@@ -1,0 +1,25 @@
+Cleanup report for addon: mg_kohztec_course
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_kohztec_course\maps\mg_kohztec_course_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (1) ===
+models\chicken\chicken.mdl
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (10) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/decals/ivy02.vmt
+materials/decals/blood4model.vmt
+materials/de_aztec/carving01_cheap.vmt
+materials/liquids/shack_water.vmt
+materials/de_aztec/carving03b_cheap.vmt
+materials/de_nuke/nukblenddirtgrass.vmt
+materials/liquids/overpasswater.vmt
+materials/de_aztec/hpe_aztec_brokenstone_cheap.vmt
+materials/maps/ryan_dev/white.vmt
+materials/crates/crate_seite6.vmt

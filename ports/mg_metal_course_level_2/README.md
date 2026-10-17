@@ -1,0 +1,42 @@
+# mg_metal_course_level_2
+
+| | |
+|---|---|
+| Status | Stage C done, queued for build |
+| Original map | ScHoOuFi |
+| Imported | 2026-10-16 |
+| Map last changed | 2026-10-16 |
+| How | cs2port pipeline |
+
+## What the cleanup did
+
+(from the cleanup log in this folder)
+
+- collapsed 6 prefabs into the map, world offsets kept: mg_metal_course_level_2_gameplay.vmap (142 nodes, 142 entities), mg_metal_course_level_2_environment_prefab.vmap (762 nodes, 177 entities), mg_metal_course_level_2_lighting_prefab.vmap (2 nodes, 2 entiti...
+- outputs restored that the importer dropped: 0
+- 13 trigger_push (speeds [70.0, 100.0, 250.0, 700.0, 1200.0]; CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500); names/filters/Enable/Disable kept
+- removed 2 point_servercommand; 5 Command outputs -> script Cmd_n (CS2 servers block point_servercommand)
+- added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> mp_freezetime 0, mp_roundtime 600; only CT spawns, but the map already has a game_player_equip giving weapon_knife on spawn (unnamed), so no extra knife equip
+- removed 1 game_score (not in CS2); 1 ApplyScore -> script Score_n
+- env_sky materials/skybox/mpa123.vmat: rebuilt from the six CS:GO faces
+- visibility hints: lowest 1 (whole map incl. void), low 17 (cells with geometry), medium 0 (densest cells only)
+- 7 env_laser + 0 env_beam (CS2 cannot spawn them) -> 7 never-solid func_brush beams between their end points (mutual laser pairs drawn once), coloured self-illuminated laser materials materials/lasers/laser_<rgb>.vmat; 0 TurnOn/TurnOff/Toggle -> Enable/Disab...
+- stationary lights: 2 of 84 lights switched Static -> Stationary (directlight 3) across 1 sealed compartments, ranges trimmed so no spot is inside more than 4
+- 2 materials were alpha-tested / translucent in CS:GO but imported opaque - fixed with a mask from the texture alpha: train_cautionstripe (translucent), fin (translucent)
+- radar: rendered from geometry (261 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/mg_metal_course_level_2_radar_psd.png + game resource/overviews/mg_metal_course_level_2.txt (pos -2830 9476, scale 10.41)
+
+## Import report
+
+(`post_import_cleanup.py` report in this folder)
+
+- Textures - fully missing, no source found anywhere: 1
+
+## Scripts
+
+- [`scripts/mg_metal_course_level_2_io.js`](scripts/mg_metal_course_level_2_io.js)
+
+## Open / to check
+
+- the importer leaves these out (they're on its exclusion list, mostly cosmetic): 13 point_spotlight (spotlight beams), 13 func_dustmotes (dust motes)
+- chat messages use "say" from cs_script ServerCommand - if a server blocks it the messages just will not show
+- these lasers did damage in CS:GO but there is no trigger_hurt along them, so in CS2 they are only visual: la3 at 2496 4812 256 (damage 10000), la4 at 2496 4864 308 (damage 10000), la5 at 2496 5056 308 (damage 10000)

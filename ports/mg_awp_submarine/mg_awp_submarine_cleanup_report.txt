@@ -1,0 +1,18 @@
+Cleanup report for addon: mg_awp_submarine
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_awp_submarine\maps\mg_awp_submarine_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (3) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/dev/dev_water2.vmt
+materials/brick/brickwall014l.vmt
+materials/ground/blendsnow_conc.vmt

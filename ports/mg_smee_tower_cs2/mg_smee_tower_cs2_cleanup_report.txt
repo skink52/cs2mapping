@@ -1,0 +1,30 @@
+Cleanup report for addon: mg_smee_tower_cs2
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_smee_tower_cs2\maps\mg_smee_tower_cs2_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (15) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/sprites/light_glow02_add_noz.vmt
+materials/decals/blood_gunshot_decalmodel.vmt
+materials/decals/burn01a.vmt
+materials/decals/decalmetalgrate016a.vmt
+materials/decals/decalmetalgrate022a.vmt
+materials/decals/decalsignstreet006b.vmt
+materials/decals/decalshipsign005d.vmt
+materials/decals/blood_gunshot_decal.vmt
+materials/plaster/offwllc.vmt
+materials/cs_havana/ground01grass.vmt
+materials/concrete/concretefloor026a.vmt
+materials/metal/metalwall045a_nobump.vmt
+materials/metal/citadel_tilefloor016a.vmt
+materials/de_nuke/nukblenddirtgrass.vmt
+materials/de_nuke/nukwater_movingplane.vmt

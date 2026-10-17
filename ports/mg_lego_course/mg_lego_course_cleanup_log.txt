@@ -1,0 +1,20 @@
+CS2 post-import clean - mg_lego_course (2026-10-14)
+Backup of the pre-clean map: csgo_addons\prefabs+backups\preclean_2026-10-14\mg_lego_course_preclean.vmap
+
+- restored 21 sky brushes (dropped by the importer) as moondome meshes using materials/skybox/sky_dust_moondome.vmat
+- env_sky sky_dust: rebuilt materials/skybox/sky_dust.vmat from the six CS:GO faces packed in the BSP; boharox/lego/dawall_middle.vmat created (texture was imported, material wasn't)
+- game_player_equip: CS:GO style keys ['weapon_knife'] -> CS2 weapon0..weapon21 slots
+- removed point_servercommand 'prodigy3' (chat messages + sv_airaccelerate now sent by the script)
+- removed point_servercommand 'tyi' (chat messages + sv_airaccelerate now sent by the script)
+- 15 point_servercommand Command outputs (say messages, sv_airaccelerate 150) -> script Cmd_n; added "Ported to CS2 by skink52" after each CS:GO port credit
+- removed game_score 'score1' (game_score does not exist in CS2; ApplyScore -> script Score_500)
+- removed point_viewcontrol '' (not in CS2, and it had no name so nothing ever turned it on)
+- removed env_sun '' (not in CS2; light_environment draws the sun)
+- 11 env_laser replaced by func_brush beams (laser_beam_1..11, never solid, materials/lasers/laser_red.vmat copied from mg_circle_course, crossed double-sided quads 8u wide); the existing 2u trigger_hurt under each laser (700 dmg) does the killing, unchanged
+- 8 ambient_generics + func_door sounds pointed at new soundevents (lego.*) instead of raw .vsnd paths
+- added point_script mg_lego_course_io_script (maps/scripts/mg_lego_course_io.js)
+- visibility hints: {'lowest': 1, 'low': 39} (lowest box over whole map incl. void, low over gameplay, medium only in the densest cells)
+- pruned 377 orphaned elements
+- radar: rendered from geometry
+- loading text: "original map by The_Prodigy cs2 port by skink52"
+- TO CHECK: chat messages use "say" from cs_script ServerCommand - if your server blocks it the messages just won't show

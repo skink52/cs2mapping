@@ -1,0 +1,20 @@
+Cleanup report for addon: mg_mario_party
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_mario_party\maps\mg_mario_party_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (5) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/nature/water_coast02.vmt
+materials/realworldtextures2/ground/ice_03_nonice.vmt
+materials/nature/water_coast03.vmt
+materials/ba_mario_map/mario_grass_rock_blend.vmt
+materials/cs_havana/metalwall085a.vmt

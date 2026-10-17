@@ -1,0 +1,15 @@
+mg_fred_all OK
+mg_draw_course OK
+mg_color_dev OK
+mg_ski_mountain OK
+mg_fred_all OK
+mg_draw_course OK
+mg_bob2 OK
+mg_egypt_course OK
+mg_faohu_course OK
+mg_galaxy_course OK
+mg_kohztec_course OK
+mg_minecraft_adventure OK
+de_nuketown OK
+mg_simpsons_course OK
+mg_metal_course_level_2 OK

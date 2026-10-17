@@ -1,0 +1,23 @@
+Cleanup report for addon: mg_bob2
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_bob2\maps\mg_bob2_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (8) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/decals/custom/bob2.vmt
+materials/dev/dev_blendmeasure2.vmt
+materials/de_nuke/nukwater_movingplane_dx70.vmt
+materials/de_nuke/nukwater_movingplane2.vmt
+materials/dev/dev_blendmeasure.vmt
+materials/cs_italy/wallpaper02.vmt
+materials/nature/infblendgrassdirt001a.vmt
+materials/props/plasticexitsign001b.vmt

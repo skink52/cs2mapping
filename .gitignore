@@ -1,0 +1,35 @@
+# No map content: these belong to the original mappers or are build output
+*.bsp
+*.vmf
+*.vmx
+*.vmap
+!tools/box_template.vmap
+!tools/laser_template.vmap
+*.vpk
+*.vpk_c
+*_c
+*.vtf
+*.vmt
+*.mdl
+*.vvd
+*.vtx
+*.phy
+*.dmx
+*.fbx
+*.wav
+*.mp3
+*.zip
+*.nav
+*.lmp
+
+# Valve's import scripts are not redistributed (scripts/make_import_map_auto.py patches your own copy)
+import_map_community*.py
+import_map_auto.py
+utils/
+
+# Python / tooling noise
+__pycache__/
+*.pyc
+out/
+prep_out/
+logs/*.log

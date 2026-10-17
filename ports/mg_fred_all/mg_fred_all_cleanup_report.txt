@@ -1,0 +1,21 @@
+Cleanup report for addon: mg_fred_all
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_fred_all\maps\mg_fred_all_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (6) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/glass/glass01.vmt
+materials/liquids/inferno_water.vmt
+materials/watersource/waterfall/waterfallfull_1024_clear.vmt
+materials/watersource/waterfall/waterfallfull_256_nrm_clear.vmt
+materials/sprites/combineball_glow_red_1.vmt
+materials/watersource/waterfall/waterfallsoft_512_nrm_clear.vmt

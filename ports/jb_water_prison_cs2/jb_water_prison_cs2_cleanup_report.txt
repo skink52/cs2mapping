@@ -1,0 +1,27 @@
+Cleanup report for addon: jb_water_prison_cs2
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\jb_water_prison_cs2\maps\jb_water_prison_cs2_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (12) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/de_cbble/grass_alt/blendgrassdirt.vmt
+materials/metal/metalgrate013a2.vmt
+materials/plaster/urban_plasterwall_05a_nobump.vmt
+materials/metal/citadel_tilefloor016a.vmt
+materials/concrete/cinderwall04_cheap.vmt
+materials/glass/glass01.vmt
+materials/cs_havana/metalfence007a.vmt
+materials/concrete/metalwall001b_cheap.vmt
+materials/plaster/urban_plasterwall_00b.vmt
+materials/props/metalcomputerpanel001a.vmt
+materials/cs_italy/hpe_plaster_tint_tan.vmt
+materials/dev/dev_water2_cheap.vmt

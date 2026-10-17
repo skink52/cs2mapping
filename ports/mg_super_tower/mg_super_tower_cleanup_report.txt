@@ -1,0 +1,22 @@
+Cleanup report for addon: mg_super_tower
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_super_tower\maps\mg_super_tower_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (7) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/de_nuke/nukwater_movingplane.vmt
+materials/de_train/blendgrassdirt001a.vmt
+materials/de_mirage/plaster/de_mirage_plaster_blue1_diffuse.vmt
+materials/concrete/cinderwall04_cheap.vmt
+materials/cs_italy/wallpaper1.vmt
+materials/halflife/glassblue2.vmt
+materials/metal/metalrail012c.vmt

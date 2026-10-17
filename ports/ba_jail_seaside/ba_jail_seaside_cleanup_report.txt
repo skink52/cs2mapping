@@ -1,0 +1,53 @@
+Cleanup report for addon: ba_jail_seaside
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\ba_jail_seaside\maps\ba_jail_seaside_refs.txt
+
+=== MODELS - FAILED TO IMPORT (1) ===
+models\props_junk\trashdumpster02a.mdl
+
+=== MODELS - FAILED TO COMPILE (7) ===
+models\weapons\w_snip_awp.mdl
+models\characters\hostage_01.mdl
+models\props_doors\doormain01_static.mdl
+models\weapons\w_rif_famas.mdl
+models\weapons\w_smg_mp7.mdl
+models\weapons\w_rif_aug.mdl
+models\weapons\w_rif_m4a1.mdl
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (32) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/sprites/light_glow02_add_noz.vmt
+materials/valve/tamara.vmt
+materials/valve/flickshot.vmt
+materials/valve/howling_dawn.vmt
+materials/valve/martha.vmt
+materials/valve/ivette.vmt
+materials/valve/skull.vmt
+materials/valve/fireserpent.vmt
+materials/valve/drugwarveteran.vmt
+materials/valve/realmvp_02.vmt
+materials/valve/cerberus.vmt
+materials/spyvspy/break.vmt
+materials/decals/graffiti_spray_06_dark_red.vmt
+materials/decals/graffiti_spray_03_black.vmt
+materials/decals/graffiti_spray_01_pink.vmt
+materials/cs_havana/metalfence007a.vmt
+materials/brick/brick_ext_02_cheap.vmt
+materials/concrete/hr_c/hr_concrete_wall_001.vmt
+materials/metal/metalroof008a_cheap.vmt
+materials/de_mirage/plaster/de_mirage_plaster_blue1_diffuse.vmt
+materials/concrete/blend_blacktop_01.vmt
+materials/cs_havana/tunnelplaster03.vmt
+materials/nature/water_riverbed02.vmt
+materials/props_c17/metalladder001.vmt
+materials/nature/blend_grass_cobblestone_01.vmt
+materials/concrete/blend_sidewalk_01.vmt
+materials/de_nuke/hr_nuke/hazard_stripe_001_trim.vmt
+materials/dev/dev_water3_exp.vmt
+materials/liquids/aztecwater.vmt
+materials/liquids/shack_water.vmt
+materials/concrete/blend_rubble_02.vmt
+materials/nature/blendswampmud_aztec.vmt

@@ -1,0 +1,26 @@
+Cleanup report for addon: de_nuketown
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\de_nuketown\maps\de_nuketown_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (11) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/sprites/light_glow02_add_noz.vmt
+materials/wood/floor03cheap.vmt
+materials/carpet/blue04_ssbump.vmt
+materials/de_nuke/nuke_walloffice_01_wood.vmt
+materials/concrete/blend_blacktop_04.vmt
+materials/de_dust/dust_palacewall01_nospec.vmt
+materials/concrete/blend_sidewalk_01.vmt
+materials/brick/brick_ext_02_cheap.vmt
+materials/wood/woodsiding_ext_a03.vmt
+materials/nature/blend_dirtleavesgravel01.vmt
+materials/concrete/urban_road_01a_cheap.vmt

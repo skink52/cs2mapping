@@ -1,0 +1,21 @@
+Cleanup report for addon: de_rats_1337
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\de_rats_1337\maps\de_rats_1337_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (1) ===
+models\tomobobo\models\newbiclighter.mdl
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (6) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/metal/metalvent002b_decal.vmt
+materials/de_nuke/nuke_metalgrate_01_translucent.vmt
+materials/wood/infwoodfloor007a.vmt
+materials/concrete/offflrasnow.vmt
+materials/liquids/boathouse_water.vmt
+materials/glass/glass01cull.vmt

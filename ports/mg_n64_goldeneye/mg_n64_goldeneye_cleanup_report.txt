@@ -1,0 +1,41 @@
+Cleanup report for addon: mg_n64_goldeneye
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_n64_goldeneye\maps\mg_n64_goldeneye_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (26) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/goldeneyedecals/graffiti/n64logo.vmt
+materials/goldeneyedecals/minivent.vmt
+materials/goldeneyedecals/signs/noadmittance.vmt
+materials/goldeneyedecals/signs/exit01.vmt
+materials/goldeneyedecals/signs/exit02.vmt
+materials/goldeneyedecals/signs/no_ent.vmt
+materials/goldeneyedecals/signs/nosmoke2.vmt
+materials/goldeneyedecals/signs/wash_hands.vmt
+materials/goldeneyedecals/signs/outoforder1.vmt
+materials/goldeneyedecals/signs/nobond.vmt
+materials/remonttimies/glasswindow_noenvmap.vmt
+materials/metal/citadel_metalwall074a.vmt
+materials/goldeneye/complex/blackmetal.vmt
+materials/goldeneye/glass04.vmt
+materials/ukcs/medal-awp.vmt
+materials/ukcs/medal-usp.vmt
+materials/ukcs/medal-ak47.vmt
+materials/ukcs/medal-deagle.vmt
+materials/ukcs/medal-p90.vmt
+materials/ukcs/medal-p228.vmt
+materials/ukcs/medal-m3.vmt
+materials/ukcs/medal-grenade.vmt
+materials/ukcs/medal-glock18.vmt
+materials/ukcs/medal-fiveseven.vmt
+materials/ukcs/medal-m4a1.vmt
+materials/ukcs/medal-elite.vmt

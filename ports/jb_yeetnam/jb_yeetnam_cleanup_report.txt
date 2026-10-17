@@ -1,0 +1,36 @@
+Cleanup report for addon: jb_yeetnam
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\jb_yeetnam\maps\jb_yeetnam_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (6) ===
+models\weapons\w_pist_deagle.mdl
+models\weapons\w_pist_tec9.mdl
+models\weapons\w_rif_ak47.mdl
+models\weapons\w_snip_awp.mdl
+models\weapons\w_rif_m4a1.mdl
+models\player\custom\chickenleet\chickenleet.mdl
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (16) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/nature/blendrocksgrass006a.vmt
+materials/concrete/blend_milwall002_concretefloor012a.vmt
+materials/concrete/hr_c/4wb_concrete_floor_broken.vmt
+materials/gg_vietnam/vietnam_dirt_mud.vmt
+materials/brick/brick_ext_02_cheap.vmt
+materials/concrete/hr_c/4wb_sidewalk_a.vmt
+materials/asphalt/hr_conc_a_damage_e.vmt
+materials/carpet/blue04_ssbump.vmt
+materials/metal/hr_metal/hr_metal_wood_a.vmt
+materials/dev/dev_water2.vmt
+materials/liquids/boathouse_water.vmt
+materials/dev/dev_water4.vmt
+materials/dev/dev_water3.vmt
+materials/custom/waterfall001.vmt
+materials/lights/white001_nochop.vmt
+materials/metal/drainage_floor_02_-9069_5863_-182.vmt

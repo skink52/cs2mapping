@@ -1,0 +1,10 @@
+{
+ "doors/door_metal_thin_open1.wav": "sounds/doors/door_metal_thin_open1.wav",
+ "doors/door_metal_medium_close1.wav": "sounds/doors/door_metal_medium_close1.wav",
+ "doors/doorstop1.wav": "sounds/doors/doorstop1.wav",
+ "npc/zombie/zombie_pound_door.wav": "sounds/npc/zombie/zombie_pound_door.wav",
+ "ambient/tones/fan2_loop.wav": "sounds/ambient/tones/fan2_loop.wav",
+ "ambient/tones/steam_loop1.wav": "sounds/ambient/tones/steam_loop1.wav",
+ "ambient/atmosphere/indoor2.wav": "sounds/ambient/atmosphere/indoor2.wav",
+ "ambient/alarms/alarm_citizen_loop1.wav": "sounds/ambient/alarms/alarm_citizen_loop1.wav"
+}

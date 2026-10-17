@@ -1,0 +1,17 @@
+CS2 post-import clean - mg_super_tower (2026-10-14)
+Backup of the pre-clean map: csgo_addons\prefabs+backups\preclean_2026-10-14\mg_super_tower_preclean.vmap
+
+- missing materials swapped for the closest stock CS2 ones (17 faces): cs_italy/wallpaper1.vmat -> cs_italy/plasterwall04.vmat, de_nuke/nukwater_movingplane.vmat -> liquids/nuke_water.vmat, de_train/blendgrassdirt001a.vmat -> de_train/blendgrassdirt002a.vmat, halflife/glassblue2.vmat -> glass/glass01.vmat, metal/metalrail012c.vmat -> metal/metaltrack001a.vmat
+- concrete/cinderwall04_cheap rebuilt from the original CS:GO texture
+- env_sky: sky_cs15_daylight03_hdr (missing) -> rebuilt materials/skybox/sky_cs15_daylight03.vmat
+- restored 5 sky brushes (dropped by the importer) as moondome meshes using materials/skybox/sky_cs15_daylight03_moondome.vmat
+- 8 func_breakable_surf windows (entity gone in CS2) -> func_breakable, material Glass, health 1
+- 4 music ambient_generics pointed at new soundevents (supertower.smb3_*) instead of raw .vsnd paths
+- door / elevator sounds -> stock CS2 soundevents (Door.wood_start_open, train_wheels)
+- restored the output the importer dropped: top trigger_multiple OnStartTouch -> !activator SetDamageFilter no_fall_damage_filter
+- 16 trigger_push (speed 3650, CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500 like sv_maxvelocity)
+- added point_script mg_super_tower_io_script (maps/scripts/mg_super_tower_io.js)
+- visibility hints: {'lowest': 1, 'low': 28, 'medium': 1} (lowest box over whole map incl. void, low over gameplay, medium only in the densest cells)
+- pruned 85 orphaned elements
+- radar: rendered from geometry
+- loading text: "original map by iSuperleggera cs2 port by skink52" (author from the GameBanana mg_super_tower_v3 page; the map itself has no credits)

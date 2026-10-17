@@ -1,0 +1,38 @@
+<root>
+	<styles>
+		<include src="file://{resources}/styles/custom_game/mario_overlays.css" />
+	</styles>
+
+	<!--
+		CS2 replacement for the CS:GO env_screenoverlay entities in mg_mario_party.
+		One full-screen panel per "GAME SELECTED" overlay; all start hidden.
+		Shown/hidden by maps/scripts/overlays.js (point_script "mario_overlay_script").
+	-->
+	<Panel class="Root" hittest="false">
+		<Panel id="BlockfortOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="BoxGameOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="ChainChompOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="ChompKnifeOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="climb_race_Overlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="FightYardOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="gravity_revolvers_Overlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="HexagonHeatOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="HungerGamesOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="KingOfTheHillOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="KnifeArenaOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="MarioSaysOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="mvp_Overlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="ObstacleOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="PirateClimbOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="PirateIslandOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="PlatformPerilOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="random_fight_yard_Overlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="ScoutzKnivezOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="shotgun_arena_Overlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="SkippingOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="SkyPlatformsOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="SniperThwompsOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="SpeedSMGsOverlay" class="ScreenOverlay Hidden" hittest="false" />
+		<Panel id="ThwompFallsOverlay" class="ScreenOverlay Hidden" hittest="false" />
+	</Panel>
+</root>

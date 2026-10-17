@@ -1,0 +1,29 @@
+Cleanup report for addon: mg_galaxy_course
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_galaxy_course\maps\mg_galaxy_course_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (14) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/props/decal_prison04b.vmt
+materials/realworldtextures2/decals/dirt_decal_02.vmt
+materials/realworldtextures2/decals/dirt_decal_03.vmt
+materials/realworldtextures2/metal/floor/metal_86_reflective.vmt
+materials/metal/2x4_metal.vmt
+materials/realworldtextures2/metal/floor/metal_145_reflective.vmt
+materials/realworldtextures2/metal/metal_70_reflective.vmt
+materials/dev/dev_water3.vmt
+materials/realworldtextures2/metal/wall/metal_151_reflective.vmt
+materials/dev/dev_water5.vmt
+materials/liquids/water_swamp_m1_beneath.vmt
+materials/metal/citadel_tilefloor016a.vmt
+materials/lights/white001_nochop.vmt
+materials/realworldtextures2/metal/floor/metal_141_reflective.vmt

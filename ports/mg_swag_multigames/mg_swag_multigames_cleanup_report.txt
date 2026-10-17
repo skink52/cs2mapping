@@ -1,0 +1,23 @@
+Cleanup report for addon: mg_swag_multigames
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_swag_multigames\maps\mg_swag_multigames_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (6) ===
+models\weapons\w_pist_223.mdl
+models\3d\penis\penis.mdl
+models\weapons\w_pist_deagle.mdl
+models\weapons\w_pist_elite.mdl
+models\weapons\w_pist_fiveseven.mdl
+models\weapons\w_pist_tec9.mdl
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (3) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/liquids/inferno_water.vmt
+materials/dev/dev_water2.vmt
+materials/dev/dev_water3.vmt

@@ -1,0 +1,19 @@
+mg_mario_party follow-up fixes (2026-10-17)
+- lava: Mario Says floor under the collapsing platforms - 1 top face(s) at z 557 now materials/mario_cs2/lava_glow.vmat
+- lava: Hexagon Heat floor - 1 top face(s) at z 98 now materials/mario_cs2/lava_glow.vmat
+- lava: Obstacle last level, pit under the moving beams - 1 top face(s) at z -432 now materials/mario_cs2/lava_glow.vmat
+- lava: Obstacle last level, spike pit - 1 top face(s) at z -432 now materials/mario_cs2/lava_glow.vmat
+- water: 5 nuke_water volumes added in the Obstacle sand-level pits (surface 32 units above the pit floor, inside the existing trigger_hurts)
+- fire: 40 info_particle_system (particles/burning_fx/env_fire_tiny.vpcf) added on the mario_wall_torch props
+- lighting: map had no light probe volumes, so brush entities (platforms, doors, buttons), props, players and weapons were lit differently from the baked world - added 32 env_combined_light_probe_volume, one inside each moondome room
+- platform peril: laser_door1 trigger_hurt now has a visible magenta laser (func_brush laser_door1_beam, parented to laser_door1, never solid)
+- thwomp sounds: 13 thwomp movers had their sound only in func_door sound keys (CS2 wants a soundevent there), now play "chooseconfirmed" through their own point_soundevent like the ice level: thwomp_awp_1 (OnFullyClosed), thwomp_awp_2 (OnFullyClosed), thwomp_awp_3 (OnFullyClosed), thwomp_awp_4 (OnFullyClosed), thwomp_awp_5 (OnFullyClosed), thwomp_awp_6 (OnFullyClosed), thwomp4 (OnFullyOpen+OnFullyClosed), thwomp_mid_front (OnClose), thwomp_mid_back (OnClose), thwomp_left_front (OnClose), thwomp_left_back (OnClose), thwomp_right_back (OnClose), thwomp_right_front (OnClose)
+- weapon triggers: 12 outputs and 80 AddOutput-built outputs to 25 non-stripping game_player_equips now go through mario_io_script Equip_<name>, which only gives a weapon the player does not already have (CS:GO never gave duplicates; CS2 does, so walking in and out stacked guns)
+- bullet bill cannons: 7 cannons (bullet_push_trigger_climb, bullet_push_trigger_ka, bullet_push_trigger_ka1, bullet_push_trigger_ka2, bullet_push_trigger_ka3, bullet_push_trigger_ka4, bullet_push_trigger_ka5) no longer rely on a trigger_push to throw a physics prop (CS2 does not push it, so it dropped into the water); the cannon timer fires mario_io_script BulletFire_<push trigger>, which flies the bullet straight out along the push direction (rotating with the cannon) until it hits a wall
+- materials: letters/a + b (A/B button fronts) alpha-tested from the texture alpha so the neon colour shows through; de_train/train_bombsite_arrow_01 (wall-jump arrow) translucent; flag cloth materials a_flag/green and mario/red use the neon green/red textures again (the import had left them plain white); new mario_cs2/lava_glow (self-illuminated lava_magma_05)
+- mario_io.js: Speed_<x> now uses the held weapon's run speed (CS:GO speedmod scaled weapon speed) and pre-compensates ground friction; Equip_<name> and BulletFire_<trigger> inputs added
+- backup of the vmap before these fixes: maps/mg_mario_party.vmap.bak_2026-10-17
+
+Vis optimisation (2026-10-17, after the first build: Voxelize 8u 103 s / 19.2M nodes, outside detection 62 s)
+- the 32 moondome + 32 tools/skybox shells (about half of all vis-relevant surface area) set to Exclude from Vis: every room is already sealed by its own nodraw hull from the CS:GO map (flood-fill checked at 16 units), so the shells only cost voxelize time
+- the 32 Low visibility_hints were all copies of the map-wide box; each now covers one room (the Lowest hint still covers the whole map, so the void between rooms clusters at 256 units)

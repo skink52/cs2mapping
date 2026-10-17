@@ -1,0 +1,47 @@
+/* Full-screen "GAME SELECTED" overlays recovered from the CS:GO version of mg_mario_party.
+   The originals were 1024x1024 UnlitGeneric materials ($translucent 1, $alpha 0.8) stretched across the screen. */
+
+.Root {
+    width: 100%;
+    height: 100%;
+}
+
+.ScreenOverlay {
+    width: 100%;
+    height: 100%;
+    background-size: 100% 100%;     /* stretch to the screen, like env_screenoverlay did */
+    background-repeat: no-repeat;
+    opacity: 0.8;                    /* original material $alpha */
+    transition-property: opacity;
+    transition-duration: 0.1s;
+}
+
+.ScreenOverlay.Hidden {
+    opacity: 0;
+}
+
+#BlockfortOverlay { background-image: url("file://{images}/custom_game/mario_overlays/blockfortoverlay.png"); }
+#BoxGameOverlay { background-image: url("file://{images}/custom_game/mario_overlays/floatingislandsoverlay.png"); }
+#ChainChompOverlay { background-image: url("file://{images}/custom_game/mario_overlays/chainchompoverlay.png"); }
+#ChompKnifeOverlay { background-image: url("file://{images}/custom_game/mario_overlays/chompknifeoverlay.png"); }
+#climb_race_Overlay { background-image: url("file://{images}/custom_game/mario_overlays/climbraceoverlay.png"); }
+#FightYardOverlay { background-image: url("file://{images}/custom_game/mario_overlays/fightyardoverlay.png"); }
+#gravity_revolvers_Overlay { background-image: url("file://{images}/custom_game/mario_overlays/gravityarenaoverlay.png"); }
+#HexagonHeatOverlay { background-image: url("file://{images}/custom_game/mario_overlays/hexagonheatoverlay.png"); }
+#HungerGamesOverlay { background-image: url("file://{images}/custom_game/mario_overlays/hungergamesoverlay.png"); }
+#KingOfTheHillOverlay { background-image: url("file://{images}/custom_game/mario_overlays/kingofthehilloverlay.png"); }
+#KnifeArenaOverlay { background-image: url("file://{images}/custom_game/mario_overlays/knifearenaoverlay.png"); }
+#MarioSaysOverlay { background-image: url("file://{images}/custom_game/mario_overlays/mariosaysoverlay.png"); }
+#mvp_Overlay { background-image: url("file://{images}/custom_game/mario_overlays/mvpoverlay.png"); }
+#ObstacleOverlay { background-image: url("file://{images}/custom_game/mario_overlays/obstacleoverlay.png"); }
+#PirateClimbOverlay { background-image: url("file://{images}/custom_game/mario_overlays/pirateclimboverlay.png"); }
+#PirateIslandOverlay { background-image: url("file://{images}/custom_game/mario_overlays/pirateislandoverlay.png"); }
+#PlatformPerilOverlay { background-image: url("file://{images}/custom_game/mario_overlays/platformperiloverlay.png"); }
+#random_fight_yard_Overlay { background-image: url("file://{images}/custom_game/mario_overlays/randomfightyardoverlay.png"); }
+#ScoutzKnivezOverlay { background-image: url("file://{images}/custom_game/mario_overlays/scoutzknivezoverlay.png"); }
+#shotgun_arena_Overlay { background-image: url("file://{images}/custom_game/mario_overlays/shotgunarenaoverlay.png"); }
+#SkippingOverlay { background-image: url("file://{images}/custom_game/mario_overlays/skippingoverlay.png"); }
+#SkyPlatformsOverlay { background-image: url("file://{images}/custom_game/mario_overlays/skyplatformsoverlay.png"); }
+#SniperThwompsOverlay { background-image: url("file://{images}/custom_game/mario_overlays/sniperthwompsoverlay.png"); }
+#SpeedSMGsOverlay { background-image: url("file://{images}/custom_game/mario_overlays/speedsmgsoverlay.png"); }
+#ThwompFallsOverlay { background-image: url("file://{images}/custom_game/mario_overlays/thwompfallsoverlay.png"); }

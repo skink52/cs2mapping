@@ -1,0 +1,16 @@
+CS2 post-import clean - de_rats_1337 (2026-10-14)
+Backup of the pre-clean map: csgo_addons\prefabs+backups\preclean_2026-10-14\de_rats_1337_preclean.vmap
+
+- liquids/boathouse_water (CS:GO water shader, no CS2 equivalent) -> stock liquids/nuke_water.vmat (4 faces)
+- rebuilt missing materials from the original CS:GO textures: wood/infwoodfloor007a, de_train/train_metal_door_02, de_nuke/nuke_metalvent (alpha-tested), environment_maps/pipemetal004b + pipeset_metal (CS:GO folder had a space in its name)
+- env_sky embassy: rebuilt materials/skybox/embassy.vmat from the six CS:GO faces
+- 94 prop_hallucination (does not spawn in CS2, so every lamp/ladder model was invisible) -> 32 prop_dynamic (named, they take Skin inputs from the shoot-out lights) + 62 prop_static
+- 32 light_omni2 that get TurnOn/TurnOff (shoot-out lamps, trap lights) switched Static -> Dynamic so they can actually turn off
+- elevator func_door sounds Doors.Elevator.* (CS:GO only) -> Door.de_vertigo_start_open / full_close
+- 12 trigger_push (fan vortex "TP" x9 at 300, vent launcher at 16000) -> trigger_multiple + script push zones holding CS:GO speed; "TP" name kept so the fan button still enables/disables them
+- added point_script de_rats_1337_io_script (maps/scripts/de_rats_1337_io.js)
+- visibility hints: {'lowest': 1, 'low': 15, 'medium': 1} (lowest box over whole map incl. void, low over gameplay, medium only in the densest cells)
+- pruned 0 orphaned elements
+- radar: original CS:GO radar converted (panorama/images/overheadmaps/de_rats_1337_radar_psd.png + game resource/overviews/de_rats_1337.txt)
+- loading text: game\csgo_addons\de_rats_1337\maps\de_rats_1337.txt = "original map by SkyDusH cs2 port by skink52" (credits file also names Deamon as assistant)
+- Boulder.ScrapeRough / Inferno.Loop / ambient.steam01: wavs extracted from CS:GO (sounds/physics/concrete, sounds/weapons/molotov, sounds/ambient/gas), new soundevents rats.boulder_scrape_rough / rats.inferno_loop / rats.steam01, V1 / TRS / VEn1 pointed at them

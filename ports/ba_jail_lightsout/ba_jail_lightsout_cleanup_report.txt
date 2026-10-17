@@ -1,0 +1,74 @@
+Cleanup report for addon: ba_jail_lightsout
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\ba_jail_lightsout\maps\ba_jail_lightsout_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (59) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/sprites/light_glow02_add_noz.vmt
+materials/decals/decalgraffiti011a.vmt
+materials/decals/decal_posters003a.vmt
+materials/decals/plaster014a.vmt
+materials/decals/decalgraffiti025a.vmt
+materials/decals/plaster012a.vmt
+materials/de_nuke/radwarning.vmt
+materials/decals/decalgraffiti024a.vmt
+materials/decals/decalgraffiti006a.vmt
+materials/decals/plaster015a.vmt
+materials/decals/plaster016a.vmt
+materials/decals/decalgraffiti044a.vmt
+materials/decals/decalsigndanger001f.vmt
+materials/decals/plaster007a.vmt
+materials/decals/debris_concrete001b.vmt
+materials/decals/debris_tile001a.vmt
+materials/decals/plaster006a.vmt
+materials/decals/decalposter004a.vmt
+materials/decals/decalgraffiti050a.vmt
+materials/decals/decal_signroute004a.vmt
+materials/decals/decalshipsign002h.vmt
+materials/decals/decalindustrialnumber01b.vmt
+materials/decals/decalindustrialnumber05b.vmt
+materials/decals/decalindustrialnumber02b.vmt
+materials/decals/decalgraffiti037a.vmt
+materials/decals/decalgraffiti059a.vmt
+materials/decals/decalgraffiti054a.vmt
+materials/decals/decal_skidmark01.vmt
+materials/decals/decalgraffiti005a.vmt
+materials/decals/decalgraffiti043a.vmt
+materials/decals/decalgraffiti003a.vmt
+materials/decals/metalgrate008a_decal.vmt
+materials/decals/decalindustrialnumber04b.vmt
+materials/decals/decalindustrialnumber06b.vmt
+materials/decals/decalindustrialnumber07c.vmt
+materials/metal/hr_metal/hr_metal_floor_002.vmt
+materials/dev/ocean.vmt
+materials/dev/dev_water2_cheap.vmt
+materials/de_nuke/nuke_metalgrate_01_translucent.vmt
+materials/nature/water_epic_tropical.vmt
+materials/concrete/cinderblockwall01colortint_green.vmt
+materials/concrete/vertigo_tunnel_concretewall_01c.vmt
+materials/cs_havana/tunnelplaster03.vmt
+materials/de_mirage/marble/marble_01.vmt
+materials/concrete/cinderwall04_cheap.vmt
+materials/asphalt/asphalt_b1_blend.vmt
+materials/concrete/concretewall004a_c17.vmt
+materials/de_dust/rockwall_blend.vmt
+materials/concrete/blend_rubble_02.vmt
+materials/de_cbble/grass_alt/blendgrassdirt.vmt
+materials/de_train/blendgrassdirt001a.vmt
+materials/concrete/blend_concrete02_concfloor012a.vmt
+materials/nature/mudfloor001a_cheap.vmt
+materials/nature/rockwall007b.vmt
+materials/nature/infblendgrassdirt001a.vmt
+materials/de_biome/glass/biome_glass_grass.vmt
+materials/nature/hr_c/hr_grass_mulch_blend_001.vmt
+materials/concrete/cinderblockwall01colortint_tan.vmt
+materials/glass/glass01cull.vmt

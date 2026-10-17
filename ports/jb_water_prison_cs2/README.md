@@ -1,0 +1,22 @@
+# jb_water_prison_cs2
+
+| | |
+|---|---|
+| Status | Ported, with added scripted features (jailbreak map) |
+| Source BSP | `jb_water_prison_go_v3n.bsp` |
+| Imported | 2026-09-20 |
+| Map last changed | 2026-10-02 |
+| How | manual (Valve importer + post_import_cleanup.py) |
+
+Drivable car (`vehicle_base5` physbox + four thrusters, +use on `vehicle_button5` to get in and out; the driver rides along) replacing a dead game_ui. A `waterhurt` trigger_hurt (acid damage) with `waterfilter`: players who came through the vent are immune until they first leave the water.
+
+## Import report
+
+(`post_import_cleanup.py` report in this folder)
+
+- Textures - fully missing, no source found anywhere: 12
+
+## Scripts
+
+- [`scripts/vehicles.js`](scripts/vehicles.js) - game_ui replacement for the car
+- [`scripts/water_immunity.js`](scripts/water_immunity.js) - names the player so `waterfilter` exempts them

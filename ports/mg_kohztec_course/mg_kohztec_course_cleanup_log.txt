@@ -1,0 +1,29 @@
+CS2 post-import clean - mg_kohztec_course (2026-10-16)
+
+- collapsed 6 prefabs into the map, world offsets kept: mg_kohztec_course_gameplay.vmap (313 nodes, 313 entities), mg_kohztec_course_environment_prefab.vmap (2761 nodes, 558 entities), mg_kohztec_course_lighting_prefab.vmap (3 nodes, 3 entities), mg_kohztec_course_cubemaps_prefab.vmap (12 nodes, 12 entities), mg_kohztec_course_audio_prefab.vmap (25 nodes, 25 entities), mg_kohztec_course_nav_prefab.vmap (0 nodes, 0 entities)
+- outputs restored that the importer dropped: 88 (e.g. trigger_multiple  -> !activator.AddOutput(targetname platform); trigger_multiple  -> !activator.AddOutput(targetname normal); trigger_multiple  -> !activator.AddOutput(targetname normal); trigger_teleport  -> !activator.AddOutput(targetname normal); trigger_teleport  -> !activator.AddOutput(targetname normal); trigger_teleport  -> !activator.AddOutput(targetname normal))
+- game_player_equip (unnamed): CS:GO keys ['weapon_knife', 'weapon_usp_silencer'] -> CS2 weapon0..weapon21 slots
+- 6 trigger_push (speeds [100.0, 1000.0]; CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500); names/filters/Enable/Disable kept
+- added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> mp_freezetime 0, mp_roundtime 600; only T spawns, but the map already has a game_player_equip giving weapon_knife on spawn (unnamed), so no extra knife equip
+- removed 1 game_score (not in CS2); 1 ApplyScore -> script Score_n
+- 7 ambient_generics pointed at 5 new soundevents (kohzteccourse.06_metal_man, kohzteccourse.brass_bell_c, kohzteccourse.firewerks_burst_02, kohzteccourse.indianatheme, kohzteccourse.mod_godlike) instead of raw .vsnd paths
+- stock CS:GO sounds extracted from the CS:GO VPK into the addon: sounds/ambient/atmosphere/firewerks_burst_02.wav
+- 4 static overlay materials -> csgo_static_overlay with translucency masks from the original alpha: train_bombsite_arrow_01.vmat, arrowlf.vmat, arrowrt.vmat, ivy03.vmat
+- env_sky materials/skybox/jungle.vmat: rebuilt from the six CS:GO faces
+- restored 35 sky brushes (dropped by the importer) as moondome meshes using materials/skybox/jungle_moondome.vmat
+- visibility hints: lowest 1 (whole map incl. void), low 48 (cells with geometry), medium 0 (densest cells only)
+- added 5 stationary light_omni2 to sealed rooms with spawns / teleport destinations that had no light at all
+- stationary lights: 5 of 157 lights switched Static -> Stationary (directlight 3) across 5 sealed compartments, ranges trimmed so no spot is inside more than 4; 3 compartments open to sky left to light_environment
+- 5 materials were alpha-tested / translucent in CS:GO but imported opaque - fixed with a mask from the texture alpha: miltree003 (translucent), miltree005 (translucent), treeline001a (translucent), waterfallfull_1024_clear (translucent), waterfallfull_512_clear (translucent)
+- radar: rendered from geometry (1247 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/mg_kohztec_course_radar_psd.png + game resource/overviews/mg_kohztec_course.txt (pos -6734 4308, scale 9.19)
+- built 11 missing materials from the original CS:GO textures: crate_seite6, carving01_cheap, carving03b_cheap, hpe_aztec_brokenstone_cheap, nukblenddirtgrass, train_metalgrate_01, white, dark_magenta2, dark_magenta3, pastel_magenta2, rbg_magenta
+- CS:GO water materials (no CS2 equivalent shader) -> stock: materials/liquids/shack_water.vmat -> materials/liquids/nuke_water.vmat
+- added point_script mg_kohztec_course_io_script (maps/scripts/mg_kohztec_course_io.js)
+- pruned 22 orphaned elements
+- TO CHECK: the importer leaves these out (they're on its exclusion list, mostly cosmetic): 1 point_spotlight (spotlight beams), 2 func_precipitation (rain/snow)
+- TO CHECK: 1 env_screenoverlay (mg_kohztec_course_overlay_2) - not converted automatically, needs a look
+- TO CHECK: 1 point_clientcommand (clcmd) - not converted automatically, needs a look
+- TO CHECK: ambient_generic mg_kohztec_course_secret_music_1_sound is set to loop but sounds/megaman/06-metal-man.mp3 has no loop cue points, so it will play once in CS2
+- TO CHECK: overlay materials not converted: materials/decals/blood4.vmat (texture has no alpha); materials/decals/blood4model.vmat (vmat not in addon); materials/decals/bloodstain_003.vmat (texture has no alpha); materials/decals/flesh/blood3.vmat (texture has no alpha); materials/decals/ivy02.vmat (vmat not in addon)
+- TO CHECK: 1 compartments only partly covered by stationary light (overlap cap) - check weapons are lit there
+- TO CHECK: materials still missing: materials/decals/blood4model.vmat (custom decal with no CS:GO source - left as is rather than swapped for an unrelated decal); materials/decals/ivy02.vmat (custom decal with no CS:GO source - left as is rather than swapped for an unrelated decal)

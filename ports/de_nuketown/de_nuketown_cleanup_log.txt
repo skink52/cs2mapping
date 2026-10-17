@@ -1,0 +1,19 @@
+CS2 post-import clean - de_nuketown (2026-10-16)
+
+- collapsed 6 prefabs into the map, world offsets kept: de_nuketown_gameplay.vmap (38 nodes, 38 entities), de_nuketown_environment_prefab.vmap (3004 nodes, 1026 entities), de_nuketown_lighting_prefab.vmap (4 nodes, 4 entities), de_nuketown_cubemaps_prefab.vmap (39 nodes, 39 entities), de_nuketown_audio_prefab.vmap (0 nodes, 0 entities), de_nuketown_nav_prefab.vmap (0 nodes, 0 entities)
+- outputs restored that the importer dropped: 0
+- added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> mp_freezetime 0, mp_roundtime 600
+- removed env_sun '' (not in CS2; light_environment draws the sun)
+- 5 static overlay materials -> csgo_static_overlay with translucency masks from the original alpha: bombsite_a.vmat, bombsite_b.vmat, decalpoweroutlet001a.vmat, decalsigndanger002a.vmat, milswitch003.vmat
+- env_sky materials/skybox/jungle.vmat: rebuilt from the six CS:GO faces
+- restored 10 sky brushes (dropped by the importer) as moondome meshes using materials/skybox/jungle_moondome.vmat
+- visibility hints: lowest 1 (whole map incl. void), low 12 (cells with geometry), medium 2 (densest cells only)
+- stationary lights: 0 of 18 lights switched Static -> Stationary (directlight 3) across 0 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 compartments open to sky left to light_environment
+- 7 materials were alpha-tested / translucent in CS:GO but imported opaque - fixed with a mask from the texture alpha: hotel_glass001 (translucent), offlightcover (translucent), offlightcover_off (translucent), metalfence003a (translucent), metalfence007a (translucent), inffence01 (alpha test), lattice01 (alpha test)
+- radar: rendered from geometry (886 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/de_nuketown_radar_psd.png + game resource/overviews/de_nuketown.txt (pos 2570 1774, scale 5.86)
+- built 11 missing materials from the original CS:GO textures: brick_ext_02_cheap, blue04_ssbump, blend_blacktop_04, blend_sidewalk_01, urban_road_01a_cheap, assault_metalcrate001b_red, assault_metalcrate001d, train_metalgrate_01, blend_dirtleavesgravel01, floor03cheap, woodsiding_ext_a03
+- materials missing everywhere swapped for the closest stock CS2 ones: materials/environment_maps/pipeset_metal.vmat -> materials/models/props_pipes/pipeset_metal.vmat
+- pruned 22 orphaned elements
+- TO CHECK: the importer leaves these out (they're on its exclusion list, mostly cosmetic): 1 env_fog_controller (fog)
+- TO CHECK: the map had a CS:GO 3D skybox (sky_camera at 9837 -132 89, scale 16): its geometry is now ordinary geometry in the map and CS2 ignores sky_camera - move it to a separate skybox map + skybox_reference, or delete it
+- TO CHECK: check the substituted materials look right: materials/environment_maps/pipeset_metal.vmat -> materials/models/props_pipes/pipeset_metal.vmat

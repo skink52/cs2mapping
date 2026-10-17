@@ -1,0 +1,19 @@
+Cleanup report for addon: mg_enjoy_multigames
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_enjoy_multigames\maps\mg_enjoy_multigames_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (4) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/dev/dev_water2_cheap.vmt
+materials/de_mirage/ground/de_mirage_ground_tileh_blend2_diffuse.vmt
+materials/dev/dev_water2.vmt
+materials/tile/tile_mall_floor00_cheap.vmt

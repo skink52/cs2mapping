@@ -1,0 +1,17 @@
+Cleanup report for addon: mg_bombardment
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_bombardment\maps\mg_bombardment_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (2) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/sprites/light_glow02_add_noz.vmt
+materials/liquids/boathouse_water.vmt

@@ -1,0 +1,28 @@
+CS2 post-import clean - mg_fred_all (2026-10-16)
+
+- collapsed 6 prefabs into the map, world offsets kept: mg_fred_all_gameplay.vmap (292 nodes, 292 entities), mg_fred_all_environment_prefab.vmap (2842 nodes, 693 entities), mg_fred_all_lighting_prefab.vmap (2 nodes, 2 entities), mg_fred_all_cubemaps_prefab.vmap (18 nodes, 18 entities), mg_fred_all_audio_prefab.vmap (11 nodes, 11 entities), mg_fred_all_nav_prefab.vmap (0 nodes, 0 entities)
+- outputs restored that the importer dropped: 0
+- game_player_equip (unnamed): CS:GO keys ['weapon_knife'] -> CS2 weapon0..weapon21 slots
+- 15 trigger_push (speeds [800.0, 9999.0, 10000.0]; CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500); names/filters/Enable/Disable kept
+- 11 ambient_generics pointed at 1 new soundevents (fredall.waterrun) instead of raw .vsnd paths
+- stock CS:GO sounds extracted from the CS:GO VPK into the addon: sounds/ambient/waterrun.wav
+- visibility hints: lowest 1 (whole map incl. void), low 30 (cells with geometry), medium 0 (densest cells only)
+- built 2 missing materials from the original CS:GO textures: dev_measuregeneric01, dev_measuregeneric01b
+- CS:GO water materials (no CS2 equivalent shader) -> stock: materials/liquids/inferno_water.vmat -> materials/liquids/nuke_water.vmat; materials/watersource/waterfall/waterfallfull_1024_clear.vmat -> materials/liquids/nuke_water.vmat; materials/watersource/waterfall/waterfallfull_256_nrm_clear.vmat -> materials/liquids/nuke_water.vmat; materials/watersource/waterfall/waterfallsoft_512_nrm_clear.vmat -> materials/liquids/nuke_water.vmat
+- materials missing everywhere swapped for the closest stock CS2 ones: materials/sprites/combineball_glow_red_1.vmat -> materials/sprites/blueglow1.vmat
+- added point_script mg_fred_all_io_script (maps/scripts/mg_fred_all_io.js)
+- pruned 18 orphaned elements
+- TO CHECK: check the substituted materials look right: materials/sprites/combineball_glow_red_1.vmat -> materials/sprites/blueglow1.vmat
+- TO CHECK: the waterfall brushes now use liquids/nuke_water (CS2 has no CS:GO waterfall shader) - swap in a stock waterfall/foam material if they look wrong
+
+Follow-up pass (2026-10-16): beams, lights, alpha, radar
+- added 17 stationary light_omni2 to sealed rooms with spawns / teleport destinations that had no light at all
+- stationary lights: 112 of 599 lights switched Static -> Stationary (directlight 3) across 102 sealed compartments, ranges trimmed so no spot is inside more than 4
+- radar: rendered from geometry (1349 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/mg_fred_all_radar_psd.png + game resource/overviews/mg_fred_all.txt (pos -2866 7056, scale 10.28)
+- pruned 1 orphaned elements
+- TO CHECK: 5 compartments could not get a stationary light without going over 4 overlapping - check them
+- TO CHECK: 32 compartments only partly covered by stationary light (overlap cap) - check weapons are lit there
+
+Follow-up (2026-10-16): enemy damage gate
+- fintrigger (trigger_once at the Fin room) OnTrigger -> mg_fred_all_io_script RunScriptInput EnableDamage
+- maps/scripts/mg_fred_all_io.js: players cannot damage players on the other team until EnableDamage; every round start turns it off again (DisableDamage input also available). World / trigger_hurt / fall damage is unaffected.

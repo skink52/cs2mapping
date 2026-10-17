@@ -1,0 +1,24 @@
+CS2 post-import clean - mg_faohu_course (2026-10-16)
+
+- collapsed 6 prefabs into the map, world offsets kept: mg_faohu_course_gameplay.vmap (188 nodes, 188 entities), mg_faohu_course_environment_prefab.vmap (591 nodes, 213 entities), mg_faohu_course_lighting_prefab.vmap (2 nodes, 2 entities), mg_faohu_course_cubemaps_prefab.vmap (0 nodes, 0 entities), mg_faohu_course_audio_prefab.vmap (3 nodes, 3 entities), mg_faohu_course_nav_prefab.vmap (0 nodes, 0 entities)
+- outputs restored that the importer dropped: 0
+- game_player_equip (unnamed): CS:GO keys ['weapon_knife'] -> CS2 weapon0..weapon21 slots
+- 4 trigger_push (speeds [300.0, 500.0, 1000.0, 1500.0]; CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500); names/filters/Enable/Disable kept
+- added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> mp_freezetime 0, mp_roundtime 600; only T spawns, but the map already has a game_player_equip giving weapon_knife on spawn (unnamed), so no extra knife equip
+- removed 1 game_score (not in CS2); 1 ApplyScore -> script Score_n
+- 3 ambient_generics pointed at 3 new soundevents (faohucourse.animefinal, faohucourse.touhoufinal, faohucourse.vocalfinal) instead of raw .vsnd paths
+- 1 static overlay materials -> csgo_static_overlay with translucency masks from the original alpha: m9.vmat
+- env_sky materials/skybox/sky_dust.vmat: rebuilt from the six CS:GO faces
+- visibility hints: lowest 1 (whole map incl. void), low 10 (cells with geometry), medium 0 (densest cells only)
+- 61 env_laser + 0 env_beam (CS2 cannot spawn them) -> 33 never-solid func_brush beams between their end points (mutual laser pairs drawn once), coloured self-illuminated laser materials materials/lasers/laser_<rgb>.vmat; 0 TurnOn/TurnOff/Toggle -> Enable/Disable/Toggle; no damage added
+- added 2 stationary light_omni2 to sealed rooms with spawns / teleport destinations that had no light at all
+- stationary lights: 11 of 104 lights switched Static -> Stationary (directlight 3) across 11 sealed compartments, ranges trimmed so no spot is inside more than 4
+- 19 materials were alpha-tested / translucent in CS:GO but imported opaque - fixed with a mask from the texture alpha: hotel_glass001 (translucent), chitoge (translucent), ending (translucent), ending1 (translucent), finalstage (translucent), mapper (translucent), song (translucent), songanime (translucent), songtouhou (translucent), songvocal (translucent), stage1 (translucent), stage2 (translucent), stage3 (translucent), stage4 (translucent), stage5 (translucent), stage6 (translucent), stage7 (translucent), stop (translucent), waterfall (translucent)
+- radar: rendered from geometry (387 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/mg_faohu_course_radar_psd.png + game resource/overviews/mg_faohu_course.txt (pos -1333 1417, scale 5.41)
+- built 2 missing materials from the original CS:GO textures: dev_measuregeneric01, stage7_ni
+- CS:GO water materials (no CS2 equivalent shader) -> stock: materials/waterfall/waterfall_nrm.vmat -> materials/liquids/nuke_water.vmat
+- added point_script mg_faohu_course_io_script (maps/scripts/mg_faohu_course_io.js)
+- pruned 270 orphaned elements
+- TO CHECK: the importer leaves these out (they're on its exclusion list, mostly cosmetic): 10 point_spotlight (spotlight beams)
+- TO CHECK: these lasers did damage in CS:GO but there is no trigger_hurt along them, so in CS2 they are only visual: stage5_t_laser13 at -1056 -1216 416 (damage 500), stage5_t_laser15 at -672 -1216 416 (damage 500), stage5_t_laser17 at -672 -1216 320 (damage 500), stage5_t_laser19 at -672 -1216 336 (damage 500), stage5_t_laser21 at -672 -1216 352 (damage 500), stage5_t_laser23 at -672 -1216 368 (damage 500), stage5_t_laser25 at -672 -1216 384 (damage 500), stage5_t_laser27 at -672 -1216 400 (damage 500), stage5_t_laser31 at -711.542 -1216 244 (damage 500), stage5_t_laser33 at -752.45 -1216 264 (damage 500)
+- TO CHECK: beams with no usable end point, removed: finalaser6

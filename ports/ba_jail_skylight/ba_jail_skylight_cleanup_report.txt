@@ -1,0 +1,53 @@
+Cleanup report for addon: ba_jail_skylight
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\ba_jail_skylight\maps\ba_jail_skylight_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (6) ===
+models\weapons\w_snip_awp.mdl
+models\weapons\w_rif_ak47.mdl
+models\weapons\w_rif_m4a1.mdl
+models\weapons\w_pist_deagle.mdl
+models\weapons\w_pist_elite_dropped.mdl
+models\chicken\chicken.mdl
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (33) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/fg_map_textures/scamperspray.vmt
+materials/fg_map_textures/fjbadvert2.vmt
+materials/sprites/light_glow02_add_noz.vmt
+materials/de_train/decalgraffiti058a.vmt
+materials/decals/decalborealispuddle001a.vmt
+materials/decals/decalconcretedrain003a.vmt
+materials/decals/decomp_puddle1.vmt
+materials/fg_map_textures/azzarspray.vmt
+materials/metal/metalgrate013a2.vmt
+materials/brick/hr_brick/4wb_brick_g.vmt
+materials/brick/hr_brick/4wb_brick_b.vmt
+materials/metal/citadel_tilefloor016a.vmt
+materials/metal/hr_metal/hr_metal_floor_001_dark.vmt
+materials/tile/hr_t/4wb_tiles_a.vmt
+materials/concrete/blend_concrete02_concfloor012a.vmt
+materials/glass/metal_door_glass_001.vmt
+materials/cs_havana/metalfence007a.vmt
+materials/buildings/c1_building03.vmt
+materials/de_cbble/grass_alt/blendgrassdirt.vmt
+materials/patriot/water/water001a.vmt
+materials/plaster/hr_p/inferno/plaster_i_ceiling_blend02.vmt
+materials/wood/infwoodfloor007a.vmt
+materials/cs_havana/glass2.vmt
+materials/carpet/blue04_ssbump.vmt
+materials/metal/hr_metal/hr_metal_duct_001.vmt
+materials/nature/blendswampmud_aztec.vmt
+materials/concrete/hr_c/4wb_concrete_floor_broken.vmt
+materials/metal/hr_metal/hr_metal_grated_d.vmt
+materials/glass/glass01cull.vmt
+materials/metal/citadel_metalwall060a.vmt
+materials/liquids/cementplantwater_cheap.vmt
+materials/de_nuke/nukwater_movingplane.vmt
+materials/metal/hr_metal/hr_metal_wall_002.vmt
