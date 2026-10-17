@@ -9,6 +9,11 @@
 
 Has a map-specific script gate: damage between enemies is off until the Fin room's `fintrigger` fires `EnableDamage` (every round starts with it off).
 
+## History
+
+- 2026-10-16: 6 prefabs merged; 15 trigger_push (800/9999/10000) → script push zones capped at 3500; 11 waterfalls → a `waterrun.wav` soundevent; waterfall and lava surfaces → `nuke_water`; a sprite material on a brush → `sprites/blueglow1`. Re-imported after the func_illusionary fix (94 of them). 112 of 599 lights made stationary and 17 added.
+- 2026-10-16 16:35: damage between enemies is off until the Fin room's `fintrigger` fires `EnableDamage`, and every round starts with it off. Rebuilt at 18:13 (26.9 min).
+
 ## What the cleanup did
 
 (from the cleanup log in this folder)
@@ -32,6 +37,8 @@ Has a map-specific script gate: damage between enemies is off until the Fin room
 
 ## Open / to check
 
+- The damage gate is untested in game.
+- The map has no win output.
 - check the substituted materials look right: materials/sprites/combineball_glow_red_1.vmat -> materials/sprites/blueglow1.vmat
 - the waterfall brushes now use liquids/nuke_water (CS2 has no CS:GO waterfall shader) - swap in a stock waterfall/foam material if they look wrong
 - 5 compartments could not get a stationary light without going over 4 overlapping - check them

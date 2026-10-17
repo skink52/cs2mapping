@@ -7,6 +7,10 @@
 | Map last changed | 2026-10-16 |
 | How | cs2port pipeline |
 
+## History
+
+- 2026-10-16: stages A–C in the second pipeline batch. Its custom decal had been swapped for a sticker, which is why custom decals with no CS:GO source are now left alone and flagged. The extra knife equip was dropped because the map already gives one.
+
 ## What the cleanup did
 
 (from the cleanup log in this folder)

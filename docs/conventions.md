@@ -6,7 +6,11 @@ These are the standing rules every port follows. The pipeline applies most of th
 
 - **Check for an existing CS2 port first.** Look in `existing_ports.txt` (`tools/ports.py check`, which ignores prefixes, `_cs2` and
   version suffixes) and search the Steam Workshop and GameBanana. If a port already exists, report it and don't port the map unless asked.
-  (mg_ski_mountain was ported and then deleted because a CS2 port already existed.)
+  (mg_ski_mountain was ported and then deleted because a CS2 port already existed, and mg_50arenas was ported before an existing one turned up.)
+  mg_simpsons_course, mg_metal_course_level_2 and de_nuketown were reported first and then ported on request: commenters say the existing
+  simpsons port crashes and can't be completed, and the CS2 Nuketown maps are Call of Duty remakes rather than ports.
+- **Workshop pages: never report an item as "removed" or "incompatible" from the page text.** Every Workshop page's HTML carries that
+  wording as hidden template text, and page fetchers pick it up. A page that shows visitor and subscriber stats is live.
 - **Addon name = map name with version and bloat stripped.** `_v2`, `_v1_2`, `_b3`, `_rc1`, `_final`, `_fix`, `_beta`, `_csgo`, `_hdr`, `_ws`...
   (`mg_x_v2_final` → `mg_x`). Use `bspname=addonname` to force a different name.
 - **Log it.** Add the map to `existing_ports.txt` as `<addon> [in progress] [skink]`. A successful command-line build changes it to
@@ -15,10 +19,14 @@ These are the standing rules every port follows. The pipeline applies most of th
 
 ## In every port
 
-- **Credit the original mapper** in the loading-screen text (set with Hammer5Tools): `original map by <author> cs2 port by skink52`.
+- **Credit the original mapper** in the loading-screen text: `original map by <author> cs2 port by skink52`. Credit a CS:GO porter
+  too when the map names one (mg_smee_tower_cs2: "Original map by Mathijs / CS:GO port by WriteX / Ported to CS2 by skink52"). The text
+  lives in `game\csgo_addons\<addon>\maps\<map>.txt`, first line `COMMUNITYMAPCREDITS:` (the file Hammer5Tools' Loading Editor writes),
+  and needs no rebuild. Find the author in the map's own credits, its GameBanana page or the BSP's embedded files.
   Chat credits that the map printed through `point_servercommand` keep working through the map's script, with "Ported to CS2 by skink52" added.
 - **Round setup.** A `point_servercommand` driven by a `logic_auto` sets `mp_freezetime 0` and `mp_roundtime 600` on map spawn.
   If the map only has one team's spawns, a `game_player_equip` gives a knife on spawn (unless the map already does that).
+  Two caveats: community servers block `point_servercommand` by default, and 600 is probably above the round-time limit (CS:GO capped it at 60 minutes).
 - **Weapons and players must not be black.** CS:GO lights import as Static (baked only), which leaves weapons and player models unlit.
   Switch enough lights to **Stationary** (`directlight 3`): at least one per sealed compartment, spaced so no spot is inside more than
   four stationary lights, and no more than needed. Compartments open to a `light_environment` are fine as they are.
@@ -28,6 +36,7 @@ These are the standing rules every port follows. The pipeline applies most of th
   self-illuminated laser material in the beam's colour. Add damage only where a `trigger_hurt` already exists. If a laser did damage
   with no `trigger_hurt` along it, flag it rather than inventing one. If a trigger_hurt moves (parented to a door / mover), parent the beam to the same mover.
 - **Radar.** Every map gets a minimap: `panorama/images/overheadmaps/<map>_radar_psd.png` + `.vtex`, and `resource/overviews/<map>.txt` in game.
+  Stacked maps (one spawn above another) get vertical sections, one image per level.
 - **Sky.** Sky brushes the importer dropped come back as moondome boxes using the map's `env_sky` (rebuilt from the six CS:GO faces
   if CS2 doesn't have that sky).
 - **Vis hints.** One `visibility_hint` set to Lowest covering the whole map, including the void. Low over each room or arena.
@@ -38,7 +47,9 @@ These are the standing rules every port follows. The pipeline applies most of th
 ## Multi-arena maps (original minigame addons)
 
 Enclose each arena in a moondome (sky-material shell) with a tools/skybox shell 1 unit inside it, so the environment lighting works.
-Vis hints as above: Lowest for the void between arenas, Low throughout the arenas, Medium sparingly.
+Use one box per arena rather than one big shell (mg_50arenas has 53), and keep each box close to its arena: the vis compile pays for every unit of volume.
+Vis hints as above: Lowest for the void between arenas, Low throughout the arenas, Medium sparingly. If the arenas add up to a huge volume,
+use Lower (`hintType` 8) instead of Low. Never Lowest alone: with only 256-unit regions, walls vanish a few steps back.
 
 ## Working on the files
 

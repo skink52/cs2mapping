@@ -8,6 +8,10 @@
 | Map last changed | 2026-10-16 |
 | How | cs2port pipeline (stages A-D) |
 
+## History
+
+- 2026-10-16: the first pipeline map. Stage C restored 5 outputs, moved game_score and player_speedmod into the script, made 4 songs into soundevents and rebuilt the sky. 10 of 41 lights became stationary, and 25 beams (17 env_beam, 8 env_laser) became func_brush. Its first command-line build failed on the new laser materials, which led to the assets-first build step. Published as 3820639006.
+
 ## What the cleanup did
 
 (from the cleanup log in this folder)

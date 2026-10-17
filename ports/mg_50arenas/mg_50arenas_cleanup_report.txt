@@ -1,0 +1,47 @@
+Cleanup report for addon: mg_50arenas
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_50arenas\maps\mg_50arenas_refs.txt
+
+=== MODELS - FAILED TO IMPORT (29) ===
+models\player\tm_professional_var4.mdl
+models\player\tm_separatist_variantd.mdl
+models\player\ctm_sas_variantc.mdl
+models\player\ctm_st6_variantd.mdl
+models\player\ctm_st6_varianta.mdl
+models\player\ctm_swat_variantc.mdl
+models\player\ctm_swat_variantb.mdl
+models\player\ctm_sas_variante.mdl
+models\player\ctm_fbi_variantc.mdl
+models\player\ctm_fbi_variantd.mdl
+models\player\ctm_fbi.mdl
+models\player\tm_anarchist_variantd.mdl
+models\player\tm_anarchist_varianta.mdl
+models\player\ctm_gign.mdl
+models\player\ctm_gign_variantd.mdl
+models\player\ctm_gsg9.mdl
+models\player\ctm_gsg9_variantd.mdl
+models\player\ctm_idf.mdl
+models\player\ctm_idf_variantd.mdl
+models\player\tm_balkan_varianta.mdl
+models\player\tm_balkan_variantb.mdl
+models\player\tm_balkan_variantc.mdl
+models\player\tm_leet_variante.mdl
+models\player\tm_leet_variantb.mdl
+models\player\tm_leet_variantc.mdl
+models\player\tm_phoenix.mdl
+models\player\tm_phoenix_variantc.mdl
+models\player\ctm_sas.mdl
+models\player\tm_separatist.mdl
+
+=== MODELS - FAILED TO COMPILE (4) ===
+models\player\mapeadores\morell\powerranger\green.mdl
+models\player\tm_pirate_variantb.mdl
+models\player\tm_pirate_variantc.mdl
+models\player\tm_professional_var3.mdl
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (0) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+(none)

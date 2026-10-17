@@ -67,6 +67,9 @@ tick late, but it can't miss a release. A missed release would leave a thruster 
 - A weapon's targetname does **not** survive being picked up. To track a specific map weapon, watch the named entity while it's on the ground
   and record who takes it (`buff_new.js`).
 - `pawn.GetActiveWeapon()?.GetData()` gives the CS weapon data (name, type, gear slot, price, damage...).
+- `GiveNamedItem` doesn't fire the weapon's `OnPlayerPickup`, so a map output on pickup won't see script-given weapons.
+- There's no setter for a player's speed multiplier. Ground speed is set through velocity (above); servers running CounterStrikeSharp can
+  use a plugin that sets `VelocityModifier` instead.
 
 ## Entities and I/O from script
 
@@ -79,10 +82,13 @@ tick late, but it can't miss a release. A missed release would leave a thruster 
 
 ## Rounds, damage, score
 
-- `Instance.OnRoundStart`, `OnRoundEnd`, `OnBeginRoundRestart` (reset per-round state). In CS2 map entities respawn each round, as in CS:GO.
+- `Instance.OnRoundStart`, `OnRoundEnd`, `OnBeginRoundRestart` (reset per-round state). In CS2 map entities respawn each round, as in CS:GO,
+  so anything hooked with `ConnectOutput` has to be hooked again in `OnRoundStart` (ba_jail_skylight's keypad, Mario Party's counters).
 - `Instance.OnBeforePlayerDamage(e => ({ abort: true }))` cancels a hit (mg_fred_all's enemy-damage gate).
-- `controller.AddScore(n)` replaces `game_score`.
-- `Instance.ServerCommand("...")` replaces `point_servercommand`. Servers can block `say` from maps, in which case the chat line just doesn't appear.
+- `controller.AddScore(n)` replaces `game_score`. It adds to the scoreboard's score column, not kills.
+- `Instance.ServerCommand("...")` replaces `point_servercommand`. Chat lines sent this way show as "Console: …". Servers can block `say`
+  from maps, in which case the chat line just doesn't appear.
+- `math_counter` values reach outputs as floats ("5.000000"). Round them in script before comparing or passing to a `logic_case`.
 
 ## HUD overlays (env_screenoverlay replacement)
 

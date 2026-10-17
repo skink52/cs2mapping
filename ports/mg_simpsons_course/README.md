@@ -8,6 +8,12 @@
 | Map last changed | 2026-10-16 |
 | How | cs2port pipeline |
 
+kolkazadrot published a CS2 port in Nov 2023 (mg_simpsons_course_v2, Workshop 3070447697), but its commenters report crashes and that it can't be completed, so this one went ahead on request. The author credit comes from the map itself (not Struse).
+
+## History
+
+- 2026-10-16: stages A–C in the second pipeline batch. The slowest import of the batch: a tm_balkan prop made the importer convert the whole T animation set (2,654 animations).
+
 ## What the cleanup did
 
 (from the cleanup log in this folder)

@@ -3,9 +3,14 @@
 | | |
 |---|---|
 | Status | In progress |
+| Original map | iSuperleggera |
 | Imported | 2026-10-14 |
 | Map last changed | 2026-10-15 |
 | How | first cleanup with the scripted fixes that became stage C |
+
+## History
+
+- 2026-10-14: 16 trigger_push corridors (3650) → script push zones; sky shell → moondome; 8 func_breakable_surf windows → func_breakable glass; the dropped no-fall-damage output restored; 6 materials swapped for stock ones and `cinderwall04_cheap` rebuilt; radar from the geometry; loading text (author from GameBanana's mg_super_tower_v3).
 
 ## What the cleanup did
 
@@ -27,3 +32,7 @@
 ## Scripts
 
 - [`scripts/mg_super_tower_io.js`](scripts/mg_super_tower_io.js) - the 16 trigger_push corridors
+
+## Open / to check
+
+- The sky lacks the original's detail; a 3D skybox is planned.

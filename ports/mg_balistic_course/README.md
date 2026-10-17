@@ -7,3 +7,7 @@
 | Imported | 2026-10-10 |
 | Map last changed | 2026-10-10 |
 | How | manual (Valve importer + post_import_cleanup.py) |
+
+## History
+
+- 2026-10-10: neon laser materials (red, green, cyan, magenta: colour, translucency and self-illum textures) made in `materials\lasers`. Later ports copied them. Decals converted to `csgo_static_overlay` with `vmat_to_overlay.py`.

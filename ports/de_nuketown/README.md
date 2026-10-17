@@ -7,6 +7,12 @@
 | Map last changed | 2026-10-16 |
 | How | cs2port pipeline |
 
+The CS2 Nuketown maps on the Workshop (e.g. 3093088534) are remakes of the Call of Duty map, not ports of this one, so it went ahead after the duplicate check.
+
+## History
+
+- 2026-10-16: stages A–C in the second pipeline batch. Its sky is now the CS:GO jungle sky, with 10 moondomes.
+
 ## What the cleanup did
 
 (from the cleanup log in this folder)

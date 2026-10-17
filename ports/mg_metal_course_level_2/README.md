@@ -8,6 +8,12 @@
 | Map last changed | 2026-10-16 |
 | How | cs2port pipeline |
 
+kolkazadrot published a CS2 port as mg_metal_course_2_v2 (Workshop 3070464801, credited to ScHoOuFi). This one went ahead on request.
+
+## History
+
+- 2026-10-16: stages A–C in the second pipeline batch. Its panda spray overlay showed that overlays rebuilt later in the same stage C run weren't being converted; fixed in the pipeline.
+
 ## What the cleanup did
 
 (from the cleanup log in this folder)

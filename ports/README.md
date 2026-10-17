@@ -65,11 +65,12 @@ One folder per map. The live status list is `existing_ports.txt` on the PC (snap
 
 | Map | Status | Workshop | Imported | How |
 |---|---|---|---|---|
+| [mg_50arenas](mg_50arenas/) | Ported 13 Oct 2026, not published: a CS2 port by someone else exists |  | 2026-10-13 | manual, with a generated map script |
 | [mg_ski_mountain](mg_ski_mountain/) | Deleted: a CS2 port already existed |  | - | cs2port pipeline |
 
 ## Other entries in existing_ports.txt
 
 - **mg_kirbys_brawl** ([3819068027](https://steamcommunity.com/sharedfiles/filedetails/?id=3819068027)) and **awp_multigames** ([3819078634](https://steamcommunity.com/sharedfiles/filedetails/?id=3819078634)): published ports with no addon folder on the PC at the time of writing.
-- **trains_detach**: in progress by briar (`mg_ka_trains_detach` BSP/VMF in `bspsrc-windows\bsp's`).
+- **trains_detach**: in progress by briar (`mg_ka_trains_detach` BSP/VMF in `bspsrc-windows\bsp's`). Its trigger_gravity minigames got a replacement script (`gravity_minigames.js`), still being debugged on 9 Oct.
 - Originals, not ports: **mg_ka_heli_arena** ([3808594398](https://steamcommunity.com/sharedfiles/filedetails/?id=3808594398), the `mapgames` addon) and **doom** ([3820099820](https://steamcommunity.com/sharedfiles/filedetails/?id=3820099820), Hellmatch / FreeDM).
-- `[ext. port]` lines are CS2 ports by other people (acrophobia, simpsons deathrun, serpentis temple, dr_arctic, ski mountain, lego multigames, bounce, mg_50arenas). Those maps are skipped.
+- `[ext. port]` lines are CS2 ports by other people (acrophobia, simpsons deathrun, serpentis temple, dr_arctic, ski mountain, lego multigames, bounce, mg_50arenas). Those maps are skipped. (mg_50arenas was ported before its existing port turned up: see [mg_50arenas](mg_50arenas/).)

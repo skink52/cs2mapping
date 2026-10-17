@@ -7,6 +7,10 @@
 | Map last changed | 2026-10-16 |
 | How | cs2port pipeline |
 
+## History
+
+- 2026-10-16: stages A–C in the second pipeline batch.
+
 ## What the cleanup did
 
 (from the cleanup log in this folder)

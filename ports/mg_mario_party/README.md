@@ -12,15 +12,15 @@ Mario-themed multigame lobby with 20+ minigames (Mario Says, Hexagon Heat, Platf
 
 ## History
 
+- 2026-10-11: soundevents built from the map's 46 sounds. Every ambient_generic became a point_soundevent, with `PlaySound` → `StartSound` (`StopSound` stays).
 - 2026-10-11/13: ported with the manual flow. `mario_io.js` replaced the `!activator AddOutput targetname` filters, player alpha/colour, player_speedmod, trigger_gravity, retargetable teleporters (`AddOutput target`), game_round_end, the Block Fort random spawn sorter, the Chain Chomp's 16 phys_thrusters (the script glides Dog_box), the spawn-box mushroom power-up and the spawn strip. `overlays.js` + Panorama replaced 25 env_screenoverlays. `teleports.js` replaced SetRemoteDestination for the MVP game. `changemodel.js` and `mvp_health_increase.js` are ports of the map's VScripts.
+- 2026-10-12: filter audit (warnings about missing filter targets are names the script gives players, such as `predator` and `marine`). A new `part1_spawn` destination for the five part1 teleports, which pointed at one that never existed. Dead Mario Kart teleports removed. Moondome with `sky_pipeplaza`.
+- 2026-10-12: math_counter → logic_case now goes through the script (`COUNTER_TO_CASE`), because CS2 passes the counter value as a float ("5.000000") and the whole-number cases never fired. The hooks are re-made every round, since map entities respawn.
+- 2026-10-12: the mushroom grab is done by script within 36 units: CS2 stops players at the physbox surface, so the trigger that stuck out 2 units couldn't be reached. Octodad rebuilt on the Phoenix agent (73 bones; the old model had no CS2 skeleton or animgraph, so held weapons were huge). The between-rounds strip moved into the script. Aztec grass/rock blend material. First vis hints (High around the moondome areas).
+- 2026-10-13 (`fix_games.py`): chain chomp (frozen physics, the script glides `Dog_box`: chase 280, wander 220); pirate climb `bolder_timer` 0.5 → 1.0 s; Block Fort hands out one of 16 random spawns per team from script (the teleporter only checks players as they enter); Octodad got tm_phoenix's 14 ragdoll joints. Medium arena hints gave 1,451,170 regions and 663 s of clustering, so the arena hints became Low with one Lowest over the void.
 - 2026-10-17 (reported in game, compared with the CS:GO v3_5 version): flag cloth was white (the import dropped the neon textures from `a_flag/green.vmat` and `mario/red.vmat`); A/B button fronts were black (letter textures now alpha-tested); entity lighting didn't match the world (no light probe volumes: one `env_combined_light_probe_volume` per moondome room, 32 total); no fire on torches (40 `info_particle_system` with `particles/burning_fx/env_fire_tiny.vpcf`); lava added under Mario Says, Hexagon Heat and both pits of Obstacle's last level (new `mario_cs2/lava_glow.vmat`); water in the 5 pits of Obstacle's sand level; Platform Peril's moving laser hurt trigger got a visible magenta beam (`laser_door1_beam`, parented to `laser_door1`); wall-jump arrow decal translucent; Speed SMGs ran about 8% slow (friction, and CS:GO's speedmod scaled the held weapon's speed); weapon triggers handed out duplicate guns (CS2 `game_player_equip` gives duplicates); 13 thwomps silent (sound only in func_door keys); bullet bills fell out of the cannons (CS2 trigger_push doesn't throw the prop).
 - 2026-10-17: vis compile took 103 s to voxelise (19.2M nodes) plus 62 s outside detection. The 64 sky shells (moondome + tools/skybox per room) were set to Exclude from Vis, since every room is sealed by its own nodraw hull, and the 32 Low vis hints (all copies of the map-wide box) were made one per room.
-
-## What the cleanup did
-
-(from the cleanup log in this folder)
-
-- bullet bill cannons: 7 cannons (bullet_push_trigger_climb, bullet_push_trigger_ka, bullet_push_trigger_ka1, bullet_push_trigger_ka2, bullet_push_trigger_ka3, bullet_push_trigger_ka4, bullet_push_trigger_ka5) no longer rely on a trigger_push to throw a physi...
+- 2026-10-17, rebuilt from the command line (29.3 min, OK): voxelize 23 s / 3,641,409 nodes (was 103 s / 19,173,961), outside detection 27 s (was 62 s). The vis stage as a whole still took 27 min: 117 s of clustering, 416 s merging cluster lists, 444 s of line-of-sight rays and 560 s merging 12,963 clusters down to 4,096.
 
 ## Import report
 
@@ -42,4 +42,7 @@ Mario-themed multigame lobby with 20+ minigames (Mario Says, Hexagon Heat, Platf
 - Flag colours are red/green (the original materials). v3_5 has black flags, so check which is wanted.
 - Torch fire positions were estimated from the nearby lights.
 - Bullet speed is `BULLET_SPEED = 1500` in `mario_io.js`.
-- Rebuild and test: vis time after the sky-shell change, thwomp sounds, bullet bills, Speed SMGs.
+- Moondome doesn't fully block the other arenas: small parts of them show from odd positions (reported 13 Oct).
+- The motes game prints "t's win" but doesn't end the round (reported 12 Oct).
+- Vis still takes 27 min. Switching the 32 room hints from Low to Lower (`hintType` 8) should start with fewer clusters.
+- Test in game: thwomp sounds, bullet bills, Speed SMGs, lava and water, entity lighting.

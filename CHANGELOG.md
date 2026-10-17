@@ -1,12 +1,17 @@
 # Changelog
 
-Newest first. Dates are Adelaide time. Entries before this repo existed are rebuilt from file dates on the PC, the cleanup logs, and
-earlier working sessions. Dates taken from file timestamps say "(file date)".
+Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
+of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
 ## 2026-10-17
 
+- **mg_mario_party rebuilt** with the vis changes below (command-line build, 29.3 min, OK). Voxelize went from 103 s / 19,173,961 nodes
+  to 23 s / 3,641,409 nodes, and outside detection from 62 s to 27 s. The whole visibility stage still took 1,631 s (27 min). Most of
+  that is now clustering (1,282,040 initial clusters from 291,915 regions, 117 s, then 416 s merging the cluster lists), line-of-sight
+  sampling (444 s) and merging 12,963 clusters down to the 4,096 cap (560 s).
 - **Repo created** (this repo): pipeline tools, PC runners, a per-map record of every port, the CS2 gotchas list, cs_script notes, and this changelog.
   The pipeline's references to a real name became the handle. `scripts/make_import_map_auto.py` replaces shipping a copy of Valve's importer.
+  The history of the earlier sessions was then merged in: this changelog, the gotchas, the house rules and the port records.
 - **Pipeline: `skyvis` pass** (`tools/skyvis.py`, stage C and `stage_d.py ... skyvis`). Moondome and tools/skybox shells around rooms that
   are already sealed by their own walls get "Exclude from Vis". Each shell is checked with a 16-unit voxel flood fill from outside the
   room, and shells a room needs to stay sealed are left alone. Tested on Mario Party (all 64 shells excluded) and on a copy with Platform
@@ -17,25 +22,81 @@ earlier working sessions. Dates taken from file timestamps say "(file date)".
 - **mg_mario_party: gameplay and visual fixes** reported from in-game testing against the CS:GO v3_5 version. See
   [ports/mg_mario_party](ports/mg_mario_party/README.md): flags, A/B buttons, light probe volumes, torch fire, lava and water floors, the Platform
   Peril laser, the arrow decal, Speed SMGs speed, weapon-trigger duplicates, thwomp sounds and bullet bill cannons.
-- mg_smee_tower_cs2 and mg_bombardment `.vmap` files were edited (file date). That was a separate session, and its changes aren't recorded here.
+- **mg_smee_tower_cs2: two-level radar and loading text** (10:11). The radar is split at z 2560 into vertical sections: `"default"` for the
+  top of the tower (T spawn, image `mg_smee_tower_cs2_radar_psd`) and `"lower"` for the ground, yard and tower stairs
+  (`mg_smee_tower_cs2_lower_radar_psd`). Loading text: "Original map by Mathijs / CS:GO port by WriteX / Ported to CS2 by skink52".
+  The two radar images need an assets compile: `run_build.bat "assets mg_smee_tower_cs2"`.
+- **Workshop false alarm** (10:43). A session reported the mg_smee_tower_cs2 Workshop item as removed for breaking the content guidelines.
+  It wasn't: every Workshop page's HTML carries hidden "removed" and "incompatible with Counter-Strike 2" template text, and the page reader
+  picks it up. It was the second time this happened. The pipeline doc now says never to report that text. The same session added the
+  loading-screen credit section and the stacked-map radar note to the doc. Those three additions were missing from the first import
+  of `docs/pipeline.md` and were restored later the same day.
+- mg_bombardment's `.vmap` also changed this morning (file date). What changed isn't recorded.
 
-## 2026-10-16
+## 2026-10-16: the cs2port pipeline
 
-- **cs2port pipeline built** (file dates 10:53–18:34): `prep.py` (stage A), `run_import.bat` (stage B), `stage_c.py` and its passes,
-  `run_build.bat` / `build_maps.ps1` (stage D, command-line builds with the outroot copy), `stage_d.py` follow-up passes, `daylight.py`, the
-  missing-material pass (`assets.py`) and `ports.py` (duplicate check against existing_ports.txt).
-- Pipeline ports: **mg_color_dev**, **mg_draw_course**, **mg_fred_all** (stage C, built). mg_draw_course got the first `daylight` pass, and
-  mg_fred_all got an enemy-damage gate script. **mg_color_dev** published as 3820639006.
-- **mg_ski_mountain** imported, then deleted because a CS2 port already existed. Duplicate checks now come first.
-- Batch of nine through stages A–C: **mg_bob2, mg_egypt_course, mg_faohu_course, mg_galaxy_course, mg_kohztec_course, mg_minecraft_adventure,
-  de_nuketown, mg_metal_course_level_2, mg_simpsons_course**. All are queued in `build_queue.txt`.
+- **Pipeline built** in one session (about 10:40 to 16:47; tool file dates 10:53–18:34), starting from the manual flow in
+  [docs/manual-workflow.md](docs/manual-workflow.md).
+  - Stage A: BSPSource extracted from its jlink image, with class files patched to run on Java 21 (`setup_bspsrc.sh`). `hammer_resave.py`
+    was built by diffing a BSPSource `.vmx` against a Hammer save. `prep.py` creates the addon from `addon_template`.
+  - Stage B: `run_import.bat`, running `import_map_auto.py` (Valve's importer without its Enter prompt), then `post_import_cleanup.py`.
+  - Stage C: `stage_c.py` on the vmap library (`dmx.py` for binary DMX encoding 9, `kv2.py`, `vmapedit.py`), with `gen_script.py`, `vpk.py`, `vtf.py` and `assets.py`.
+  - 12:15, the first stage C runs (mg_color_dev and mg_ski_mountain). **Valve's importer throws away every func_illusionary** (94 on
+    mg_fred_all, 2 on mg_draw_course), so stage A now turns them into never-solid func_brush, and both maps were re-imported.
+  - 12:34, stage C on mg_fred_all and mg_draw_course.
+  - 13:07–13:42, after the first look in game: stationary lights (weapons were black), env_laser/env_beam replacements, alpha flags and a
+    radar for every map (`lighting.py`, `beams.py`, `radar.py`, `stage_d.py`). mg_ski_mountain was deleted because a CS2 port already
+    existed, and the duplicate check moved to the front of the pipeline.
+  - 13:42, stage D: `build_maps.ps1`, `run_build.bat`, `build_queue.txt`, and `ports.py` for `existing_ports.txt`.
+  - 14:34, the first command-line builds failed on `materials/lasers/laser_*.vmat_c`, because a command-line map build doesn't compile
+    materials (Hammer does that when it loads a map). `build_maps.ps1` got the assets-first step and `assets <addon>` queue lines.
+    mg_color_dev then built, and was published as 3820639006.
+  - 16:35, the `daylight` pass for mg_draw_course ("really dark"), and mg_fred_all's enemy-damage gate (`EnableDamage` when the Fin room's trigger fires).
+- **Batch 2** (a parallel session, 14:17–18:35): stages A–C for mg_bob2, mg_egypt_course, mg_faohu_course, mg_galaxy_course,
+  mg_kohztec_course and mg_minecraft_adventure.
+  - The duplicate check held back three maps: kolkazadrot's CS2 ports of mg_simpsons_course (mg_simpsons_course_v2, Workshop
+    3070447697) and mg_metal_course_level_2 (mg_metal_course_2_v2, 3070464801), and the CS2 Nuketown maps, which turned out to be remakes of
+    the Call of Duty map rather than ports. All three went ahead on request (15:55). Kolkazadrot also ported mg_draw_course.
+  - Assets now travel as `assets\<addon>.zip` (+ `.2`/`.3`/`.4.zip`, each under about 14 MB), unpacked by `run_import.bat` with `tar -k`.
+  - Stage C gained the round setup (`mp_freezetime 0`, `mp_roundtime 600`, and a knife on one-team maps unless the map already gives one).
+  - Custom decals with no CS:GO source are now left alone and flagged (mg_bob2's had been swapped for a sticker). Overlays rebuilt later in
+    the same run now convert too (mg_metal_course_level_2's panda spray).
+  - mg_simpsons_course's import was slow because a tm_balkan prop made the importer convert the whole T animation set (2,654 animations).
+  - All nine were queued in `build_queue.txt`. Their build results aren't recorded yet.
+- Builds (`logs/stage_d_done.txt`): mg_color_dev assets, mg_draw_course (49 min) and mg_fred_all (24.7 min) at 15:52. Both maps were
+  rebuilt after the daylight and damage-gate changes, finishing at 18:13 (56.6 and 26.9 min).
 
-## 2026-10-14 – 15
+## 2026-10-15
 
-- **de_rats_1337, mg_lego_course, mg_super_tower**: the first ports cleaned with scripted fixes (the start of stage C): `<map>_io.js` scripts for
-  trigger_push / point_servercommand / game_score, restored dropped outputs, moondomes for dropped sky brushes, rebuilt skies.
-  The loading-screen credit rule "original map by &lt;author&gt; cs2 port by skink52" starts here. de_rats_1337 published as 3820105155 and
-  mg_lego_course as 3820524232.
+- **de_rats_1337 / mg_lego_course / mg_super_tower follow-ups** (feedback at 09:10): a rats lighter model referenced `no_material.vmat` and
+  was repointed at its black material. lego's interior lighting is weak (left for a manual pass). super_tower's sky lacks detail (a 3D skybox later).
+- Radar `.vtex` files added next to the PNGs, so a command-line compile picks up the radars. `compile_ports_oct15.ps1` did a forced asset
+  compile, the builds, then a copy to `game\` with a size check. mg_freedm and mg_bomb_arena went to the front of its build order.
+- 15:51, mg_lego_course's script explained: `Cmd_0..Cmd_14` (15 chat lines plus `sv_airaccelerate 150`) replace two point_servercommands, and
+  `Score_500` replaces game_score on the five finish lasers (21 outputs). The chat lines show as "Console: …". CS2's `AddScore` adds to the
+  scoreboard's score column, where CS:GO's game_score added frags.
+
+## 2026-10-14
+
+- **de_rats_1337, mg_lego_course, mg_super_tower** cleaned as one batch (19:14 to 23:22). These scripted fixes became stage C. Backups are in
+  `csgo_addons\prefabs+backups\preclean_2026-10-14`.
+  - trigger_push → trigger_multiple + `<map>_io.js` push zones that hold the push speed (capped at 3500): super_tower's 16 corridors at 3650,
+    rats' fan vortex (9 pushes at 300) and a 16000 vent launcher.
+  - Static overlays → `csgo_static_overlay` with masks. Eight rats decals had grey backgrounds, which were keyed out.
+  - Vis hints: one Lowest over the map, Low over the play areas, one Medium in the densest spot.
+  - Radars: rats from its original CS:GO radar image, lego and tower rendered from the geometry.
+  - Loading-screen text in `maps\<map>.txt` (`COMMUNITYMAPCREDITS:`), crediting SkyDusH (whose credits also name Deamon), The_Prodigy and
+    iSuperleggera. The credit rule "original map by &lt;author&gt; cs2 port by skink52" starts here.
+  - rats: 94 prop_hallucination lamps and ladders were invisible (the entity doesn't spawn in CS2), so the 32 named ones became
+    prop_dynamic and the other 62 prop_static. Its 32 switchable lights became Dynamic, since Static lights can't switch off. Sky and 5
+    materials rebuilt, boathouse water → stock CS2 water. At 23:22 three sounds were pulled from CS:GO's VPK (`rats.boulder_scrape_rough`,
+    `rats.inferno_loop`, `rats.steam01`).
+  - lego: 21 dropped sky ceilings → moondomes, equips → `weapon0` slots, game_score / env_sun / point_viewcontrol removed, and a "Ported to CS2
+    by skink52" chat line. At 22:19 its 11 env_lasers became func_brush beams `laser_beam_1..11` (laser_red, copied from mg_circle_course's
+    lasers). The existing 700-damage trigger_hurts still do the killing.
+  - super_tower: sky shell → moondome, 8 func_breakable_surf windows → func_breakable glass, the dropped no-fall-damage output restored, 6
+    materials swapped for stock ones.
+- Published soon after: de_rats_1337 (3820105155) and mg_lego_course (3820524232).
 
 ## 2026-10-09 – 13: the first mg ports (manual flow)
 
@@ -45,25 +106,145 @@ earlier working sessions. Dates taken from file timestamps say "(file date)".
 - **mg_mario_party** (10-11, 3818267169): `mario_io.js` plus overlay, teleport, model and health scripts.
 - **mg_n64_goldeneye** (10-12, 3818260481): kept as a reference port.
 - **mg_yolo_multigames** (10-12, 3819030057) and **mg_swag_multigames** (10-13): big generated scripts (`yolo_io.js`, `swag_io.js`) replacing about 20 dead mechanisms each.
+- **mg_50arenas** (10-13): ported, then not published, because a CS2 port by someone else exists (`[ext. port]` in existing_ports.txt).
 - Also published in this period: **mg_kirbys_brawl** (3819068027) and **awp_multigames** (3819078634).
+
+### 2026-10-13
+
+- **mg_yolo_multigames** (`convert_yolo.py`, from 00:12, with "make sure lasers, sprites and beams are reformatted"):
+  - Restored the dropped `!activator` outputs.
+  - game_player_equip → `weapon0..N` slots, and "use" → `TriggerForActivatedPlayer`.
+  - Spawn teleporters' `AddOutput "target X"` → script `SetDest_` / `Teleport_`, and `AddOutput "origin x y z"` → `MakerOrigin_`.
+  - env_sprite → one particle per texture; ambient_generic → point_soundevent.
+  - The two game_ui (a remote-control cube and a secret) → script.
+  - player_speedmod → `Speed_<x>`, trigger_gravity → `Gravity_<x>`, player_weaponstrip → `Strip`, `sm_slay @all` → `SlayAll`, and
+    `head_ammo` (ammo_50ae; CS2 has no ammo items) → `RefillPistolAmmo`.
+  - env_screenoverlay → custom_hud_layout.
+  - Class swaps: func_monitor → func_brush, func_physbox_multiplayer → func_physbox, light_dynamic → light_barn, color_correction → post_processing_volume.
+  - Dropped toolsskybox faces → moondome + toolsskybox meshes, and militiawater → dev_water2.
+- **mg_swag_multigames** (`convert_swag.py`, from about 01:00):
+  - The same treatment as yolo, plus 17 env_screenoverlays and 5 env_spritetrail → info_particle_system.
+  - 9 func_illusionary → non-solid func_brush, and water → dev_water2 inside a func_water.
+  - The star models rebuilt from the pakfile.
+  - At 01:18, func_wall_toggle → func_brush (toggled solidity, start state from "starts invisible") in both swag and yolo.
+- **mg_mario_party** (`fix_games.py`, before 06:35):
+  - The chain chomp's 16 phys_thrusters didn't move `Dog_box`. The script steered it at first; in the end its physics is frozen and the
+    script glides the box (chase 280, wander 220).
+  - Pirate climb `bolder_timer` refire 0.5 → 1.0 s.
+  - Block Fort: the teleporter only checks players as they enter, and the rename landed after they were already inside, so the script
+    now hands out one of 16 random spawns per team.
+  - The Octodad model got tm_phoenix's 14 ragdoll joints.
+- **mg_50arenas** (`convert_a50.py`, 05:51 to the evening). See [ports/mg_50arenas](ports/mg_50arenas/README.md):
+  - Sky `sky56` + moondome; 13 music soundevents.
+  - 33 SetModel VScripts → `Model_<name>` using CS2 agents, and the Green Power Ranger rebuilt on the CS2 skeleton.
+  - 55 "EFFECT" screen overlays → colour-tint post-processing; 100 func_wall_toggle → func_brush.
+  - The moondome rebuilt as 53 boxes, one per arena bubble.
+  - A stale asset reference list inside the vmap was found and rebuilt.
+- **Vis hint tuning** (mario, yolo, swag, 50arenas):
+  - Medium arena hints on mario still gave 1,451,170 regions (662.85 s, 7,124,693 clusters).
+  - Lowest-only hints (256-unit regions) made walls vanish a few steps back (50arenas, 16:28).
+  - Settled on Low per arena and one Lowest over the void.
+  - 50arenas (53 boxes, about 60 times a normal map's volume) went to Lower (`hintType` 8), but VIS3 still ran 30+ min there.
+  - Mario's moondome also showed bits of other arenas from odd positions.
+- **yolo / swag gameplay fixes** (afternoon to 20:26):
+  - Removed the map check (a physics barrel that can't arrive in CS2 was deleting four game buttons), and the `phys_pushscale` /
+    `cs_enable_player_physics_box` commands. The script now pushes props for knife hits, shots and players running into them.
+  - Football goal triggers set to Physics Objects.
+  - Grenade holes are tracked by script, since CS2 triggers don't detect grenades.
+  - Shot blocks fly toward the shooter.
+  - Volleyball: frozen balls get a nudge, the ball passes `fb_playerclip`, and low gravity cancels 3/4 of the measured gravity.
+  - 20:26 "score doesn't work": the outputs moved onto 24 logic_relays still said `OnStartTouch`, and were renamed to `OnTrigger`.
+  - swag: the intro overlay is limited to two rounds.
+- **Build scripts:** `compile_maps.ps1` builds mario, yolo, swag and 50arenas one after another (lightmap 1024, phys/vis/nav, Steam Audio
+  bakes) and copies each map's outroot back into `game\csgo_addons\<addon>` with a vpk size check. The copy exists because an `-outroot`
+  build only writes to the outroot; Hammer copies the vpk into the game addon itself.
+
+### 2026-10-12
+
+- **mg_mario_party** (00:32 to 23:43):
+  - Filter audit (the "missing filter target" warnings are names the script gives players, such as `predator` and `marine`).
+  - A new `part1_spawn` (the five part1 teleports pointed at a destination that never existed), and the dead Mario Kart teleports removed.
+  - At 11:27, a moondome using `sky_pipeplaza`.
+  - **math_counter → logic_case passes a float** ("5.000000"), so whole-number cases never fired. The script now forwards the rounded value
+    (`COUNTER_TO_CASE`) and re-hooks the counters every round.
+  - 22:13: the motes game prints "t's win" but doesn't end the round (still open).
+  - 22:52–23:31: the mushroom grab. CS2 stops players at the physbox surface, so the thin grab trigger couldn't be reached; the script grabs within 36 units.
+  - The Octodad player model was rebuilt on the Phoenix agent (73 bones). The old model had no CS2 skeleton or animgraph, so held weapons were huge.
+  - The between-rounds strip moved into the script (CS2 doesn't apply non-"Use Only" equips on spawn).
+  - An Aztec grass/rock blend material.
+  - 23:43: the first visibility hints (High around the moondome areas).
+- **mg_n64_goldeneye**, round 1:
+  - Soundevents, and all 41 `Use` → `TriggerForActivatedPlayer` conversions checked.
+  - The `elite` equip fixed (it gave an SSG 08), `item_assaultsuit` restored, leftover `weapon_x 1` keys removed.
+  - The 14 dropped env_beams restored, 20 medals restored, and overlays → `csgo_static_overlay`.
+- **mg_n64_goldeneye**, round 2 (from 03:35):
+  - All env_beams removed on request ("they can cause crashes").
+  - 24 signs rebuilt as properly sized quads.
+  - 16 func_breakable_surf windows → func_shatterglass (`glass_plate_shatter`).
+- `cs2_build_goldeneye_mario.ps1`: the first command-line build script. It compiles out-of-date assets first, checks the vpk contents and copies it with a hash check.
+
+### 2026-10-11
+
+- **mg_circle_course:** VIS ran 18+ min (307,557 regions, 2,453,840 clusters). The big open centre gives vis little to cull. Iterate without full vis and keep the sealed volume small.
+- **mg_awp_submarine** (21:28): the `launch` soundevent was silent.
+  - Most of the wavs had never compiled to `.vsnd_c`.
+  - Two point_soundevents had a file path (`sounds/launch.vsnd`) where the event name (`launch`) belongs.
+  - The `disco1` / `disco2` wavs were missing.
+- **mg_mario_party** (late): soundevents built from the map's 46 sounds. Every ambient_generic → point_soundevent, with `PlaySound` → `StartSound` (`StopSound` stays).
+
+### 2026-10-10
+
+- mg_smee_tower_cs2 / mg_balistic_course: `vmat_to_overlay.py` converts decal materials from `csgo_complex` to `csgo_static_overlay` in place,
+  with a mask keyed from the most common border colour.
+- Neon laser textures (red, green, cyan, magenta: colour, translucency and self-illum PNGs + vmats) made in mg_balistic_course's
+  `materials\lasers`, and reused by later ports.
+
+### 2026-10-09
+
+- mg_ka_trains_detach (briar's port): a trigger_gravity replacement script (`gravity_minigames.js`: low 0.4 and high 1.4 by logic_case),
+  still being debugged with `[gravity]` logging and chat test commands.
 
 ## 2026-10-01 – 07
 
-- **ba_jail_lightsout** imported 10-01. The environment prefab was too heavy to collapse in Hammer, so its contents were pasted in with Paste Special.
-  The 3D skybox didn't render until "Editor only" was unticked on its `sky_camera`.
+- **ba_jail_lightsout** imported 10-01.
+  - The environment prefab (about 15 MB, 1,457 entities) was too heavy to collapse in Hammer, so its contents were pasted in with Paste Special.
+  - The 3D skybox didn't render until "Editor only" was unticked on its `sky_camera`.
+  - The importer needed the content root to be `C:\source1`, where the VMF is, not the CS:GO content folder ("Found no files matching
+    specification"). `-usebsp` needs the BSP in the legacy `csgo\maps`.
+  - Glow and blood decals got alpha masks, and its static overlays were toned down with `g_fTextureColorBrightness` 0.3.
+  - Its compile log: 123 light_omni2 asked for shadow slots and 102 failed; the vis boundary pass took about 1,018 s.
 - **ba_jail_keimusho** import started 10-07.
 
 ## 2026-09 (jailbreak features)
 
 - **jb_water_prison_cs2** imported 09-20: `vehicles.js` (drivable car replacing game_ui; file date 09-20) and `water_immunity.js` (09-29).
-- **ba_jail_seaside**: `dodgeball.js` (09-19), `bumper_cars.js` / `buff_new.js` copies (09-24).
-- **ba_jail_skylight**: `bumper_cars.js` (09-25), `helicopter.js` (09-25), `keypad.js` (09-28), `buff_new.js` (10-01). The buff script was rewritten
-  to track who picks up the named map weapon, after it turned out CS2 doesn't keep a weapon's targetname through a pickup.
+  CS2's AddOutput can't rename entities ("AddOutput fired with bad string"), so the immunity script calls `SetEntityName`. `waterfilter` needed
+  `negated 1`, added as a raw keyvalue with Smart Edit off.
+- **ba_jail_seaside**: `dodgeball.js` (09-19), `bumper_cars.js` / `buff_new.js` copies (09-24). func_brush beams parented to a func_rotating
+  wouldn't Enable, so they stay unparented and get `SetParent` at runtime. The radar was made with RadGen (its selection set has to be named
+  `radgen_path`). The BreakFloor respawn uses a counter (to 104) and a point_template.
+- **ba_jail_skylight**: `bumper_cars.js` (09-25), `helicopter.js` (09-25), `keypad.js` (09-28), `buff_new.js` (10-01). The keypad script
+  re-hooks its buttons every round start, because map entities are re-created each round. The buff script was rewritten to track who picks up
+  the named map weapon, after it turned out CS2 doesn't keep a weapon's targetname through a pickup.
 - **jb_sides_cs2** radar made with RadGen (09-30).
+- A jailbreak speed knife: player_speedmod doesn't work in CS2, cs_script has no speed setter, and `GiveNamedItem` doesn't fire
+  `OnPlayerPickup`, so it became a CounterStrikeSharp plugin setting `VelocityModifier`.
 
 ## 2026-08 (first CS2 ports: jailbreak maps)
 
 - **jb_mangaroons** (08-22), **ba_jail_seaside** (08-24), **jb_yeetnam** (08-28), **jb_renegade** and **ba_jail_skylight** (08-30) imported with Valve's importer.
 - Import helpers written as problems came up: `findmissingtextures.py` (08-24), `findmissingmodels.py`, `mdltovmdl.py`, `newcheck.py` (08-26),
-  `makealpha.py` (08-27), `modelsfromrefs.py` and **`post_import_cleanup.py`** (08-28). Valve's importer kills the whole run on its first bad model, and
-  post_import_cleanup became the standard second step.
+  `makealpha.py` (08-27), `modelsfromrefs.py` and **`post_import_cleanup.py`** (08-28).
+  - Valve's importer kills the whole run on its first bad asset (`utlc.RunCommand` → `Error()` → `sys.exit(1)`), so post_import_cleanup
+    became the standard second step.
+  - It grew from `modelsfromrefs.py` into four phases: models, texture cascade, vmat sweep, report. It skips models that already have a
+    `.vmdl` but always retries their compile, decides what's out of date by comparing against the compiled `_c` files, and leaves `materials/tools/` alone.
+- Import failures found on these maps:
+  - "pak01.vpk / Failed to load file (invalid)": rename `vpk.signatures`.
+  - A CS:GO content path with spaces: use a junction (`C:\cscontent` → `csgo`).
+  - VTFCmd's `-output` flattens the folder tree, so the PNGs are written next to the VTFs instead.
+- ba_jail_seaside models:
+  - `cs_mdl_import -r` with `*.mdl` scanned about 12,164 stock models and crashed (253 of 255 failed).
+  - An explicit `-l` file list got 152 through, then crashed on one mdl/vtx checksum mismatch, which is what `newcheck.py` finds.
+  - cs_mdl_import converts geometry only; materials are a separate pass.
+- Props from other Source games (undated): Crowbar → Blender → ModelDoc, with generated alpha masks.

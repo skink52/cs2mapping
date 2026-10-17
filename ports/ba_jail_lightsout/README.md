@@ -9,6 +9,10 @@
 
 Separate 3D skybox map (`ba_jail_lightsout_3dskybox.vmap`, referenced by a `skybox_reference`). It didn't render until **Editor only** was unticked on its `sky_camera`.
 
+## History
+
+- Around its import (10-01): the importer needed the content root `C:\source1` (where the VMF is), not the CS:GO content folder. The environment prefab (about 15 MB, 1,457 entities) was pasted in with Paste Special. Alpha masks for glow and blood decals; static overlays toned down with `g_fTextureColorBrightness` 0.3. Its compile log: 123 light_omni2 asked for shadow slots and 102 failed; the vis boundary pass took about 1,018 s.
+
 ## Import report
 
 (`post_import_cleanup.py` report in this folder)
