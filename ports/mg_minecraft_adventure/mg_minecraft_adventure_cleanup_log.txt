@@ -16,3 +16,10 @@ CS2 post-import clean - mg_minecraft_adventure (2026-10-16)
 - added point_script mg_minecraft_adventure_io_script (maps/scripts/mg_minecraft_adventure_io.js)
 - pruned 50 orphaned elements
 - TO CHECK: materials still missing: materials/ennergy/minecraft/mobs_heads/skeleton_wither_bottom.vmat (no CS:GO source and no similar stock CS2 material)
+
+Follow-up pass (2026-10-18): vis compile time (visfit)
+- visibility hints rebuilt from the play space: 71 Low (64-unit grid) over the walkable band (playable air up to 160 units above a floor), 20 Lower (64-unit grid, fewer initial clusters) over the rest of the playable air near geometry, 1 Lowest over the whole map; old set 1 Lowest, 45 Low, 3 Medium
+- hint volume (billion cubic units): before Medium 0.4, Low 38.9, Lowest 1566.6, after Low 16.9, Lower 1.0, Lowest 539.9
+- sky shells: 6 of 101 moondome meshes set to Exclude from Vis (they bound no playable air that would be open without them); 95 kept
+- Medium hints removed (no dense vis geometry: the old density count included meshes already excluded from vis)
+- TO CHECK: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium); backup in csgo_addons\prefabs+backups\pre_vis_2026-10-18

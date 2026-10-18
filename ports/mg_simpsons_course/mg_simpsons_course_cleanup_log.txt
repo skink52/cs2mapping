@@ -25,3 +25,9 @@ CS2 post-import clean - mg_simpsons_course (2026-10-16)
 - TO CHECK: ambient_generic sounds not in the addon (stock CS:GO sounds or not packed in the BSP): sounds/porco.vsnd
 - TO CHECK: beams with no usable end point, removed: laser1.3
 - TO CHECK: materials still missing: materials/ryan_dev/dev_darker_blue1.vmat (no CS:GO source and no similar stock CS2 material)
+
+Follow-up pass (2026-10-18): vis compile time (visfit)
+- visibility hints rebuilt from the play space: 23 Low (64-unit grid) over the walkable band (playable air up to 160 units above a floor), 18 Lower (64-unit grid, fewer initial clusters) over the rest of the playable air near geometry, 1 Lowest over the whole map; old set 1 Lowest, 14 Low
+- hint volume (billion cubic units): before Low 24.5, Lowest 213.8, after Low 10.3, Lower 0.9, Lowest 261.3
+- sky shells: 2 of 27 moondome meshes set to Exclude from Vis (they bound no playable air that would be open without them); 25 kept
+- TO CHECK: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium); backup in csgo_addons\prefabs+backups\pre_vis_2026-10-18

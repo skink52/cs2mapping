@@ -27,3 +27,9 @@ CS2 post-import clean - mg_kohztec_course (2026-10-16)
 - TO CHECK: overlay materials not converted: materials/decals/blood4.vmat (texture has no alpha); materials/decals/blood4model.vmat (vmat not in addon); materials/decals/bloodstain_003.vmat (texture has no alpha); materials/decals/flesh/blood3.vmat (texture has no alpha); materials/decals/ivy02.vmat (vmat not in addon)
 - TO CHECK: 1 compartments only partly covered by stationary light (overlap cap) - check weapons are lit there
 - TO CHECK: materials still missing: materials/decals/blood4model.vmat (custom decal with no CS:GO source - left as is rather than swapped for an unrelated decal); materials/decals/ivy02.vmat (custom decal with no CS:GO source - left as is rather than swapped for an unrelated decal)
+
+Follow-up pass (2026-10-18): vis compile time (visfit)
+- visibility hints rebuilt from the play space: 87 Low (64-unit grid) over the walkable band (playable air up to 160 units above a floor), 103 Lower (64-unit grid, fewer initial clusters) over the rest of the playable air near geometry, 1 Lowest over the whole map; old set 1 Lowest, 48 Low
+- hint volume (billion cubic units): before Low 71.8, Lowest 629.9, after Low 39.1, Lower 18.5, Lowest 764.5
+- sky shells: 8 of 35 moondome meshes set to Exclude from Vis (they bound no playable air that would be open without them); 27 kept
+- TO CHECK: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium); backup in csgo_addons\prefabs+backups\pre_vis_2026-10-18

@@ -7,7 +7,7 @@ Writes changed files to <local_root>/out/<addon>/... and <local_root>/out/<addon
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis
+import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit
 
 CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 
@@ -613,8 +613,8 @@ def run(addon, root, passes=None):
     if 'sounds' in steps: sounds(m, c)
     if 'overlays' in steps: overlays(m, c)
     if 'sky' in steps: sky_pass(m, c, vmfp)
-    if 'skyvis' in steps: skyvis.run(m, c)
-    if 'vis' in steps: vis_hints(m, c)
+    if 'vis' in steps: visfit.run(m, c)                  # hints fitted to the play space + sky shells out of vis
+    elif 'skyvis' in steps: skyvis.run(m, c)
     if 'beams' in steps: beammod.run(m, c)
     if 'lights' in steps: lighting.run(m, c)
     if 'alpha' in steps and c.src: assets.fix_alpha(m, c)

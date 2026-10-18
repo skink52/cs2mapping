@@ -3,6 +3,22 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-18
+
+- **Pipeline: `visfit` pass** (`tools/visfit.py`; it is now the stage C `vis` step, and stage D runs it as `visfit` or `visfit_lower`). Hints are fitted to the play
+  space: Low over the walkable band (playable air up to 160 units above a floor), Lower over the rest of the playable air near geometry,
+  one Lowest over everything. They sit on a 256-unit grid with no Low/Lower overlap and no Medium. Sky shells are excluded from vis unless they close playable air. The sealing test
+  ignores toolsnodraw, clips, triggers and meshes already excluded from vis, which Valve's docs say vis doesn't use.
+- **Vis pass on the 8 queued maps** (mg_egypt_course, mg_faohu_course, mg_galaxy_course, mg_kohztec_course, mg_minecraft_adventure, de_nuketown,
+  mg_metal_course_level_2, mg_simpsons_course). Low hint volume went down by 50-70% on the courses: e.g. metal 19.4 → 5.8, faohu 20.3 → 7.8 and
+  kohztec 71.8 → 39.1 billion cubic units. Nuketown stays about the same (21 → 25; its whole outdoor ground is walkable). 21 of the 174 sky shells
+  are out of vis, including the 5 around nuketown's old 3D skybox. All Medium hints are gone. Backups are in `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
+  Build queue reordered with mg_egypt_course last.
+- **mg_egypt_course: vis stall.** The first build stalled in the final vis cluster merge: 35,254 clusters, then 2,308 s to reach 32,768, and it was
+  stopped after 51 min. Its play-space hints are all Lower now.
+- **mg_bob2 built** (08:14, 30.2 min, OK). Not in `stage_d_done.txt` because the run was stopped during egypt, before the summary is written;
+  existing_ports.txt was already marked built.
+
 ## 2026-10-17
 
 - **mg_mario_party rebuilt** with the vis changes below (command-line build, 29.3 min, OK). Voxelize went from 103 s / 19,173,961 nodes

@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Status | Stage C done, queued for build |
+| Status | Stage C done, vis optimised 18 Oct, queued for build |
 | Original map | ScHoOuFi |
 | Imported | 2026-10-16 |
-| Map last changed | 2026-10-16 |
+| Map last changed | 2026-10-18 |
 | How | cs2port pipeline |
 
 kolkazadrot published a CS2 port as mg_metal_course_2_v2 (Workshop 3070464801, credited to ScHoOuFi). This one went ahead on request.
@@ -13,6 +13,7 @@ kolkazadrot published a CS2 port as mg_metal_course_2_v2 (Workshop 3070464801, c
 ## History
 
 - 2026-10-16: stages A–C in the second pipeline batch. Its panda spray overlay showed that overlays rebuilt later in the same stage C run weren't being converted; fixed in the pipeline.
+- 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 17 Low → 34 Low, 7 Lower, 1 Lowest; hint volume in billion cubic units Low 19.4, Lowest 98.9 → Low 5.8, Lower 0.2, Lowest 131.0. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 
 ## What the cleanup did
 
@@ -43,6 +44,7 @@ kolkazadrot published a CS2 port as mg_metal_course_2_v2 (Workshop 3070464801, c
 
 ## Open / to check
 
+- Vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium).
 - the importer leaves these out (they're on its exclusion list, mostly cosmetic): 13 point_spotlight (spotlight beams), 13 func_dustmotes (dust motes)
 - chat messages use "say" from cs_script ServerCommand - if a server blocks it the messages just will not show
 - these lasers did damage in CS:GO but there is no trigger_hurt along them, so in CS2 they are only visual: la3 at 2496 4812 256 (damage 10000), la4 at 2496 4864 308 (damage 10000), la5 at 2496 5056 308 (damage 10000)

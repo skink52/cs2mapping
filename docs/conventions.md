@@ -39,8 +39,9 @@ These are the standing rules every port follows. The pipeline applies most of th
   Stacked maps (one spawn above another) get vertical sections, one image per level.
 - **Sky.** Sky brushes the importer dropped come back as moondome boxes using the map's `env_sky` (rebuilt from the six CS:GO faces
   if CS2 doesn't have that sky).
-- **Vis hints.** One `visibility_hint` set to Lowest covering the whole map, including the void. Low over each room or arena.
-  Medium only sparingly, where the playable space has very complicated meshes.
+- **Vis hints.** One `visibility_hint` set to Lowest covering the whole map, including the void. Low where players stand (the walkable
+  band, up to 160 units above a floor), Lower over the rest of the playable air near geometry (high ceilings, shafts). Medium only
+  sparingly, where the playable space has very complicated meshes. `visfit.py` builds this from the map.
 - **Sky shells out of vis.** Moondome and tools/skybox shells around a room that is already sealed by its own walls get
   "Exclude from Vis". They're huge surfaces and otherwise dominate the vis compile.
 

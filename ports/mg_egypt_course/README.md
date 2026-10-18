@@ -2,14 +2,15 @@
 
 | | |
 |---|---|
-| Status | Stage C done, queued for build |
+| Status | Stage C done, vis optimised 18 Oct, queued for build |
 | Imported | 2026-10-16 |
-| Map last changed | 2026-10-16 |
+| Map last changed | 2026-10-18 |
 | How | cs2port pipeline |
 
 ## History
 
 - 2026-10-16: stages A–C in the second pipeline batch.
+- 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 12 Low, 1 Medium → 23 Lower, 1 Lowest; hint volume in billion cubic units Medium 0.2, Low 42.3, Lowest 414.9 → Lower 23.4, Lowest 493.0. Sky shells: 0 of 1 set to Exclude from Vis. All play-space hints are Lower because the 18 Oct build stalled in vis (35,254 clusters after the list merge, 2,308 s to merge to 32,768; stopped after 51 min). The one sky shell stays: it closes the top-left room, whose other walls are detail meshes Excluded from Vis. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 
 ## What the cleanup did
 
@@ -38,5 +39,6 @@
 
 ## Open / to check
 
+- Vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium).
 - ambient_generic themesong is set to loop but sounds/ongrid_001/ancient_egyptian_music_-_desert_mercenaries.mp3 has no loop cue points, so it will play once in CS2
 - these lasers did damage in CS:GO but there is no trigger_hurt along them, so in CS2 they are only visual: laser50 at 5873.12 -1872 834.47 (damage 100), laser50 at 6152.12 -2036 833.5 (damage 100), laser50 at 6404.12 -1873 834.53 (damage 100)

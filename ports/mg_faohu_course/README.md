@@ -2,14 +2,15 @@
 
 | | |
 |---|---|
-| Status | Stage C done, queued for build |
+| Status | Stage C done, vis optimised 18 Oct, queued for build |
 | Imported | 2026-10-16 |
-| Map last changed | 2026-10-16 |
+| Map last changed | 2026-10-18 |
 | How | cs2port pipeline |
 
 ## History
 
 - 2026-10-16: stages A–C in the second pipeline batch. The extra knife equip was dropped because the map already gives one.
+- 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 10 Low → 34 Low, 26 Lower, 1 Lowest; hint volume in billion cubic units Low 20.3, Lowest 111.0 → Low 7.8, Lower 1.2, Lowest 142.5. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 
 ## What the cleanup did
 
@@ -39,6 +40,7 @@
 
 ## Open / to check
 
+- Vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium).
 - the importer leaves these out (they're on its exclusion list, mostly cosmetic): 10 point_spotlight (spotlight beams)
 - these lasers did damage in CS:GO but there is no trigger_hurt along them, so in CS2 they are only visual: stage5_t_laser13 at -1056 -1216 416 (damage 500), stage5_t_laser15 at -672 -1216 416 (damage 500), stage5_t_laser17 at -672 -1216 320 (damage 500), stage5_t_laser19 at -672 -1216 336 (damage 500), stage5_t_laser21 at -672 -1216 352 (damage 500), stage5_t_laser23 at -672 -1216 368 (damage 500), stage5_t_laser25 at -672 -1216 384 (damage 500), stage5_t_laser27 at -672 -1216 400 (damage 500), stage5_t_laser31 at -711.542 -1216 244 (damage 500), stage5_t_laser33 at -752.45 -1216 264 (damage 500)
 - beams with no usable end point, removed: finalaser6

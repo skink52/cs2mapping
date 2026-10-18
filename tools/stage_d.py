@@ -1,11 +1,11 @@
 """Run individual clean passes on an already-cleaned map (keeps your own Hammer edits).
 
-python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alpha, radar, daylight, skyvis
+python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import vmapedit as V, stage_c, beams, lighting, assets, vpk, radar, daylight, skyvis
+import vmapedit as V, stage_c, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -18,6 +18,7 @@ def run(addon, root, passes):
         c.src = assets.Source(c, csgov, arcs)
     if 'beams' in passes: beams.run(m, c)
     if 'skyvis' in passes: skyvis.run(m, c)
+    if 'visfit' in passes or 'visfit_lower' in passes: visfit.run(m, c, all_lower='visfit_lower' in passes)
     if 'lights' in passes: lighting.run(m, c)
     if 'alpha' in passes and c.src: assets.fix_alpha(m, c)
     if 'daylight' in passes: daylight.run(m, c)

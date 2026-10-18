@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Status | Stage C done, queued for build |
+| Status | Stage C done, vis optimised 18 Oct, queued for build |
 | Original map | Joe101 & guilhermealegretti |
 | Imported | 2026-10-16 |
-| Map last changed | 2026-10-16 |
+| Map last changed | 2026-10-18 |
 | How | cs2port pipeline |
 
 kolkazadrot published a CS2 port in Nov 2023 (mg_simpsons_course_v2, Workshop 3070447697), but its commenters report crashes and that it can't be completed, so this one went ahead on request. The author credit comes from the map itself (not Struse).
@@ -13,6 +13,7 @@ kolkazadrot published a CS2 port in Nov 2023 (mg_simpsons_course_v2, Workshop 30
 ## History
 
 - 2026-10-16: stages A–C in the second pipeline batch. The slowest import of the batch: a tm_balkan prop made the importer convert the whole T animation set (2,654 animations).
+- 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 14 Low → 23 Low, 18 Lower, 1 Lowest; hint volume in billion cubic units Low 24.5, Lowest 213.8 → Low 10.3, Lower 0.9, Lowest 261.3. Sky shells: 2 of 27 set to Exclude from Vis. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 
 ## What the cleanup did
 
@@ -44,6 +45,7 @@ kolkazadrot published a CS2 port in Nov 2023 (mg_simpsons_course_v2, Workshop 30
 
 ## Open / to check
 
+- Vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium).
 - chat messages use "say" from cs_script ServerCommand - if a server blocks it the messages just will not show
 - 2 trigger_gravity (-) - not converted automatically, needs a look
 - ambient_generic sounds not in the addon (stock CS:GO sounds or not packed in the BSP): sounds/porco.vsnd

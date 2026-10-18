@@ -23,6 +23,7 @@ One folder per map. The live status list is `existing_ports.txt` on the PC (snap
 
 | Map | Status | Workshop | Imported | How |
 |---|---|---|---|---|
+| [mg_bob2](mg_bob2/) | Built (in progress) |  | 2026-10-16 | cs2port pipeline |
 | [mg_draw_course](mg_draw_course/) | Built (in progress) |  | 2026-10-16 | cs2port pipeline |
 | [mg_fred_all](mg_fred_all/) | Built (in progress) |  | 2026-10-16 | cs2port pipeline |
 
@@ -30,15 +31,14 @@ One folder per map. The live status list is `existing_ports.txt` on the PC (snap
 
 | Map | Status | Workshop | Imported | How |
 |---|---|---|---|---|
-| [de_nuketown](de_nuketown/) | Stage C done, queued for build |  | 2026-10-16 | cs2port pipeline |
-| [mg_bob2](mg_bob2/) | Stage C done, queued for build |  | 2026-10-16 | cs2port pipeline |
-| [mg_egypt_course](mg_egypt_course/) | Stage C done, queued for build |  | 2026-10-16 | cs2port pipeline |
-| [mg_faohu_course](mg_faohu_course/) | Stage C done, queued for build |  | 2026-10-16 | cs2port pipeline |
-| [mg_galaxy_course](mg_galaxy_course/) | Stage C done, queued for build |  | 2026-10-16 | cs2port pipeline |
-| [mg_kohztec_course](mg_kohztec_course/) | Stage C done, queued for build |  | 2026-10-16 | cs2port pipeline |
-| [mg_metal_course_level_2](mg_metal_course_level_2/) | Stage C done, queued for build |  | 2026-10-16 | cs2port pipeline |
-| [mg_minecraft_adventure](mg_minecraft_adventure/) | Stage C done, queued for build |  | 2026-10-16 | cs2port pipeline |
-| [mg_simpsons_course](mg_simpsons_course/) | Stage C done, queued for build |  | 2026-10-16 | cs2port pipeline |
+| [de_nuketown](de_nuketown/) | Stage C done, vis optimised 18 Oct, queued for build |  | 2026-10-16 | cs2port pipeline |
+| [mg_egypt_course](mg_egypt_course/) | Stage C done, vis optimised 18 Oct, queued for build |  | 2026-10-16 | cs2port pipeline |
+| [mg_faohu_course](mg_faohu_course/) | Stage C done, vis optimised 18 Oct, queued for build |  | 2026-10-16 | cs2port pipeline |
+| [mg_galaxy_course](mg_galaxy_course/) | Stage C done, vis optimised 18 Oct, queued for build |  | 2026-10-16 | cs2port pipeline |
+| [mg_kohztec_course](mg_kohztec_course/) | Stage C done, vis optimised 18 Oct, queued for build |  | 2026-10-16 | cs2port pipeline |
+| [mg_metal_course_level_2](mg_metal_course_level_2/) | Stage C done, vis optimised 18 Oct, queued for build |  | 2026-10-16 | cs2port pipeline |
+| [mg_minecraft_adventure](mg_minecraft_adventure/) | Stage C done, vis optimised 18 Oct, queued for build |  | 2026-10-16 | cs2port pipeline |
+| [mg_simpsons_course](mg_simpsons_course/) | Stage C done, vis optimised 18 Oct, queued for build |  | 2026-10-16 | cs2port pipeline |
 
 ## In progress
 

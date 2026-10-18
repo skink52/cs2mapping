@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Stage C done, queued for build |
+| Status | Built (in progress) |
 | Imported | 2026-10-16 |
 | Map last changed | 2026-10-16 |
 | How | cs2port pipeline |
@@ -10,6 +10,7 @@
 ## History
 
 - 2026-10-16: stages A–C in the second pipeline batch. Its custom decal had been swapped for a sticker, which is why custom decals with no CS:GO source are now left alone and flagged. The extra knife equip was dropped because the map already gives one.
+- 2026-10-18: built from the command line (30.2 min, OK; vis 1,624 s: 556,739 regions, 13,596 clusters after the list merge, 209 s final merge).
 
 ## What the cleanup did
 

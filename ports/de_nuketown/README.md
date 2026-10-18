@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Status | Stage C done, queued for build |
+| Status | Stage C done, vis optimised 18 Oct, queued for build |
 | Imported | 2026-10-16 |
-| Map last changed | 2026-10-16 |
+| Map last changed | 2026-10-18 |
 | How | cs2port pipeline |
 
 The CS2 Nuketown maps on the Workshop (e.g. 3093088534) are remakes of the Call of Duty map, not ports of this one, so it went ahead after the duplicate check.
@@ -12,6 +12,7 @@ The CS2 Nuketown maps on the Workshop (e.g. 3093088534) are remakes of the Call 
 ## History
 
 - 2026-10-16: stages A–C in the second pipeline batch. Its sky is now the CS:GO jungle sky, with 10 moondomes.
+- 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 12 Low, 2 Medium → 46 Low, 1 Lowest; hint volume in billion cubic units Medium 0.3, Low 21.3, Lowest 88.6 → Low 24.6, Lowest 93.8. Sky shells: 5 of 10 set to Exclude from Vis. The 5 sky shells around the old 3D skybox (sky_camera 9837 -132 89) and 3 of its meshes are now Excluded from Vis. It is still ordinary geometry that CS2 ignores as a skybox: move it to a skybox map or delete it. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 
 ## What the cleanup did
 
@@ -35,6 +36,7 @@ The CS2 Nuketown maps on the Workshop (e.g. 3093088534) are remakes of the Call 
 
 ## Open / to check
 
+- Vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium).
 - the importer leaves these out (they're on its exclusion list, mostly cosmetic): 1 env_fog_controller (fog)
 - the map had a CS:GO 3D skybox (sky_camera at 9837 -132 89, scale 16): its geometry is now ordinary geometry in the map and CS2 ignores sky_camera - move it to a separate skybox map + skybox_reference, or delete it
 - check the substituted materials look right: materials/environment_maps/pipeset_metal.vmat -> materials/models/props_pipes/pipeset_metal.vmat

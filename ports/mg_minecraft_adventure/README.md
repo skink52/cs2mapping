@@ -2,15 +2,16 @@
 
 | | |
 |---|---|
-| Status | Stage C done, queued for build |
+| Status | Stage C done, vis optimised 18 Oct, queued for build |
 | Original map | Salty |
 | Imported | 2026-10-16 |
-| Map last changed | 2026-10-16 |
+| Map last changed | 2026-10-18 |
 | How | cs2port pipeline |
 
 ## History
 
 - 2026-10-16: stages A–C in the second pipeline batch.
+- 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 45 Low, 3 Medium → 71 Low, 20 Lower, 1 Lowest; hint volume in billion cubic units Medium 0.4, Low 38.9, Lowest 1566.6 → Low 16.9, Lower 1.0, Lowest 539.9. Sky shells: 6 of 101 set to Exclude from Vis. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 
 ## What the cleanup did
 
@@ -41,4 +42,5 @@
 
 ## Open / to check
 
+- Vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium).
 - materials still missing: materials/ennergy/minecraft/mobs_heads/skeleton_wither_bottom.vmat (no CS:GO source and no similar stock CS2 material)

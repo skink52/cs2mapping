@@ -2,14 +2,15 @@
 
 | | |
 |---|---|
-| Status | Stage C done, queued for build |
+| Status | Stage C done, vis optimised 18 Oct, queued for build |
 | Imported | 2026-10-16 |
-| Map last changed | 2026-10-16 |
+| Map last changed | 2026-10-18 |
 | How | cs2port pipeline |
 
 ## History
 
 - 2026-10-16: stages A–C in the second pipeline batch. Its assets went over in two zips. The extra knife equip was dropped because the map already gives one.
+- 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 48 Low → 87 Low, 103 Lower, 1 Lowest; hint volume in billion cubic units Low 71.8, Lowest 629.9 → Low 39.1, Lower 18.5, Lowest 764.5. Sky shells: 8 of 35 set to Exclude from Vis. The big sky-boxed room in the south-west has no spawn or teleport destination, but it has a button and triggers, so it is treated as playable. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 
 ## What the cleanup did
 
@@ -40,6 +41,7 @@
 
 ## Open / to check
 
+- Vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium).
 - the importer leaves these out (they're on its exclusion list, mostly cosmetic): 1 point_spotlight (spotlight beams), 2 func_precipitation (rain/snow)
 - 1 env_screenoverlay (mg_kohztec_course_overlay_2) - not converted automatically, needs a look
 - 1 point_clientcommand (clcmd) - not converted automatically, needs a look

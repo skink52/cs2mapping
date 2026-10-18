@@ -23,3 +23,8 @@ CS2 post-import clean - mg_galaxy_course (2026-10-16)
 - TO CHECK: overlay materials not converted: materials/props/decal_prison04b.vmat (vmat not in addon); materials/realworldtextures2/decals/dirt_decal_02.vmat (vmat not in addon); materials/realworldtextures2/decals/dirt_decal_03.vmat (vmat not in addon)
 - TO CHECK: check the substituted materials look right: materials/environment_maps/pipemetal001a.vmat -> models/generic/pipe01/pipe_metal01a.vmat; materials/realworldtextures2/decals/dirt_decal_02.vmat -> materials/de_train/train_dirt_decal_07.vmat; materials/realworldtextures2/decals/dirt_decal_03.vmat -> materials/de_train/train_dirt_decal_07.vmat
 - TO CHECK: materials still missing: materials/props/decal_prison04b.vmat (decal with no CS:GO source; closest stock match materials/props/metalfan001a.vmat is not a decal, so left as is)
+
+Follow-up pass (2026-10-18): vis compile time (visfit)
+- visibility hints rebuilt from the play space: 33 Low (64-unit grid) over the walkable band (playable air up to 160 units above a floor), 14 Lower (64-unit grid, fewer initial clusters) over the rest of the playable air near geometry, 1 Lowest over the whole map; old set 1 Lowest, 22 Low
+- hint volume (billion cubic units): before Low 26.0, Lowest 108.1, after Low 7.9, Lower 2.9, Lowest 118.8
+- TO CHECK: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium); backup in csgo_addons\prefabs+backups\pre_vis_2026-10-18

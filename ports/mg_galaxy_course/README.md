@@ -2,15 +2,16 @@
 
 | | |
 |---|---|
-| Status | Stage C done, queued for build |
+| Status | Stage C done, vis optimised 18 Oct, queued for build |
 | Original map | xGrandx |
 | Imported | 2026-10-16 |
-| Map last changed | 2026-10-16 |
+| Map last changed | 2026-10-18 |
 | How | cs2port pipeline |
 
 ## History
 
 - 2026-10-16: stages A–C in the second pipeline batch.
+- 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 22 Low → 33 Low, 14 Lower, 1 Lowest; hint volume in billion cubic units Low 26.0, Lowest 108.1 → Low 7.9, Lower 2.9, Lowest 118.8. In vis terms the map is open: it is enclosed only by toolsnodraw meshes, which vis ignores. Not changed; if vis culling turns out poor, the enclosure needs toolsskybox faces. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 
 ## What the cleanup did
 
@@ -39,6 +40,7 @@
 
 ## Open / to check
 
+- Vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium).
 - the importer leaves these out (they're on its exclusion list, mostly cosmetic): 8 point_spotlight (spotlight beams)
 - chat messages use "say" from cs_script ServerCommand - if a server blocks it the messages just will not show
 - 6 trigger_gravity (-) - not converted automatically, needs a look

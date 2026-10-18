@@ -23,3 +23,8 @@ CS2 post-import clean - mg_metal_course_level_2 (2026-10-16)
 - TO CHECK: the importer leaves these out (they're on its exclusion list, mostly cosmetic): 13 point_spotlight (spotlight beams), 13 func_dustmotes (dust motes)
 - TO CHECK: chat messages use "say" from cs_script ServerCommand - if a server blocks it the messages just will not show
 - TO CHECK: these lasers did damage in CS:GO but there is no trigger_hurt along them, so in CS2 they are only visual: la3 at 2496 4812 256 (damage 10000), la4 at 2496 4864 308 (damage 10000), la5 at 2496 5056 308 (damage 10000)
+
+Follow-up pass (2026-10-18): vis compile time (visfit)
+- visibility hints rebuilt from the play space: 34 Low (64-unit grid) over the walkable band (playable air up to 160 units above a floor), 7 Lower (64-unit grid, fewer initial clusters) over the rest of the playable air near geometry, 1 Lowest over the whole map; old set 1 Lowest, 17 Low
+- hint volume (billion cubic units): before Low 19.4, Lowest 98.9, after Low 5.8, Lower 0.2, Lowest 131.0
+- TO CHECK: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium); backup in csgo_addons\prefabs+backups\pre_vis_2026-10-18

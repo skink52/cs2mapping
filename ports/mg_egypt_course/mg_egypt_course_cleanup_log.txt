@@ -16,3 +16,11 @@ CS2 post-import clean - mg_egypt_course (2026-10-16)
 - pruned 154 orphaned elements
 - TO CHECK: ambient_generic themesong is set to loop but sounds/ongrid_001/ancient_egyptian_music_-_desert_mercenaries.mp3 has no loop cue points, so it will play once in CS2
 - TO CHECK: these lasers did damage in CS:GO but there is no trigger_hurt along them, so in CS2 they are only visual: laser50 at 5873.12 -1872 834.47 (damage 100), laser50 at 6152.12 -2036 833.5 (damage 100), laser50 at 6404.12 -1873 834.53 (damage 100)
+
+Follow-up pass (2026-10-18): vis compile time (visfit)
+- visibility hints rebuilt from the play space: 23 Lower (64-unit grid, fewer initial clusters) over all playable air, 1 Lowest over the whole map; old set 1 Lowest, 12 Low, 1 Medium
+- hint volume (billion cubic units): before Medium 0.2, Low 42.3, Lowest 414.9, after Lower 23.4, Lowest 493.0
+- Lower instead of Low everywhere because the 18 Oct build stalled in the final vis cluster merge (35,254 clusters, 2,308 s to reach 32,768)
+- sky shells: 0 of 1 moondome meshes set to Exclude from Vis (they bound no playable air that would be open without them); 1 kept
+- Medium hints removed (no dense vis geometry: the old density count included meshes already excluded from vis)
+- TO CHECK: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium); backup in csgo_addons\prefabs+backups\pre_vis_2026-10-18
