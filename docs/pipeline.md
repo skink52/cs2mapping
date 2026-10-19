@@ -54,13 +54,14 @@ the PC through the linked-computer file tools. Hammer must stay closed while Cla
 - **Radar.** Rendered from the geometry. Only floors you can stand on are drawn (the space above them has lights, spawns or teleports, or is an enclosed non-sky room), shaded by height, with walls outlined. Output: `panorama/images/overheadmaps/<map>_radar_psd.png` + `.vtex`, plus game `resource/overviews/<map>.txt`.
   - Stacked maps (towers, one spawn directly above another): split into vertical sections like Nuke/Vertigo. `"verticalsections"` in the overview txt with `"default"` (image `<map>_radar_psd`) and `"lower"` (image `<map>_lower_radar_psd`), each with AltitudeMin/Max; all sections share pos_x/pos_y/scale. Done by hand for mg_smee_tower_cs2 (split at z 2560, 17 Oct 2026); `radar.py` itself still makes one image.
 - A missing-model report.
-- Listed in the log's TO CHECK lines but not converted: trigger_gravity, player_speedmod, env_screenoverlay, point_clientcommand, game_ui, VScripts.
+- **trigger_gravity** (does nothing to players in CS2) → trigger_multiple whose OnStartTouch fires script `Gravity_<scale>`; names, filters and Enable/Disable are kept. While a player is airborne the script adds back `(1 - scale) * 800 * dt` of vertical velocity each tick. As in CS:GO the scale sticks until another gravity trigger or a respawn. `gravity.py`; stage D runs it as `gravity` on an already-cleaned map and adds the section to the existing `<addon>_io.js`.
+- Listed in the log's TO CHECK lines but not converted: player_speedmod, env_screenoverlay, point_clientcommand, game_ui, VScripts.
 
 ## Loading-screen credit
 CS2 reads the loading-screen text from `game\csgo_addons\<addon>\maps\<map>.txt` (the same file Hammer5Tools' Loading Editor writes): first line `COMMUNITYMAPCREDITS:`, then the text, e.g. `Original map by <author>` / `CS:GO port by <porter>` (when the map credits one) / `Ported to CS2 by skink52`. No map rebuild needed.
 
 ## Follow-up passes on a map you've already edited in Hammer
-`stage_d.py <addon> <root> beams,lights,alpha,radar,daylight,skyvis,visfit` runs only those passes on the current vmap. It keeps your Hammer edits and appends to the cleanup log.
+`stage_d.py <addon> <root> beams,lights,alpha,radar,daylight,skyvis,visfit,gravity` runs only those passes on the current vmap. It keeps your Hammer edits and appends to the cleanup log.
 `stage_d.py <addon> <root> visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with Lower instead of Low everywhere (for a map whose vis merge stalls).
 `stage_d.py <addon> <root> daylight` is the dark-indoor-map fix above.
 Map-specific script gates (e.g. mg_fred_all's `EnableDamage`) go in `maps/scripts/<addon>_io.js`: `Instance.OnBeforePlayerDamage` returns `{ abort: true }` to cancel a hit, `Instance.OnRoundStart` resets per-round state, and a trigger fires `RunScriptInput <name>` on `<addon>_io_script`.

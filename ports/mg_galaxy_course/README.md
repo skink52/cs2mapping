@@ -2,16 +2,17 @@
 
 | | |
 |---|---|
-| Status | Stage C done, vis optimised 18 Oct, queued for build |
+| Status | Stage C done, vis optimised 18 Oct, gravity triggers scripted 19 Oct, queued for build |
 | Original map | xGrandx |
 | Imported | 2026-10-16 |
-| Map last changed | 2026-10-18 |
+| Map last changed | 2026-10-19 |
 | How | cs2port pipeline |
 
 ## History
 
 - 2026-10-16: stages A–C in the second pipeline batch.
 - 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 22 Low → 33 Low, 14 Lower, 1 Lowest; hint volume in billion cubic units Low 26.0, Lowest 108.1 → Low 7.9, Lower 2.9, Lowest 118.8. In vis terms the map is open: it is enclosed only by toolsnodraw meshes, which vis ignores. Not changed; if vis culling turns out poor, the enclosure needs toolsskybox faces. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
+- 2026-10-19: the 6 trigger_gravity (scales 0.2, 0.3, 0.5, 1) the clean had left as TO CHECK → trigger_multiples firing script `Gravity_<scale>` (new pipeline `gravity` pass, run as a stage D follow-up). Backup: `prefabs+backups\mg_galaxy_course_pre_gravity_2026-10-19.vmap`.
 
 ## What the cleanup did
 
@@ -36,14 +37,14 @@
 
 ## Scripts
 
-- [`scripts/mg_galaxy_course_io.js`](scripts/mg_galaxy_course_io.js)
+- [`scripts/mg_galaxy_course_io.js`](scripts/mg_galaxy_course_io.js) - chat messages (`Cmd_n`) and per-player gravity (`Gravity_<scale>`)
 
 ## Open / to check
 
 - Vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium).
 - the importer leaves these out (they're on its exclusion list, mostly cosmetic): 8 point_spotlight (spotlight beams)
 - chat messages use "say" from cs_script ServerCommand - if a server blocks it the messages just will not show
-- 6 trigger_gravity (-) - not converted automatically, needs a look
+- Gravity script untested in game: the big 0.2 zone (2304..5104 x 2192..3472) should feel like low gravity; the 0.3/1 pair at x 5112-5128 are entry/exit doorways.
 - overlay materials not converted: materials/props/decal_prison04b.vmat (vmat not in addon); materials/realworldtextures2/decals/dirt_decal_02.vmat (vmat not in addon); materials/realworldtextures2/decals/dirt_decal_03.vmat (vmat not in addon)
 - check the substituted materials look right: materials/environment_maps/pipemetal001a.vmat -> models/generic/pipe01/pipe_metal01a.vmat; materials/realworldtextures2/decals/dirt_decal_02.vmat -> materials/de_train/train_dirt_decal_07.vmat; materials/realworldtextures2/decals/dirt_decal_03.vmat -> materials/de_train/train_dirt_decal_07.vmat
 - materials still missing: materials/props/decal_prison04b.vmat (decal with no CS:GO source; closest stock match materials/props/metalfan001a.vmat is not a decal, so left as is)

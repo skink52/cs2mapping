@@ -3,6 +3,13 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-19
+
+- **Pipeline: `gravity` pass** (`tools/gravity.py`, in stage C by default and `stage_d.py ... gravity` for ports already cleaned). trigger_gravity → trigger_multiple
+  firing script `Gravity_<scale>` on touch; the script adds back `(1 - scale) * 800 * dt` of vertical velocity while airborne (the Mario Party / yolo method).
+  Stage D patches the section into the map's existing `<addon>_io.js`. trigger_gravity is no longer a TO CHECK line.
+- **mg_galaxy_course**: its 6 trigger_gravity (0.2, 0.3, 0.5, 1) scripted with the new pass. Untested in game.
+
 ## 2026-10-18
 
 - **Pipeline: `visfit` pass** (`tools/visfit.py`; it is now the stage C `vis` step, and stage D runs it as `visfit` or `visfit_lower`). Hints are fitted to the play

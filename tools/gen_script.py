@@ -1,21 +1,23 @@
 """Build the per-map cs_script (maps/scripts/<map>_io.js) that replaces dead CS:GO entity behaviour."""
 import json, os
+import gravity
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-def build(mapname, script_name, push=None, commands=None, scores=None, speeds=None):
-    head = ['import { Instance, CSPlayerPawn, CSPlayerController%s } from "cs_script/point_script";' % (', CSInputs' if speeds else ''), '',
+def build(mapname, script_name, push=None, commands=None, scores=None, speeds=None, gravities=None):
+    head = ['import { Instance, CSPlayerPawn, CSPlayerController%s } from "cs_script/point_script";' % ((', CSInputs' if speeds else '') + (', CSMoveType' if gravities else '')), '',
             '// %s: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.' % mapname,
             '// Everything here is driven by `%s` -> RunScriptInput <input name>, with the activator passed through.' % script_name, '//']
     if push: head.append('//   PushIn_<n> / PushOut_<n>   replaces the trigger_push brushes (CS:GO "set speed" behaviour)')
     if commands: head.append('//   Cmd_<n>     replaces point_servercommand (chat messages / cvars)')
     if scores: head.append('//   Score_<pts> replaces game_score (ApplyScore)')
     if speeds: head.append('//   Speed_<mult> replaces player_speedmod ModifySpeed (activator only, 1 = back to normal)')
+    if gravities: head.append(gravity.HEAD_LINE)
     body = ['', '// ---------------------------------------------------------------- shared think loop',
             '/** @type {(() => boolean)[]} each returns true while it still needs ticks */',
             'const THINKERS = [];', 'let thinking = false;',
             'function wakeThink() { if (!thinking) { thinking = true; Instance.SetNextThink(Instance.GetGameTime()); } }',
             'Instance.SetThink(() => {', '    let active = false;', '    for (const t of THINKERS) if (t()) active = true;',
-            '    if (active) Instance.SetNextThink(Instance.GetGameTime()); else thinking = false;', '});'] if (push or speeds) else []
+            '    if (active) Instance.SetNextThink(Instance.GetGameTime()); else thinking = false;', '});'] if (push or speeds or gravities) else []
     if push:
         body += ['', '// ---------------------------------------------------------------- trigger_push replacement',
                  "// CS2's trigger_push keeps adding velocity every tick while you are inside it, so CS:GO pushes became rocket launchers.",
@@ -45,6 +47,8 @@ def build(mapname, script_name, push=None, commands=None, scores=None, speeds=No
                  '}']
     if speeds:
         body += ['', SPEED_JS.replace('__SPEEDS__', json.dumps(sorted(speeds)))]
+    if gravities:
+        body += ['', gravity.js_section(gravities)]
     return '\n'.join(head + body) + '\n'
 
 SPEED_JS = r'''// ---------------------------------------------------------------- player_speedmod replacement (dead in CS2)

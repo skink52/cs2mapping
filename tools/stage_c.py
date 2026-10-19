@@ -7,7 +7,7 @@ Writes changed files to <local_root>/out/<addon>/... and <local_root>/out/<addon
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit
+import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity
 
 CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 
@@ -18,7 +18,7 @@ class Ctx:
         s.out = os.path.join(root, 'out', addon)
         s.log = []; s.todo = []; s.files = {}   # rel path (content-relative, / separated) -> bytes
         s.script = addon + '_io_script'
-        s.push = {}; s.commands = []; s.scores = set(); s.speeds = set(); s.src = None; s.cs2v = None; s.need = set(); s.asset_refs = set(); s.game_files = {}
+        s.push = {}; s.commands = []; s.scores = set(); s.speeds = set(); s.gravities = set(); s.src = None; s.cs2v = None; s.need = set(); s.asset_refs = set(); s.game_files = {}
         lp = os.path.join(root, 'content_files_%s.json' % addon)   # listing of the addon content folder on the PC
         s.pc_files = set(x.lower().replace('\\', '/') for x in json.load(open(lp))) if os.path.exists(lp) else set()
     def exists(s, rel):
@@ -289,7 +289,7 @@ def dead_entities(m, c):
     for e in bs:
         m.setp(e, 'classname', 'func_breakable'); m.setp(e, 'material', '0'); m.setp(e, 'health', m.P(e, 'health', '1') or '1')
     if bs: c.log.append('%d func_breakable_surf (gone in CS2) -> func_breakable, material Glass' % len(bs))
-    for cl in ('trigger_gravity', 'env_screenoverlay', 'point_clientcommand', 'game_ui', 'logic_script', 'env_entity_igniter', 'func_precipitation', 'env_fog_controller'):
+    for cl in ('env_screenoverlay', 'point_clientcommand', 'game_ui', 'logic_script', 'env_entity_igniter', 'func_precipitation', 'env_fog_controller'):
         es = m.by_class(cl)
         if es: c.todo.append('%d %s (%s) - not converted automatically, needs a look' % (len(es), cl, ', '.join(sorted(set(m.name(e) or '-' for e in es)))[:200]))
     vs = [e for e in m.entities() if m.P(e, 'vscripts')]
@@ -593,7 +593,7 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'dead', 'sounds', 'overlays', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'radar', 'assets']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'sounds', 'overlays', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'radar', 'assets']
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
     if 'io' in steps and os.path.exists(vmfp): restore_io(m, c, vmfp); dropped_report(m, c, vmfp)
@@ -604,6 +604,7 @@ def run(addon, root, passes=None):
     if 'roundcfg' in steps: round_setup(m, c)
     if 'score' in steps: game_score(m, c)
     if 'speed' in steps: speedmod(m, c)
+    if 'gravity' in steps: gravity.run(m, c)
     if 'dead' in steps: dead_entities(m, c)
     vd = os.path.join(root, 'vpk')
     if os.path.exists(os.path.join(vd, 'cs2_pak01_dir.vpk')):
@@ -630,8 +631,8 @@ def run(addon, root, passes=None):
             c.todo = [t for t in c.todo if not t.startswith('overlay materials not converted: ')]
             c.overlay_skipped = prev + c.overlay_skipped
             if c.overlay_skipped: c.todo.append('overlay materials not converted: %s' % '; '.join(c.overlay_skipped)[:800])
-    if c.push or c.commands or c.scores or c.speeds:
-        js = gen_script.build(addon, c.script, c.push, c.commands, c.scores, c.speeds)
+    if c.push or c.commands or c.scores or c.speeds or c.gravities:
+        js = gen_script.build(addon, c.script, c.push, c.commands, c.scores, c.speeds, c.gravities)
         c.write('maps/scripts/%s_io.js' % addon, js)
         if not any(m.name(e) == c.script for e in m.by_class('point_script')):
             spawn = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]

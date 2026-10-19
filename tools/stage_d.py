@@ -1,11 +1,11 @@
 """Run individual clean passes on an already-cleaned map (keeps your own Hammer edits).
 
-python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower
+python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, gravity
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import vmapedit as V, stage_c, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit
+import vmapedit as V, stage_c, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -23,6 +23,18 @@ def run(addon, root, passes):
     if 'alpha' in passes and c.src: assets.fix_alpha(m, c)
     if 'daylight' in passes: daylight.run(m, c)
     if 'radar' in passes: radar.run(m, c)
+    if 'gravity' in passes:
+        gravity.run(m, c)
+        if c.gravities:
+            jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
+            if os.path.exists(jp): js = gravity.patch_script(open(jp, encoding='utf-8').read(), c.gravities)
+            else: js = stage_c.gen_script.build(addon, c.script, gravities=c.gravities)
+            c.write('maps/scripts/%s_io.js' % addon, js)
+            if not any(m.name(e) == c.script for e in m.by_class('point_script')):
+                spawn = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]
+                o = m.origin(spawn)
+                m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
+                c.log.append('added point_script %s (maps/scripts/%s_io.js)' % (c.script, addon))
     c.log.append('pruned %d orphaned elements' % m.prune())
     c.write('maps/%s.vmap' % addon, m.dumps())
     lp = os.path.join(c.content, 'maps', addon + '_cleanup_log.txt')

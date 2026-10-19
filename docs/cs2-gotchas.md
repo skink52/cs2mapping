@@ -75,7 +75,7 @@ automatically in stage C (see [pipeline.md](pipeline.md)).
 | `env_laser`, `env_beam` | Can't spawn (and env_beams were blamed for crashes on mg_n64_goldeneye). | Never-solid `func_brush` beam with a laser material between the end points. Parent it to the same mover if the hurt trigger moves (Mario Party's Platform Peril). |
 | `func_brush` parented to a `func_rotating` | Won't Enable. | Leave it unparented and fire `SetParent` at runtime (ba_jail_seaside). |
 | `game_ui` | Still in the FGD, but its outputs never fire. | cs_script reads the driver's keys and fires the thrusters (`bumper_cars.js`, `helicopter.js`, `vehicles.js`, mg_yolo_multigames' cube). |
-| `trigger_gravity` | Doesn't work on players. | Script gravity per player (Mario Party `Gravity_<x>`, mg_yolo_multigames). |
+| `trigger_gravity` | Doesn't work on players. | Script gravity per player: the pipeline's `gravity` pass (`tools/gravity.py`, `Gravity_<scale>`; same method as Mario Party and mg_yolo_multigames). |
 | `player_speedmod` | Gone, and cs_script has no speed setter. | Script sets ground velocity from the keys. Scale by the held weapon's speed and compensate for friction (Mario Party `Speed_<x>`). On servers with CounterStrikeSharp a plugin can set `VelocityModifier` instead. |
 | `trigger_push` (players) | Keeps **adding** velocity every tick you're inside, so CS:GO's "set speed" pushes become rocket launchers. | `trigger_multiple` + script that holds the velocity along the push direction at the push speed (clamped to 3500). |
 | `trigger_push` (physics props) | Doesn't throw them. Mario Party's bullet bills dropped into the water. | Script flies the prop straight along the push direction (which turns with a rotating parent) until it hits a wall. |
