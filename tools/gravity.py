@@ -3,11 +3,12 @@
 CS2's trigger_gravity does nothing to players. Each one becomes a trigger_multiple whose OnStartTouch fires
 RunScriptInput Gravity_<scale> on the map's io script; the script then gives back (1 - scale) * sv_gravity of vertical
 velocity every tick while the player is airborne, which is what CS:GO's per-player gravity scale looked like.
-As in CS:GO the scale sticks until another gravity trigger (or a respawn) changes it, so there is no OnEndTouch.
+Unlike CS:GO (where the scale stuck until another gravity trigger) leaving the trigger resets the player to normal gravity
+(OnEndTouch -> Gravity_1), so a zone is only low-gravity while you are inside it.
 """
 import json, re
 
-HEAD_LINE = '//   Gravity_<scale> replaces trigger_gravity (activator only, 1 = back to normal; sticks until the next gravity trigger)'
+HEAD_LINE = '//   Gravity_<scale> replaces trigger_gravity (activator only, 1 = back to normal; the trigger fires Gravity_1 on leaving)'
 
 THINK_JS = '''// ---------------------------------------------------------------- shared think loop
 /** @type {(() => boolean)[]} each returns true while it still needs ticks */
@@ -22,7 +23,7 @@ Instance.SetThink(() => {
 
 GRAVITY_JS = r'''// ---------------------------------------------------------------- trigger_gravity replacement (does nothing to players in CS2)
 // CS2 players have no gravity scale, so while a player is airborne the script gives back the part of sv_gravity the
-// scale removes (0.2 -> 80% of 800 pushed back up every tick). The scale sticks until another gravity trigger or a respawn.
+// scale removes (0.2 -> 80% of 800 pushed back up every tick). Leaving the trigger (OnEndTouch -> Gravity_1) or respawning resets it.
 const SV_GRAVITY = 800;
 /** @type {Map<number, number>} player slot -> gravity scale (only non-1 values are stored) */
 const gravityBySlot = new Map();
@@ -76,7 +77,8 @@ def run(m, c):
         m.delp(e, 'gravity')
         if m.P(e, 'wait') is None: m.setp(e, 'wait', '0')
         m.add_conn(e, 'OnStartTouch', c.script, 'RunScriptInput', 'Gravity_%g' % g)
-    c.log.append('%d trigger_gravity (does nothing to players in CS2) -> trigger_multiple firing script Gravity_<scale> on touch (scales %s); names/filters/Enable/Disable kept' % (len(tg), sorted(c.gravities)))
+        if g != 1: m.add_conn(e, 'OnEndTouch', c.script, 'RunScriptInput', 'Gravity_1'); c.gravities.add(1.0)
+    c.log.append('%d trigger_gravity (does nothing to players in CS2) -> trigger_multiple firing script Gravity_<scale> on touch and Gravity_1 on leaving (scales %s); names/filters/Enable/Disable kept' % (len(tg), sorted(c.gravities)))
 
 def patch_script(js, gravities):
     """Add the gravity section to an existing <addon>_io.js (follow-up pass)."""

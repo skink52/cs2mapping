@@ -12,7 +12,7 @@
 
 - 2026-10-16: stages A–C in the second pipeline batch.
 - 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 22 Low → 33 Low, 14 Lower, 1 Lowest; hint volume in billion cubic units Low 26.0, Lowest 108.1 → Low 7.9, Lower 2.9, Lowest 118.8. In vis terms the map is open: it is enclosed only by toolsnodraw meshes, which vis ignores. Not changed; if vis culling turns out poor, the enclosure needs toolsskybox faces. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
-- 2026-10-19: the 6 trigger_gravity (scales 0.2, 0.3, 0.5, 1) the clean had left as TO CHECK → trigger_multiples firing script `Gravity_<scale>` (new pipeline `gravity` pass, run as a stage D follow-up). Backup: `prefabs+backups\mg_galaxy_course_pre_gravity_2026-10-19.vmap`.
+- 2026-10-19: the 6 trigger_gravity (scales 0.2, 0.3, 0.5, 1) the clean had left as TO CHECK → trigger_multiples firing script `Gravity_<scale>` on touch and `Gravity_1` on leaving (new pipeline `gravity` pass, run as a stage D follow-up). Backup: `prefabs+backups\mg_galaxy_course_pre_gravity_2026-10-19.vmap`.
 
 ## What the cleanup did
 

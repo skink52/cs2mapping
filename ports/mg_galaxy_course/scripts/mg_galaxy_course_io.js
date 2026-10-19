@@ -4,7 +4,7 @@ import { Instance, CSPlayerPawn, CSPlayerController, CSMoveType } from "cs_scrip
 // Everything here is driven by `mg_galaxy_course_io_script` -> RunScriptInput <input name>, with the activator passed through.
 //
 //   Cmd_<n>     replaces point_servercommand (chat messages / cvars)
-//   Gravity_<scale> replaces trigger_gravity (activator only, 1 = back to normal; sticks until the next gravity trigger)
+//   Gravity_<scale> replaces trigger_gravity (activator only, 1 = back to normal; the trigger fires Gravity_1 on leaving)
 
 // ---------------------------------------------------------------- point_servercommand replacement
 // CS2 servers block most point_servercommand commands, so the map's chat messages / cvars are sent from script instead.
@@ -32,7 +32,7 @@ Instance.SetThink(() => {
 
 // ---------------------------------------------------------------- trigger_gravity replacement (does nothing to players in CS2)
 // CS2 players have no gravity scale, so while a player is airborne the script gives back the part of sv_gravity the
-// scale removes (0.2 -> 80% of 800 pushed back up every tick). The scale sticks until another gravity trigger or a respawn.
+// scale removes (0.2 -> 80% of 800 pushed back up every tick). Leaving the trigger (OnEndTouch -> Gravity_1) or respawning resets it.
 const SV_GRAVITY = 800;
 /** @type {Map<number, number>} player slot -> gravity scale (only non-1 values are stored) */
 const gravityBySlot = new Map();

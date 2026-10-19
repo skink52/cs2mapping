@@ -32,4 +32,4 @@ Follow-up pass (2026-10-18): vis compile time (visfit)
 Follow-up pass (2026-10-19): gravity
 - 6 trigger_gravity (does nothing to players in CS2) -> trigger_multiple firing script Gravity_<scale> on touch (scales [0.2, 0.3, 0.5, 1.0]); names/filters/Enable/Disable kept
 - pruned 1 orphaned elements
-
+- 2026-10-19: the 3 low-gravity trigger_multiples also fire Gravity_1 OnEndTouch, so gravity returns to normal on leaving the zone
