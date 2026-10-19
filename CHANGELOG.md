@@ -9,6 +9,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   firing script `Gravity_<scale>` on touch; the script adds back `(1 - scale) * 800 * dt` of vertical velocity while airborne (the Mario Party / yolo method); OnEndTouch fires `Gravity_1` so leaving the zone restores normal gravity.
   Stage D patches the section into the map's existing `<addon>_io.js`. trigger_gravity is no longer a TO CHECK line.
 - **mg_galaxy_course**: its 6 trigger_gravity (0.2, 0.3, 0.5, 1) scripted with the new pass. Untested in game.
+- **mg_simpsons_course**: its 2 trigger_gravity (0.5, 1) scripted with the same pass. Untested in game.
 
 ## 2026-10-18
 

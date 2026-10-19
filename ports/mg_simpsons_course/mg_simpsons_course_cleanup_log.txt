@@ -31,3 +31,8 @@ Follow-up pass (2026-10-18): vis compile time (visfit)
 - hint volume (billion cubic units): before Low 24.5, Lowest 213.8, after Low 10.3, Lower 0.9, Lowest 261.3
 - sky shells: 2 of 27 moondome meshes set to Exclude from Vis (they bound no playable air that would be open without them); 25 kept
 - TO CHECK: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium); backup in csgo_addons\prefabs+backups\pre_vis_2026-10-18
+
+Follow-up pass (2026-10-19): gravity
+- 2 trigger_gravity (does nothing to players in CS2) -> trigger_multiple firing script Gravity_<scale> on touch and Gravity_1 on leaving (scales [0.5, 1.0]); names/filters/Enable/Disable kept
+- pruned 0 orphaned elements
+
