@@ -3,6 +3,10 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-20
+
+- `scripts/vmap_refs.py` scans the .vmap + prefabs for used materials/models (stock CS2 filtered); `post_import_cleanup.py` now runs off that list by default (`--refs` for the old importer refs.txt behaviour).
+
 ## 2026-10-19
 
 - **Pipeline: `gravity` pass** (`tools/gravity.py`, in stage C by default and `stage_d.py ... gravity` for ports already cleaned). trigger_gravity → trigger_multiple

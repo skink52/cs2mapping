@@ -8,8 +8,13 @@ aborts the ENTIRE run on the first model/material it can't handle
 a large map "it died" can mean anything from "barely started" to
 "everything imported fine but never got compiled".
 
-This script never touches the .vmf/.vmap step. Everything it does is
-driven off the addon's own <addon_name>_refs.txt.
+This script never edits the .vmap. By default it is driven off the .vmap
+itself: vmap_refs.py (next to this file) walks <addon>.vmap and every prefab
+it references and writes <addon>_vmap_refs.txt with the materials and models
+the map actually uses, minus stock CS2 ones. That catches what the importer's
+own <addon>_refs.txt missed (prefab contents, things the importer died
+before). Pass --refs to use the importer's refs.txt instead; if the vmap is
+missing (importer died before writing it) the refs.txt is used automatically.
 
 USAGE
 -----
@@ -183,9 +188,13 @@ def needs_compile(source_path, compiled_path):
 
 
 def strip_mdls_from_refs(filename):
-    refs = utl.ReadTextFile(filename)
-    mdls, others = [], []
-    utl.SplitMdlFromRefs(mdls, others, refs)
+    if filename.endswith("_vmap_refs.txt"):   # our own file: plain "file" lines, no importer options
+        with open(filename) as f:
+            mdls = [m for m in VMT_PATTERN.findall(f.read()) if m.lower().endswith(".mdl")]
+    else:
+        refs = utl.ReadTextFile(filename)
+        mdls, others = [], []
+        utl.SplitMdlFromRefs(mdls, others, refs)
     mdlfilename = filename.replace("_refs.txt", "_mdl_lst.txt")
     utl.EnsureFileWritable(mdlfilename)
     with open(mdlfilename, "w") as f:
@@ -600,6 +609,11 @@ def main():
         " content\\csgo_addons\\ and game\\csgo_addons\\",
     )
     parser.add_argument(
+        "--refs",
+        action="store_true",
+        help="drive the run off the importer's <addon>_refs.txt instead of scanning the .vmap",
+    )
+    parser.add_argument(
         "--steam-root",
         default=STEAM_CSGO_ROOT,
         help="Override the base 'Counter-Strike Global Offensive' folder"
@@ -624,7 +638,18 @@ def main():
         print("ERROR: S2_CONTENT_ADDON not found: %s" % S2_CONTENT_ADDON)
         return
 
-    REFS_FILE = find_refs_file()
+    REFS_FILE = None
+    vmap_path = os.path.join(S2_CONTENT_ADDON, "maps", S2_ADDON_NAME + ".vmap")
+    if not args.refs and os.path.exists(vmap_path):
+        try:
+            import vmap_refs
+            REFS_FILE = vmap_refs.build(S2_ADDON_NAME, args.steam_root)[0]
+        except Exception as e:
+            print("!! vmap scan failed (%s) - falling back to the importer's refs.txt" % e)
+    elif not args.refs:
+        print("Note: %s not found (importer died before writing it?) - using the importer's refs.txt" % vmap_path)
+    if REFS_FILE is None:
+        REFS_FILE = find_refs_file()
     if REFS_FILE is None:
         print(
             "ERROR: could not find '%s_refs.txt' or '%s_prefab_refs.txt' under %s\\maps"

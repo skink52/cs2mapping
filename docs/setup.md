@@ -13,7 +13,7 @@ folders but can't start programs there.
 | `docs/pipeline.md` | `C:\source1\cs2port\tools\README.md` **and** `C:\source1\cs2port\cs2_port_pipeline.md` |
 | `scripts/run_import.bat`, `run_build.bat`, `build_maps.ps1` | `C:\source1\cs2port\` |
 | `scripts/make_import_map_auto.py` | `C:\source1\cs2port\` - run once (below); it writes `C:\source1\cs2port\import_map_auto.py` |
-| `scripts/post_import_cleanup.py`, `scripts/modelsfromrefs.py` | `<CS2>\game\csgo\import_scripts\` (next to Valve's `import_map_community.py`, they import its `utils`) |
+| `scripts/post_import_cleanup.py`, `scripts/vmap_refs.py`, `scripts/modelsfromrefs.py` | `<CS2>\game\csgo\import_scripts\` (next to Valve's `import_map_community.py`, they import its `utils`) |
 | `data/existing_ports.txt` | `C:\source1\cs2port\existing_ports.txt` (the PC copy is the live one) |
 | `ports/<addon>/scripts/*.js` | `<CS2>\content\csgo_addons\<addon>\maps\scripts\` (pipeline ports) or `...\<addon>\scripts\` (older jail ports) |
 
