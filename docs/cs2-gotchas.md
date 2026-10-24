@@ -21,6 +21,7 @@ automatically in stage C (see [pipeline.md](pipeline.md)).
 | CS:GO materials with no source anywhere (custom textures not packed in the BSP). | Stage C rebuilds them from CS:GO's VPK if they're stock CS:GO, otherwise swaps in the closest stock CS2 material and flags it. Custom decals are left alone and flagged, because a random stock decal looks worse. |
 | A prop using a player model (a `tm_balkan` prop on mg_simpsons_course) makes the importer convert that model's whole animation set (2,654 animations). | Slow, not broken. Let it run. |
 | VTFCmd's `-output` flag flattens the folder tree (all PNGs land in one folder by bare name). | Leave out `-output` so each PNG is written next to its VTF. |
+| The importer sanitises asset paths with spaces (`materials/schooufi texture/x.vmt` is referenced as `schooufi_texture/x.vmat`, `crash bandicoot/` → `crash_bandicoot/`), but `post_import_cleanup.py` converts the textures under their real names, so the vmap points at files that don't exist and the assets pass substitutes random stock materials. | `tools/matnames.py <addon> <root>` remaps the refs to the addon's real file names (needs `content_files_<addon>.json`). Run it before `alpha,assets`. mg_antique_course / mg_crash_bandicoot_course, 24 Oct 2026. |
 
 ## Models (cs_mdl_import)
 

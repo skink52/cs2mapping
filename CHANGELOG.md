@@ -5,6 +5,16 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-10-24
 
+- **Three new ports from Briar's CS:GO minigames folder**: mg_insomnia_course (Charon), mg_crash_bandicoot_course, mg_antique_course (ScHoOuFi), stages A–C done the same day, builds queued. Per-map notes in `ports/`.
+- **Unattended runs**: `scripts/run_import_then_build.bat` runs stage B, then polls for `C:\source1\cs2port\build_go.txt` (Claude writes it after stage C) and runs stage D. Nested batch files are called with `< nul` so their `pause` doesn't block. Claude follows up with scheduled checks.
+- **Pipeline rule change (Zach, 24 Oct)**: lasers that did damage in CS:GO get a `trigger_hurt` even where the original had none. New `tools/laserhurt.py` (run after stage C; reads the CS:GO VMF for damage/targets, adds an 8-unit trigger_hurt box per laser, same start state, Enable/Disable/Toggle I/O copied).
+- **Importer-sanitised material names**: the importer rewrites `materials/schooufi texture/x.vmat` to `schooufi_texture/x.vmat` (spaces → underscores) while post_import_cleanup writes the real names, so the assets pass thought 25 materials were missing and swapped them for random stock ones. New `tools/matnames.py <addon> <root>` points the vmap back at the real files; run it before the assets pass. Gotcha recorded.
+- `tools/run_pass.py <addon> <root> passes` runs stage C passes (e.g. `alpha,assets`, `sky`) on an already-cleaned map and appends to the cleanup log; `tools/run_c.py` runs stage C with a stubbed CS2 VPK when `game\csgo\pak01_dir.vpk` isn't reachable (sky/sounds still work, assets/alpha skipped).
+- Stock CS:GO textures for the assets pass can come from the extracted CS:GO content in `<CS2>\csgo\materials` (copy them into `<root>/embedded/<addon>/materials`) when the CS:GO VPK chunks aren't on the PC.
+- Workshop sweep for the remaining Briar minigames (83 maps): 22 with no CS2 port, 30 with an existing one, all recorded as `[ext. port]` lines in existing_ports.txt. Steam account 76561197969701400 ("gordon") is bulk-porting the same folder (24 mg ports, 19–21 Oct 2026).
+
+### earlier the same day
+
 - mg_metal_course_level_2: HE grenade glows (env_particle_glow, parented to he2–he13) now follow the carrier and the thrown grenade: per-colour following glow particles + script follow. New `tools/glowfix.py` for parented env_particle_glows on future ports; gotcha recorded.
 - de_nuketown: 122 dropped displacements rebuilt (30 more in the old 3D skybox skipped); 8 custom materials built from the BSP pakfile. `disprestore.py`: flat fan-triangulated back (smaller vmaps, needed to stay under the 30 MB transfer limit) and skip boxes.
 - mg_kohztec_course: all 61 displacements were missing after import; rebuilt from the BSP with new `tools/disprestore.py` (closed meshes, CS:GO texture projection; blendgrassgravel001a/road01_cheap get stand-ins). Import logs show the same drop ("Found a displacement missing a needed subkey.") on de_nuketown (152, restored) and mg_faohu_course (2, not yet restored).

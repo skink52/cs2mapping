@@ -1,0 +1,26 @@
+Cleanup report for addon: mg_insomnia_course
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_insomnia_course\maps\mg_insomnia_course_refs.txt
+
+=== MODELS - FAILED TO IMPORT (1) ===
+models\props_furniture\piano.mdl
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (11) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/dev/dev_water3.vmt
+materials/concrete/hr_c/hr_concrete_wall_painted_005b.vmt
+materials/cs_havana/metalfence007a.vmt
+materials/de_train/blendgrassdirt001a.vmt
+materials/carpet/blue04_ssbump.vmt
+materials/dev/dev_water4.vmt
+materials/dev/dev_water2.vmt
+materials/metal/hr_metal/hr_metal_floor_001_grey.vmt
+materials/de_nuke/nukblenddirtgrass.vmt
+materials/concrete/hr_c/hr_concrete_polished_001_dark_cheap.vmt
+materials/nature/blendswampmud_aztec.vmt

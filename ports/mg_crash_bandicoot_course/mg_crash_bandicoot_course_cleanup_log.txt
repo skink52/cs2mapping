@@ -1,0 +1,31 @@
+CS2 post-import clean - mg_crash_bandicoot_course (2026-10-24)
+
+- collapsed 6 prefabs into the map, world offsets kept: mg_crash_bandicoot_course_gameplay.vmap (638 nodes, 638 entities), mg_crash_bandicoot_course_environment_prefab.vmap (1727 nodes, 428 entities), mg_crash_bandicoot_course_lighting_prefab.vmap (3 nodes, 3 entities), mg_crash_bandicoot_course_cubemaps_prefab.vmap (0 nodes, 0 entities), mg_crash_bandicoot_course_audio_prefab.vmap (2 nodes, 2 entities), mg_crash_bandicoot_course_nav_prefab.vmap (0 nodes, 0 entities)
+- outputs restored that the importer dropped: 0
+- game_player_equip (unnamed): CS:GO keys ['weapon_knife'] -> CS2 weapon0..weapon21 slots
+- added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> mp_freezetime 0, mp_roundtime 600; only T spawns, but the map already has a game_player_equip giving weapon_knife on spawn (unnamed), so no extra knife equip
+- removed 1 game_score (not in CS2); 1 ApplyScore -> script Score_n
+- removed 1 player_speedmod (dead in CS2); 1 ModifySpeed outputs -> script Speed_n (speeds [0.1])
+- 1 trigger_gravity (does nothing to players in CS2) -> trigger_multiple firing script Gravity_<scale> on touch and Gravity_1 on leaving (scales [-2.0, 1.0]); names/filters/Enable/Disable kept
+- 2 ambient_generics pointed at 2 new soundevents (crashbandicootcourse.chariot, crashbandicootcourse.crash) instead of raw .vsnd paths
+- restored 37 sky brushes (dropped by the importer) as moondome meshes using materials/skybox/jungle_moondome.vmat
+- added point_script mg_crash_bandicoot_course_io_script (maps/scripts/mg_crash_bandicoot_course_io.js)
+- pruned 26 orphaned elements
+- TO CHECK: the importer leaves these out (they're on its exclusion list, mostly cosmetic): 1 func_dustmotes (dust motes), 2 func_precipitation (rain/snow)
+- TO CHECK: overlay materials not converted: materials/realworldtextures2/ground/grass_07.vmat (vmat not in addon)
+- TO CHECK: 1 non-box sky brushes in the VMF were not rebuilt as moondomes
+
+Follow-up pass (2026-10-24): visfit, lights, radar
+- visfit (32-unit voxels): 1954.5 billion cubic units of playable air, 66.3 of it walkable band; hints 108 Low, 81 Lower, 1 Lowest
+- visfit: 1 of 37 sky shell meshes set to Exclude from Vis, 36 kept because they close playable air
+- added 1 stationary light_omni2 to sealed rooms with spawns / teleport destinations that had no light at all
+- stationary lights: 1 of 105 lights switched Static -> Stationary (directlight 3) across 1 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 compartments open to sky left to light_environment
+- radar: rendered from geometry (4467 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/mg_crash_bandicoot_course_radar_psd.png + game resource/overviews/mg_crash_bandicoot_course.txt (pos -6616 13205, scale 17.88)
+- pruned 0 orphaned elements
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+- displacements: 118 the importer dropped rebuilt from the BSP with disprestore.py (terrain blends, aztec stone, milbeams, rwt grass); their missing CS:GO materials still need the assets pass (CS2 pak01_dir.vpk was not reachable)
+
+Follow-up pass (2026-10-24): alpha, assets
+- built 21 missing materials from the original CS:GO textures: metal_crate_normal, wood_crate_mask, wood_crate_normal, carving01_cheap, carving03b_cheap, hpe_aztec_brokenstone_cheap, hpe_aztec_stone01_cheap, hpe_aztec_stone03_base_cheap, hpe_aztec_stone03_cheap, trim64b_cheap, blendgraveldirt001a, dev_measuregeneric01, dev_measuregeneric01b, dev_measurewall01c, blend_dirt_concrete_07_aztec, blend_dirt_roots_01, blend_grass_concrete_01, blendswampmud_aztec, rockwall007, grass_09, lava_magma_02
+- pruned 0 orphaned elements
+

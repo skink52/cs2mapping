@@ -1,0 +1,27 @@
+Cleanup report for addon: mg_crash_bandicoot_course
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_crash_bandicoot_course\maps\mg_crash_bandicoot_course_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (12) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/de_train/blendgraveldirt001a.vmt
+materials/de_aztec/hpe_aztec_stone03_base_cheap.vmt
+materials/de_aztec/hpe_aztec_stone03_cheap.vmt
+materials/de_aztec/carving01_cheap.vmt
+materials/de_aztec/hpe_aztec_stone01_cheap.vmt
+materials/de_aztec/trim64b_cheap.vmt
+materials/nature/blend_grass_concrete_01.vmt
+materials/de_aztec/hpe_aztec_brokenstone_cheap.vmt
+materials/de_aztec/carving03b_cheap.vmt
+materials/nature/blend_dirt_roots_01.vmt
+materials/nature/blend_dirt_concrete_07_aztec.vmt
+materials/nature/blendswampmud_aztec.vmt

@@ -1,0 +1,52 @@
+CS2 post-import clean - mg_antique_course (2026-10-24)
+
+- collapsed 6 prefabs into the map, world offsets kept: mg_antique_course_gameplay.vmap (414 nodes, 414 entities), mg_antique_course_environment_prefab.vmap (2067 nodes, 954 entities), mg_antique_course_lighting_prefab.vmap (3 nodes, 3 entities), mg_antique_course_cubemaps_prefab.vmap (24 nodes, 24 entities), mg_antique_course_audio_prefab.vmap (94 nodes, 94 entities), mg_antique_course_nav_prefab.vmap (0 nodes, 0 entities)
+- outputs restored that the importer dropped: 4 (e.g. prop_dynamic  -> tempg.ForceSpawn(); trigger_hurt  -> !self.Disable(); trigger_hurt  -> !self.Enable(); trigger_hurt  -> command.Command(playgamesound items/smallmedkit1.wav))
+- 97 func_wall_toggle -> func_brush (Solidity Toggle, StartDisabled from "Starts Invisible"); 0 TurnOn/TurnOff inputs -> Enable/Disable
+- game_player_equip (unnamed): CS:GO keys ['weapon_knife'] -> CS2 weapon0..weapon21 slots
+- 2 trigger_push (speeds [250.0]; CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500); names/filters/Enable/Disable kept
+- removed 1 point_servercommand; 1 Command outputs -> script Cmd_n (CS2 servers block point_servercommand)
+- added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> mp_freezetime 0, mp_roundtime 600; only T spawns, but the map already has a game_player_equip giving weapon_knife on spawn (unnamed), so no extra knife equip
+- removed 6 game_score (not in CS2); 28 ApplyScore -> script Score_n
+- 85 ambient_generics pointed at 20 new soundevents (antiquecourse.bim1, antiquecourse.bombe_pot2, antiquecourse.bulle_2, antiquecourse.by_schooufi, antiquecourse.criezm, antiquecourse.g2nk_js, antiquecourse.impact, antiquecourse.invasionpenis, antiquecourse.longblick, antiquecourse.missionaccomplie2, antiquecourse.ovni, antiquecourse.petard, antiquecourse.rire_demo, antiquecourse.ruborangeact2, antiquecourse.rupee_get___the_legend_of_zelda__twilight_princess, antiquecourse.salle_s, antiquecourse.sinther2, antiquecourse.tremblemen, antiquecourse.two_steps_from_hell___after_the_fall, antiquecourse.two_steps_from_hell___strength_of_an_empire) instead of raw .vsnd paths
+- env_sky materials/skybox/sky_cerulean.vmat: rebuilt from the six CS:GO faces
+- restored 10 sky brushes (dropped by the importer) as moondome meshes using materials/skybox/sky_cerulean_moondome.vmat
+- 22 env_laser + 0 env_beam (CS2 cannot spawn them) -> 22 never-solid func_brush beams between their end points (mutual laser pairs drawn once), coloured self-illuminated laser materials materials/lasers/laser_<rgb>.vmat; 22 TurnOn/TurnOff/Toggle -> Enable/Disable/Toggle; no damage added
+- added point_script mg_antique_course_io_script (maps/scripts/mg_antique_course_io.js)
+- pruned 154 orphaned elements
+- TO CHECK: 1 VMF entities with outputs could not be matched 1:1 in the vmap - their outputs were not checked
+- TO CHECK: the importer leaves these out (they're on its exclusion list, mostly cosmetic): 1 point_spotlight (spotlight beams), 106 func_dustmotes (dust motes)
+- TO CHECK: the map had a CS:GO 3D skybox (sky_camera at 450 -3523 144, scale 64): its geometry is now ordinary geometry in the map and CS2 ignores sky_camera - move it to a separate skybox map + skybox_reference, or delete it
+- TO CHECK: point_viewcontrol cam1 - check it still works in CS2
+- TO CHECK: 1 game_ui (game1) - not converted automatically, needs a look
+- TO CHECK: ambient_generic smission3 is set to loop but sounds/missionaccomplie2.mp3 has no loop cue points, so it will play once in CS2
+- TO CHECK: ambient_generic salle s is set to loop but sounds/salle_s.mp3 has no loop cue points, so it will play once in CS2
+- TO CHECK: ambient_generic ov is set to loop but sounds/ovni.mp3 has no loop cue points, so it will play once in CS2
+- TO CHECK: ambient_generic peta is set to loop but sounds/petard.mp3 has no loop cue points, so it will play once in CS2
+- TO CHECK: ambient_generic ruru is set to loop but sounds/ruborangeact2.mp3 has no loop cue points, so it will play once in CS2
+- TO CHECK: ambient_generic penisa is set to loop but sounds/invasionpenis.mp3 has no loop cue points, so it will play once in CS2
+- TO CHECK: ambient_generic mus2 is set to loop but sounds/two_steps_from_hell_-_after_the_fall.mp3 has no loop cue points, so it will play once in CS2
+- TO CHECK: ambient_generic mus3 is set to loop but sounds/two_steps_from_hell_-_strength_of_an_empire.mp3 has no loop cue points, so it will play once in CS2
+- TO CHECK: ambient_generic mus1 is set to loop but sounds/g2nk_js.mp3 has no loop cue points, so it will play once in CS2
+- TO CHECK: ambient_generic slend is set to loop but sounds/leloucheost/longblick.mp3 has no loop cue points, so it will play once in CS2
+- TO CHECK: ambient_generic sounds not in the addon (stock CS:GO sounds or not packed in the BSP): sounds/ambient/atmosphere/ambience_base.vsnd, sounds/ambient/atmosphere/cs_metalscrapeverb04.vsnd, sounds/ambient/nature/water_streamloop3.vsnd
+- TO CHECK: overlay materials not converted: materials/boo_textures/{boo_smokeylogo.vmat (vmat not in addon); materials/schooufi texture/tableaux12.vmat (vmat not in addon); materials/schooufi texture/tableaux13.vmat (vmat not in addon); materials/schooufi texture/tableaux14.vmat (vmat not in addon); materials/schooufi texture/tableaux15.vmat (vmat not in addon); materials/schooufi texture/tableaux16.vmat (vmat not in addon); materials/schooufi texture/tableaux19.vmat (vmat not in addon); materials/schooufi texture/tableaux23.vmat (vmat not in addon); materials/schooufi texture/tableaux26.vmat (vmat not in addon); materials/schooufi texture/tableaux28.vmat (vmat not in addon); materials/schooufi texture/tableaux30.vmat (vmat not in addon); materials/schooufi texture/tableaux34.vmat (vmat not in addon); materials/schooufi texture/tabl
+- TO CHECK: these lasers did damage in CS:GO but there is no trigger_hurt along them, so in CS2 they are only visual: l5 at 1216 -849.5 193 (damage 1000), l6 at 1210 -881 177 (damage 1000), l7 at 1229 -899 184 (damage 1000), l8 at 1201 -933 187 (damage 1000), l9 at 1203 -965 173 (damage 1000)
+- TO CHECK: beams with no usable end point, removed: l14, l2, l4, la2, la4
+
+Follow-up pass (2026-10-24): visfit, lights, radar
+- visfit (16-unit voxels): 0.9 billion cubic units of playable air, 0.7 of it walkable band; hints 15 Low, 3 Lower, 1 Lowest
+- visfit: 0 of 10 sky shell meshes set to Exclude from Vis, 10 kept because they close playable air
+- stationary lights: 6 of 138 lights switched Static -> Stationary (directlight 3) across 6 sealed compartments, ranges trimmed so no spot is inside more than 4; 2 compartments open to sky left to light_environment
+- radar: rendered from geometry (569 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/mg_antique_course_radar_psd.png + game resource/overviews/mg_antique_course.txt (pos -1160 616, scale 3.84)
+- pruned 0 orphaned elements
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+- displacements: 24 the importer dropped (lb_text/toile1) rebuilt from the BSP with disprestore.py
+- glowfix: 22 parented env_particle_glows (on func_rotating / func_tanktrain movers) -> following info_particle_system glows (particles/glowfix/glow_<rrggbb>.vpcf, 4 colours); no weapon parents, so no script follow section needed
+- NOTE: run without CS2 pak01_dir.vpk - the assets/alpha passes (missing materials, translucency) still need to be run; stock CS:GO ambient sounds need VPK chunks 119 and 137
+
+Follow-up pass (2026-10-24): alpha, assets
+- built 1 missing materials from the original CS:GO textures: toile1 (alpha)
+- CS:GO water materials (no CS2 equivalent shader) -> stock: materials/liquids/boathouse_water.vmat -> materials/liquids/nuke_water.vmat; materials/mytextures/ringel_waterfall_n3.vmat -> materials/liquids/nuke_water.vmat
+- pruned 0 orphaned elements
+- TO CHECK: models referenced but not in the addon or CS2: models/player/slow/zombie_package/slow_1.vmdl x2

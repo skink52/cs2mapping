@@ -39,6 +39,9 @@ One folder per map. The live status list is `existing_ports.txt` on the PC (snap
 | [mg_metal_course_level_2](mg_metal_course_level_2/) | Stage C done, vis optimised 18 Oct, queued for build |  | 2026-10-16 | cs2port pipeline |
 | [mg_minecraft_adventure](mg_minecraft_adventure/) | Stage C done, vis optimised 18 Oct, queued for build |  | 2026-10-16 | cs2port pipeline |
 | [mg_simpsons_course](mg_simpsons_course/) | Stage C done, vis optimised 18 Oct, queued for build |  | 2026-10-16 | cs2port pipeline |
+| [mg_antique_course](mg_antique_course/) | Stage C done 24 Oct, queued for build |  | 2026-10-24 | cs2port pipeline, unattended |
+| [mg_crash_bandicoot_course](mg_crash_bandicoot_course/) | Stage C done 24 Oct, queued for build |  | 2026-10-24 | cs2port pipeline, unattended |
+| [mg_insomnia_course](mg_insomnia_course/) | Stage C done 24 Oct, queued for build |  | 2026-10-24 | cs2port pipeline, unattended |
 
 ## In progress
 
