@@ -5,7 +5,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-10-24
 
-- mg_kohztec_course: all 61 displacements were missing after import; rebuilt from the BSP with new `tools/disprestore.py` (closed meshes, CS:GO texture projection; blendgrassgravel001a/road01_cheap get stand-ins). Other ports may have lost displacements the same way.
+- mg_kohztec_course: all 61 displacements were missing after import; rebuilt from the BSP with new `tools/disprestore.py` (closed meshes, CS:GO texture projection; blendgrassgravel001a/road01_cheap get stand-ins). Import logs show the same drop ("Found a displacement missing a needed subkey.") on de_nuketown (152) and mg_faohu_course (2); not yet restored.
 
 ## 2026-10-20
 
