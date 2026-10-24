@@ -4,13 +4,15 @@
 |---|---|
 | Status | Stage C done, vis optimised 18 Oct, queued for build |
 | Imported | 2026-10-16 |
-| Map last changed | 2026-10-18 |
+| Map last changed | 2026-10-24 |
 | How | cs2port pipeline |
 
 ## History
 
 - 2026-10-16: stages A–C in the second pipeline batch. Its assets went over in two zips. The extra knife equip was dropped because the map already gives one.
 - 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 48 Low → 87 Low, 103 Lower, 1 Lowest; hint volume in billion cubic units Low 71.8, Lowest 629.9 → Low 39.1, Lower 18.5, Lowest 764.5. Sky shells: 8 of 35 set to Exclude from Vis. The big sky-boxed room in the south-west has no spawn or teleport destination, but it has a button and triggers, so it is treated as playable. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
+
+- 2026-10-24: all 61 displacements (terrain, rock walls, the south-west pit floor) were missing from the vmap: none survived the import. Rebuilt from the BSP's dispinfo/dispverts with `tools/disprestore.py` as closed meshes (displaced surface with the CS:GO texture projection, 4-unit toolsnodraw back and sides). Stand-ins for materials with no CS2 copy in the addon: `nature/blendgrassgravel001a` → `grass/hr_grass/grass_b` (10), `de_aztec/road01_cheap` → `de_aztec/hpe_aztec_stone01_dirt` (2). No vertex-paint blending. Backup: `maps\mg_kohztec_course_pre_disp_2026-10-24.vmap.bak`. Every other brush face in the BSP was checked against the vmap and is present; the only other gap is the two toolsblack func_illusionary areaportal-window fade brushes, which CS2 has no use for.
 
 ## What the cleanup did
 
@@ -40,6 +42,8 @@
 - [`scripts/mg_kohztec_course_io.js`](scripts/mg_kohztec_course_io.js)
 
 ## Open / to check
+
+- Restored displacements: check the grass/stone stand-ins look right and that seams between neighbouring displacements line up.
 
 - Vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium).
 - the importer leaves these out (they're on its exclusion list, mostly cosmetic): 1 point_spotlight (spotlight beams), 2 func_precipitation (rain/snow)

@@ -3,6 +3,10 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-24
+
+- mg_kohztec_course: all 61 displacements were missing after import; rebuilt from the BSP with new `tools/disprestore.py` (closed meshes, CS:GO texture projection; blendgrassgravel001a/road01_cheap get stand-ins). Other ports may have lost displacements the same way.
+
 ## 2026-10-20
 
 - `scripts/vmap_refs.py` scans the .vmap + prefabs for used materials/models (stock CS2 filtered); `post_import_cleanup.py` now runs off that list by default (`--refs` for the old importer refs.txt behaviour).
