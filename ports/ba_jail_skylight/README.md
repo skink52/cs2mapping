@@ -4,13 +4,14 @@
 |---|---|
 | Status | Ported, with added scripted features (jailbreak map) |
 | Imported | 2026-08-30 |
-| Map last changed | 2026-09-28 |
+| Map last changed | 2026-10-24 (radar/loading screen/credits only) |
 | How | manual (Valve importer + post_import_cleanup.py) |
 
 8 bumper cars (1-4 blue, 5-8 red: physbox `carN` + four thrusters each, driven remote-control style, crouch/jump to get out), a remote-piloted helicopter (six thrusters, +use in and out, optional camera anchor), weapon buffs (ssg08 = invisible, mp5sd = about 2x speed, gated so loadout copies don't count), and a keypad door. The servers run CounterStrikeSharp with a loadout picker and a Last Request system, which the buff gating had to work around. Separate 3D skybox map.
 
 ## History
 
+- 2026-10-24: Radar, 1 loading-screen image, credits (JJJohan, custom models IVORK). Assets compile with `run_build.bat "assets ba_jail_skylight"`.
 - 2026-09-28 (file date): the keypad was rebuilt as a cs_script code door. Map entities are re-created every round, so the script re-hooks the buttons on every round start.
 
 ## Import report

@@ -3,6 +3,10 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-24 (evening)
+
+- **Jailbreak maps: radars, loading screens, credits** (ba_jail_lightsout, ba_jail_seaside, ba_jail_skylight, jb_mangaroons, jb_sides_cs2, jb_water_prison_cs2). Radar rendered with `radar.py` for all six (jb_sides_cs2's RadGen radar was broken and is replaced; its old `_radar.tga/_radar_tga.vtex` files are still in the content folder). Loading-screen backgrounds from the Workshop preview images (Hammer5Tools layout, documented in pipeline.md); jb_mangaroons uses the full 1920x1080 `Mangaroons.png`, the rest are 637x358 Steam thumbnails upscaled. `COMMUNITYMAPCREDITS:` credits written for skylight (JJJohan, models IVORK), mangaroons (gReeN), sides (JJ and ab), water_prison (TomGreen, CS:GO port JJ); seaside's existing file was missing the header line and was rewritten. jb_renegade skipped (compiled for someone else). `radar.py` gained a `pct` argument (percentile trimmed off the floor extent; 0 keeps every floor - jb_sides_cs2's long west corridor was clipped at the default 0.5).
+
 ## 2026-10-24
 
 - `prep.py` no longer copies `addoninfo.txt` / `readonly_tools_asset_info.bin` from addon_template into the game addon: they made the launcher list the three new addons as read-only example maps (delete them by hand on existing addons).

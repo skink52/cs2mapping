@@ -35,6 +35,7 @@ These are the standing rules every port follows. The pipeline applies most of th
 - **Lasers.** CS2 can't spawn `env_laser` / `env_beam`. Replace each with a never-solid `func_brush` drawn between its end points with a
   self-illuminated laser material in the beam's colour. Add damage only where a `trigger_hurt` already exists. If a laser did damage
   with no `trigger_hurt` along it, flag it rather than inventing one. If a trigger_hurt moves (parented to a door / mover), parent the beam to the same mover.
+- **Loading screen.** Every map gets a background image (Workshop preview) in `panorama/images/map_icons/screenshots/<res>/<map>_png.png` + `.vtex` (see pipeline.md).
 - **Radar.** Every map gets a minimap: `panorama/images/overheadmaps/<map>_radar_psd.png` + `.vtex`, and `resource/overviews/<map>.txt` in game.
   Stacked maps (one spawn above another) get vertical sections, one image per level.
 - **Sky.** Sky brushes the importer dropped come back as moondome boxes using the map's `env_sky` (rebuilt from the six CS:GO faces

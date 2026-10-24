@@ -60,6 +60,9 @@ the PC through the linked-computer file tools. Hammer must stay closed while Cla
 ## Loading-screen credit
 CS2 reads the loading-screen text from `game\csgo_addons\<addon>\maps\<map>.txt` (the same file Hammer5Tools' Loading Editor writes): first line `COMMUNITYMAPCREDITS:`, then the text, e.g. `Original map by <author>` / `CS:GO port by <porter>` (when the map credits one) / `Ported to CS2 by skink52`. No map rebuild needed.
 
+## Loading-screen background images
+Same layout Hammer5Tools' Loading Editor writes: `content\csgo_addons\<addon>\panorama\images\map_icons\screenshots\{1080p,720p,360p}\<map>_png.png` + `.vtex` (height 1080/720/360, same vtex as a radar but `linear` colour space, max dimension 2048), more images as `<map>_1_png`, `<map>_2_png`… Compile them with `run_build.bat "assets <addon>"` (the panorama pass is recursive). Steam's image CDN is blocked from Claude's workspace, so Workshop images have to be saved on the PC first (Zach drops them in a linked folder); the 637x358 thumbnails Steam shows on the item page are upscaled, the full-size originals look better.
+
 ## Follow-up passes on a map you've already edited in Hammer
 `stage_d.py <addon> <root> beams,lights,alpha,radar,daylight,skyvis,visfit,gravity` runs only those passes on the current vmap. It keeps your Hammer edits and appends to the cleanup log.
 `stage_d.py <addon> <root> visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with Lower instead of Low everywhere (for a map whose vis merge stalls).

@@ -70,7 +70,7 @@ OVERVIEW = '''// Overview (radar) description for %(map)s: rendered from the map
 '''
 SKIP = ('materials/tools/', 'moondome', 'skybox')
 
-def run(m, c, size=1024, ss=2):
+def run(m, c, size=1024, ss=2, pct=0.5):   # pct: percentile trimmed off each edge of the floor extent (0 = keep every floor)
     polys = list(lighting.world_polys(m))
     for e in m.entities():                         # solid brush entities (doors, func_brush, breakables...) count too
         if m.cls(e).startswith(('trigger_', 'func_buyzone', 'func_bomb_target', 'func_water', 'visibility')): continue
@@ -114,7 +114,7 @@ def run(m, c, size=1024, ss=2):
             kept = [P for P in floors if ok(lab_at(P.mean(0) + [0, 0, 40]))]
             if kept: floors = kept
     allp = np.concatenate(floors)
-    lo = np.percentile(allp, 0.5, axis=0); hi = np.percentile(allp, 99.5, axis=0)
+    lo = np.percentile(allp, pct, axis=0); hi = np.percentile(allp, 100 - pct, axis=0)
     span = max(hi[0] - lo[0], hi[1] - lo[1]) * 1.06 + 256
     cx, cy = (lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2
     px, py = cx - span / 2, cy + span / 2
