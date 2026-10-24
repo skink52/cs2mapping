@@ -1,6 +1,7 @@
 """Rebuild CS:GO displacements the importer dropped, straight from the BSP (dispinfo/dispverts), as closed meshes:
-displaced top surface with the original texture projection, 4-unit toolsnodraw back and sides.
-Usage: disprestore.py <vmap in> <bsp> <vmap out>   (SUB maps materials with no CS2 copy to a stand-in)"""
+displaced top surface with the original texture projection, toolsnodraw sides and a flat toolsnodraw back 4 units below its lowest point.
+Usage: disprestore.py <vmap in> <bsp> <vmap out> [skip box x0,y0,z0,x1,y1,z1 ...]
+(SUB maps materials with no CS2 copy to a stand-in; displacements centred in a skip box, e.g. an old 3D skybox, are left out)"""
 import struct, numpy as np
 
 def load_disps(path):
@@ -50,7 +51,8 @@ import dmx
 from vmapedit import Map
 
 VMAP, BSP, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
-SUB = {'nature/blendgrassgravel001a': 'grass/hr_grass/grass_b', 'de_aztec/road01_cheap': 'de_aztec/hpe_aztec_stone01_dirt'}
+SUB = {'nature/blendgrassgravel001a': 'grass/hr_grass/grass_b', 'de_aztec/road01_cheap': 'de_aztec/hpe_aztec_stone01_dirt',
+       'de_train/blendgrassdirt002a': 'textures/mygrass3'}  # stand-ins for materials with no CS2 copy (mygrass3: de_nuketown's own grass)
 NODRAW = b'materials/tools/toolsnodraw.vmat'
 THICK = 4.0
 
@@ -83,8 +85,7 @@ def build(d):
     VN = np.cross(gu, gv)
     if np.mean(np.einsum('ijk,k->ij', VN, N0)) < 0: VN = -VN
     VN /= np.linalg.norm(VN, axis=2, keepdims=True) + 1e-12
-    top = P.reshape(-1, 3); bot = (P - VN * THICK).reshape(-1, 3)
-    verts = np.vstack([top, bot]); off = n * n
+    top = P.reshape(-1, 3); off = n * n
     idx = lambda r, c: r * n + c
     faces = []  # (loop, kind)
     Bf = B.reshape(-1, 3)
@@ -94,18 +95,22 @@ def build(d):
             q = [idx(r, c), idx(r, c + 1), idx(r + 1, c + 1), idx(r + 1, c)]
             if flip: q = q[::-1]
             faces.append((q, 'top'))
-            faces.append(([x + off for x in q[::-1]], 'bot'))
-    # sides: walk the boundary in the same direction as the top faces use it
+    # flat back THICK below the lowest point, joined to the top's boundary by side quads
     ring = [idx(0, c) for c in range(n - 1)] + [idx(r, n - 1) for r in range(n - 1)] + \
            [idx(n - 1, c) for c in range(n - 1, 0, -1)] + [idx(r, 0) for r in range(n - 1, 0, -1)]
     tophe = set()
     for q, k in faces:
-        if k == 'top':
-            for i in range(4): tophe.add((q[i], q[(i + 1) % 4]))
+        for i in range(4): tophe.add((q[i], q[(i + 1) % 4]))
+    if (ring[0], ring[1]) not in tophe: ring = ring[::-1]  # ring now follows the top's boundary half-edges
+    dmin = (top @ N0).min() - THICK
+    back = {v: off + i for i, v in enumerate(ring)}
+    verts = np.vstack([top] + [top[v] - N0 * (top[v] @ N0 - dmin) for v in ring])
+    ctr_b = len(verts); verts = np.vstack([verts, verts[off:].mean(0)])
     for i in range(len(ring)):
-        x, y = ring[i], ring[(i + 1) % len(ring)]
-        a, b = (x, y) if (x, y) in tophe else (y, x)
-        faces.append(([b, a, a + off, b + off], 'side'))
+        a, b = ring[i], ring[(i + 1) % len(ring)]
+        faces.append(([b, a, back[a], back[b]], 'side'))
+    bl = [back[v] for v in ring[::-1]]
+    for i in range(len(bl)): faces.append(([ctr_b, bl[i], bl[(i + 1) % len(bl)]], 'back'))  # fan, no 64-gon
     # half-edges
     he_id = {}; nund = 0
     for q, _ in faces:
@@ -125,11 +130,11 @@ def build(d):
     s, t = d['s'], d['t']; su = 1 / np.linalg.norm(s[:3]); sv = 1 / np.linalg.norm(t[:3])
     au = list(s[:3] * su) + [float(s[3])]; av = list(t[:3] * sv) + [float(t[3])]
     W, H = max(d['w'], 1), max(d['h'], 1)
-    baseflat = np.vstack([B.reshape(-1, 3), B.reshape(-1, 3)])
+    baseflat = B.reshape(-1, 3)
     fv_tc = [None] * nhe; fv_n = [None] * nhe; fv_t = [None] * nhe
-    VNf = np.vstack([VN.reshape(-1, 3), -VN.reshape(-1, 3)])
+    VNf = VN.reshape(-1, 3)
     for f, (q, k) in enumerate(faces):
-        pts = verts[q]; fn = np.cross(pts[1] - pts[0], pts[2] - pts[0]); fn /= np.linalg.norm(fn) + 1e-12
+        pts = verts[q]; fn = sum(np.cross(pts[i], pts[(i + 1) % len(q)]) for i in range(len(q))); fn /= np.linalg.norm(fn) + 1e-12
         for i in range(len(q)):
             h = he_id[(q[i - 1], q[i])]  # half-edge arriving at q[i]
             v = q[i]
@@ -178,6 +183,12 @@ def build(d):
     return node, mat
 
 D = load_disps(BSP)
+SKIP = [np.array([float(v) for v in a.split(',')]).reshape(2, 3) for a in sys.argv[4:]]
+def skipped(d):
+    c = d['pos'].reshape(-1, 3).mean(0)
+    return any(np.all(c >= b[0]) and np.all(c <= b[1]) for b in SKIP)
+ns = sum(map(skipped, D)); D = [d for d in D if not skipped(d)]
+if ns: print('skipped', ns, 'displacements inside skip boxes')
 from collections import Counter
 used = Counter()
 for d in D:
