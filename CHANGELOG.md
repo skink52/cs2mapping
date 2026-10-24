@@ -5,6 +5,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-10-24
 
+- `prep.py` no longer copies `addoninfo.txt` / `readonly_tools_asset_info.bin` from addon_template into the game addon: they made the launcher list the three new addons as read-only example maps (delete them by hand on existing addons).
 - **Three new ports from Briar's CS:GO minigames folder**: mg_insomnia_course (Charon), mg_crash_bandicoot_course, mg_antique_course (ScHoOuFi), stages A–C done the same day, builds queued. Per-map notes in `ports/`.
 - **Unattended runs**: `scripts/run_import_then_build.bat` runs stage B, then polls for `C:\source1\cs2port\build_go.txt` (Claude writes it after stage C) and runs stage D. Nested batch files are called with `< nul` so their `pause` doesn't block. Claude follows up with scheduled checks.
 - **Pipeline rule change (Zach, 24 Oct)**: lasers that did damage in CS:GO get a `trigger_hurt` even where the original had none. New `tools/laserhurt.py` (run after stage C; reads the CS:GO VMF for damage/targets, adds an 8-unit trigger_hurt box per laser, same start state, Enable/Disable/Toggle I/O copied).

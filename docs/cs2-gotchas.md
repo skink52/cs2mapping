@@ -22,6 +22,7 @@ automatically in stage C (see [pipeline.md](pipeline.md)).
 | A prop using a player model (a `tm_balkan` prop on mg_simpsons_course) makes the importer convert that model's whole animation set (2,654 animations). | Slow, not broken. Let it run. |
 | VTFCmd's `-output` flag flattens the folder tree (all PNGs land in one folder by bare name). | Leave out `-output` so each PNG is written next to its VTF. |
 | The importer sanitises asset paths with spaces (`materials/schooufi texture/x.vmt` is referenced as `schooufi_texture/x.vmat`, `crash bandicoot/` → `crash_bandicoot/`), but `post_import_cleanup.py` converts the textures under their real names, so the vmap points at files that don't exist and the assets pass substitutes random stock materials. | `tools/matnames.py <addon> <root>` remaps the refs to the addon's real file names (needs `content_files_<addon>.json`). Run it before `alpha,assets`. mg_antique_course / mg_crash_bandicoot_course, 24 Oct 2026. |
+| An addon shows up in the Workshop Tools launcher as an example map that can't be edited. | `game\csgo_addons\<addon>\` still has the template's `readonly_tools_asset_info.bin` / `addoninfo.txt`. Delete both (working addons have neither). `prep.py` no longer copies them (24 Oct 2026). |
 
 ## Models (cs_mdl_import)
 

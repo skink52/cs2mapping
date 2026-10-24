@@ -91,9 +91,8 @@ def prep(bsp, addon, out_root, log):
             for f in fs:
                 rel = os.path.relpath(os.path.join(dp, f), tdir).replace(os.sep, '/')
                 if rel.startswith('maps/xxx_mapname_xxx.vmap'): continue   # the importer writes the real vmap
+                if rel in ('addoninfo.txt', 'readonly_tools_asset_info.bin'): continue   # template markers: with them the launcher lists the addon as a read-only example
                 data = open(os.path.join(dp, f), 'rb').read()
-                if rel == 'addoninfo.txt':
-                    data = b'<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:generic:version{7412167c-06e9-4698-aff2-e63eb59037e7} -->\r\n{\r\n}\r\n'
                 put(None, winjoin(CS2, side, 'csgo_addons', addon, rel.replace('xxx_mapname_xxx', addon).replace('/', '\\')), data)
     # materials/models -> C:\source1\cs2port\assets\<addon>.zip (+ .2/.3/.4.zip, each <=14 MB) instead of
     # writing into csgo\ directly; run_import.bat unpacks them into csgo\ with tar -k (existing files kept)
