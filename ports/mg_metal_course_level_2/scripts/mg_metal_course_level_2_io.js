@@ -31,7 +31,7 @@ const PUSH = {
             0.0,
             0.0
         ],
-        "speed": 700.0,
+        "speed": 850.0,
         "mins": [
             2112.0,
             4928.0,
@@ -49,11 +49,11 @@ const PUSH = {
             0.0,
             0.0
         ],
-        "speed": 70.0,
+        "speed": 1.0,
         "mins": [
             3968.0,
             6208.0,
-            -64.0
+            -8.0
         ],
         "maxs": [
             4736.0,
@@ -320,11 +320,10 @@ THINKERS.push(() => {
 // CS2 servers block most point_servercommand commands, so the map's chat messages / cvars are sent from script instead.
 /** @type {string[]} */
 const COMMANDS = [
-    "say --> Gryffin Bipolar Sunshine - Whole Heart <--",
-    "say --> Map By ScHoOuFi <--",
+    "say --> Map By ScHoOuFi, CS2 By Skink52 <--",
     "say --> Spawn Protection Enabled <--",
     "say --> Spawn Protection in 40 Seconds <--",
-    "sv_airaccelerate 150"
+    "sv_airaccelerate 900"
 ];
 COMMANDS.forEach((cmd, i) => {
     Instance.OnScriptInput("Cmd_" + i, () => { Instance.ServerCommand(cmd); });
@@ -339,3 +338,89 @@ for (const pts of [150]) {
         if (ctrl && ctrl.IsValid()) ctrl.AddScore(pts);
     });
 }
+
+// ---------------------------------------------------------------- he2-he13 glow follow
+// Each grenade heN has info_particle_system glows named heglow_heN_<k> (particles/heglow/*.vpcf, which follow their entity).
+// The glows are unparented and moved every tick: on the grenade, at the carrier's chest, then on the thrown projectile.
+const HE_NAMES = Array.from({ length: 12 }, (_, i) => "he" + (i + 2));
+const HE_CARRY_Z = 40;
+let hePairs = [];
+let heReady = false;
+let heTries = 0;
+
+function heMove(ent, pos) {
+    if (ent.Teleport) ent.Teleport({ position: pos }); else ent.Move({ position: pos });
+}
+
+function heInit() {
+    hePairs = [];
+    for (const n of HE_NAMES) {
+        const w = Instance.FindEntityByName(n);
+        if (!w || !w.IsValid()) continue;
+        const wp = w.GetAbsOrigin();
+        for (let k = 1; k <= 8; k++) {
+            const g = Instance.FindEntityByName("heglow_" + n + "_" + k);
+            if (!g || !g.IsValid()) continue;
+            const gp = g.GetAbsOrigin();
+            hePairs.push({ name: n, w, g, owner: undefined, proj: undefined, thrown: false, wait: 0,
+                ofs: { x: gp.x - wp.x, y: gp.y - wp.y, z: gp.z - wp.z } });
+            Instance.EntFireAtTarget({ target: g, input: "ClearParent" });
+        }
+    }
+    heReady = hePairs.length > 0 || ++heTries > 50;
+}
+
+function heFindProjectile(owner, name) {
+    if (!owner || !owner.IsValid()) return undefined;
+    for (const pr of Instance.FindEntitiesByClass("hegrenade_projectile")) {
+        if (hePairs.some((q) => q.proj === pr && q.name !== name)) continue;
+        const po = pr.GetOwner();
+        if (po && po.IsValid() && po === owner) return pr;
+    }
+    return undefined;
+}
+
+if (typeof Instance.OnGrenadeThrow === "function") {
+    Instance.OnGrenadeThrow((e) => {
+        const n = e && e.weapon && e.weapon.IsValid() ? e.weapon.GetEntityName() : "";
+        if (!n || !e.projectile) return;
+        for (const q of hePairs) if (q.name === n && !q.proj) q.proj = e.projectile;
+    });
+}
+
+Instance.OnRoundStart(() => { heReady = false; heTries = 0; wakeThink(); });
+
+THINKERS.push(() => {
+    if (!heReady) { heInit(); return true; }
+    for (let i = hePairs.length - 1; i >= 0; i--) {
+        const q = hePairs[i];
+        if (!q.g || !q.g.IsValid()) { hePairs.splice(i, 1); continue; }
+
+        if (q.w && q.w.IsValid()) {
+            const o = q.w.GetOwner();
+            if (o && o.IsValid() && o instanceof CSPlayerPawn) {
+                q.owner = o;
+                const p = o.GetAbsOrigin();
+                heMove(q.g, { x: p.x + q.ofs.x, y: p.y + q.ofs.y, z: p.z + HE_CARRY_Z + q.ofs.z });
+            } else {
+                const p = q.w.GetAbsOrigin();
+                heMove(q.g, { x: p.x + q.ofs.x, y: p.y + q.ofs.y, z: p.z + q.ofs.z });
+            }
+            continue;
+        }
+
+        if (!q.proj) q.proj = heFindProjectile(q.owner, q.name);
+        if (q.proj && q.proj.IsValid()) {
+            const p = q.proj.GetAbsOrigin();
+            heMove(q.g, { x: p.x + q.ofs.x, y: p.y + q.ofs.y, z: p.z + q.ofs.z });
+            q.thrown = true;
+            continue;
+        }
+        if (q.thrown || ++q.wait > 10) {
+            Instance.EntFireAtTarget({ target: q.g, input: "Kill" });
+            hePairs.splice(i, 1);
+        }
+    }
+    return true;
+});
+wakeThink();
