@@ -1,0 +1,48 @@
+{
+ "name": "lee_enfield",
+ "sub": "models/weapons/ww1/lee_enfield",
+ "out": "C:/source2/trenchwarfare assets/build_out",
+ "fbx": "C:/source2/trenchwarfare assets/lee enfield/cgtrader_optimized_lee_enfield_mk1.FBX",
+ "axes": "zxy",
+ "stock": "ssg08",
+ "shift_wo": [
+  9.5,
+  0.43,
+  -7.4
+ ],
+ "bore_wo": [
+  0.4,
+  0.55
+ ],
+ "part_bone": {
+  "Bolt 1": "bolt",
+  "FirePin": "bolt",
+  "Trigger": "trigger",
+  "Follower": "clip"
+ },
+ "rules": [
+  {
+   "bone": "clip",
+   "part": "Body",
+   "box": [
+    -8.3,
+    -4.3,
+    -9,
+    9,
+    4.1,
+    6.12
+   ],
+   "mag": true
+  }
+ ],
+ "scope": {
+  "style": "allied",
+  "x0": -1.0,
+  "y": 1.45,
+  "mounts": [
+   1.2,
+   7.4
+  ],
+  "y_post": 0.45
+ }
+}

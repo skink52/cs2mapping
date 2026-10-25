@@ -1,0 +1,84 @@
+{
+ "name": "luger_p08",
+ "sub": "models/weapons/ww1/luger_p08",
+ "out": "C:/source2/trenchwarfare assets/build_out",
+ "glb": "C:/source2/trenchwarfare assets/luger_p08.glb",
+ "scale": 0.01,
+ "axes": "Yxz",
+ "stock": "glock18",
+ "stock_prefix": "weapon_pist",
+ "shift_wo": [
+  0.2,
+  0.0,
+  -1.93
+ ],
+ "bore_wo": [
+  0.0,
+  0.34
+ ],
+ "part_bone_idx": {
+  "20": "slide",
+  "21": "slide",
+  "9": "slide",
+  "10": "slide",
+  "0": "slide",
+  "5": "slide",
+  "6": "slide",
+  "7": "slide",
+  "8": "slide",
+  "1": "slide",
+  "2": "slide",
+  "3": "slide",
+  "18": "trigger"
+ },
+ "mag_parts": [
+  22,
+  23,
+  24,
+  25,
+  26,
+  27,
+  28
+ ],
+ "part_moves": {
+  "22": [
+   0,
+   -4.41,
+   0
+  ],
+  "23": [
+   0,
+   -4.41,
+   0
+  ],
+  "24": [
+   0,
+   -4.41,
+   0
+  ],
+  "25": [
+   0,
+   -4.41,
+   0
+  ],
+  "26": [
+   0,
+   -4.41,
+   0
+  ],
+  "27": [
+   0,
+   -4.41,
+   0
+  ],
+  "28": [
+   0,
+   -4.41,
+   0
+  ]
+ },
+ "drop_parts": [
+  29,
+  30
+ ]
+}

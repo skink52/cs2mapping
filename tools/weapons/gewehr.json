@@ -1,0 +1,55 @@
+{
+ "name": "gewehr98",
+ "sub": "models/weapons/ww1/gewehr98",
+ "out": "C:/source2/trenchwarfare assets/build_out",
+ "fbx": "C:/source2/trenchwarfare assets/Gewehr98/source/Gewehr98_Sketchfab.fbx",
+ "axes": "zxy",
+ "stock": "awp",
+ "shift_wo": [
+  -3.0,
+  0.14,
+  -2.06
+ ],
+ "bore_wo": [
+  0.16,
+  -0.06
+ ],
+ "part_bone": {},
+ "rules": [
+  {
+   "bone": "bolt_action",
+   "mode": "components",
+   "box": [
+    0.8,
+    4.9,
+    -3.4,
+    1.2,
+    1.2,
+    2.65
+   ]
+  },
+  {
+   "bone": "trigger",
+   "mode": "components",
+   "box": [
+    1.8,
+    2.8,
+    -0.5,
+    0.5,
+    -2.2,
+    -0.5
+   ]
+  }
+ ],
+ "scope": {
+  "style": "axis",
+  "x0": -1.5,
+  "y": 1.15,
+  "mounts": [
+   0.8,
+   7.0
+  ],
+  "y_post": 0.16,
+  "clear": 0.45
+ }
+}

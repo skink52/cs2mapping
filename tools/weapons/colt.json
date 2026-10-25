@@ -1,0 +1,111 @@
+{
+ "name": "colt_m1911",
+ "sub": "models/weapons/ww1/colt_m1911",
+ "out": "C:/source2/trenchwarfare assets/build_out",
+ "glb": "C:/source2/trenchwarfare assets/colt_m1911.glb",
+ "scale": 0.01,
+ "axes": "XYz",
+ "stock": "hkp2000",
+ "stock_prefix": "weapon_pist",
+ "shift_wo": [
+  1.8,
+  0.0,
+  -1.79
+ ],
+ "bore_wo": [
+  0.0,
+  0.48
+ ],
+ "rules": [
+  {
+   "mode": "components",
+   "box": [
+    5.0,
+    13.6,
+    -0.7,
+    0.7,
+    1.1,
+    3.1
+   ],
+   "rot180z": [
+    4.94,
+    0.0
+   ],
+   "move": [
+    0,
+    0,
+    0.25
+   ],
+   "bone": "slide"
+  },
+  {
+   "mode": "components",
+   "box": [
+    -4.4,
+    -3.2,
+    -0.3,
+    0.3,
+    2.4,
+    4.0
+   ],
+   "move": [
+    -0.2,
+    0,
+    -1.65
+   ],
+   "bone": "hammer"
+  },
+  {
+   "mode": "components",
+   "box": [
+    1.1,
+    2.8,
+    -0.3,
+    0.3,
+    -2.2,
+    -1.4
+   ],
+   "drop": true
+  },
+  {
+   "mode": "components",
+   "box": [
+    3.2,
+    4.4,
+    -0.2,
+    0.2,
+    -0.1,
+    1.1
+   ],
+   "drop": true
+  },
+  {
+   "mode": "components",
+   "box": [
+    -4.3,
+    -2.1,
+    -0.4,
+    0.4,
+    -3.1,
+    -2.5
+   ],
+   "bone": "mag",
+   "mag": true
+  }
+ ],
+ "boxes": [
+  {
+   "box": [
+    -3.95,
+    -2.45,
+    -0.26,
+    0.26,
+    -2.7,
+    1.2
+   ],
+   "bone": "mag",
+   "mag": true,
+   "mat": 0
+  }
+ ]
+}

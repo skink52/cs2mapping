@@ -1,3 +1,4 @@
+- 2026-10-25: custom WW1 weapons pipeline (vdata override + cs_script loadout + FBX/GLB→DMX weapon rigging builder): docs/custom-weapons.md, tools/weapons/.
 # Changelog
 
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
