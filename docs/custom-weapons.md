@@ -1,6 +1,6 @@
 # Custom WW1 weapons for CS2 (vdata + cs_script, no plugins) — handover
 
-Status 25 Oct 2026. Working in the `testing` addon; everything below is verified in game unless marked.
+Status 25 Oct 2026. A separate Claude session (the weapons session) keeps building weapons with the tools below; this doc is for the session building the map/game logic. Weapons marked in progress are being made there. Working in the `testing` addon; everything below is verified in game unless marked.
 
 ## What exists
 
@@ -10,8 +10,8 @@ Status 25 Oct 2026. Working in the `testing` addon; everything below is verified
 | Gewehr 98 | T | `weapon_awp` (stat-for-stat SSG08 clone, 5 rd, 6 spare) | `models/weapons/ww1/gewehr98/gewehr98.vmdl` | Axis (Goerz/Oigee style) scope. Mesh is a BF1 rip ("BF1 All weapons") — replace before Workshop |
 | Luger P08 | T | `weapon_glock` (8 rd, burst off) | `models/weapons/ww1/luger_p08/luger_p08.vmdl` | from `luger_p08.glb` |
 | Colt M1911 | CT | `weapon_hkp2000` (7 rd) | `models/weapons/ww1/colt_m1911/colt_m1911.vmdl` | from `colt_m1911.glb` (display model reassembled) |
-| Lewis Mk I | CT | `weapon_scar20` (planned) | `lewis_mk1.glb` | not built yet |
-| Mondragón M1908 | T | `weapon_g3sg1` (planned, new weathered textures) | `mondragon-m1908/` | not built yet |
+| Lewis Mk I | CT | `weapon_scar20` | `lewis_mk1.glb` | **in progress in the weapons session — do not duplicate** |
+| Mondragón M1908 | T | `weapon_g3sg1` | `mondragon-m1908/` | **in progress in the weapons session (new weathered wood/steel textures)** |
 
 Shared materials: `materials/models/weapons/ww1/scope/{scope,brass,glass}.vmat` (procedural weathered steel/brass, dark glass).
 

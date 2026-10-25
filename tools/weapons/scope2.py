@@ -57,11 +57,12 @@ def disc(x, r, cy, cz, nx, seg=24, mat=3):
     return np.array(V, float), np.array(N, float), np.array(T, float), np.array(F), np.full(len(F), mat)
 
 def lens_end(xe, d, R, y, z, lip_mat=0):
-    """lip ring protruding past the tube end, dark inner wall, recessed glass disc. d = +1 front, -1 rear"""
-    a, b = (xe - 0.3, xe + 0.06) if d > 0 else (xe - 0.06, xe + 0.3)
-    parts = [lathe([(a, R+0.05), (b, R+0.05)], y, z, mat=lip_mat, cap_start=(d < 0), cap_end=(d > 0))]
-    parts.append(lathe([(a, R-0.03), (b, R-0.03)], y, z, mat=0, cap_start=False, cap_end=False))   # inner wall (normals outward, visible edge)
-    parts.append(disc(xe - 0.14*d, R-0.03, y, z, d, mat=3))
+    """thick lip ring (bevelled, protruding), dark inner wall, glass disc just inside. d = +1 front, -1 rear"""
+    lip = R + 0.14
+    if d > 0: prof = [(xe-0.5, R), (xe-0.45, lip), (xe+0.12, lip), (xe+0.2, lip-0.1), (xe+0.2, R-0.02), (xe-0.2, R-0.06)]
+    else:     prof = [(xe+0.5, R), (xe+0.45, lip), (xe-0.12, lip), (xe-0.2, lip-0.1), (xe-0.2, R-0.02), (xe+0.2, R-0.06)]
+    parts = [lathe(prof, y, z, mat=lip_mat, cap_start=False, cap_end=False)]
+    parts.append(disc(xe + 0.02*d, R-0.05, y, z, d, mat=3))
     return parts
 
 def merge(parts):
