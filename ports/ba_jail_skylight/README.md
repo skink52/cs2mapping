@@ -11,6 +11,7 @@
 
 ## History
 
+- 2026-10-25: radar re-rendered with textured floors (`radar.py` + `radartex.py`).
 - 2026-10-24: Radar, 1 loading-screen image, credits (JJJohan, custom models IVORK). Assets compile with `run_build.bat "assets ba_jail_skylight"`.
 - 2026-09-28 (file date): the keypad was rebuilt as a cs_script code door. Map entities are re-created every round, so the script re-hooks the buttons on every round start.
 

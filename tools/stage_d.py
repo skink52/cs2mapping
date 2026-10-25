@@ -22,7 +22,7 @@ def run(addon, root, passes):
     if 'lights' in passes: lighting.run(m, c)
     if 'alpha' in passes and c.src: assets.fix_alpha(m, c)
     if 'daylight' in passes: daylight.run(m, c)
-    if 'radar' in passes: radar.run(m, c)
+    if 'radar' in passes: radar.run(m, c, tex=radar.textures_for(c))
     if 'gravity' in passes:
         gravity.run(m, c)
         if c.gravities:

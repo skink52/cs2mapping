@@ -3,6 +3,11 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-25
+
+- **Textured radars.** `radar.py` now paints each floor with its material instead of grey: the addon's own source textures tiled world-aligned (`tools/radartex.py`), a name-guessed colour for stock CS2 materials, glass translucent, height as brightness. Wired into stage C and `stage_d.py radar` (`radar.textures_for(c)`). Two bugs fixed on the way: the standable-floor test used only the face centroid, so a face with a prop on that spot was dropped and left a wedge-shaped hole (jb_mangaroons); `lighting.mesh_polys` stopped at 64 vertices per face. Water planes no longer set the radar extent (ba_jail_seaside's sea). Re-rendered the six jail radars (seaside first for a Workshop update).
+- Loading screens added for mg_crash_bandicoot_course (2) and mg_insomnia_course (3) from Zach's screenshots.
+
 ## 2026-10-24 (evening)
 
 - **Jailbreak maps: radars, loading screens, credits** (ba_jail_lightsout, ba_jail_seaside, ba_jail_skylight, jb_mangaroons, jb_sides_cs2, jb_water_prison_cs2). Radar rendered with `radar.py` for all six (jb_sides_cs2's RadGen radar was broken and is replaced; its old `_radar.tga/_radar_tga.vtex` files are still in the content folder). Loading-screen backgrounds from the Workshop preview images (Hammer5Tools layout, documented in pipeline.md); jb_mangaroons uses the full 1920x1080 `Mangaroons.png`, the rest are 637x358 Steam thumbnails upscaled. `COMMUNITYMAPCREDITS:` credits written for skylight (JJJohan, models IVORK), mangaroons (gReeN), sides (JJ and ab), water_prison (TomGreen, CS:GO port JJ); seaside's existing file was missing the header line and was rewritten. jb_renegade skipped (compiled for someone else). `radar.py` gained a `pct` argument (percentile trimmed off the floor extent; 0 keeps every floor - jb_sides_cs2's long west corridor was clipped at the default 0.5).

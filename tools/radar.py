@@ -1,9 +1,11 @@
-"""Radar / minimap from the map geometry: upward-facing surfaces shaded by height (higher = lighter, drawn on top),
-wall edges outlined, transparent outside. Writes the png + vtex (content) and resource/overviews/<map>.txt (game)."""
+"""Radar / minimap from the map geometry: upward-facing surfaces painted with their material (source texture tiled every 128 units,
+or a colour guessed from the material name), darker towards the bottom of the map, higher floors drawn on top, wall edges outlined,
+glass translucent, transparent outside. Writes the png + vtex (content) and resource/overviews/<map>.txt (game)."""
 import io
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 import lighting
+import radartex
 
 VTEX = '''<!-- dmx encoding keyvalues2_noids 1 format vtex 1 -->
 "CDmeVtex"
@@ -70,7 +72,13 @@ OVERVIEW = '''// Overview (radar) description for %(map)s: rendered from the map
 '''
 SKIP = ('materials/tools/', 'moondome', 'skybox')
 
-def run(m, c, size=1024, ss=2, pct=0.5):   # pct: percentile trimmed off each edge of the floor extent (0 = keep every floor)
+def textures_for(c, tile_units=128.0):
+    """Textures from the addon's own source images (content/<addon>/materials, <root>/embedded/<addon>/materials);
+    anything else (stock CS2 materials) is painted with a colour guessed from its name."""
+    import os
+    return radartex.Textures([os.path.join(c.content, 'materials'), os.path.join(c.root, 'embedded', c.addon, 'materials')], tile_units)
+
+def run(m, c, size=1024, ss=2, pct=0.5, tex=None):   # pct: percentile trimmed off each edge of the floor extent (0 = keep every floor); tex: radartex.Textures to paint floors with their materials
     polys = list(lighting.world_polys(m))
     for e in m.entities():                         # solid brush entities (doors, func_brush, breakables...) count too
         if m.cls(e).startswith(('trigger_', 'func_buyzone', 'func_bomb_target', 'func_water', 'visibility')): continue
@@ -80,12 +88,15 @@ def run(m, c, size=1024, ss=2, pct=0.5):   # pct: percentile trimmed off each ed
     for mat, loop in polys:
         if any(s in mat for s in SKIP) or len(loop) < 3: continue
         P = np.array(loop)
-        n = np.cross(P[1] - P[0], P[2] - P[0]); ln = np.linalg.norm(n)
+        Q = np.roll(P, -1, axis=0)                     # Newell normal: right for concave faces and collinear first vertices
+        n = np.array([((P[:, 1] - Q[:, 1]) * (P[:, 2] + Q[:, 2])).sum(), ((P[:, 2] - Q[:, 2]) * (P[:, 0] + Q[:, 0])).sum(), ((P[:, 0] - Q[:, 0]) * (P[:, 1] + Q[:, 1])).sum()])
+        ln = np.linalg.norm(n)
         if ln < 1e-6: continue
         n /= ln
-        if n[2] > 0.6: floors.append(P)
+        if n[2] > 0.6: floors.append((mat, P))
         elif abs(n[2]) < 0.3: walls.append(P)
     if not floors: return
+    if tex is None and getattr(c, 'textures', None): tex = c.textures
     # keep only floors you can stand on: the space just above them must be a room with lights / spawns / teleports in it
     # (stops the outside tops of roofs and the sky shell covering the floors underneath)
     wp = lighting.world_polys(m)
@@ -111,9 +122,13 @@ def run(m, c, size=1024, ss=2, pct=0.5):   # pct: percentile trimmed off each ed
         skyl = set(np.unique(lab[ndimage.binary_dilation(solid == 2) & (lab > 0)]))
         ok = lambda l: l in play or (l and l not in ext and l not in skyl)
         if play:
-            kept = [P for P in floors if ok(lab_at(P.mean(0) + [0, 0, 40]))]
+            def face_ok(P):                        # the centroid alone misses faces with a prop or wall on that one spot
+                c0 = P.mean(0)
+                return any(ok(lab_at(q + [0, 0, 40])) for q in [c0] + [(c0 + v) / 2 for v in P])
+            kept = [f for f in floors if face_ok(f[1])]
             if kept: floors = kept
-    allp = np.concatenate(floors)
+    land = [f for f in floors if 'water' not in f[0].lower()] or floors    # a sea plane shouldn't set the map extent
+    allp = np.concatenate([f[1] for f in land])
     lo = np.percentile(allp, pct, axis=0); hi = np.percentile(allp, 100 - pct, axis=0)
     span = max(hi[0] - lo[0], hi[1] - lo[1]) * 1.06 + 256
     cx, cy = (lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2
@@ -123,10 +138,12 @@ def run(m, c, size=1024, ss=2, pct=0.5):   # pct: percentile trimmed off each ed
     def to_img(P): return [((x - px) / scale * ss, (py - y) / scale * ss) for x, y in P[:, :2]]
     zlo, zhi = np.percentile(allp[:, 2], 2), np.percentile(allp[:, 2], 98)
     img = Image.new('RGBA', (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
-    for P in sorted(floors, key=lambda P: P[:, 2].mean()):
+    for mat, P in sorted(floors, key=lambda f: f[1][:, 2].mean()):
         t = float(np.clip((P[:, 2].mean() - zlo) / max(zhi - zlo, 1), 0, 1))
-        col = (int(70 + 120 * t), int(80 + 120 * t), int(95 + 125 * t), 255)
-        d.polygon(to_img(P), fill=col)
+        if tex is None:
+            col = (int(70 + 120 * t), int(80 + 120 * t), int(95 + 125 * t), 255)
+            d.polygon(to_img(P), fill=col); continue
+        paint_face(img, to_img(P), P, mat, t, tex, px, py, scale, ss)
     edge = Image.new('RGBA', (S, S), (0, 0, 0, 0)); de = ImageDraw.Draw(edge)
     for P in walls:
         if P[:, 2].max() - P[:, 2].min() < 40: continue        # skip low lips and steps
@@ -145,3 +162,28 @@ def run(m, c, size=1024, ss=2, pct=0.5):   # pct: percentile trimmed off each ed
     c.game_files['resource/overviews/%s.txt' % c.addon] = (OVERVIEW % dict(map=c.addon, px=px, py=py, scale=scale, ctx=ctx, cty=cty, tx=tx, ty=ty)).encode()
     c.log.append('radar: rendered from geometry (%d floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/%s_radar_psd.png + game resource/overviews/%s.txt (pos %d %d, scale %.2f)'
                  % (len(floors), c.addon, c.addon, px, py, scale))
+
+def paint_face(img, pts, P, mat, t, tex, px, py, scale, ss):
+    """Fill one floor polygon with its material: the source texture tiled every tex.tile world units (world-aligned, so
+    neighbouring faces line up), or a flat guessed colour, darkened towards the bottom of the map (0.55..1.05 by height)."""
+    xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
+    x0, y0 = int(np.floor(min(xs))), int(np.floor(min(ys))); x1, y1 = int(np.ceil(max(xs))) + 1, int(np.ceil(max(ys))) + 1
+    x0, y0 = max(x0, 0), max(y0, 0); x1, y1 = min(x1, img.width), min(y1, img.height)
+    if x1 <= x0 or y1 <= y0: return
+    ppt = tex.tile / scale * ss                       # pixels per texture tile
+    tile, is_tex = tex.get(mat, ppt)
+    w, h = x1 - x0, y1 - y0
+    if is_tex:
+        n = tile.shape[0]
+        # world x -> pixel column; tile origin at world 0 so faces share the pattern
+        ox = ((-px) / scale * ss) % n; oy = ((py) / scale * ss) % n
+        ix = ((np.arange(x0, x1) + ox) % n).astype(int); iy = ((np.arange(y0, y1) + oy) % n).astype(int)
+        fill = tile[iy][:, ix].astype(np.float32)
+    else:
+        fill = np.broadcast_to(tile.astype(np.float32), (h, w, 3)).copy()
+    fill *= 0.55 + 0.5 * t
+    fill = np.clip(fill, 0, 255).astype(np.uint8)
+    mask = Image.new('L', (w, h), 0)
+    ImageDraw.Draw(mask).polygon([(x - x0, y - y0) for x, y in pts], fill=90 if 'glass' in mat.lower() else 255)   # glass: see the floor below
+    patch = Image.fromarray(fill, 'RGB').convert('RGBA')
+    img.paste(patch, (x0, y0), mask)

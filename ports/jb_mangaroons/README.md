@@ -9,4 +9,5 @@
 
 ## History
 
+- 2026-10-25: radar re-rendered with textured floors (`radar.py` + `radartex.py`).
 - 2026-10-24: Radar, 4 loading-screen images (`Mangaroons.png` 1080p + 3 thumbnails), credits (gReeN). Assets compile with `run_build.bat "assets jb_mangaroons"`.

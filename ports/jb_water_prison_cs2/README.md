@@ -12,6 +12,7 @@ Drivable car (`vehicle_base5` physbox + four thrusters, +use on `vehicle_button5
 
 ## History
 
+- 2026-10-25: radar re-rendered with textured floors (`radar.py` + `radartex.py`).
 - 2026-10-24: Radar, 1 loading-screen image, credits (TomGreen, CS:GO port JJ). Assets compile with `run_build.bat "assets jb_water_prison_cs2"`.
 - 2026-09-29 (file date): CS2's AddOutput can't rename entities ("AddOutput fired with bad string"), so `water_immunity.js` calls `SetEntityName`. `waterfilter` needed `negated 1`, added as a raw keyvalue with Smart Edit off.
 

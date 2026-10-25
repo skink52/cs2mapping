@@ -34,7 +34,7 @@ def mesh_polys(m, node):
     out = []
     for f, e0 in enumerate(fei):
         loop = []; e = e0
-        for _ in range(64):
+        for _ in range(4096):                       # big ground faces can have hundreds of vertices; a truncated loop drew wedges
             v = evi[e]; p = pos[vdi[v]]; loop.append((p[0] + o[0], p[1] + o[1], p[2] + o[2]))
             e = eni[e]
             if e == e0: break

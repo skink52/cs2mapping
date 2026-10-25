@@ -619,7 +619,7 @@ def run(addon, root, passes=None):
     if 'beams' in steps: beammod.run(m, c)
     if 'lights' in steps: lighting.run(m, c)
     if 'alpha' in steps and c.src: assets.fix_alpha(m, c)
-    if 'radar' in steps: radar.run(m, c)
+    if 'radar' in steps: radar.run(m, c, tex=radar.textures_for(c))
     if 'assets' in steps and c.src:
         assets.fix_materials(m, c, c.cs2v, c.src.vpk, c.src.arcs)
         assets.check_models(m, c, c.cs2v)

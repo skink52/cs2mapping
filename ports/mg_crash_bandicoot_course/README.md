@@ -10,6 +10,7 @@
 
 ## History
 
+- 2026-10-25: 2 loading-screen images added (`panorama/images/map_icons/screenshots`), compile with `run_build.bat "assets mg_crash_bandicoot_course"`.
 - 2026-10-24: stages A–C. **118 displacements** (all the terrain, roots, aztec stone, beams, grass) were dropped by the importer, so the first visfit found no playable air at all; stage C was run in two halves: merge/entities/sounds/sky/beams, then `disprestore.py`, then `stage_d.py visfit,lights,radar`. The 37 sky brushes came back as moondomes with the **jungle sky copied from mg_kohztec_course** (the CS:GO VPK chunks for the sky faces aren't on the PC). Second pass: 21 materials rebuilt from the extracted CS:GO content and the BSP's own textures (aztec stone, dirt/grass blends, the custom crate textures). The importer had sanitised `materials/crash bandicoot/…` and `silkroad/asia minor/…` to underscores while post_import_cleanup kept the real names; `matnames.py` points the vmap back at the real files. Backups: `prefabs+backups\mg_crash_bandicoot_course_imported_2026-10-24.vmap`.
 
 ## What the cleanup did
