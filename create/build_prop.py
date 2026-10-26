@@ -53,7 +53,7 @@ def build(name, spec, preview=True, cam=None):
         else:
             alpha = None
         vm = '%s/%s.vmat' % (mat_rel, tname)
-        modelio.write_vmat(OUT, vm, tex, comment='mg_trenchwarfare %s (procedural, AI-generated)' % tname, alpha=alpha,
+        modelio.write_vmat(OUT, vm, tex, comment='%s (procedural, AI-generated)' % tname, alpha=alpha,
                            backfaces=g.get('backfaces', False))
         vmats[key] = vm
         if g.get('alpha') is not None:
@@ -86,7 +86,7 @@ def build(name, spec, preview=True, cam=None):
         hull_names.append(hn)
     remaps = [(('stock_%s.vmat' % k[1:]) if k.startswith('~') else ('%s_%s.vmat' % (name, k)), v) for k, v in vmats.items()]
     txt = modelio.vmdl_text(name, rel_dir, meshes, remaps, hull_names, surface=spec.get('surface', 'default'),
-                            lod_thresholds=spec.get('lod_thresholds'), entity='')
+                            lod_thresholds=spec.get('lod_thresholds'), entity='', single_lod=spec.get('single_lod'))
     open(os.path.join(OUT, rel_dir, name + '.vmdl'), 'w', newline='\n').write(txt)
     lo, hi = m0.bounds()
     info = dict(model='%s/%s.vmdl' % (rel_dir, name), tris=[int(m.tri_count()) for m in lods], mins=lo.round(1).tolist(), maxs=hi.round(1).tolist())
@@ -156,7 +156,7 @@ def stock_preview(m, fsel, fuv, key):
                 import vtexread as V
                 os.makedirs(os.path.dirname(p), exist_ok=True)
                 vm = stock.STOCK[key]['vmat']
-                if not vm.endswith('.vmat') or os.path.exists(os.path.join(OUT, vm)):
+                if os.path.exists(os.path.join(OUT, vm)):   # our own exported copy; otherwise read the game's from the VPK
                     import re
                     txt = open(os.path.join(OUT, vm)).read()
                     tc = re.search(r'TextureColor "([^"]+)"', txt).group(1)

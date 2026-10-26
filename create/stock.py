@@ -88,7 +88,7 @@ def export_custom(outdir, maxsize=1024):
         # untouched colour textures are shared between the tinted variants
         cfile = '%s/%s.png' % (rel, (name + '_color') if c.get('chip') else c['c'].split('/')[-1].split('_tga_')[0].split('_psd_')[0])
         Image.fromarray((col.clip(0, 1) * 255).astype(np.uint8)).save(os.path.join(outdir, cfile))
-        lines = ['// %s: CS2 game texture (Valve) re-used for mg_trenchwarfare props' % name, '', 'Layer0', '{', '\tshader "csgo_complex.vfx"', '\tF_SPECULAR 1',
+        lines = ['// %s: CS2 game texture (Valve) re-used for procedural props' % name, '', 'Layer0', '{', '\tshader "csgo_complex.vfx"', '\tF_SPECULAR 1',
                  '\tTextureColor "%s"' % cfile, '\tg_vColorTint "[%.3f %.3f %.3f 0.000000]"' % tuple(c.get('tint', (1, 1, 1))), '\tg_flMetalness "%.3f"' % c.get('metal', 0.0)]
         if rough is not None:
             rfile = '%s/%s_rough.png' % (rel, name)
@@ -219,7 +219,7 @@ def uv_for(mesh, fsel, key):
 
 
 def export_bark(outdir):
-    """writes materials/models/tw/stock/bark_maple.vmat + textures decoded from the game's maple bark (csgo_complex, no wind)"""
+    """writes materials/models/<PREFIX>/stock/bark_maple.vmat + textures decoded from the game's maple bark (csgo_complex, no wind)"""
     import vtexread as V
     from PIL import Image
     rel = 'materials/models/%s/stock' % PREFIX
@@ -237,7 +237,7 @@ def export_bark(outdir):
     z = np.sqrt(np.clip(1 - x * x - y * y, 0, 1))
     Image.fromarray((np.stack([x, y, z], -1) * 127.5 + 127.5).clip(0, 255).astype(np.uint8)).save(os.path.join(d, 'bark_maple_normal.png'))
     if 'ao' in got: V.decode_vtex(V.vpk_read(got['ao'] + '_c')).convert('L').save(os.path.join(d, 'bark_maple_ao.png'))
-    lines = ['// maple bark from the CS2 game files (Valve), re-used without wind animation for mg_trenchwarfare posts and trunks', '',
+    lines = ['// maple bark from the CS2 game files (Valve), re-used without wind animation for posts and trunks', '',
              'Layer0', '{', '\tshader "csgo_complex.vfx"', '\tF_SPECULAR 1',
              '\tTextureColor "%s/bark_maple_color.png"' % rel, '\tTextureNormal "%s/bark_maple_normal.png"' % rel,
              '\tTextureRoughness "[0.900000 0.900000 0.900000 0.000000]"', '\tg_flMetalness "0.000"']
