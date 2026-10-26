@@ -2,7 +2,11 @@
 //  - twist bones: spread limb twist along the agent's TWIST bones (the bone-merged agent copies
 //    them from our rig, so leaving them at bind makes skin wring at shoulders, wrists and neck)
 //  - fists: curl the fingers (0 open .. 1 fist), per hand
-//  - two-bone IK for arms and legs that keeps the existing bend plane
+//  - two-bone IK for arms and legs: hinge knees/elbows (ik2), free IK with CS2_FREE_IK=1
+//  - armsOutOfBody (hands/elbows pushed out of head and torso), limitHips (airborne thigh flex)
+// All work in place on a pose: e.g. ik2(W, ...LEG.L, [x, y, z]); spreadTwist(W).
+// Numbers are for the CS2 agent at model scale 1 (KNEE_FLOOR, HEAD_R, TORSO_R, HIP_FLEX_MAX).
+// From cs2-fighter/tools/anim/post.mjs (MIT), made project-neutral.
 import { q, v3, clamp } from "./m3.mjs";
 import { SK, IDX, BIND, setWorldRot, setWorld } from "./rig.mjs";
 
@@ -91,7 +95,7 @@ export function curlFingers(W, side, fist = 1, { thumb = null } = {}) {
 // limb's plane, then bends the lower bone about that axis only, so the skin folds the way the
 // joint does, never sideways or backwards.
 export const HINGE_LOCAL = {};
-const KNEE_FLOOR = 3.2;   // knee joint height when kneeling on it
+export const KNEE_FLOOR = 3.2;   // knee joint height when kneeling on it
 const BONE_AXIS = {};
 function initHinge(upper, middle, end, worldAxis) {
   const A = IDX[upper], B = IDX[middle], C = IDX[end];
@@ -111,7 +115,7 @@ function basis(f, u) {
   return q.fromBasis(x, y, z);
 }
 export function ik2(W, upper, middle, end, target, opts = {}) {
-  if (HINGE_LOCAL[upper] && !process.env.PB_FREE_IK) return ik2Hinge(W, upper, middle, end, target, opts);
+  if (HINGE_LOCAL[upper] && !process.env.CS2_FREE_IK) return ik2Hinge(W, upper, middle, end, target, opts);
   return ik2Free(W, upper, middle, end, target, opts);
 }
 function ik2Hinge(W, upper, middle, end, target, { pole = null, keepEnd = true, soft = 0.995 } = {}) {
@@ -216,7 +220,7 @@ export const ARM = { L: ["arm_upper_L", "arm_lower_L", "hand_L"], R: ["arm_upper
 // Hands, elbows and forearms that end up inside the head or the torso are pushed back out to
 // the surface (plus a margin) and the arm is re-solved with the elbow kept on its side; the hand
 // keeps its set on the forearm.
-const HEAD_R = 7.2, TORSO_R = 7.0;
+export const HEAD_R = 7.2, TORSO_R = 7.0;
 function closestOnSeg(p, a, b) {
   const ab = v3.sub(b, a), t = clamp(v3.dot(v3.sub(p, a), ab) / Math.max(1e-6, v3.dot(ab, ab)), 0, 1);
   return v3.add(a, v3.mul(ab, t));
@@ -258,7 +262,7 @@ export function armsOutOfBody(W) {
 // A leg in the air never swings up into the torso: thigh flexion against the hips is held to
 // HIP_FLEX_MAX, the whole leg turned down about the hips' left-right axis (the foot keeps its set
 // on the shin). Planted feet are left alone.
-const HIP_FLEX_MAX = 148;
+export const HIP_FLEX_MAX = 148;
 export function limitHips(W) {
   const pq = W[IDX.pelvis].q, bq = q.conj(BIND[IDX.pelvis].q);
   const fwd = q.rotate(pq, q.rotate(bq, [1, 0, 0])), up = q.rotate(pq, q.rotate(bq, [0, 0, 1])), left = q.rotate(pq, q.rotate(bq, [0, 1, 0]));

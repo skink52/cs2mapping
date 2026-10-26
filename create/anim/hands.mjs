@@ -1,6 +1,9 @@
 // Hand shapes: a real fist (fingers rolled into the palm, thumb wrapped over the front of the
 // index and middle fingers), a relaxed hand, an open hand and a flat chop. Curls are applied
 // about each hand's knuckle line, so they follow the hand wherever the arm puts it.
+//   shapeHand(W, "R", "fist");  shapeHand(W, "L", ["relaxed", "fist", 0.5]);   // or a shape object
+// Uses the CS2 agent finger bone names (finger_<index|middle|ring|pinky>_<meta|0|1|2>_<L|R>, thumb_0..2).
+// From cs2-fighter/tools/anim/hands.mjs (MIT), made project-neutral.
 import { q, v3 } from "./m3.mjs";
 import { SK, IDX, BIND, setWorld } from "./rig.mjs";
 

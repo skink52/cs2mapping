@@ -1,7 +1,7 @@
 # Outside tools and references
 
 Everything used alongside this repo that isn't ours, what it was used for, and the traps found. Our own tools are listed in
-[../porting/pipeline.md](../porting/pipeline.md) and [../../create/README.md](../../create/README.md).
+[../../tools/README.md](../../tools/README.md) (porting) and [../../create/README.md](../../create/README.md) (creation).
 
 ## Valve (ships with CS2 Workshop Tools)
 
@@ -31,9 +31,10 @@ Everything used alongside this repo that isn't ours, what it was used for, and t
 
 | Source | Used for | Notes |
 |---|---|---|
-| [CMU Motion Capture](http://mocap.cs.cmu.edu/) (BVH via github.com/Shriinivas/cmubvh) | Puppet Brawl kicks and punches | Free to use. Takes and retargeting method in [../creation/models.md](../creation/models.md#animated-rigs-puppet-brawl). |
+| [CMU Motion Capture](http://mocap.cs.cmu.edu/) (BVH via github.com/Shriinivas/cmubvh) | Puppet Brawl kicks and punches | Free to use. 120 Hz takes. Takes and retargeting method in [../creation/models.md](../creation/models.md#animated-rigs-puppet-brawl). The BVH cache lives in the session's temp folder, so a new session has to fetch the takes again. |
 | Sketchfab (CC-BY models) | GLB props, aircraft | Credit author + licence in the vmdl comment and `CREDITS.md`. Avoid game rips. |
 | Freedoom | Hellmatch levels, sprites, sounds | BSD; licence text in the Workshop description; don't use the name to endorse. |
-| libADLMIDI (Nuked OPL3, DMXOPL3 bank) | Rendering MIDI music | MIT bank. |
+| libADLMIDI (Nuked OPL3, DMXOPL3 bank) | Rendering MIDI music | MIT bank. Hellmatch: `adlmidiplay` bank 72 (DMXOPL3) with 2 emulated OPL3 chips so notes don't drop; then two-pass `loudnorm I=-16:TP=-1.5:LRA=11` in ffmpeg. |
+| Playwright + headless Chromium (software GL) | Rendering previews of models and Panorama HUDs without the game | `chromium.launch(args=['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'])`; the page sets `document.title = "done"` when drawn (Hellmatch `preview/`). Panorama-to-HTML translation doesn't model Panorama's alignment rules. |
 | ffmpeg, gifsicle | Trailers, GIFs, audio analysis | |
 | TypeScript (`npm i -g typescript`) | Type-checking cs_script | |

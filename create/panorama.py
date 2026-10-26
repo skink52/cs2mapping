@@ -42,7 +42,8 @@ never share a name with a panel class; keep the top panel without an id (wrap it
 
 From space-racer-cs2/tools/hud.py and hellmatch-cs2/tools/hud.py (MIT), made project-neutral.
 """
-import os, re, json
+import os, re, sys, json
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))     # finds pixfont.py (also under python3 -I)
 
 FONT = 'Stratum2, "Stratum2 Bold", Arial'     # CS2's HUD font for Labels
 SIZES = {'XXL': 84, 'XL': 52, 'L': 40, 'M': 30, 'S': 22, 'XS': 17}   # pixel-text sizes (cell height, px)

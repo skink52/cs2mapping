@@ -1,29 +1,34 @@
-// Moves from motion capture: a cut of a CMU take is turned to strike along +X, placed so its
-// support foot stands where the fighter's stance has it, retimed so its contact lands on the
-// move's active frame, and blended out of the start stance and back into the end stance with a
-// displacement that fades to nothing at contact (so the strike itself is the real motion).
-import { q, v3, clamp, smoother } from "./m3.mjs";
+// Moves from motion capture: a cut of a mocap take is turned so the action points along +X,
+// placed so its support foot stands where the start pose has it, retimed with key pairs so the
+// contact lands on a chosen frame, and blended out of the start pose and back into the end pose
+// with a displacement that fades to nothing at contact (so the action itself is the real motion).
+// Then: support-foot lock, optional tip steering, floor clamp, optional look-at.
+//   const { poses } = mocapPoses(spec, { start: stancePose, end: stancePose, n: 40 });
+// spec fields are listed above mocapPoses() at the bottom.
+// Tips: "fist_L|R" (knuckles), "foot_L|R" (between ankle and toe), "knee_L|R", or any bone name.
+// From cs2-fighter/tools/anim/mocap_move.mjs (MIT), made project-neutral.
+import { q, v3, clamp, smoother, monotoneSlopes, hermiteMap } from "./m3.mjs";
 import { SK, IDX, N, fk, toLocals, mirrorPose } from "./rig.mjs";
-import { mocapPose, clonePose, hermiteMap, monotoneSlopes } from "./clip.mjs";
+import { mocapPose, clonePose, takeFps } from "./clip.mjs";
 import { ik2, LEG, ARM } from "./post.mjs";
 import { lookAt, bendSpine } from "./pose.mjs";
 import { BIND } from "./rig.mjs";
 const BIND_PELVIS_Q = BIND[IDX.pelvis].q;
 
-// world tip of a limb (matches bake.mjs): fists at the knuckles, feet between ankle and toe
+// world point of a limb tip: fists at the knuckles, feet between ankle and toe
 export function tipOf(W, tip) {
   const p = (n) => W[IDX[n]].p;
-  if (tip === "fF" || tip === "bF") { const s = tip === "fF" ? "L" : "R"; return v3.lerp(p("hand_" + s), p("finger_middle_0_" + s), 0.8); }
-  if (tip === "fT" || tip === "bT") {
-    const s = tip === "fT" ? "L" : "R";
-    const a = p("ankle_" + s), b = p("ball_" + s);
+  const m = /^(fist|foot|knee)_([LR])$/.exec(tip);
+  if (m && m[1] === "fist") return v3.lerp(p("hand_" + m[2]), p("finger_middle_0_" + m[2]), 0.8);
+  if (m && m[1] === "foot") {
+    const a = p("ankle_" + m[2]), b = p("ball_" + m[2]);
     return v3.lerp(a, v3.add(b, v3.mul(v3.norm(v3.sub(b, a)), 2.2)), 0.75);
   }
-  if (tip === "fK") return p("leg_lower_L");
-  if (tip === "bK") return p("leg_lower_R");
+  if (m) return p("leg_lower_" + m[2]);
+  if (IDX[tip] !== undefined) return p(tip);
   return p("head_0");
 }
-const LIMB_ROOT = { fF: "arm_upper_L", bF: "arm_upper_R", fT: "leg_upper_L", bT: "leg_upper_R" };
+const LIMB_ROOT = { fist_L: "arm_upper_L", fist_R: "arm_upper_R", foot_L: "leg_upper_L", foot_R: "leg_upper_R", knee_L: "leg_upper_L", knee_R: "leg_upper_R" };
 
 function transformPose(W, rot, d) {
   return W.map((t) => ({ q: q.mul(rot, t.q), p: v3.add(q.rotate(rot, t.p), d) }));
@@ -38,17 +43,17 @@ const GROUP = SK.map((b) => {
   return "root";
 });
 
-// Cut a take: frames are in the take's own frame numbers (120 Hz for CMU).
-//  spec: { take, mirror, keys: [[gameFrame, takeFrame], ...] (monotone), tip, support: "L"|"R",
-//          aimFrame (take frame used to aim and place), yaw (extra turn, deg) }
+// Cut a take: keys pair output frames with the take's own frame numbers (120 Hz for CMU).
+//  spec: { take, mirror, keys: [[outFrame, takeFrame], ...] (monotone), takeFps (default: the BVH's) }
 export function cutTake(spec, n) {
+  const fps = spec.takeFps || takeFps(spec.take);
   const keys = spec.keys;
   const gx = keys.map((k) => k[0]), tx = keys.map((k) => k[1]);
   const m = monotoneSlopes(gx, tx);
   const poses = [];
   for (let f = 0; f < n; f++) {
     const tf = hermiteMap(gx, tx, m, f);
-    let W = mocapPose(spec.take, tf / 120);
+    let W = mocapPose(spec.take, tf / fps);
     if (spec.mirror) W = mirrorPose(W);
     poses.push(W);
   }
@@ -106,7 +111,6 @@ export function lockFoot(W, s, at, rot = null, w = 1) {
   ik2(W, ...LEG[s], target, { keepEnd: false });
   W[ai] = { q: r, p: W[ai].p };
   // re-place the ankle's children (ball/toe) with the new ankle rotation
-  const kids = SK.map((b, i) => i).filter((i) => SK[i].pi === ai);
   const walk = (j) => { for (const c of SK.map((b, i) => i).filter((i) => SK[i].pi === j)) { W[c] = { q: q.mul(W[j].q, SK[c].local.q), p: v3.add(W[j].p, q.rotate(W[j].q, SK[c].local.p)) }; walk(c); } };
   walk(ai);
   return W;
@@ -114,7 +118,7 @@ export function lockFoot(W, s, at, rot = null, w = 1) {
 
 // Move a strike's tip toward a target over a window of frames: the limb is re-solved with IK
 // (leg: hip-knee-ankle, arm: shoulder-elbow-hand) by the weighted miss. target: {x, z} (either).
-const CHAIN = { fF: ["arm_upper_L", "arm_lower_L", "hand_L"], bF: ["arm_upper_R", "arm_lower_R", "hand_R"], fT: ["leg_upper_L", "leg_lower_L", "ankle_L"], bT: ["leg_upper_R", "leg_lower_R", "ankle_R"] };
+const CHAIN = { fist_L: ARM.L, fist_R: ARM.R, foot_L: LEG.L, foot_R: LEG.R };
 export function steerTip(P, tip, { from, to, ease = 3, x = null, z = null, y = null }) {
   const ch = CHAIN[tip];
   if (!ch) return;
@@ -135,8 +139,8 @@ const KIDS = SK.map((_, i) => SK.map((b, j) => j).filter((j) => SK[j].pi === i))
 export function refreshKids(W, i) {
   for (const c of KIDS[i]) { W[c] = { q: q.mul(W[i].q, SK[c].local.q), p: v3.add(W[i].p, q.rotate(W[i].q, SK[c].local.p)) }; refreshKids(W, c); }
 }
-// keep both feet above the floor (ankle z >= floor), lifting the whole body if needed is not
-// done: the low foot's leg is re-solved instead
+// keep both feet above the floor (ankle z >= floorZ; the agent's flat-foot ankle is ~4.3): the
+// low foot's leg is re-solved (the body isn't lifted)
 export function floorFeet(W, floorZ = 4.0) {
   for (const s of ["L", "R"]) {
     const ai = IDX["ankle_" + s];
@@ -145,10 +149,16 @@ export function floorFeet(W, floorZ = 4.0) {
   return W;
 }
 
-// Build a move clip from a mocap spec.
-//  spec: { take, mirror, keys: [[baseFrame, takeFrame]...], aim: takeFrame, tip, support,
-//          place: "support" | "pelvis", pelvisDx, yaw, lock (support foot planted at its stance spot),
-//          keep: {armL, armR, ...}, steer: [{from, to, x, z}] (base frames), inEnd, outStart }
+// Build a move from a mocap spec.
+//  spec: { take (id in CS2_BVH_DIR or a .bvh path), mirror, keys: [[outFrame, takeFrame]...],
+//          aim: takeFrame (one of the keys; the frame used to aim and place), tip, support: "L"|"R",
+//          place: "support" | "pelvis", supportDx, pelvisDx, pelvisDy, strip (0..1, hold travelling
+//          moves over one spot), aimBy: "tip" | "travel", yaw (deg), lock (support foot planted
+//          at its start spot), keep: {armL, armR, legL, legR, torso, root} (0..1 of the start pose
+//          held through the move), inEnd / outStart (blend windows, default: aim / aim + 4),
+//          turn: {from, to, deg, ease}, lean: {from, to, deg, ease}, steer: [{from, to, x, y, z}],
+//          floorZ (default 4.0), look: [x, y, z] (eyes on a point; omit to keep the capture's) }
+//  start / end: poses to blend out of and into; n: output frames; k: scales the key frames.
 export function mocapPoses(spec, { start, end, k = 1, n }) {
   const keys = spec.keys.map(([g, t]) => [g * k, t]);
   let P = cutTake({ ...spec, keys }, n);
@@ -158,7 +168,7 @@ export function mocapPoses(spec, { start, end, k = 1, n }) {
   const sup = spec.support;
   if (spec.place === "pelvis") {
     P = aimCut(P, { tip: spec.tip, aimIndex, support: sup, supportAt: [0, 0], yaw: spec.yaw || 0, by: spec.aimBy });
-    // travelling moves (the game carries the fighter): hold the pelvis over one spot
+    // travelling moves (the game carries the body): hold the pelvis over one spot
     if (spec.strip) { const x0 = P[0][IDX.pelvis].p[0]; P = P.map((W) => { const dx = W[IDX.pelvis].p[0] - x0; return W.map((t) => ({ q: t.q, p: [t.p[0] - dx * spec.strip, t.p[1], t.p[2]] })); }); }
     const pz = P[aimIndex][IDX.pelvis].p, sp = start[IDX.pelvis].p;
     const d = [sp[0] + (spec.pelvisDx || 0) - pz[0], sp[1] + (spec.pelvisDy || 0) - pz[1], 0];
@@ -199,10 +209,10 @@ export function mocapPoses(spec, { start, end, k = 1, n }) {
     P = P.map((W) => lockFoot(W, sup, sa.p, null, 1));
   }
   for (const st of spec.steer || []) steerTip(P, spec.tip, { ...st, from: Math.round(st.from * k), to: Math.round(st.to * k) });
-  P = P.map((W) => floorFeet(W));
-  // eyes on the opponent through the move (the capture looks wherever the performer did)
-  if (spec.look !== false) {
-    const tgt = spec.look || [90, 0, 52];
+  P = P.map((W) => floorFeet(W, spec.floorZ ?? 4.0));
+  // eyes on a point through the move (the capture looks wherever the performer did)
+  if (Array.isArray(spec.look)) {
+    const tgt = spec.look;
     P = P.map((W, f) => {
       const w = Math.min(1, Math.min(f, n - 1 - f) / Math.max(1, 3 * k));
       if (w <= 0) return W;

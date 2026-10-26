@@ -16,8 +16,9 @@ usage:
 
 From space-racer-cs2/tools/skies.py (MIT), made project-neutral.
 """
-import math
+import math, os, sys
 import numpy as np
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))     # finds retro.py (also under python3 -I)
 from retro import *
 import retro
 

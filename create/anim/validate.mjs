@@ -1,30 +1,22 @@
 // Joint checker: walks every frame of every clip and reports poses a body can't make or that
 // skin badly: knees and elbows bending the wrong way, thighs twisted or swung into the torso,
 // ankles past their range, hands, elbows and knees inside the torso or head.
-//   node tools/anim/validate.mjs [fighter|all] [key,key...] [--frames]
+//   node validate.mjs <clip.smd | folder of SMDs>... [--min 0.5]     (worst first)
+//   in code: checkPose(W) -> [{j, msg, sev}], checkClip({poses}) -> [{msg, frames, sev}]
+// Run it after every animation change; a severity under ~1 is usually fine on screen.
+// From cs2-fighter/tools/anim/validate.mjs (MIT), made project-neutral.
+import fs from "node:fs";
 import path from "node:path";
-import url from "node:url";
 import { q, v3, clamp, DEG } from "./m3.mjs";
 import { IDX, BIND } from "./rig.mjs";
 import { footAngles } from "./pose.mjs";
 import { HINGE_LOCAL } from "./post.mjs";
-import { buildClip, FIGHTERS, STATE_KEYS } from "./library.mjs";
-import { buildStance } from "./stances.mjs";
+import { readSMD } from "./smd.mjs";
 
 const P = (W, n) => W[IDX[n]].p;
 const local = (W, a, v) => q.rotate(q.conj(W[IDX[a]].q), v);
 
-// natural bend directions (bone-local), measured on the four stances' knees and elbows
-function hingeOf(upper, lower, end, poses) {
-  let acc = [0, 0, 0];
-  for (const W of poses) {
-    const a = v3.norm(local(W, upper, v3.sub(P(W, lower), P(W, upper))));
-    const b = v3.norm(local(W, upper, v3.sub(P(W, end), P(W, lower))));
-    const n = v3.cross(a, b);
-    if (v3.len(n) > 0.05) acc = v3.add(acc, v3.norm(n));
-  }
-  return v3.norm(acc);
-}
+// natural bend directions (bone-local) of knees and elbows: the hinge axes post.mjs's IK uses
 const HINGE = {};
 for (const s of ["L", "R"]) { HINGE["knee" + s] = HINGE_LOCAL["leg_upper_" + s]; HINGE["elbow" + s] = HINGE_LOCAL["arm_upper_" + s]; }
 // a hinge: bend angle and how well the bend plane matches the natural one (1 = exactly, -1 = reversed)
@@ -120,30 +112,23 @@ export function checkClip(c) {
 
 const main = process.argv[1] && path.basename(process.argv[1]) === "validate.mjs";
 if (main) {
-  const here = path.dirname(url.fileURLToPath(import.meta.url));
-  const C = await import(path.join(here, "..", "..", "dist", "core_node.mjs"));
-  const core = { CHARACTERS: C.CHARACTERS, MOVES: C.MOVES };
   const args = process.argv.slice(2);
-  const who = !args[0] || args[0] === "all" ? FIGHTERS : args[0].split(",");
-  const onlyKeys = args[1] && !args[1].startsWith("--") ? args[1].split(",") : null;
-  let total = 0;
-  const rows = [];
-  for (const id of who) {
-    const ch = core.CHARACTERS.find((c) => c.id === id);
-    const keys = onlyKeys || [...STATE_KEYS, ...Object.keys(ch.moves)];
-    for (const key of keys) {
-      const c = buildClip(id, key, core);
-      if (!c) continue;
-      for (const it of checkClip(c)) {
-        total++;
-        rows.push({ id, key, ...it });
-      }
-    }
+  const mi = args.indexOf("--min");
+  const min = mi < 0 ? 0 : +args[mi + 1];
+  const inputs = args.filter((a, i) => !a.startsWith("--") && args[i - 1] !== "--min");
+  if (!inputs.length) { console.log("usage: node validate.mjs <clip.smd | folder>... [--min severity]"); process.exit(2); }
+  const files = [];
+  for (const a of inputs) {
+    if (fs.statSync(a).isDirectory()) for (const f of fs.readdirSync(a).sort()) { if (f.endsWith(".smd") && !f.endsWith("_ref.smd")) files.push(path.join(a, f)); }
+    else files.push(a);
   }
+  const rows = [];
+  for (const f of files) for (const it of checkClip({ poses: readSMD(f) })) if (it.sev >= min) rows.push({ clip: path.basename(f, ".smd"), ...it });
   rows.sort((a, b) => b.sev - a.sev);
+  const w = Math.max(8, ...rows.map((r) => r.clip.length));
   for (const r of rows) {
     const fr = r.frames.length > 8 ? `${r.frames[0]}..${r.frames[r.frames.length - 1]} (${r.frames.length})` : r.frames.join(",");
-    console.log(`${r.sev.toFixed(1).padStart(5)}  ${r.id.padEnd(9)} ${r.key.padEnd(14)} ${r.msg}  @ ${fr}`);
+    console.log(`${r.sev.toFixed(1).padStart(5)}  ${r.clip.padEnd(w)} ${r.msg}  @ ${fr}`);
   }
-  console.log(`${total} issues`);
+  console.log(`${files.length} clips, ${rows.length} issues`);
 }

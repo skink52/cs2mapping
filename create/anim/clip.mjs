@@ -1,24 +1,56 @@
-// Clips: sequences of rig poses at 64 Hz, plus tools to cut them from mocap, retime, blend,
-// plant feet and finish them for export.
+// Clips: sequences of rig poses (64 Hz by default), plus tools to cut them from mocap, retime,
+// blend, plant feet and finish them for export.
+//   const c = Clip.fromMocap("jab", "13_17", 2.1, 2.9);   // take 13_17.bvh in CS2_BVH_DIR, seconds
+//   c.warp([[0, 0], [30, 20], [52, 40]]).blendIn(stance, 6).plantFeet().finish();
+// Takes are found as <CS2_BVH_DIR>/<id>.bvh (default ./bvh), or pass a path to a .bvh.
+// From cs2-fighter/tools/anim/clip.mjs (MIT), made project-neutral.
 import path from "node:path";
 import { limitAnkles } from "./pose.mjs";
-import { q, v3, clamp, smooth, smoother } from "./m3.mjs";
-import { SK, IDX, N, fk, toLocals, mirrorPose, setWorldRot } from "./rig.mjs";
+import { q, v3, clamp, smooth, smoother, monotoneSlopes, hermiteMap } from "./m3.mjs";
+import { SK, IDX, N, BIND, fk, toLocals, mirrorPose, setWorldRot } from "./rig.mjs";
 import { loadBVH } from "./bvh.mjs";
 import { makeRetargeter } from "./retarget.mjs";
-import { normalisePoses, gazeDir, chestDir } from "./gallery.mjs";
 import { ik2, LEG, ARM, spreadTwist, armsOutOfBody, limitHips } from "./post.mjs";
 import { shapeHand } from "./hands.mjs";
 
 export const FPS = 64;
-export const BVH_DIR = process.env.PB_BVH_DIR || "/tmp/claude-0/bvh";
+export const BVH_DIR = process.env.CS2_BVH_DIR || "bvh";
 const bvhCache = new Map();
+// retarget options (joint map etc., see retarget.mjs) used for takes loaded from now on
+let retargetOpts = {};
+export function setRetargetOptions(o) { retargetOpts = o || {}; bvhCache.clear(); }
 function getTake(id) {
   if (!bvhCache.has(id)) {
-    const b = loadBVH(path.join(BVH_DIR, id + ".bvh"));
-    bvhCache.set(id, { b, rt: makeRetargeter(b), cache: new Map() });
+    const file = id.endsWith(".bvh") ? id : path.join(BVH_DIR, id + ".bvh");
+    const b = loadBVH(file);
+    bvhCache.set(id, { b, rt: makeRetargeter(b, retargetOpts), cache: new Map() });
   }
   return bvhCache.get(id);
+}
+export const takeFps = (id) => 1 / getTake(id).b.dt;
+
+// ------------------------------------------------------------------ facing
+// the way the head faces (agents face +X in their bind pose)
+const HEAD_FWD_LOCAL = q.rotate(q.conj(BIND[IDX.head_0].q), [1, 0, 0]);
+export function gazeDir(W) {
+  const d = q.rotate(W[IDX.head_0].q, HEAD_FWD_LOCAL);
+  return v3.norm([d[0], d[1], 0]);
+}
+export function chestDir(W) {
+  const l = v3.sub(W[IDX.arm_upper_L].p, W[IDX.arm_upper_R].p);
+  const lh = v3.sub(W[IDX.leg_upper_L].p, W[IDX.leg_upper_R].p);
+  const left = v3.norm([l[0] + lh[0], l[1] + lh[1], 0]);
+  return [left[1], -left[0], 0];
+}
+// turn + move a pose sequence so that at frame `ref` the body (by="chest") or the gaze
+// (by="gaze") faces +X and the pelvis is over 0,0
+export function normalisePoses(poses, ref, by = "chest") {
+  const P = poses[ref];
+  const fwd = by === "gaze" ? gazeDir(P) : chestDir(P);
+  const yaw = Math.atan2(fwd[1], fwd[0]);
+  const rot = q.axisAngle([0, 0, 1], -yaw);
+  const c = q.rotate(rot, P[IDX.pelvis].p);
+  return poses.map((W) => W.map((t) => { const p = q.rotate(rot, t.p); return { q: q.mul(rot, t.q), p: [p[0] - c[0], p[1] - c[1], p[2]] }; }));
 }
 // retargeted pose at source time t (seconds), interpolated between source frames
 export function mocapPose(id, t) {
@@ -61,16 +93,16 @@ export class Clip {
     return lerpWorld(this.poses[a], this.poses[b], t - a);
   }
 
-  // cut [t0, t1] seconds of a take at 64 Hz, turned so the fighter faces +X at `alignAt`
-  static fromMocap(name, take, t0, t1, { align = "gaze", alignAt = t0, yaw = 0, mirror = false, speed = 1 } = {}) {
-    const n = Math.max(2, Math.round((t1 - t0) / speed * FPS) + 1);
+  // cut [t0, t1] seconds of a take, turned so the body faces +X at `alignAt`
+  static fromMocap(name, take, t0, t1, { align = "gaze", alignAt = t0, yaw = 0, mirror = false, speed = 1, fps = FPS } = {}) {
+    const n = Math.max(2, Math.round((t1 - t0) / speed * fps) + 1);
     let poses = [];
-    for (let k = 0; k < n; k++) poses.push(mocapPose(take, t0 + (k / FPS) * speed));
+    for (let k = 0; k < n; k++) poses.push(mocapPose(take, t0 + (k / fps) * speed));
     if (mirror) poses = poses.map(mirrorPose);
-    const ref = Math.round((alignAt - t0) / speed * FPS);
+    const ref = Math.round((alignAt - t0) / speed * fps);
     poses = normalisePoses(poses, clamp(ref, 0, n - 1), align);
     if (yaw) poses = poses.map((W) => turn(W, yaw));
-    return new Clip(name, poses);
+    return new Clip(name, poses, { fps });
   }
 
   // time warp: keys [[srcFrame, dstFrame], ...] (monotone), output length = last dst + 1
@@ -93,7 +125,7 @@ export class Clip {
   groundPoint(W) { const a = W[IDX.ankle_L].p, b = W[IDX.ankle_R].p; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0]; }
 
   // Take horizontal travel out of the clip. axis "x": forward travel becomes root motion (the
-  // game moves the fighter), sideways drift is removed. Returns per-frame forward displacement.
+  // game moves the body), sideways drift is removed. Returns per-frame forward displacement.
   extractRoot({ smoothFrames = 6, keepX = false } = {}) {
     const raw = this.poses.map((W) => { const p = W[IDX.pelvis].p; return [p[0], p[1]]; });
     const sm = raw.map((_, i) => {
@@ -188,7 +220,8 @@ export class Clip {
   }
 }
 
-export const SK_ANKLE_Z = 4.33;
+// ankle height of a flat foot standing on the floor (the bind pose's)
+export const SK_ANKLE_Z = BIND[IDX.ankle_L].p[2];
 // fist amount (0 relaxed .. 1 fist) or a hands.mjs shape name -> shape
 export function handShape(v) {
   if (typeof v === "string" || Array.isArray(v)) return v;
@@ -203,26 +236,4 @@ export function turn(W, deg) {
 }
 export function shift(W, d) { return W.map((t) => ({ q: t.q, p: v3.add(t.p, d) })); }
 
-// monotone cubic (Fritsch-Carlson) mapping from x[] to y[]
-function monotoneSlopes(x, y) {
-  const n = x.length, d = [], m = new Array(n).fill(0);
-  for (let i = 0; i < n - 1; i++) d.push((y[i + 1] - y[i]) / Math.max(1e-9, x[i + 1] - x[i]));
-  m[0] = d[0]; m[n - 1] = d[n - 2];
-  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
-  for (let i = 0; i < n - 1; i++) {
-    if (Math.abs(d[i]) < 1e-12) { m[i] = 0; m[i + 1] = 0; continue; }
-    const a = m[i] / d[i], b = m[i + 1] / d[i], s = a * a + b * b;
-    if (s > 9) { const t = 3 / Math.sqrt(s); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; }
-  }
-  return m;
-}
-function hermiteMap(x, y, m, v) {
-  const n = x.length;
-  if (v <= x[0]) return y[0];
-  if (v >= x[n - 1]) return y[n - 1];
-  let i = 0; while (i < n - 2 && v > x[i + 1]) i++;
-  const h = x[i + 1] - x[i], t = (v - x[i]) / h;
-  const t2 = t * t, t3 = t2 * t;
-  return (2 * t3 - 3 * t2 + 1) * y[i] + (t3 - 2 * t2 + t) * h * m[i] + (-2 * t3 + 3 * t2) * y[i + 1] + (t3 - t2) * h * m[i + 1];
-}
 export { hermiteMap, monotoneSlopes };

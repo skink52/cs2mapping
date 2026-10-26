@@ -1,5 +1,8 @@
 // Pose editing helpers: place the pelvis, bend and twist the spine, aim the head, plant feet,
-// put hands somewhere with the elbows where they should be. All work on world poses in place.
+// put hands somewhere with the elbows where they should be, set the foot on the shin and keep
+// ankles in range (limitAnkles). All work on world poses in place.
+//   placeFoot(W, "L", [x, y, z], yawDeg); lookAt(W, [100, 0, 60]); limitAnkles(W);
+// From cs2-fighter/tools/anim/pose.mjs (MIT), made project-neutral.
 import { q, v3, clamp, DEG } from "./m3.mjs";
 import { SK, IDX, BIND, setWorldRot, setWorld } from "./rig.mjs";
 import { ik2, LEG, ARM } from "./post.mjs";

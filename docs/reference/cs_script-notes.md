@@ -11,8 +11,10 @@ For the full API see Valve's [Scripting API page](https://developer.valvesoftwar
 - Map I/O talks to it with `RunScriptInput` and the input name as the parameter:
   `trigger OnStartTouch → <addon>_io_script RunScriptInput Speed_3`. The script listens with `Instance.OnScriptInput("Speed_3", ({ activator, caller }) => ...)`.
   The activator is passed through, so `!activator` logic works.
-- Because inputs are plain strings, one script can expose a family of inputs from a data table (`Speed_<x>`, `SetDest_<tele>__<dest>`,
-  `Equip_<equip>`...). The pipeline generates those tables from the map.
+- Because inputs are plain strings, one script can expose a family of inputs from a data table. The pipeline generates `Cmd_<n>`, `Score_<n>`,
+  `Speed_<x>`, `Gravity_<scale>` and `PushIn_<n>`/`PushOut_<n>` from the map (`gen_script.py`, `push_tail.js`, `gravity.py`). `SetDest_<tele>__<dest>`
+  and `Equip_<equip>` exist only in hand-written ports (mg_mario_party's `mario_io.js`, mg_50arenas' `a50_io.js`).
+- `RunScriptInput` carries only the input name, no value: encode numbers in the name and parse them in the script.
 - Hammer's build log warns "Parameter 'x' corresponds to an entity target name, but is sent to input 'RunScriptInput'..." when an input
   name happens to match an entity name. That warning is harmless.
 - The command-line build compiles `maps/scripts/*.js` with the other addon assets (`build_maps.ps1`).
@@ -85,8 +87,11 @@ tick late, but it can't miss a release. A missed release would leave a thruster 
 - `Instance.OnRoundStart`, `OnRoundEnd`, `OnBeginRoundRestart` (reset per-round state). In CS2 map entities respawn each round, as in CS:GO,
   so anything hooked with `ConnectOutput` has to be hooked again in `OnRoundStart` (ba_jail_skylight's keypad, Mario Party's counters).
 - Cancel or change a hit with `Instance.OnModifyPlayerDamage(ev => ({ abort: true }) | ({ damage: n }) | ({ damageFlags }))`. It runs after hitgroup
-  multipliers and doesn't fire for zero-damage hits. The older `OnBeforePlayerDamage` (mg_fred_all's gate) is marked deprecated in Valve's
-  `point_script.d.ts`, as are `OnBeforeReload`/`OnReload` (use `OnScriptReload`).
+  multipliers and doesn't fire for zero-damage hits. The older `OnBeforePlayerDamage` is marked deprecated in Valve's `point_script.d.ts`
+  (mg_fred_all's gate and the helicopter/vehicle scripts in ba_jail_skylight and jb_water_prison_cs2 still use it), as are `OnBeforeReload`/`OnReload`
+  (use `OnScriptReload`). New scripts use `OnModifyPlayerDamage`.
+- Map-specific gates (e.g. mg_fred_all's `EnableDamage`): a trigger fires `RunScriptInput <name>` on `<addon>_io_script`, the script sets a flag,
+  the damage hook aborts hits while it's off, and `OnRoundStart` resets it.
 - `controller.AddScore(n)` replaces `game_score`. It adds to the scoreboard's score column, not kills.
 - `Instance.ServerCommand("...")` replaces `point_servercommand`. Chat lines sent this way show as "Console: …". Servers can block `say`
   from maps, in which case the chat line just doesn't appear.
@@ -117,48 +122,86 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
 - Don't kill with `Kill()` or a `trigger_hurt` when credit matters (no attacker). For thrown/physics kills remember the last hitter (dodgeball: `OnDamaged` activator).
 - Queue kill-share kills one every few ticks so the killfeed rolls; drop or give to world any queued kill whose victim's or killer's slot changed hands
   (that bug once turned real kills off for a whole map).
-- CS2 counted an **assist** only when the assisting player had dealt a sizeable non-lethal share first (≥55 damage worked).
+- Assists: mg_trenchwarfare's design assumes CS2 counts an assist only when the assisting player dealt a sizeable non-lethal share first
+  (it gives ≥55 damage). **Unverified**: a design choice in that project's notes, not confirmed in game.
+- After `TakeDamage`, check `victim.IsAlive()`; if the victim survived, log once that a scripted kill was blocked (plugin or damage settings)
+  (Space Racer). Space Racer kills with `CSDamageTypes.VEHICLE` (killfeed icon unverified).
+- `Instance.OnPlayerKill` also fires for deaths the script didn't cause (admin slay, world): update the game's own state there too (Hellmatch).
+- Respawn watchdog: after a scripted kill in a respawn mode, wait for `OnPlayerReset`; if CS2 hasn't respawned a still-present player within 8 s,
+  count a failure, and after several in a row (Hellmatch 3, Space Racer 2) stop using real kills and log "check mp_respawn_on_death_t/ct".
+  Switching off after one failure was tripped by bot kicks. One-life modes can batch the CS2 kills until the round ends and apply them in order.
 - **End a round with a winner:** `EntFireAtName({ name: "<info_map_parameters name>", input: "FireWinCondition", value: CSRoundEndReason.TERRORISTS_WIN })`
   (or `CTS_WIN`, `DRAW`). Fallback: `Instance.SetRoundRemainingTime(1)`. Keep `mp_ignore_round_win_conditions 1` while the script runs the round and set it to `0` just before firing (Hellmatch, verified). Run the CS2 round clock ~15 s
   longer than the game's own clock.
+- Round fallback: if CS2 hasn't ended the round ~20 s after the game finished (warmup, or a plugin blocked `FireWinCondition`), start the next
+  game round from the script (Space Racer `ROUND_END_WAIT`). `OnRoundEnd(({ winningTeam, reason }))` logs what CS2 decided.
 - `Instance.SetRoundRemainingTime(s)` / `GetRoundRemainingTime()` set and read the round clock directly (no need for a huge `mp_roundtime`).
   `IsWarmupPeriod()`, `IsFreezePeriod()`, `IsTeamIntroPeriod()` tell you the phase.
-- Money off: `mp_playercashawards 0`, `mp_teamcashawards 0`, `mp_startmoney 0`, `mp_maxmoney 0`, `mp_afterroundmoney 0`. Auto teams without the menu:
+- Money off: `mp_playercashawards 0`, `mp_teamcashawards 0`, `mp_startmoney 0`, `mp_maxmoney 0`, `mp_afterroundmoney 0`, plus
+  `mp_buy_anywhere 0`, `mp_buytime 0`, `mp_death_drop_gun 0` (Hellmatch, Space Racer). `sv_disable_radar 1` if the radar would show parked pawns.
+  Offer a switch (Hellmatch `APPLY_CVARS`) so a server can keep its own config. Auto teams without the menu:
   `mp_force_assign_teams 1`, `sv_disable_teamselect_menu 1`. No starting pistols: `mp_t_default_secondary ""`, `mp_ct_default_secondary ""`.
 - Talking to a server plugin: `Instance.ServerCommand("<plugin_cmd> {slot} …")` is the only channel.
 
 ## Players: parking, cameras and input
 
-- **Pawn parking** (games where the player isn't the pawn): freeze the pawn with `pawn.SetMoveType(CSMoveType.NONE)` in a sealed booth, hide it with
-  `SetModelScale`, drive the view with a camera, read input from the pawn. Restore with `CSMoveType.WALK`. Abort all CS2 damage to parked pawns except your own kills.
+- **Pawn parking** (games where the player isn't the pawn): freeze the pawn with `pawn.SetMoveType(CSMoveType.NONE)` in a sealed booth, hide it,
+  drive the view with a camera, read input from the pawn. Restore with `CSMoveType.WALK`. Abort all CS2 damage to parked pawns except your own kills.
+  Hiding: `SetModelScale(0.02)` (Puppet Brawl, mg_trenchwarfare), or `DestroyWeapons()` then `SetColor({ r: 255, g: 255, b: 255, a: 0 })`, restored
+  with `a: 255` (Hellmatch, Space Racer; "own body hidden" confirmed in game). Don't use the alpha method on a pawn that still holds weapons
+  (see [cs2-gotchas](cs2-gotchas.md#scripts-players-rounds-and-plugins)).
 - **Custom camera:** `const cam = pawn.GetCustomCamera(); cam.SetParent(undefined); cam.SetMode(CustomCameraMode.CONTROLLED)` and move it with `Teleport`/`Move`.
   `CONTROLLED_POSITION` keeps mouse look client-side (instant); `CONTROLLED` takes the angles from the entity; `FOLLOW_POSITION` takes
-  `SetFollowConfig({ followEntity, cameraOffset, clipCameraOffset })` (chase cams). Restore with `SetMode(CustomCameraMode.DISABLED)` and `SetParent(pawn)`.
+  `SetFollowConfig({ followEntity, cameraOffset, clipCameraOffset })` (chase cams). Restore with `SetMode(CustomCameraMode.DISABLED)` and the parent you
+  stored with `cam.GetParent()` when taking it. Puppet Brawl also calls `pawn.SetEyeAngles(...)` on take and `Move`s the camera every tick; guard with
+  `typeof pawn.GetCustomCamera === "function"`. Spectators and unassigned players have no pawn, so no custom camera (the HUD still shows).
+- **FOV:** CS2's FOV 90 is horizontal at 4:3, so on 16:9 the real horizontal FOV is `2·atan(tan(45°)·(16/9)/(4/3))` ≈ 106.3°; framing distance =
+  half-width / tan(hfov/2) (Puppet Brawl, Space Racer previews).
+- **Lag:** with `CONTROLLED_POSITION` mouse look is client-side, but movement and shots simulated by the script arrive one round trip late; a map
+  script can't lag-compensate (Hellmatch).
+- After a teleport, `SetEyeAngles`, then ignore client yaw that differs by more than 2° for ~0.35 s while the client accepts the new view (Hellmatch).
 - **Input:** `pawn.IsInputPressed(CSInputs.X)`, `WasInputJustPressed`, `WasInputJustReleased`. Usable: FORWARD, BACK, LEFT, RIGHT, JUMP, DUCK, USE, ATTACK, ATTACK2,
   RELOAD, WALK, LOOK_AT_WEAPON (F). The number keys (weapon slots) can't be read. Read edges every tick: 20 Hz polling missed quick taps.
   Masked calls (`IsInputPressed(A | B)`) are undocumented and unconfirmed: the helicopter port assumed ALL, Space Racer assumes "any of", detects it at runtime and
   logs which (`40_players.js justPressed`). Safest: test one key per call.
-- **Chat commands:** `Instance.OnPlayerChat(({ player, text }) => …)`. Accept `!` and `/`. Scripts can't send private chat or hide the typed line;
-  script `say` speaks as the host and hits the chat flood limit, so space lines ~1 s apart.
+- **Chat commands:** `Instance.OnPlayerChat(({ player, text }) => …)`. Accept `!` and `/`. Scripts can't send private chat or hide the typed line
+  (show private help on that player's HUD instead); script `say` speaks as the host and hits the chat flood limit, so space lines ~1 s apart.
+  Strip `;` and `"` from anything sent with `ServerCommand("say …")`: player and track names go into a console command (Hellmatch, Space Racer).
+- `Instance.ClientCommand(slot, "cl_hud_playercount_showcount 1")` is sent by Hellmatch once per arriving human; whether CS2 accepts it from a server
+  is **unverified** (client commands from script have been unreliable, see the gotchas).
 - `Instance.RegisterCheatCommand(name, cb)` adds console commands that work with `sv_cheats 1` (test hooks: `pb_cpu_match`).
 
 ## Spawning and moving things
 
 - `pointTemplate.ForceSpawn(origin, angles)` returns the spawned `Entity[]`. **Pool** props (hide with a null model and park them) instead of spawning and killing;
-  cap spawns per tick (Hellmatch: 20) to avoid hitches.
+  cap spawns per tick (Hellmatch: 20) to avoid hitches. Spawned props have blank names: `SetEntityName('<prefix><n>')` each one if it has to be an input
+  target (e.g. a `SetSourceEntity` sound source). Template keys that worked for pools: `spawnflags 2`, `asynchronous 0`,
+  `spawnGroupType INSERT_INTO_POINT_TEMPLATE_SPAWN_GROUP`, `clientOnlyEntityBehavior CREATE_FOR_CURRENTLY_CONNECTED_CLIENTS_ONLY`; source `prop_dynamic`
+  with the null model, `solid 0`, `fademindist -1` (Hellmatch, Space Racer).
+- Prop skins: `EntFireAtTarget({ target: prop, input: "Skin", value: n })`; `n` is the material-group order in the vmdl (default group = 0, then each
+  `MaterialGroup`). Used for team colours (Space Racer) and animated textures (Hellmatch steps one group per frame every 8 tics).
+- Teleport a prop only when it jumped more than ~400 u (Space Racer `TELEPORT_DIST`) or on a real reset; otherwise `Move`; send nothing for unchanged poses.
+- `Instance.TraceLine({ ignoreEntity })` accepts an `Entity[]` (`point_script.d.ts`): mg_trenchwarfare's planes died on spawn until the ground trace ignored every aircraft.
+- Teleport targets: any point entity works (the script reads its origin); `info_teleport_destination` is handy because Hammer draws the player hull.
 - `Move` every tick for anything that moves (the client interpolates); `Teleport` only for the first placement and real jumps.
 - `entity.Glow(color)` / `Unglow()` outline props (unverified in game).
 - `point_worldtext` from script: `EntFireAtName({ name, input: "SetMessage", value })` (use " " for empty).
 - Sounds: pre-placed `point_soundevent`s; `EntFireAtTarget({ target: snd, input: "SetSourceEntity", value: "<entity name>" })`, then `StartSound`/`StopSound`.
-  Whether the listener is the parked pawn or the custom camera is unverified.
+  Whether the listener is the parked pawn or the custom camera is unverified. Sounds at arbitrary points: a ring of pooled invisible anchor props
+  teleported to the spot and used as the source (Hellmatch 24, Space Racer 16), with a cap on sounds per tick.
 - **Bone-merged agent on a script-driven rig** (Puppet Brawl): a `point_template` holding an invisible `prop_dynamic` rig plus an agent `prop_dynamic` with parent = rig and
-  Parent Attachment `!bonemerge` (both not solid). Fallback: the `FollowEntity` input. Unverified.
+  Parent Attachment `!bonemerge` (both not solid). The template `!bonemerge` parenting is verified (agents animated in game once the rig kept its bones);
+  the fallback (`FollowEntity` with the rig's name when `agent.GetParent() !== rig`) is untested. Scale with `SetModelScale` on the rig only.
+  Clips: `EntFireAtTarget({ target: rig, input: "SetAnimationLooping" | "SetAnimationNotLooping", value: clipName })` only when the clip changes, and
+  `SetPlaybackRate` (rounded, sent only on change; 0 during hitstop).
 
 ## HUD (custom_hud_layout)
 
 - Methods: `SetHasClass(panelId, cls, on)` for everyone, `SetHasClassForPlayer(slot, panelId, cls, on)`, `SetDialogVariableString[ForPlayer]`, `Reset()`, `ResetForPlayer(slot)`,
   `SetInputCaptureEnabled(slot, on)` with `Instance.OnCustomHudClicked(({ player, layout, buttonId }) => …)`.
-- Cost: cache what each panel last showed and send only changes. Hellmatch caps class changes at 600 per server tick and resumes next tick where it stopped.
+- Cost: cache what each panel (and each text line) last showed and send only changes. Hellmatch caps class changes at 600 per server tick and resumes next
+  tick where it stopped; Space Racer uses 900 and refreshes half the players on even ticks, half on odd. Hellmatch measured the HUD at 54% of script time
+  before line caching (64 players: 6.2 → 2.9 ms/tick, mock engine).
 - Layout rules and Panorama quirks: [../creation/hud.md](../creation/hud.md).
 
 ## Performance
@@ -168,6 +211,13 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
 - Declare every field an object will ever have in its constructor (V8 hidden classes).
 - Keep the think loop alive: reschedule in `finally`, and wrap each arena/instance's tick in its own try/catch.
 - Log script time once a minute (`Date.now()` deltas). Space Racer: 64 players ≈ 0.14 ms and ~215 engine calls per tick (measured on the mock engine, not a CS2 server).
+  Hellmatch: 64 players 2.1–2.5 ms/tick average, ~560 engine calls/tick, measured in its own mock, which runs the script in a `vm` context (see Testing:
+  those figures are probably pessimistic).
+- Guard optional API: `typeof Instance[name] === "function"` before hooking `On*` events, and disable the HUD after a few throws (the HUD API is marked
+  experimental) (Puppet Brawl). Retry `init()` every few seconds until the map entities are found; re-arm it ~0.5 s after `OnRoundStart` and after
+  `OnScriptReload` (`OnScriptReload({ before: () => { cleanup(); return null; }, after: () => init() })`).
+- Puppet Brawl imports only the names it uses from `cs_script/point_script`, on the theory that a name the runtime doesn't export stops the script
+  loading. **Unverified**: other working scripts import `CustomHudLayout` without trouble.
 
 ## Testing without CS2
 
@@ -176,7 +226,10 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   joins, inputs, damage, kills, respawns, chat and a disconnect, and fails on any exception or call outside the API. `create/dump_entities.py <vmap> entities.json`
   gives it the map's named entities.
 - Bigger games keep the rules in plain JS (`src/core/`, no engine calls) and the CS2 side separately (`src/cs2/`), so the game itself runs in Node for balance sims
-  (see [../creation/guide.md](../creation/guide.md)). Run mocks as ES modules, not a `vm` context (timings were ~2.5× too slow).
+  (see [../creation/guide.md](../creation/guide.md)). Run mocks as ES modules, not a `vm` context: Space Racer measured `vm` timings ~2.5× too slow.
+  Hellmatch's published numbers come from a `vm`-context mock, so treat them as an upper bound. Profile hot spots with `node --cpu-prof`.
+- Prove a performance change alters nothing: run the mock with a fixed seed and a trace of every engine call (positions, models, HUD classes, sounds) before
+  and after, and diff the traces (Hellmatch, Space Racer). The create mock's trace/perf/churn/HUD checks: [`create/test/`](../../create/test/).
 
 ## Physics and odd entities (from the ports)
 
@@ -185,7 +238,9 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
 - Ball games: hits from `OnBulletImpact({ weapon, position, hitEntity })` and `OnKnifeAttack`, low gravity by measuring and cancelling the engine's gravity
   on the ball (see the gotchas). Frozen-spawn physics balls need a nudge from script.
 - Grenades: CS2 triggers don't see them; track from `OnGrenadeThrow({ projectile })` and test segment-vs-box each tick.
-- `game_ui` replacement for vehicles: test each key separately (the helicopter port treated a combined mask as ALL; Space Racer probes it at runtime — see Input above; unconfirmed in CS2), drive thrusters with Activate/Deactivate, limit turn rate by
-  measuring yaw change (there is no angular-velocity read).
+- `game_ui` replacement for vehicles: test each key separately (combined masks are unconfirmed, see Input above), drive thrusters with Activate/Deactivate,
+  limit turn rate by measuring yaw change (there is no angular-velocity read).
+- Script flight (mg_trenchwarfare): Source pitch + is nose down; steer yaw and pitch separately (a slerp flipped through the vertical); the ground trace
+  ignores all aircraft; touching the ground is a crash.
 - AFK: activity = any input or a view change > ~2°; warn at 20 s, move to spectate at 30 s, only count idling while actually playing. Position-based AFK plugins
   flag parked pawns.

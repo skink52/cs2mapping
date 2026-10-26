@@ -1,13 +1,16 @@
-// Posture: builds a full-body pose from a compact spec, starting from the agent's bind pose.
-// Model space: the fighter faces +X, +Y is their left (lead side, away from the camera), +Z up.
-//   pelvis: { p: [x, y, z], yaw, pitch, roll }      yaw < 0 opens the hips toward the camera (-Y)
+// Posture: builds a full-body pose from a compact spec, starting from the agent's bind pose,
+// and keyed postures (sampleSpecs: specs at key frames -> one spec per frame on smooth curves).
+//   const W = posture(spec);   const specs = sampleSpecs([[0, specA], [20, specB]], 21);
+// From cs2-fighter/tools/anim/posture.mjs (MIT), made project-neutral.
+// Model space: the body faces +X, +Y is its left, +Z up. Angles in degrees.
+//   pelvis: { p: [x, y, z], yaw, pitch, roll, spin }
 //   chest:  { yaw, pitch, side }                    relative to the pelvis, spread up the spine
 //   look:   [x, y, z]                               where the eyes go
 //   feet:   { L|R: { p: [x, y], z, yaw, heel, roll, knee } }   knee = pole point (optional)
 //   hands:  { L|R: { p: [x, y, z], elbow: [x, y, z], palm: [x, y, z], bend } }
 //           palm = the direction the palm faces; the wrist stays straight unless bend (deg)
 //   shape:  { L, R } hand shapes for hands.mjs
-import { q, v3, DEG } from "./m3.mjs";
+import { q, v3, DEG, monotoneSlopes, hermiteMap } from "./m3.mjs";
 import { IDX, BIND, bindPose, setWorld, setWorldRot } from "./rig.mjs";
 import { bendSpine, twistSpine, lookAt, placeFoot, footOnShin, BIND_ANKLE_Z } from "./pose.mjs";
 import { ik2, ARM } from "./post.mjs";
@@ -94,7 +97,6 @@ export function posture(P) {
 // keys: [[frame, spec], ...] with complete specs (every key gives the same fields); numbers are
 // interpolated with monotone cubic curves, so a foot or hand passing through several keys follows
 // a smooth arc. Extra per-key numbers: fistL / fistR (0 relaxed .. 1 fist).
-import { monotoneSlopes, hermiteMap } from "./clip.mjs";
 function flat(o, pre = "", out = {}) {
   for (const [k, v] of Object.entries(o)) {
     const key = pre ? pre + "." + k : k;
