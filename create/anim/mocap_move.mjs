@@ -162,7 +162,7 @@ export function floorFeet(W, floorZ = 4.0) {
 export function mocapPoses(spec, { start, end, k = 1, n }) {
   const keys = spec.keys.map(([g, t]) => [g * k, t]);
   let P = cutTake({ ...spec, keys }, n);
-  // aim index: the game frame mapped to the aim take frame
+  // aim index: the output frame keyed to the aim take frame
   const ak = spec.keys.find((x) => x[1] === spec.aim);
   const aimIndex = Math.min(n - 1, Math.round(ak[0] * k));
   const sup = spec.support;

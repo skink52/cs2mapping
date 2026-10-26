@@ -1,0 +1,5 @@
+# Data made from Valve files or downloaded mocap: never commit
+cs2_skeleton.json
+*.bvh
+bvh/
+agentmesh/

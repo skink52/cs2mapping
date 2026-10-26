@@ -1,0 +1,3 @@
+# Output of these readers is Valve data: never commit
+*.json
+agentmesh/

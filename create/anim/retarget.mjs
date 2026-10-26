@@ -142,7 +142,7 @@ export function makeRetargeter(bvh, opts = {}) {
   };
 }
 
-// Whole take -> poses at the game's 64 Hz (or `fps`), frames [f0, f1) of the source.
+// Whole take -> poses at 64 Hz (or `fps`), frames [f0, f1) of the source.
 export function retargetRange(bvh, f0, f1, { fps = 64, ...opts } = {}) {
   const rt = makeRetargeter(bvh, opts);
   const srcFps = 1 / bvh.dt;

@@ -168,6 +168,10 @@ function ik2Hinge(W, upper, middle, end, target, { pole = null, keepEnd = true, 
   const ang = Math.atan2(v3.dot(v3.cross(now, d2), n), v3.dot(now, d2));
   Ql = q.mul(q.axisAngle(n, ang), Ql);
   setWorldRot(W, B, Ql);
+  // the bind lower bone sits slightly off the hinge plane (about 0.5 units at the agent's ankle),
+  // so swing the whole limb about the hip/shoulder by that small angle to land on the target
+  const fix = q.between(v3.sub(W[C].p, a), v3.sub(tip, a));
+  if (q.angle(fix) > 1e-6) setWorldRot(W, A, q.mul(fix, W[A].q));
   if (keepEnd) setWorldRot(W, C, endRot);
   return dist - tl;
 }

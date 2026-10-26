@@ -64,7 +64,7 @@ export function posture(P) {
   // pelvis place and turn (everything below and above follows)
   setWorld(W, pi, { q: W[pi].q, p: pel.p ? pel.p.slice() : W[pi].p });
   let rp = q.mul(q.axisAngle([0, 1, 0], (pel.pitch || 0) * DEG), q.axisAngle([1, 0, 0], (pel.roll || 0) * DEG));
-  if (pel.spin) rp = q.mul(q.axisAngle([1, 0, 0], pel.spin * DEG), rp);   // about the fight line (lying, tumbling)
+  if (pel.spin) rp = q.mul(q.axisAngle([1, 0, 0], pel.spin * DEG), rp);   // about the forward axis (lying, tumbling)
   rp = q.mul(q.axisAngle([0, 0, 1], (pel.yaw || 0) * DEG), rp);
   setWorldRot(W, pi, q.mul(rp, W[pi].q));
   // spine

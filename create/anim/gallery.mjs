@@ -16,7 +16,7 @@ if (process.argv[1] && process.argv[1].endsWith("gallery.mjs")) {
   const opt = (k, d) => { const i = args.indexOf("--" + k); return i < 0 ? d : args[i + 1]; };
   const out = args[0], kind = args[1];
   const files = args.slice(2).filter((a, i, A) => a.endsWith(".bvh"));
-  const side = opt("side", null), max = +opt("max", 12), view = opt("view", "game");
+  const side = opt("side", null), max = +opt("max", 12);
   const offsets = (opt("offsets", kind === "kick" ? "-0.45,-0.3,-0.18,-0.08,0,0.12,0.3" : "-0.3,-0.2,-0.12,-0.06,0,0.1,0.25")).split(",").map(Number);
   if (!out || !kind || !opt("agent")) { console.log("usage: node gallery.mjs <out.png> <punch|kick|all> <take.bvh>... --agent <agent.json|name>"); process.exit(2); }
   const agent = loadAgent(agentFile(opt("agent")));
