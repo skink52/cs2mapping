@@ -36,8 +36,11 @@ for /f "usebackq tokens=1,2" %%a in ("%PORT%\queue.txt") do (
   echo ==== !ADDON! : post_import_cleanup ====
   py post_import_cleanup.py !ADDON! > "%PORT%\logs\!ADDON!_cleanup.log" 2>&1
   echo      cleanup exit code !ERRORLEVEL!   ^(log: logs\!ADDON!_cleanup.log^)
-  if not "!IMPERR!"=="0" (
-    echo      FAILED - the importer exited with !IMPERR!, check the import log ^(an older vmap may still be there^)
+  rem Valve's importer always exits 1 at its prefab_refs step, so a failed import is spotted by "Aborting" in its log
+  set "IMPFAIL="
+  findstr /c:"Aborting" "%PORT%\logs\!ADDON!_import.log" >nul 2>&1 && set "IMPFAIL=1"
+  if defined IMPFAIL (
+    echo      FAILED - the importer aborted, check the import log ^(an older vmap may still be there^)
     echo !ADDON! FAILED>> "%PORT%\logs\stage_b_done.txt"
   ) else if exist "%CS2%\content\csgo_addons\!ADDON!\maps\!MAP!.vmap" (
     echo      OK - !MAP!.vmap exists

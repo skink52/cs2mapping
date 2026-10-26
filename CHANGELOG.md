@@ -6,7 +6,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-10-26
 
-- `run_import.bat`: a map now counts as FAILED in `stage_b_done.txt` when the importer exits non-zero. Before, an older vmap left in the addon made a failed import look OK (mg_n64_goldeneye re-port, vpk.signatures was back).
+- `run_import.bat`: a map now counts as FAILED in `stage_b_done.txt` when the import log says "Aborting" (the importer always exits 1 at its prefab_refs step, so the exit code is no use). Before, an older vmap left in the addon made a failed import look OK (mg_n64_goldeneye re-port, vpk.signatures was back).
 
 ## 2026-10-25
 
