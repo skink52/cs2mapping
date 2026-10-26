@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | In progress |
+| Status | Built (in progress, slow progress) (27 Oct 2026) |
 | Imported | 2026-10-13 |
 | Map last changed | 2026-10-13 |
 | How | manual, with a large generated map script |

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | In progress |
+| Status | Built (in progress) (27 Oct 2026) |
 | Original map | iSuperleggera |
 | Imported | 2026-10-14 |
 | Map last changed | 2026-10-15 |

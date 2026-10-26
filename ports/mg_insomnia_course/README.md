@@ -2,7 +2,8 @@
 
 | | |
 |---|---|
-| Status | Stage C done 24 Oct 2026, queued for build |
+| Status | Published (27 Oct 2026) |
+| Workshop | [3826811170](https://steamcommunity.com/sharedfiles/filedetails/?id=3826811170) |
 | Original | mg_insomnia_course__v3 by Charon (from Briar's CS:GO minigames folder) |
 | Imported | 2026-10-24 |
 | Map last changed | 2026-10-24 |

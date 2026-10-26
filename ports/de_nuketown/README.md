@@ -2,7 +2,8 @@
 
 | | |
 |---|---|
-| Status | Stage C done, vis optimised 18 Oct, queued for build |
+| Status | Published (quality is a bit low) (27 Oct 2026) |
+| Workshop | [3825929040](https://steamcommunity.com/sharedfiles/filedetails/?id=3825929040) |
 | Imported | 2026-10-16 |
 | Map last changed | 2026-10-24 |
 | How | cs2port pipeline |

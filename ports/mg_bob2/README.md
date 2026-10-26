@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Built (in progress) |
+| Status | Built (in progress; surf ramps limit playability) (27 Oct 2026) |
 | Imported | 2026-10-16 |
 | Map last changed | 2026-10-16 |
 | How | cs2port pipeline |

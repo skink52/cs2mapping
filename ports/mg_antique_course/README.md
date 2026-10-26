@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Stage C done 24 Oct 2026, queued for build |
+| Status | In progress (27 Oct 2026) |
 | Original | mg_antique_course3 by ScHoOuFi |
 | Imported | 2026-10-24 |
 | Map last changed | 2026-10-24 |

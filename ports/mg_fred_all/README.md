@@ -2,7 +2,8 @@
 
 | | |
 |---|---|
-| Status | Built (in progress) |
+| Status | Published (surf) (27 Oct 2026) |
+| Workshop | [3820745044](https://steamcommunity.com/sharedfiles/filedetails/?id=3820745044) |
 | Imported | 2026-10-16 |
 | Map last changed | 2026-10-16 |
 | How | cs2port pipeline (stages A-D) |

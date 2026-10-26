@@ -2,7 +2,8 @@
 
 | | |
 |---|---|
-| Status | Built (in progress) |
+| Status | Published (27 Oct 2026) |
+| Workshop | [3820723954](https://steamcommunity.com/sharedfiles/filedetails/?id=3820723954) |
 | Original map | PatatoR (Team-Furaxx) |
 | Imported | 2026-10-16 |
 | Map last changed | 2026-10-16 |

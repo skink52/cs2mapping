@@ -2,7 +2,8 @@
 
 | | |
 |---|---|
-| Status | Stage C done 24 Oct 2026, queued for build |
+| Status | Published (27 Oct 2026) |
+| Workshop | [3826776791](https://steamcommunity.com/sharedfiles/filedetails/?id=3826776791) |
 | Original | mg_crash_bandicoot_course_v1 (author not recorded in the map; music folder "gogaming") |
 | Imported | 2026-10-24 |
 | Map last changed | 2026-10-24 |

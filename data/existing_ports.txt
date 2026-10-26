@@ -1,10 +1,10 @@
-serpentis temple - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3574579115) By OG creator - excellent. 1hour+ for map to be fully played tho.
+serpentis temple - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3574579115) By OG creator 1hour+ for map to be fully played tho.
 mg_50arenas - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3571758583) Good port.
 lego multigames - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3097973183) Good port
 dr_arctic - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3307797491) Good port. Textures are old.
-ski mountain - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3307925815) Good port. Textures are old.
+ski mountain - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3307925815) Good port.
 bounce - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3088183343) Low-pop map, good.
-acrophobia - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3070463620) | This is russian w/ adverts, remake if possible. Otherwise good.
+acrophobia - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3070463620) | This is russian w/ adverts
 
 
 mg_smee_tower_cs2 [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3816892618)
@@ -14,46 +14,38 @@ mg_enjoy_multigames_cs2 [ported] [skink]: (https://steamcommunity.com/sharedfile
 mg_circle_course_cs2 [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3817732135)
 mg_awp_submarine_cs2 [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3817816213)
 mg_n64_goldeneye_cs2 [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3818260481)
-mg_mario_party [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3818267169) 
+mg_mario_party [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3818267169)
 mg_yolo_multigames [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3819030057)
 de_rats_1337 [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3820105155)
 mg_lego_course [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3820524232)
 mg_color_dev [ported] [skink]:(https://steamcommunity.com/sharedfiles/filedetails/?id=3820639006)
 mg_draw_course [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3820723954)
-mg_fred_all [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3820745044) surf ramps limit playability
+mg_fred_all [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3820745044) *surf
 mg_egypt_course [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3823331534)
 mg_galaxy_course [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3823405334)
 mg_faohu_course [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3824326493)
-mg_minecraft_adventure [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3825226010) 
+mg_minecraft_adventure [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3825226010)
 mg_metal_course_level_2 [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3825813828)
 mg_kirbys_brawl [ported] [briar]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3819068027)
 awp_multigames [ported] [briar]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3819078634)
 trains_detach [ported] [briar]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3822860582)
 
-mg_super_tower [in progress] [skink]
-mg_swag_multigames [in progress] [skink]
-trains_detach [in progress] [briar]
-mg_draw_course [in progress, built] [skink]
-mg_fred_all [in progress, built] [skink]
-mg_bob2 [in progress, built] [skink]
-mg_egypt_course [in progress, built] [skink]
-mg_faohu_course [in progress, built] [skink]
-mg_galaxy_course [in progress, built] [skink]
-mg_kohztec_course [in progress, built] [skink]
-mg_minecraft_adventure [in progress, built] [skink]
-de_nuketown [in progress] [skink]
-mg_simpsons_course [in progress, built] [skink]
-mg_metal_course_level_2 [in progress, built] [skink]
+mg_super_tower [in progress, built] [skink]
+mg_swag_multigames [in progress, built] [skink] (slow progress)
+mg_bob2 [in progress, built, *surf ramps limit playability*] [skink]
+mg_kohztec_course [in progress] [skink]
+de_nuketown [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3825929040) It's a bit low qual.
+mg_simpsons_course [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3827100992)
 mg_cs2_fighter [in progress, built] [skink]
 
 mg_piratewars_2012 [in progress] [Briar]
 mg_truck_wars [in progress] [Briar]
 mg_savethebacon_course [in progress] [Briar]
 mg_ipods_all_in_one [in progress] [Briar]
-mg_skilled_or_lucky_multigames [Ported] [Briar]
-mg_insomnia_course [in progress] [skink]
+mg_skilled_or_lucky_multigames [Ported] [Briar]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3824333747)
+mg_insomnia_course [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3826811170)
 mg_antique_course [in progress] [skink]
-mg_crash_bandicoot_course [in progress] [skink]
+mg_crash_bandicoot_course [ported] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3826776791)
 
 mg_100traps - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3553174829)
 mg_adev - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3823346380) gordon, Oct 2026
@@ -83,3 +75,12 @@ mg_sonic_islands - [ext. port] (https://steamcommunity.com/sharedfiles/filedetai
 mg_thc_lego_multimap - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3254037626) fys 'internal use' only
 mg_warmcup_headshot - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3076765511)
 mg_wipeout_course - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3485057336) easy version: gordon 3823346391
+
+mg_ka_heli_arena [*original*] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3808594398)
+Hellmatch CS2 (doom multiplayer) [*original*] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3821892329) Unlisted.
+damon's headshot arena [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3090078601) By OG creator
+surf_ski_2 - [ext. port] (https://steamcommunity.com/sharedfiles/filedetails/?id=3079877518)
+mg_space_racer (f-zero type racing) [*original*] [skink]: (https://steamcommunity.com/sharedfiles/filedetails/?id=3821296722) Unlisted.
+deathrun playground [ext. original] (https://steamcommunity.com/sharedfiles/filedetails/?id=3164611860) incredible
+deathrun civilisation [ext. original] (https://steamcommunity.com/sharedfiles/filedetails/?id=3188021118) same as playground.
+mg_tomgreens_allinone_v2 [in progress waiting for cs3] [ninja chris]
