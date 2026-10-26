@@ -7,7 +7,7 @@ Writes changed files to <local_root>/out/<addon>/... and <local_root>/out/<addon
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity
+import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix
 
 CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 
@@ -705,7 +705,7 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'sounds', 'doors', 'overlays', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'radar', 'assets']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'sounds', 'doors', 'overlays', 'overlayfix', 'facescale', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'radar', 'assets', 'matflags']
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
     if 'io' in steps and os.path.exists(vmfp): restore_io(m, c, vmfp); dropped_report(m, c, vmfp)
@@ -726,6 +726,8 @@ def run(addon, root, passes=None):
     if 'sounds' in steps: sounds(m, c)
     if 'doors' in steps: door_sounds(m, c, vmfp)
     if 'overlays' in steps: overlays(m, c)
+    if 'overlayfix' in steps or 'overlaydepth' in steps: texfix.overlay_geometry(m, c, vmfp, depth=8.0 if 'overlaydepth' in steps else None)
+    if 'facescale' in steps: texfix.face_scales(m, c, vmfp)
     if 'sky' in steps: sky_pass(m, c, vmfp)
     if 'vis' in steps: visfit.run(m, c)                  # hints fitted to the play space + sky shells out of vis
     elif 'skyvis' in steps: skyvis.run(m, c)
@@ -744,6 +746,7 @@ def run(addon, root, passes=None):
             c.todo = [t for t in c.todo if not t.startswith('overlay materials not converted: ')]
             c.overlay_skipped = prev + c.overlay_skipped
             if c.overlay_skipped: c.todo.append('overlay materials not converted: %s' % '; '.join(c.overlay_skipped)[:800])
+    if 'matflags' in steps: texfix.material_flags(m, c)
     if c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips:
         js = gen_script.build(addon, c.script, c.push, c.commands, c.scores, c.speeds, c.gravities, c.spawn_equips)
         c.write('maps/scripts/%s_io.js' % addon, js)

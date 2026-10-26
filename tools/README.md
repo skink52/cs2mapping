@@ -40,6 +40,9 @@ the PC through the linked-computer file tools. Hammer must stay closed while Cla
 - prop_hallucination → prop_dynamic or prop_static. env_sun and unnamed point_viewcontrol are removed.
 - ambient_generic custom sounds → soundevents in `soundevents_addon.vsndevts`. "Play everywhere" uses the stereo base; others use a 3D event with the original radius.
 - Static overlays → `csgo_static_overlay` with a translucency mask taken from the original alpha.
+- **Static overlay geometry** (`overlayfix`, `tools/texfix.py`): the importer's 2x2 placeholder quads are rebuilt from the VMF (texture size x `$decalscale` for infodecals, uv extent for info_overlays), laid on the brush face under the decal and the right way up. Hand-edited overlays are skipped. Overlays with a projection depth >= 32 are flagged; `stage_d.py ... overlaydepth` sets all to 8.
+- **Face texture scales** (`facescale`, `tools/texfix.py`): absurd brush-face scales/shifts are restored from the matching VMF side and the stored texture coordinates rewritten from the CS:GO texture size. No-op on faces that are already right.
+- **Material flags** (`matflags`, after `assets`): CS:GO `$additive` → `F_TRANSLUCENT` + `F_ADDITIVE_BLEND` (lightmapped) or `csgo_unlitgeneric` `F_BLEND_MODE 4`; `$nocull` → `F_RENDER_BACKFACES`.
 - Missing materials are rebuilt from CS:GO's VPK (VMT from `pak01_dir`, VTF decoded from the archive chunk). Water materials → `liquids/nuke_water`. Materials missing everywhere are swapped for the closest stock CS2 material and flagged for checking. Custom decals with no CS:GO source are left as they are and flagged instead, as is anything whose closest stock match is not a decal; stickers are never used as substitutes.
 - create a point_servercommand and point a logic_auto towards it, to set mp_freezetime 0 and mp_roundtime 600 OnMapSpawn. If a map only has 1 type of spawn (only info_player_counterterrorist or _terrorist) create a game_player_equip which will equip a knife, make it run OnMapSpawn. (Skipped when the map already has a game_player_equip that gives a knife on spawn, so players don't get a second one.)
 - player_speedmod → script `Speed_n` (ground speed driven from the player's keys).
@@ -61,7 +64,7 @@ the PC through the linked-computer file tools. Hammer must stay closed while Cla
 CS2 reads the loading-screen text from `game\csgo_addons\<addon>\maps\<map>.txt` (the same file Hammer5Tools' Loading Editor writes): first line `COMMUNITYMAPCREDITS:`, then the text, e.g. `Original map by <author>` / `CS:GO port by <porter>` (when the map credits one) / `Ported to CS2 by skink52`. No map rebuild needed.
 
 ## Follow-up passes on a map you've already edited in Hammer
-`stage_d.py <addon> <root> beams,lights,alpha,radar,daylight,skyvis,visfit,gravity` runs only those passes on the current vmap. It keeps your Hammer edits and appends to the cleanup log.
+`stage_d.py <addon> <root> beams,lights,alpha,radar,daylight,skyvis,visfit,gravity,overlayfix,overlaydepth,facescale,matflags` runs only those passes on the current vmap. It keeps your Hammer edits and appends to the cleanup log.
 `stage_d.py <addon> <root> visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with Lower instead of Low everywhere (for a map whose vis merge stalls).
 `glowfix.py <vmap in> <vmap out> <addon content root>` converts parented env_particle_glows to following glow particles (see cs2-gotchas). Run it on any map that has them; weapon-parented ones also need the glow follow section in `<addon>_io.js` (template: `ports/mg_metal_course_level_2/scripts`).
 `stage_d.py <addon> <root> daylight` is the dark-indoor-map fix above.

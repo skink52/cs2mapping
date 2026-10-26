@@ -8,7 +8,7 @@ in the same session.
 
 - `tools/`: cs2port pipeline (runs in the cloud workspace). Entry points: `prep.py` (stage A), `stage_c.py` (stage C),
   `stage_d.py` (follow-up passes). The library modules are `vmapedit.py`/`dmx.py`/`kv2.py` (vmap read/write), `vmf.py`, `vpk.py` and `vtf.py`.
-  The passes live in `lighting.py`, `beams.py`, `daylight.py`, `skyvis.py`, `radar.py`, `sky.py`, `assets.py` and `gen_script.py`.
+  The passes live in `lighting.py`, `beams.py`, `daylight.py`, `skyvis.py`, `radar.py`, `sky.py`, `assets.py`, `texfix.py` (overlay geometry, face texture scales, material flags) and `gen_script.py`.
 - `scripts/`: things that run on the Windows PC (`run_import.bat`, `run_build.bat`, `build_maps.ps1`,
   `post_import_cleanup.py`, `modelsfromrefs.py`, `make_import_map_auto.py`).
 - `docs/pipeline.md`: the pipeline reference. It is deployed to the PC as `C:\source1\cs2port\tools\README.md` and

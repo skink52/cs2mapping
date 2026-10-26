@@ -1,11 +1,12 @@
 """Run individual clean passes on an already-cleaned map (keeps your own Hammer edits).
 
-python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, gravity
+python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, gravity,
+        overlayfix (rebuild placeholder overlay quads), overlaydepth (same + projection depth 8 on every overlay), facescale, matflags
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import vmapedit as V, stage_c, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity
+import vmapedit as V, stage_c, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -16,6 +17,10 @@ def run(addon, root, passes):
         c.cs2v = vpk.VPK(os.path.join(vd, 'cs2_pak01_dir.vpk')); csgov = vpk.VPK(os.path.join(vd, 'csgo_pak01_dir.vpk'))
         arcs = {int(f[11:14]): os.path.join(vd, f) for f in os.listdir(vd) if re.match(r'csgo_pak01_\d{3}\.vpk$', f)}
         c.src = assets.Source(c, csgov, arcs)
+    vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
+    if 'overlayfix' in passes or 'overlaydepth' in passes: texfix.overlay_geometry(m, c, vmfp, depth=8.0 if 'overlaydepth' in passes else None)
+    if 'facescale' in passes: texfix.face_scales(m, c, vmfp)
+    if 'matflags' in passes: texfix.material_flags(m, c)
     if 'beams' in passes: beams.run(m, c)
     if 'skyvis' in passes: skyvis.run(m, c)
     if 'visfit' in passes or 'visfit_lower' in passes: visfit.run(m, c, all_lower='visfit_lower' in passes)
