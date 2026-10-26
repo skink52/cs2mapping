@@ -2,25 +2,38 @@
 
 | | |
 |---|---|
-| Status | Published |
-| Workshop | [mg_n64_goldeneye_cs2](https://steamcommunity.com/sharedfiles/filedetails/?id=3818260481) |
-| Imported | 2026-10-12 |
-| Map last changed | 2026-10-12 |
-| How | manual (Valve importer + post_import_cleanup.py) |
-
-Kept as a reference port after publishing.
+| Status | Re-ported with the cs2port pipeline 26 Oct 2026, queued for build |
+| Original | mg_n64_goldeneye_hdr by [TsM]RoB (HDR recompile by GFLClan) |
+| Workshop | [mg_n64_goldeneye_cs2](https://steamcommunity.com/sharedfiles/filedetails/?id=3818260481) (published from the 12 Oct manual port) |
+| Imported | 2026-10-26 (first import 2026-10-12) |
+| Map last changed | 2026-10-26 |
+| How | cs2port pipeline (stages A–D); the published manual port's vmap was overwritten |
 
 ## History
 
-- 2026-10-12, round 1: soundevents built the same way as Mario Party's. The I/O was diffed against the BSP, and all 41 `Use` → `TriggerForActivatedPlayer` conversions checked. The `elite` equip gave an SSG 08 and now gives Dual Berettas; `item_assaultsuit` restored; leftover CS:GO `weapon_x 1` keys removed. The 14 dropped env_beams restored (lobby lightning, 900 damage, 20 s after a door is chosen), 20 medals restored from the BSP's textures, overlays → `csgo_static_overlay` with masks.
-- 2026-10-12, round 2 (from 03:35): all env_beams and their outputs removed on request ("they can cause crashes"). The 24 signs that were left on a grey placeholder were rebuilt as properly sized quads (32×16, 24×24 round, 16×16 vents). 16 func_breakable_surf windows → func_shatterglass with the stock `glass_plate_shatter`.
+- 2026-10-26: full re-port from `mg_n64_goldeneye_hdr.bsp`, overwriting the published vmap. Backups: `prefabs+backups\mg_n64_goldeneye_published_2026-10-26.vmap` (+ `_published_2026-10-26\` prefabs and soundevents) and `mg_n64_goldeneye_imported_2026-10-26.vmap`. Map-specific fixes done along the way, and added to the pipeline so later ports get them:
+  - 45 `Use` inputs on game_player_equips → `TriggerForActivatedPlayer` (weapon arenas' teleports, HE wall buttons).
+  - The unnamed "Strip First" knife equip ran on every spawn in CS:GO: the io script now strips each spawning player and gives a knife (one tick after `OnPlayerReset`), so arena guns no longer stack on the default pistol.
+  - Door sounds: the importer drops `noise1`/`noise2`; 40 point_soundevents (default_locked, door_metal_large open/close, rock2, rock_impact_hard1) started from the doors' outputs; 28 unnamed doors got `port_door_N` names.
+  - Lobby lightning (14 env_beam, `StrikeOnce` 20 s after a door is picked): func_brush beams, `StrikeOnce` → Enable, Disable after the beam's 2 s life. The existing `beam2` trigger_hurt (100 dmg) still does the damage. (The 12 Oct port removed the beams because env_beam crashed; func_brushes don't.)
+  - `force_field_loop1.wav` (teleport hum, looping) given a cue point so CS2 loops it.
+  - The custom inmate ragdoll (`models/player/rgmodels/rginmate`) → stock `characters/models/tm_jumpsuit/tm_jumpsuit_varianta.vmdl`; player models are skipped by post_import_cleanup now (cs_mdl_import hung 20+ min on its animations).
+  - 2 dropped displacements rebuilt (`disprestore.py`, goldeneye/egyptian/sand); 31 dropped sky brushes → moondomes; sky_cs15_daylight04_hdr rebuilt from the CS:GO faces.
+  - Both point_viewcontrols removed (nothing targets them; the old port's open item).
+  - Loading text: "Original map by [TsM]RoB / HDR recompile by GFLClan / Ported to CS2 by skink52".
+- 2026-10-12, round 1 (manual): soundevents built the same way as Mario Party's. The I/O was diffed against the BSP, and all 41 `Use` → `TriggerForActivatedPlayer` conversions checked. The `elite` equip gave an SSG 08 and now gives Dual Berettas; `item_assaultsuit` restored; leftover CS:GO `weapon_x 1` keys removed. The 14 dropped env_beams restored, 20 medals restored from the BSP's textures, overlays → `csgo_static_overlay` with masks.
+- 2026-10-12, round 2 (manual): all env_beams and their outputs removed ("they can cause crashes"). The 24 signs left on a grey placeholder were rebuilt as properly sized quads. 16 func_breakable_surf windows → func_shatterglass.
 
-## Import report
+## What the cleanup did
 
-(`post_import_cleanup.py` report in this folder)
-
-- Textures - fully missing, no source found anywhere: 26
+See [mg_n64_goldeneye_cleanup_log.txt](mg_n64_goldeneye_cleanup_log.txt): 6 prefabs collapsed, 4 dropped outputs restored, 13 equips → weapon slots, point_servercommand → script `Cmd_n` (credits message, `sv_infinite_ammo 2`, `sv_autobunnyhopping 0`, nade hint), 27 ambient_generics → 8 soundevents (3 stock CS:GO sounds extracted), visfit 48 Low / 26 Lower / 1 Lowest, 11 of 567 lights Stationary, radar, 6 missing materials rebuilt from CS:GO, 2 overlays → csgo_static_overlay.
 
 ## Open / to check
 
-- One unused `point_viewcontrol` is still in the map.
+- 14 point_spotlight beams and the env_fog_controller are dropped by the importer (cosmetic).
+- Chat messages go through cs_script `ServerCommand("say ...")`.
+- Vis: if anything pops where players stand, change the nearest Lower hint to Low.
+
+## Scripts
+
+- [`scripts/mg_n64_goldeneye_io.js`](scripts/mg_n64_goldeneye_io.js) (point_servercommand commands, spawn strip + knife)

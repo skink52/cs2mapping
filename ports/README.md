@@ -15,7 +15,7 @@ One folder per map. The live status list is `existing_ports.txt` on the PC (snap
 | [mg_enjoy_multigames](mg_enjoy_multigames/) | Published | [3817075436](https://steamcommunity.com/sharedfiles/filedetails/?id=3817075436) | 2026-10-10 | manual |
 | [mg_lego_course](mg_lego_course/) | Published | [3820524232](https://steamcommunity.com/sharedfiles/filedetails/?id=3820524232) | 2026-10-14 | first cleanup with the scripted fixes that became stage C |
 | [mg_mario_party](mg_mario_party/) | Published, fixes on 17 Oct 2026 not yet republished | [3818267169](https://steamcommunity.com/sharedfiles/filedetails/?id=3818267169) | 2026-10-11 | manual |
-| [mg_n64_goldeneye](mg_n64_goldeneye/) | Published | [3818260481](https://steamcommunity.com/sharedfiles/filedetails/?id=3818260481) | 2026-10-12 | manual |
+| [mg_n64_goldeneye](mg_n64_goldeneye/) | Published (re-port 2026-10-26 queued for build) | [3818260481](https://steamcommunity.com/sharedfiles/filedetails/?id=3818260481) | 2026-10-26 | pipeline (was manual) |
 | [mg_smee_tower_cs2](mg_smee_tower_cs2/) | Published | [3816892618](https://steamcommunity.com/sharedfiles/filedetails/?id=3816892618) | 2026-10-09 | manual |
 | [mg_yolo_multigames](mg_yolo_multigames/) | Published | [3819030057](https://steamcommunity.com/sharedfiles/filedetails/?id=3819030057) | 2026-10-12 | manual, with a large generated map script |
 

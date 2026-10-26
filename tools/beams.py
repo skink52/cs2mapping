@@ -148,14 +148,22 @@ def run(m, c):
         if s['damage'] > 0 and not hurt_along(s['a'], s['b']): no_hurt.append('%s at %s (damage %g)' % (s['name'] or s['cls'], ' '.join('%g' % x for x in s['a']), s['damage']))
     # inputs
     bnames = set(s['name'].lower() for s in segs if s['name'])
-    n_in = 0
-    for e, cc in m.all_conns():
+    life = {}
+    for s in segs:
+        if s['name'] and s['cls'] == 'env_beam': life[s['name'].lower()] = max(life.get(s['name'].lower(), 0), float(m.P(s['e'], 'life', '0') or 0))
+    n_in = 0; n_strike = 0
+    for e, cc in list(m.all_conns()):
         t = dmx.get(cc, b'targetName').decode().lower(); i = dmx.get(cc, b'inputName').decode().lower()
         if t in bnames and i in ('turnon', 'turnoff', 'toggle'):
             dmx.set_(cc, b'inputName', dmx.T_STR, {'turnon': b'Enable', 'turnoff': b'Disable', 'toggle': b'Toggle'}[i]); n_in += 1
+        elif t in bnames and i == 'strikeonce':      # one strike lasting the beam's life: Enable now, Disable after life
+            dmx.set_(cc, b'inputName', dmx.T_STR, b'Enable'); n_strike += 1
+            if life.get(t, 0) > 0:
+                o, tg, _, prm, dl, tf = m.conn_tuple(cc)
+                m.add_conn(e, o, tg, 'Disable', '', dl + life[t], tf)
     for e in beams: m.remove_node(e)
     nl = sum(1 for s in segs if s['cls'] == 'env_laser'); nb = len(segs) - nl
-    c.log.append('%d env_laser + %d env_beam (CS2 cannot spawn them) -> %d never-solid func_brush beams between their end points (mutual laser pairs drawn once), coloured self-illuminated laser materials materials/lasers/laser_<rgb>.vmat; %d TurnOn/TurnOff/Toggle -> Enable/Disable/Toggle; no damage added'
-                 % (nl, nb, len(keep), n_in))
+    c.log.append('%d env_laser + %d env_beam (CS2 cannot spawn them) -> %d never-solid func_brush beams between their end points (mutual laser pairs drawn once), coloured self-illuminated laser materials materials/lasers/laser_<rgb>.vmat; %d TurnOn/TurnOff/Toggle -> Enable/Disable/Toggle; %d StrikeOnce -> Enable, then Disable after the beam life; no damage added'
+                 % (nl, nb, len(keep), n_in, n_strike))
     if no_hurt: c.todo.append('these lasers did damage in CS:GO but there is no trigger_hurt along them, so in CS2 they are only visual: %s' % ', '.join(sorted(set(no_hurt))))
     if skipped: c.todo.append('beams with no usable end point, removed: %s' % ', '.join(skipped))
