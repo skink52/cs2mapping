@@ -27,6 +27,10 @@ Tools, notes and history for porting **CS:GO maps to Counter-Strike 2** (mainly 
 
 No map content: no BSPs, decompiled VMFs, `.vmap` files, or textures, models and sounds taken from the original maps. Those belong to the original mappers (each port credits them in its loading screen: "original map by &lt;author&gt; cs2 port by skink52"). Valve's own import scripts aren't copied either. [`scripts/make_import_map_auto.py`](scripts/make_import_map_auto.py) patches your local copy instead.
 
+## Licence
+
+MIT ([LICENSE](LICENSE)): copy, change and reuse anything here, including the tools, docs and cs_script files, as long as the licence notice goes with it. It covers this repo's own work only. Valve's tools and import scripts that `scripts/` runs alongside, and the original maps, assets and sounds credited in each port, belong to their owners and are not included.
+
 ## Related
 
 - [Hellmatch CS2](https://github.com/skink52/freedm-cs2) (repo first named freedm-cs2): a Freedoom deathmatch made entirely in cs_script.
