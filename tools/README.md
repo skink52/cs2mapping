@@ -38,7 +38,7 @@ the PC through the linked-computer file tools. Hammer must stay closed while Cla
 - point_servercommand → script `Cmd_n`, with "Ported to CS2 by skink52" added after CS:GO port credits. game_score → script `Score_n`.
 - game_player_equip → weapon0..weapon21 slots. func_breakable_surf → func_breakable (glass).
 - prop_hallucination → prop_dynamic or prop_static. env_sun and unnamed point_viewcontrol are removed.
-- ambient_generic custom sounds → soundevents in `soundevents_addon.vsndevts`. "Play everywhere" uses the stereo base; others use a 3D event with the original radius.
+- ambient_generic custom sounds → soundevents in `soundevents_addon.vsndevts` (wavs that aren't 16-bit PCM are re-encoded; ADPCM is flagged). "Play everywhere" uses the stereo base; others use a 3D event with the original radius.
 - Static overlays → `csgo_static_overlay` with a translucency mask taken from the original alpha.
 - **Static overlay geometry** (`overlayfix`, `tools/texfix.py`): the importer's 2x2 placeholder quads are rebuilt from the VMF (texture size x `$decalscale` for infodecals, uv extent for info_overlays), laid on the brush face under the decal and the right way up. Hand-edited overlays are skipped. Overlays with a projection depth >= 32 are flagged; `stage_d.py ... overlaydepth` sets all to 8.
 - **Face texture scales** (`facescale`, `tools/texfix.py`): absurd brush-face scales/shifts are restored from the matching VMF side and the stored texture coordinates rewritten from the CS:GO texture size. No-op on faces that are already right.

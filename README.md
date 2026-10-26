@@ -42,6 +42,7 @@ Everything skink52 and Claude have worked out about **making Counter-Strike 2 ma
 |---|---|
 | [docs/reference/cs2-gotchas.md](docs/reference/cs2-gotchas.md) | What breaks in CS2 and the fix: importer, models, lighting, vis, entities, sound, players, Workshop |
 | [docs/reference/cs_script-notes.md](docs/reference/cs_script-notes.md) | cs_script patterns: wiring, input, movement, weapons, kills/rounds, cameras, prop pools, HUD API, performance, testing |
+| [docs/reference/external-tools.md](docs/reference/external-tools.md) | Outside tools and references (Valve, BSPSource, Source 2 Viewer, Hammer5Tools, cs2-slop-porting, mocap, …) and their traps |
 | [docs/reference/ai-workflow.md](docs/reference/ai-workflow.md) | Working with Claude: who does what, house rules, transfer limits, unattended runs, verifying without the game |
 | [CHANGELOG.md](CHANGELOG.md) | Dated history, newest first |
 

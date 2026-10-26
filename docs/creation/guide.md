@@ -36,6 +36,11 @@ ref/          the Hammer map (as last saved by the user) the build writes into, 
   keyvalues2 support.
 - **Start from the user's map.** The generator takes the map as last saved in Hammer (`<X>_CURRENT_VMAP=` or argv) and layers its content on top, keeping
   the user's edits. A fresh project starts from the addon template map (keeps its sky, lighting, probes, post-processing, team intro, nav).
+- **Clone entities from the user's map** instead of writing them from scratch: place one sample of each class in Hammer (point_script, custom_hud_layout,
+  point_soundevent, point_template, prop_dynamic) and copy it, so every FGD key is present. Entities written with only classname + needed keys get defaults
+  when Hammer re-saves. Keys: `custom_hud_layout` → `layout` (the `.vxml`), `point_script` → `cs_script` (the `.vjs`).
+- Binary DMX quirks: the prefix element holds the thumbnail and `map_asset_references` / `map_subasset_reference_*`; array type codes are base + 32 (element 33,
+  int 34, float 35, string 37); string arrays are inline C strings while scalar strings are string-table indices; a qangle is 3 floats.
 - **Tag everything generated** with a vis group (`tw_gen`, `fdm_env`) so a re-run replaces only its own work.
 - Full regeneration can reshuffle randomly placed things once the user's edits act as obstacles (RNG cascade). For late changes, **patch the user's
   vmap** with a small delta script instead (`patch_vmap.py` style), so nothing moves.

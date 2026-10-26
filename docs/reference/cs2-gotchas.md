@@ -244,4 +244,8 @@ These came from the original cs_script minigames (Hellmatch, Space Racer, mg_tre
 | Hammer while CS2 is running. | Second instance: `cs2.exe -addon <name> -tools -steam -retail -insecure -noassetbrowser -vulkan` (≈2× RAM/VRAM; don't build while both have the addon mounted; untested). |
 | Blender FBX → ModelDoc materials. | Per-material custom string property `FBX_vmatPath` (live value, forward slashes, `materials/` prefix, no extension), Custom Properties ticked on export. |
 | A door prop's pivot is in the wrong place and ModelDoc has no import translation. | Move the mesh in the source file, or an invisible `func_door_rotating` pivot with the prop parented. |
+| WAVs that aren't plain 16-bit PCM (8/24/32-bit, float, ADPCM). | Re-encode to 16-bit PCM (stage C `sounds` does PCM/float; ADPCM is flagged). From cs2-slop-porting. |
+| Some stock CS2 materials ship as stubs (error shader, no textures), so a CS:GO material of the same name looks broken. | Re-port the CS:GO material into the addon (cs2-slop-porting checks for this; our pipeline doesn't yet). |
+| Entities that play Source 1 soundscript names (`MetalGrate.ImpactHard`) are silent. | Write a same-named soundevent from the CS:GO soundscript (cs2-slop-porting does this). |
+| `env_steam` doesn't exist in CS2. | An `info_particle_system` with a particle built from its speed/spread/size/colour keyvalues (heat-wave type as a refracting sprite), as cs2-slop-porting generates. |
 | The choose-team camera position. | It uses an `info_player_terrorist`'s position/angles. |

@@ -51,6 +51,13 @@ one convex hull per prop. Example: `build_prop.build('sandbags', p_sandbag.spec(
 mg_deku_tree's creatures (snapper, spitter, weaver, grub, a boss) are procedural low-poly models with a painted swatch atlas (its `tools/creatures.py`,
 `tools/swatches.py`); poses are separate models swapped by the script (no animgraph). Bomb-arena characters are 2D chibi sprites on props.
 
+## Flat sprite models (top-down games)
+
+The bomb-arena game draws everything as flat textured quads seen from straight above (custom camera pitch 89.9°): 617 small models (tiles, crates with
+break frames, bombs, flame arms per direction/length/frame, chibi T/CT characters), a static floor+blocks model per generated map swapped onto one prop,
+and the script choosing the model per frame. 1,357 model files went to the PC as one zip (the bridge's 50-files-per-write limit). If the model count becomes
+a problem, bodygroups switched with `SetBodyGroup` would cut it.
+
 ## Voxel models from sprites
 
 - Hellmatch (`tools/sprites.py`): Freedoom sprites → CS2 models. `rot8`: a voxel figure carved from the 8 sprite rotations (players, rockets); `lathe`: solid of

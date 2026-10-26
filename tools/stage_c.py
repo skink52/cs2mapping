@@ -336,6 +336,34 @@ SOUND_EVENT = '''	// %(comment)s
 		]
 	}
 '''
+def wav_to_pcm16(data):
+    """-> (new bytes, note) for a wav that isn't plain 16-bit PCM (8/24/32-bit PCM and float are re-encoded, other chunks such as cue/smpl kept),
+    (None, None) when it already is, (None, reason) when it can't be converted here (ADPCM and other codecs)."""
+    import struct, numpy as np
+    if data[:4] != b'RIFF' or data[8:12] != b'WAVE': return None, None
+    chunks = []; i = 12
+    while i + 8 <= len(data):
+        cid = data[i:i + 4]; sz = struct.unpack('<I', data[i + 4:i + 8])[0]
+        chunks.append([cid, data[i + 8:i + 8 + sz]]); i += 8 + sz + (sz & 1)
+    fmt = next((c for c in chunks if c[0] == b'fmt '), None); dat = next((c for c in chunks if c[0] == b'data'), None)
+    if not fmt or not dat: return None, None
+    tag, ch, rate, _, _, bits = struct.unpack('<HHIIHH', fmt[1][:16])
+    if tag == 0xFFFE and len(fmt[1]) >= 26: tag = struct.unpack('<H', fmt[1][24:26])[0]
+    if tag == 1 and bits == 16: return None, None
+    raw = dat[1]
+    if tag == 1 and bits == 8: x = (np.frombuffer(raw, np.uint8).astype(np.float32) - 128) / 128
+    elif tag == 1 and bits == 24:
+        b = np.frombuffer(raw[:len(raw) // 3 * 3], np.uint8).reshape(-1, 3).astype(np.int32)
+        x = ((b[:, 0] | (b[:, 1] << 8) | (b[:, 2] << 16)) << 8 >> 8).astype(np.float32) / 8388608
+    elif tag == 1 and bits == 32: x = np.frombuffer(raw, '<i4').astype(np.float32) / 2147483648
+    elif tag == 3 and bits == 32: x = np.frombuffer(raw, '<f4').astype(np.float32)
+    elif tag == 3 and bits == 64: x = np.frombuffer(raw, '<f8').astype(np.float32)
+    else: return None, 'format tag %d, %d-bit' % (tag, bits)
+    dat[1] = (np.clip(x, -1, 1) * 32767).astype('<i2').tobytes()
+    fmt[1] = struct.pack('<HHIIHH', 1, ch, rate, rate * ch * 2, ch * 2, 16)
+    body = b''.join(c[0] + struct.pack('<I', len(c[1])) + c[1] + (b'\0' if len(c[1]) & 1 else b'') for c in chunks)
+    return b'RIFF' + struct.pack('<I', 4 + len(body)) + b'WAVE' + body, '%s %d-bit -> 16-bit PCM' % ('float' if tag == 3 else 'PCM', bits)
+
 def wav_add_cue(data):
     """a looping .wav without a cue chunk -> same wav with one cue point at the sampler loop start (or 0); None if not a RIFF wav"""
     import struct
@@ -363,6 +391,7 @@ def sounds(m, c):
     ev = open(evp, encoding='utf-8').read()
     prefix = re.sub(r'^(mg|de|jb|ba|cs|surf|bhop|kz)_', '', c.addon).replace('_', '')
     added = {}; fixed = 0; missing = set(); extracted = set(); looped = set()
+    pcm_done = set(); converted = []
     for e in m.by_class('ambient_generic'):
         msg = m.P(e, 'message', '')
         if not msg or not msg.lower().endswith('.vsnd'): continue
@@ -381,6 +410,14 @@ def sounds(m, c):
                     src = 'sounds/' + stem[len('sound/'):] + ext
                     c.write(src, data); extracted.add(src); break
         if src is None: missing.add(msg); continue
+        if src.endswith('.wav') and src not in pcm_done:
+            pcm_done.add(src)
+            wd = c.files.get(src)
+            if wd is None and os.path.exists(os.path.join(c.content, src)): wd = open(os.path.join(c.content, src), 'rb').read()
+            if wd:
+                nw, note = wav_to_pcm16(wd)
+                if nw: c.write(src, nw); converted.append('%s (%s)' % (os.path.basename(src), note))
+                elif note: c.todo.append('%s is %s, which CS2 may not compile: re-encode it as 16-bit PCM wav' % (src, note))
         vsnd = os.path.splitext(src)[0] + '.vsnd'
         evname = '%s.%s' % (prefix, re.sub(r'[^a-z0-9_]', '_', os.path.splitext(os.path.basename(src))[0].lower()).strip('_'))
         sf = int(m.P(e, 'spawnflags', '0') or 0); everywhere = bool(sf & 1)
@@ -405,6 +442,7 @@ def sounds(m, c):
         c.write('soundevents/soundevents_addon.vsndevts', ev)
     if fixed: c.log.append('%d ambient_generics pointed at %d new soundevents (%s) instead of raw .vsnd paths' % (fixed, len(added), ', '.join(sorted(added))))
     if extracted: c.log.append('stock CS:GO sounds extracted from the CS:GO VPK into the addon: %s' % ', '.join(sorted(extracted)))
+    if converted: c.log.append('wavs re-encoded to 16-bit PCM: %s' % ', '.join(converted))
     if looped: c.log.append('looping sounds given a cue point (CS2 only loops wavs with markers; start taken from the smpl loop when there is one): %s' % ', '.join(sorted(looped)))
     if missing: c.todo.append('ambient_generic sounds not in the addon (stock CS:GO sounds or not packed in the BSP): %s' % ', '.join(sorted(missing))[:600])
 
