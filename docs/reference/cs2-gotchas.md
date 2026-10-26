@@ -1,7 +1,7 @@
 # CS2 gotchas: what breaks when a CS:GO map is ported, and what fixed it
 
 Collected from the ports in this repo. "Where" points at a port that has the fix (see `ports/<addon>/`). Pipeline fixes run
-automatically in stage C (see [pipeline.md](pipeline.md)).
+automatically in stage C (see [pipeline.md](../porting/pipeline.md)).
 
 ## Valve's importer
 
@@ -136,3 +136,79 @@ automatically in stage C (see [pipeline.md](pipeline.md)).
   (mg_50arenas). Rebuild it from the real entities.
 - Moving outputs from a trigger onto a `logic_relay`: rename `OnStartTouch` to `OnTrigger`, or they never fire (yolo's scores).
 - After fixing a sound, restart the tools. Hammer can keep a failed sound load cached.
+
+## Learned building original addons
+
+These came from the original cs_script minigames (Hellmatch, Space Racer, mg_trenchwarfare, Puppet Brawl, mg_deku_tree, the bomb-arena game).
+"Unverified" means the project notes say it had not been confirmed in CS2 yet. The detailed write-ups are in the creation docs
+([../creation/](../creation/)).
+
+### Rendering, materials, models
+
+| Problem | Fix |
+|---|---|
+| A custom camera close to a wall clips through it (CS2's near clip plane; eye 15 u forward, collision radius 16). Scripts can't change the near plane. | A hidden render-only copy of each wall up to 16 u behind it, same material; tall step faces and low lintels too. See-through dropped from ~99% to <1% (Hellmatch). |
+| `csgo_unlitgeneric` `g_vTexCoordScrollSpeed` does nothing in CS2. | Animated prop whose frames are the texture shifted `max(2, w/32)` px (max 32 frames), stepped by the script. `F_TEXTURE_ANIMATION` (Valve's TV-static material) is the other route (unverified). |
+| ModelDoc material-group skins never switched when groups were remapped from the SMD material name. | Remap groups from the default group's material path. |
+| Alpha-tested textures must be power-of-two. | Pad or resize. |
+| Backface culling: Hellmatch found CS2 drew both faces of its model polygons, while `$nocull` ports need `F_RENDER_BACKFACES 1`. | Depends on the shader. Check the material's flags instead of assuming. |
+| Stock vmats with `F_VERTEX_ANIMATION` (wind, e.g. `maple_tree_bark_1`) look wrong on static props; legacy `vertexlitgeneric` stock materials (palletwood, kasbah planks, cloth01) have flat normals. | Export a non-animated `csgo_complex` copy of the texture, or pick a `csgo_complex` stock material. |
+| Self-lit model parts (tracers, sight pips). | `csgo_vertexlitgeneric` + `F_SELF_ILLUM`. |
+| Terrain blending. | Valve blend materials (e.g. `hr_ancient_blend_groundmud03-groundgrass_01_wet`), `VertexPaintBlendParams.x` = layer B weight, `VertexPaintTintColor`. Copy the mesh stream layout from `content/csgo/maps/editor/zoo/ancient_zoo.vmap`. |
+| LOD pops at ~300 u with `lod_thresholds` 12–60, and generated LOD1 meshes that shift parts. | Thresholds ×16 (192–480); ship LOD0 only where LOD1 deviates > ~2 u; keep geometry identical across LODs. |
+| A prop with no physics hull is walk-through; a full-mesh hull on a weapon crashed on drop. | One convex hull per prop (or a few), never the render mesh. |
+| A ModelDoc model that only the script references (rig, effects) doesn't compile from the map build. | Open and save it in ModelDoc once, or compile it with `resourcecompiler -i <vmdl>`. |
+| `SetModel` on players to a CS2 agent drew the local body/head in first person (mg_trenchwarfare, removed). Calling `SetColor`/alpha on a pawn every reset is the suspected cause of giant first-person weapons. | Hide pawns with `SetModelScale(0.02)` only and restore only what you changed. Converted custom player models need the agent rebuild ([../creation/models.md](../creation/models.md#player-models)). |
+| Props the script moves. | `prop_dynamic` with `model_archetype ""`. Move them with `Move` every tick; a prop that is `Teleport`ed every tick is not drawn. |
+| `SetModel` to a model the map never loaded does nothing. | Place a hidden "cache" `prop_dynamic` of every model the script uses. |
+
+### Lighting and bake
+
+| Problem | Fix |
+|---|---|
+| Lightmap bake stalled in charting ("26669 unique meshes") with every prop forced to `bakelighting 1` × LODs. | Light-probe foliage, wire and props under ~40 u (`bakelighting 0`); cover outer areas with probe volumes. |
+| "No lightmap resolution volumes set". | Closed `toolslightmapres.vmat` meshes over the player space (64 grid, floor to +128) plus one box per room. |
+| CS2 has 4 shadow slots per area. | In lamp-heavy spaces make most lights unshadowed with capped range, 1–2 shadowed. |
+
+### Sky, vis, world
+
+| Problem | Fix |
+|---|---|
+| The 3D skybox draws behind everything. | Nothing players or vehicles can get near may live in it. The skybox map needs `mapUsageType skybox`, its own `light_environment` + `env_sky` and a `sky_camera` (scale 16); the main map gets a `skybox_reference`. |
+| A `toolsskybox` shell always shows the single `env_sky`. | Several skies in one map: one moondome box per area with its own sky material and no toolsskybox shell (whether `csgo_moondome` accepts an equirect `TextureCubeMap` is unverified). |
+| `prop_static` models (visoccluder off) never block vis; fine hints over prop-only levels cost huge compile time (36 Low hints → 1.8M regions, 1013 s). | Low hints only along the play band, Lowest elsewhere. |
+| World limit ±16384. Scripted things flown past it misbehave. | Clamp positions or hide the entity. |
+| Bots don't move in a script-built lobby. | `func_nav_markup` WALKABLESEED volume. |
+| `cs_minimap_boundary` makes CS2 draw its own top-down minimap instead of the radar image. | Remove them; the overview txt is enough. |
+| Two players teleported to the same spot can never move again; spawns flush against a wall stick the player. | Step to the nearest clear spot after teleporting; fit spawns clear of walls. |
+
+### Sound
+
+| Problem | Fix |
+|---|---|
+| `csgo_music` soundevents with `volume_convar "snd_musicvolume"` spam "Unable to acquire convar value". | Remove `volume_convar`. Music then follows `snd_menumusic_volume` (Main Menu Music slider). `csgo_music` plays to everyone with no fall-off. |
+| Looping wavs don't loop. | Write both a `smpl` loop and a `cue` chunk. |
+| Rapid repeated sounds cut each other off. | Several `point_soundevent`s per source, round-robin. |
+
+### Players, rounds and plugins
+
+| Problem | Fix |
+|---|---|
+| `OnPlayerReset` also fires on a team change, sometimes **before** `OnPlayerTeamChanged`, with stale team data. | Re-read the controller's team in both handlers. |
+| A slot can change hands with no disconnect event (a bot kicked for a joining human). | Check once a second who holds each slot; drop queued state when it changes. |
+| HUD class changes sent before a joining client is ready are lost. | `hud.ResetForPlayer(slot)` and redraw on `OnPlayerActivate`, `OnPlayerTeamChanged` and spawn. |
+| Scripted kills don't happen or count as teamkills. | `mp_respawn_immunitytime 0`, `mp_teammates_are_enemies 1`, skip kills in warmup (details in [cs_script-notes.md](cs_script-notes.md#kills-rounds-and-score)). |
+| CounterStrikeSharp plugins that break script-run games: position-based AFK managers, no-respawn, spawn protection/godmode, TK punishment, plugins forcing `mp_teammates_are_enemies 0`, round-start cvar resetters (re-apply ~1 s after round start), loadout/knife givers, anti-stuck/noblock/third-person, chat-command clashes (`!rtv`), mid-round team balancers, per-tick entity scanners, `mp_restartgame` (clears spawned entities). | Whitelist the map or re-apply settings after them. |
+| Client cvars from script (`Instance.ClientCommand`) are unreliable (`cl_draw_only_deathnotices` was refused once and took effect another time, hiding the custom HUD too). | Don't depend on them. |
+| A script or Panorama change doesn't show after recompiling. | `disconnect`, then load the map again. |
+
+### Loading screens and Workshop
+
+| Problem | Fix |
+|---|---|
+| Space Racer / Hellmatch: with a single loading picture CS2 kept its default art. | Ship at least two (`<map>`, `<map>_1` … `_9`); they play as a slideshow, 4 s each, starting on a random one. Ports done with the Hammer5Tools `<map>_png` layout should be checked against this. |
+| Loading pictures not compiled. | Reference them from a never-shown rule in the HUD stylesheet (they show from the second load), or compile with `run_build.bat "assets <addon>"`. |
+| Content hidden behind CS2's loading UI. | 1920×1080 slide; CS2 draws a 300 px column 20 px from the right and crops 4:3/ultrawide. Keep content in x 252–1348, y 104–948. |
+| The overview txt in the content folder isn't used. | `resource/overviews/<map>.txt` goes in the **game** folder. |
+| Renamed map ships its old files too. | Delete the old `maps/<old>.vpk`, `_cameras.txt`, `_retakes.txt`, overview txt and compiled panorama images from content and game before uploading. |
+| Workshop upload carries the compiled game folder, not content. | Licence and credit files must be in the game folder and/or the description. |

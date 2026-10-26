@@ -1,0 +1,112 @@
+# What this toolkit can do
+
+A plain-language list of everything skink52 and Claude (an AI agent) can do for Counter-Strike 2 maps with the tools and methods in this repo.
+No coding knowledge needed to read it. Each line links to the detailed write-up for whoever does the work.
+
+**How it works in practice:** you keep Hammer and CS2 on your PC; Claude works in the cloud, reads and writes your map folders through the Claude desktop
+app, and hands you batch files to double-click for the steps that need Valve's tools (importing, compiling). You test in game and say what's wrong.
+
+---
+
+## Porting CS:GO maps to CS2
+
+**Before starting**
+- Check whether a CS2 port of the map already exists (our list, the Steam Workshop, GameBanana) and tell you before doing anything.
+- Name the CS2 addon cleanly (strips `_v2`, `_final`, `_fix` and similar).
+- Keep a running list of which maps are ported, in progress, or ported by someone else.
+
+**Getting the map into CS2**
+- Decompile the CS:GO map file (BSP) with its packed-in textures, models and sounds.
+- Fix the decompiled map so Valve's importer accepts it, without opening CS:GO's Hammer.
+- Run the import and the leftover model/material conversion unattended from one double-click, and even chain it straight into the build while you're away.
+
+**Automatic fixes after import** ([details](docs/porting/pipeline.md))
+- Put back map logic (outputs) the importer silently drops.
+- Merge the importer's separate prefab pieces back into one map.
+- Replace things CS2 no longer has, with scripts that behave like the original:
+  push triggers (CS:GO-style speed), low-gravity zones, player speed changers, scoreboard points, server commands, weapon givers (with the right slots),
+  toggling walls, hallucination props, breakable glass, screen overlays.
+- Lasers and beams (which CS2 can't create) redrawn as glowing beams in the right colour, with damage where the original did damage.
+- Missing skies rebuilt from the original six sky pictures; sky brushes the importer dropped rebuilt as sky shells.
+- Missing textures rebuilt from CS:GO's own files, water swapped for CS2 water, anything unrecoverable swapped for the closest CS2 texture and flagged.
+- Transparent textures (fences, glass, decals) that came through solid made transparent again; glowing/additive and double-sided textures restored.
+- Decals and overlays: correct size, position and orientation on the wall, with transparent backgrounds.
+- Texture alignment and scale on brushes repaired where the importer got it wrong.
+- Displacements (terrain) the importer dropped rebuilt from the original map.
+- Lighting so players and weapons aren't black: the right number of lights switched to Stationary per room, daylight added to dark indoor maps,
+  light probe volumes so props and players match the world.
+- Door sounds, ambient sounds and looping sounds converted to CS2 sound events, including stock CS:GO sounds.
+- Material names the importer mangled (spaces in folder names) pointed back at the real files.
+- Glows attached to moving objects (e.g. thrown grenades) made to follow them again.
+- Visibility hints placed for fast compiles, and huge sky shells taken out of the visibility calculation.
+- A minimap (radar) drawn from the map's own floors with their real textures, split into levels for tower maps.
+- Loading-screen credit to the original author ("original map by … cs2 port by skink52") and loading-screen pictures.
+- Round settings (no freeze time, long rounds, a knife on spawn for one-team maps).
+- A report of everything that still needs a human look.
+
+**Building and checking**
+- Compile maps from the command line one at a time, compiling textures/models/sounds/scripts first and copying the result into the game folder safely.
+- Read the build logs and fix compile errors.
+- Preview the map as pictures (top-down and from each corner) without opening Hammer.
+- Test the map's scripts against a stand-in for CS2 before you load the map.
+- Keep a record of every port: what was fixed, what's still open, the Workshop link.
+
+---
+
+## Creating new CS2 addons
+
+**Whole games inside one map, no server plugins** ([guide](docs/creation/guide.md))
+- Script-driven minigames where the map itself runs the game: deathmatch arenas, racing, fighting, grid bomb arenas, platform/KZ courses with monsters,
+  team battles with mortars and aircraft.
+- Several arenas in one map for big servers (e.g. 4 × 16 players), with automatic arena sizing, modes that change each round, spectating, AFK handling,
+  bots, chat commands, and round results.
+- Real CS2 kills and scores from script, so server ranking plugins count them; podium/kill-share systems for games without shooting.
+- Custom cameras (chase cams, fixed fight cameras), players driving vehicles or characters instead of walking.
+- Balance and bug testing by simulating thousands of rounds before you ever load the map.
+
+**Maps built by the tools**
+- Write a whole map (rooms, terrain, trenches, tracks, lobbies, spawns, lights, sky shells, visibility hints, all the entities the script needs) straight into your
+  Hammer map, keeping your own edits; or apply small changes to your latest save without regenerating anything else.
+- 3D skyboxes (distant terrain and forests), several different skies in one map, lightmap resolution and light probe setup.
+- Check every generated mesh for errors and render previews before you open it.
+
+**Models** ([details](docs/creation/models.md))
+- Convert downloaded 3D models (GLB/glTF, e.g. from Sketchfab) into CS2 props with materials, collision and credits.
+- Generate original props from scratch with realistic baked textures (wood, rust, cloth, mud, paint), detail levels and collision, or with CS2's own textures.
+- Low-poly creatures, voxel characters and objects built from 2D sprites, animated textures.
+- Turn old CS:GO custom player models (e.g. Octodad) into working CS2 player models with proper animations, hitboxes, ragdolls and first-person arms.
+- Animated characters driven by script, with hand-keyed and motion-capture animation retargeted onto the CS2 skeleton.
+- Read and preview CS2's built-in textures and models to reuse them.
+
+**Weapons** ([details](docs/creation/custom-weapons.md))
+- New weapons without plugins by replacing a stock weapon's entry: new model, magazine size, spare ammo, zoom, scope.
+- Rig a weapon model (FBX/GLB) onto a stock weapon's skeleton so the bolt, trigger and magazine animate; build period scopes; weathered textures.
+- Give different weapons per team from script.
+
+**HUD and screens** ([details](docs/creation/hud.md))
+- Custom on-screen HUDs: health bars, scores, timers, minimaps with your position, menus with clickable buttons, messages per player, pixel-font or retro styles.
+- Full-screen overlays (the CS2 replacement for CS:GO screen overlays).
+- Loading-screen slideshows, map icons, minimaps (radar) and alignment checks.
+- Layout checking at different screen shapes before testing in game.
+
+**Sound and music** ([details](docs/creation/sound.md))
+- Sound events (3D sounds with range, looping sounds, music heard everywhere).
+- Original synthesised sound effects and music (metal, chiptune, ambience), so there's nothing to licence.
+
+**Publishing** ([details](docs/creation/workshop.md))
+- Workshop images, trailers and GIFs with original music.
+- Keeping an addon safe to publish: no copyrighted names, art or ripped models; credits and licences in place.
+
+---
+
+## Reference for anyone
+
+- [What breaks in CS2 and how it was fixed](docs/reference/cs2-gotchas.md) — a long list of real problems from these projects.
+- [Scripting notes](docs/reference/cs_script-notes.md) — how map logic is done in CS2's JavaScript.
+- [Working with Claude](docs/reference/ai-workflow.md) — how the work is split, the house rules, and the practical limits.
+
+## What it can't do
+
+- Run Valve's tools on your PC by itself: you double-click the import/build batch files and play-test.
+- Hide or move CS2's own HUD, read number keys from script, or change the camera's near clipping.
+- Guarantee anything untested in game: every write-up marks what was confirmed in CS2 and what wasn't.

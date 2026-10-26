@@ -11,7 +11,7 @@
 ## History
 
 - 2026-10-25: 3 loading-screen images added (`panorama/images/map_icons/screenshots`), compile with `run_build.bat "assets mg_insomnia_course"`.
-- 2026-10-24: stages A–C. Indoor map (sky_dust env_sky but no sky brushes; the sky_dust panorama was copied from mg_egypt_course). 6 displacements the importer dropped rebuilt with `disprestore.py` (4 rockwall006a, 1 blend_dirt_concrete_07_aztec, 1 cs_italy/black). Second pass the same day: the 6 kill lasers got `trigger_hurt` boxes along them (`laserhurt.py`, damage 42069, always on) because Zach wants damaging lasers recreated even when the original had no trigger_hurt; 7 stock CS:GO materials rebuilt from the extracted CS:GO content (`<CS2>\csgo`), dev_water3/4 → nuke_water. Backups: `prefabs+backups\mg_insomnia_course_imported_2026-10-24.vmap`.
+- 2026-10-24: stages A–C. Indoor map (sky_dust env_sky but no sky brushes; the sky_dust panorama was copied from mg_egypt_course). 6 displacements the importer dropped rebuilt with `disprestore.py` (4 rockwall006a, 1 blend_dirt_concrete_07_aztec, 1 cs_italy/black). Second pass the same day: the 6 kill lasers got `trigger_hurt` boxes along them (`laserhurt.py`, damage 42069, always on) because skink52 wants damaging lasers recreated even when the original had no trigger_hurt; 7 stock CS:GO materials rebuilt from the extracted CS:GO content (`<CS2>\csgo`), dev_water3/4 → nuke_water. Backups: `prefabs+backups\mg_insomnia_course_imported_2026-10-24.vmap`.
 
 ## What the cleanup did
 

@@ -84,7 +84,9 @@ tick late, but it can't miss a release. A missed release would leave a thruster 
 
 - `Instance.OnRoundStart`, `OnRoundEnd`, `OnBeginRoundRestart` (reset per-round state). In CS2 map entities respawn each round, as in CS:GO,
   so anything hooked with `ConnectOutput` has to be hooked again in `OnRoundStart` (ba_jail_skylight's keypad, Mario Party's counters).
-- `Instance.OnBeforePlayerDamage(e => ({ abort: true }))` cancels a hit (mg_fred_all's enemy-damage gate).
+- Cancel or change a hit with `Instance.OnModifyPlayerDamage(ev => ({ abort: true }) | ({ damage: n }) | ({ damageFlags }))`. It runs after hitgroup
+  multipliers and doesn't fire for zero-damage hits. The older `OnBeforePlayerDamage` (mg_fred_all's gate) is marked deprecated in Valve's
+  `point_script.d.ts`, as are `OnBeforeReload`/`OnReload` (use `OnScriptReload`).
 - `controller.AddScore(n)` replaces `game_score`. It adds to the scoreboard's score column, not kills.
 - `Instance.ServerCommand("...")` replaces `point_servercommand`. Chat lines sent this way show as "Console: …". Servers can block `say`
   from maps, in which case the chat line just doesn't appear.
@@ -99,3 +101,74 @@ panels by id (`Show_<overlay>` / `Hide_<overlay>`). See `ports/mg_mario_party/pa
 
 `Instance.Msg("...")` writes to the console. `Instance.DebugScreenText`, `DebugLine`, `DebugBox` and `DebugSphere` draw in game. `OnScriptReload`
 keeps state through a hot reload when the `.js` is recompiled while the map is running.
+
+# Patterns from the original addons
+
+The sections below come from the games written entirely in cs_script (Hellmatch, Space Racer, mg_trenchwarfare, Puppet Brawl, mg_deku_tree).
+They apply just as well to port scripts. Methods are from Valve's `point_script.d.ts`, which is kept in `create/test/` for type-checking.
+
+## Kills, rounds and score
+
+- **A real kill from script** (killfeed, scoreboard, rank plugins):
+  `victim.TakeDamage({ damage: 1000, attacker, inflictor: attacker, damageTypes: CSDamageTypes.BULLET, damageFlags: CSDamageFlags.FORCE_DEATH | CSDamageFlags.IGNORE_ARMOR })`.
+  Let it through your own `OnModifyPlayerDamage` gate. If the attacker's pawn is dead, pass its controller. `attacker` undefined = world kill (no −1).
+- Scripted kills need `mp_respawn_immunitytime 0` (immunity blocks them), `mp_teammates_are_enemies 1` (otherwise same-side kills are teamkills, −1),
+  and respawn cvars (`mp_respawn_on_death_t/ct 1`) if players should come back. Skip kills during warmup.
+- CS2 counted an **assist** only when the assisting player had dealt a sizeable non-lethal share first (≥55 damage worked).
+- **End a round with a winner:** `EntFireAtName({ name: "<info_map_parameters name>", input: "FireWinCondition", value: CSRoundEndReason.TERRORISTS_WIN })`
+  (or `CTS_WIN`, `DRAW`). Fallback: `Instance.SetRoundRemainingTime(1)`. Keep `mp_ignore_round_win_conditions 1` while the script runs the round.
+- `Instance.SetRoundRemainingTime(s)` / `GetRoundRemainingTime()` set and read the round clock directly (no need for a huge `mp_roundtime`).
+  `IsWarmupPeriod()`, `IsFreezePeriod()`, `IsTeamIntroPeriod()` tell you the phase.
+- Money off: `mp_playercashawards 0`, `mp_teamcashawards 0`, `mp_startmoney 0`, `mp_maxmoney 0`, `mp_afterroundmoney 0`. Auto teams without the menu:
+  `mp_force_assign_teams 1`, `sv_disable_teamselect_menu 1`. No starting pistols: `mp_t_default_secondary ""`, `mp_ct_default_secondary ""`.
+- Talking to a server plugin: `Instance.ServerCommand("<plugin_cmd> {slot} …")` is the only channel.
+
+## Players: parking, cameras and input
+
+- **Pawn parking** (games where the player isn't the pawn): freeze the pawn with `pawn.SetMoveType(CSMoveType.NONE)` in a sealed booth, hide it with
+  `SetModelScale`, drive the view with a camera, read input from the pawn. Restore with `CSMoveType.WALK`. Abort all CS2 damage to parked pawns except your own kills.
+- **Custom camera:** `const cam = pawn.GetCustomCamera(); cam.SetParent(undefined); cam.SetMode(CustomCameraMode.CONTROLLED)` and move it with `Teleport`/`Move`.
+  `CONTROLLED_POSITION` keeps mouse look client-side (instant); `CONTROLLED` takes the angles from the entity; `FOLLOW_POSITION` takes
+  `SetFollowConfig({ followEntity, cameraOffset, clipCameraOffset })` (chase cams). Restore with `SetMode(CustomCameraMode.DISABLED)` and `SetParent(pawn)`.
+- **Input:** `pawn.IsInputPressed(CSInputs.X)`, `WasInputJustPressed`, `WasInputJustReleased`. Usable: FORWARD, BACK, LEFT, RIGHT, JUMP, DUCK, USE, ATTACK, ATTACK2,
+  RELOAD, WALK, LOOK_AT_WEAPON (F). The number keys (weapon slots) can't be read. Read edges every tick: 20 Hz polling missed quick taps.
+  Masked calls (`IsInputPressed(A | B)`) are undocumented; Space Racer detects at runtime whether a mask means "any of".
+- **Chat commands:** `Instance.OnPlayerChat(({ player, text }) => …)`. Accept `!` and `/`. Scripts can't send private chat or hide the typed line;
+  script `say` speaks as the host and hits the chat flood limit, so space lines ~1 s apart.
+- `Instance.RegisterCheatCommand(name, cb)` adds console commands that work with `sv_cheats 1` (test hooks: `pb_cpu_match`).
+
+## Spawning and moving things
+
+- `pointTemplate.ForceSpawn(origin, angles)` returns the spawned `Entity[]`. **Pool** props (hide with a null model and park them) instead of spawning and killing;
+  cap spawns per tick (Hellmatch: 20) to avoid hitches.
+- `Move` every tick for anything that moves (the client interpolates); `Teleport` only for the first placement and real jumps.
+- `entity.Glow(color)` / `Unglow()` outline props (unverified in game).
+- `point_worldtext` from script: `EntFireAtName({ name, input: "SetMessage", value })` (use " " for empty).
+- Sounds: pre-placed `point_soundevent`s; `EntFireAtTarget({ target: snd, input: "SetSourceEntity", value: "<entity name>" })`, then `StartSound`/`StopSound`.
+  Whether the listener is the parked pawn or the custom camera is unverified.
+- **Bone-merged agent on a script-driven rig** (Puppet Brawl): a `point_template` holding an invisible `prop_dynamic` rig plus an agent `prop_dynamic` with parent = rig and
+  Parent Attachment `!bonemerge` (both not solid). Fallback: the `FollowEntity` input. Unverified.
+
+## HUD (custom_hud_layout)
+
+- Methods: `SetHasClass(panelId, cls, on)` for everyone, `SetHasClassForPlayer(slot, panelId, cls, on)`, `SetDialogVariableString[ForPlayer]`, `Reset()`, `ResetForPlayer(slot)`,
+  `SetInputCaptureEnabled(slot, on)` with `Instance.OnCustomHudClicked(({ player, layout, buttonId }) => …)`.
+- Cost: cache what each panel last showed and send only changes. Hellmatch caps class changes at 600 per server tick and resumes next tick where it stopped.
+- Layout rules and Panorama quirks: [../creation/hud.md](../creation/hud.md).
+
+## Performance
+
+- CS2 warns "point_script … thinking for" on slow ticks. Native calls cost the most: don't call `IsValid` on every prop every tick (check every 8th/16th tick, or catch
+  the error on use), cache `GetGameTime()` once per tick, skip moving things that haven't moved.
+- Declare every field an object will ever have in its constructor (V8 hidden classes).
+- Keep the think loop alive: reschedule in `finally`, and wrap each arena/instance's tick in its own try/catch.
+- Log script time once a minute (`Date.now()` deltas). Space Racer: 64 players ≈ 0.14 ms and ~215 engine calls per tick.
+
+## Testing without CS2
+
+- Type-check: `sh create/test/tscheck.sh <script.js>` (Valve's `point_script.d.ts`, needs `npm i -g typescript`).
+- Smoke test: `node create/test/mock_point_script.mjs <script.js> [entities.json] players=16 seconds=300` runs the real script on a stand-in engine with
+  joins, inputs, damage, kills, respawns, chat and a disconnect, and fails on any exception or call outside the API. `create/dump_entities.py <vmap> entities.json`
+  gives it the map's named entities.
+- Bigger games keep the rules in plain JS (`src/core/`, no engine calls) and the CS2 side separately (`src/cs2/`), so the game itself runs in Node for balance sims
+  (see [../creation/guide.md](../creation/guide.md)). Run mocks as ES modules, not a `vm` context (timings were ~2.5× too slow).

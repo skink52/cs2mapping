@@ -15,7 +15,7 @@ a map without Claude, or to see what a pipeline stage is standing in for.
    `<addon>_cleanup_report.txt`.
 8. **Collapse the prefabs into the main `.vmap`.** The importer writes the map as prefabs (environment, gameplay, lighting, cubemaps, audio,
    nav). Collapse them, or copy each one's contents and Paste Special into the main map. Paste Special also works when a prefab is too heavy to collapse.
-9. **Fix what CS2 broke** (see [cs2-gotchas.md](cs2-gotchas.md)): stationary lights, lasers, sky, scripts for dead entities, materials.
+9. **Fix what CS2 broke** (see [cs2-gotchas.md](../reference/cs2-gotchas.md)): stationary lights, lasers, sky, scripts for dead entities, materials.
 10. **Radar** (RadGen, `C:\source2\RadGen.exe`) and **loading-screen text** (Hammer5Tools: "original map by &lt;author&gt; cs2 port by skink52").
 11. **Build**, test, and upload to the Workshop (game mode Custom).
 

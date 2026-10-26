@@ -12,4 +12,4 @@
 | `post_import_cleanup.py` | `<CS2>\game\csgo\import_scripts\` | Run after the importer, even if it died part-way (it aborts the whole run on the first bad model). Driven off the `.vmap` via `vmap_refs.py` (the importer's `_refs.txt` only with `--refs`, or when the vmap doesn't exist). Re-imports and compiles models that are missing or out of date, finds textures (addon → VTF staging → raw CS:GO content) and converts them with VTFCmd, writes vmats for loose textures, and reports what's still missing in `<addon>_cleanup_report.txt` |
 | `modelsfromrefs.py` | `<CS2>\game\csgo\import_scripts\` | Imports and compiles only the models in a `_refs.txt` (plus their materials) without touching the map. Edit the CONFIG block first |
 
-Stage A (decompile, assets) and stage C (all the map fixes) run in Claude's workspace. See [../docs/pipeline.md](../docs/pipeline.md).
+Stage A (decompile, assets) and stage C (all the map fixes) run in Claude's workspace. See [../docs/porting/pipeline.md](../docs/porting/pipeline.md).

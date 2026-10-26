@@ -1,7 +1,7 @@
 # Instructions for Claude sessions working on this repo
 
-This repo is the shared memory for skink52's CS:GO → CS2 map ports: the cs2port pipeline, the PC runners, the per-map records and
-what was learned along the way. Keep it current. If you change the pipeline, fix a port, or discover a CS2 behaviour, record it here
+This repo (`cs2mapping`, formerly `cs2portdocs`) is the shared memory for skink52's CS2 mapping: CS:GO → CS2 ports (the cs2port pipeline,
+the PC runners, the per-map records) and original CS2 addons (the creation toolkit and guides), plus what was learned along the way. Keep it current. If you change the pipeline, fix a port, or discover a CS2 behaviour, record it here
 in the same session.
 
 ## Layout
@@ -11,9 +11,12 @@ in the same session.
   The passes live in `lighting.py`, `beams.py`, `daylight.py`, `skyvis.py`, `radar.py`, `sky.py`, `assets.py`, `texfix.py` (overlay geometry, face texture scales, material flags) and `gen_script.py`.
 - `scripts/`: things that run on the Windows PC (`run_import.bat`, `run_build.bat`, `build_maps.ps1`,
   `post_import_cleanup.py`, `modelsfromrefs.py`, `make_import_map_auto.py`).
-- `docs/pipeline.md`: the pipeline reference. It is deployed to the PC as `C:\source1\cs2port\tools\README.md` and
+- `create/`: the creation toolkit (lossless vmap, mesh writer/checker, GLB→prop, procedural props, stock textures, cs_script tscheck + mock engine).
+- `docs/porting/`, `docs/creation/`, `docs/reference/` (gotchas, cs_script notes, AI workflow). `CAPABILITIES.md` is the plain-language list for non-coders:
+  keep it in step when a capability is added.
+- `docs/porting/pipeline.md`: the pipeline reference. It is deployed to the PC as `C:\source1\cs2port\tools\README.md` and
   `C:\source1\cs2port\cs2_port_pipeline.md`, and mirrored in the claude.ai project as `claude/cs2_port_pipeline.md`.
-- `docs/setup.md`: which repo file goes where on the PC.
+- `docs/porting/setup.md`: which repo file goes where on the PC.
 - `ports/<addon>/`: `README.md` (status, history, open issues), the cleanup log/report, and the map's own `scripts/*.js`.
 - `CHANGELOG.md`: dated history, newest first.
 - `data/existing_ports.txt`: snapshot only. The live file is `C:\source1\cs2port\existing_ports.txt` on the PC.
@@ -21,7 +24,7 @@ in the same session.
 ## Rules
 
 - **The PC copy is what runs.** After changing anything in `tools/` or `scripts/`, copy the changed files to their PC paths
-  (see `docs/setup.md`) and say which ones you copied. Then check the sizes on the PC, because a stale copy has been delivered once before.
+  (see `docs/porting/setup.md`) and say which ones you copied. Then check the sizes on the PC, because a stale copy has been delivered once before.
 - **No map content in git.** That means BSPs, VMFs, `.vmap`/`.vpk` files, and materials, models or sounds from the original maps. It also
   means no Valve scripts (`import_map_community.py`, `utils/`). `.gitignore` blocks the usual extensions. The two small template
   `.vmap` files in `tools/` are our own and are allowed.
@@ -30,6 +33,8 @@ in the same session.
 - When a port gets fixes: update `ports/<addon>/README.md` (what changed and why, what's still open), copy the new cleanup log and
   changed scripts into `ports/<addon>/`, and add a `CHANGELOG.md` line.
 - When a CS2 behaviour is discovered (something that worked in CS:GO and doesn't in CS2, plus the workaround), add it to
-  `docs/cs2-gotchas.md`.
+  `docs/reference/cs2-gotchas.md`. cs_script API findings go in `docs/reference/cs_script-notes.md`.
+- When an original addon project learns something reusable (a model method, HUD trick, engine limit), add it to the creation docs and, if it's a tool,
+  a project-neutral copy in `create/`.
 - Commit messages say what changed and which map or pass it was for.
 - Hammer must be closed while editing a map on the PC. Back up the `.vmap` before editing it, and send only changed files.
