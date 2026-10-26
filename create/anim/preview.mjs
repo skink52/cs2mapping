@@ -1,7 +1,9 @@
-// Animation preview: renders clips on the real agent meshes to contact sheets or MP4.
-//   node tools/anim/preview.mjs --smd <clip.smd> [--agent tm_professional_varf] [--view game|side|front|top]
-//        [--sheet out.png --cols 6 --every 3] [--mp4 out.mp4] [--size 480x360] [--mirror]
-import fs from "node:fs";
+// Animation preview: renders clips on a real agent mesh to contact sheets (PNG) or MP4.
+//   node preview.mjs --smd <clip.smd> --agent <agent.json | name in CS2_AGENT_DIR>
+//        [--view side|front|back|three|top|near] [--sheet out.png --cols 6 --every 3] [--mp4 out.mp4]
+//        [--size 480x360] [--mirror] [--fps 64]
+// The agent JSON comes from ../s2/agent_mesh.mjs. Needs ffmpeg on PATH.
+// From cs2-fighter/tools/anim/preview.mjs (MIT), made project-neutral.
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { Renderer, loadAgent } from "./render.mjs";
@@ -9,11 +11,12 @@ import { readSMD } from "./smd.mjs";
 import { mirrorPose } from "./rig.mjs";
 import { q, v3 } from "./m3.mjs";
 
-export const AGENT_DIR = process.env.PB_AGENT_DIR || "/tmp/claude-0/agentmesh";
-export const AGENTS = { timber: "tm_professional_varf", brass: "ctm_swat_varianth", pirouette: "ctm_fbi_variantb", motley: "tm_leet_variantf" };
+export const AGENT_DIR = process.env.CS2_AGENT_DIR || "agentmesh";
+// an agent JSON path, or a name looked up as <CS2_AGENT_DIR>/<name>.json
+export const agentFile = (a) => (a.endsWith(".json") ? a : path.join(AGENT_DIR, a + ".json"));
+// cameras around a body standing at the origin facing +X (units = model units)
 export const VIEWS = {
-  // the fight camera: audience side (-Y), a little above head height, fighter facing +X
-  game: { eye: [0, -150, 58], at: [0, 0, 40], fov: 50 },
+  near: { eye: [0, -150, 58], at: [0, 0, 40], fov: 50 },
   side: { eye: [0, -260, 42], at: [0, 0, 40], fov: 30 },
   front: { eye: [260, 0, 50], at: [0, 0, 40], fov: 30 },
   back: { eye: [-260, -30, 50], at: [0, 0, 40], fov: 30 },
@@ -21,7 +24,7 @@ export const VIEWS = {
   top: { eye: [0, -1, 330], at: [0, 0, 0], fov: 40 },
 };
 
-export function renderFrames({ actors, view = "game", size = [480, 360], label = null, frames, extra = null, labelScale = 2 }) {
+export function renderFrames({ actors, view = "side", size = [480, 360], label = null, frames, extra = null, labelScale = 2 }) {
   const [W, H] = size;
   const V = typeof view === "string" ? VIEWS[view] : view;
   const out = [];
@@ -69,13 +72,13 @@ if (process.argv[1] && path.basename(process.argv[1]) === "preview.mjs") {
   const smd = arg("smd");
   let poses = readSMD(smd);
   if (flag("mirror")) poses = poses.map(mirrorPose);
-  const agentName = AGENTS[arg("agent", "timber")] || arg("agent", "timber");
-  const agent = loadAgent(path.join(AGENT_DIR, agentName + ".json"));
+  if (!smd || !arg("agent")) { console.log("usage: node preview.mjs --smd <clip.smd> --agent <agent.json|name> [--sheet out.png] [--mp4 out.mp4] [--view side]"); process.exit(2); }
+  const agent = loadAgent(agentFile(arg("agent")));
   const size = arg("size", "480x360").split("x").map(Number);
   const every = +arg("every", 1);
   const sel = poses.filter((_, i) => i % every === 0);
-  const res = renderFrames({ actors: [{ agent, poses: sel }], view: arg("view", "game"), size, frames: sel.length, label: (f) => `${path.basename(smd, ".smd")} ${f * every}` });
+  const res = renderFrames({ actors: [{ agent, poses: sel }], view: arg("view", "side"), size, frames: sel.length, label: (f) => `${path.basename(smd, ".smd")} ${f * every}` });
   if (arg("sheet")) writeSheet(res, arg("sheet"), { cols: +arg("cols", 6) });
-  if (arg("mp4")) writeMP4(res, arg("mp4"), Math.round(64 / every));
+  if (arg("mp4")) writeMP4(res, arg("mp4"), Math.round(+arg("fps", 64) / every));
   console.log(`rendered ${sel.length} frames`);
 }

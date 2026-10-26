@@ -4,6 +4,10 @@
 
 Addon names default to the BSP name with version/bloat stripped (ports.clean_name: mg_x_v2_final -> mg_x).
 With --ports, possible duplicates in existing_ports.txt are printed.
+Environment: OUT (output root, default ./prep_out), PORTS (same as --ports=), BSPSRC (BSPSource launcher, default tools/bspsrc.sh,
+written by setup_bspsrc.sh). Needs tools/addon_template/content and /game: copy them from <CS2>\\content\\csgo_addons\\addon_template
+and <CS2>\\game\\csgo_addons\\addon_template (Valve's files, not in git).
+Output per addon: OUT/<addon>/pc/<drive path>/..., OUT/<addon>/zips/, OUT/<addon>/manifest.json.
 
 For each BSP: decompile with BSPSource (embedded files unpacked), rename to the
 addon name, apply the Hammer re-save fix, and lay out every file where it goes

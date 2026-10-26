@@ -1,15 +1,13 @@
-# WW1 rifle builder (CS2) — AI-agent generated (Claude)
+# Weapon builder (CS2) — AI-agent generated (Claude)
 
-FBX -> CS2 weapon vmdl rigged to a stock weapon skeleton (ssg08 / awp), reusing the stock animations.
+FBX or GLB model → CS2 weapon vmdl rigged to a stock weapon skeleton (rifles, pistols, optional period scope), reusing the stock animations.
 
-Needs: python3 + numpy + Pillow. Stock files: Source 2 Viewer "Decompile & Export" of
-weapons/models/<w>/weapon_snip_<w>.vmdl_c (+ _mag.vmdl) into the `stock` folder.
+- Method, config keys and lessons: [docs/creation/custom-weapons.md](../../docs/creation/custom-weapons.md).
+- Every file here with its usage line: [tools/README.md](../README.md#weapons-the-custom-weapon-builder-creation-not-porting).
 
-    python build_weapon.py lee.json
-    python build_weapon.py gewehr.json
-    python -c "from material import make_material; ..."   # see material.py
+    python3 build_weapon.py lee.json          # WW1_STOCK=<folder of decompiled stock weapon vmdl/dmx>
+    python3 preview.py lee.json               # left/right/top renders of the built body
 
-Config keys: shift_wo = offset added to mesh coords to land in weapon_offset bone space;
-bore_wo = (y,z) of the bolt/bore axis in that space; part_bone = FBX part -> bone;
-rules = box selections (faces or whole components) -> bone, mag:true marks the detachable magazine.
-Output goes to the addon content root (models/, materials/). Debug overlays: <name>_debug_side/top.png.
+Output goes to the config's `out` folder under `sub` (models/…, materials/…), plus `<name>_debug_side/top.png` there.
+Required config keys: `name`, `sub`, `out`, `stock`, `shift_wo`, `bore_wo`, and `fbx` or `glb`. Optional: `axes`, `scale`, `stock_prefix`, `part_bone`,
+`part_bone_idx`, `part_moves`, `rules`, `boxes`, `mag_parts`, `drop_parts`, `scope`, `flipv`, `flip_green`, `texsize`.

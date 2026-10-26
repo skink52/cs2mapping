@@ -17,11 +17,11 @@ Everything skink52 and Claude have worked out about **making Counter-Strike 2 ma
 | [docs/porting/conventions.md](docs/porting/conventions.md) | House rules: naming, credits, lights, lasers, radar, vis, multi-arena maps |
 | [docs/porting/setup.md](docs/porting/setup.md) | Which repo file goes where on the PC |
 | [docs/porting/manual-workflow.md](docs/porting/manual-workflow.md) | The by-hand method the pipeline replaced |
-| [`tools/`](tools) | The pipeline (Python, runs in Claude's workspace): decompile prep, Hammer-save fix, `.vmap` editing, post-import fixes, radar, sky, vis, lights, overlays, texture scales, map previews |
-| [`scripts/`](scripts) | PC-side runners: import, command-line build, post-import cleanup, model import, unattended import→build |
+| [`tools/`](tools/README.md) | The pipeline (Python, runs in Claude's workspace): decompile prep, Hammer-save fix, `.vmap` editing, post-import fixes, radar, sky, vis, lights, overlays, texture scales, map previews. [tools/README.md](tools/README.md) is the index of every tool with its usage line |
+| [`scripts/`](scripts/README.md) | PC-side runners: import, command-line build, post-import cleanup, model import, unattended import→build |
 | [`ports/`](ports) | One folder per ported map: status, Workshop link, fixes, open issues, cleanup log, the map's cs_script files |
-| [`data/`](data) | `existing_ports.txt` (which maps have CS2 ports, by whom) and the queue files |
-| [`legacy/`](legacy) | Helpers from the early manual ports |
+| [`data/`](data/README.md) | `existing_ports.txt` (which maps have CS2 ports, by whom) and the queue files |
+| [`legacy/`](legacy/README.md) | Helpers from the early manual ports |
 
 ## Creating original CS2 addons
 
@@ -33,8 +33,8 @@ Everything skink52 and Claude have worked out about **making Counter-Strike 2 ma
 | [docs/creation/custom-weapons.md](docs/creation/custom-weapons.md) | New weapons without plugins: `weapons.vdata` override, rigging models onto stock weapon skeletons, scopes |
 | [docs/creation/sound.md](docs/creation/sound.md) | Sound events, music, loops, synthesised audio |
 | [docs/creation/workshop.md](docs/creation/workshop.md) | Publishing, Workshop limits, keeping content safe to publish |
-| [`create/`](create) | The creation toolkit: lossless vmap read/write, mesh writer/checker, GLB→prop, procedural prop baker, stock texture reader, cs_script type-check and mock engine |
-| [`tools/weapons/`](tools/weapons) | The weapon builder (FBX/GLB → rigged CS2 weapon) |
+| [`create/`](create/README.md) | The creation toolkit (index in [create/README.md](create/README.md)): lossless vmap read/write and map generation, mesh writer/checker, GLB→prop, procedural props, stock textures, voxel models, HUD/loading-screen/sky/sound generators and checkers. Subfolders: [`create/test/`](create/test) (cs_script type-check and mock engine), [`create/build/`](create/build) (script build template), [`create/anim/`](create/anim) (mocap retarget, IK, joint validator, rig vmdl writer), [`create/s2/`](create/s2) (compiled-resource readers) |
+| [`tools/weapons/`](tools/README.md#weapons-the-custom-weapon-builder-creation-not-porting) | The weapon builder (FBX/GLB → rigged CS2 weapon) |
 
 ## Reference (both)
 

@@ -9,8 +9,8 @@ These are the standing rules every port follows. The pipeline applies most of th
   (mg_ski_mountain was ported and then deleted because a CS2 port already existed, and mg_50arenas was ported before an existing one turned up.)
   mg_simpsons_course, mg_metal_course_level_2 and de_nuketown were reported first and then ported on request: commenters say the existing
   simpsons port crashes and can't be completed, and the CS2 Nuketown maps are Call of Duty remakes rather than ports.
-- **Workshop pages: never report an item as "removed" or "incompatible" from the page text.** Every Workshop page's HTML carries that
-  wording as hidden template text, and page fetchers pick it up. A page that shows visitor and subscriber stats is live.
+- **Workshop pages: never report an item as "removed" or "incompatible" from the page text** (hidden template text; see
+  [pipeline.md](pipeline.md#before-porting-duplicate-check-and-names)).
 - **Addon name = map name with version and bloat stripped.** `_v2`, `_v1_2`, `_b3`, `_rc1`, `_final`, `_fix`, `_beta`, `_csgo`, `_hdr`, `_ws`...
   (`mg_x_v2_final` → `mg_x`). Use `bspname=addonname` to force a different name.
 - **Log it.** Add the map to `existing_ports.txt` as `<addon> [in progress] [skink]`. A successful command-line build changes it to
@@ -33,26 +33,27 @@ These are the standing rules every port follows. The pipeline applies most of th
 - **Light probe volumes.** Without an `env_combined_light_probe_volume`, brush entities, props, players and weapons don't get the baked
   lighting, so they look different from the world (Mario Party's platforms were brighter than the walls). One per room is enough.
 - **Lasers.** CS2 can't spawn `env_laser` / `env_beam`. Replace each with a never-solid `func_brush` drawn between its end points with a
-  self-illuminated laser material in the beam's colour. Add damage only where a `trigger_hurt` already exists. If a laser did damage
-  with no `trigger_hurt` along it, flag it rather than inventing one. If a trigger_hurt moves (parented to a door / mover), parent the beam to the same mover.
-- **Loading screen.** Every map gets a background image (Workshop preview) in `panorama/images/map_icons/screenshots/<res>/<map>_png.png` + `.vtex` (see pipeline.md).
+  self-illuminated laser material in the beam's colour. Lasers that did damage in CS:GO get a `trigger_hurt` (`laserhurt.py` after stage C),
+  even where the original had none (skink52's rule, 24 Oct 2026). If a trigger_hurt moves (parented to a door / mover), parent the beam to the same mover.
+- **Loading screen.** Every map gets background images (Workshop previews, at least two) in `panorama/images/map_icons/screenshots/<res>/<map>_png.png` + `.vtex`
+  (naming rule: [pipeline.md](pipeline.md#loading-screen-background-images)).
 - **Radar.** Every map gets a minimap: `panorama/images/overheadmaps/<map>_radar_psd.png` + `.vtex`, and `resource/overviews/<map>.txt` in game.
   Stacked maps (one spawn above another) get vertical sections, one image per level.
 - **Sky.** Sky brushes the importer dropped come back as moondome boxes using the map's `env_sky` (rebuilt from the six CS:GO faces
   if CS2 doesn't have that sky).
 - **Vis hints.** One `visibility_hint` set to Lowest covering the whole map, including the void. Low where players stand (the walkable
-  band, up to 160 units above a floor), Lower over the rest of the playable air near geometry (high ceilings, shafts). Medium only
-  sparingly, where the playable space has very complicated meshes. `visfit.py` builds this from the map.
+  band, up to 160 units above a floor), Lower over the rest of the playable air near geometry (high ceilings, shafts). No Medium on ports
+  (`visfit.py` never writes it). `visfit.py` builds this from the map.
 - **Sky shells out of vis.** Moondome and tools/skybox shells around a room that is already sealed by its own walls get
   "Exclude from Vis". They're huge surfaces and otherwise dominate the vis compile.
 
 ## Multi-arena maps (original minigame addons)
 
-**New in the late-October 2026 CS2 update:** a `toolsskyboxocclude` tool material that does the job of the moondome shells (a surface that shows the sky and closes off the void). Reported by skink52; not yet tested in our maps or wired into the pipeline, which still writes `csgo_moondome` shells. Check the exact material path in Hammer's tools materials before scripting it.
-
-Enclose each arena in a moondome (sky-material shell) with a tools/skybox shell 1 unit inside it, so the environment lighting works.
+Enclose each arena in a moondome (sky-material shell) with a tools/skybox shell 1 unit inside it, so the environment lighting works (single-sky maps only:
+a toolsskybox shell always shows the one `env_sky`, so for several skies use moondome boxes with no toolsskybox shell). See
+[cs2-gotchas](../reference/cs2-gotchas.md#sky-and-world) for `toolsskyboxocclude` (new, untested).
 Use one box per arena rather than one big shell (mg_50arenas has 53), and keep each box close to its arena: the vis compile pays for every unit of volume.
-Vis hints as above: Lowest for the void between arenas, Low throughout the arenas, Medium sparingly. If the arenas add up to a huge volume,
+Vis hints: Lowest for the void between arenas, Low throughout the arenas, Medium sparingly (only in small dense spots; this is the one place Medium is used). If the arenas add up to a huge volume,
 use Lower (`hintType` 8) instead of Low. Never Lowest alone: with only 256-unit regions, walls vanish a few steps back.
 
 ## Working on the files

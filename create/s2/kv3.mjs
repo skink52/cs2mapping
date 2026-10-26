@@ -1,5 +1,11 @@
-// Source 2 compiled-resource reader (blocks + binary KV3 v1..v5) for exploring game assets.
-// Based on the layout documented by ValveResourceFormat (MIT). Node 22+ (built-in zstd).
+// Source 2 compiled-resource reader (blocks + binary KV3 v1..v5, LZ4 / zstd) for exploring
+// compiled game files (.vmdl_c, .vmat_c, ...). Node 22+ (zstd is built in from 22.15 / 23.8).
+//   import { readKV3Blocks } from "./kv3.mjs"; const { kv } = readKV3Blocks(fs.readFileSync(f));
+//   node kv3.mjs <file_c> [BLOCK]        prints the KV3 blocks (or one, e.g. DATA) as JSON
+// Based on the layout documented by ValveResourceFormat (MIT).
+// From cs2-fighter/tools/kv3.mjs + tools/dump.mjs (MIT), made project-neutral.
+import fs from "node:fs";
+import path from "node:path";
 import zlib from "node:zlib";
 
 export function readResource(buf) {
@@ -53,6 +59,10 @@ class Lane {
 }
 
 const align = (o, a) => (o + a - 1) & ~(a - 1);
+function zstd(b) {
+  if (typeof zlib.zstdDecompressSync !== "function") throw new Error(`this file needs zstd: use Node 22.15+ (this is ${process.version})`);
+  return zlib.zstdDecompressSync(b);
+}
 
 export function readKV3(b) {
   const r = new Lane(b);
@@ -80,7 +90,7 @@ export function readKV3(b) {
     const src = b.subarray(r.p, r.p + size); r.p += size;
     if (comp === 0) return Buffer.from(src);
     if (comp === 1) return lz4(src, outSize);
-    if (comp === 2) return zlib.zstdDecompressSync(src);
+    if (comp === 2) return zstd(src);
     throw new Error("comp " + comp);
   };
   let buf1;
@@ -126,8 +136,8 @@ export function readKV3(b) {
     for (let i = 0; i < cBlocks; i++) ctx.blobLens.push(blobSizesLane.i32());
     // blob data follows; we only need to skip it for our purposes (zstd / raw only)
     if (comp === 0) { ctx.blobs = b.subarray(r.p, r.p + blobBytes); }
-    else if (comp === 2 && version >= 5) { ctx.blobs = zlib.zstdDecompressSync(b.subarray(r.p, r.p + (compTotal - s1 - s2))); }
-    else if (comp === 2) { ctx.blobs = zlib.zstdDecompressSync(b.subarray(r.p - s1, r.p)).subarray(u1); }
+    else if (comp === 2 && version >= 5) { ctx.blobs = zstd(b.subarray(r.p, r.p + (compTotal - s1 - s2))); }
+    else if (comp === 2) { ctx.blobs = zstd(b.subarray(r.p - s1, r.p)).subarray(u1); }
     else ctx.blobs = null;
     ctx.blobP = 0;
   }
@@ -183,4 +193,13 @@ export function readKV3Blocks(file) {
     else if (k === "RERL" || k === "RED2" || k === "REDI") out[k] = { raw: v.length };
   }
   return { res, kv: out };
+}
+
+if (process.argv[1] && path.basename(process.argv[1]) === "kv3.mjs") {
+  const [file, block] = process.argv.slice(2);
+  if (!file) { console.log("usage: node kv3.mjs <file_c> [BLOCK]"); process.exit(2); }
+  const { kv } = readKV3Blocks(fs.readFileSync(file));
+  // blobs and long number lists are summarised
+  const strip = (k, v) => (v && v.data !== undefined && v.blob !== undefined ? { blob: v.blob } : (Array.isArray(v) && v.length > 64 && typeof v[0] === "number" ? `[${v.length} numbers]` : v));
+  console.log(JSON.stringify(block ? kv[block] : kv, strip, 1));
 }

@@ -36,18 +36,6 @@ On the PC this file is `C:\source1\cs2port\cs2_port_pipeline.md`.
 - Addon names are the BSP name with version/bloat stripped: `_v2`, `_v1_2`, `_b3`, `_rc1`, `_final`, `_fix`, `_beta`, `_csgo`, `_hdr`, `_ws`… (`mg_x_v2_final` → `mg_x`). A different name can be forced with `bspname=addonname`.
 - Each map Claude starts is added to `existing_ports.txt` as `<addon> [in progress] [skink]` (`ports.py add <existing_ports.txt> <addon>`). A successful build changes it to `[in progress, built]`. `[briar]` lines are maintained by hand; `[ported]`, `[*original*]` and `[ext. port]` lines are never changed.
 
-## Stage D: command-line build (`build_maps.ps1`)
-- `run_build.bat` runs `build_maps.ps1` on `build_queue.txt` (one addon per line, optionally `addon mapname`). `build_maps.ps1 mg_a mg_b` builds just those maps. For assets only from the command line, pass the line as one quoted argument: `run_build.bat "assets mg_x"`.
-- **Assets first.** The command-line map build does not compile materials or textures; Hammer normally compiles them when it loads a map. So anything Claude added outside Hammer (laser materials, alpha masks, radar) would be missing, and missing materials are fatal for those meshes. For each addon the script first runs `resourcecompiler -r -i <content addon>/<dir>/*.<ext>` for materials `*.vmat`, models `*.vmdl`, panorama `*.vtex` (radar), soundevents, sounds `*.wav`/`*.mp3` and `maps/scripts/*.js`, logging to `logs\<addon>_assets.log`. Only out-of-date files are recompiled. If any content .vmat still has no compiled `_c` in `game\`, that map is skipped and the materials are listed. A queue line `assets <addon>` compiles the assets only, with no map build.
-- The pre-pass compiles `maps/scripts/*.js` and `panorama/*.vtex` only. Scripts in the older `scripts/` layout and Panorama `layout/custom_game/*.xml` /
-  `styles/custom_game/*.css` (original addons) need `resourcecompiler -f -i <file>` by hand.
-- Then it runs `game\bin\win64\resourcecompiler.exe` with Hammer's full-build arguments: `-threads 5 -fshallow -maxtextureres 256 -quiet -unbufferedio -i <content vmap, forward slashes> -noassert -world -rebake_surfacegraph -bakelighting -lightmapMaxResolution 1024 -lightmapVRadQuality 1 -phys -vis -nav -sareverb -sareverb_threads 6 -sapaths -sareverb_threads 6 -sacustomdata -sacustomdata_threads 6 -breakpad -nop4 -outroot %LOCALAPPDATA%\Temp\valve\hammermapbuild\game`.
-- **Outroot step** (what Hammer does after a build): the compiler writes `<outroot>\csgo_addons\<addon>\maps\<map>.vpk`. The script waits for the compiler to exit, then copies that vpk to `game\csgo_addons\<addon>\maps\`, checks the size matches, and deletes the temp copy. Only then does the next map start. A stale vpk left in the outroot is deleted before each compile so it can never be copied by mistake. If the game file is locked (CS2 open) it retries, then reports the map as failed with the vpk still in the outroot.
-- Maps are built one at a time on purpose. Separate outroots per map would avoid the vpk clash, but the light bake uses the GPU and every build writes shared compiled assets into `game\`, so parallel builds are no faster and risk VRAM or file-lock failures.
-- The script refuses to start while `cs2.exe` (CS2 or Hammer) is running, and waits for any other resourcecompiler to finish.
-- Logs: `logs\<addon>_build.log`, plus one line per map in `logs\stage_d_done.txt` (OK / FAILED, minutes, exit code).
-- Claude writes `build_queue.txt` at the end of stage C (or after follow-up passes) and tells you to run `run_build.bat`. When you say it's finished, Claude reads `logs\` and fixes any compile errors.
-
 ## Stage C fixes (automatic; the importer's main .vmap is keyvalues2 text and is saved back as binary)
 
 Step keys in run order (from `stage_c.run()`; `run_pass.py` takes these names): `merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity, dead,
@@ -134,25 +122,70 @@ sounds, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights,
 - **The io script** (end of the run): if any step needs it, `maps/scripts/<addon>_io.js` is generated (`gen_script.py` + `push_tail.js`) and a
   `point_script` `<addon>_io_script` is added. Then `maps/<addon>_cleanup_log.txt` is written, with TO CHECK lines for everything that needs a human look.
 
+## Stage D: command-line build (`build_maps.ps1`)
+- `run_build.bat` runs `build_maps.ps1` on `build_queue.txt` (one addon per line, optionally `addon mapname`). `build_maps.ps1 mg_a mg_b` builds just those maps. For assets only from the command line, pass the line as one quoted argument: `run_build.bat "assets mg_x"`.
+- **Assets first.** The command-line map build does not compile materials or textures; Hammer normally compiles them when it loads a map. So anything Claude added outside Hammer (laser materials, alpha masks, radar) would be missing, and missing materials are fatal for those meshes. For each addon the script first runs `resourcecompiler -r -i <content addon>/<dir>/*.<ext>` for materials `*.vmat`, models `*.vmdl`, panorama `*.vtex` (radar), soundevents, sounds `*.wav`/`*.mp3` and `maps/scripts/*.js`, logging to `logs\<addon>_assets.log`. Only out-of-date files are recompiled. If any content .vmat still has no compiled `_c` in `game\`, that map is skipped and the materials are listed. A queue line `assets <addon>` compiles the assets only, with no map build.
+- The pre-pass compiles `maps/scripts/*.js` and `panorama/*.vtex` only. Scripts in the older `scripts/` layout and Panorama `layout/custom_game/*.xml` /
+  `styles/custom_game/*.css` (original addons) need `resourcecompiler -f -i <file>` by hand.
+- Then it runs `game\bin\win64\resourcecompiler.exe` with Hammer's full-build arguments: `-threads 5 -fshallow -maxtextureres 256 -quiet -unbufferedio -i <content vmap, forward slashes> -noassert -world -rebake_surfacegraph -bakelighting -lightmapMaxResolution 1024 -lightmapVRadQuality 1 -phys -vis -nav -sareverb -sareverb_threads 6 -sapaths -sareverb_threads 6 -sacustomdata -sacustomdata_threads 6 -breakpad -nop4 -outroot %LOCALAPPDATA%\Temp\valve\hammermapbuild\game`.
+- **Outroot step** (what Hammer does after a build): the compiler writes `<outroot>\csgo_addons\<addon>\maps\<map>.vpk`. The script waits for the compiler to exit, then copies that vpk to `game\csgo_addons\<addon>\maps\`, checks the size matches, and deletes the temp copy. Only then does the next map start. A stale vpk left in the outroot is deleted before each compile so it can never be copied by mistake. If the game file is locked (CS2 open) it retries, then reports the map as failed with the vpk still in the outroot.
+- Maps are built one at a time on purpose. Separate outroots per map would avoid the vpk clash, but the light bake uses the GPU and every build writes shared compiled assets into `game\`, so parallel builds are no faster and risk VRAM or file-lock failures.
+- The script refuses to start while `cs2.exe` (CS2 or Hammer) is running, and waits for any other resourcecompiler to finish.
+- Logs: `logs\<addon>_build.log`, plus one line per map in `logs\stage_d_done.txt` (OK / FAILED, minutes, exit code).
+- Claude writes `build_queue.txt` at the end of stage C (or after follow-up passes) and tells you to run `run_build.bat`. When you say it's finished, Claude reads `logs\` and fixes any compile errors.
+
 ## Loading-screen credit
 CS2 reads the loading-screen text from `game\csgo_addons\<addon>\maps\<map>.txt` (the same file Hammer5Tools' Loading Editor writes): first line `COMMUNITYMAPCREDITS:`, then the text, e.g. `Original map by <author>` / `CS:GO port by <porter>` (when the map credits one) / `Ported to CS2 by skink52`. No map rebuild needed.
 
 ## Loading-screen background images
-Same layout Hammer5Tools' Loading Editor writes: `content\csgo_addons\<addon>\panorama\images\map_icons\screenshots\{1080p,720p,360p}\<map>_png.png` + `.vtex` (height 1080/720/360, same vtex as a radar but `linear` colour space, max dimension 2048), more images as `<map>_1_png`, `<map>_2_png`… Compile them with `run_build.bat "assets <addon>"` (the panorama pass is recursive). Steam's image CDN is blocked from Claude's workspace, so Workshop images have to be saved on the PC first (the mapper drops them in a linked folder); the 637x358 thumbnails Steam shows on the item page are upscaled, the full-size originals look better.
+This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) and the gotchas link here.
 
-## Follow-up passes on a map you've already edited in Hammer
-`stage_d.py <addon> <root> beams,lights,alpha,radar,daylight,skyvis,visfit,gravity,overlayfix,overlaydepth,facescale,matflags` runs only those passes on the current vmap. It keeps your Hammer edits and appends to the cleanup log.
-`stage_d.py <addon> <root> visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with Lower instead of Low everywhere (for a map whose vis merge stalls).
-`glowfix.py <vmap in> <vmap out> <addon content root>` converts parented env_particle_glows to following glow particles (see cs2-gotchas). Run it on any map that has them; weapon-parented ones also need the glow follow section in `<addon>_io.js` (template: `ports/mg_metal_course_level_2/scripts`).
-`stage_d.py <addon> <root> daylight` is the dark-indoor-map fix above.
-`disprestore.py <vmap in> <bsp> <vmap out>` rebuilds displacements the importer dropped. The import log shows each one as "Found a displacement missing a needed subkey." (24 Oct 2026: mg_kohztec_course 61 (all, fixed), de_nuketown 152 (fixed, old 3D skybox skipped), mg_faohu_course 2). After every import, grep the log for that line. It reads dispinfo/dispverts from the BSP and adds each as a closed mesh: the displaced surface with the CS:GO texture projection, toolsnodraw sides and a flat back. Materials with no CS2 copy get a stand-in from its `SUB` table; custom ones can be built from the BSP pakfile with `assets.write_vmat`. Extra args `x0,y0,z0,x1,y1,z1` skip displacements centred in that box (an old 3D skybox).
-`laserhurt.py <vmap in> <csgo vmf> <vmap out>` (after stage C): a `trigger_hurt` box along every CS:GO env_laser that did damage and has no trigger_hurt yet — skink52's rule from 24 Oct 2026 is that damaging lasers are recreated even where the original relied on the laser itself. Same start state as the beam; Enable/Disable/Toggle sent to the beam are copied to `<laser>_hurt`.
-`matnames.py <addon> <root>`: importer-sanitised material refs (spaces → underscores) back to the addon's real file names; run before the `assets` pass (see cs2-gotchas).
-`vmap_preview.py <vmap> <out.png> [box]`: top-down + four corner renders of any vmap (importer text or binary), to check a port or a generated map without Hammer.
-`create/test/mock_point_script.mjs <addon>_io.js` and `create/test/tscheck.sh <addon>_io.js`: run / type-check a map script before the build (see `create/README.md`).
-`run_pass.py <addon> <root> pass[,pass]`: any stage C pass on the current vmap, appending to the cleanup log (e.g. `alpha,assets` once the CS2 VPK is available, or `sky`).
-**Unattended runs:** `run_import_then_build.bat` = stage B, then wait for `build_go.txt`, then stage D. Claude does stage C in between and writes the flag file; a scheduled check reads the logs afterwards.
-Map-specific script gates (e.g. mg_fred_all's `EnableDamage`) go in `maps/scripts/<addon>_io.js`: `Instance.OnBeforePlayerDamage` returns `{ abort: true }` to cancel a hit, `Instance.OnRoundStart` resets per-round state, and a trigger fires `RunScriptInput <name>` on `<addon>_io_script`.
+- **What CS2 loads:** the compiled `panorama/images/map_icons/screenshots/1080p/<map>_png.vtex_c`, then `<map>_1_png`, `<map>_2_png` … (up to `_9`), as a
+  slideshow, 4 s each. Ship at least two: with one picture Space Racer and Hellmatch saw none of their art. Single-picture ports (ba_jail_skylight,
+  jb_water_prison_cs2) should get a second one.
+- **Way 1, what the ports use** (Hammer5Tools' Loading Editor layout): `content\csgo_addons\<addon>\panorama\images\map_icons\screenshots\{1080p,720p,360p}\<map>_png.png`
+  + `<map>_png.vtex` (height 1080/720/360, same vtex as a radar but `linear` colour space, max dimension 2048), more images as `<map>_1_png`, `<map>_2_png`…
+  Compile them with `run_build.bat "assets <addon>"` (the panorama pass is recursive).
+- **Way 2, what the original addons use:** a plain `screenshots/1080p/<map>.png`, `<map>_1.png` … with no `.vtex`, referenced from a never-shown rule in the
+  HUD stylesheet; the resource compiler turns `<map>.png` into the same `<map>_png.vtex_c` (Space Racer TESTING C6). Needs a `custom_hud_layout`.
+- Not recorded per port: which ports' slides have been seen in game. Note it in `ports/<addon>/README.md` when the mapper confirms one.
+- Pictures: Steam's image CDN is blocked from Claude's workspace, so Workshop images have to be saved on the PC first (the mapper drops them in a linked
+  folder); the 637x358 thumbnails Steam shows on the item page are upscaled, the full-size originals look better. Safe area and crop: [hud.md](../creation/hud.md#loading-screens).
+
+## Follow-up passes (after stage C, or on a map you've already edited in Hammer)
+
+All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
+
+- `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, gravity, overlayfix, overlaydepth,
+  facescale, matflags`. Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
+  - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
+    Lower instead of Low everywhere (for a map whose vis merge stalls).
+  - **Daylight** (`daylight`, stage D only; for indoor maps that are still dark after stage C): adds a stationary light_environment using the map's env_sky
+    and picks the sun angle that reaches the most floor. Every ceiling / roof mesh between the playable floors and the sky gets "Disable Shadows" so sun and
+    sky light reach inside; walls still cast shadows. If the map has no light probe volumes it adds env_combined_light_probe_volumes over the playable space;
+    without them players and weapons get no indirect light. It also raises post_processing_volume maxexposure to 2.
+- `run_pass.py <addon> <root> step[,step]`: any stage C step (stage C key names) on the current vmap, e.g. `alpha,assets` once the CS2 VPK is available, or `sky`.
+- `run_c.py <addon> <root> [steps]`: stage C when CS2's `pak01_dir.vpk` isn't staged. Its default list leaves out `alpha`, `assets`, `doors`, `overlayfix`,
+  `facescale` and `matflags`; run those with `run_pass.py` later.
+- `laserhurt.py <vmap in> <csgo vmf> <vmap out>` (after stage C): a `trigger_hurt` box along every CS:GO env_laser that did damage and has no trigger_hurt
+  yet — skink52's rule from 24 Oct 2026 is that damaging lasers are recreated even where the original relied on the laser itself. Same start state as the
+  beam; Enable/Disable/Toggle sent to the beam are copied to `<laser>_hurt`.
+- `glowfix.py <vmap in> <vmap out> <addon content root>` converts parented env_particle_glows to following glow particles (see cs2-gotchas). Run it on any
+  map that has them; weapon-parented ones also need the glow follow section in `<addon>_io.js` (template: `ports/mg_metal_course_level_2/scripts`).
+- `disprestore.py <vmap in> <bsp> <vmap out> [x0,y0,z0,x1,y1,z1 ...]` rebuilds displacements the importer dropped. The import log shows each one as "Found a
+  displacement missing a needed subkey." (24 Oct 2026: mg_kohztec_course 61 (all, fixed), de_nuketown 152 (fixed, old 3D skybox skipped), mg_faohu_course 2).
+  After every import, grep the log for that line. It reads dispinfo/dispverts from the BSP and adds each as a closed mesh: the displaced surface with the
+  CS:GO texture projection, toolsnodraw sides and a flat back. Materials with no CS2 copy get a stand-in from its `SUB` table; custom ones can be built from
+  the BSP pakfile with `assets.write_vmat`. The optional boxes skip displacements centred in them (an old 3D skybox).
+- `matnames.py <addon> <root>`: importer-sanitised material refs (spaces → underscores) back to the addon's real file names; run before the `assets` pass (see cs2-gotchas).
+- `vmap_preview.py <vmap> <out.png> [box]`: top-down + four corner renders of any vmap (importer text or binary), to check a port or a generated map without Hammer.
+- `node create/test/mock_point_script.mjs <addon>_io.js` and `sh create/test/tscheck.sh <addon>_io.js`: run / type-check a map script before the build
+  (see [create/README.md](../../create/README.md)).
+- **Unattended runs:** `run_import_then_build.bat` = stage B, then wait for `build_go.txt`, then stage D. Claude does stage C in between and writes the flag
+  file; a scheduled check reads the logs afterwards.
+- Map-specific script gates (e.g. mg_fred_all's `EnableDamage`) go in `maps/scripts/<addon>_io.js`: `Instance.OnModifyPlayerDamage` returns
+  `{ abort: true }` to cancel a hit (mg_fred_all still uses the deprecated `OnBeforePlayerDamage`), `Instance.OnRoundStart` resets per-round state, and a
+  trigger fires `RunScriptInput <name>` on `<addon>_io_script`.
 
 ## Standard prompt (paste into a new Claude session in the "cs2 mapping" project)
 
@@ -162,4 +195,4 @@ Map-specific script gates (e.g. mg_fred_all's `EnableDamage`) go in `maps/script
 > When I say it's done, read `C:\source1\cs2port\logs`. For each map, do stage C on the vmap, the extra fixes you've been doing for me (moondomes for dropped sky brushes, vis hints, a radar for every map, loading-screen credit "original map by <author> cs2 port by skink52"), and anything map-specific the log flags.
 > Back up the vmap to `csgo_addons\prefabs+backups\` first. Keep Hammer closed until you say you're done. Only send changed files.
 > When the maps are ready, put them in `build_queue.txt` and tell me to run `run_build.bat` (stage D). When I say it's done, read the build logs and fix anything that failed.
-> Record each port in the cs2portdocs repo (`ports/<addon>/` README, cleanup log and scripts, plus a CHANGELOG line) and push it.
+> Record each port in the cs2mapping repo (`ports/<addon>/` README, cleanup log and scripts, plus a CHANGELOG line) and push it.

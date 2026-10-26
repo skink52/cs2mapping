@@ -1,5 +1,7 @@
-// Finds strikes in a CMU take: punches and kicks with their timing, limb, height and shape.
-//   node tools/anim/analyze.mjs <take.bvh> [more...]
+// Finds strikes in a CMU take: punches and kicks with their timing, limb, height and shape
+// (uses CMU joint names). VERBOSE=1 lists every event with its time (s) and take frame.
+//   node analyze.mjs <take.bvh> [more...]
+// From cs2-fighter/tools/anim/analyze.mjs (MIT), made project-neutral.
 import path from "node:path";
 import { loadBVH, bvhFrame, bvhWorld } from "./bvh.mjs";
 import { v3, q } from "./m3.mjs";

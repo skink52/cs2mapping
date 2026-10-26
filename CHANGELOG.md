@@ -1,8 +1,13 @@
-- 2026-10-25: custom WW1 weapons pipeline (vdata override + cs_script loadout + FBX/GLB→DMX weapon rigging builder): docs/custom-weapons.md, tools/weapons/.
 # Changelog
 
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
+
+## 2026-10-27
+
+- 2026-10-27: review of all skink52 repos; toolkit additions (see create/README.md)
+- Stage C `sounds`: WAVs that aren't 16-bit PCM (8/24/32-bit, float) are re-encoded to 16-bit PCM; ADPCM is flagged. New `docs/reference/external-tools.md` (Valve, community tools, assets and their traps). Gotchas for the cs2-slop-porting features we lack (stub stock materials, soundscript names, env_steam) and the bomb-arena DMX/entity-cloning and flat-sprite model notes (commit 8446fd4).
+- Docs restructure from the self-audit: `tools/README.md` is now the tool index (every file in `tools/` and `tools/weapons/` with its usage line) instead of a second copy of pipeline.md, and deploys as `C:\source1\cs2port\tools\README.md`; pipeline.md deploys only as `cs2_port_pipeline.md`. pipeline.md gained a quick start for agents, stage C step keys in run order, prep.py usage and the `addon_template` requirement. Contradictions resolved (laser damage rule, Medium hints, player_speedmod, daylight as a stage D pass, `OnModifyPlayerDamage`, embedded files, generated script inputs, pawn hiding methods, Hellmatch label truncation). cs2-gotchas deduplicated into topical sections; cs_script notes, AI workflow and external tools extended from the Hellmatch, Space Racer, mg_trenchwarfare and Puppet Brawl repos. `tools/weapons/preview.py` paths now come from arguments/env vars.
 
 ## 2026-10-26
 
@@ -16,6 +21,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-10-25
 
+- Custom WW1 weapons pipeline (vdata override + cs_script loadout + FBX/GLB→DMX weapon rigging builder): `docs/creation/custom-weapons.md`, `tools/weapons/`.
 - **Textured radars.** `radar.py` now paints each floor with its material instead of grey: the addon's own source textures tiled world-aligned (`tools/radartex.py`), a name-guessed colour for stock CS2 materials, glass translucent, height as brightness. Wired into stage C and `stage_d.py radar` (`radar.textures_for(c)`). Two bugs fixed on the way: the standable-floor test used only the face centroid, so a face with a prop on that spot was dropped and left a wedge-shaped hole (jb_mangaroons); `lighting.mesh_polys` stopped at 64 vertices per face. Water planes no longer set the radar extent (ba_jail_seaside's sea). Re-rendered the six jail radars (seaside first for a Workshop update).
 - Loading screens added for mg_crash_bandicoot_course (2) and mg_insomnia_course (3) from skink52's screenshots.
 
@@ -32,7 +38,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 - **Importer-sanitised material names**: the importer rewrites `materials/schooufi texture/x.vmat` to `schooufi_texture/x.vmat` (spaces → underscores) while post_import_cleanup writes the real names, so the assets pass thought 25 materials were missing and swapped them for random stock ones. New `tools/matnames.py <addon> <root>` points the vmap back at the real files; run it before the assets pass. Gotcha recorded.
 - `tools/run_pass.py <addon> <root> passes` runs stage C passes (e.g. `alpha,assets`, `sky`) on an already-cleaned map and appends to the cleanup log; `tools/run_c.py` runs stage C with a stubbed CS2 VPK when `game\csgo\pak01_dir.vpk` isn't reachable (sky/sounds still work, assets/alpha skipped).
 - Stock CS:GO textures for the assets pass can come from the extracted CS:GO content in `<CS2>\csgo\materials` (copy them into `<root>/embedded/<addon>/materials`) when the CS:GO VPK chunks aren't on the PC.
-- Workshop sweep for the remaining Briar minigames (83 maps): 22 with no CS2 port, 30 with an existing one, all recorded as `[ext. port]` lines in existing_ports.txt. Steam account 76561197969701400 ("gordon") is bulk-porting the same folder (24 mg ports, 19–21 Oct 2026).
+- Workshop sweep for the remaining Briar minigames (83 maps): 22 with no CS2 port, 30 with an existing one, all recorded as `[ext. port]` lines in existing_ports.txt. A Steam account ("gordon") is bulk-porting the same folder (24 mg ports, 19–21 Oct 2026).
 
 ### earlier the same day
 
@@ -95,13 +101,13 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   It wasn't: every Workshop page's HTML carries hidden "removed" and "incompatible with Counter-Strike 2" template text, and the page reader
   picks it up. It was the second time this happened. The pipeline doc now says never to report that text. The same session added the
   loading-screen credit section and the stacked-map radar note to the doc. Those three additions were missing from the first import
-  of `docs/pipeline.md` and were restored later the same day.
+  of `docs/pipeline.md` (now `docs/porting/pipeline.md`) and were restored later the same day.
 - mg_bombardment's `.vmap` also changed this morning (file date). What changed isn't recorded.
 
 ## 2026-10-16: the cs2port pipeline
 
 - **Pipeline built** in one session (about 10:40 to 16:47; tool file dates 10:53–18:34), starting from the manual flow in
-  [docs/manual-workflow.md](docs/porting/manual-workflow.md).
+  [docs/porting/manual-workflow.md](docs/porting/manual-workflow.md).
   - Stage A: BSPSource extracted from its jlink image, with class files patched to run on Java 21 (`setup_bspsrc.sh`). `hammer_resave.py`
     was built by diffing a BSPSource `.vmx` against a Hammer save. `prep.py` creates the addon from `addon_template`.
   - Stage B: `run_import.bat`, running `import_map_auto.py` (Valve's importer without its Enter prompt), then `post_import_cleanup.py`.

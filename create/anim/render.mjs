@@ -1,6 +1,8 @@
 // A small software renderer for animation previews: skinned CS2 agent meshes (extracted by
-// tools/s2/agent_mesh.mjs), a floor, debug lines and points. Outputs RGB frames that ffmpeg turns
-// into PNG / MP4 / contact sheets.
+// ../s2/agent_mesh.mjs), a floor, debug lines and points, 5x7 text labels. Outputs RGB frames
+// that preview.mjs turns into PNG contact sheets / MP4 with ffmpeg.
+//   const R = new Renderer(480, 360); R.clear(); R.camera(eye, at, fov); R.drawAgent(loadAgent(json), pose, { q: [0,0,0,1], p: [0,0,0] });
+// From cs2-fighter/tools/anim/render.mjs (MIT), made project-neutral.
 import fs from "node:fs";
 import { v3, q, xf } from "./m3.mjs";
 import { unpackAgent } from "../s2/agent_mesh.mjs";

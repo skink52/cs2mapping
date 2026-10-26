@@ -1,9 +1,14 @@
 // Extracts a CS2 agent model (.vmdl_c) into a compact preview mesh: the model skeleton (bind
 // pose), and the third-person default meshes with positions, normals, UVs and skin weights.
-// Usage: node tools/s2/agent_mesh.mjs <model.vmdl_c> <out.json>
+// The JSON is what ../anim/render.mjs and ../anim/preview.mjs draw. Keep it out of git (Valve data).
+//   node agent_mesh.mjs <model.vmdl_c | path in the VPK> <out.json> [--vpk <folder with pak01_dir.vpk>]
+//   e.g. node agent_mesh.mjs agents/models/tm_professional/tm_professional_varf.vmdl_c agentmesh/tm_professional_varf.json --vpk "<CS2>/game/csgo"
+// From cs2-fighter/tools/s2/agent_mesh.mjs (MIT), made project-neutral.
 import fs from "node:fs";
+import path from "node:path";
 import { readResourceKV } from "./resource.mjs";
-import { MeshoptDecoder } from "../vendor/meshoptimizer/meshopt_decoder.mjs";
+import { readInput } from "./vpk.mjs";
+import { MeshoptDecoder } from "./vendor/meshoptimizer/meshopt_decoder.mjs";
 
 export async function extractAgent(buf, { meshGroupMask = null } = {}) {
   await MeshoptDecoder.ready;
@@ -138,8 +143,13 @@ export function unpackAgent(o) {
   };
 }
 
-if (process.argv[1] && process.argv[1].endsWith("agent_mesh.mjs") && process.argv[2]) {
-  const a = await extractAgent(fs.readFileSync(process.argv[2]));
+if (process.argv[1] && path.basename(process.argv[1]) === "agent_mesh.mjs") {
+  const args = process.argv.slice(2);
+  const vi = args.indexOf("--vpk");
+  const vpk = vi < 0 ? process.env.CS2_VPK_DIR : args[vi + 1];
+  const pos = args.filter((a, i) => !a.startsWith("--") && args[i - 1] !== "--vpk");
+  if (!pos[0]) { console.log("usage: node agent_mesh.mjs <model.vmdl_c | path in VPK> <out.json> [--vpk dir]"); process.exit(2); }
+  const a = await extractAgent(readInput(pos[0], vpk));
   console.log(a.skeleton.length, "bones;", a.meshes.map((m) => `${m.mesh}:${m.material.split("/").pop()} v${m.P.length / 3} t${m.I.length / 3}`).join(", "));
-  if (process.argv[3]) fs.writeFileSync(process.argv[3], JSON.stringify(packAgent(a)));
+  if (pos[1]) { fs.mkdirSync(path.dirname(path.resolve(pos[1])), { recursive: true }); fs.writeFileSync(pos[1], JSON.stringify(packAgent(a))); }
 }

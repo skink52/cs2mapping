@@ -6,7 +6,8 @@ a map without Claude, or to see what a pipeline stage is standing in for.
 1. **Decompile** the CS:GO BSP with BSPSource, with "extract embedded files" on, into `C:\source1\maps`.
 2. **Copy the decompiled assets** (materials, models) into the CS:GO content folder the importer reads (`<CS2>\csgo`, junctioned as
    `C:\cscontent`). Sounds and scripts go straight into the CS2 addon.
-3. **Re-save the VMF in CS:GO Hammer.** The importer wanted a Hammer-saved VMF (`tools/hammer_resave.py` now does the same edit).
+3. **Re-save the VMF in CS:GO Hammer.** The importer wanted a Hammer-saved VMF. `python3 tools/hammer_resave.py <in.vmf> <out.vmf>` now does the same edit
+   without Hammer (prep.py runs it automatically).
 4. **Create the addon** in the Workshop Tools launcher (addon name = map name, version suffixes stripped).
 5. **Rename `game\bin\win64\vpk.signatures`** (e.g. to `vpk.signatures.aaa`), otherwise the importer fails.
 6. **Run Valve's importer** from `game\csgo\import_scripts`:

@@ -1,9 +1,15 @@
-// Extracts static prop meshes (.vmdl_c whose meshes live in an MBUF / VBIB block) for layout
-// previews: positions, normals and triangle indices per draw call, plus the bounds.
-//   node tools/s2/prop_mesh.mjs <model.vmdl_c>...    (prints bounds and materials)
+// Extracts static prop meshes (.vmdl_c, LOD 0) for layout previews: positions, normals and
+// triangle indices per draw call, plus the real bounds (model units, before any map scale), so
+// stock props can be placed and stacked by their true size when dressing a set.
+//   node prop_mesh.mjs <model.vmdl_c | path in VPK>... [--vpk <folder with pak01_dir.vpk>] [--json out.json]
+//   e.g. node prop_mesh.mjs models/props/de_inferno/crate_fruit_break.vmdl_c --vpk "<CS2>/game/csgo"
+// Prints draw calls, triangles, bounds (min .. max) and size; --json writes {model: {lo, hi, size, materials}}.
+// From cs2-fighter/tools/s2/prop_mesh.mjs (MIT), made project-neutral.
 import fs from "node:fs";
+import path from "node:path";
 import { readResourceKV } from "./resource.mjs";
-import { MeshoptDecoder } from "../vendor/meshoptimizer/meshopt_decoder.mjs";
+import { readInput } from "./vpk.mjs";
+import { MeshoptDecoder } from "./vendor/meshoptimizer/meshopt_decoder.mjs";
 
 // VBIB: vertex and index buffer descriptors with self-relative offsets
 function readVBIB(buf) {
@@ -104,10 +110,26 @@ export async function extractProp(buf) {
   return out;
 }
 
-if (process.argv[1] && process.argv[1].endsWith("prop_mesh.mjs")) {
-  for (const f of process.argv.slice(2)) {
-    const p = await extractProp(fs.readFileSync(f));
+// just the bounds: { lo, hi, size, materials }
+export async function propBounds(buf) {
+  const p = await extractProp(buf);
+  return { lo: p.lo, hi: p.hi, size: p.hi.map((h, k) => h - p.lo[k]), materials: [...new Set(p.meshes.map((m) => String(m.material)))] };
+}
+
+if (process.argv[1] && path.basename(process.argv[1]) === "prop_mesh.mjs") {
+  const args = process.argv.slice(2);
+  const opt = (k) => { const i = args.indexOf("--" + k); return i < 0 ? null : args[i + 1]; };
+  const files = args.filter((a, i) => !a.startsWith("--") && !["--vpk", "--json"].includes(args[i - 1]));
+  if (!files.length) { console.log("usage: node prop_mesh.mjs <model.vmdl_c | path in VPK>... [--vpk dir] [--json out.json]"); process.exit(2); }
+  const vpk = opt("vpk") || process.env.CS2_VPK_DIR;
+  const all = {};
+  const f1 = (v) => v.map((x) => x.toFixed(1)).join(",");
+  for (const f of files) {
+    const p = await extractProp(readInput(f, vpk));
     const tris = p.meshes.reduce((a, m) => a + m.I.length / 3, 0);
-    console.log(f.split("/").pop(), "draws", p.meshes.length, "tris", tris, "bounds", p.lo.map((v) => v.toFixed(1)).join(","), "..", p.hi.map((v) => v.toFixed(1)).join(","), p.meshes.map((m) => String(m.material).split("/").pop()).join(" "));
+    const size = p.hi.map((h, k) => h - p.lo[k]);
+    all[f] = { lo: p.lo, hi: p.hi, size, materials: [...new Set(p.meshes.map((m) => String(m.material)))] };
+    console.log(f.split("/").pop(), "draws", p.meshes.length, "tris", tris, "bounds", f1(p.lo), "..", f1(p.hi), "size", f1(size), p.meshes.map((m) => String(m.material).split("/").pop()).join(" "));
   }
+  if (opt("json")) fs.writeFileSync(opt("json"), JSON.stringify(all, null, 1));
 }

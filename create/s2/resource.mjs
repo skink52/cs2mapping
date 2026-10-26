@@ -1,6 +1,8 @@
-// Source 2 compiled resource reader: block list (by index and by type) + binary KV3.
-// Based on the layout documented by ValveResourceFormat (MIT). Node 22+ (built-in zstd).
-import { readKV3 } from "../kv3.mjs";
+// Source 2 compiled resource reader: block list (by index and by type) + binary KV3 per block.
+//   const blocks = readResourceKV(buf);  blocks.find((b) => b.type === "DATA").kv
+// Based on the layout documented by ValveResourceFormat (MIT). Node 22+ for zstd-compressed files.
+// From cs2-fighter/tools/s2/resource.mjs (MIT), made project-neutral.
+import { readKV3 } from "./kv3.mjs";
 
 export function readResourceBlocks(buf) {
   const blockOffset = buf.readUInt32LE(8) + 8;

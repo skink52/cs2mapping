@@ -26,7 +26,8 @@ What has worked for porting and building CS2 maps with Claude, and the practical
 ## Transfer limits and traps
 
 - **File size:** uploads of 25 MB+ failed, so keep each file or zip under about 20 MB. `prep.py` cuts asset zips at 14 MB as a safety margin (big maps
-  get `.2`/`.3`/`.4.zip`); a 30 MB vmap was too big for de_nuketown, which is why `disprestore.py` writes flat backs. About 50 files and ~90 MB per write batch;
+  get `.2`/`.3`/`.4.zip`). The 24 Oct CHANGELOG entry for de_nuketown's `disprestore.py` cites a "30 MB transfer limit" instead; ~20 MB is the
+  figure from failed uploads, so use that. About 50 files and ~90 MB per write batch;
   recursive folder listings truncate around 2,000 entries.
 - The bridge copies a delayed snapshot: writing a file and sending it immediately can deliver the previous version, and re-sending from the same staged path can
   send the old upload. Wait, send from a fresh path, then read it back and compare (Puppet Brawl checked a sha1 of every delivered file). Hundreds of small
