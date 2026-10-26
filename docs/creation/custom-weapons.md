@@ -1,30 +1,14 @@
-# Custom WW1 weapons for CS2 (vdata + cs_script, no plugins) — handover
+# Custom weapons for CS2 (vdata + cs_script, no plugins)
 
-Status 25 Oct 2026. A separate Claude session (the weapons session) keeps building weapons with the tools below; this doc is for the session building the map/game logic. Weapons marked in progress are being made there. Working in the `testing` addon; everything below is verified in game unless marked.
+How mg_trenchwarfare's WW1 weapons were made: stock weapon entries overridden in `weapons.vdata`, new models rigged onto the stock weapon skeletons so the
+stock animations drive them, and a cs_script that hands out the loadout. Builder: [`tools/weapons/`](../../tools/weapons) (python3 + numpy + Pillow).
+Engine facts (viewmodel unreachable from script, Source 2 Viewer dev build for `vdata_c`, server vdata priority):
+[cs2-gotchas, models and weapons](../reference/cs2-gotchas.md#models-modeldoc-and-weapons).
 
-## What exists
-
-| Weapon | Side | Replaces vdata entry | Model | Notes |
-|---|---|---|---|---|
-| Lee-Enfield SMLE | CT | `weapon_ssg08` | `models/weapons/ww1/lee_enfield/lee_enfield.vmdl` | 10 rd, 5 spare mags, Allied (Periscopic Prism style) offset scope, brass fittings |
-| Gewehr 98 | T | `weapon_awp` (stat-for-stat SSG08 clone, 5 rd, 6 spare) | `models/weapons/ww1/gewehr98/gewehr98.vmdl` | Axis (Goerz/Oigee style) scope. Mesh is a BF1 rip ("BF1 All weapons") — replace before Workshop |
-| Luger P08 | T | `weapon_glock` (8 rd, burst off) | `models/weapons/ww1/luger_p08/luger_p08.vmdl` | from `luger_p08.glb` |
-| Colt M1911 | CT | `weapon_hkp2000` (7 rd) | `models/weapons/ww1/colt_m1911/colt_m1911.vmdl` | from `colt_m1911.glb` (display model reassembled) |
-| Lewis Mk I | CT | `weapon_scar20` | `lewis_mk1.glb` | **in progress in the weapons session — do not duplicate** |
-| Mondragón M1908 | T | `weapon_g3sg1` | `mondragon-m1908/` | **in progress in the weapons session (new weathered wood/steel textures)** |
-
-Shared materials: `materials/models/weapons/ww1/scope/{scope,brass,glass}.vmat` (procedural weathered steel/brass, dark glass).
-
-## Folders to link (Claude desktop "Add folder")
-
-1. `C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\testing` — the addon. Holds
-   `scripts\weapons.vdata`, `scripts\ww1_weapons.js`, `models\weapons\ww1\*`, `materials\models\weapons\ww1\*`, `maps\testing.vmap`.
-   To move the weapons into the real map's addon, copy `scripts\weapons.vdata`, `scripts\ww1_weapons.js`, `models\weapons\ww1` and
-   `materials\models\weapons\ww1` into that addon's content root and add a point_script pointing at `scripts/ww1_weapons.js`.
-2. `C:\source2\trenchwarfare assets` — source models (`*.glb`, `lee enfield\`, `Gewehr98\`, `mondragon-m1908\`), the original decompiled
-   `weapons.vdata`, `stock\` (Source 2 Viewer "Decompile & Export" of the stock weapon vmdl_c files: ssg08, awp, glock18, hkp2000, scar20,
-   g3sg1 — vmdl + body/anim/hull DMX + `_mag.vmdl`), and `tools\` (the builder, same files as `tools/weapons/` in this repo).
-3. Optionally `C:\source2\trenchwarfare assets\build_out` as the builder's output root before copying into the addon.
+The weapon list and status (Lee-Enfield → `weapon_ssg08`, Gewehr 98 → `weapon_awp`, Luger → `weapon_glock`, Colt M1911 → `weapon_hkp2000`, Lewis →
+`weapon_scar20`, Mondragón → `weapon_g3sg1`) and the PC folders of that session are a project handover:
+[trenchwarfare-cs2 `docs/weapons_handover.md`](https://github.com/skink52/trenchwarfare-cs2/blob/main/docs/weapons_handover.md). Before the Workshop, the
+Gewehr 98 mesh (a "BF1 All weapons" rip) must be replaced ([workshop.md](workshop.md#keeping-it-safe-to-publish-ip)).
 
 ## How it works
 
@@ -41,13 +25,14 @@ Shared materials: `materials/models/weapons/ww1/scope/{scope,brass,glass}.vmat` 
 - Known limits: first-person hand placement comes from the arms animation (can't fix per weapon); the Luger's toggle translates like a slide;
   the Gewehr has an internal mag so its reload shows an invisible stub mag.
 
-## Builder (`tools/weapons/`, needs python3 + numpy + Pillow; copy of `C:\source2\trenchwarfare assets\tools`)
+## Builder
 
 `python build_weapon.py <cfg>.json` → `<out>/models/weapons/ww1/<name>/` (vmdl, `_body.dmx`, `_hull.dmx`, `_mag.vmdl` + mesh/hull, copied stock
 anim DMX) plus `<name>_debug_side/top.png` overlays against the stock mesh. For GLB inputs it also writes one vmat per glTF material with the
 embedded textures; for FBX use `material.py` separately. `preview.py <name>` renders flat-shaded checks.
 
-Config keys (see `lee.json`, `gewehr.json`, `luger.json`, `colt.json`): `fbx`/`glb`, `scale`, `axes` (permutation so the muzzle is +X, e.g.
+Config keys (see `lee.json`, `gewehr.json`, `luger.json`, `colt.json`): `name`, `sub` (model folder, e.g. `models/weapons/ww1/lee_enfield`),
+`out` (output root; required), `fbx`/`glb`, `flipv` (FBX only: flip V once more; default off), `flip_green` (DirectX → OpenGL normal maps), `texsize` (default 2048), `scale`, `axes` (permutation so the muzzle is +X, e.g.
 `zxy` for these FBX, `Yxz`/`XYz` for the GLBs), `stock` + `stock_prefix` (`weapon_snip`/`weapon_pist`), `shift_wo` (offset that puts the
 mesh into weapon_offset space — align bolt/bore axis `bore_wo`, bolt handle, trigger and grip to the stock bone/vertex positions printed by the
 analysis), `part_bone`/`part_bone_idx`, `rules` (box selections of faces or whole components → bone; `mag:true`; `drop`; `move`/`rot180z`
@@ -61,7 +46,8 @@ Modules: `fbxparse.py`/`fbxmesh.py` (binary FBX 7.4), `glbmesh.py`, `dmx.py` (bi
 
 ## Conventions learned the hard way
 
-- DMX texcoords are top-left origin: FBX/OBJ/glTF-bottom-left UVs must be V-flipped when writing DMX (not when writing OBJ).
+- UVs: the builder brings every source to a bottom-left V convention (`glbmesh.py` flips glTF's top-left V on load) and flips once when writing DMX
+  (DMX texcoords are top-left). Leave `flipv` off for FBX: an extra flip caused the "textures misaligned" report.
 - Normal maps: Source 2 wants OpenGL (Y+). Both FBX texture sets were DirectX → green flipped; glTF ones are already OpenGL.
 - Enable `F_METALNESS_TEXTURE 1` in the vmat when a metalness map exists.
 - Physics hull = small convex hull, never the full mesh. Pistol mag models have no skeleton; sniper mags have a `clip` bone.
@@ -77,5 +63,9 @@ Modules: `fbxparse.py`/`fbxmesh.py` (binary FBX 7.4), `glbmesh.py`, `dmx.py` (bi
   range modifier, cycle time, spread/recoil, move speed, price, kill award). `m_bHasBurstMode` turns burst off (Luger on the Glock entry).
 - Without vdata, a magazine size can be emulated by counting `OnGunFire` and strip + regive (the HUD still shows the old count).
 - A server's own vdata addon takes priority over a map's.
-- FBX: UVs need **no** V flip (a flip caused the "textures misaligned" report); glTF needs one.
+- **Iron-sight zoom** (Lewis/Mondragón, mg_trenchwarfare plan): 1 zoom level, FOV ~55, `m_bHideViewModelWhenZoomed false` (no scope overlay). Once vdata sets the
+  magazine sizes, the script's `RIFLE_MAG` emulation goes.
+- **Swapping weapons in a slot from script:** SHIFT+E or `!swap` toggles the streak weapon and the scoped rifle, keeping ammo (mg_trenchwarfare).
+- Moving the weapons into another addon: copy `scripts/weapons.vdata`, `scripts/ww1_weapons.js`, `models/weapons/ww1`, `materials/models/weapons/ww1` into its
+  content root and add a `point_script` for the js (mg_trenchwarfare used a `copy_ww1_weapons_<addon>.bat`).
 

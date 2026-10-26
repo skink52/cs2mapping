@@ -2,16 +2,32 @@
 
 Every route used so far to get a model into CS2, from downloaded files to fully generated ones. Tools are in [`create/`](../../create)
 unless a project repo is named. Model files: ModelDoc `.vmdl` (KV3 text, header `format:modeldoc41`) referencing SMD/DMX/OBJ meshes; compile in ModelDoc, by loading the map
-in Hammer, or with `resourcecompiler -i <file.vmdl>` (`run_build.bat "assets <addon>"`). A model only the script uses must be compiled explicitly.
+in Hammer, or with `resourcecompiler -i <file.vmdl>` (`run_build.bat "assets <addon>"`). A model only the script uses must be compiled explicitly
+(the asset pre-pass's `models|*.vmdl` pass catches it on the command-line build).
 
 ## ModelDoc traps (verified)
 
 - ModelDoc turns **SMD imports 90° about Z** and reads V from the bottom: write positions as `(y, −x, z)` with V flipped (or compensate in script).
+  Animation SMDs: pre-rotate the root bone instead ([cs2-gotchas](../reference/cs2-gotchas.md#models-modeldoc-and-weapons)).
 - It **drops bones with no geometry**: an invisible rig needs a tiny hidden triangle per bone and `BoneMarkupList { bone_cull_type = "None" }`.
 - Material groups (skins) must remap from the default group's full material path, not the SMD material name.
 - Minimal static prop: `RootNode` → `MaterialGroupList/DefaultMaterialGroup` remaps (`from = "<smd material>.vmat"`, `to = "materials/….vmat"`),
   `RenderMeshList/RenderMeshFile`, `PhysicsShapeList/PhysicsHullFile` on the same mesh, `model_archetype`, `document_sub_type = "ModelDocSubType_None"`.
+  Props a script moves: `model_archetype ""`. `create/s2.py` writes SMD + vmdl + vmat + PNG.
 - Blender FBX: a per-material string property `FBX_vmatPath` maps materials. Door pivots: move the mesh in the source or use a `func_door_rotating` pivot.
+
+## Skins and animated textures
+
+- **Skin index:** a script picks a material group with `Instance.EntFireAtTarget({ target: prop, input: "Skin", value: n })`; `n` is the order in the vmdl's
+  `MaterialGroupList`: `DefaultMaterialGroup` = 0, then each `MaterialGroup` in order. Space Racer: neutral, t, ct, gold, then 12 shades; Hellmatch: 16 player
+  colours + a fuzz skin. One model with skins beats one model per colour (the cache room and `SetModel` stay small).
+- **Animated textures (Hellmatch, water/lava/slime and scrolling walls):** **one prop, one `MaterialGroup` per frame** (named `anim<N>`, each remapping the
+  default group's full material paths to that frame's vmat), stepped by the script with the `Skin` input (Doom flats every 8 tics). Scrolling walls: each
+  scrolling texture becomes its own anim prop whose frames are the texture shifted `max(2, w/32)` px (≤ 32 frames), because `g_vTexCoordScrollSpeed`
+  doesn't scroll in CS2. The first version remapped from the SMD material name and never animated; the 19 Oct fix (remap from the default group's path)
+  is **not yet confirmed in game**.
+- The material-side alternative, `F_TEXTURE_ANIMATION` strips (Space Racer flames; `voxel.flame_frames`): keys in
+  [cs2-gotchas](../reference/cs2-gotchas.md#lighting-materials-and-rendering); untested in CS2.
 
 ## Static props from downloaded models (GLB/glTF)
 
@@ -23,9 +39,12 @@ in Hammer, or with `resourcecompiler -i <file.vmdl>` (`run_build.bat "assets <ad
 - Conventions: glTF metres → inches ×39.3701; Y-up → Z-up `(x, y, z) → (x, −z, y)`; UV v flipped; node transforms baked (winding flipped for mirrored nodes);
   glTF normal maps are OpenGL (Y+), which Source 2 uses as-is. Metallic-roughness texture: G = roughness, B = metalness. Constant roughness → a 4×4 grey PNG.
   `doubleSided` → `F_RENDER_BACKFACES 1`.
-- First used for a CC-BY spike barricade in mg_kohztec_course; mg_trenchwarfare converted its Sketchfab aircraft and props this way (`ext_smd.py` re-textures
-  them later, e.g. one weathered PBR atlas per aircraft). Moving parts (propellers) were split out of the SMD into their own `prop_dynamic` models with the
-  origin on the hub so the script can spin them.
+- **Re-texturing converted models** (mg_trenchwarfare's aircraft, `weather_ext.py` in its repo, method only): re-orient yawed Sketchfab models (nose to +X,
+  centred), pack ~50 materials into one 4096 atlas of planar charts, bake the original colour plus triplanar stock-texture detail and object-space wear
+  (oil, soot, mud, faded paint, worn edges), and write compound convex hulls (wings, fuselage, tail). `create/ext_smd.py` reads/writes the converted SMDs.
+- **Moving parts** (propellers, wheels): `python3 create/split_parts.py <model.smd> --name prop --axis x --min 120` moves every connected piece beyond the
+  threshold into `<model>_prop.smd/.vmdl` with the origin on the hub, writes the hub offset to JSON, and keeps the unsplit SMD so re-runs are idempotent.
+  The script places the part at body origin + hub rotated by the body's angles and spins it.
 - Record the source and licence in the vmdl comment and the addon's `CREDITS.md`.
 
 ## Procedural props with baked textures
@@ -33,38 +52,47 @@ in Hammer, or with `resourcecompiler -i <file.vmdl>` (`run_build.bat "assets <ad
 mg_trenchwarfare's props (sandbags, revetments, duckboards, wire, shattered trees, a Minenwerfer, wrecked tank, hangar…) are all generated:
 
 1. **Geometry** (`geo.py`): triangle meshes built from parts (rounded boxes, tubes, lathes) with per-chart UVs of known world size, and a local frame per part
-   handed to the shaders (wood grain direction, panel axes).
+   handed to the shaders (wood grain direction, panel axes). Decals: `geo.decal(img_id, origin, u, v, size)` + `spec['decal_imgs']` → an alpha-tested
+   `<prop>_decal` atlas.
 2. **Shaders** (`shaders.py` + `noise.py`): procedural PBR materials evaluated per texel in object space — colour, roughness, metalness, height — wood, rust, burlap,
    mud, painted metal, canvas, with fBm/ridged/cellular noise.
 3. **Bake** (`bake.py`): packs charts into one atlas per model, rasterises every texel to its 3D point, runs the shaders, bakes voxel AO, edge and cavity masks,
    converts height to a tangent-space normal map (OpenGL, +Y up), pads gutters.
 4. **Write** (`modelio.py` via `build_prop.py`): LOD meshes sharing the chart layout, `csgo_complex` vmat + PNGs, vmdl with LODs and convex hulls, a turntable preview
    (`render.py`) to check before CS2.
-5. **Stock materials where they're better** (`stock.py`): charts mapped to real Valve materials (wet floorboards, rusty metal, mud, maple bark exported as a non-animated
-   copy) skip the bake and get real-scale tiling UVs per face corner (plank strips, box or cylindrical projection).
+5. **Stock materials where they're better** (`stock.py`): charts mapped to real Valve materials skip the bake and get real-scale tiling UVs per face corner
+   (plank strips, box or cylindrical projection). mg_trenchwarfare's exported copies: hessian ← `pbr_defaults` cloth001 tinted; paint ← `metalhull003a`
+   (rust kept, roughness derived); brass/steel ← de_mirage `metal_basic_1`; rope ← `rope_braid_1`; boards ← train boards 02. `ASSIGN` lists per-part variants.
+6. **Batch and tidy:** `create/build_all_props.py <modules>` builds every prop and writes `props.json` (model, tris, bounds) for the placer;
+   `create/clean_stale.py` deletes material files no vmdl uses any more, before zipping a delivery.
 
-Lessons: LOD thresholds ×16 (pops at ~300 u otherwise) and LOD0 only where LOD1 deviates > ~2 u; probe-light (`bakelighting 0`) small props and foliage;
-one convex hull per prop. Example: `build_prop.build('sandbags', p_sandbag.spec(0))`.
+Example: `build_prop.build('sandbags', p_sandbag.spec(0))`.
 
-## Low-poly creatures with painted atlases
+**LODs** (mg_trenchwarfare): thresholds ×16 (`modelio.LOD_SCALE`; at ×1 and ×4 the swaps were visible at ~300 u). Measure each prop's LOD0-vs-LOD1 deviation
+as the **p95 of the nearest-surface distance** between the two meshes: shattered trees 20–48 u, tunnel set 10, hangar 9, stumps 7–8, log 6,
+shelter/wire coil/wrecked tank ~2, revetments 1.2–1.7, sandbags 0.7, crates 0.1. Props at **≥ ~2 u** shipped LOD0 only (`CS2_SINGLE_LOD` /
+`modelio.SINGLE_LOD`, empty by default). Keep geometry rules identical across LODs (a LOD-dependent plank gap made revetments jump). Better long-term: derive LOD1 by
+decimating LOD0. Probe-light (`bakelighting 0`) small props and foliage; one convex hull per prop.
 
-mg_deku_tree's creatures (snapper, spitter, weaver, grub, a boss) are procedural low-poly models with a painted swatch atlas (its `tools/creatures.py`,
-`tools/swatches.py`); poses are separate models swapped by the script (no animgraph). Bomb-arena characters are 2D chibi sprites on props.
+**Self-lit effect models** (tracers, sight pips, ground markers): `python3 create/fx_models.py <addon> [--prefix fx]`; `fx_models.emissive(...)` writes a
+`csgo_vertexlitgeneric` vmat with `F_SELF_ILLUM 1`, a `TextureSelfIllumMask`, `g_flSelfIllumBrightness` 12–40 and `g_vSelfIllumTint`; quads are double-sided.
 
-## Flat sprite models (top-down games)
+## Voxel and sprite models
 
-The bomb-arena game draws everything as flat textured quads seen from straight above (custom camera pitch 89.9°): 617 small models (tiles, crates with
-break frames, bombs, flame arms per direction/length/frame, chibi T/CT characters), a static floor+blocks model per generated map swapped onto one prop,
-and the script choosing the model per frame. 1,357 model files went to the PC as one zip (the bridge's 50-files-per-write limit). If the model count becomes
-a problem, bodygroups switched with `SetBodyGroup` would cut it.
-
-## Voxel models from sprites
-
-- Hellmatch (`tools/sprites.py`): Freedoom sprites → CS2 models. `rot8`: a voxel figure carved from the 8 sprite rotations (players, rockets); `lathe`: solid of
-  revolution (lamps, barrels); `slab`: extrusion (boxes, weapons); `star`: three crossed alpha-tested planes (effects, corpses). One shared palette material
-  with 16 player-colour skins + a fuzz skin; sector light via `SetColor`.
-- Space Racer (`tools/cars.py`): true 3D voxel cars (~115 units) in normal and boosting variants with T/CT colour skins, explosion frames, effects; renders for the HUD picker.
-- Animated textures (water, lava): frames as separate models stepped by the script, because `g_vTexCoordScrollSpeed` doesn't scroll in CS2.
+- **Voxel models** ([`create/voxel.py`](../../create/voxel.py), from Space Racer's `cars.py`): paint a `Grid` (box, ellipsoid, taper, cylinders), greedy-mesh it
+  into quads (a few hundred triangles per vehicle), one palette texture with 4 shades per colour (lighting baked in, unlit material), skins as material groups,
+  a shaded render at any angle for HUD pictures, and `null_model()` (one 0.01-unit triangle) for pooled props.
+- **Hellmatch** (`tools/sprites.py` in its repo): Freedoom sprites → CS2 models. `rot8`: a voxel figure carved from the 8 sprite rotations; `lathe`; `slab`
+  (extrusion); `star`: three crossed alpha-tested planes with `F_RENDER_BACKFACES 1`. Sprites over 60 px are carved at 2 u per voxel, over 130 px at 4 u
+  (one large model went from 50 MB per frame to 1–6 MB).
+- **Unlit retro materials** (`csgo_unlitgeneric`): `F_BLEND_MODE` 0 / 2 alpha test / 1 translucent, `g_vColorTint` per baked light level,
+  `g_flModelTintAmount "1.000"` so script `SetColor` tints the prop (Hellmatch's sector light). Alpha-tested textures must be power-of-two: Hellmatch pads
+  sprites (UVs scaled `w·4 / pot(w·4)`) and stretches tiling textures.
+- **Flat sprite models (top-down games):** the bomb-arena game draws everything as flat textured quads seen from straight above (camera pitch 89.9°):
+  617 small models, a static floor+blocks model per generated map swapped onto one prop, the script choosing the model per frame. 1,357 model files went to the
+  PC as one zip. Bodygroups switched with `SetBodyGroup` would cut the model count.
+- **Low-poly creatures** (mg_deku_tree `tools/creatures.py`, `tools/swatches.py`): procedural low-poly models with a painted swatch atlas; poses are separate
+  models swapped by the script (no animgraph).
 
 ## Player models
 
@@ -115,26 +143,61 @@ keep the stock model and only tint/mark the player, or map CS:GO player models t
 
 ### Script-driven characters
 
-- Hide the pawn with `SetModelScale(0.02)`, not `SetColor`/alpha every reset (suspected cause of giant first-person weapons). `SetModel` on a live pawn to a stock
-  agent drew the local body in first person in mg_trenchwarfare and was removed.
-- Every model the script swaps to must be precached by a hidden `prop_dynamic` in the map.
+- Hiding the parked pawn (two methods, both used): see [cs_script-notes, parking](../reference/cs_script-notes.md#players-parking-cameras-and-input).
+  `SetModel` on a live pawn to a stock agent drew the local body in first person in mg_trenchwarfare and was removed.
+- Every model the script swaps to must be precached by a hidden `prop_dynamic` in the map's cache room.
 
 ## Animated rigs (Puppet Brawl)
 
-One invisible rig model plays every animation, and the four stock agents are **bone-merged** on top (`point_template` with the rig `prop_dynamic` and an agent
-`prop_dynamic` parented to it with attachment `!bonemerge`), so one animation set drives all fighters. The fighting game runs in 2D in the script; the rig shows it.
+One invisible rig model plays every animation, and stock agents are **bone-merged** on top (a `point_template` holding the rig `prop_dynamic` and an agent
+`prop_dynamic` parented to it with attachment `!bonemerge`), so one animation set drives every look. The full pipeline, entity keys, script inputs and file list:
+[`create/anim/README.md`](../../create/anim/README.md) (Node 22+; compiled-file readers in [`create/s2/`](../../create/s2)).
 
-- **Skeleton:** the CS2 agent skeleton read from a stock agent `vmdl_c` (bones, parents, bind pose; `cs2-fighter/tools/skel.mjs` + `kv3.mjs`).
-- **Clips** (`tools/anim/`): written as SMD animations + a reference SMD and listed in the rig's ModelDoc vmdl. 196 clips, each with a mirrored twin (392 files).
-  - 2D game poses lifted to 3D (hands and feet exactly where the 2D hit boxes are; depth gets a stance twist and guard).
-  - Hand shapes (fist with thumb wrap, relaxed, open, chop, claw) and straight wrists by default (`hands.mjs`, `posture.mjs`).
-  - **Motion capture:** CMU mocap BVHs (free use) cut, aimed along +X, placed on the support foot, retimed to game frames, blended in/out of each fighter's
-    stance per bone group, support foot locked, feet put on the floor (`mocap_move.mjs`, `retarget.mjs`, `bvh.mjs`).
-  - **Hinge IK** for knees/elbows (can't bend backwards; knee floor limit), airborne ankles held to a natural range, arms pushed out of head/torso.
-  - Hit and hurt boxes baked from the same animation, so gameplay matches what's drawn.
-- **Checks without CS2:** `validate.mjs` (joint ranges, limbs inside the body), offline renders on the real agent meshes (`review.mjs`), review sheets sent to the mapper.
-- In game the script picks the clip per frame on the rig (`SetAnimation`, crossfade via `fade_in_time`; blending untested in CS2 at the time of writing).
-- Delivery: hundreds of SMDs go as a zip the mapper extracts into `rig/anims/`, then `pb_rig.vmdl` is recompiled.
+- **Skeleton:** the CS2 agent skeleton, 77 bones, read from a stock agent `vmdl_c` (`create/s2/`; not committed, it's Valve's data). Root `root_motion` →
+  `pelvis` → `spine_0..3` → `neck_0` → `head_0`; `clavicle_L/R`, `arm_upper/lower_L/R`, `hand_L/R`, fingers `finger_{thumb_0..2, index/middle/ring/pinky_meta, _0.._2}_L/R`,
+  `scapula_L/R`, `leg_upper/lower_L/R`, `ankle_L/R`, `ball_L/R`, plus `*_TWIST*` bones. Model space +X forward, +Y left, +Z up; agents face +X in bind.
+  Puppet Brawl's agents: `tm_professional_varf`, `ctm_swat_varianth`, `ctm_fbi_variantb`, `tm_leet_variantf` (under `agents/models/`).
+- **Rig vmdl** (`create/anim/rig_vmdl.mjs` `writeRig`): reference SMD with one 0.04-unit triangle per bone (material `<name>_dot` remapped to a dark vmat),
+  `BoneMarkupList { bone_cull_type = "None" }`, `anim_graph_name = ""`, and an `AnimationList` of `AnimFile` entries: `name`, `looping`,
+  `fade_in_time = fade_out_time` (Puppet Brawl: 0.03 s for hit/block/launch/land clips, 0.12 s loops, 0.05 s otherwise), `framerate = 64.0`,
+  `source_filename = "models/…/anims/<clip>.smd"`, `delta/worldSpace/hidden = false`, `start_frame = end_frame = -1`. An extra `name = "idle"` entry with
+  `is_default_idle_anim = true` matches the template props' `StartingAnim`/`IdleAnim` `idle`.
+- **Mirrored clips:** every clip has a `<clip>_m` twin (left/right bones swapped, reflected with a per-bone bind correction), played when the body faces the
+  other way so the same side always faces the camera (Puppet Brawl: 196 clips → 392 SMDs).
+- **Making clips:** 2D game poses lifted to 3D; full-body postures from compact specs; hand shapes (fist with thumb wrap, relaxed, open, chop, claw);
+  CMU mocap (BVH, 120 Hz) retargeted by rest-matched world rotations, cut, aimed along +X, placed on the support foot, retimed with `[gameFrame, takeFrame]`
+  keys, blended in/out of the stance, support foot locked, feet floored. Mocap discovery: `analyze.mjs` lists strikes in a take → `gallery.mjs` strips →
+  pick a moment → key it. Takes used: [external-tools.md](../reference/external-tools.md).
+- **Joint limits that worked** (`post.mjs`, `pose.mjs`): hinge IK for knees/elbows (legs hinge about the hips' left-right axis, arms about the bind elbow
+  bend; knee floor 3.2), head keep-out r 7.2 and torso r 7.0 for arms, airborne thigh flex ≤ 148°, ankles toes-up 25° / pointed 60° / turn 25° / roll 25°.
+- **Twist bones:** the bone-merged agent copies `arm_upper_*_TWIST*`, `arm_lower_*_TWIST*`, `leg_upper_*_TWIST*`, `head_0_TWIST` from the rig; left at bind,
+  the skin wrings at shoulders, wrists and neck, so limb twist is spread along them (`spreadTwist`).
+- **What you see is what hits:** 16 joints projected to the fight plane at 64 Hz (= the sim rate), 2 characters per value, embedded in the script as data;
+  the game's hit and hurt boxes sample them (Puppet Brawl `bake.mjs`, project-specific).
+- **Keep old reach when art is redone:** record the previous system's hit tips, hurt capsules and timing per move (`old_ref.mjs` → `old_frames.json`) and key the
+  new clips to the same reach, so balance doesn't shift. Mid-rebuild, clips not yet redone are read back from the previous SMDs so the game stays complete.
+- **In game:** `SetAnimationLooping` / `SetAnimationNotLooping` (value = clip name) **only when the clip changes**, `SetPlaybackRate` rounded to 0.02 and sent
+  only on change (0 during hitstop, ⅓ during KO slow-mo). Bone-merge from the template is verified; blending via `fade_in_time`, the visible freeze at rate 0
+  and the `FollowEntity` fallback are not ([cs_script-notes](../reference/cs_script-notes.md#spawning-and-moving-things)).
+- Delivery: hundreds of SMDs go as a zip extracted into `rig/anims/` (or copied directly and sha1-checked), then the rig vmdl is recompiled.
+
+### Checks without CS2
+
+- `node create/anim/validate.mjs <anims dir>`: joint checker (wrong-way knees/elbows, twisted thighs, ankles out of range, limbs inside the body), worst
+  first. Run it after every animation change as a gate; accept by-design flags explicitly in the notes (deep crouch, dancer kicks).
+- **Review-sheet loop:** contact sheets of each clip on the real agent meshes from the game camera (`create/anim/preview.mjs`; Puppet Brawl's `review.mjs`
+  adds hit circles and the old reach). The sheets go to the mapper; the annotated notes become the next task list.
+
+### Troubleshooting a rig addon (from Puppet Brawl's README)
+
+| Symptom | Likely cause |
+|---|---|
+| Console prints an old version, bodies don't animate | Old compiled script: `resourcecompiler -f -i` the `.js`, layout `.xml` and `.css`, reload the map |
+| Bodies invisible | Rig vmdl not compiled |
+| Agent frozen in T-pose | Bone-merge failed (rig compiled without bones, or parent/attachment wrong) |
+| Pink checkerboard | Model or material not compiled |
+| No HUD | `custom_hud_layout` not pointing at the `.vxml` |
+| Silent sounds | Events missing from `soundevents_addon.vsndevts`, or a `point_soundevent` missing |
 
 ## Weapons
 
@@ -142,6 +205,9 @@ Rigging new weapon models onto stock weapon skeletons and swapping them in throu
 
 ## Checking stock CS2 assets offline
 
-`create/vpkdir.py` + `create/vtexread.py` index CS2's `pak01_dir.vpk`, pull files out of the chunks, list a `vmat_c`'s textures and decode `vtex_c` to PNG — used to
-preview Valve materials before choosing them and to export stock textures as non-animated copies. Source 2 Viewer (CLI: Decompile & Export) turns stock
-`vmdl_c` models into editable vmdl + DMX, the starting point for weapons and player models.
+- `create/vpkdir.py` + `create/vtexread.py` index CS2's `pak01_dir.vpk`, pull files out of the chunks, list a `vmat_c`'s textures and decode `vtex_c` to PNG — used to
+  preview Valve materials before choosing them and to export stock textures as non-animated copies. The `pak01_NNN.vpk` chunks (~100 MB each) are staged from
+  the PC on demand.
+- `create/s2/` (Node 22+, binary KV3 with LZ4/zstd): `prop_mesh.mjs <model.vmdl_c>` prints a stock prop's real bounds and materials (for placement),
+  `agent_mesh.mjs` extracts an agent's skinned mesh for previews.
+- Source 2 Viewer (CLI: Decompile & Export) turns stock `vmdl_c` models into editable vmdl + DMX, the starting point for weapons and player models.
