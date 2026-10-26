@@ -7,9 +7,10 @@ Materials are read the way generators write them: <vmat>_color.png (+ <vmat>_tra
 material remaps; skins (material groups) can be picked by name.
 
 usage:
-  smd_view.py <addon_out> <out.png> --model models/x/a.vmdl[@x,y,z[,yaw]] [--model ...] --eye x,y,z --at x,y,z
+  smd_view.py <addon_out> <out.png> --model models/x/a.vmdl[@x,y,z[,yaw]] [--model ...] --eye=x,y,z --at=x,y,z
               [--size 1280x720] [--fov 106] [--sky materials/x/sky_color.png] [--skin NAME] [--bg r,g,b]
-  (yaw in degrees; --skin applies to every model; a sky path is relative to addon_out)
+  (yaw in degrees; --skin applies to every model; a sky path is relative to addon_out; write --eye=-200,0,80
+   with "=" when a value starts with a minus sign)
 import:
   import smd_view as V
   sc = V.Scene(out)
