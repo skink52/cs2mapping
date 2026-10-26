@@ -119,7 +119,7 @@ Checks before handing a map over: `create/check_mesh.py <vmap>` (half-edge valid
 - **Vis hints:** Lowest over everything (the void), Low only over the playable band (Space Racer: a chain of Low hints along the track centre line, 40 samples per
   chunk, padded 900 sideways, 350 down, 1100 up; `vmapgen.path_hints`), Lower (`hintType` 8) for big volumes, Medium only around very complex meshes.
   Sky shells around sealed rooms: Exclude from Vis.
-- **Lighting:** enough stationary lights that weapons aren't black; one `env_combined_light_probe_volume` per room/arena (`vmapgen.probe_volume`);
+- **Lighting:** enough stationary lights that weapons aren't black; one `env_combined_light_probe_volume` per room/arena (`vmapgen.probe_volume`) that fully covers every static func_breakable / func_brush (check with `tools/probecover.py` via `stage_d.py … probes`);
   `toolslightmapres` shells over the player space (`vmapgen.lmres_*`: 64-grid occupancy, floor −8 to +128); probe-lit (`bakelighting 0`) foliage and small props;
   ≤ 4 shadowed lights overlapping. Probe sizes and lamp keys: [cs2-gotchas, lighting](../reference/cs2-gotchas.md#lighting-materials-and-rendering).
 - **Lobby + pawn booth:** a lobby room (join by chat command or automatically; Hellmatch dropped its join pads), a sealed booth where parked pawns wait,

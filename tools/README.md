@@ -30,13 +30,13 @@ Everything runs in Claude's cloud workspace with Python 3 + numpy, scipy and Pil
 
 ### Stage C step keys (run order, from `stage_c.run()`)
 
-`merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity, dead, sounds, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, radar, assets, matflags`,
+`merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity, dead, sounds, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags`,
 plus `overlaydepth` (= `overlayfix` + projection depth 8) when named. `vis` runs `visfit.py`; `skyvis` (the older shell-only pass) runs only when `vis` isn't in the list.
 `alpha` and `assets` need `<root>/vpk/cs2_pak01_dir.vpk` and are skipped silently without it. `daylight` is **not** a stage C step.
 
 ### stage_d.py passes
 
-`beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, gravity, overlayfix, overlaydepth, facescale, matflags`.
+`beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, gravity, overlayfix, overlaydepth, facescale, matflags, probes, probecover`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -55,6 +55,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `skyvis.py` | `skyvis` | Older pass: sky shells that seal nothing get Exclude from Vis |
 | `beams.py` | `beams` | env_laser / env_beam → never-solid func_brush beams (damage: `laserhurt.py`) |
 | `lighting.py` | `lights` | Minimal set of Stationary lights per sealed compartment, max 4 overlapping |
+| `probecover.py` | `probes` (C, report) / `probecover` (D, fix) | Static func_breakable / func_brush meshes outside every light probe volume: listed in TO CHECK, or a volume added around each uncovered group |
 | `daylight.py` | `daylight` (D only) | Stationary sun, ceilings without shadows, probe volumes, maxexposure 2 for dark indoor maps |
 | `radar.py` | `radar` | Radar png + vtex + `resource/overviews/<map>.txt` from the standable floors, painted with their materials |
 | `radartex.py` | (radar, vmap_preview) | Material name → tiled source texture or a colour guessed from the name |

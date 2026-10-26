@@ -31,7 +31,8 @@ These are the standing rules every port follows. The pipeline applies most of th
   Switch enough lights to **Stationary** (`directlight 3`): at least one per sealed compartment, spaced so no spot is inside more than
   four stationary lights, and no more than needed. Compartments open to a `light_environment` are fine as they are.
 - **Light probe volumes.** Without an `env_combined_light_probe_volume`, brush entities, props, players and weapons don't get the baked
-  lighting, so they look different from the world (Mario Party's platforms were brighter than the walls). One per room is enough.
+  lighting, so they look different from the world (Mario Party's platforms were brighter than the walls). One per room is enough, as long as it covers
+  every static brush entity completely: Static `func_breakable` and `func_brush` meshes (not parented to a door, mover, train, rotator or physics object) are lit from light probes, not lightmaps: the **whole mesh** must sit inside an `env_combined_light_probe_volume`, or its lighting is wrong (skink52, 27 Oct 2026). Stage C `probes` lists any that aren't; `stage_d.py … probecover` adds a volume around each uncovered group.
 - **Lasers.** CS2 can't spawn `env_laser` / `env_beam`. Replace each with a never-solid `func_brush` drawn between its end points with a
   self-illuminated laser material in the beam's colour. Lasers that did damage in CS:GO get a `trigger_hurt` (`laserhurt.py` after stage C),
   even where the original had none (skink52's rule, 24 Oct 2026). If a trigger_hurt moves (parented to a door / mover), parent the beam to the same mover.

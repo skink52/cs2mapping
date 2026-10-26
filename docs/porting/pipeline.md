@@ -94,6 +94,7 @@ sounds, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights,
   colour. A mutual laser pair is drawn once. A CS:GO beam with no name starts on. TurnOn/TurnOff/Toggle become Enable/Disable/Toggle; StrikeOnce becomes
   Enable plus a Disable after the beam's `life`. Stage C adds no damage: a damaging laser with no trigger_hurt along it is flagged; then run `laserhurt.py`
   (below).
+- **Probe coverage** (`probes`). Static `func_breakable` and `func_brush` meshes (not parented to a door, mover, train, rotator or physics object) are lit from light probes, not lightmaps: the **whole mesh** must sit inside an `env_combined_light_probe_volume`, or its lighting is wrong (skink52, 27 Oct 2026). Stage C `probes` lists any that aren't; `stage_d.py … probecover` adds a volume around each uncovered group.
 - **Stationary lights** (`lights`). CS:GO lights import as Static, which leaves weapons and players black. The world is voxelised and flood-filled into
   sealed compartments. Each compartment gets at least one light switched to `directlight 3` (Stationary; in the FGD 3 = Stationary and 2 = fully Dynamic),
   smallest rooms first. More lights are added only to cover the rest of a room. Ranges are trimmed so no spot is inside more than 4 stationary lights. A

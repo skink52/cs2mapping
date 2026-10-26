@@ -11,7 +11,7 @@ dead, sounds, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, l
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix
+import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover
 
 CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 
@@ -747,7 +747,7 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'sounds', 'doors', 'overlays', 'overlayfix', 'facescale', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'radar', 'assets', 'matflags']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'sounds', 'doors', 'overlays', 'overlayfix', 'facescale', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'probes', 'radar', 'assets', 'matflags']
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
     if 'io' in steps and os.path.exists(vmfp): restore_io(m, c, vmfp); dropped_report(m, c, vmfp)
@@ -776,6 +776,7 @@ def run(addon, root, passes=None):
     if 'beams' in steps: beammod.run(m, c)
     if 'lights' in steps: lighting.run(m, c)
     if 'alpha' in steps and c.src: assets.fix_alpha(m, c)
+    if 'probes' in steps: probecover.run(m, c)
     if 'radar' in steps: radar.run(m, c, tex=radar.textures_for(c))
     if 'assets' in steps and c.src:
         assets.fix_materials(m, c, c.cs2v, c.src.vpk, c.src.arcs)

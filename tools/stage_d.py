@@ -1,12 +1,13 @@
 """Run individual clean passes on an already-cleaned map (keeps your own Hammer edits).
 
 python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, gravity,
-        overlayfix (rebuild placeholder overlay quads), overlaydepth (same + projection depth 8 on every overlay), facescale, matflags
+        overlayfix (rebuild placeholder overlay quads), overlaydepth (same + projection depth 8 on every overlay), facescale, matflags,
+        probes (report static func_breakable/func_brush outside probe volumes), probecover (add volumes for them)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import vmapedit as V, stage_c, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix
+import vmapedit as V, stage_c, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -27,6 +28,7 @@ def run(addon, root, passes):
     if 'lights' in passes: lighting.run(m, c)
     if 'alpha' in passes and c.src: assets.fix_alpha(m, c)
     if 'daylight' in passes: daylight.run(m, c)
+    if 'probecover' in passes or 'probes' in passes: probecover.run(m, c, fix='probecover' in passes)
     if 'radar' in passes: radar.run(m, c, tex=radar.textures_for(c))
     if 'gravity' in passes:
         gravity.run(m, c)

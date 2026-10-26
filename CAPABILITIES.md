@@ -37,7 +37,8 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Texture alignment and scale on brushes repaired where the importer got it wrong.
 - Displacements (terrain) the importer dropped rebuilt from the original map.
 - Lighting so players and weapons aren't black: the right number of lights switched to Stationary per room; for dark indoor maps a follow-up daylight step
-  adds sunlight and light probe volumes so props and players match the world.
+  adds sunlight and light probe volumes so props and players match the world; breakables and brush walls that don't move are checked to sit fully
+  inside a light probe volume, and volumes are added where they don't.
 - Door sounds, ambient sounds and looping sounds converted to CS2 sound events, including stock CS:GO sounds; sound files in formats CS2 can't play re-encoded.
 - Material names the importer mangled (spaces in folder names) pointed back at the real files.
 - Glows attached to moving objects (e.g. thrown grenades) made to follow them again.
