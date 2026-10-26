@@ -136,7 +136,8 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   `SetFollowConfig({ followEntity, cameraOffset, clipCameraOffset })` (chase cams). Restore with `SetMode(CustomCameraMode.DISABLED)` and `SetParent(pawn)`.
 - **Input:** `pawn.IsInputPressed(CSInputs.X)`, `WasInputJustPressed`, `WasInputJustReleased`. Usable: FORWARD, BACK, LEFT, RIGHT, JUMP, DUCK, USE, ATTACK, ATTACK2,
   RELOAD, WALK, LOOK_AT_WEAPON (F). The number keys (weapon slots) can't be read. Read edges every tick: 20 Hz polling missed quick taps.
-  Masked calls (`IsInputPressed(A | B)`) are undocumented; Space Racer detects at runtime whether a mask means "any of".
+  Masked calls (`IsInputPressed(A | B)`) are undocumented and unconfirmed: the helicopter port assumed ALL, Space Racer assumes "any of", detects it at runtime and
+  logs which (`40_players.js justPressed`). Safest: test one key per call.
 - **Chat commands:** `Instance.OnPlayerChat(({ player, text }) => …)`. Accept `!` and `/`. Scripts can't send private chat or hide the typed line;
   script `say` speaks as the host and hits the chat flood limit, so space lines ~1 s apart.
 - `Instance.RegisterCheatCommand(name, cb)` adds console commands that work with `sv_cheats 1` (test hooks: `pb_cpu_match`).
@@ -166,7 +167,7 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   the error on use), cache `GetGameTime()` once per tick, skip moving things that haven't moved.
 - Declare every field an object will ever have in its constructor (V8 hidden classes).
 - Keep the think loop alive: reschedule in `finally`, and wrap each arena/instance's tick in its own try/catch.
-- Log script time once a minute (`Date.now()` deltas). Space Racer: 64 players ≈ 0.14 ms and ~215 engine calls per tick.
+- Log script time once a minute (`Date.now()` deltas). Space Racer: 64 players ≈ 0.14 ms and ~215 engine calls per tick (measured on the mock engine, not a CS2 server).
 
 ## Testing without CS2
 
@@ -184,7 +185,7 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
 - Ball games: hits from `OnBulletImpact({ weapon, position, hitEntity })` and `OnKnifeAttack`, low gravity by measuring and cancelling the engine's gravity
   on the ball (see the gotchas). Frozen-spawn physics balls need a nudge from script.
 - Grenades: CS2 triggers don't see them; track from `OnGrenadeThrow({ projectile })` and test segment-vs-box each tick.
-- `game_ui` replacement for vehicles: test each key separately (a combined mask means ALL), drive thrusters with Activate/Deactivate, limit turn rate by
+- `game_ui` replacement for vehicles: test each key separately (the helicopter port treated a combined mask as ALL; Space Racer probes it at runtime — see Input above; unconfirmed in CS2), drive thrusters with Activate/Deactivate, limit turn rate by
   measuring yaw change (there is no angular-velocity read).
 - AFK: activity = any input or a view change > ~2°; warn at 20 s, move to spectate at 30 s, only count idling while actually playing. Position-based AFK plugins
   flag parked pawns.

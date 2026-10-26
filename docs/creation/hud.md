@@ -86,7 +86,7 @@ Patterns (send only changes, reset on activate/team change, per-tick caps): [../
 ## Loading screens
 
 - **Credit text:** `game\csgo_addons\<addon>\maps\<map>.txt`, first line `COMMUNITYMAPCREDITS:`, then the lines (no rebuild needed).
-- **Pictures:** `panorama/images/map_icons/screenshots/1080p/<map>.png`, `<map>_1.png` … `_9`. Ship **at least two**: with one, CS2 kept its default art
+- **Pictures:** `panorama/images/map_icons/screenshots/1080p/<map>.png`, `<map>_1.png` … `_9`. Ship **at least two**: with one, CS2 showed none of it
   (Space Racer, Hellmatch). They play as a slideshow, 4 s each. The ports use Hammer5Tools' layout (`<map>_png.png` + `.vtex` at 1080/720/360p); see
   [../porting/pipeline.md](../porting/pipeline.md#loading-screen-background-images).
 - Safe area on a 1920×1080 slide: CS2 draws a 300 px column 20 px from the right (name, icon, progress) and crops 4:3/ultrawide; keep content in x 252–1348, y 104–948.

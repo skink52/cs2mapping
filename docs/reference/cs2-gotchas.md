@@ -207,7 +207,7 @@ These came from the original cs_script minigames (Hellmatch, Space Racer, mg_tre
 
 | Problem | Fix |
 |---|---|
-| Space Racer / Hellmatch: with a single loading picture CS2 kept its default art. | Ship at least two (`<map>`, `<map>_1` … `_9`); they play as a slideshow, 4 s each, starting on a random one. Ports done with the Hammer5Tools `<map>_png` layout should be checked against this. |
+| Space Racer / Hellmatch: with a single loading picture CS2 showed none of it (no custom art). | Ship at least two (`<map>`, `<map>_1` … `_9`); they play as a slideshow, 4 s each, starting on a random one. Ports done with the Hammer5Tools `<map>_png` layout should be checked against this. |
 | Loading pictures not compiled. | Reference them from a never-shown rule in the HUD stylesheet (they show from the second load), or compile with `run_build.bat "assets <addon>"`. |
 | Content hidden behind CS2's loading UI. | 1920×1080 slide; CS2 draws a 300 px column 20 px from the right and crops 4:3/ultrawide. Keep content in x 252–1348, y 104–948. |
 | The overview txt in the content folder isn't used. | `resource/overviews/<map>.txt` goes in the **game** folder. |

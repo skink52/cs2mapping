@@ -24,7 +24,7 @@ out/addon/    generated content tree -> content\csgo_addons\<addon>\     out/gam
 ref/          the Hammer map (as last saved by the user) the build writes into, stock files used as templates
 ```
 
-- **Why split core and cs2:** the rules can be simulated thousands of times in Node (balance, durations, bot behaviour, regression hashes) and the
+- **Why split core and cs2:** the rules can be simulated thousands of times in Node (balance, durations, bot behaviour) and the
   CS2 adapter stays thin. Puppet Brawl ran 600 s × 3 seeds of CPU-vs-CPU per fighter to balance stats.
 - The build bakes generated data (level geometry tables, model lists, HUD string indexes, music lengths) into the script as constants.
 - One `CONFIG` object at the top of the script holds every tunable (round length, arena sizes, damage, cvars applied), so changes don't need code edits.
@@ -51,7 +51,8 @@ ref/          the Hammer map (as last saved by the user) the build writes into, 
 
 - **New in the late-October 2026 CS2 update:** a `toolsskyboxocclude` tool material that does the job of the moondome shells (a surface that shows the sky and closes off the void). Reported by skink52; not yet tested in our maps or wired into the pipeline, which still writes `csgo_moondome` shells. Check the exact material path in Hammer's tools materials before scripting it.
 - **Multi-arena maps:** every arena/level/track sits in its own box in the void. Each box is enclosed in a moondome (sky-material shell) with a
-  `tools/skybox` shell 1 unit inside it for environment lighting. Several skies in one map = one moondome per box with its own sky material.
+  `tools/skybox` shell 1 unit inside it for environment lighting — single-sky maps only: a toolsskybox shell always shows the one `env_sky`, so maps with
+  several skies use one moondome per box with its own sky material and no toolsskybox shell (Space Racer strips them).
 - **Vis hints:** Lowest over everything (the void), Low only over the playable band, Lower (`hintType` 8) for big volumes, Medium only around very complex
   meshes. Prop-only levels gain nothing from fine hints. Sky shells around sealed rooms: Exclude from Vis.
 - **Lighting:** enough stationary lights that weapons aren't black; one `env_combined_light_probe_volume` per room/arena; lightmap resolution
@@ -104,7 +105,8 @@ point-sampled look), `csgo_vertexlitgeneric` + `F_SELF_ILLUM` for glowing parts,
 
 ## 6. Testing before CS2
 
-1. `node test/sim.cjs` — the pure game with bots: durations, balance, crashes, regression hash of every state.
+1. `node test/sim.cjs` — the pure game with bots: durations, balance, crashes. For behaviour-preserving refactors, compare a hash or trace of every state
+   between the old and new build with the same seed.
 2. `node create/test/mock_point_script.mjs <script> entities.json players=32 seconds=600` — the real script on a stand-in engine (or the project's own richer mock).
 3. `sh create/test/tscheck.sh <script>` — type check against Valve's API.
 4. Software previews: model turntables, map views, HUD laid out like Panorama at 16:9, ultrawide and 4:3 with CS2's own HUD areas marked.
