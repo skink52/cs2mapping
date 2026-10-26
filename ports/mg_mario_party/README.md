@@ -38,6 +38,8 @@ Mario-themed multigame lobby with 20+ minigames (Mario Says, Hexagon Heat, Platf
 
 ## Open / to check
 
+- 2026-10-27 (mock engine): `mario_io.js` `moveBullets()` moves the bullet bills with `Teleport` every tick; CS2 stops drawing props moved that way (the mushrooms were switched to `Move` for this). Switch to `Move` if the bullets are invisible in game.
+
 - This port was made from an older version than CS:GO v3_5, so some geometry differs (Hexagon Heat, for example). The lava and sand water match v3_5's look rather than its exact brushwork. The original BSP is no longer in `C:\source1`.
 - Flag colours are red/green (the original materials). v3_5 has black flags, so check which is wanted.
 - Torch fire positions were estimated from the nearby lights.

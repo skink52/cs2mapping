@@ -45,6 +45,8 @@ kolkazadrot published a CS2 port as mg_metal_course_2_v2 (Workshop 3070464801, c
 
 ## Open / to check
 
+- 2026-10-27 (mock engine): `heMove()` teleports the `heglow_*` particle systems every tick. The not-drawn rule is known for props; watch the grenade glows in game.
+
 - Vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium).
 - the importer leaves these out (they're on its exclusion list, mostly cosmetic): 13 point_spotlight (spotlight beams), 13 func_dustmotes (dust motes)
 - chat messages use "say" from cs_script ServerCommand - if a server blocks it the messages just will not show

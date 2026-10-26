@@ -36,7 +36,10 @@ const MODEL_ROOTS = kv.has('models') ? opt('models').split(',').map((d) => path.
 let time = 0, tick = 0;
 let rs = +opt('seed', 1) >>> 0;
 Math.random = () => { rs = (rs + 0x6D2B79F5) >>> 0; let t = rs; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+// the script sees game-time clocks (repeatable runs); the mock keeps the real one for its own timing
+const clock = performance.now.bind(performance);
 Date.now = () => 1790000000000 + Math.round(time * 1000);
+Object.defineProperty(globalThis, 'performance', { value: { now: () => time * 1000, timeOrigin: 1790000000000 }, configurable: true, writable: true });
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
 // ---------------------------------------------------------------- Valve's declarations: API names, return types, classes, enums
@@ -72,7 +75,7 @@ const dflt = (k) => { const t = RET[k] || ''; if (/^number/.test(t)) return 0; i
 
 // ---------------------------------------------------------------- bookkeeping
 const stats = { calls: {}, unknownEntityCalls: {}, fired: {}, errors: [], notInApi: {}, problems: [], kills: 0, scriptDamage: 0, teamkills: 0, respawns: 0,
-  teamChanges: 0, roundEnds: {}, restarts: 0, spawned: 0, hudCalls: 0, hudDropped: 0, tpRuns: 0, tpNames: new Set(), invalidCalls: 0, models: new Set(),
+  teamChanges: 0, roundEnds: {}, restarts: 0, spawned: 0, hudCalls: 0, hudDropped: 0, tpRuns: 0, tpNames: new Set(), tpAuto: 0, tpAutoNames: new Set(), invalidCalls: 0, models: new Set(),
   churn: { join: 0, kick: 0, swap: 0, leave: 0 } };
 const count = (o, k) => { o[k] = (o[k] || 0) + 1; };
 const flagIt = (msg) => stats.problems.push(msg);
@@ -85,13 +88,20 @@ const state = new Map(), dirty = new Map(), evs = [], traceOut = [];
 const see = (key, val) => { if (!dirty.has(key)) dirty.set(key, state.get(key)); if (val === undefined) state.delete(key); else state.set(key, val); };
 const r2 = (n) => (Math.round(n * 100) / 100).toFixed(2);
 function entState(e) {
-  const p = e._p, a = e._a; let s = `${e._n} ${r2(p.x)},${r2(p.y)},${r2(p.z)} ${r2(a.pitch)},${r2(a.yaw)},${r2(a.roll)}`;
+  const p = e._p, a = e._a; let s = `${r2(p.x)},${r2(p.y)},${r2(p.z)} ${r2(a.pitch)},${r2(a.yaw)},${r2(a.roll)}`;
   if (e._model !== undefined) { const c = e._color; s += ` ${e._model} s${e._skin} c${c.r},${c.g},${c.b},${c.a}${e._glow ? ' glow ' + e._glow : ''}${e._scale !== 1 ? ' x' + e._scale : ''}`; }
   if (e instanceof Pawn) s += e._alive ? ' hp' + e._hp : ' dead';
   if (e instanceof Camera) s += ' m' + e.mode;
   return s;
 }
-const seeEnt = (e) => { if (OBS) see('e ' + e._c + '#' + e._id, e._ok ? entState(e) : undefined); };
+const nameSeq = new Map();
+function traceKey(e) {
+  if (e._tk) return e._tk;
+  if (e instanceof Pawn) return 'pawn' + e.ctl.slot; if (e instanceof Camera) return 'cam' + e.pawn.ctl.slot;
+  const base = e._n || e._c, n = (nameSeq.get(base) || 0) + 1; nameSeq.set(base, n);
+  return (e._tk = base + (n > 1 ? '#' + n : ''));
+}
+const seeEnt = (e) => { if (OBS && !(e instanceof Controller) && !(e instanceof Weapon)) see('e ' + traceKey(e), e._ok ? entState(e) : undefined); };
 const event = (s) => { if (OBS) evs.push(s); };
 function traceTick() {
   if (!dirty.size && !evs.length) return;
@@ -128,8 +138,8 @@ function place(e, o, tp) {
   if (!o || typeof o !== 'object') throw new Error((tp ? 'Teleport' : 'Move') + ' needs an object');
   if (o.position) chkV(o.position, 'position', true); if (o.velocity) chkV(o.velocity, 'velocity'); if (o.angularVelocity) chkV(o.angularVelocity, 'angularVelocity');
   if (o.angles) chkA(o.angles, 'angles');
-  if (tp && e._tp) {   // CS2 doesn't draw a prop that is Teleported every tick
-    if (e._tpTick === tick - 1) { if (++e._tpRun === 2) { stats.tpRuns++; stats.tpNames.add(e._n || e._c); } } else if (e._tpTick !== tick) e._tpRun = 0;
+  if (tp && e._tp && (o.position || o.angles)) {   // CS2 doesn't draw a prop whose position is Teleported every tick
+    if (e._tpTick === tick - 1) { if (++e._tpRun === 2) { if (e._auto) { stats.tpAuto++; stats.tpAutoNames.add(e._n); } else { stats.tpRuns++; stats.tpNames.add(e._n || e._c); } } } else if (e._tpTick !== tick) e._tpRun = 0;
     e._tpTick = tick;
   }
   if (o.position) e._p = { x: o.position.x, y: o.position.y, z: o.position.z };
@@ -312,7 +322,7 @@ for (const [n, C] of Object.entries(CLS)) for (const k of Object.getOwnPropertyN
     : function (...a) { if (this._ok === false) { stats.invalidCalls++; throw new Error('Invalid entity (' + label + ' on ' + this._c + ')'); } if (CALLS) cnt(label); return f.apply(this, a); };
 }
 
-const permissive = (e) => new Proxy(e, { get(t, k) { if (k in t || typeof k === 'symbol') return t[k]; count(stats.unknownEntityCalls, t._c + '.' + String(k)); return () => dflt(String(k)); } });
+const permissive = (e) => new Proxy(e, { get(t, k) { if (k in t || typeof k === 'symbol' || !/^[A-Z]/.test(k)) return t[k]; count(stats.unknownEntityCalls, t._c + '.' + String(k)); return () => dflt(String(k)); } });
 const add = (e) => { const x = e._auto ? permissive(e) : e; world.push(x); index(x); seeEnt(x); return x; };
 const byName = new Map();
 function index(e) { if (!e._n) return; let a = byName.get(e._n); if (!a) byName.set(e._n, a = []); a.push(e); }
@@ -536,10 +546,10 @@ fs.writeFileSync(tmp, src);
 let depth = 0, tickMs = 0;
 const fail = (what, e) => { stats.errors.push(what + ': ' + (e && e.stack ? e.stack.split('\n').slice(0, 3).join(' | ') : e)); };
 function safe(what, fn) {
-  const top = depth++ === 0, t0 = top ? performance.now() : 0;
+  const top = depth++ === 0, t0 = top ? clock() : 0;
   try { const r = fn(); if (r && typeof r.then === 'function') { asyncPending = true; r.then(null, (e) => fail(what, e)); } return r; }
   catch (e) { fail(what, e); }
-  finally { depth--; if (top) tickMs += performance.now() - t0; }
+  finally { depth--; if (top) tickMs += clock() - t0; }
 }
 const fire = (k, ev) => { const a = hooks[k]; if (a) for (const cb of a) safe(k, () => cb(ev)); };
 process.on('unhandledRejection', (e) => fail('async', e));
@@ -634,7 +644,7 @@ for (tick = 0; tick < TICKS; tick++) {
   roundTick();
   if (CHURN) { if (time > churnFrom && tick % 320 === 0) churn(); }
   else if (tick === Math.floor(TICKS / 2) && players[1]) { const old = players[1]; disconnect(old); connect(1, old.bot, old._team || 3, false); }
-  if (asyncPending) { asyncPending = false; const t0 = performance.now(); await new Promise(setImmediate); tickMs += performance.now() - t0; }
+  if (asyncPending) { asyncPending = false; const t0 = clock(); await new Promise(setImmediate); tickMs += clock() - t0; }
   times[tick] = tickMs; ran = tick + 1;
   if (tickMs > 16) slow.push(time.toFixed(1) + 's:' + tickMs.toFixed(0) + 'ms');
   if (OBS) traceTick();
@@ -674,6 +684,7 @@ if (OBS) {
   console.log(`trace: ${traceOut.length} ticks with changes, hash ${h.toString(16).padStart(8, '0')}${TRACE !== '1' ? ' -> ' + TRACE : ''}`);
 }
 if (stats.tpRuns) flagIt(`props Teleported 3+ ticks in a row (CS2 doesn't draw them; use Move): ${stats.tpRuns} (${[...stats.tpNames].slice(0, 6).join(', ')})`);
+if (stats.tpAuto) console.log(`autoents names Teleported 3+ ticks in a row (a problem only if they are props; give entities.json to check): ${stats.tpAuto} (${[...stats.tpAutoNames].slice(0, 6).join(', ')})`);
 if (stats.invalidCalls) console.log('calls on entities that had gone away:', stats.invalidCalls);
 if (Object.keys(stats.notInApi).length) stats.errors.push('Instance methods not in point_script.d.ts: ' + Object.keys(stats.notInApi).join(', '));
 const probs = [...new Set(stats.problems)];
