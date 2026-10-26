@@ -175,6 +175,7 @@ These came from the original cs_script minigames (Hellmatch, Space Racer, mg_tre
 | Problem | Fix |
 |---|---|
 | The 3D skybox draws behind everything. | Nothing players or vehicles can get near may live in it. The skybox map needs `mapUsageType skybox`, its own `light_environment` + `env_sky` and a `sky_camera` (scale 16); the main map gets a `skybox_reference`. |
+| Sky shells around arenas / dropped sky brushes (moondomes). | **New in the late-October 2026 CS2 update:** a `toolsskyboxocclude` tool material that does the job of the moondome shells (a surface that shows the sky and closes off the void). Reported by skink52; not yet tested in our maps or wired into the pipeline, which still writes `csgo_moondome` shells. Check the exact material path in Hammer's tools materials before scripting it. |
 | A `toolsskybox` shell always shows the single `env_sky`. | Several skies in one map: one moondome box per area with its own sky material and no toolsskybox shell (whether `csgo_moondome` accepts an equirect `TextureCubeMap` is unverified). |
 | `prop_static` models (visoccluder off) never block vis; fine hints over prop-only levels cost huge compile time (36 Low hints → 1.8M regions, 1013 s). | Low hints only along the play band, Lowest elsewhere. |
 | World limit ±16384. Scripted things flown past it misbehave. | Clamp positions or hide the entity. |

@@ -48,6 +48,8 @@ These are the standing rules every port follows. The pipeline applies most of th
 
 ## Multi-arena maps (original minigame addons)
 
+**New in the late-October 2026 CS2 update:** a `toolsskyboxocclude` tool material that does the job of the moondome shells (a surface that shows the sky and closes off the void). Reported by skink52; not yet tested in our maps or wired into the pipeline, which still writes `csgo_moondome` shells. Check the exact material path in Hammer's tools materials before scripting it.
+
 Enclose each arena in a moondome (sky-material shell) with a tools/skybox shell 1 unit inside it, so the environment lighting works.
 Use one box per arena rather than one big shell (mg_50arenas has 53), and keep each box close to its arena: the vis compile pays for every unit of volume.
 Vis hints as above: Lowest for the void between arenas, Low throughout the arenas, Medium sparingly. If the arenas add up to a huge volume,

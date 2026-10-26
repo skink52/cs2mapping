@@ -44,6 +44,7 @@ ref/          the Hammer map (as last saved by the user) the build writes into, 
 
 ## 3. World layout conventions
 
+- **New in the late-October 2026 CS2 update:** a `toolsskyboxocclude` tool material that does the job of the moondome shells (a surface that shows the sky and closes off the void). Reported by skink52; not yet tested in our maps or wired into the pipeline, which still writes `csgo_moondome` shells. Check the exact material path in Hammer's tools materials before scripting it.
 - **Multi-arena maps:** every arena/level/track sits in its own box in the void. Each box is enclosed in a moondome (sky-material shell) with a
   `tools/skybox` shell 1 unit inside it for environment lighting. Several skies in one map = one moondome per box with its own sky material.
 - **Vis hints:** Lowest over everything (the void), Low only over the playable band, Lower (`hintType` 8) for big volumes, Medium only around very complex
