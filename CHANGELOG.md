@@ -6,6 +6,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-10-26
 
+- `post_import_cleanup.py` skips `models/player/` (player models pull in the whole t/ct_animations set: cs_mdl_import ran 20+ min on mg_n64_goldeneye's ragdoll and the result is unusable) plus anything listed in `maps/<addon>_skip_models.txt`. `vmap_refs.py` now reads keyvalues2 vmaps (a fresh import is text, so it had been falling back to the importer's refs.txt). The PC copy of post_import_cleanup.py was the August version without vmap_refs; both are now deployed.
 - `run_import.bat`: a map now counts as FAILED in `stage_b_done.txt` when the import log says "Aborting" (the importer always exits 1 at its prefab_refs step, so the exit code is no use). Before, an older vmap left in the addon made a failed import look OK (mg_n64_goldeneye re-port, vpk.signatures was back).
 
 ## 2026-10-25

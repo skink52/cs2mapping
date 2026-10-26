@@ -56,7 +56,11 @@ class Scan:
         s.seen.add(rel)
         path = os.path.join(s.content, rel.replace('/', os.sep))
         if not os.path.exists(path): s.missing_prefabs.append(rel); return
-        doc = dmx.load(path)
+        raw = open(path, 'rb').read()
+        if b'encoding keyvalues2' in raw[:80]:           # a fresh import is keyvalues2 text; Hammer saves binary
+            import kv2; doc = kv2.loads(raw)
+        else:
+            doc = dmx.loads(raw)
         for e in doc.elements:
             t = e['type']
             if t == b'CDmePolygonMesh':

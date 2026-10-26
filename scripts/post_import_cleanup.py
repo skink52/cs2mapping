@@ -187,6 +187,9 @@ def needs_compile(source_path, compiled_path):
     return os.path.getmtime(source_path) > os.path.getmtime(compiled_path)
 
 
+SKIP_MODEL_PREFIXES = ("models/player/",)
+
+
 def strip_mdls_from_refs(filename):
     if filename.endswith("_vmap_refs.txt"):   # our own file: plain "file" lines, no importer options
         with open(filename) as f:
@@ -223,6 +226,17 @@ def phase1_models():
     print("=" * 70)
 
     mdl_lst_file, mdlfiles = strip_mdls_from_refs(REFS_FILE)
+    # player models drag in the whole t/ct_animations set (cs_mdl_import runs for an hour+ and the result is unusable
+    # in CS2), so they are skipped; more can be listed one per line in maps/<addon>_skip_models.txt
+    skip = list(SKIP_MODEL_PREFIXES)
+    skip_file = os.path.join(S2_CONTENT_ADDON, "maps", S2_ADDON_NAME + "_skip_models.txt")
+    if os.path.exists(skip_file):
+        with open(skip_file) as f:
+            skip += [l.strip().lower().replace("\\", "/") for l in f if l.strip() and not l.startswith("#")]
+    skipped_mdls = [m for m in mdlfiles if not m.startswith("-") and m.lower().replace("\\", "/").startswith(tuple(skip))]
+    mdlfiles = [m for m in mdlfiles if m not in skipped_mdls]
+    for m in skipped_mdls:
+        print("Skipped (skip list): %s" % m)
     real_mdls = [m for m in mdlfiles if not m.startswith("-")]
     print("Model entries found: %d" % len(real_mdls))
 
