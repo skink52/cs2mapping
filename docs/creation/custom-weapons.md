@@ -66,3 +66,16 @@ Modules: `fbxparse.py`/`fbxmesh.py` (binary FBX 7.4), `glbmesh.py`, `dmx.py` (bi
 - Enable `F_METALNESS_TEXTURE 1` in the vmat when a metalness map exists.
 - Physics hull = small convex hull, never the full mesh. Pistol mag models have no skeleton; sniper mags have a `clip` bone.
 - Model refs in vdata use `resource_name:"models/…vmdl"`; mesh material paths are addon-root relative (`materials/models/…vmat`).
+
+## Also learned (from the weapons chats)
+
+- cs_script can't reach the viewmodel (no `*viewmodel*` class exists at runtime); `CSWeaponBase.SetModel` only changes the third-person/dropped model and fails
+  silently on a model that isn't loaded.
+- Decompiling `scripts/weapons.vdata_c` needs the Source 2 Viewer **dev build** (release builds throw "Unknown KVType … 26"); use Decompile & Export.
+- One entity class = one model: vdata has no per-team model key and scripts can't hand out vdata subclasses, so per-team rifles use two classes
+  (`weapon_ssg08` → Lee-Enfield, `weapon_awp` → Gewehr 98 with every SSG08 gameplay stat copied into the AWP entry: damage, armour ratio, penetration,
+  range modifier, cycle time, spread/recoil, move speed, price, kill award). `m_bHasBurstMode` turns burst off (Luger on the Glock entry).
+- Without vdata, a magazine size can be emulated by counting `OnGunFire` and strip + regive (the HUD still shows the old count).
+- A server's own vdata addon takes priority over a map's.
+- FBX: UVs need **no** V flip (a flip caused the "textures misaligned" report); glTF needs one.
+

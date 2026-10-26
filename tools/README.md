@@ -4,7 +4,7 @@
 
 On the PC they live in `C:\source1\cs2port\tools` (this repo's `tools/` folder). Claude runs them in its cloud workspace and reads and writes
 the PC through the linked-computer file tools. Hammer must stay closed while Claude edits a map. Paths below are the PC paths; see
-[setup.md](setup.md) for how the repo maps onto them.
+[setup.md](../docs/porting/setup.md) for how the repo maps onto them.
 
 ## Who does what
 

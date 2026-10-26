@@ -50,7 +50,7 @@ material's `$alpha`.
 
 ### Script API
 
-`SetHasClass(panelId, cls, on)` (everyone), `SetHasClassForPlayer(slot, panelId, cls, on)`, `SetDialogVariableString[ForPlayer](…)` for text
+`SetHasClass(panelId, cls, on)` (everyone), `SetHasClassForPlayer(slot, panelId, cls, on)`, `SetDialogVariableString` / `SetDialogVariableStringForPlayer` for text
 (`{s:name}` in a Label), `Reset()` / `ResetForPlayer(slot)`, `SetInputCaptureEnabled(slot, on)` + `Instance.OnCustomHudClicked` for clickable buttons.
 Patterns (send only changes, reset on activate/team change, per-tick caps): [../reference/cs_script-notes.md](../reference/cs_script-notes.md#hud-custom_hud_layout).
 
@@ -62,6 +62,14 @@ Patterns (send only changes, reset on activate/team change, per-tick caps): [../
 - Panorama scales every screen to 1080 high. Robust layout: one fixed 1080-high screen panel, every panel a fixed size pinned from the top and from the
   left, centre or right edge; no vertical centring, no negative margins, no fit-children boxes. Show and hide with **opacity**, not collapse.
 - Changing `horizontal-align` through a class doesn't move a panel (transform and size changes do). `@keyframes` names must be quoted.
+- A layout that fails to compile is ignored silently: CS2 keeps the last good `.vxml` (Puppet Brawl ran a 3-day-old HUD). Compile one layout with
+  `resourcecompiler.exe -f -i "…\panorama\layout\custom_game\<name>.xml"` and check it ends "1 compiled".
+- Children are clipped to their parent (minimap dots in an 8 px parent vanished when moved): make the parent as big as the travel, or `overflow: noclip`.
+- Move things with `transform: translatex()/translatey()`, not class-driven margins (not always re-laid out).
+- Labels held ~32 characters before truncating; wrap long messages into rows.
+- Pictures are only compiled if referenced: preload loading-screen pictures, radar and map icon from a hidden 1 px `visibility: collapse` panel in the HUD.
+- CS2 hosts custom HUDs in `<Panel class="WindowRoot"><CSGOCustomHud id="CustomHud" style="width:100%;height:100%;flow-children:none;">`; its own stylesheet
+  doesn't style your class names.
 - Panel-id prefixes must not end in a digit (`x2` + "0" clashes with `x` + "20").
 - CS2's own HUD can't be hidden from a map and draws over yours. Keep clear of: chat box x 18–571, y 609–1000 (at 1080 high; 40% of the width on 4:3),
   kill feed from y 75 down (~36 px per line), team counter to y ~65, money/health row along the bottom.

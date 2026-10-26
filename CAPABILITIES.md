@@ -62,6 +62,8 @@ app, and hands you batch files to double-click for the steps that need Valve's t
   bots, chat commands, and round results.
 - Real CS2 kills and scores from script, so server ranking plugins count them; podium/kill-share systems for games without shooting.
 - Custom cameras (chase cams, fixed fight cameras), players driving vehicles or characters instead of walking.
+- Physics games the CS:GO way: pushable props and balls hit by bullets and knives, low-gravity balls, chasing enemies that slide along walls,
+  thrown-grenade tracking, vehicles steered with the movement keys.
 - Balance and bug testing by simulating thousands of rounds before you ever load the map.
 
 **Maps built by the tools**

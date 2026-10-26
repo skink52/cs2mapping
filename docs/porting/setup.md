@@ -67,7 +67,7 @@ C:\source1\
 ## Cloud workspace
 
 - Python 3 with `numpy`, `scipy` and `Pillow`.
-- Java 21 for BSPSource. [`tools/setup_bspsrc.sh`](../tools/setup_bspsrc.sh) extracts BSPSource from the jlink image in
+- Java 21 for BSPSource. [`tools/setup_bspsrc.sh`](../../tools/setup_bspsrc.sh) extracts BSPSource from the jlink image in
   `C:\source1\bspsrc-windows\lib\modules` (staged into the workspace) and patches the class files from Java 24 down to 21.
 - A working root that mirrors the PC (this is what `stage_c.py <addon> <root>` expects):
 

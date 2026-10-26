@@ -25,8 +25,13 @@ What has worked for porting and building CS2 maps with Claude, and the practical
 
 ## Transfer limits and traps
 
-- Uploads of 25 MB+ failed; keep files/zips under ~20 MB (big maps' assets are split into `.2`/`.3`/`.4.zip`).
-- Re-sending a changed file from the same staged path can send the old upload. Use a fresh path, then read it back and compare.
+- Uploads of 25 MB+ failed; keep files/zips under ~20 MB (big maps' assets are split into `.2`/`.3`/`.4.zip`). About 50 files and ~90 MB per write batch;
+  recursive folder listings truncate around 2,000 entries.
+- The bridge copies a delayed snapshot: writing a file and sending it immediately can deliver the previous version, and re-sending from the same staged path can
+  send the old upload. Wait, send from a fresh path, then read it back and compare.
+- Hammer re-saves floats, so when diffing the user's edits against generated content allow ~0.75 u / 1° tolerance.
+- Keep "written", "verified offline" and "tested in game" separate; flag inferred causes. Confident wrong claims (a Workshop item "removed", console spam "harmless")
+  had to be corrected by the mapper.
 - Files written through the output folder can gain metadata (PNG `caBX` chunk, MP3 `GEOB`, WAV block, ~5.8 KB), so compare images by pixels and audio
   by samples, not by hash.
 - Bulk deliveries come with an unpack `.bat` that applies each zip once (and records it), never containing the user's `.vmap` or the live script.

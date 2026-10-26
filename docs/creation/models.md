@@ -1,8 +1,17 @@
 # Models
 
 Every route used so far to get a model into CS2, from downloaded files to fully generated ones. Tools are in [`create/`](../../create)
-unless a project repo is named. Model files: ModelDoc `.vmdl` (KV3 text) referencing SMD/DMX/OBJ meshes; compile in ModelDoc, by loading the map
+unless a project repo is named. Model files: ModelDoc `.vmdl` (KV3 text, header `format:modeldoc41`) referencing SMD/DMX/OBJ meshes; compile in ModelDoc, by loading the map
 in Hammer, or with `resourcecompiler -i <file.vmdl>` (`run_build.bat "assets <addon>"`). A model only the script uses must be compiled explicitly.
+
+## ModelDoc traps (verified)
+
+- ModelDoc turns **SMD imports 90° about Z** and reads V from the bottom: write positions as `(y, −x, z)` with V flipped (or compensate in script).
+- It **drops bones with no geometry**: an invisible rig needs a tiny hidden triangle per bone and `BoneMarkupList { bone_cull_type = "None" }`.
+- Material groups (skins) must remap from the default group's full material path, not the SMD material name.
+- Minimal static prop: `RootNode` → `MaterialGroupList/DefaultMaterialGroup` remaps (`from = "<smd material>.vmat"`, `to = "materials/….vmat"`),
+  `RenderMeshList/RenderMeshFile`, `PhysicsShapeList/PhysicsHullFile` on the same mesh, `model_archetype`, `document_sub_type = "ModelDocSubType_None"`.
+- Blender FBX: a per-material string property `FBX_vmatPath` maps materials. Door pivots: move the mesh in the source or use a `func_door_rotating` pivot.
 
 ## Static props from downloaded models (GLB/glTF)
 
@@ -57,7 +66,45 @@ mg_deku_tree's creatures (snapper, spitter, weaver, grub, a boss) are procedural
 CS:GO custom player models (Octodad in mg_mario_party, the green Power Ranger in mg_50arenas) import as plain props: no CS2 animgraph, so weapons are
 drawn huge and ragdolls fail. They were rebuilt as real CS2 player models:
 
-PLAYER_MODEL_METHOD
+1. **Get the real agent.** The `characters/models/…` agents in `pak01_dir.vpk` are placeholders with one "dummy" bone. The real ones are
+   `agents/models/<agent>/<agent>.vmdl_c` on the new animation system: shared skeleton `animation/skeletons/characters/worldmodel.vnmskel_c`
+   (+ `viewmodel.vnmskel_c`) and `.vnmgraph_c` graphs. Find the chunk through the VPK directory (`create/vpkdir.py`) and slice it out of `pak01_NNN.vpk`
+   (tm_phoenix was in `pak01_366`/`502`; numbers change with updates).
+2. **Decompile it** with Source 2 Viewer CLI: `Source2Viewer-CLI -i tm_phoenix.vmdl_c -d -o dec/tm_phoenix.vmdl` → ModelDoc vmdl +
+   `tm_phoenix_thirdperson_body.dmx`, `tm_phoenix_firstperson_default_gloves_arms2.dmx`, `tm_phoenix_firstperson_sleeves3.dmx`, `tm_phoenix_tools_preview.dmx`.
+3. **Use the agent vmdl as the template** (skeleton, animgraph, hitboxes, physics shapes, attachments, first-person arms) and edit it:
+   remove the `thirdperson_default_gloves` render mesh and its bodygroup choice, remove every `AnimConstraintDotToMorph` and the `eye_test` animation
+   (no face morphs on the new mesh), repoint the four DMX paths to your model folder, check no `tm_phoenix` string is left and braces balance.
+4. **Rebuild the ragdoll.** The decompiled vmdl has physics bodies but **no joints**, so the first build didn't ragdoll. Dump the compiled physics
+   (`Source2Viewer-CLI -i tm_phoenix.vmdl_c -b PHYS`) and rebuild the 14 joints from `m_joints` (type 4 conical, 3 revolute for knees; `m_Frame1` position +
+   quaternion → `anchor_origin`/`anchor_angles`; swing/twist limits rad → deg; bone names from `m_boneNames`) as a `PhysicsJointList` after the
+   `PhysicsShapeList`:
+   ```
+   { _class = "PhysicsJointList" children = [
+     { _class = "PhysicsJointConical" parent_body = "<bone>" child_body = "<bone>"
+       anchor_origin = [ x, y, z ] anchor_angles = [ p, y, r ] collision_enabled = false motion_resistance = "none"
+       enable_swing_limit = true swing_limit = 45.0 swing_offset_angle = [ 0.0, 0.0, 0.0 ]
+       enable_twist_limit = true min_twist_angle = -30.0 max_twist_angle = 30.0 }, … ] },
+   ```
+   Knees were written as conical joints with swing 0 and the hinge range as twist. Octodad's ragdoll was confirmed working in game.
+5. **Rebind the mesh onto the CS2 skeleton.** Start from the agent's third-person body DMX: keep its joints, hierarchy and bind pose, delete its meshes and
+   graft the old mesh in.
+   - Models with ValveBiped-like names (Octodad: 73 bones matched by name, within ~0.5 u after alignment): rotate the mesh +90° about Z (CS:GO player models face
+     −Y, CS2 agents face +X), shift by the median per-bone offset, remap weights by bone name; unmatched bones go to the nearest matching ancestor;
+     explicit map for twist bones (`bip01_l*armtwist → arm_upper_l_twist`, `*thightwist → leg_upper_l_twist`, `*calftwist → leg_lower_l`).
+   - Models with different proportions (the Power Ranger, T-pose): re-pose every bone onto the CS2 A-pose (rotate without twist onto the CS2 bone direction,
+     stretch to its length, put it on the CS2 joint), carry the vertices by their skin weights, then remap weights. Map: `bip01_pelvis→pelvis`,
+     `spine..spine3→spine_0..spine_3`, `neck→neck_0`, `head→head_0`, `<s>_clavicle→clavicle_<s>`, `upperarm→arm_upper_<s>`, `forearm→arm_lower_<s>`,
+     `hand→hand_<s>`, `thigh→leg_upper_<s>`, `calf→leg_lower_<s>`, fingers 0–4 → thumb/index/middle/ring/pinky, `weapon_bone→hand_r`.
+   - Check the fit with a front/side plot of the vertices over the CS2 bones.
+6. **First-person arms:** the agent's arms and sleeves DMX are copied as they are (you see the agent's gloves in first person).
+7. **Materials:** the CS:GO VertexLitGeneric base texture decoded to PNG with a simple vmat.
+8. **In game:** `pawn.SetModel(path)` from the map script (a `Model_<name>` / `ChangeModel` input), with a hidden `prop_dynamic` of the model in the map so it's loaded.
+   Agent models often don't render in Hammer's viewport; that's normal.
+
+The Power Ranger reused the finished Octodad vmdl with only the paths swapped (its ragdoll wasn't checked in game). The fallback when a rebuild isn't worth it:
+keep the stock model and only tint/mark the player, or map CS:GO player models to the nearest CS2 agent (mg_50arenas has a 33-model table, e.g.
+`ctm_gign → ctm_gendarmerie/ctm_gendarmerie_varianta`).
 
 ### Script-driven characters
 

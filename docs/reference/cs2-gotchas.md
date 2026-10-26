@@ -186,7 +186,7 @@ These came from the original cs_script minigames (Hellmatch, Space Racer, mg_tre
 
 | Problem | Fix |
 |---|---|
-| `csgo_music` soundevents with `volume_convar "snd_musicvolume"` spam "Unable to acquire convar value". | Remove `volume_convar`. Music then follows `snd_menumusic_volume` (Main Menu Music slider). `csgo_music` plays to everyone with no fall-off. |
+| `csgo_music` soundevents with `volume_convar "snd_musicvolume"` spam "CSosOperatorConvar … Unable to acquire convar value: snd_musicvolume_rush…" on servers. | `volume_convar = "snd_menumusic_volume"` (verified: no spam, follows the Main Menu Music slider, silent if it's at 0). Alternative: `csgo_mega` with a flat distance curve (follows effects volume). Music is per server, not per player. |
 | Looping wavs don't loop. | Write both a `smpl` loop and a `cue` chunk. |
 | Rapid repeated sounds cut each other off. | Several `point_soundevent`s per source, round-robin. |
 
@@ -212,3 +212,35 @@ These came from the original cs_script minigames (Hellmatch, Space Racer, mg_tre
 | The overview txt in the content folder isn't used. | `resource/overviews/<map>.txt` goes in the **game** folder. |
 | Renamed map ships its old files too. | Delete the old `maps/<old>.vpk`, `_cameras.txt`, `_retakes.txt`, overview txt and compiled panorama images from content and game before uploading. |
 | Workshop upload carries the compiled game folder, not content. | Licence and credit files must be in the game folder and/or the description. |
+
+### More from the port and addon chats
+
+| Problem | Fix |
+|---|---|
+| ModelDoc turns SMD imports 90° about Z and reads V from the bottom (Space Racer tracks and cars came out 90° off). | Write SMD positions pre-rotated −90° (`(y, −x, z)`) with V flipped, or compensate with a yaw offset in script. Verified. |
+| ModelDoc drops bones that have no geometry (and meshes made only of tool materials): an invisible animation rig compiled with zero bones, leaving bone-merged agents in T-pose. | A tiny triangle per bone hidden inside the body (dark material) and `BoneMarkupList { bone_cull_type = "None" }`. Verified. |
+| A custom player model imported from CS:GO is a plain prop: held weapons render huge, no ragdoll. | Rebuild it on the CS2 agent setup ([../creation/models.md](../creation/models.md#player-models)). |
+| `CSWeaponBase.SetModel()` / `pawn.SetModel()` to a model that isn't loaded fails silently ("RESOURCE_TYPE_MODEL … requested is not loaded"). | Precache with a hidden `prop_dynamic` in the map. |
+| The viewmodel can't be reached from cs_script (no `*viewmodel*` class at runtime). | Change view models through `weapons.vdata` ([../creation/custom-weapons.md](../creation/custom-weapons.md)). |
+| Decompiling stock `scripts/weapons.vdata_c` throws "Unknown KVType … 26" in release Source 2 Viewer. | Use the Source 2 Viewer dev build (s2v.app), "Decompile & Export". A server's own vdata addon takes priority over a map's. |
+| CS2 draws the local player's own body attached to the view even with a custom camera. | Make the parked pawn invisible (`SetModelScale`), keep geometry clear of the camera. |
+| A text Label truncated at ~32 characters (Hellmatch kill messages). | Split long messages into rows wrapped at spaces; cap names at ~12 characters. |
+| `say` sent from inside an `OnPlayerChat` callback is dropped. | Queue it and send from the think loop, ≥1 s apart. |
+| Team-select menu shows behind a custom HUD. | Auto-assign unteamed players ~1 s after connect (`JoinTeam`), plus `mp_force_assign_teams 1`, `sv_disable_teamselect_menu 1`. |
+| `RunScriptInput` carries only the input name, no value. | Encode numbers in the name (`Gravity_0.3`, `Speed_1.5`) and parse in script. |
+| CS2 doesn't re-check players already inside a trigger when it's Enabled (and a `trigger_teleport` checks only on entry). | Script "Sweep_<name>" 0.1 s after the Enable teleports whoever is inside. Verified on Mario Party. |
+| Imported triggers with no "touched by" flags ticked never fire. | Tick Clients / Physics Objects as needed (ball goals need Physics Objects). |
+| Thin triggers around a physbox are unreachable (players stop at the physbox surface). | Script proximity check (36 units). |
+| `prop_physics_override` won't move when pushed. | `damagetoenablemotion` / `forcetoenablemotion` set to any value (even "0") spawn it motion-disabled; clear them. `massScale` is a multiplier. |
+| `phys_pushscale` is a disallowed Workshop convar (even through `Console.SetConvar`); `cs_enable_player_physics_box` is gone. | Simulate pushes: `OnBulletImpact` → velocity along impact − shooter eye; `OnKnifeAttack` → `TraceSphere` 72 u ahead → launch; proximity push for running into props. Verified on yolo. |
+| No per-prop gravity for low-gravity balls. | Measure the engine's gravity on the ball in free flight ((vz − last set vz)/dt) and cancel (1 − scale) of it. Verified ("low grav is working"). |
+| `amb.looping.stereo.base` fades in from silence over 1 s, so one-shots based on it lose their start. | `use_time_volume_mapping_curve = false`. |
+| A `.mp3` without loop markers plays once. | Loops as WAV with `smpl` + `cue` chunks; mono for 3D sounds. Verified. |
+| `effect_textureOverride` on a shared stock particle (glow01) changes every glow01 in the map. | A dedicated vpcf per texture. Hand-written vpcf that "isn't precached correctly": open and re-save it in the Particle Editor. |
+| CS:GO "Refract" screen overlays and `color_correction` have no CS2 equivalent. | Keep the colour as a `post_processing_volume` with a 32³ RGB `.raw` LUT (`CColorLookupColorCorrectionLayer`). |
+| Build logs look garbled. | They're UTF-16LE (`iconv -f UTF-16LE -t UTF-8`). Harmless noise: `scripts/detail_prop_types.vdata_c` missing, "Parameter corresponds to an entity target name… RunScriptInput", "No lightmap resolution volumes set". |
+| `vrad3` `VK_ERROR_OUT_OF_DEVICE_MEMORY` on an Intel Arc B580. | Driver/ReBAR or CPU lighting, and lightmap resolution volumes to cut charts (untested). |
+| Hammer while CS2 is running. | Second instance: `cs2.exe -addon <name> -tools -steam -retail -insecure -noassetbrowser -vulkan` (≈2× RAM/VRAM; don't build while both have the addon mounted; untested). |
+| Blender FBX → ModelDoc materials. | Per-material custom string property `FBX_vmatPath` (live value, forward slashes, `materials/` prefix, no extension), Custom Properties ticked on export. |
+| A door prop's pivot is in the wrong place and ModelDoc has no import translation. | Move the mesh in the source file, or an invisible `func_door_rotating` pivot with the prop parented. |
+| The choose-team camera position. | It uses an `info_player_terrorist`'s position/angles. |

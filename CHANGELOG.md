@@ -100,7 +100,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 ## 2026-10-16: the cs2port pipeline
 
 - **Pipeline built** in one session (about 10:40 to 16:47; tool file dates 10:53–18:34), starting from the manual flow in
-  [docs/manual-workflow.md](docs/manual-workflow.md).
+  [docs/manual-workflow.md](docs/porting/manual-workflow.md).
   - Stage A: BSPSource extracted from its jlink image, with class files patched to run on Java 21 (`setup_bspsrc.sh`). `hammer_resave.py`
     was built by diffing a BSPSource `.vmx` against a Hammer save. `prep.py` creates the addon from `addon_template`.
   - Stage B: `run_import.bat`, running `import_map_auto.py` (Valve's importer without its Enter prompt), then `post_import_cleanup.py`.

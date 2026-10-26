@@ -114,9 +114,13 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   Let it through your own `OnModifyPlayerDamage` gate. If the attacker's pawn is dead, pass its controller. `attacker` undefined = world kill (no −1).
 - Scripted kills need `mp_respawn_immunitytime 0` (immunity blocks them), `mp_teammates_are_enemies 1` (otherwise same-side kills are teamkills, −1),
   and respawn cvars (`mp_respawn_on_death_t/ct 1`) if players should come back. Skip kills during warmup.
+- Don't kill with `Kill()` or a `trigger_hurt` when credit matters (no attacker). For thrown/physics kills remember the last hitter (dodgeball: `OnDamaged` activator).
+- Queue kill-share kills one every few ticks so the killfeed rolls; drop or give to world any queued kill whose victim's or killer's slot changed hands
+  (that bug once turned real kills off for a whole map).
 - CS2 counted an **assist** only when the assisting player had dealt a sizeable non-lethal share first (≥55 damage worked).
 - **End a round with a winner:** `EntFireAtName({ name: "<info_map_parameters name>", input: "FireWinCondition", value: CSRoundEndReason.TERRORISTS_WIN })`
-  (or `CTS_WIN`, `DRAW`). Fallback: `Instance.SetRoundRemainingTime(1)`. Keep `mp_ignore_round_win_conditions 1` while the script runs the round.
+  (or `CTS_WIN`, `DRAW`). Fallback: `Instance.SetRoundRemainingTime(1)`. Keep `mp_ignore_round_win_conditions 1` while the script runs the round and set it to `0` just before firing (Hellmatch, verified). Run the CS2 round clock ~15 s
+  longer than the game's own clock.
 - `Instance.SetRoundRemainingTime(s)` / `GetRoundRemainingTime()` set and read the round clock directly (no need for a huge `mp_roundtime`).
   `IsWarmupPeriod()`, `IsFreezePeriod()`, `IsTeamIntroPeriod()` tell you the phase.
 - Money off: `mp_playercashawards 0`, `mp_teamcashawards 0`, `mp_startmoney 0`, `mp_maxmoney 0`, `mp_afterroundmoney 0`. Auto teams without the menu:
@@ -172,3 +176,15 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   gives it the map's named entities.
 - Bigger games keep the rules in plain JS (`src/core/`, no engine calls) and the CS2 side separately (`src/cs2/`), so the game itself runs in Node for balance sims
   (see [../creation/guide.md](../creation/guide.md)). Run mocks as ES modules, not a `vm` context (timings were ~2.5× too slow).
+
+## Physics and odd entities (from the ports)
+
+- Physics props that must slide or chase (Mario Party's chain chomp): `DisableMotion`, then `Move` them every tick with `TraceBox` per axis to slide along walls.
+  `phys_thruster` and setting velocity both lost to floor friction.
+- Ball games: hits from `OnBulletImpact({ weapon, position, hitEntity })` and `OnKnifeAttack`, low gravity by measuring and cancelling the engine's gravity
+  on the ball (see the gotchas). Frozen-spawn physics balls need a nudge from script.
+- Grenades: CS2 triggers don't see them; track from `OnGrenadeThrow({ projectile })` and test segment-vs-box each tick.
+- `game_ui` replacement for vehicles: test each key separately (a combined mask means ALL), drive thrusters with Activate/Deactivate, limit turn rate by
+  measuring yaw change (there is no angular-velocity read).
+- AFK: activity = any input or a view change > ~2°; warn at 20 s, move to spectate at 30 s, only count idling while actually playing. Position-based AFK plugins
+  flag parked pawns.
