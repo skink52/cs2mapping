@@ -70,6 +70,10 @@ ref/          the Hammer map (as last saved by the user) the build writes into, 
 - **AFK and robustness:** AFK detection on input (not position), slot ownership checked once a second, full HUD reset on activate/team change, everything
   re-validated after round restarts.
 - **Bots:** CS2 bots fill slots; the script drives them with its own AI (Space Racer's lane-keeping cut car contact 30%).
+- **Game feel** (Puppet Brawl's polish pass): impact tiers with hit-stop (7/9/12/14 frames, KO 18 + slow-mo), camera kick / punch-in / shake, layered hit
+  sounds, block effects (shield ring, defender slide, attacker bounce), dust on landings and dashes, a COUNTER callout for hits during start-up.
+- **Set dressing from stock props:** place Valve's models using their real bounds (read from the compiled model) so nothing intersects; a placer with
+  footprints for every prop keeps optional dressing out of the way (mg_trenchwarfare's `placer.py`).
 - **Performance:** see [cs_script-notes.md](../reference/cs_script-notes.md#performance). Measure on the mock engine before shipping.
 
 Full API patterns: [../reference/cs_script-notes.md](../reference/cs_script-notes.md).

@@ -79,6 +79,7 @@ One invisible rig model plays every animation, and the four stock agents are **b
   - **Hinge IK** for knees/elbows (can't bend backwards; knee floor limit), airborne ankles held to a natural range, arms pushed out of head/torso.
   - Hit and hurt boxes baked from the same animation, so gameplay matches what's drawn.
 - **Checks without CS2:** `validate.mjs` (joint ranges, limbs inside the body), offline renders on the real agent meshes (`review.mjs`), review sheets sent to the mapper.
+- In game the script picks the clip per frame on the rig (`SetAnimation`, crossfade via `fade_in_time`; blending untested in CS2 at the time of writing).
 - Delivery: hundreds of SMDs go as a zip the mapper extracts into `rig/anims/`, then `pb_rig.vmdl` is recompiled.
 
 ## Weapons
