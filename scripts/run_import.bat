@@ -31,11 +31,15 @@ for /f "usebackq tokens=1,2" %%a in ("%PORT%\queue.txt") do (
   )
   echo ==== !ADDON! : importing maps\!MAP!.vmf ====
   python import_map_auto.py "%CS2%\csgo" "C:\source1" "%CS2%\game\csgo" !ADDON! !MAP! > "%PORT%\logs\!ADDON!_import.log" 2>&1
-  echo      import exit code !ERRORLEVEL!   ^(log: logs\!ADDON!_import.log^)
+  set "IMPERR=!ERRORLEVEL!"
+  echo      import exit code !IMPERR!   ^(log: logs\!ADDON!_import.log^)
   echo ==== !ADDON! : post_import_cleanup ====
   py post_import_cleanup.py !ADDON! > "%PORT%\logs\!ADDON!_cleanup.log" 2>&1
   echo      cleanup exit code !ERRORLEVEL!   ^(log: logs\!ADDON!_cleanup.log^)
-  if exist "%CS2%\content\csgo_addons\!ADDON!\maps\!MAP!.vmap" (
+  if not "!IMPERR!"=="0" (
+    echo      FAILED - the importer exited with !IMPERR!, check the import log ^(an older vmap may still be there^)
+    echo !ADDON! FAILED>> "%PORT%\logs\stage_b_done.txt"
+  ) else if exist "%CS2%\content\csgo_addons\!ADDON!\maps\!MAP!.vmap" (
     echo      OK - !MAP!.vmap exists
     echo !ADDON! OK>> "%PORT%\logs\stage_b_done.txt"
   ) else (

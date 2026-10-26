@@ -4,6 +4,10 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-26
+
+- `run_import.bat`: a map now counts as FAILED in `stage_b_done.txt` when the importer exits non-zero. Before, an older vmap left in the addon made a failed import look OK (mg_n64_goldeneye re-port, vpk.signatures was back).
+
 ## 2026-10-25
 
 - **Textured radars.** `radar.py` now paints each floor with its material instead of grey: the addon's own source textures tiled world-aligned (`tools/radartex.py`), a name-guessed colour for stock CS2 materials, glass translucent, height as brightness. Wired into stage C and `stage_d.py radar` (`radar.textures_for(c)`). Two bugs fixed on the way: the standable-floor test used only the face centroid, so a face with a prop on that spot was dropped and left a wedge-shaped hole (jb_mangaroons); `lighting.mesh_polys` stopped at 64 vertices per face. Water planes no longer set the radar extent (ba_jail_seaside's sea). Re-rendered the six jail radars (seaside first for a Workshop update).
