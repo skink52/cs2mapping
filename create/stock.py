@@ -4,6 +4,8 @@ Faces on these charts skip the atlas bake and get real-scale tiling UVs (per fac
 modes: plank  - board parts (part frame x = length, y = width, z = thickness) mapped onto one board strip of a boards texture
        box    - model-space box projection, S units per texture tile
        cyl    - around the part's long axis (posts, trunks), S units per tile
+
+From trenchwarfare-cs2/tools/stock.py (MIT), made project-neutral.
 """
 import os
 PREFIX = os.environ.get('CS2_MODEL_PREFIX', 'props')   # stock material copies go to materials/models/<PREFIX>/stock

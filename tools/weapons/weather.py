@@ -1,3 +1,6 @@
+"""Procedural weathered steel and brass textures (value-noise fbm + scratches) for scopes and fittings.
+
+python3 weather.py   writes wsteel_*/wbrass_* colour/rough/metal PNGs to /tmp (steel(out=...) / brass(out=...) for another folder)"""
 import numpy as np
 from PIL import Image
 def vnoise(n, cells, rng):

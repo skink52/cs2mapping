@@ -1,3 +1,6 @@
+"""csgo_complex vmat + texture set (color/normal/rough/metal/ao) for a built weapon, written under <out>/materials/<sub>/.
+
+from material import make_material; make_material(out, sub, name, {"color": path, ...}, size=2048, flip_green=False)"""
 import os
 from PIL import Image
 

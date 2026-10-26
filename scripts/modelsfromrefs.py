@@ -1,5 +1,5 @@
 """
-import_models_only.py
+modelsfromrefs.py
 
 Reads a CS:GO _refs.txt file, extracts just the .mdl entries, and imports +
 compiles ONLY those models (plus the materials the models themselves depend
@@ -13,7 +13,7 @@ Usage:
     Place this file next to import_map_community.py and utils/ (so the
     imports below resolve), edit the CONFIG block, then run:
 
-        python import_models_only.py
+        python modelsfromrefs.py
 """
 
 import os

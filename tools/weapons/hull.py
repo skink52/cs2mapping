@@ -1,3 +1,5 @@
+"""Convex hull for weapon physics: support points along random directions, then the hull planes found by testing every point triple (build_weapon.py uses it for the
+body and magazine hulls; one convex hull per part, never the render mesh)."""
 import numpy as np
 from itertools import combinations
 def support_points(V, n=80, seed=1):

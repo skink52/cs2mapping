@@ -3,7 +3,7 @@
 Walks the main vmap and every prefab vmap it references, collects every material (mesh faces, overlays, entity
 keys ending in .vmat) and every model (entity keys ending in .vmdl), drops what already exists in the addon or in
 CS2's stock pak01, and writes <addon>_vmap_refs.txt in the importer's "file" line format so post_import_cleanup.py
-can import/convert the rest. Runs on the PC with Valve's python; needs only dmx.py (C:\\source1\\cs2port\\tools).
+can import/convert the rest. Runs on the PC with Valve's python; needs dmx.py and kv2.py (C:\\source1\\cs2port\\tools).
 
     python vmap_refs.py <addon> [--steam-root <path>] [--all]
 

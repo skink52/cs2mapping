@@ -1,3 +1,5 @@
+"""Older scope mesh builder (single tube + mounts), superseded by scope2.py (allied/axis lathe scopes). build_weapon.py still
+imports it but calls only scope2; kept for reference."""
 import numpy as np
 def cylinder(x0, x1, r, cy, cz, seg=20, caps=True, voff=0.0):
     V=[]; N=[]; T=[]; F=[]

@@ -2,8 +2,8 @@
 
 Each beam becomes a never-solid func_brush made of two crossed double-sided quads between its end points, using a
 self-illuminated translucent laser material in the beam's colour. Named beams keep their name, so TurnOn / TurnOff /
-Toggle inputs become Enable / Disable / Toggle. No damage is added: lasers that did damage in CS:GO are only flagged
-when there is no trigger_hurt along them.
+Toggle inputs become Enable / Disable / Toggle. No damage is added here: lasers that did damage in CS:GO with no trigger_hurt along them are
+flagged, and laserhurt.py (run after stage C) adds the trigger_hurt.
 """
 import io, os, math
 import numpy as np

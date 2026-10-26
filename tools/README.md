@@ -1,89 +1,99 @@
-# cs2port: the CS:GO → CS2 map port pipeline
+# tools: index of the cs2port pipeline files
 
 > **AI-generated code.** These tools were written by Claude (an AI agent) for skink52's CS:GO to CS2 map ports, not hand-written.
 
-On the PC they live in `C:\source1\cs2port\tools` (this repo's `tools/` folder). Claude runs them in its cloud workspace and reads and writes
-the PC through the linked-computer file tools. Hammer must stay closed while Claude edits a map. Paths below are the PC paths; see
-[setup.md](../docs/porting/setup.md) for how the repo maps onto them.
+This is the list of every file in `tools/`, with what it does and how to run it. **How the stages fit together, what each fix does and the
+order to run things in is in [docs/porting/pipeline.md](../docs/porting/pipeline.md)** (start with its "Quick start for an agent").
+Where each file goes on the PC: [docs/porting/setup.md](../docs/porting/setup.md). On the PC this file is
+`C:\source1\cs2port\tools\README.md`; the pipeline reference is `C:\source1\cs2port\cs2_port_pipeline.md`.
 
-## Who does what
+Everything runs in Claude's cloud workspace with Python 3 + numpy, scipy and Pillow. `<root>` is the working root that mirrors the PC
+(layout in [setup.md](../docs/porting/setup.md#cloud-workspace)).
 
-| Stage | What happens | Who |
+## Entry points (command line)
+
+| File | What it does | Usage |
 |---|---|---|
-| A. Prep | BSPSource decompile with embedded files unpacked (`bspsrc` extracted from your jlink image, run on Java 21). VMF renamed to the addon name. **Hammer re-save fix** (`hammer_resave.py`) adds versioninfo/viewsettings/cordons, editor blocks and side `rotation`, and rewrites planes and axes at %g precision with upper-case materials. The result matches a real Hammer save structurally. func_illusionary (on Valve's import exclusion list, so it would vanish) becomes a never-solid func_brush. Materials and models are packed into `C:\source1\cs2port\assets\<addon>.zip` (plus `.2`/`.3`/`.4.zip` for big maps, each under ~14 MB so they transfer to the PC), and `run_import.bat` unpacks them into `csgo\` (files that already exist are never overwritten). Claude doesn't need access to the `csgo` folder. The decompiled embedded files are not kept under `C:\source1\maps\<addon>\`; the BSP can always regenerate them. Sounds go to `<addon>\sounds\` with cleaned names (`maps\<addon>_sound_renames.json`). Other embedded files go to the addon. The addon is created from `addon_template`, the same way the Workshop Tools launcher does it. | Claude |
-| B. Import | Double-click `C:\source1\cs2port\run_import.bat`. For each line in `queue.txt` (`addon [vmfname]`) it re-renames `vpk.signatures` if Steam restored it, unpacks `assets\<addon>*.zip` into `csgo\` with `tar -k` (log `logs\<addon>_assets_unpack.log`), runs `import_map_auto.py` (Valve's importer without the Enter prompt), then `post_import_cleanup.py`, which first runs `vmap_refs.py` so the model/material list comes from the `.vmap` and its prefabs rather than the importer's `_refs.txt`. Logs go to `logs\`. | **You** (Claude can't run programs on the PC) |
-| C. Clean | `stage_c.py <addon> <root>` edits the .vmap directly. It collapses every prefab (lighting/nav/audio/cubemaps/environment/gameplay) into the map with world offsets kept; a 3D skybox prefab stays as a prefab. It then runs the fixes below and writes `maps\<addon>_cleanup_log.txt`. | Claude |
-| D. Build | Close CS2/Hammer and double-click `C:\source1\cs2port\run_build.bat`. It compiles every map in `build_queue.txt` from the command line, one at a time, and moves each built .vpk into the game addon before starting the next (see below). Then test in game and report anything odd. | **You** |
+| `prep.py` | **Stage A.** BSPSource decompile, addon name cleaning, Hammer re-save fix, func_illusionary → func_brush, embedded files laid out at their PC paths, materials/models zipped into `assets\<addon>[.N].zip` (≤ 14 MB each), addon skeleton from `addon_template/`, and `manifest.json` (staged path → PC path pairs for `device_commit_files`) | `OUT=<dir> BSPSRC=<bspsrc.sh> python3 prep.py <bsp> [<bsp>...] [bspname=addonname ...] [--ports=existing_ports.txt]` (env `PORTS=` = `--ports=`; defaults `OUT=./prep_out`, `BSPSRC=tools/bspsrc.sh`) |
+| `stage_c.py` | **Stage C.** Prefab merge + every post-import fix on the `.vmap` (step keys below). Writes `<root>/out/<addon>/`, `<root>/out/<addon>_game/` and `<root>/out/<addon>_result.json` | `python3 stage_c.py <addon> <root>` |
+| `run_pass.py` | Any stage C step(s) on the current, already-cleaned vmap; appends to the cleanup log | `python3 run_pass.py <addon> <root> step[,step...]` (stage C step keys) |
+| `run_c.py` | Stage C when CS2's `pak01_dir.vpk` isn't staged (stub VPK). Default steps leave out `alpha`, `assets` (need the VPK) and `doors`, `overlayfix`, `facescale`, `matflags` (run those later with `run_pass.py`) | `python3 run_c.py <addon> <root> [step,...]` |
+| `stage_d.py` | Follow-up passes on a map you've already edited in Hammer (keeps your edits) | `python3 stage_d.py <addon> <root> pass[,pass...]` (passes below) |
+| `ports.py` | `existing_ports.txt` helpers: duplicate check (ignores prefixes, `_cs2`, version suffixes) and adding a line | `python3 ports.py check <existing_ports.txt> <name>...` · `python3 ports.py add <existing_ports.txt> <name> [status] [mapper]` (default `[in progress] [skink]`) |
+| `hammer_resave.py` | What a CS:GO Hammer open/save changes in a BSPSource VMF (prep.py calls it) | `python3 hammer_resave.py <in.vmf> <out.vmf>` |
+| `disprestore.py` | Rebuilds displacements the importer dropped ("Found a displacement missing a needed subkey.") from the BSP | `python3 disprestore.py <vmap in> <bsp> <vmap out> [x0,y0,z0,x1,y1,z1 ...]` (skip boxes) |
+| `laserhurt.py` | A `trigger_hurt` along every CS:GO env_laser that did damage and has none (after stage C) | `python3 laserhurt.py <vmap in> <csgo vmf> <vmap out>` |
+| `glowfix.py` | Parented env_particle_glows → following glow particles | `python3 glowfix.py <vmap in> <vmap out> <addon content root>` |
+| `matnames.py` | Importer-sanitised material refs (spaces → underscores) back to the real file names; run before `alpha,assets` | `python3 matnames.py <addon> <root>` (needs `<root>/content_files_<addon>.json`) |
+| `vmap_preview.py` | Top-down + four corner renders of any vmap (binary or importer text) | `python3 vmap_preview.py <map.vmap> <out.png> [x0,y0,z0,x1,y1,z1]` |
+| `setup_bspsrc.sh` | Extracts BSPSource from its jlink image and patches the class files to Java 21; writes `<dest>/bspsrc.sh` | `sh setup_bspsrc.sh <staged bspsrc-windows/lib/modules> <dest dir>` (use `<dest>` = `tools/` so prep.py finds it, or set `BSPSRC=`) |
 
-## Before porting: duplicate check and names
-- Claude checks every requested map against `C:\source1\cs2port\existing_ports.txt` (`ports.py check`, which ignores prefixes, `_cs2` and version suffixes) **and** searches the web (Steam Workshop, GameBanana) for a CS2 port that already exists. Any likely duplicate is reported before stage A starts, and that map is not ported unless you say so.
-- **Steam Workshop pages: ignore the "removed" banner.** Every Workshop page's HTML contains hidden template text: "This item has been removed from the community because it violates Steam Community & Content Guidelines. It is only visible to you." and "This item is incompatible with Counter-Strike 2." A browser never shows it, but WebFetch's page reader picks it up on healthy items too (checked 17 Oct 2026 against an unrelated public collection). Never report an item as removed or incompatible from that text. An item that really is removed doesn't load at all for an anonymous visitor; a page that shows visitor/subscriber stats is live. (A Claude session wrongly reported the mg_smee_tower_cs2 item as removed this way, twice.)
-- Addon names are the BSP name with version/bloat stripped: `_v2`, `_v1_2`, `_b3`, `_rc1`, `_final`, `_fix`, `_beta`, `_csgo`, `_hdr`, `_ws`… (`mg_x_v2_final` → `mg_x`). A different name can be forced with `bspname=addonname`.
-- Each map Claude starts is added to `existing_ports.txt` as `<addon> [in progress] [skink]` (`ports.py add`). A successful build changes it to `[in progress, built]`. `[briar]` lines are maintained by hand; `[ported]`, `[*original*]` and `[ext. port]` lines are never changed.
+### Stage C step keys (run order, from `stage_c.run()`)
 
-## Stage D: command-line build (`build_maps.ps1`)
-- `run_build.bat` runs `build_maps.ps1` on `build_queue.txt` (one addon per line, optionally `addon mapname`). `build_maps.ps1 mg_a mg_b` builds just those maps. For assets only from the command line, pass the line as one quoted argument: `run_build.bat "assets mg_x"`.
-- **Assets first.** The command-line map build does not compile materials or textures; Hammer normally compiles them when it loads a map. So anything Claude added outside Hammer (laser materials, alpha masks, radar) would be missing, and missing materials are fatal for those meshes. For each addon the script first runs `resourcecompiler -r -i <content addon>/<dir>/*.<ext>` for materials `*.vmat`, models `*.vmdl`, panorama `*.vtex` (radar), soundevents, sounds `*.wav`/`*.mp3` and `maps/scripts/*.js`, logging to `logs\<addon>_assets.log`. Only out-of-date files are recompiled. If any content .vmat still has no compiled `_c` in `game\`, that map is skipped and the materials are listed. A queue line `assets <addon>` compiles the assets only, with no map build.
-- Then it runs `game\bin\win64\resourcecompiler.exe` with Hammer's full-build arguments: `-threads 5 -fshallow -maxtextureres 256 -quiet -unbufferedio -i <content vmap, forward slashes> -noassert -world -rebake_surfacegraph -bakelighting -lightmapMaxResolution 1024 -lightmapVRadQuality 1 -phys -vis -nav -sareverb -sareverb_threads 6 -sapaths -sareverb_threads 6 -sacustomdata -sacustomdata_threads 6 -breakpad -nop4 -outroot %LOCALAPPDATA%\Temp\valve\hammermapbuild\game`.
-- **Outroot step** (what Hammer does after a build): the compiler writes `<outroot>\csgo_addons\<addon>\maps\<map>.vpk`. The script waits for the compiler to exit, then copies that vpk to `game\csgo_addons\<addon>\maps\`, checks the size matches, and deletes the temp copy. Only then does the next map start. A stale vpk left in the outroot is deleted before each compile so it can never be copied by mistake. If the game file is locked (CS2 open) it retries, then reports the map as failed with the vpk still in the outroot.
-- Maps are built one at a time on purpose. Separate outroots per map would avoid the vpk clash, but the light bake uses the GPU and every build writes shared compiled assets into `game\`, so parallel builds are no faster and risk VRAM or file-lock failures.
-- The script refuses to start while `cs2.exe` (CS2 or Hammer) is running, and waits for any other resourcecompiler to finish.
-- Logs: `logs\<addon>_build.log`, plus one line per map in `logs\stage_d_done.txt` (OK / FAILED, minutes, exit code).
-- Claude writes `build_queue.txt` at the end of stage C (or after follow-up passes) and tells you to run `run_build.bat`. When you say it's finished, Claude reads `logs\` and fixes any compile errors.
+`merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity, dead, sounds, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, radar, assets, matflags`,
+plus `overlaydepth` (= `overlayfix` + projection depth 8) when named. `vis` runs `visfit.py`; `skyvis` (the older shell-only pass) runs only when `vis` isn't in the list.
+`alpha` and `assets` need `<root>/vpk/cs2_pak01_dir.vpk` and are skipped silently without it. `daylight` is **not** a stage C step.
 
-## Stage C fixes (automatic; the importer's main .vmap is keyvalues2 text and is saved back as binary)
-- Puts back outputs the importer dropped (diffs every entity's outputs against the decompiled VMF).
-- func_wall_toggle → func_brush (Solidity Toggle; StartDisabled from "Starts Invisible"). TurnOn/TurnOff → Enable/Disable.
-- trigger_push → trigger_multiple plus `maps/scripts/<addon>_io.js` push zones that hold CS:GO "set speed" behaviour. Names, filters and Enable/Disable are kept.
-- point_servercommand → script `Cmd_n`, with "Ported to CS2 by skink52" added after CS:GO port credits. game_score → script `Score_n`.
-- game_player_equip → weapon0..weapon21 slots. func_breakable_surf → func_breakable (glass).
-- prop_hallucination → prop_dynamic or prop_static. env_sun and unnamed point_viewcontrol are removed.
-- ambient_generic custom sounds → soundevents in `soundevents_addon.vsndevts` (wavs that aren't 16-bit PCM are re-encoded; ADPCM is flagged). "Play everywhere" uses the stereo base; others use a 3D event with the original radius.
-- Static overlays → `csgo_static_overlay` with a translucency mask taken from the original alpha.
-- **Static overlay geometry** (`overlayfix`, `tools/texfix.py`): the importer's 2x2 placeholder quads are rebuilt from the VMF (texture size x `$decalscale` for infodecals, uv extent for info_overlays), laid on the brush face under the decal and the right way up. Hand-edited overlays are skipped. Overlays with a projection depth >= 32 are flagged; `stage_d.py ... overlaydepth` sets all to 8.
-- **Face texture scales** (`facescale`, `tools/texfix.py`): absurd brush-face scales/shifts are restored from the matching VMF side and the stored texture coordinates rewritten from the CS:GO texture size. No-op on faces that are already right.
-- **Material flags** (`matflags`, after `assets`): CS:GO `$additive` → `F_TRANSLUCENT` + `F_ADDITIVE_BLEND` (lightmapped) or `csgo_unlitgeneric` `F_BLEND_MODE 4`; `$nocull` → `F_RENDER_BACKFACES`.
-- Missing materials are rebuilt from CS:GO's VPK (VMT from `pak01_dir`, VTF decoded from the archive chunk). Water materials → `liquids/nuke_water`. Materials missing everywhere are swapped for the closest stock CS2 material and flagged for checking. Custom decals with no CS:GO source are left as they are and flagged instead, as is anything whose closest stock match is not a decal; stickers are never used as substitutes.
-- create a point_servercommand and point a logic_auto towards it, to set mp_freezetime 0 and mp_roundtime 600 OnMapSpawn. If a map only has 1 type of spawn (only info_player_counterterrorist or _terrorist) create a game_player_equip which will equip a knife, make it run OnMapSpawn. (Skipped when the map already has a game_player_equip that gives a knife on spawn, so players don't get a second one.)
-- player_speedmod → script `Speed_n` (ground speed driven from the player's keys).
-- Stock CS:GO sounds used by ambient_generics are pulled out of CS:GO's VPK into the addon with soundevents.
-- env_sky: a sky that CS2 doesn't have is rebuilt from the six CS:GO faces into an equirect panorama (HDR skies tone mapped). Sky brushes the importer dropped come back as moondome boxes.
-- Sky shells: **New in the late-October 2026 CS2 update:** a `toolsskyboxocclude` tool material that does the job of the moondome shells (a surface that shows the sky and closes off the void). Reported by skink52; not yet tested in our maps or wired into the pipeline, which still writes `csgo_moondome` shells. Check the exact material path in Hammer's tools materials before scripting it.
-- **Vis: hints fitted to the play space and sky shells out of vis** (`visfit.py`, the stage C `vis` step; `skyvis.py` is the older shell-only pass). Playable air is the empty space (16-unit voxels; 24 or 32 on very big maps) connected to a spawn or teleport destination, plus sealed rooms holding buttons, doors, triggers, trains or weapons. The **walkable band** is playable air up to 160 units above something to stand on. Hints sit on a 256-unit grid: **Low** over the walkable band, **Lower** (`hintType` 8, fewer initial clusters) over the rest of the playable air next to geometry (high ceilings, shafts), and one **Lowest** over the whole map, so the void, sealed-off rooms and open sky fall to Lowest. No Medium (these Source 1 maps have no dense vis geometry). Low and Lower boxes never overlap, and they are merged down to about 100 boxes or fewer. `all_lower` (stage D `visfit_lower`) makes the Low boxes Lower too, for maps whose vis merge stalls. Moondome / tools/skybox shells get **Exclude from Vis** (they still render) unless they border playable air that is open once every sky shell is gone. That test uses only vis-relevant geometry: Valve's docs say `toolsnodraw` is ignored by vis and its inside/outside test, and clips, triggers and meshes already excluded from vis don't count. Big shells are expensive because vis voxelises every vis face at 8 units (mg_mario_party: 19.2M nodes and 103 s, then 3.6M nodes and 23 s with its 64 shells excluded).
-- A report of excluded cosmetic entities (point_spotlight, func_dustmotes…) and 3D skyboxes, which need a separate skybox map in CS2.
-- **Stationary lights.** CS:GO lights import as Static, which leaves weapons and players black. The world is voxelised and flood-filled into sealed compartments. Each compartment gets at least one light switched to `directlight 3` (Stationary; in the FGD 3 = Stationary and 2 = fully Dynamic), smallest rooms first. More lights are added only to cover the rest of a room. Ranges are trimmed so no spot is inside more than 4 stationary lights. A compartment open to sky is left to light_environment, if the map has one. A sealed room with spawns or teleport destinations but no light gets a new stationary light_omni2.
-- **Daylight (indoor maps that are still dark).** `daylight` pass: adds a stationary light_environment using the map's env_sky and picks the sun angle that reaches the most floor. Every ceiling / roof mesh between the playable floors and the sky gets "Disable Shadows" so sun and sky light reach inside; walls still cast shadows. If the map has no light probe volumes it adds env_combined_light_probe_volumes over the playable space; without them players and weapons get no indirect light. It also raises post_processing_volume maxexposure to 2. Use it when stationary lights alone leave a map too dark.
-- **env_laser / env_beam.** CS2 can't spawn them. Each becomes a never-solid func_brush between its end points: LaserTarget for lasers, LightningStart/End for beams, matched case-insensitively. It is drawn as crossed double-sided quads with a self-illuminated laser material in the beam's colour. A mutual laser pair is drawn once. A CS:GO beam with no name starts on. TurnOn/TurnOff/Toggle become Enable/Disable/Toggle. No damage is added; a damaging laser with no trigger_hurt along it is flagged.
-- **Alpha.** Materials that were $alphatest/$translucent in CS:GO but imported opaque get F_ALPHA_TEST/F_TRANSLUCENT with a mask from the texture alpha.
-- **Radar.** Rendered from the geometry. Only floors you can stand on are drawn (the space above them has lights, spawns or teleports, or is an enclosed non-sky room), shaded by height, with walls outlined. Output: `panorama/images/overheadmaps/<map>_radar_psd.png` + `.vtex`, plus game `resource/overviews/<map>.txt`.
-  - Stacked maps (towers, one spawn directly above another): split into vertical sections like Nuke/Vertigo. `"verticalsections"` in the overview txt with `"default"` (image `<map>_radar_psd`) and `"lower"` (image `<map>_lower_radar_psd`), each with AltitudeMin/Max; all sections share pos_x/pos_y/scale. Done by hand for mg_smee_tower_cs2 (split at z 2560, 17 Oct 2026); `radar.py` itself still makes one image.
-- A missing-model report.
-- **trigger_gravity** (does nothing to players in CS2) → trigger_multiple whose OnStartTouch fires script `Gravity_<scale>`; names, filters and Enable/Disable are kept. While a player is airborne the script adds back `(1 - scale) * 800 * dt` of vertical velocity each tick. Leaving the trigger fires `Gravity_1` (OnEndTouch), so a zone is low-gravity only while you are inside it; a respawn also resets it. `gravity.py`; stage D runs it as `gravity` on an already-cleaned map and adds the section to the existing `<addon>_io.js`.
-- Listed in the log's TO CHECK lines but not converted: player_speedmod, env_screenoverlay, point_clientcommand, game_ui, VScripts.
+### stage_d.py passes
 
-## Loading-screen credit
-CS2 reads the loading-screen text from `game\csgo_addons\<addon>\maps\<map>.txt` (the same file Hammer5Tools' Loading Editor writes): first line `COMMUNITYMAPCREDITS:`, then the text, e.g. `Original map by <author>` / `CS:GO port by <porter>` (when the map credits one) / `Ported to CS2 by skink52`. No map rebuild needed.
+`beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, gravity, overlayfix, overlaydepth, facescale, matflags`.
+Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
+`radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
+steps aren't stage D passes: use `run_pass.py`.
 
-## Follow-up passes on a map you've already edited in Hammer
-`stage_d.py <addon> <root> beams,lights,alpha,radar,daylight,skyvis,visfit,gravity,overlayfix,overlaydepth,facescale,matflags` runs only those passes on the current vmap. It keeps your Hammer edits and appends to the cleanup log.
-`stage_d.py <addon> <root> visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with Lower instead of Low everywhere (for a map whose vis merge stalls).
-`glowfix.py <vmap in> <vmap out> <addon content root>` converts parented env_particle_glows to following glow particles (see cs2-gotchas). Run it on any map that has them; weapon-parented ones also need the glow follow section in `<addon>_io.js` (template: `ports/mg_metal_course_level_2/scripts`).
-`stage_d.py <addon> <root> daylight` is the dark-indoor-map fix above.
-`disprestore.py <vmap in> <bsp> <vmap out>` rebuilds displacements the importer dropped. The import log shows each one as "Found a displacement missing a needed subkey." (24 Oct 2026: mg_kohztec_course 61 (all, fixed), de_nuketown 152 (fixed, old 3D skybox skipped), mg_faohu_course 2). After every import, grep the log for that line. It reads dispinfo/dispverts from the BSP and adds each as a closed mesh: the displaced surface with the CS:GO texture projection, toolsnodraw sides and a flat back. Materials with no CS2 copy get a stand-in from its `SUB` table; custom ones can be built from the BSP pakfile with `assets.write_vmat`. Extra args `x0,y0,z0,x1,y1,z1` skip displacements centred in that box (an old 3D skybox).
-`laserhurt.py <vmap in> <csgo vmf> <vmap out>` (after stage C): a `trigger_hurt` box along every CS:GO env_laser that did damage and has no trigger_hurt yet — skink52's rule from 24 Oct 2026 is that damaging lasers are recreated even where the original relied on the laser itself. Same start state as the beam; Enable/Disable/Toggle sent to the beam are copied to `<laser>_hurt`.
-`matnames.py <addon> <root>`: importer-sanitised material refs (spaces → underscores) back to the addon's real file names; run before the `assets` pass (see cs2-gotchas).
-`vmap_preview.py <vmap> <out.png> [box]`: top-down + four corner renders of any vmap (importer text or binary), to check a port or a generated map without Hammer.
-`create/test/mock_point_script.mjs <addon>_io.js` and `create/test/tscheck.sh <addon>_io.js`: run / type-check a map script before the build (see `create/README.md`).
-`run_pass.py <addon> <root> pass[,pass]`: any stage C pass on the current vmap, appending to the cleanup log (e.g. `alpha,assets` once the CS2 VPK is available, or `sky`).
-**Unattended runs:** `run_import_then_build.bat` = stage B, then wait for `build_go.txt`, then stage D. Claude does stage C in between and writes the flag file; a scheduled check reads the logs afterwards.
-Map-specific script gates (e.g. mg_fred_all's `EnableDamage`) go in `maps/scripts/<addon>_io.js`: `Instance.OnBeforePlayerDamage` returns `{ abort: true }` to cancel a hit, `Instance.OnRoundStart` resets per-round state, and a trigger fires `RunScriptInput <name>` on `<addon>_io_script`.
+## Passes (library modules called by stage C / D)
 
-## Standard prompt (paste into a new Claude session in the "cs2 mapping" project)
+| File | Step / pass | What it does |
+|---|---|---|
+| `gen_script.py` | (end of stage C) | Builds `maps/scripts/<addon>_io.js`: `Cmd_`, `Score_`, `Speed_`, `Gravity_` inputs, spawn equips, plus `push_tail.js` for push zones (`PushIn_`/`PushOut_`) |
+| `push_tail.js` | `push` | The trigger_push half of the generated io script (holds CS:GO "set speed" pushes, max 3500); appended by gen_script.py |
+| `gravity.py` | `gravity` | trigger_gravity → trigger_multiple + script `Gravity_<scale>`; stage D patches the existing `_io.js` |
+| `assets.py` | `alpha`, `assets` | Missing materials rebuilt from CS:GO's VPK, water → `liquids/nuke_water`, closest stock CS2 material otherwise; alpha-test/translucent masks |
+| `texfix.py` | `overlayfix`, `overlaydepth`, `facescale`, `matflags` | Static overlay geometry, brush-face texture scale/shift, `$additive`/`$nocull` material flags |
+| `sky.py` | `sky` | Six CS:GO sky faces → 2:1 equirect panorama for `sky.vfx` / `csgo_moondome` |
+| `visfit.py` | `vis` (C), `visfit`/`visfit_lower` (D) | Vis hints fitted to the play space (Low / Lower / one Lowest) and sky shells out of vis |
+| `skyvis.py` | `skyvis` | Older pass: sky shells that seal nothing get Exclude from Vis |
+| `beams.py` | `beams` | env_laser / env_beam → never-solid func_brush beams (damage: `laserhurt.py`) |
+| `lighting.py` | `lights` | Minimal set of Stationary lights per sealed compartment, max 4 overlapping |
+| `daylight.py` | `daylight` (D only) | Stationary sun, ceilings without shadows, probe volumes, maxexposure 2 for dark indoor maps |
+| `radar.py` | `radar` | Radar png + vtex + `resource/overviews/<map>.txt` from the standable floors, painted with their materials |
+| `radartex.py` | (radar, vmap_preview) | Material name → tiled source texture or a colour guessed from the name |
 
-> Port these CS:GO maps to CS2 with my cs2port pipeline: **<map names, or "the N smallest BSPs in C:\source1\bspsrc-windows\mg maps that don't have an addon yet">**.
-> First check each map against `C:\source1\cs2port\existing_ports.txt` and the internet (Steam Workshop, GameBanana) for an existing CS2 port, and tell me about any you find before porting them. Strip version/bloat (`_v2`, `_final`…) from addon names, and add each map you start to existing_ports.txt as `<addon> [in progress] [skink]`.
-> The tools and instructions are in the github.com/skink52/cs2mapping repo (read its CLAUDE.md) and on my PC in `C:\source1\cs2port\tools`. Use them in your workspace and do stage A for every map. Add each one to `C:\source1\cs2port\queue.txt` and tell me when to run `run_import.bat`.
-> When I say it's done, read `C:\source1\cs2port\logs`. For each map, do stage C on the vmap, the extra fixes you've been doing for me (moondomes for dropped sky brushes, vis hints, a radar for every map, loading-screen credit "original map by <author> cs2 port by skink52"), and anything map-specific the log flags.
-> Back up the vmap to `csgo_addons\prefabs+backups\` first. Keep Hammer closed until you say you're done. Only send changed files.
-> When the maps are ready, put them in `build_queue.txt` and tell me to run `run_build.bat` (stage D). When I say it's done, read the build logs and fix anything that failed.
-> Record each port in the cs2portdocs repo (`ports/<addon>/` README, cleanup log and scripts, plus a CHANGELOG line) and push it.
+## Libraries
+
+| File | What it is |
+|---|---|
+| `vmapedit.py` | `.vmap` editing. `m = V.Map(path)`; `m.entities()`, `m.by_class('cls', ...)`, `m.P(e, key)` / `m.setp(e, key, val)` / `m.delp`, `m.name(e)`, `m.origin(e)`, `m.new_entity(cls, origin, props)`, `m.add_conn(e, output, target, input, param, delay)`, `m.all_conns()`, `m.remove_node(e)`, `m.prune()`, `m.dumps()` / `m.save(path)` |
+| `dmx.py` | Binary DMX (encoding binary 9), the `.vmap` format: `dmx.load/loads/dumps`, `get/set_/delete` on elements. (Other DMX code: `create/dmx.py` is the lossless reader/writer for original maps, `tools/weapons/dmx.py` handles ModelDoc mesh DMX.) |
+| `kv2.py` | Keyvalues2 text DMX (what Valve's importer writes for the main vmap) → `dmx.Doc` |
+| `vmf.py` | Source 1 VMF parser/writer (`vmf.parse(text)`, `Node.get/set/ch`, `vmf.dump`) |
+| `vpk.py` | VPK v1/v2 directory reader (stock file lists, CS:GO VMT/VTF extraction) |
+| `vtf.py` | Top-mip VTF decoder → PIL image |
+
+## Data files
+
+| File | Used by |
+|---|---|
+| `box_template.vmap` | stage C sky pass: the moondome box mesh for dropped sky brushes (our own file) |
+| `laser_template.vmap` | `beams.py`, `laserhurt.py`: the beam / hurt-box mesh (our own file) |
+| `addon_template/` | **Not in the repo** (Valve's files). `prep.py` needs `tools/addon_template/content/` and `game/`: copy them from `<CS2>\content\csgo_addons\addon_template\` and `<CS2>\game\csgo_addons\addon_template\` (what the Workshop Tools launcher copies when it creates an addon) |
+| `bspsrc.sh` | **Not in the repo.** Written by `setup_bspsrc.sh`; `prep.py` looks for `tools/bspsrc.sh` unless `BSPSRC=` is set |
+
+## `weapons/`: the custom weapon builder (creation, not porting)
+
+Method and config keys: [docs/creation/custom-weapons.md](../docs/creation/custom-weapons.md). Not needed on the PC for porting.
+
+| File | What it does | Usage |
+|---|---|---|
+| `build_weapon.py` | FBX/GLB → CS2 weapon vmdl rigged to a stock weapon skeleton (DMX mesh, hull, magazine, stock anims, materials, optional scope); output under the config's `out` | `python3 build_weapon.py <config.json>` (env `WW1_STOCK` = folder of decompiled stock weapon vmdl/dmx) |
+| `lee.json`, `gewehr.json`, `luger.json`, `colt.json` | Example configs (Lee-Enfield, Gewehr 98, Luger, Colt) | |
+| `preview.py` | Left/right/top software renders of a built weapon body | `python3 preview.py <name or config.json> ...` (env `WEAPON_OUT`, default `/home/claude/out2`; `WEAPON_PREVIEW_DIR`, default `/tmp`) |
+| `fbxparse.py`, `fbxmesh.py` | Binary FBX reader; static meshes in Source space | `python3 fbxparse.py <file.fbx>` dumps the node tree |
+| `glbmesh.py` | GLB → parts in Source space, embedded textures exported | |
+| `dmx.py`, `dmxmodel.py` | ModelDoc mesh DMX (model 22) read/write | |
+| `hull.py` | Convex hulls for the physics shapes | |
+| `material.py` | csgo_complex vmat + texture set | `make_material(out, sub, name, tex, size, flip_green)` |
+| `scope2.py` | Period scope meshes (allied / axis) | |
+| `scope.py` | Older scope builder, superseded by scope2.py (still imported, not called) | |
+| `weather.py` | Weathered steel / brass textures | `python3 weather.py` (writes to /tmp) |
+| `ww1_weapons.js` | cs_script loadout example (per-team weapons) | |

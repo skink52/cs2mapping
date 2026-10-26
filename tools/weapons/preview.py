@@ -1,5 +1,14 @@
-import sys, numpy as np; sys.path.insert(0,'/home/claude/fbx')
+"""Quick software renders (left, right, top) of a built weapon's body mesh, to check the rig before compiling.
+
+usage: preview.py <name or config.json> [...]
+  <name>         reads $WEAPON_OUT/models/weapons/ww1/<name>/<name>_body.dmx (WEAPON_OUT defaults to /home/claude/out2)
+  <config.json>  reads <out>/<sub>/<name>_body.dmx from the build_weapon.py config
+Writes <name>_left/_right/_top.png to $WEAPON_PREVIEW_DIR (default /tmp).
+"""
+import os, sys, json, numpy as np; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dmx
+OUT = os.environ.get('WEAPON_OUT', '/home/claude/out2')
+PREVIEW_DIR = os.environ.get('WEAPON_PREVIEW_DIR', '/tmp')
 from PIL import Image
 def render(V, F, cols, ax, ay, dz, xr, yr, scale, fn):
     W = int((xr[1]-xr[0])*scale); H = int((yr[1]-yr[0])*scale)
@@ -23,8 +32,13 @@ def render(V, F, cols, ax, ay, dz, xr, yr, scale, fn):
         img[y0:y1, x0:x1][upd] = (np.array(cols[k]) * sh).astype(np.uint8); sub[upd] = z[upd]
     Image.fromarray(img).save(fn)
 palette = {'scope.vmat': (60, 62, 68), 'brass.vmat': (190, 150, 70)}
-def preview(name, out='/tmp', scale=30, span=(3, 30)):
-    h, els = dmx.read(f'/home/claude/out2/models/weapons/ww1/{name}/{name}_body.dmx')
+def preview(name, out=None, scale=30, span=(3, 30)):
+    out = out or PREVIEW_DIR
+    if name.endswith('.json'):
+        cfg = json.load(open(name)); name = cfg['name']; body = os.path.join(cfg['out'], cfg['sub'], f'{name}_body.dmx')
+    else:
+        body = os.path.join(OUT, 'models', 'weapons', 'ww1', name, f'{name}_body.dmx')
+    h, els = dmx.read(body)
     mesh = [e for e in els if e.type == 'DmeMesh'][0]; V = mesh['currentState']['position$0'].items.astype(float)
     F = []; cols = []
     for fs in mesh['faceSets'].items:
@@ -34,4 +48,5 @@ def preview(name, out='/tmp', scale=30, span=(3, 30)):
     render(V, F, cols, 0, 2, (1, -1), (xm+span[0], xm+span[1]), (V[:,2].mean()-6, V[:,2].mean()+6), scale, f'{out}/{name}_right.png')
     render(V, F, cols, 0, 1, (2, 1), (xm+span[0], xm+span[1]), (V[:,1].min()-1, V[:,1].max()+1), scale, f'{out}/{name}_top.png')
 if __name__ == '__main__':
+    if len(sys.argv) < 2 or sys.argv[1] in ('-h', '--help'): print(__doc__); sys.exit(0)
     for n in sys.argv[1:]: preview(n)

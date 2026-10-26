@@ -1,4 +1,7 @@
-"""Bakes and writes one prop: LOD meshes (same chart layout), atlas textures, vmat, vmdl, physics hulls, preview."""
+"""Bakes and writes one prop: LOD meshes (same chart layout), atlas textures, vmat, vmdl, physics hulls, preview.
+
+From trenchwarfare-cs2/tools/build_prop.py (MIT), made project-neutral.
+"""
 import os, sys, time
 import numpy as np
 from PIL import Image
@@ -168,7 +171,8 @@ def stock_preview(m, fsel, fuv, key):
                     r = [x for x in V.refs(V.vpk_read(vm + '_c')) if '_color' in x][0]
                     V.decode_vtex(V.vpk_read(r + '_c'), 1).convert('RGB').save(p)
             col = np.asarray(Image.open(p).convert('RGB'), np.float32) / 255.0
-        except Exception:
+        except Exception as ex:      # no exported copy and no VPK access: grey stand-in, say why
+            print('preview: %s shown grey (%s: %s)' % (key, type(ex).__name__, ex))
             col = np.full((4, 4, 3), 0.5)
         h, w = col.shape[:2]
         _STOCK_PREV[key] = dict(color=col, normal=np.tile([0, 0, 1.0], (h, w, 1)), rough=np.full((h, w), 0.8), ao=np.ones((h, w)), metal=np.zeros((h, w)))

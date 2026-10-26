@@ -1,3 +1,7 @@
+"""Source 1 VMF (KeyValues text) parser/writer.
+
+root = vmf.parse(text); Node.name, .kv (list of (key, value)), .ch (child nodes); get/set/items; vmf.dump(root) -> text.
+Used by stage C (dropped outputs, sky brushes, door sounds, overlays) and hammer_resave.py."""
 import re
 _tok=re.compile(r'"((?:[^"\\]|\\.)*)"|([{}])|([^\s{}"]+)')
 class Node:

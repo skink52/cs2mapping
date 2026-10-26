@@ -1,9 +1,13 @@
-"""Stage C/D of the CS:GO -> CS2 port: prefab merge + post-import fixes, done on the .vmap directly (Hammer closed).
+"""Stage C of the CS:GO -> CS2 port: prefab merge + post-import fixes, done on the .vmap directly (Hammer closed).
 
 python3 stage_c.py <addon> <local_root>
   <local_root> mirrors the PC:  <local_root>/content/<addon>/...   (content\\csgo_addons\\<addon>)
                                 <local_root>/source1/maps/<addon>.vmf
-Writes changed files to <local_root>/out/<addon>/... and <local_root>/out/<addon>_manifest.json
+Writes changed files to <local_root>/out/<addon>/... (content), <local_root>/out/<addon>_game/... (game-side files)
+and <local_root>/out/<addon>_result.json (log, TO CHECK lines, file list, CS:GO archives still needed).
+Step keys, in run order (run_pass.py takes any of them): merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity,
+dead, sounds, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, radar, assets, matflags
+(+ overlaydepth when asked). daylight is a stage_d.py pass only.
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -698,7 +702,7 @@ def sky_pass(m, c, vmfpath):
     if odd: c.todo.append('%d non-box sky brushes in the VMF were not rebuilt as moondomes' % odd)
 
 # ------------------------------------------------------------------ visibility hints
-def vis_hints(m, c, cell=512):
+def vis_hints(m, c, cell=512):   # unused: the old grid hints, replaced by visfit.run (the `vis` step)
     if m.by_class('visibility_hint'): return
     boxes = []
     for n, _ in m.walk():

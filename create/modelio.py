@@ -1,4 +1,7 @@
-"""Writes baked meshes as Source 2 content: SMD render/physics meshes, csgo_complex .vmat + PNGs, .vmdl."""
+"""Writes baked meshes as Source 2 content: SMD render/physics meshes, csgo_complex .vmat + PNGs, .vmdl.
+
+From trenchwarfare-cs2/tools/modelio.py (MIT), made project-neutral.
+"""
 import os, json
 import numpy as np
 from PIL import Image

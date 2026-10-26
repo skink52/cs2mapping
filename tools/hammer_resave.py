@@ -6,6 +6,8 @@ mapversion, puts id/mapversion/classname first on worldspawn, adds the full
 editor block (color, visgroupshown, visgroupautoshown, logicalpos) to entities
 and solids, adds "rotation" "0" to every side, rewrites plane points and
 texture axes with %g precision (no -0), and upper-cases side materials.
+
+usage: hammer_resave.py <in.vmf> <out.vmf>   (prep.py calls it for every BSP)
 """
 import re, sys
 import vmf

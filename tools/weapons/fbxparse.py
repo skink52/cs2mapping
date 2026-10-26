@@ -1,3 +1,4 @@
+"""Binary FBX node-tree reader (used by fbxmesh.py).  python3 fbxparse.py <file.fbx> dumps the top of the node tree."""
 import struct, zlib, sys, json
 import numpy as np
 

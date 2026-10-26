@@ -1,4 +1,10 @@
-"""stage_c without CS2's pak01_dir.vpk: stub CS2 VPK so sky/sounds passes can use the CS:GO source; assets/alpha skipped."""
+"""stage_c without CS2's pak01_dir.vpk: stub CS2 VPK so sky/sounds passes can use the CS:GO source.
+
+python3 run_c.py <addon> <root> [pass,pass...]
+Default passes: merge,io,wall,equip,push,cmd,roundcfg,score,speed,gravity,dead,sounds,overlays,sky,vis,beams,lights,radar.
+Not in the default list: alpha, assets (need the CS2 VPK), and doors, overlayfix, facescale, matflags (run them later with
+run_pass.py, or name them in the pass list).
+"""
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import vpk, stage_c
