@@ -401,7 +401,7 @@ def material_flags(m, c):
         sh = ms.group(1).lower(); new = txt; ins = []
         if kv.get('$nocull') == '1' and 'F_RENDER_BACKFACES' not in txt: ins.append('F_RENDER_BACKFACES 1'); back.append(os.path.basename(mat)[:-5])
         if kv.get('$additive') == '1' and 'F_ADDITIVE_BLEND' not in txt and not re.search(r'F_BLEND_MODE"?\s+"?4', txt):
-            if 'lightmappedgeneric' in sh:
+            if any(k in (shader or '').lower() for k in ('lightmappedgeneric', 'worldvertextransition')) or 'lightmappedgeneric' in sh:   # judged by the CS:GO shader
                 new = re.sub(r'(?im)^\s*"?F_ALPHA_TEST"?\s+"?1"?\s*$\n?', '', new)
                 if 'F_TRANSLUCENT' not in new: ins.append('F_TRANSLUCENT 1')
                 ins.append('F_ADDITIVE_BLEND 1'); add.append(os.path.basename(mat)[:-5])

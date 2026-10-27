@@ -25,6 +25,7 @@ Everything runs in Claude's cloud workspace with Python 3 + numpy, scipy and Pil
 | `laserhurt.py` | A `trigger_hurt` along every CS:GO env_laser that did damage and has none (after stage C) | `python3 laserhurt.py <vmap in> <csgo vmf> <vmap out>` |
 | `glowfix.py` | Parented env_particle_glows → following glow particles | `python3 glowfix.py <vmap in> <vmap out> <addon content root>` |
 | `matnames.py` | Importer-sanitised material refs (spaces → underscores) back to the real file names; run before `alpha,assets` | `python3 matnames.py <addon> <root>` (needs `<root>/content_files_<addon>.json`) |
+| `bsp2vmf_lite.py` | Minimal VMF from a CS:GO BSP (every brush side with material + uaxis/vaxis from the texinfo, infodecals, info_overlays) and the BSP's embedded files, for `texfix` passes when the decompiled VMF isn't available | `python3 -I bsp2vmf_lite.py <map.bsp> <root>/source1/maps/<addon>.vmf [<root>/embedded/<addon>]` |
 | `vmap_preview.py` | Top-down + four corner renders of any vmap (binary or importer text) | `python3 vmap_preview.py <map.vmap> <out.png> [x0,y0,z0,x1,y1,z1]` |
 | `setup_bspsrc.sh` | Extracts BSPSource from its jlink image and patches the class files to Java 21; writes `<dest>/bspsrc.sh` | `sh setup_bspsrc.sh <staged bspsrc-windows/lib/modules> <dest dir>` (use `<dest>` = `tools/` so prep.py finds it, or set `BSPSRC=`) |
 

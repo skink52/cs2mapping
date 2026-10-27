@@ -26,7 +26,7 @@ which also covers other porters' maps, external ports and skink52's originals: m
 | [mg_mario_party](mg_mario_party/) | Published, fixes on 17 Oct 2026 not yet republished | [3818267169](https://steamcommunity.com/sharedfiles/filedetails/?id=3818267169) | 2026-10-11 | manual |
 | [mg_metal_course_level_2](mg_metal_course_level_2/) | Published | [3825813828](https://steamcommunity.com/sharedfiles/filedetails/?id=3825813828) | 2026-10-16 | cs2port pipeline |
 | [mg_minecraft_adventure](mg_minecraft_adventure/) | Published | [3825226010](https://steamcommunity.com/sharedfiles/filedetails/?id=3825226010) | 2026-10-16 | cs2port pipeline |
-| [mg_n64_goldeneye](mg_n64_goldeneye/) | Published (re-port 2026-10-26 queued for build) | [3818260481](https://steamcommunity.com/sharedfiles/filedetails/?id=3818260481) | 2026-10-26 | pipeline (was manual) |
+| [mg_n64_goldeneye](mg_n64_goldeneye/) | Published (re-port 2026-10-26; texfix/probe passes 27 Oct, needs a build) | [3818260481](https://steamcommunity.com/sharedfiles/filedetails/?id=3818260481) | 2026-10-26 | pipeline (was manual) |
 | [mg_simpsons_course](mg_simpsons_course/) | Published | [3827100992](https://steamcommunity.com/sharedfiles/filedetails/?id=3827100992) | 2026-10-16 | cs2port pipeline |
 | [mg_smee_tower_cs2](mg_smee_tower_cs2/) | Published | [3816892618](https://steamcommunity.com/sharedfiles/filedetails/?id=3816892618) | 2026-10-09 | manual |
 | [mg_yolo_multigames](mg_yolo_multigames/) | Published | [3819030057](https://steamcommunity.com/sharedfiles/filedetails/?id=3819030057) | 2026-10-12 | manual, with a large generated map script |

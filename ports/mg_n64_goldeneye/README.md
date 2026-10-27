@@ -11,6 +11,14 @@
 
 ## History
 
+- 2026-10-27: new cleanup passes on the cleaned map (`stage_d.py … facescale,matflags,probecover`), VMF rebuilt from the BSP with `tools/bsp2vmf_lite.py`
+  (the decompiled VMF folder wasn't linked). Backup: `maps\mg_n64_goldeneye_before_texfix_2026-10-27.vmap.bak`.
+  - Face texture mapping: 6,352 faces given back their CS:GO scale/shift, 6,267 with texture coordinates rewritten; ~6,500 texture coordinates moved by a
+    visible amount (the importer had reduced shifts mod 16 texels and mangled scales). 1,340 faces where overlapping brushes disagree and 1,066 with no
+    matching side were left as imported.
+  - `glass04` ($additive LightMappedGeneric): F_TRANSLUCENT + F_ADDITIVE_BLEND (was opaque black).
+  - 19 light probe volumes added around 24 static func_breakable / func_brush meshes no existing volume fully covered.
+  - Overlays: all 70 are real-sized (no importer placeholders), so `overlayfix` had nothing to do; their projection depth (64/128) was left alone.
 - 2026-10-26: full re-port from `mg_n64_goldeneye_hdr.bsp`, overwriting the published vmap. Backups: `prefabs+backups\mg_n64_goldeneye_published_2026-10-26.vmap` (+ `_published_2026-10-26\` prefabs and soundevents) and `mg_n64_goldeneye_imported_2026-10-26.vmap`. Map-specific fixes done along the way, and added to the pipeline so later ports get them:
   - 45 `Use` inputs on game_player_equips → `TriggerForActivatedPlayer` (weapon arenas' teleports, HE wall buttons).
   - The unnamed "Strip First" knife equip ran on every spawn in CS:GO: the io script now strips each spawning player and gives a knife (one tick after `OnPlayerReset`), so arena guns no longer stack on the default pistol.
@@ -30,6 +38,9 @@ See [mg_n64_goldeneye_cleanup_log.txt](mg_n64_goldeneye_cleanup_log.txt): 6 pref
 
 ## Open / to check
 
+- 2026-10-27 passes, check in Hammer/game: texture alignment on walls/floors (revert = restore the `.vmap.bak`), the new probe volumes, glass04.
+  Faces still with an absurd scale and no VMF match: nuke_metalvent 8, dev_measuregeneric20 12, offwndwb 1, blackmetal 8, door_metal_hr 10, rail_rust 1,
+  glass01 13, glass04 1, metalrail003a 10, metalwall014a 32. concretefloor016a / dev_measureice01 scales fixed but coordinates not rewritten (no texture size).
 - 14 point_spotlight beams and the env_fog_controller are dropped by the importer (cosmetic).
 - Chat messages go through cs_script `ServerCommand("say ...")`.
 - Vis: if anything pops where players stand, change the nearest Lower hint to Low.
