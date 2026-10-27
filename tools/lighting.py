@@ -5,7 +5,7 @@ per sealed compartment and switches them to directlight 3 (Stationary: dynamic d
 inside more than MAX_OVERLAP stationary lights. Compartments come from voxelising the world geometry and flood-filling
 the empty space; compartments that see sky (moondome / skybox) count as lit by light_environment when the map has one.
 """
-import collections, math
+import collections, math, os
 import numpy as np
 import dmx
 
@@ -194,3 +194,67 @@ def run(m, c, vs=32.0):
     weak = [x for x in report if x[3] < 0.6]
     if weak: c.todo.append('%d compartments only partly covered by stationary light (overlap cap) - check weapons are lit there' % len(weak))
     return report
+
+
+# ------------------------------------------------------------------ light brightness (importer NaN bug)
+def fix_nan_brightness(m, c):
+    """Valve's importer writes brightness = nan for most CS:GO lights (see fix_brightness). Set those to 0 / legacy 1, which is
+    what Hammer itself does when it re-saves the map, so a command-line build sees the same values as a Hammer build."""
+    import math
+    n = 0
+    for e in m.by_class('light_omni2', 'light_barn', 'light_rect', 'light_capsule'):
+        try: ok = math.isfinite(float(m.P(e, 'brightness', '0') or 0))
+        except ValueError: ok = False
+        if not ok: m.setp(e, 'brightness', '0'); m.setp(e, 'brightness_legacy', '1'); n += 1
+    if n: c.log.append('%d lights had brightness = nan from the importer: set to 0 (as a Hammer save does); stage_d lightbright rebuilds real values from the VMF' % n)
+
+def fix_brightness(m, c, vmfpath):
+    """Valve's importer stores log2(intensity/265) in brightness_legacy and then log2 of that in brightness, so every CS:GO light
+    dimmer than ~265 (3-value _light, linear attenuation, most maps) gets brightness = nan, which crashes the server on map load,
+    and brighter ones come out too dim. Rebuild from the VMF: I = _light 4th value (255 when only r g b), times (max rgb/255)^2.2
+    because the importer normalises the colour; legacy = I/265 (linear), brightness = log2(legacy), lumens/candelas/nits from it."""
+    import re, math, vmf as vmfmod
+    if not os.path.exists(vmfpath): return
+    root = vmfmod.parse(open(vmfpath, encoding='utf-8', errors='replace').read())
+    src = []
+    for e in root.ch:
+        cls = (e.get('classname') or '').lower()
+        if e.name != 'entity' or cls not in ('light', 'light_spot') or not e.get('origin'): continue
+        lv = [float(x) for x in (e.get('_light') or '255 255 255 200').split()[:4]]
+        if len(lv) == 1: lv = lv * 3
+        sc = lv[3] if len(lv) > 3 else 255.0
+        mx = max(lv[:3]) or 1.0
+        src.append((cls, [float(x) for x in e.get('origin').split()], sc * (mx / 255.0) ** 2.2))
+    lights = [(e, m.origin(e)) for e in m.by_class('light_omni2', 'light_barn')]
+    used = set(); fixed = nan = 0
+    for cls, o, ieff in src:
+        want = 'light_omni2' if cls == 'light' else 'light_barn'
+        cand = [(sum((a - b) ** 2 for a, b in zip(p, o)), e) for e, p in lights if m.cls(e) == want and e not in used]
+        if not cand: continue
+        d2, e = min(cand, key=lambda x: x[0])
+        if d2 > 64 ** 2: continue
+        used.add(e)
+        def num(k, d):
+            try:
+                v = float(m.P(e, k, '') or d); return v if math.isfinite(v) else d
+            except ValueError: return d
+        if not math.isfinite(num('brightness', float('nan'))): nan += 1
+        old_leg = num('brightness_legacy', 1.0)
+        leg = max(ieff / 265.0, 1e-4)
+        m.setp(e, 'brightness_legacy', '%g' % round(leg, 6)); m.setp(e, 'brightness', '%g' % round(math.log2(leg), 6))
+        if m.cls(e) == 'light_omni2':
+            m.setp(e, 'brightness_lumens', '%d' % max(1, round(1000 * leg)))
+            m.setp(e, 'brightness_candelas', '%d' % max(1, round(1000 * leg / (4 * math.pi))))
+            m.setp(e, 'brightness_nits', '%d' % max(1, round(9816 * leg)))
+        else:   # barn: lumens scale with the cone; the importer's lumens were for its own (log) legacy value
+            base = num('brightness_lumens', 1000.0) / (old_leg if old_leg > 0 else 1.0)
+            m.setp(e, 'brightness_lumens', '%d' % max(1, round(base * leg)))
+        fixed += 1
+    def finite(s):
+        try: return math.isfinite(float(s))
+        except (TypeError, ValueError): return False
+    left = [e for e, _ in lights if not finite(m.P(e, 'brightness', '0'))]
+    for e in left:   # no VMF match: neutral brightness so nothing is left as nan
+        m.setp(e, 'brightness', '0'); m.setp(e, 'brightness_legacy', '1')
+    c.log.append('light brightness rebuilt from the CS:GO _light values for %d lights (%d had brightness = nan from the importer, which crashes CS2 on map load)%s'
+                 % (fixed, nan, '; %d unmatched lights set to brightness 0' % len(left) if left else ''))

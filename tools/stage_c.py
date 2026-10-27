@@ -22,7 +22,7 @@ class Ctx:
         s.out = os.path.join(root, 'out', addon)
         s.log = []; s.todo = []; s.files = {}   # rel path (content-relative, / separated) -> bytes
         s.script = addon + '_io_script'
-        s.push = {}; s.spawn_equips = []; s.commands = []; s.scores = set(); s.speeds = set(); s.gravities = set(); s.src = None; s.cs2v = None; s.need = set(); s.asset_refs = set(); s.game_files = {}
+        s.push = {}; s.spawn_equips = []; s.equip_items = {}; s.items_js = {}; s.commands = []; s.scores = set(); s.speeds = set(); s.gravities = set(); s.src = None; s.cs2v = None; s.need = set(); s.asset_refs = set(); s.game_files = {}
         lp = os.path.join(root, 'content_files_%s.json' % addon)   # listing of the addon content folder on the PC
         s.pc_files = set(x.lower().replace('\\', '/') for x in json.load(open(lp))) if os.path.exists(lp) else set()
     def exists(s, rel):
@@ -186,15 +186,44 @@ def player_equip(m, c):
         if dmx.get(cc, b'targetName').decode().lower() in eq and dmx.get(cc, b'inputName').decode().lower() == 'use':
             dmx.set_(cc, b'inputName', dmx.T_STR, b'TriggerForActivatedPlayer'); nu += 1
     if nu: c.log.append('%d Use inputs on game_player_equips -> TriggerForActivatedPlayer' % nu)
+    equip_items(m, c)
     # equips without "Use Only" ran on every spawn in CS:GO; CS2 doesn't run them, so the io script does it (OnPlayerReset)
     for e in m.by_class('game_player_equip'):
         sf = int(m.P(e, 'spawnflags', '0') or 0)
         if sf & 1 or m.name(e) == 'port_knife_equip': continue
         items = [m.P(e, 'weapon%d' % i, '') for i in range(22)]; items = [x for x in items if x]
+        items += c.equip_items.get(m.name(e) or '__unnamed_%d' % e, [])
         if not items and not sf & 2: continue
         c.spawn_equips.append({'strip': bool(sf & 2), 'items': items})
         c.log.append('game_player_equip %s ran on every spawn in CS:GO (no "Use Only"): the io script now %sgives %s on every spawn' %
                      (m.name(e) or '(unnamed)', 'strips, then ' if sf & 2 else '', ', '.join(items) or 'nothing'))
+
+ITEM_RE = re.compile(r'^item_', re.I)
+def equip_items(m, c):
+    """item_* (armour, defuser...) in a game_player_equip weapon slot crashes the CS2 server on map load (null vtable in the equip's
+    weapon spawn; mg_n64_goldeneye, item_assaultsuit). Take them out of the slots; the io script gives them instead, fired from every
+    output that triggers the equip (Item_<equip> for TriggerForActivatedPlayer, ItemAll_<equip> for TriggerForAllPlayers)."""
+    moved = []
+    for e in m.by_class('game_player_equip'):
+        vals = [m.P(e, 'weapon%d' % i, '') for i in range(22)]
+        items = [v.lower() for v in vals if v and ITEM_RE.match(v)]
+        if not items: continue
+        keep = [v for v in vals if v and not ITEM_RE.match(v)]
+        for i in range(22): m.setp(e, 'weapon%d' % i, keep[i] if i < len(keep) else '')
+        key = m.name(e) or '__unnamed_%d' % e
+        c.equip_items[key] = items; moved.append('%s (%s)' % (m.name(e) or 'unnamed', ', '.join(items)))
+        if not m.name(e): continue
+        for src, cc in list(m.all_conns()):
+            if dmx.get(cc, b'targetName').decode().lower() != m.name(e).lower(): continue
+            inp = dmx.get(cc, b'inputName').decode().lower()
+            if inp in ('triggerforactivatedplayer', 'use'): fn = 'Item_'
+            elif inp == 'triggerforallplayers': fn = 'ItemAll_'
+            else: continue
+            o, _, _, _, dl, tf = m.conn_tuple(cc)
+            m.add_conn(src, o, c.script, 'RunScriptInput', fn + m.name(e), dl, tf)
+    if moved:
+        c.items_js = {k: v for k, v in c.equip_items.items() if not k.startswith('__unnamed_')}
+        c.log.append('item_* taken out of game_player_equip weapon slots (CS2 crashes on map load with them there), given by the io script instead: %s' % '; '.join(moved))
 
 def trigger_push(m, c):
     ps = m.by_class('trigger_push')
@@ -774,6 +803,8 @@ def run(addon, root, passes=None):
     if 'vis' in steps: visfit.run(m, c)                  # hints fitted to the play space + sky shells out of vis
     elif 'skyvis' in steps: skyvis.run(m, c)
     if 'beams' in steps: beammod.run(m, c)
+    if 'lightbright' in steps: lighting.fix_brightness(m, c, vmfp)
+    elif 'lights' in steps: lighting.fix_nan_brightness(m, c)
     if 'lights' in steps: lighting.run(m, c)
     if 'alpha' in steps and c.src: assets.fix_alpha(m, c)
     if 'probes' in steps: probecover.run(m, c)
@@ -792,8 +823,8 @@ def run(addon, root, passes=None):
             c.overlay_skipped = prev + c.overlay_skipped
             if c.overlay_skipped: c.todo.append('overlay materials not converted: %s' % '; '.join(c.overlay_skipped)[:800])
     if 'matflags' in steps: texfix.material_flags(m, c)
-    if c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips:
-        js = gen_script.build(addon, c.script, c.push, c.commands, c.scores, c.speeds, c.gravities, c.spawn_equips)
+    if c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js:
+        js = gen_script.build(addon, c.script, c.push, c.commands, c.scores, c.speeds, c.gravities, c.spawn_equips, c.items_js)
         c.write('maps/scripts/%s_io.js' % addon, js)
         if not any(m.name(e) == c.script for e in m.by_class('point_script')):
             spawn = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]

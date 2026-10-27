@@ -3,7 +3,7 @@ import json, os
 import gravity
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-def build(mapname, script_name, push=None, commands=None, scores=None, speeds=None, gravities=None, spawn_equips=None):
+def build(mapname, script_name, push=None, commands=None, scores=None, speeds=None, gravities=None, spawn_equips=None, equip_items=None):
     head = ['import { Instance, CSPlayerPawn, CSPlayerController%s } from "cs_script/point_script";' % ((', CSInputs' if speeds else '') + (', CSMoveType' if gravities else '') + (', CSGearSlot' if spawn_equips else '')), '',
             '// %s: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.' % mapname,
             '// Everything here is driven by `%s` -> RunScriptInput <input name>, with the activator passed through.' % script_name, '//']
@@ -13,6 +13,7 @@ def build(mapname, script_name, push=None, commands=None, scores=None, speeds=No
     if speeds: head.append('//   Speed_<mult> replaces player_speedmod ModifySpeed (activator only, 1 = back to normal)')
     if gravities: head.append(gravity.HEAD_LINE)
     if spawn_equips: head.append('//   (automatic) replaces game_player_equips without "Use Only" (CS:GO ran them on every spawn, CS2 does not)')
+    if equip_items: head.append(ITEMS_HEAD)
     body = ['', '// ---------------------------------------------------------------- shared think loop',
             '/** @type {(() => boolean)[]} each returns true while it still needs ticks */',
             'const THINKERS = [];', 'let thinking = false;',
@@ -52,6 +53,8 @@ def build(mapname, script_name, push=None, commands=None, scores=None, speeds=No
         body += ['', gravity.js_section(gravities)]
     if spawn_equips:
         body += ['', SPAWN_EQUIP_JS.replace('__EQUIPS__', json.dumps(spawn_equips))]
+    if equip_items:
+        body += ['', ITEMS_JS.replace('__ITEMS__', json.dumps(equip_items, indent=4))]
     return '\n'.join(head + body) + '\n'
 
 SPAWN_EQUIP_JS = r'''// ---------------------------------------------------------------- spawn equips (game_player_equip without "Use Only")
@@ -71,13 +74,55 @@ THINKERS.push(() => {
         for (const eq of SPAWN_EQUIPS) {
             if (eq.strip) pawn.DestroyWeapons();
             for (const item of eq.items) {
-                if (item === "weapon_knife" ? pawn.FindWeaponBySlot(CSGearSlot.KNIFE) : pawn.FindWeapon(item)) continue;
+                if (!item.startsWith("item_") && (item === "weapon_knife" ? pawn.FindWeaponBySlot(CSGearSlot.KNIFE) : pawn.FindWeapon(item))) continue;
                 pawn.GiveNamedItem(item, false);
             }
         }
     }
     return false;
 });'''
+
+ITEMS_HEAD = '//   Item_<equip> / ItemAll_<equip>  replaces item_* (armour) in game_player_equips: CS2 crashes on map load with an item in a weapon slot'
+ITEMS_JS = r'''// ---------------------------------------------------------------- game_player_equip items (item_assaultsuit, item_kevlar...)
+// An item_* in a game_player_equip weapon slot crashes the CS2 server on map load, so the items were taken out of the equips
+// and are given from here: every output that triggers the equip also fires Item_<equip> (activator) or ItemAll_<equip>.
+/** @type {Record<string, string[]>} */
+const EQUIP_ITEMS = __ITEMS__;
+function itemPawn(ent) {
+    if (ent instanceof CSPlayerPawn) return ent;
+    if (ent instanceof CSPlayerController) return ent.GetPlayerPawn();
+    return undefined;
+}
+function giveItems(pawn, items) {
+    if (pawn && pawn.IsValid() && pawn.IsAlive()) for (const it of items) pawn.GiveNamedItem(it, false);
+}
+for (const [equip, items] of Object.entries(EQUIP_ITEMS)) {
+    Instance.OnScriptInput("Item_" + equip, ({ activator }) => giveItems(itemPawn(activator), items));
+    Instance.OnScriptInput("ItemAll_" + equip, () => {
+        for (let slot = 0; slot < 64; slot++) giveItems(Instance.GetPlayerController(slot)?.GetPlayerPawn(), items);
+    });
+}'''
+
+def patch_items(js, equip_items):
+    """Add (or replace) the equip-items section in an existing <map>_io.js (follow-up pass)."""
+    import re
+    sec = ITEMS_JS.replace('__ITEMS__', json.dumps(equip_items, indent=4))
+    js = js.replace('if (item === "weapon_knife" ? pawn.FindWeaponBySlot', 'if (!item.startsWith("item_") && (item === "weapon_knife" ? pawn.FindWeaponBySlot')
+    js = js.replace('pawn.FindWeapon(item)) continue;', 'pawn.FindWeapon(item))) continue;') if 'item.startsWith("item_") && (' in js and 'pawn.FindWeapon(item))) continue;' not in js else js
+    if '// ---------------------------------------------------------------- game_player_equip items' in js:
+        i = js.index('// ---------------------------------------------------------------- game_player_equip items')
+        j = js.find('\n// ----------------------------------------------------------------', i + 10)
+        return js[:i] + sec + (js[j:] if j >= 0 else '\n')
+    m = re.match(r'import \{([^}]*)\} from "cs_script/point_script";', js)
+    if m:
+        names = [x.strip() for x in m.group(1).split(',') if x.strip()]
+        for n in ('CSPlayerPawn', 'CSPlayerController'):
+            if n not in names: names.append(n)
+        js = js[:m.start()] + 'import { %s } from "cs_script/point_script";' % ', '.join(names) + js[m.end():]
+    lines = js.rstrip('\n').split('\n')
+    last_head = max((i for i, l in enumerate(lines[:40]) if l.startswith('//   ')), default=None)
+    if last_head is not None: lines.insert(last_head + 1, ITEMS_HEAD)
+    return '\n'.join(lines) + '\n\n' + sec + '\n'
 
 SPEED_JS = r'''// ---------------------------------------------------------------- player_speedmod replacement (dead in CS2)
 // While a player has a multiplier, their ground speed is driven from their own movement keys at 250 x mult.

@@ -13,7 +13,8 @@ highest resolution wins). So hints should only be fine where players can actuall
      Lower  (hintType 8, 64-unit grid, fewer initial clusters)  other playable air next to geometry (high ceilings, shafts)
      Lowest (hintType 9, 256-unit grid)                         one box over the whole map: void, sealed-off rooms, open sky
    Open sky far above an outdoor area gets no box of its own, so it falls to Lowest. all_lower=True makes the Low cells Lower too
-   (for maps whose vis merge stalls, e.g. mg_egypt_course). Boxes are merged while at least 75% (then 60%, 50%) of a box is its
+   (for maps whose vis merge stalls, e.g. mg_egypt_course). lean=True (stage D visfit_lean) goes further: only the walkable band gets a
+   box, as Lower, and all other playable air (high ceilings, shafts) falls to Lowest (mg_n64_goldeneye: 620k initial clusters). Boxes are merged while at least 75% (then 60%, 50%) of a box is its
    own cells, aiming for at most 100 boxes.
 4. Sky shells (all-moondome / all-toolsskybox meshes) get Exclude from Vis unless they border playable air that is open once
    every sky shell is gone. That test uses only vis-relevant geometry: Valve's docs say toolsnodraw is ignored by vis and by
@@ -128,7 +129,7 @@ def merge_boxes(boxes, own, other, fill=0.75):
         boxes = [bx for k, bx in enumerate(boxes) if not ins[k]] + [(a, b)]
     return boxes
 
-def plan(m, all_lower=False, extra_visex_box=None, vs=None, margin=256.0):
+def plan(m, all_lower=False, extra_visex_box=None, vs=None, margin=256.0, lean=False):
     ms = meshes(m)
     world = [x for x in ms if x['ent'] is None]
     allp = np.array([p for x in world for _, l in x['polys'] for p in l])
@@ -169,6 +170,7 @@ def plan(m, all_lower=False, extra_visex_box=None, vs=None, margin=256.0):
     geo = cells_of((phys & (sh == 0)) | visg | ent)
     low = set(bc); lower = (pc - low) & geo
     if all_lower: lower |= low; low = set()
+    if lean: lower = set(low) | (lower & bc); low = set()      # only the walkable band gets a box (Lower); all other air falls to Lowest
     for fill in (0.75, 0.6, 0.5):
         hints = [('Low', a, b) for a, b in merge_boxes(boxes_from_cells(low), low, lower, fill)] + \
                 [('Lower', a, b) for a, b in merge_boxes(boxes_from_cells(lower), lower, low, fill)]
@@ -204,10 +206,10 @@ def apply(m, pl):
         if a: a[2] = True
         else: dmx.set_(m.E[x['n']], b'visexclude', dmx.T_BOOL, True)
 
-def run(m, c, all_lower=False, extra_visex_box=None):
+def run(m, c, all_lower=False, extra_visex_box=None, lean=False):
     old = collections.Counter({'3': 'Low', '8': 'Lower', '9': 'Lowest', '2': 'Medium', '0': 'High', '1': 'Normal', '10': 'Reduced'}
                               .get(m.P(e, 'hintType', ''), '?') for e in m.by_class('visibility_hint'))
-    pl = plan(m, all_lower, extra_visex_box)
+    pl = plan(m, all_lower, extra_visex_box, lean=lean)
     apply(m, pl)
     s = pl['stats']; h = s['hints']
     c.log.append('visfit (%g-unit voxels): %.1f billion cubic units of playable air, %.1f of it walkable band; hints %d Low, %d Lower, %d Lowest%s'

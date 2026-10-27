@@ -37,7 +37,7 @@ plus `overlaydepth` (= `overlayfix` + projection depth 8) when named. `vis` runs
 
 ### stage_d.py passes
 
-`beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, gravity, overlayfix, overlaydepth, facescale, matflags, probes, probecover`.
+`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -46,16 +46,16 @@ steps aren't stage D passes: use `run_pass.py`.
 
 | File | Step / pass | What it does |
 |---|---|---|
-| `gen_script.py` | (end of stage C) | Builds `maps/scripts/<addon>_io.js`: `Cmd_`, `Score_`, `Speed_`, `Gravity_` inputs, spawn equips, plus `push_tail.js` for push zones (`PushIn_`/`PushOut_`) |
+| `gen_script.py` | (end of stage C) | Builds `maps/scripts/<addon>_io.js`: `Cmd_`, `Score_`, `Speed_`, `Gravity_`, `Item_`/`ItemAll_` inputs, spawn equips, plus `push_tail.js` for push zones (`PushIn_`/`PushOut_`) |
 | `push_tail.js` | `push` | The trigger_push half of the generated io script (holds CS:GO "set speed" pushes, max 3500); appended by gen_script.py |
 | `gravity.py` | `gravity` | trigger_gravity → trigger_multiple + script `Gravity_<scale>`; stage D patches the existing `_io.js` |
 | `assets.py` | `alpha`, `assets` | Missing materials rebuilt from CS:GO's VPK, water → `liquids/nuke_water`, closest stock CS2 material otherwise; alpha-test/translucent masks |
 | `texfix.py` | `overlayfix`, `overlaydepth`, `facescale`, `matflags` | Static overlay geometry, brush-face texture scale/shift, `$additive`/`$nocull` material flags |
 | `sky.py` | `sky` | Six CS:GO sky faces → 2:1 equirect panorama for `sky.vfx` / `csgo_moondome` |
-| `visfit.py` | `vis` (C), `visfit`/`visfit_lower` (D) | Vis hints fitted to the play space (Low / Lower / one Lowest) and sky shells out of vis |
+| `visfit.py` | `vis` (C), `visfit`/`visfit_lower`/`visfit_lean` (D) | Vis hints fitted to the play space (Low / Lower / one Lowest) and sky shells out of vis |
 | `skyvis.py` | `skyvis` | Older pass: sky shells that seal nothing get Exclude from Vis |
 | `beams.py` | `beams` | env_laser / env_beam → never-solid func_brush beams (damage: `laserhurt.py`) |
-| `lighting.py` | `lights` | Minimal set of Stationary lights per sealed compartment, max 4 overlapping |
+| `lighting.py` | `lights`, `lightbright` (D) | Minimal set of Stationary lights per sealed compartment, max 4 overlapping; importer `brightness = nan` set to 0 (stage C) or rebuilt from the VMF `_light` values (`lightbright`) |
 | `probecover.py` | `probes` (C, report) / `probecover` (D, fix) | Static func_breakable / func_brush meshes outside every light probe volume: listed in TO CHECK, or a volume added around each uncovered group |
 | `daylight.py` | `daylight` (D only) | Stationary sun, ceilings without shadows, probe volumes, maxexposure 2 for dark indoor maps |
 | `radar.py` | `radar` | Radar png + vtex + `resource/overviews/<map>.txt` from the standable floors, painted with their materials |

@@ -63,3 +63,7 @@ Follow-up pass (2026-10-27): alpha, matflags
 - $nocull materials -> F_RENDER_BACKFACES: offwndwb
 - pruned 0 orphaned elements
 
+Follow-up pass (2026-10-27): equipitems
+- item_* taken out of game_player_equip weapon slots (CS2 crashes on map load with them there), given by the io script instead: m4a1 (item_assaultsuit); awp (item_assaultsuit); ak47 (item_assaultsuit)
+- pruned 1 orphaned elements
+

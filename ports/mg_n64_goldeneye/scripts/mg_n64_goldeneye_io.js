@@ -5,6 +5,7 @@ import { Instance, CSPlayerPawn, CSPlayerController, CSGearSlot } from "cs_scrip
 //
 //   Cmd_<n>     replaces point_servercommand (chat messages / cvars)
 //   (automatic) replaces game_player_equips without "Use Only" (CS:GO ran them on every spawn, CS2 does not)
+//   Item_<equip> / ItemAll_<equip>  replaces item_* (armour) in game_player_equips: CS2 crashes on map load with an item in a weapon slot
 
 // ---------------------------------------------------------------- shared think loop
 /** @type {(() => boolean)[]} each returns true while it still needs ticks */
@@ -47,10 +48,40 @@ THINKERS.push(() => {
         for (const eq of SPAWN_EQUIPS) {
             if (eq.strip) pawn.DestroyWeapons();
             for (const item of eq.items) {
-                if (item === "weapon_knife" ? pawn.FindWeaponBySlot(CSGearSlot.KNIFE) : pawn.FindWeapon(item)) continue;
+                if (!item.startsWith("item_") && (item === "weapon_knife" ? pawn.FindWeaponBySlot(CSGearSlot.KNIFE) : pawn.FindWeapon(item))) continue;
                 pawn.GiveNamedItem(item, false);
             }
         }
     }
     return false;
 });
+
+// ---------------------------------------------------------------- game_player_equip items (item_assaultsuit, item_kevlar...)
+// An item_* in a game_player_equip weapon slot crashes the CS2 server on map load, so the items were taken out of the equips
+// and are given from here: every output that triggers the equip also fires Item_<equip> (activator) or ItemAll_<equip>.
+/** @type {Record<string, string[]>} */
+const EQUIP_ITEMS = {
+    "m4a1": [
+        "item_assaultsuit"
+    ],
+    "awp": [
+        "item_assaultsuit"
+    ],
+    "ak47": [
+        "item_assaultsuit"
+    ]
+};
+function itemPawn(ent) {
+    if (ent instanceof CSPlayerPawn) return ent;
+    if (ent instanceof CSPlayerController) return ent.GetPlayerPawn();
+    return undefined;
+}
+function giveItems(pawn, items) {
+    if (pawn && pawn.IsValid() && pawn.IsAlive()) for (const it of items) pawn.GiveNamedItem(it, false);
+}
+for (const [equip, items] of Object.entries(EQUIP_ITEMS)) {
+    Instance.OnScriptInput("Item_" + equip, ({ activator }) => giveItems(itemPawn(activator), items));
+    Instance.OnScriptInput("ItemAll_" + equip, () => {
+        for (let slot = 0; slot < 64; slot++) giveItems(Instance.GetPlayerController(slot)?.GetPlayerPawn(), items);
+    });
+}
