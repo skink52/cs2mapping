@@ -114,7 +114,12 @@ def fix_materials(m, c, cs2_vpk, csgo_vpk, csgo_archives):
             kv = {}; base = mat[len('materials/'):-5]
         col = 'materials/' + base + '.png'
         if c.exists(col):                                    # texture already converted into the addon
-            write_vmat(c, mat, vmt, base, col, None, kv); rebuilt.append(os.path.basename(mat)[:-5]); continue
+            img = None
+            if (kv.get('$translucent') == '1' or kv.get('$alphatest') == '1') and src.has('materials/' + base + '.vtf'):
+                data = src.read('materials/' + base + '.vtf')   # the addon png may have lost its alpha: take it from the CS:GO texture
+                if data is None: continue
+                img = vtf.decode(data)
+            write_vmat(c, mat, vmt, base, col, img, kv); rebuilt.append(os.path.basename(mat)[:-5]); continue
         vtfp = 'materials/' + base + '.vtf'
         if src.has(vtfp):
             data = src.read(vtfp)
@@ -167,9 +172,14 @@ def fix_alpha(m, c):
         mc = re.search(r'TextureColor"?\s+"([^"]+)"', txt)
         if not mc: continue
         col = mc.group(1).replace('\\', '/'); cp = os.path.join(c.content, col)
-        if not os.path.exists(cp): continue
-        img = Image.open(cp)
-        if 'A' not in img.getbands() or img.getchannel('A').getextrema()[0] == 255: continue
+        img = Image.open(cp) if os.path.exists(cp) else None
+        if img is None or 'A' not in img.getbands() or img.getchannel('A').getextrema()[0] == 255:
+            # the png came through without alpha (or isn't staged): take the alpha from the CS:GO texture itself
+            vb = (kv.get('$basetexture') or '').lower().replace('\\', '/')
+            vb = vb[:-4] if vb.endswith('.vtf') else vb
+            data = c.src.read('materials/' + vb + '.vtf') if vb and c.src.has('materials/' + vb + '.vtf') else None
+            img = vtf.decode(data) if data else None
+        if img is None or 'A' not in img.getbands() or img.getchannel('A').getextrema()[0] == 255: continue
         base = os.path.splitext(col)[0][len('materials/'):]
         write_vmat(c, mat, mat[:-5] + '.vmt', base, col, img.convert('RGBA'), kv)
         done.append(os.path.basename(mat)[:-5] + (' (alpha test)' if kv.get('$alphatest') == '1' else ' (translucent)'))

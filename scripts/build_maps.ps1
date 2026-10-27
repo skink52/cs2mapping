@@ -94,17 +94,19 @@ foreach ($q in $queue) {
         $spec_in = (($dir -replace '\\', '/') + '/' + $pat).ToLower()
         & $RC -r -i $spec_in -nop4 -quiet 2>&1 | ForEach-Object { "$_" } | Add-Content -Path $alog
     }
-    $bad = @(); $unused = @()
-    # only materials a map vmap uses (or model materials) are fatal; leftovers nothing references are reported and skipped
-    $vtext = ''
-    Get-ChildItem (Join-Path $content 'maps') -Recurse -Filter *.vmap -File -ErrorAction SilentlyContinue | ForEach-Object {
-        $vtext += [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($_.FullName)).ToLower()
+    $bad = @(); $unused = @(); $novmap = $false
+    # only materials the map uses (or model materials) are fatal; leftovers nothing references are reported and skipped
+    # the map being built plus the prefabs it still references (a collapsed import's old prefab files don't count)
+    if (Test-Path $vmap) { $vtext = [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($vmap)).ToLower() } else { $vtext = ''; $novmap = $true }   # assets-only with no vmap: every uncompiled material counts
+    foreach ($pf in ([regex]::Matches($vtext, 'maps/[a-z0-9_./\-]+\.vmap') | ForEach-Object { $_.Value } | Sort-Object -Unique)) {
+        $pp = Join-Path $content ($pf -replace '/', '\')
+        if (Test-Path $pp) { $vtext += [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($pp)).ToLower() }
     }
     Get-ChildItem (Join-Path $content 'materials') -Recurse -Filter *.vmat -File -ErrorAction SilentlyContinue | ForEach-Object {
         $rel = $_.FullName.Substring($content.Length).TrimStart('\')
         $c = Join-Path $CS2 "game\csgo_addons\$addon\${rel}_c"
         $key = ($rel -replace '\\', '/').ToLower()
-        if (-not (Test-Path $c)) { if ($vtext.Contains($key) -or $key.StartsWith('materials/models/')) { $bad += $rel } else { $unused += $rel } }
+        if (-not (Test-Path $c)) { if ($novmap -or $vtext.Contains($key) -or $key.StartsWith('materials/models/')) { $bad += $rel } else { $unused += $rel } }
         elseif ((Get-Item $c).LastWriteTime -lt $_.LastWriteTime) { Write-Host "     note: $rel compiled file is older than the source (compiler judged it up to date)" -ForegroundColor Yellow }
     }
     if ($unused.Count) {

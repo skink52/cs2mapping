@@ -11,6 +11,7 @@
 
 ## History
 
+- 2026-10-27 (later still): 9 materials that were `$translucent`/`$alphatest` in CS:GO had come through opaque (library008/012, glass01, offwndwb, redhandrailclassic, metalfence007a, metalrail003a, prodventb, nuke_metalvent): rebuilt with a translucency mask taken from the CS:GO texture alpha (`alpha` pass), offwndwb also two-sided (`matflags`). The alpha pass had skipped them because their vmats were only on the PC; it now takes the alpha straight from the CS:GO VTF when the png has none. The tsm_textures pngs were deleted by accident and restored on the PC. build_maps.ps1 now reads only the map being built and the prefabs it references, so the old import prefabs no longer count the `+0sign` leftover as used.
 - 2026-10-27 (later): first build stopped on two materials. `+0sign_compmon4_hr` (a CS:GO animated-texture frame name) can never compile because resourcecompiler treats `+` as a fused delimiter: copied to `sign_compmon4_hr.vmat/.png` and the 2 meshes + `map_asset_references` repointed. `sky_cs15_daylight03_hdrrt.vmat` is a 12 Oct leftover with no texture that nothing uses; `build_maps.ps1` now only fails a map for uncompiled materials a vmap or model uses. Backup: `prefabs+backups\mg_n64_goldeneye_before_plusfix_2026-10-27.vmap`.
 - 2026-10-27: new cleanup passes on the cleaned map (`stage_d.py … facescale,matflags,probecover`), VMF rebuilt from the BSP with `tools/bsp2vmf_lite.py`
   (the decompiled VMF folder wasn't linked). Backup: `maps\mg_n64_goldeneye_before_texfix_2026-10-27.vmap.bak`.
