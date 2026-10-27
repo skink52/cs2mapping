@@ -11,6 +11,7 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 | Problem | Fix |
 |---|---|
 | The importer fails with "pak01.vpk / Failed to load file (invalid)" while `game\bin\win64\vpk.signatures` exists, and Steam restores the file after updates. | Rename it (`run_import.bat` does it every run). |
+| A material or texture file name containing `+` (CS:GO animated-texture frames such as `+0sign_compmon4_hr`) | resourcecompiler: "Non-fused-child compiles cannot contain fused delimiter '+'", so the material never compiles and the build stops (mg_n64_goldeneye). | Copy the vmat/png to a name without the `+N` prefix and repoint the meshes and the vmap's `map_asset_references`. Stage C flags them. |
 | `import_map_community.py` waits for Enter/Esc, so it can't run unattended. | `scripts/make_import_map_auto.py` makes a copy without the prompt. |
 | The importer aborts the **whole** run on the first model or material it can't handle (`utlc.RunCommand` → `Error()` → `sys.exit(1)`). On a big map "it died" can mean anything from "barely started" to "only the compile didn't happen". | Run `post_import_cleanup.py` afterwards: it picks up where the importer stopped and reports what's still missing. |
 | The importer fails when the CS:GO content path contains spaces. | Point it at a junction instead (`mklink /J C:\cscontent "<CS2>\csgo"`). |

@@ -11,6 +11,7 @@
 
 ## History
 
+- 2026-10-27 (later): first build stopped on two materials. `+0sign_compmon4_hr` (a CS:GO animated-texture frame name) can never compile because resourcecompiler treats `+` as a fused delimiter: copied to `sign_compmon4_hr.vmat/.png` and the 2 meshes + `map_asset_references` repointed. `sky_cs15_daylight03_hdrrt.vmat` is a 12 Oct leftover with no texture that nothing uses; `build_maps.ps1` now only fails a map for uncompiled materials a vmap or model uses. Backup: `prefabs+backups\mg_n64_goldeneye_before_plusfix_2026-10-27.vmap`.
 - 2026-10-27: new cleanup passes on the cleaned map (`stage_d.py … facescale,matflags,probecover`), VMF rebuilt from the BSP with `tools/bsp2vmf_lite.py`
   (the decompiled VMF folder wasn't linked). Backup: `maps\mg_n64_goldeneye_before_texfix_2026-10-27.vmap.bak`.
   - Face texture mapping: 6,352 faces given back their CS:GO scale/shift, 6,267 with texture coordinates rewritten; ~6,500 texture coordinates moved by a

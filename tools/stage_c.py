@@ -781,6 +781,8 @@ def run(addon, root, passes=None):
     if 'assets' in steps and c.src:
         assets.fix_materials(m, c, c.cs2v, c.src.vpk, c.src.arcs)
         assets.check_models(m, c, c.cs2v)
+        plus = sorted(x for x in assets.mesh_materials(m) if '+' in os.path.basename(x))
+        if plus: c.todo.append('material file names with "+" (CS:GO animated-texture frames) never compile in CS2 ("fused delimiter"): copy each vmat/png to a name without the +N prefix and repoint the meshes and map_asset_references: %s' % ', '.join(plus))
         retry = [x.split(' (')[0] for x in getattr(c, 'overlay_skipped', []) if x.endswith('(vmat not in addon)') and x.split(' (')[0] in c.files]
         if retry and 'overlays' in steps:   # overlay vmats the assets pass just rebuilt from CS:GO
             c.todo = [t for t in c.todo if not t.startswith('overlay materials not converted: ')]

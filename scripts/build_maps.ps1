@@ -94,12 +94,22 @@ foreach ($q in $queue) {
         $spec_in = (($dir -replace '\\', '/') + '/' + $pat).ToLower()
         & $RC -r -i $spec_in -nop4 -quiet 2>&1 | ForEach-Object { "$_" } | Add-Content -Path $alog
     }
-    $bad = @()
+    $bad = @(); $unused = @()
+    # only materials a map vmap uses (or model materials) are fatal; leftovers nothing references are reported and skipped
+    $vtext = ''
+    Get-ChildItem (Join-Path $content 'maps') -Recurse -Filter *.vmap -File -ErrorAction SilentlyContinue | ForEach-Object {
+        $vtext += [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($_.FullName)).ToLower()
+    }
     Get-ChildItem (Join-Path $content 'materials') -Recurse -Filter *.vmat -File -ErrorAction SilentlyContinue | ForEach-Object {
         $rel = $_.FullName.Substring($content.Length).TrimStart('\')
         $c = Join-Path $CS2 "game\csgo_addons\$addon\${rel}_c"
-        if (-not (Test-Path $c)) { $bad += $rel }
+        $key = ($rel -replace '\\', '/').ToLower()
+        if (-not (Test-Path $c)) { if ($vtext.Contains($key) -or $key.StartsWith('materials/models/')) { $bad += $rel } else { $unused += $rel } }
         elseif ((Get-Item $c).LastWriteTime -lt $_.LastWriteTime) { Write-Host "     note: $rel compiled file is older than the source (compiler judged it up to date)" -ForegroundColor Yellow }
+    }
+    if ($unused.Count) {
+        Write-Host "     note: not compiled but no vmap uses them (left out of the build):" -ForegroundColor Yellow
+        $unused | ForEach-Object { Write-Host "        $_" -ForegroundColor Yellow }
     }
     if ($bad.Count) {
         Write-Host "     FAILED - these materials did not compile (see logs\${addon}_assets.log):" -ForegroundColor Red

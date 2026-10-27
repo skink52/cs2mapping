@@ -53,3 +53,7 @@ Follow-up pass (2026-10-27): facescale, matflags, probecover
 - TO CHECK: faces with an absurd texture scale (<0.01 or >8) and no matching VMF side, left as imported: nuke_metalvent (8), dev_measuregeneric20 (12), offwndwb (1), blackmetal (8), door_metal_hr (10), rail_rust (1), glass01 (13), glass04 (1), metalrail003a (10), metalwall014a (32)
 - TO CHECK: face scales fixed but texture coordinates not rewritten (no CS:GO texture size): materials/concrete/concretefloor016a.vmat, materials/dev/dev_measureice01.vmat
 - TO CHECK: probecover: check the new probe volumes look right next to the existing ones
+
+Follow-up fix (2026-10-27): build failed on materials
+- materials/goldeneye/facility_classic/+0sign_compmon4_hr.vmat -> sign_compmon4_hr.vmat (+ png copy), 2 meshes + map_asset_references repointed: resourcecompiler refuses "+" in a file name (fused delimiter). The old +0 files stay on disk unused.
+- materials/skybox/sky_cs15_daylight03_hdrrt.vmat is a 12 Oct leftover with no texture and no user: build_maps.ps1 now only fails a map for uncompiled materials a vmap (or a model) uses.
