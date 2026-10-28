@@ -98,6 +98,7 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 | A moondome (sky-material shell) doesn't always hide the arena next door. | On mg_mario_party small parts of other arenas show from odd positions. Not solved yet. |
 | World limit ±16384. Scripted things flown past it misbehave. | Clamp positions or hide the entity. Flight volumes have to stay inside the main map (mg_trenchwarfare). |
 | Bots don't move in a script-built lobby. | `func_nav_markup` (`navProperty_NavGen WALKABLESEED`, `flags 1`) with a closed `materials/tools/toolsnavattribute.vmat` box mesh as its child, just above the floor; add that material to the vmap's `map_asset_references` (Hellmatch, Space Racer). |
+| Big frame-rate drop looking across an open area full of fog particles (mg_trenchwarfare: 15 `vietnam_fog_ground` + 4 `vietnam_fog_volume_1024` over no man's land; `r_drawparticles 0` fixed it fully). | Large translucent fog sprites cost overdraw for every pixel you look through. Use `env_cubemap_fog` height fog + `env_volumetric_fog_controller` (FogStrength/NoiseStrength for patchy mist) instead of always-on fog particles; keep particles for small, local effects. |
 | Two players teleported to the same spot can never move again; spawns flush against a wall stick the player. | Step to the nearest clear spot after teleporting; fit spawns clear of walls. |
 | Climbable ladders in a generated map. | A `toolsinvisibleladder_wood.vmat` climb volume plus a non-solid ladder prop; cut gaps in any `toolsplayerclip` slabs (mg_trenchwarfare). |
 | The choose-team camera position. | It uses an `info_player_terrorist`'s position/angles. |
@@ -218,7 +219,6 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 | Workshop upload carries the compiled game folder, not content. | Licence and credit files must be in the game folder and/or the description. |
 | Servers loading a Workshop map. | `host_workshop_map <id>` (Hellmatch's server requirements). |
 | Steam Workshop pages read through a page fetcher all say "removed" / "incompatible". | Hidden template text; never report an item as removed from it ([details](../porting/pipeline.md#before-porting-duplicate-check-and-names)). |
-| Big frame-rate drop looking across an open area full of fog particles (mg_trenchwarfare: 15 `vietnam_fog_ground` + 4 `vietnam_fog_volume_1024` over no man's land; `r_drawparticles 0` fixed it fully). | Large translucent fog sprites cost overdraw for every pixel you look through. Use `env_cubemap_fog` height fog + `env_volumetric_fog_controller` (FogStrength/NoiseStrength for patchy mist) instead of always-on fog particles; keep particles for small, local effects. |
 
 ## Hammer and workflow
 
