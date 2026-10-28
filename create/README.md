@@ -41,6 +41,7 @@ The porting side's `tools/vmapedit.py` (also reads the importer's keyvalues2 map
 | File | What it does |
 |---|---|
 | `glb2cs2_multi.py model.glb <addon content> <name> [--length L \| --scale S] [--yaw d] [--maxtex 2048] [--surface metal]` | glTF binary → static prop: SMD render mesh + convex hull SMD, a `csgo_complex` vmat per material, PNG textures, vmdl. Handles multi-material Sketchfab models; `--keep/--drop` filter nodes, `--credit` records the licence. |
+| `glbmesh.py` (import: `load`, `weld`, `decimate_to`, `render`) | Load a single-texture GLB (e.g. Tripo3D, ~950k triangles), decimate it to a target triangle count with numpy only (seam-aware vertex clustering with a quadric position per cell; UV charts kept apart so no texture smearing or seam cracks) and render textured previews. No pip packages needed (the cloud workspace can't reach PyPI). Used by space-racer-cs2's Neon Racer cars (9k triangles), pylons and gates. |
 | `ext_smd.py` | Reads/writes converted props (SMD + vmats) for re-texturing and previews. |
 | `s2.py` | Minimal SMD + ModelDoc vmdl and vmat + PNG writers. |
 | `modelio.py` | Writes baked meshes as Source 2 content: render/physics SMDs, `csgo_complex` vmat + PNGs, vmdl with LODs (`LOD_SCALE`; `SINGLE_LOD` props ship LOD0 only, empty by default: `CS2_SINGLE_LOD=a,b`, `single_lod`, or spec `'single_lod': True`). |
