@@ -124,6 +124,15 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   (that bug once turned real kills off for a whole map).
 - Assists: mg_trenchwarfare's design assumes CS2 counts an assist only when the assisting player dealt a sizeable non-lethal share first
   (it gives ≥55 damage). **Unverified**: a design choice in that project's notes, not confirmed in game.
+- **Hiding the killer** (cs2mapTTT, mock-tested only): in `OnModifyPlayerDamage`, when a player hit would be lethal (`damage >= victim.GetHealth()`), return
+  the damage with `damageFlags | PREVENT_DEATH`; in `OnPlayerDamage`, if the victim is left on ≤1 hp, queue a world kill for the next tick
+  (`TakeDamage({ damage: 1000, damageFlags: FORCE_DEATH | IGNORE_ARMOR })`, no attacker, behind a re-entry flag). The killfeed shows only the death;
+  keep the real attacker from `OnPlayerDamage` for your own scoring (`AddScore`). Armor can still save the victim (health > 1), which is correct.
+- The killfeed can't be removed from a map: CS2's HUD draws over custom HUDs, and the client cvar `cl_drawhud_force_deathnotices -1` via
+  `ClientCommand` is unreliable and may persist on the player's client. A HUD mask over the feed area is untested.
+- Respawn only in some phases (prep/warmup): flip `mp_respawn_on_death_t/ct` from script per phase (cs2mapTTT).
+- Round winner without an `info_map_parameters`: `mp_default_team_winner_no_objective 2|3`, `mp_ignore_round_win_conditions 0`, `SetRoundRemainingTime(1)` (cs2mapTTT fallback, unverified).
+- A slot can change hands with no disconnect event: compare the controller object per slot each tick and reset per-player state when it changes (cs2mapTTT).
 - After `TakeDamage`, check `victim.IsAlive()`; if the victim survived, log once that a scripted kill was blocked (plugin or damage settings)
   (Space Racer). Space Racer kills with `CSDamageTypes.VEHICLE` (killfeed icon unverified).
 - `Instance.OnPlayerKill` also fires for deaths the script didn't cause (admin slay, world): update the game's own state there too (Hellmatch).
