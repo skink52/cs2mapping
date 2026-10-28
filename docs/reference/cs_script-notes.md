@@ -242,6 +242,17 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
 
 ## Physics and odd entities (from the ports)
 
+- **Carrying / tethering by velocity spring** (seen in workshop map jb_watermelon_v2, id 3480208667, its medibeam gun drags a live player; cs2mapTTT uses
+  the same idea for props and bodies): each tick, `ent.Teleport({ velocity })` toward the hold point with speed = gain × distance (cap it), angular velocity 0.
+  Velocity-only Teleports don't hit the "teleported props aren't drawn" problem. Drop when too far, or when the holder stands on the object.
+- Seen in that map's scripts but not in our `point_script.d.ts` copy: `Instance.OnGameEvent("round_start", cb)`, player inputs `AddAttribute`/`RemoveAttribute`
+  (attribute filters), weapon inputs `SetAmmoAmount`/`SetReserveAmmoAmount`. Check Valve's current `point_script.d.ts` before relying on them.
+- **Server-side bodies** (cs2mapTTT, untested in game): a `point_template` of a `prop_ragdoll` (stock agent model); on death `ForceSpawn` at the pawn, `SetModel` to the
+  victim's `GetModelName()`, copy the velocity. Death is routed through the `PREVENT_DEATH` → queued kill path so the pawn can be shrunk (`SetModelScale(0.02)`,
+  restored on `OnPlayerReset`) before dying, to hide the client ragdoll.
+- **Killfeed off on CounterStrikeSharp servers:** a `HookMode.Pre` `EventPlayerDeath` handler with `info.DontBroadcast = true` (CSSharp docs example).
+  Clients get no death event; the server and rank plugins still do; the scoreboard reads networked stats (expected to keep updating, unverified).
+
 - Physics props that must slide or chase (Mario Party's chain chomp): `DisableMotion`, then `Move` them every tick with `TraceBox` per axis to slide along walls.
   `phys_thruster` and setting velocity both lost to floor friction.
 - Ball games: hits from `OnBulletImpact({ weapon, position, hitEntity })` and `OnKnifeAttack`, low gravity by measuring and cancelling the engine's gravity
