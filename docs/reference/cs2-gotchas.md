@@ -218,6 +218,7 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 | Workshop upload carries the compiled game folder, not content. | Licence and credit files must be in the game folder and/or the description. |
 | Servers loading a Workshop map. | `host_workshop_map <id>` (Hellmatch's server requirements). |
 | Steam Workshop pages read through a page fetcher all say "removed" / "incompatible". | Hidden template text; never report an item as removed from it ([details](../porting/pipeline.md#before-porting-duplicate-check-and-names)). |
+| Big frame-rate drop looking across an open area full of fog particles (mg_trenchwarfare: 15 `vietnam_fog_ground` + 4 `vietnam_fog_volume_1024` over no man's land; `r_drawparticles 0` fixed it fully). | Large translucent fog sprites cost overdraw for every pixel you look through. Use `env_cubemap_fog` height fog + `env_volumetric_fog_controller` (FogStrength/NoiseStrength for patchy mist) instead of always-on fog particles; keep particles for small, local effects. |
 
 ## Hammer and workflow
 
