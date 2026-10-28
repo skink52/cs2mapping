@@ -112,6 +112,7 @@ Readers for CS2's compiled resources (`*_c`), straight from the game's VPKs (`--
 | `s2/kv3.mjs <file_c> [BLOCK]`, `s2/resource.mjs` | Resource blocks + binary KV3 (v1–v5, LZ4/zstd); prints a file's blocks as JSON. |
 | `s2/skeleton.mjs <model.vmdl_c> <out.json>` | Bones, parents and bind pose of a model (the agent skeleton for `anim/`), plus hull, attachments, sequences, materials. |
 | `s2/agent_mesh.mjs <agent.vmdl_c> <out.json>` | Agent skeleton + skinned third-person meshes for the animation previews. |
+| `s2/fp_gloves.mjs <agent.vmdl_c> <out.json> [--vpk <game/csgo>]` | An agent's first-person default gloves (glove draw call of `firstperson_default_gloves_arms`) with weights by bone name, UVs in DMX orientation, for putting stock gloves under custom sleeves. |
 | `s2/prop_mesh.mjs <model.vmdl_c>... [--json out]` | Real bounds (and meshes) of stock props, for placing and stacking them by their true size. |
 
 `s2/vendor/meshoptimizer/` is meshoptimizer's decoder (MIT, Arseny Kapoulkine; licence alongside).

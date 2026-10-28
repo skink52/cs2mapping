@@ -133,6 +133,12 @@ drawn huge and ragdolls fail. They were rebuilt as real CS2 player models:
      `hand→hand_<s>`, `thigh→leg_upper_<s>`, `calf→leg_lower_<s>`, fingers 0–4 → thumb/index/middle/ring/pinky, `weapon_bone→hand_r`.
    - Check the fit with a front/side plot of the vertices over the CS2 bones.
 6. **First-person arms:** the agent's arms and sleeves DMX are copied as they are (you see the agent's gloves in first person).
+   Custom sleeves with a stock agent's default gloves (mg_trenchwarfare: T = tm_phoenix glove_fullfinger, CT = ctm_sas glove_hardknuckle_black):
+   `create/s2/fp_gloves.mjs <agent vmdl_c> <out.json> --vpk <game/csgo>` pulls the glove draw call of `firstperson_default_gloves_arms` straight from
+   the VPK (no decompile needed; UVs come out in DMX orientation, verified against the S2V decompile of tm_phoenix), a writer puts it on the template
+   skeleton (bone names → jointList, UV-derived tangents), and the sleeve cuff is eased out over the glove (glove profile around the forearm bone
+   + 0.3 u, smoothed, faded above the glove; weld seam vertices first or the sleeve cracks) until no glove edge crosses a sleeve triangle.
+   Shrinking the glove instead leaves jagged cuffs wherever the sleeve hem is cut at a slant. Tools: trenchwarfare-cs2 `tools/agent_gloves.py`, `tools/fit_gloves.py`.
 7. **Materials:** the CS:GO VertexLitGeneric base texture decoded to PNG with a simple vmat.
 8. **In game:** `pawn.SetModel(path)` from the map script (a `Model_<name>` / `ChangeModel` input), with a hidden `prop_dynamic` of the model in the map so it's loaded.
    Agent models often don't render in Hammer's viewport; that's normal.
