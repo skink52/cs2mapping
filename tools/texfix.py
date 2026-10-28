@@ -260,6 +260,18 @@ def overlay_geometry(m, c, vmfpath, depth=None, only_placeholders=True):
 # ------------------------------------------------------------------ brush face texture scales
 def _bad(sc): return min(abs(sc[0]), abs(sc[1])) < 0.01 or max(abs(sc[0]), abs(sc[1])) > 8
 
+PLANE_TOL = 0.6   # every face corner within this of the VMF side's plane (importer leaves corners ~0.1 off; measuring at one corner tilted d by 1.5-3u)
+
+def _face_normal(pts):
+    n = [0.0, 0.0, 0.0]
+    for i, a in enumerate(pts):
+        b = pts[(i + 1) % len(pts)]
+        n[0] += (a[1] - b[1]) * (a[2] + b[2]); n[1] += (a[2] - b[2]) * (a[0] + b[0]); n[2] += (a[0] - b[0]) * (a[1] + b[1])
+    n = norm(n)
+    for k in range(3):
+        if abs(n[k]) > 0.999: return [0.0 if j != k else math.copysign(1.0, n[k]) for j in range(3)]
+    return n
+
 def face_scales(m, c, vmfpath):
     lo, hi = BAD_RATIO
     sides = []
@@ -296,12 +308,11 @@ def face_scales(m, c, vmfpath):
             uv = [(pts[i], evd[hs[i]]) for i in range(len(pts))] if (tc is not None and evd and ident and max(hs) < len(evd) and all(evd[x] < len(tc) for x in hs)) else None
             ratio = tgt = None
             if ident and len(pts) >= 3 and sides:
-                nrm = norm(cross(sub(pts[1], pts[0]), sub(pts[2], pts[0]))); d = dot(nrm, pts[0])
+                nrm = _face_normal(pts); cen = [sum(p[k] for p in pts) / len(pts) for k in range(3)]; d = dot(nrm, cen)
                 bk = idx.get(matkey(mat), {})
-                cands = [s for b in sorted({b_ for c_ in (math.floor(d), math.floor(-d)) for b_ in (c_ - 1, c_, c_ + 1)}) for s in bk.get(b, [])
-                         if (dot(s['n'], nrm) > 0.999 and abs(s['d'] - d) < 0.5) or (dot(s['n'], nrm) < -0.999 and abs(s['d'] + d) < 0.5)]
+                cands = [s for b in sorted({b_ for c_ in (math.floor(d), math.floor(-d)) for b_ in range(c_ - 2, c_ + 3)}) for s in bk.get(b, [])
+                         if abs(dot(s['n'], nrm)) > 0.999 and all(abs(dot(s['n'], p) - s['d']) <= PLANE_TOL for p in pts)]
                 if len(cands) > 1:
-                    cen = [sum(p[k] for p in pts) / len(pts) for k in range(3)]
                     c0 = [s for s in cands if all(dot(o_['n'], cen) - o_['d'] <= 0.6 for o_ in s['solid'])]
                     if c0: cands = c0
                 if len(cands) > 1:

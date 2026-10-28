@@ -74,7 +74,9 @@ sounds, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights,
   for infodecals, uv extent for info_overlays), laid on the brush face under the decal and the right way up. Hand-edited overlays are skipped. Overlays with
   a projection depth >= 32 are flagged; `overlaydepth` (stage C or D) sets all to 8.
 - **Face texture scales** (`facescale`, `tools/texfix.py`): absurd brush-face scales/shifts are restored from the matching VMF side and the stored texture
-  coordinates rewritten from the CS:GO texture size. No-op on faces that are already right.
+  coordinates rewritten from the CS:GO texture size. No-op on faces that are already right. A face matches a VMF side when the normals agree
+  (near-axis normals snapped) and every corner is within 0.6 u of the side's plane: imported corners can sit ~0.1 u off, which at map coordinates in
+  the thousands moved a one-corner plane distance by 1.5-3 u and skipped the face.
 - **Sky** (`sky`): an env_sky that CS2 doesn't have is rebuilt from the six CS:GO faces into an equirect panorama (HDR skies tone mapped). Sky brushes the
   importer dropped come back as `csgo_moondome` boxes. (CS2's new `toolsskyboxocclude` material may replace moondome shells: untested, see
   [cs2-gotchas](../reference/cs2-gotchas.md#sky-and-world).)

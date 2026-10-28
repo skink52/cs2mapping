@@ -3,6 +3,10 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-28
+
+- **`texfix.facescale` plane match** (fix shared by another mapper using this repo, reproduced on mg_n64_goldeneye): stack007/wall triangles with a corner ~0.1 u off the plane tilted the normal ~0.001, shifting the one-corner plane distance 1.5-3 u past the 0.5 u limit, so the face kept the importer's reduced shift (e.g. 15x/10y instead of u 389 / -465, v 128). Now: Newell normal snapped to the axis when within 0.999, plane measured at the face centre, and a side matches when every corner is within 0.6 u. Their goldeneye run: 49,539 → 49,866 faces matched, unmatched 2,572 → 2,253. Re-run idempotence only checked without real CS:GO textures (337 coordinate rewrites from guessed sizes); expected clean on the PC.
+
 ## 2026-10-27
 
 - **Crash: `item_*` in a game_player_equip weapon slot** crashes CS2 on map load (mg_n64_goldeneye, item_assaultsuit). Stage C `equip_items` (and `stage_d.py equipitems`) takes items out of the slots and gives them from the io script (`Item_<equip>` / `ItemAll_<equip>`). **Light brightness:** the importer writes `brightness = nan` for CS:GO lights dimmer than ~265 (most of them); stage C now sets those to 0 like a Hammer save, and `stage_d.py lightbright` rebuilds them from the VMF (`I = _light 4th value or 255, x (max rgb/255)^2.2, legacy = I/265`). `visfit_lean` (from an earlier session, uncommitted until now) deployed with them.
