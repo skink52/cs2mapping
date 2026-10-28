@@ -27,7 +27,7 @@ Probably ported: mg_damons_multiarenas looks like "MG Damons Headshot" (30900786
 
 ## Popular CS:GO mg_ maps elsewhere with no CS2 port found
 
-Checked 29 Oct 2026: the 150 most-viewed maps in GameBanana's CS:GO "Mini Game" category (view counts below; GameBanana hides downloads), each searched on the Steam Workshop. Not in Briar's Dropbox, so the BSPs come from GameBanana. Ports found and excluded: siberdev_2, race_long_road_extended, toxic_course, minecraft_otherworld, sodan_lab, cartoon_course, lego_course_3, mario_course, nebo2, metal_course_2, nimafa_3, twisted_towers / four_towers (as "[COOP]" ports), plus everything in existing_ports.txt.
+Checked 29 Oct 2026: the 150 most-viewed maps in GameBanana's CS:GO "Mini Game" category (view counts below; GameBanana hides downloads), each searched on the whole CS2 Steam Workshop (all uploaders, by full `mg_` name and by key words; the top 25 twice) plus a web search for the top 10. Not in Briar's Dropbox, so the BSPs come from GameBanana. Ports found and excluded: siberdev_2, race_long_road_extended, toxic_course, minecraft_otherworld, sodan_lab, cartoon_course, lego_course_3, mario_course, nebo2, metal_course_2, nimafa_3, twisted_towers / four_towers (as "[COOP]" ports), plus everything in existing_ports.txt.
 
 | Views | Map | Note |
 |---|---|---|
