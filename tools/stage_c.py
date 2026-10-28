@@ -6,12 +6,12 @@ python3 stage_c.py <addon> <local_root>
 Writes changed files to <local_root>/out/<addon>/... (content), <local_root>/out/<addon>_game/... (game-side files)
 and <local_root>/out/<addon>_result.json (log, TO CHECK lines, file list, CS:GO archives still needed).
 Step keys, in run order (run_pass.py takes any of them): merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity,
-dead, sounds, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, radar, assets, matflags
-(+ overlaydepth when asked). daylight is a stage_d.py pass only.
+dead, steam, sounds, soundscripts, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags
+(+ overlaydepth, physpush when asked). daylight is a stage_d.py pass only.
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover
+import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush
 
 CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 
@@ -22,7 +22,7 @@ class Ctx:
         s.out = os.path.join(root, 'out', addon)
         s.log = []; s.todo = []; s.files = {}   # rel path (content-relative, / separated) -> bytes
         s.script = addon + '_io_script'
-        s.push = {}; s.spawn_equips = []; s.equip_items = {}; s.items_js = {}; s.commands = []; s.scores = set(); s.speeds = set(); s.gravities = set(); s.src = None; s.cs2v = None; s.need = set(); s.asset_refs = set(); s.game_files = {}
+        s.push = {}; s.spawn_equips = []; s.equip_items = {}; s.items_js = {}; s.commands = []; s.scores = set(); s.speeds = set(); s.gravities = set(); s.phys = {}; s.soundscript_events = {}; s.src = None; s.cs2v = None; s.need = set(); s.asset_refs = set(); s.game_files = {}
         lp = os.path.join(root, 'content_files_%s.json' % addon)   # listing of the addon content folder on the PC
         s.pc_files = set(x.lower().replace('\\', '/') for x in json.load(open(lp))) if os.path.exists(lp) else set()
     def exists(s, rel):
@@ -505,7 +505,7 @@ def door_sounds(m, c, vmfpath):
     ev = c.files.get('soundevents/soundevents_addon.vsndevts')
     ev = ev.decode('utf-8') if ev else open(evp, encoding='utf-8').read()
     prefix = re.sub(r'^(mg|de|jb|ba|cs|surf|bhop|kz)_', '', c.addon).replace('_', '')
-    added = {}; missing = set(); unmatched = 0; k = 0; nse = 0; used = set()
+    added = {}; missing = set(); unmatched = 0; k = 0; nse = 0; used = set(); used_ev = set()
     doors = [e for e in m.by_class('func_door', 'func_door_rotating', 'func_movelinear')]
     def spots(e):
         bb = m.bounds(e)
@@ -523,27 +523,32 @@ def door_sounds(m, c, vmfpath):
         for key, outs in DOOR_KEYS:
             msg = snd.get(key)
             if not msg: continue
-            rel = msg.lower().replace('\\', '/'); rel = rel[len('sounds/'):] if rel.startswith('sounds/') else rel
-            stem = os.path.splitext(rel)[0]
-            src = next(('sounds/' + stem + x for x in ('.wav', '.mp3') if c.exists('sounds/' + stem + x)), None)
-            if src is None and c.cs2v and c.cs2v.has('sounds/' + stem + '.vsnd_c'): src = 'sounds/' + stem + '.vsnd'
-            if src is None and c.src:
-                for x in ('.wav', '.mp3'):
-                    if c.src.has('sound/' + stem + x):
-                        data = c.src.read('sound/' + stem + x)
-                        if data is None: break
-                        src = 'sounds/' + stem + x; c.write(src, data); break
-            if src is None: missing.add(msg); continue
-            evname = '%s.door_%s' % (prefix, re.sub(r'[^a-z0-9_]', '_', os.path.basename(stem)).strip('_'))
-            if evname not in added:
-                added[evname] = SOUND_EVENT % dict(comment='func_door %s (%s)' % (key, msg), name=evname, base='amb.base', vol=1.0,
-                                                   vsnd=os.path.splitext(src)[0] + '.vsnd', radius=1250.0, far=0.0)
+            evname = getattr(c, 'soundscript_events', {}).get(msg.lower())   # a soundscript name, defined by the soundscripts step
+            if evname is None and '.' in msg and not os.path.splitext(msg)[1].lower() in ('.wav', '.mp3', '.vsnd'):
+                missing.add(msg + ' (soundscript name: run the soundscripts step first)'); continue
+            if evname is None:
+                rel = msg.lower().replace('\\', '/'); rel = rel[len('sounds/'):] if rel.startswith('sounds/') else rel
+                stem = os.path.splitext(rel)[0]
+                src = next(('sounds/' + stem + x for x in ('.wav', '.mp3') if c.exists('sounds/' + stem + x)), None)
+                if src is None and c.cs2v and c.cs2v.has('sounds/' + stem + '.vsnd_c'): src = 'sounds/' + stem + '.vsnd'
+                if src is None and c.src:
+                    for x in ('.wav', '.mp3'):
+                        if c.src.has('sound/' + stem + x):
+                            data = c.src.read('sound/' + stem + x)
+                            if data is None: break
+                            src = 'sounds/' + stem + x; c.write(src, data); break
+                if src is None: missing.add(msg); continue
+                evname = '%s.door_%s' % (prefix, re.sub(r'[^a-z0-9_]', '_', os.path.basename(stem)).strip('_'))
+                if evname not in added:
+                    added[evname] = SOUND_EVENT % dict(comment='func_door %s (%s)' % (key, msg), name=evname, base='amb.base', vol=1.0,
+                                                       vsnd=os.path.splitext(src)[0] + '.vsnd', radius=1250.0, far=0.0)
             dn = m.name(e)
             if not dn:
                 k += 1; dn = 'port_door_%d' % k; m.setp(e, 'targetname', dn)
             sp = spots(e)[-1]
             sn = '%s_%s_snd' % (dn, key)
             if not any(m.name(x) == sn for x in m.by_class('point_soundevent')):
+                used_ev.add(evname)
                 m.new_entity('point_soundevent', sp, {'targetname': sn, 'soundName': evname, 'sourceEntityName': dn,
                                                       'startOnSpawn': '0', 'toLocalPlayer': '0', 'stopOnNew': '1'})
                 nse += 1
@@ -553,7 +558,7 @@ def door_sounds(m, c, vmfpath):
         block = '\n\t///////////////////////////////////////////////////////////\n\t/////////////// DOOR SOUNDS - added by the CS2 post-import clean (func_door noise1/noise2)\n\n' + '\n'.join(new.values())
         i = ev.rstrip().rfind('}')
         c.write('soundevents/soundevents_addon.vsndevts', ev[:i] + block + ev[i:])
-    if added: c.log.append('door sounds: %d point_soundevents (%s), started by the doors\' OnOpen/OnClose (noise1) and OnFullyOpen/OnFullyClosed (noise2); %d unnamed doors named port_door_N' % (nse, ', '.join(sorted(added)), k))
+    if nse: c.log.append('door sounds: %d point_soundevents (%s), started by the doors\' OnOpen/OnClose (noise1) and OnFullyOpen/OnFullyClosed (noise2); %d unnamed doors named port_door_N' % (nse, ', '.join(sorted(set(added) | used_ev)), k))
     if unmatched: c.todo.append('door sounds: %d CS:GO doors with sounds could not be matched in the vmap' % unmatched)
     if missing: c.todo.append('door sounds not found in the addon, CS2 or CS:GO: %s' % ', '.join(sorted(missing)))
 
@@ -776,7 +781,7 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'sounds', 'doors', 'overlays', 'overlayfix', 'facescale', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'probes', 'radar', 'assets', 'matflags']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'steam', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'facescale', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'probes', 'radar', 'assets', 'matflags']
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
     if 'io' in steps and os.path.exists(vmfp): restore_io(m, c, vmfp); dropped_report(m, c, vmfp)
@@ -794,7 +799,10 @@ def run(addon, root, passes=None):
         c.cs2v = vpk.VPK(os.path.join(vd, 'cs2_pak01_dir.vpk')); csgov = vpk.VPK(os.path.join(vd, 'csgo_pak01_dir.vpk'))
         arcs = {int(f[11:14]): os.path.join(vd, f) for f in os.listdir(vd) if re.match(r'csgo_pak01_\d{3}\.vpk$', f)}
         c.src = assets.Source(c, csgov, arcs)
+    if 'steam' in steps: steam.run(m, c, vmfp)
+    if 'physpush' in steps: physpush.run(m, c)
     if 'sounds' in steps: sounds(m, c)
+    if 'soundscripts' in steps: soundscripts.run(m, c, vmfp)
     if 'doors' in steps: door_sounds(m, c, vmfp)
     if 'overlays' in steps: overlays(m, c)
     if 'overlayfix' in steps or 'overlaydepth' in steps: texfix.overlay_geometry(m, c, vmfp, depth=8.0 if 'overlaydepth' in steps else None)
@@ -823,8 +831,14 @@ def run(addon, root, passes=None):
             c.overlay_skipped = prev + c.overlay_skipped
             if c.overlay_skipped: c.todo.append('overlay materials not converted: %s' % '; '.join(c.overlay_skipped)[:800])
     if 'matflags' in steps: texfix.material_flags(m, c)
-    if c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js:
-        js = gen_script.build(addon, c.script, c.push, c.commands, c.scores, c.speeds, c.gravities, c.spawn_equips, c.items_js)
+    if 'physpush' not in steps and 'dead' in steps and any(m.by_class(*physpush.CLASSES)):
+        c.todo.append('the map has %d physics props: if player pushes on them feel wrong in game (too easy or too hard for the prop's size), run the physpush step (run_pass.py ... physpush)' % len(m.by_class(*physpush.CLASSES)))
+    jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
+    only_phys = c.phys and not (c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js)
+    if passes and only_phys and os.path.exists(jp):   # follow-up pass: keep the rest of the existing io script
+        c.write('maps/scripts/%s_io.js' % addon, physpush.patch_script(open(jp, encoding='utf-8').read(), c.phys))
+    if not (passes and only_phys and os.path.exists(jp)) and (c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js or c.phys):
+        js = gen_script.build(addon, c.script, c.push, c.commands, c.scores, c.speeds, c.gravities, c.spawn_equips, c.items_js, c.phys)
         c.write('maps/scripts/%s_io.js' % addon, js)
         if not any(m.name(e) == c.script for e in m.by_class('point_script')):
             spawn = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]

@@ -3,12 +3,13 @@
 python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
         overlayfix (rebuild placeholder overlay quads), overlaydepth (same + projection depth 8 on every overlay), facescale, matflags,
         probes (report static func_breakable/func_brush outside probe volumes), probecover (add volumes for them),
-        lightbright (rebuild light brightness from the VMF: the importer's brightness = nan / too dim), equipitems (item_* out of equip slots)
+        lightbright (rebuild light brightness from the VMF: the importer's brightness = nan / too dim), equipitems (item_* out of equip slots),
+        steam (env_steam -> particles), soundscripts (Source 1 soundscript names -> same-named soundevents), physpush (players push physics props by mass)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import vmapedit as V, stage_c, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover
+import vmapedit as V, stage_c, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -32,6 +33,17 @@ def run(addon, root, passes):
         if c.items_js:
             jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
             js = stage_c.gen_script.patch_items(open(jp, encoding='utf-8').read(), c.items_js) if os.path.exists(jp) else stage_c.gen_script.build(addon, c.script, equip_items=c.items_js)
+            c.write('maps/scripts/%s_io.js' % addon, js)
+            if not any(m.name(e) == c.script for e in m.by_class('point_script')):
+                sp = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]; o = m.origin(sp)
+                m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
+    if 'steam' in passes: steam.run(m, c, vmfp)
+    if 'soundscripts' in passes: soundscripts.run(m, c, vmfp)
+    if 'physpush' in passes:
+        physpush.run(m, c)
+        if c.phys:
+            jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
+            js = physpush.patch_script(open(jp, encoding='utf-8').read(), c.phys) if os.path.exists(jp) else stage_c.gen_script.build(addon, c.script, phys=c.phys)
             c.write('maps/scripts/%s_io.js' % addon, js)
             if not any(m.name(e) == c.script for e in m.by_class('point_script')):
                 sp = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]; o = m.origin(sp)

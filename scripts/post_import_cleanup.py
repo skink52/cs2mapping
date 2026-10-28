@@ -137,6 +137,13 @@ COMPILE_MODEL_MATERIALS = True
 # Overwrite existing .vmat files instead of skipping them.
 OVERWRITE_VMATS = False
 
+# cs_mdl_import watchdog: a model whose import shows no activity (console output or output files) for MDL_IDLE_SECONDS,
+# or runs longer than MDL_MAX_SECONDS, is killed and listed as stalled (not retried). Other failures retry MDL_RETRIES times.
+MDL_IDLE_SECONDS = 120
+MDL_MAX_SECONDS = 900
+MDL_RETRIES = 3
+MDL_VTX = (".dx90.vtx", ".dx80.vtx", ".sw.vtx", ".vtx")
+
 # ==========================================================================
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".tga", ".bmp", ".vtf"}
@@ -167,6 +174,7 @@ S1_GAMECSGO = None
 S2_CONTENT_ADDON = None
 S2_GAME_ADDON = None
 REFS_FILE = None
+SCAN = None          # vmap_refs.Scan of the map (which vmap/prefab used each material/model), when the run is vmap-driven
 
 
 def run_command_safe(cmd):
@@ -218,6 +226,75 @@ def find_refs_file():
 
 
 # ==========================================================================
+# cs_mdl_import with a watchdog (some CS:GO models hang the importer forever)
+# ==========================================================================
+def mdl_sidecar_problems(mdlfile):
+    """['.vvd', '.vtx'] missing next to a loose .mdl (cs_mdl_import hangs or crashes on these); [] if fine or the .mdl isn't loose
+    (it may come from CS:GO's VPK)."""
+    for root in (S1_GAMECSGO, S1_RAW_CONTENT_ROOT):
+        base = os.path.join(root, os.path.splitext(mdlfile.replace("/", os.sep))[0])
+        if os.path.exists(base + ".mdl"):
+            bad = []
+            if not os.path.exists(base + ".vvd"): bad.append(".vvd")
+            if not any(os.path.exists(base + x) for x in MDL_VTX): bad.append(".vtx")
+            return bad
+    return []
+
+
+def _kill_tree(proc):
+    try:
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True, timeout=20)
+    except Exception:
+        pass
+    try:
+        proc.kill(); proc.wait(timeout=10)
+    except Exception:
+        pass
+
+
+def _newest(path):
+    newest = 0.0
+    if os.path.isfile(path):
+        return os.path.getmtime(path)
+    if os.path.isdir(path):
+        for dp, _, fs in os.walk(path):
+            for f in fs:
+                try: newest = max(newest, os.path.getmtime(os.path.join(dp, f)))
+                except OSError: pass
+    return newest
+
+
+def import_model(mdlfile, extraoptions, outName):
+    """-> (ok, reason). Success = the .vmdl was (re)written during this run, whatever the exit code."""
+    log_path = os.path.join(S2_CONTENT_ADDON, "maps", S2_ADDON_NAME + "_mdl_import.log")
+    refs_dir = os.path.splitext(outName)[0] + "_refs"
+    cmd = "cs_mdl_import -nop4 %s -i \"%s\" -o \"%s\" \"%s\"" % (extraoptions, S1_GAMECSGO, S2_CONTENT_ADDON, mdlfile)
+    last = ""
+    for attempt in range(1, MDL_RETRIES + 1):
+        print("- cs_mdl_import (attempt %d): %s" % (attempt, mdlfile))
+        t0 = time.time()
+        with open(log_path, "a", encoding="utf-8", errors="replace") as log:
+            log.write("\n==== %s (attempt %d)\n%s\n" % (mdlfile, attempt, cmd)); log.flush()
+            proc = subprocess.Popen(cmd, shell=True, stdout=log, stderr=subprocess.STDOUT)
+            sig, active, stalled = None, time.time(), ""
+            while proc.poll() is None:
+                time.sleep(2)
+                now = time.time()
+                cur = (os.path.getsize(log_path), _newest(outName), _newest(refs_dir))
+                if cur != sig: sig, active = cur, now
+                if now - active > MDL_IDLE_SECONDS: stalled = "no activity for %ds" % MDL_IDLE_SECONDS
+                elif now - t0 > MDL_MAX_SECONDS: stalled = "still running after %ds" % MDL_MAX_SECONDS
+                if stalled:
+                    _kill_tree(proc); log.write("[killed: %s]\n" % stalled); break
+        if os.path.exists(outName) and os.path.getmtime(outName) >= t0 - 2.5:
+            return True, ""
+        if stalled:
+            return False, "stalled: %s, killed (see %s)" % (stalled, os.path.basename(log_path))
+        last = "exit code %s, no .vmdl written" % proc.returncode
+        if os.path.isdir(refs_dir) and _newest(refs_dir) >= t0 - 2.5: last += " (partial output in %s)" % os.path.basename(refs_dir)
+    return False, last + " after %d attempts" % MDL_RETRIES
+
+# ==========================================================================
 # Phase 1 - Models (unchanged behaviour from the previous version)
 # ==========================================================================
 def phase1_models():
@@ -258,12 +335,15 @@ def phase1_models():
         if os.path.exists(outName):
             already_imported += 1
         else:
-            importCmd = "cs_mdl_import -nop4 %s -i \"%s\" -o \"%s\" \"%s\"" % (
-                extraoptions, S1_GAMECSGO, S2_CONTENT_ADDON, mdlfile
-            )
-            if not run_command_safe(importCmd):
-                print("!! FAILED to import: %s" % mdlfile)
-                failed_imports.append(mdlfile)
+            bad = mdl_sidecar_problems(mdlfile)
+            if bad:
+                print("!! SKIPPED import (missing %s next to the .mdl): %s" % ("/".join(bad), mdlfile))
+                failed_imports.append("%s  (missing %s - the importer hangs or crashes on these)" % (mdlfile, "/".join(bad)))
+                continue
+            ok, why = import_model(mdlfile, extraoptions, outName)
+            if not ok:
+                print("!! FAILED to import: %s (%s)" % (mdlfile, why))
+                failed_imports.append("%s  (%s)" % (mdlfile, why))
                 continue
 
         if os.path.exists(refsName):
@@ -330,7 +410,7 @@ def phase1_models():
         if mdlfile.startswith("-"):
             continue
         mdlfile = mdlfile.replace("/", "\\")
-        if mdlfile in failed_imports:
+        if any(f.split("  (")[0] == mdlfile for f in failed_imports):
             continue
 
         outName = os.path.join(S2_CONTENT_ADDON, mdlfile.replace(".mdl", ".vmdl"))
@@ -574,10 +654,49 @@ def phase3_vmat_sweep():
     print("\nVmats created: %d. Skipped (already existed): %d." % (created, skipped))
 
 
+def explain_missing(items, steam_root):
+    """for each missing .vmt/.mdl: which vmap or prefab used it, and files with the same name elsewhere (a wrong folder or
+    extension in the reference is the usual cause) in the raw CS:GO content, the csgo folder and CS2's stock VPK"""
+    want = {}
+    for it in items:
+        stem = os.path.splitext(os.path.basename(it.split("  (")[0]))[0].lower()
+        if stem: want.setdefault(stem, []).append(it)
+    found = {it: [] for it in items}
+    def add(stem, label, path):
+        for it in want.get(stem, ()):
+            if len(found[it]) < 4 and path.lower() not in (x.lower() for x in found[it]): found[it].append("%s: %s" % (label, path))
+    seen = set()
+    for label, root in (("cscontent", S1_RAW_CONTENT_ROOT), ("csgo", S1_GAMECSGO)):
+        if os.path.realpath(root) in seen: continue
+        seen.add(os.path.realpath(root))
+        for sub in ("materials", "models"):
+            base = os.path.join(root, sub)
+            if not os.path.isdir(base): continue
+            for dp, _, fs in os.walk(base):
+                for f in fs:
+                    st = os.path.splitext(f)[0].lower()
+                    if st in want: add(st, label, os.path.relpath(os.path.join(dp, f), root).replace("\\", "/"))
+    try:
+        import vmap_refs
+        pak = os.path.join(steam_root, "game", "csgo", "pak01_dir.vpk")
+        for f in (vmap_refs.vpk_tree(pak) if os.path.exists(pak) else ()):
+            st = os.path.splitext(os.path.basename(f))[0]
+            if st.endswith(".vmat") or st.endswith(".vmdl"): st = os.path.splitext(st)[0]
+            if st in want: add(st, "CS2 stock", f)
+    except Exception as e:
+        print("explain_missing: CS2 VPK not read (%s)" % e)
+    out = []
+    for it in items:
+        rel = it.split("  (")[0].replace("\\", "/").lower()
+        key = os.path.splitext(rel)[0] + (".vmdl" if rel.endswith(".mdl") else ".vmat")
+        used = sorted((SCAN.mdls if rel.endswith(".mdl") else SCAN.mats).get(key, ())) if SCAN else []
+        out.append("%s\n    used by: %s\n    same name elsewhere: %s" % (it, ", ".join(used) or "?", "; ".join(found[it]) or "none"))
+    return out
+
 # ==========================================================================
 # Phase 4 - Report
 # ==========================================================================
-def phase4_write_report(failed_imports, failed_compiles, still_needs_conversion, fully_missing):
+def phase4_write_report(failed_imports, failed_compiles, still_needs_conversion, fully_missing, steam_root=STEAM_CSGO_ROOT):
     report_path = os.path.join(S2_CONTENT_ADDON, "maps", S2_ADDON_NAME + "_cleanup_report.txt")
     lines = []
     lines.append("Cleanup report for addon: %s" % S2_ADDON_NAME)
@@ -601,6 +720,10 @@ def phase4_write_report(failed_imports, failed_compiles, still_needs_conversion,
     lines.append("=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (%d) ===" % len(fully_missing))
     lines.append("(these need the manual Crowbar/Blender/ModelDoc pipeline)")
     lines.extend(fully_missing or ["(none)"])
+    if failed_imports or fully_missing:
+        lines.append("")
+        lines.append("=== WHY MISSING: where each is used, and files with the same name elsewhere ===")
+        lines.extend(explain_missing(list(failed_imports) + list(fully_missing), steam_root))
 
     utl.EnsureFileWritable(report_path)
     with open(report_path, "w") as f:
@@ -614,7 +737,7 @@ def phase4_write_report(failed_imports, failed_compiles, still_needs_conversion,
 # Main
 # ==========================================================================
 def main():
-    global S2_ADDON_NAME, S1_GAMECSGO, S2_CONTENT_ADDON, S2_GAME_ADDON, REFS_FILE
+    global S2_ADDON_NAME, S1_GAMECSGO, S2_CONTENT_ADDON, S2_GAME_ADDON, REFS_FILE, SCAN
 
     parser = argparse.ArgumentParser(description="Post-import model/texture cleanup for a CS2 addon")
     parser.add_argument(
@@ -657,7 +780,7 @@ def main():
     if not args.refs and os.path.exists(vmap_path):
         try:
             import vmap_refs
-            REFS_FILE = vmap_refs.build(S2_ADDON_NAME, args.steam_root)[0]
+            REFS_FILE, _m, _d, SCAN = vmap_refs.build(S2_ADDON_NAME, args.steam_root)
         except Exception as e:
             print("!! vmap scan failed (%s) - falling back to the importer's refs.txt" % e)
     elif not args.refs:
@@ -677,7 +800,7 @@ def main():
     failed_imports, failed_compiles = phase1_models()
     still_needs_conversion, fully_missing = phase2_texture_cascade()
     phase3_vmat_sweep()
-    report_path = phase4_write_report(failed_imports, failed_compiles, still_needs_conversion, fully_missing)
+    report_path = phase4_write_report(failed_imports, failed_compiles, still_needs_conversion, fully_missing, args.steam_root)
 
     elapsed = time.time() - start
     print("\n\n" + "=" * 70)

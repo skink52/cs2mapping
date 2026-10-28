@@ -20,7 +20,7 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 **Getting the map into CS2**
 - Decompile the CS:GO map file (BSP) with its packed-in textures, models and sounds.
 - Fix the decompiled map so Valve's importer accepts it, without opening CS:GO's Hammer.
-- Run the import and the leftover model/material conversion unattended from one double-click, and even chain it straight into the build while you're away.
+- Run the import and the leftover model/material conversion unattended from one double-click, and even chain it straight into the build while you're away. Models that freeze the importer are stopped and skipped instead of hanging the run, and the report says where each missing file was used and where a file with the same name exists.
 
 **Automatic fixes after import** ([details](docs/porting/pipeline.md))
 - Put back map logic (outputs) the importer silently drops.
@@ -32,6 +32,7 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Lasers and beams (which CS2 can't create) redrawn as glowing beams in the right colour; lasers that did damage get a damage zone along them (a separate step right after the automatic fixes).
 - Missing skies rebuilt from the original six sky pictures; sky brushes the importer dropped rebuilt as sky shells.
 - Missing textures rebuilt from CS:GO's own files, water swapped for CS2 water, anything unrecoverable swapped for the closest CS2 texture and flagged.
+- CS2 textures that Valve shipped broken (they show the pink error texture) replaced with the map's original CS:GO version.
 - Transparent textures (fences, glass, decals) that came through solid made transparent again; glowing/additive and double-sided textures restored.
 - Decals and overlays: correct size, position and orientation on the wall, with transparent backgrounds.
 - Texture alignment and scale on brushes repaired where the importer got it wrong.
@@ -40,6 +41,9 @@ app, and hands you batch files to double-click for the steps that need Valve's t
   adds sunlight and light probe volumes so props and players match the world; breakables and brush walls that don't move are checked to sit fully
   inside a light probe volume, and volumes are added where they don't.
 - Door sounds, ambient sounds and looping sounds converted to CS2 sound events, including stock CS:GO sounds; sound files in formats CS2 can't play re-encoded.
+- Named CS:GO sounds ("sound scripts", e.g. a grate clang used by a button) recreated under the same names so they play again.
+- Steam jets and heat-shimmer effects (gone in CS2) rebuilt as particle effects that switch on and off the same way.
+- Physics props (crates, balls) pushed by players according to how heavy they are *(optional step)*.
 - Material names the importer mangled (spaces in folder names) pointed back at the real files.
 - Glows attached to moving objects (e.g. thrown grenades) made to follow them again.
 - Visibility hints placed for fast compiles, and huge sky shells taken out of the visibility calculation.

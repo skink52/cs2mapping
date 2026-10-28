@@ -3,7 +3,8 @@
 Walks the main vmap and every prefab vmap it references, collects every material (mesh faces, overlays, entity
 keys ending in .vmat) and every model (entity keys ending in .vmdl), drops what already exists in the addon or in
 CS2's stock pak01, and writes <addon>_vmap_refs.txt in the importer's "file" line format so post_import_cleanup.py
-can import/convert the rest. Runs on the PC with Valve's python; needs dmx.py and kv2.py (C:\\source1\\cs2port\\tools).
+can import/convert the rest. Stock CS2 materials that Valve shipped as stubs (compiled against the error shader) are listed too,
+and written to <addon>_stub_materials.txt for stage C. Runs on the PC with Valve's python; needs dmx.py and kv2.py (C:\\source1\\cs2port\\tools).
 
     python vmap_refs.py <addon> [--steam-root <path>] [--all]
 
@@ -20,13 +21,15 @@ def norm(p): return p.decode() if isinstance(p, bytes) else p
 
 def normpath(p): return norm(p).lower().replace('\\', '/').strip()
 
-def vpk_tree(dir_path):
-    """set of paths in a VPK directory, reading only the tree (CS2's pak01_dir.vpk is large)"""
-    out = set()
+def vpk_tree(dir_path, keep=None):
+    """set of paths in a VPK directory, reading only the tree (CS2's pak01_dir.vpk is large).
+    keep: suffix (e.g. '.vmat_c'); those entries' (archive, offset, length, preload) go in the returned set's .entries dict"""
+    out = PathSet()
     with open(dir_path, 'rb') as f:
         hdr = f.read(28); sig, ver, tree = struct.unpack_from('<III', hdr, 0)
         if sig != 0x55aa1234: return out
         f.seek(12 if ver == 1 else 28); d = f.read(tree)
+    out.data_start = (12 if ver == 1 else 28) + tree
     p = 0
     def cstr():
         nonlocal p
@@ -40,9 +43,34 @@ def vpk_tree(dir_path):
             while True:
                 name = cstr()
                 if not name: break
-                pre = struct.unpack_from('<H', d, p + 4)[0]; p += 18 + pre
-                out.add((((path + '/') if path.strip() else '') + name + '.' + ext).lower())
+                arc, off, ln = struct.unpack_from('<HII', d, p + 6)
+                pre = struct.unpack_from('<H', d, p + 4)[0]
+                full = (((path + '/') if path.strip() else '') + name + '.' + ext).lower()
+                out.add(full)
+                if keep and full.endswith(keep): out.entries[full] = (arc, off, ln, d[p + 18:p + 18 + pre])
+                p += 18 + pre
     return out
+
+class PathSet(set):
+    def __init__(s, *a): super().__init__(*a); s.entries = {}; s.data_start = 0
+
+def vpk_read(dir_path, tree, rel):
+    """bytes of one file from a VPK whose tree was read with keep= covering it; None if unreadable"""
+    ent = tree.entries.get(rel)
+    if ent is None: return None
+    arc, off, ln, pre = ent
+    if ln == 0: return pre
+    fn = dir_path if arc == 0x7fff else dir_path.replace('_dir.vpk', '_%03d.vpk' % arc)
+    try:
+        with open(fn, 'rb') as f:
+            f.seek(tree.data_start + off if arc == 0x7fff else off); return pre + f.read(ln)
+    except OSError:
+        return None
+
+def is_stub(data):
+    """a stock CS2 vmat Valve shipped unported: compiled against the error shader, so it draws the error material. Best effort:
+    a compiled vmat whose data block is compressed won't show the shader name and is never reported."""
+    return bool(data) and b'error.vfx' in data
 
 class Scan:
     def __init__(s, content):
@@ -90,13 +118,16 @@ def build(addon, steam_root, everything=False):
     s.vmap('maps/%s.vmap' % addon)
     stock = set()
     pak = os.path.join(steam_root, 'game', 'csgo', 'pak01_dir.vpk')
-    if os.path.exists(pak): stock = vpk_tree(pak)
+    if os.path.exists(pak): stock = vpk_tree(pak, keep='.vmat_c')
+    stubs = []
     mats, mdls, present = [], [], {'mat': 0, 'mdl': 0, 'stock': 0, 'tools': 0}
     for m in sorted(s.mats):
         if not m.endswith('.vmat'): continue
         if m.startswith('materials/tools/') or m.startswith('materials/dev/'): present['tools'] += 1; continue
         if not everything:
-            if m + '_c' in stock or m in stock: present['stock'] += 1; continue
+            if m + '_c' in stock and is_stub(vpk_read(pak, stock, m + '_c')):
+                stubs.append(m)                         # listed below so its CS:GO texture is ported into the addon over the stub
+            elif m + '_c' in stock or m in stock: present['stock'] += 1; continue
             if exists_any_ext(content, m): present['mat'] += 1; continue
         mats.append(m[:-5] + '.vmt')
     for m in sorted(s.mdls):           # models already in the addon stay listed: phase 1 skips the import and recompiles if out of date
@@ -110,7 +141,12 @@ def build(addon, steam_root, everything=False):
         for m in mats: f.write('"file" "%s"\n' % m)
     print('vmap_refs: %d vmaps scanned, %d materials / %d models referenced; already in addon %d materials / %d models, stock CS2 %d, tools %d'
           % (len(s.seen), len(s.mats), len(s.mdls), present['mat'], present['mdl'], present['stock'], present['tools']))
+    sp = os.path.join(content, 'maps', addon + '_stub_materials.txt')
+    with open(sp, 'w') as f:
+        f.write('// stock CS2 materials this map uses that are unported stubs (error shader); stage C assets rebuilds them from CS:GO\n')
+        for m in stubs: f.write('%s\t%s\n' % (m, ', '.join(sorted(s.mats.get(m, ())))))
     print('vmap_refs: listed %d materials, %d models still needed -> %s' % (len(mats), len(mdls), out))
+    if stubs: print('vmap_refs: %d stock CS2 materials are stubs (error shader), re-ported from CS:GO: %s' % (len(stubs), ', '.join(stubs)))
     for p in s.missing_prefabs: print('vmap_refs: !! prefab not found: %s' % p)
     return out, mats, mdls, s
 

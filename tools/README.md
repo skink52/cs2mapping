@@ -17,7 +17,7 @@ Everything runs in Claude's cloud workspace with Python 3 + numpy, scipy and Pil
 | `prep.py` | **Stage A.** BSPSource decompile, addon name cleaning, Hammer re-save fix, func_illusionary → func_brush, embedded files laid out at their PC paths, materials/models zipped into `assets\<addon>[.N].zip` (≤ 14 MB each), addon skeleton from `addon_template/`, and `manifest.json` (staged path → PC path pairs for `device_commit_files`) | `OUT=<dir> BSPSRC=<bspsrc.sh> python3 prep.py <bsp> [<bsp>...] [bspname=addonname ...] [--ports=existing_ports.txt]` (env `PORTS=` = `--ports=`; defaults `OUT=./prep_out`, `BSPSRC=tools/bspsrc.sh`) |
 | `stage_c.py` | **Stage C.** Prefab merge + every post-import fix on the `.vmap` (step keys below). Writes `<root>/out/<addon>/`, `<root>/out/<addon>_game/` and `<root>/out/<addon>_result.json` | `python3 stage_c.py <addon> <root>` |
 | `run_pass.py` | Any stage C step(s) on the current, already-cleaned vmap; appends to the cleanup log | `python3 run_pass.py <addon> <root> step[,step...]` (stage C step keys) |
-| `run_c.py` | Stage C when CS2's `pak01_dir.vpk` isn't staged (stub VPK). Default steps leave out `alpha`, `assets` (need the VPK) and `doors`, `overlayfix`, `facescale`, `matflags` (run those later with `run_pass.py`) | `python3 run_c.py <addon> <root> [step,...]` |
+| `run_c.py` | Stage C when CS2's `pak01_dir.vpk` isn't staged (stub VPK). Default steps leave out `alpha`, `assets` (need the VPK) and `doors`, `overlayfix`, `facescale`, `matflags`, `probes` (run those later with `run_pass.py`) | `python3 run_c.py <addon> <root> [step,...]` |
 | `stage_d.py` | Follow-up passes on a map you've already edited in Hammer (keeps your edits) | `python3 stage_d.py <addon> <root> pass[,pass...]` (passes below) |
 | `ports.py` | `existing_ports.txt` helpers: duplicate check (ignores prefixes, `_cs2`, version suffixes) and adding a line | `python3 ports.py check <existing_ports.txt> <name>...` · `python3 ports.py add <existing_ports.txt> <name> [status] [mapper]` (default `[in progress] [skink]`) |
 | `hammer_resave.py` | What a CS:GO Hammer open/save changes in a BSPSource VMF (prep.py calls it) | `python3 hammer_resave.py <in.vmf> <out.vmf>` |
@@ -31,13 +31,13 @@ Everything runs in Claude's cloud workspace with Python 3 + numpy, scipy and Pil
 
 ### Stage C step keys (run order, from `stage_c.run()`)
 
-`merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity, dead, sounds, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags`,
-plus `overlaydepth` (= `overlayfix` + projection depth 8) when named. `vis` runs `visfit.py`; `skyvis` (the older shell-only pass) runs only when `vis` isn't in the list.
+`merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity, dead, steam, sounds, soundscripts, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags`,
+plus `overlaydepth` (= `overlayfix` + projection depth 8) and `physpush` (opt-in) when named. `vis` runs `visfit.py`; `skyvis` (the older shell-only pass) runs only when `vis` isn't in the list.
 `alpha` and `assets` need `<root>/vpk/cs2_pak01_dir.vpk` and are skipped silently without it. `daylight` is **not** a stage C step.
 
 ### stage_d.py passes
 
-`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover`.
+`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -46,10 +46,13 @@ steps aren't stage D passes: use `run_pass.py`.
 
 | File | Step / pass | What it does |
 |---|---|---|
-| `gen_script.py` | (end of stage C) | Builds `maps/scripts/<addon>_io.js`: `Cmd_`, `Score_`, `Speed_`, `Gravity_`, `Item_`/`ItemAll_` inputs, spawn equips, plus `push_tail.js` for push zones (`PushIn_`/`PushOut_`) |
+| `gen_script.py` | (end of stage C) | Builds `maps/scripts/<addon>_io.js`: `Cmd_`, `Score_`, `Speed_`, `Gravity_`, `Item_`/`ItemAll_` inputs, spawn equips, physics pushing, plus `push_tail.js` for push zones (`PushIn_`/`PushOut_`) |
 | `push_tail.js` | `push` | The trigger_push half of the generated io script (holds CS:GO "set speed" pushes, max 3500); appended by gen_script.py |
 | `gravity.py` | `gravity` | trigger_gravity → trigger_multiple + script `Gravity_<scale>`; stage D patches the existing `_io.js` |
-| `assets.py` | `alpha`, `assets` | Missing materials rebuilt from CS:GO's VPK, water → `liquids/nuke_water`, closest stock CS2 material otherwise; alpha-test/translucent masks |
+| `assets.py` | `alpha`, `assets` | Missing materials rebuilt from CS:GO's VPK (also stock CS2 stubs listed in `maps/<addon>_stub_materials.txt`), water → `liquids/nuke_water`, closest stock CS2 material otherwise; alpha-test/translucent masks |
+| `soundscripts.py` | `soundscripts` | Source 1 soundscript names used by entities / door noises → same-named soundevents (map soundscripts, then CS:GO's manifest) |
+| `steam.py` | `steam` | env_steam → info_particle_system + generated `particles/port_steam/*.vpcf` (heat wave = refracting sprite) |
+| `physpush.py` | `physpush` (opt-in) | Players push physics props by CS:GO `.phy` mass, from the io script (`patch_script` adds it to an existing `_io.js`) |
 | `texfix.py` | `overlayfix`, `overlaydepth`, `facescale`, `matflags` | Static overlay geometry, brush-face texture scale/shift, `$additive`/`$nocull` material flags |
 | `sky.py` | `sky` | Six CS:GO sky faces → 2:1 equirect panorama for `sky.vfx` / `csgo_moondome` |
 | `visfit.py` | `vis` (C), `visfit`/`visfit_lower`/`visfit_lean` (D) | Vis hints fitted to the play space (Low / Lower / one Lowest) and sky shells out of vis |

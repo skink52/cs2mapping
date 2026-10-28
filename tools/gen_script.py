@@ -1,9 +1,9 @@
 """Build the per-map cs_script (maps/scripts/<map>_io.js) that replaces dead CS:GO entity behaviour."""
 import json, os
-import gravity
+import gravity, physpush
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-def build(mapname, script_name, push=None, commands=None, scores=None, speeds=None, gravities=None, spawn_equips=None, equip_items=None):
+def build(mapname, script_name, push=None, commands=None, scores=None, speeds=None, gravities=None, spawn_equips=None, equip_items=None, phys=None):
     head = ['import { Instance, CSPlayerPawn, CSPlayerController%s } from "cs_script/point_script";' % ((', CSInputs' if speeds else '') + (', CSMoveType' if gravities else '') + (', CSGearSlot' if spawn_equips else '')), '',
             '// %s: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.' % mapname,
             '// Everything here is driven by `%s` -> RunScriptInput <input name>, with the activator passed through.' % script_name, '//']
@@ -14,12 +14,13 @@ def build(mapname, script_name, push=None, commands=None, scores=None, speeds=No
     if gravities: head.append(gravity.HEAD_LINE)
     if spawn_equips: head.append('//   (automatic) replaces game_player_equips without "Use Only" (CS:GO ran them on every spawn, CS2 does not)')
     if equip_items: head.append(ITEMS_HEAD)
+    if phys: head.append(physpush.HEAD_LINE)
     body = ['', '// ---------------------------------------------------------------- shared think loop',
             '/** @type {(() => boolean)[]} each returns true while it still needs ticks */',
             'const THINKERS = [];', 'let thinking = false;',
             'function wakeThink() { if (!thinking) { thinking = true; Instance.SetNextThink(Instance.GetGameTime()); } }',
             'Instance.SetThink(() => {', '    let active = false;', '    for (const t of THINKERS) if (t()) active = true;',
-            '    if (active) Instance.SetNextThink(Instance.GetGameTime()); else thinking = false;', '});'] if (push or speeds or gravities or spawn_equips) else []
+            '    if (active) Instance.SetNextThink(Instance.GetGameTime()); else thinking = false;', '});'] if (push or speeds or gravities or spawn_equips or phys) else []
     if push:
         body += ['', '// ---------------------------------------------------------------- trigger_push replacement',
                  "// CS2's trigger_push keeps adding velocity every tick while you are inside it, so CS:GO pushes became rocket launchers.",
@@ -55,6 +56,8 @@ def build(mapname, script_name, push=None, commands=None, scores=None, speeds=No
         body += ['', SPAWN_EQUIP_JS.replace('__EQUIPS__', json.dumps(spawn_equips))]
     if equip_items:
         body += ['', ITEMS_JS.replace('__ITEMS__', json.dumps(equip_items, indent=4))]
+    if phys:
+        body += ['', physpush.js_section(phys)]
     return '\n'.join(head + body) + '\n'
 
 SPAWN_EQUIP_JS = r'''// ---------------------------------------------------------------- spawn equips (game_player_equip without "Use Only")

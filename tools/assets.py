@@ -95,13 +95,16 @@ def fix_materials(m, c, cs2_vpk, csgo_vpk, csgo_archives):
     stock_by_dir = collections.defaultdict(list)
     for s in stock: stock_by_dir[os.path.dirname(s)].append(s)
     used = mesh_materials(m)
+    stubs = stub_materials(c)
     rebuilt, swapped, substituted, stuck = [], [], [], []
     WATER = 'materials/liquids/nuke_water.vmat'
     for mat in sorted(used):
         if not mat.endswith('.vmat') or mat.startswith('materials/tools/'): continue
-        if mat in stock or c.exists(mat): continue
+        if (mat in stock and mat not in stubs) or c.exists(mat): continue
         vmt = mat[:-5] + '.vmt'
         shader, kv = load_vmt(src, vmt) if src.has(vmt) else (None, None)
+        if mat in stubs and shader is None and not src.has(vmt):
+            stuck.append(mat + ' (stock CS2 stub - draws the error material - and no CS:GO source to re-port it from)'); continue
         if shader is None and src.has(vmt): continue          # waiting on a VPK chunk
         if shader is not None:
             if shader == 'water' or (not kv.get('$basetexture') and 'water' in mat):
@@ -127,7 +130,7 @@ def fix_materials(m, c, cs2_vpk, csgo_vpk, csgo_archives):
             img = vtf.decode(data)
             b = io.BytesIO(); img.convert('RGBA' if vtf.has_alpha(img) else 'RGB').save(b, 'PNG'); c.write(col, b.getvalue())
             alpha = write_vmat(c, mat, vmt, base, col, img, kv)
-            rebuilt.append(os.path.basename(mat)[:-5] + (' (alpha)' if alpha else '')); continue
+            rebuilt.append(os.path.basename(mat)[:-5] + (' (alpha)' if alpha else '') + (' (over a CS2 stub)' if mat in stubs else '')); continue
         if 'water' in mat:
             replace_material(m, mat, WATER); swapped.append('%s -> %s' % (mat, WATER)); continue
         d = os.path.dirname(mat); nm = os.path.basename(mat)
@@ -147,6 +150,15 @@ def fix_materials(m, c, cs2_vpk, csgo_vpk, csgo_archives):
     if substituted: c.log.append('materials missing everywhere swapped for the closest stock CS2 ones: %s' % '; '.join(substituted))
     if substituted: c.todo.append('check the substituted materials look right: %s' % '; '.join(substituted))
     if stuck: c.todo.append('materials still missing: %s' % '; '.join(stuck))
+
+def stub_materials(c):
+    """stock CS2 materials Valve shipped as stubs (error shader), from maps/<addon>_stub_materials.txt written on the PC by vmap_refs.py"""
+    rel = 'maps/%s_stub_materials.txt' % c.addon
+    p = os.path.join(c.content, rel)
+    if not os.path.exists(p):
+        c.todo.append('%s not staged (vmap_refs.py on the PC writes it during stage B): stock CS2 materials that are error-shader stubs were not checked' % rel)
+        return set()
+    return set(l.split('\t')[0].strip().lower() for l in open(p, encoding='utf-8', errors='replace') if l.strip() and not l.startswith('//'))
 
 def check_models(m, c, cs2_vpk):
     missing = collections.Counter()

@@ -3,6 +3,11 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-29
+
+- **Features from github.com/Ninja-Chris/cs2-slop-porting, rewritten** (that repo has no licence; it had no new commits on 29 Oct): stage C `steam` (env_steam → info_particle_system + generated `particles/port_steam/*.vpcf`, heat wave as a refracting sprite; `tools/steam.py`), `soundscripts` (Source 1 soundscript names used by entities and CS:GO door noises → same-named soundevents; `tools/soundscripts.py`; `doors` now uses them), opt-in `physpush` (players push physics props by CS:GO `.phy` mass from the io script; `tools/physpush.py`, also a stage D pass that patches an existing `_io.js`). Stage B: `vmap_refs.py` finds stock CS2 materials that are error-shader stubs and lists them in `<addon>_stub_materials.txt` (stage C `assets` rebuilds them from CS:GO); `post_import_cleanup.py` runs `cs_mdl_import` under a watchdog (sidecar check, stall kill after 120 s idle / 15 min, 3 retries, `maps\<addon>_mdl_import.log`) and ends the cleanup report with WHY MISSING (where each missing asset is used, same-named files elsewhere). Tested on a synthetic addon and with a fake importer only; the generated io script passes tscheck and the mock engine. `run_c.py` defaults gained `steam,soundscripts`.
+- `data/unported_mg.md`: the 18 mg_ maps in Briar's Dropbox `csgo/maps` folder with no CS2 port found (Workshop + gordon rechecked).
+
 ## 2026-10-28
 
 - **docs/reference/cs_script-notes.md**: vehicle flight feel (slerp mouse aim, turn law, continuous angles, no opposite-vector blends, converging guns, robust think), from Dogfight → mg_trenchwarfare tw33.
