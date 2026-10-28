@@ -5,6 +5,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-10-28
 
+- **mg_mario_party**: `lightbright` applied (349 lights rebuilt from the CS:GO `_light` values; 195 had brightness 0). Light entities read from the v3_1 BSP entity lump, as no VMF was available.
 - **`texfix.facescale` plane match** (fix shared by another mapper using this repo, reproduced on mg_n64_goldeneye): stack007/wall triangles with a corner ~0.1 u off the plane tilted the normal ~0.001, shifting the one-corner plane distance 1.5-3 u past the 0.5 u limit, so the face kept the importer's reduced shift (e.g. 15x/10y instead of u 389 / -465, v 128). Now: Newell normal snapped to the axis when within 0.999, plane measured at the face centre, and a side matches when every corner is within 0.6 u. Their goldeneye run: 49,539 → 49,866 faces matched, unmatched 2,572 → 2,253. Re-run idempotence only checked without real CS:GO textures (337 coordinate rewrites from guessed sizes); expected clean on the PC.
 
 ## 2026-10-27

@@ -17,3 +17,8 @@ mg_mario_party follow-up fixes (2026-10-17)
 Vis optimisation (2026-10-17, after the first build: Voxelize 8u 103 s / 19.2M nodes, outside detection 62 s)
 - the 32 moondome + 32 tools/skybox shells (about half of all vis-relevant surface area) set to Exclude from Vis: every room is already sealed by its own nodraw hull from the CS:GO map (flood-fill checked at 16 units), so the shells only cost voxelize time
 - the 32 Low visibility_hints were all copies of the map-wide box; each now covers one room (the Lowest hint still covers the whole map, so the void between rooms clusters at 256 units)
+
+Follow-up pass (2026-10-28): lightbright
+- light brightness rebuilt from the CS:GO _light values for 349 lights (0 had brightness = nan from the importer, which crashes CS2 on map load)
+- pruned 1 orphaned elements
+
