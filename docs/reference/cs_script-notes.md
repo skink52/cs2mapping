@@ -244,3 +244,18 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   ignores all aircraft; touching the ground is a crash.
 - AFK: activity = any input or a view change > ~2°; warn at 20 s, move to spectate at 30 s, only count idling while actually playing. Position-based AFK plugins
   flag parked pawns.
+
+## Vehicle flight that feels good (from the Dogfight jet mode, used in mg_trenchwarfare tw33)
+
+- Mouse aim: read the eye every tick, raw; turn the nose toward it with a slerp, proportional and capped: `step = min(turnRate(v)·dt, GAIN·angle·dt)`
+  (GAIN 4–5). One slerp gives a straight nose path with no overshoot or stepping. Bank comes from the yaw rate (rate-limited),
+  A/D add a free roll on top that never changes the nose.
+- Turn law: `rate·(refSpeed/max(v, minSpeed))^0.6`, clamped; times a stall factor for slow aircraft.
+- Send angles continuous with the last ones (`anglesNear`: unwrap pitch/yaw/roll, or the equivalent (180−p, y+180, r+180) triple), or a
+  yaw of 180 flickers between +180 and −180.
+- Never sum or slerp two nearly opposite directions for an aim (bounds "turn home" blend, a reversal): the result's great circle tips over the
+  top and the aircraft climbs vertically. Blend heading and climb separately, and cap the aim to 90° off the heading for a level turn.
+- Guns that converge on the crosshair: rebuild the FOLLOW_POSITION camera position (followed point + cameraOffset turned by the eye angles),
+  trace along the eye, aim the rounds at the hit point within a few degrees of the nose.
+- `SetNextThink` first in the think and try/catch per player: one exception otherwise stops the script until the next round.
+

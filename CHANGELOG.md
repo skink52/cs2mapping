@@ -5,6 +5,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-10-28
 
+- **docs/reference/cs_script-notes.md**: vehicle flight feel (slerp mouse aim, turn law, continuous angles, no opposite-vector blends, converging guns, robust think), from Dogfight → mg_trenchwarfare tw33.
 - **create/lod_decimate.py**, **create/weld_cracks.py** (from mg_trenchwarfare tw31): faithful decimated LODs with default-scale switch thresholds (FPS fix: ~17M → ~4M prop triangles across no man's land), and seam-crack repair for converted player bodies. Notes in docs/creation/models.md.
 - **create/s2/fp_gloves.mjs**: first-person default gloves straight out of an agent's vmdl_c (verified on tm_phoenix against the S2V decompile). mg_trenchwarfare uses it for stock T (tm_phoenix) and CT (ctm_sas) gloves inside its generated sleeves, with the sleeve cuff eased out so nothing clips (docs/creation/models.md).
 - **create/glbmesh.py**: GLB loader and dependency-free decimator (Tripo3D models from ~950k to ~9k triangles, keeping UVs) with a textured preview renderer, from space-racer-cs2's Neon Racer (mg_neon_racer, built from the space-racer-cs2 repo with `SPR_THEME=neon`).
