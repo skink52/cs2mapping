@@ -112,6 +112,8 @@ Readers for CS2's compiled resources (`*_c`), straight from the game's VPKs (`--
 | `s2/kv3.mjs <file_c> [BLOCK]`, `s2/resource.mjs` | Resource blocks + binary KV3 (v1–v5, LZ4/zstd); prints a file's blocks as JSON. |
 | `s2/skeleton.mjs <model.vmdl_c> <out.json>` | Bones, parents and bind pose of a model (the agent skeleton for `anim/`), plus hull, attachments, sequences, materials. |
 | `s2/agent_mesh.mjs <agent.vmdl_c> <out.json>` | Agent skeleton + skinned third-person meshes for the animation previews. |
+| `lod_decimate.py <addon> <out> <model dir under models/> ... [--keep-lod1 a,b]` | Faithful LOD1-4 for SMD static props decimated from LOD0 (quadric vertex clustering per material, corner normals kept, UVs re-projected per face so tiled textures hold); largest cell within ~1 px at each switch (thresholds 20/60/120/240); rewrites the vmdl's RenderMeshList + LODGroupList. Thin wire: keep its own LOD1. |
+| `weld_cracks.py <body dmx> <out> [tol]` | Closes seam cracks in a skinned DMX body (split vertices that drifted apart): merges boundary vertices only, closest first, groups capped at tol, weights averaged. Needs dmx9.py (mg_trenchwarfare tools). |
 | `s2/fp_gloves.mjs <agent.vmdl_c> <out.json> [--vpk <game/csgo>]` | An agent's first-person default gloves (glove draw call of `firstperson_default_gloves_arms`) with weights by bone name, UVs in DMX orientation, for putting stock gloves under custom sleeves. |
 | `s2/prop_mesh.mjs <model.vmdl_c>... [--json out]` | Real bounds (and meshes) of stock props, for placing and stacking them by their true size. |
 

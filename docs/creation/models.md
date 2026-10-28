@@ -96,6 +96,19 @@ decimating LOD0. Probe-light (`bakelighting 0`) small props and foliage; one con
 
 ## Player models
 
+### LODs that don't pop (and don't cost FPS)
+
+ModelDoc `switch_threshold` scales inversely with screen size (bigger = further). Default-scale values (20, 40, 80…) with a LOD1 that
+isn't a copy of LOD0 pop visibly at ~300 u; pushing the thresholds out 16x hid the pops but made every prop draw LOD0 map-wide
+(mg_trenchwarfare: ~17M triangles looking across no man's land). Fix: decimate each LOD from LOD0 itself (`create/lod_decimate.py`),
+with the cell size held to about a pixel at the switch distance, then keep the default-scale thresholds (20/60/120/240). Downloaded
+models with no LODs at all (28k-tri petrol cans, 55k-tri tanks) are usually the worst offenders per instance. Barbed wire and other
+geometry thinner than a cell keeps a generated low LOD instead.
+
+Seam cracks on a converted body: if the source mesh is split at every seam and the copies get different skin weights (e.g. weights
+transferred per vertex from a donor), re-posing pulls them apart and the model shows see-through specks. Weld the source first; to
+repair a finished DMX, `create/weld_cracks.py` merges the cracked boundary vertices.
+
 ### Rebuilding a CS:GO player model as a CS2 agent
 
 CS:GO custom player models (Octodad in mg_mario_party, the green Power Ranger in mg_50arenas) import as plain props: no CS2 animgraph, so weapons are
