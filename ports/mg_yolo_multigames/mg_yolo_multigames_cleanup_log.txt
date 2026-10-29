@@ -1,0 +1,33 @@
+
+
+Follow-up pass (2026-10-29): lightbright
+- light brightness rebuilt from the CS:GO _light values for 28 lights (0 had brightness = nan from the importer, which crashes CS2 on map load)
+- pruned 1 orphaned elements
+
+Follow-up pass (2026-10-29): visfit
+- visfit (48-unit voxels): 160.4 billion cubic units of playable air, 14.3 of it walkable band; hints 95 Low, 99 Lower, 1 Lowest (replacing 1 Lowest, 26 Low)
+- visfit: 102 of 174 sky shell meshes set to Exclude from Vis, 72 kept because they close playable air
+- pruned 108 orphaned elements
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+
+Follow-up pass (2026-10-29): probecover
+- probecover: added 68 light probe volumes around 141 static func_breakable / func_brush meshes that no volume fully covered: func_breakable spawn_break, func_breakable mc_breakable, func_breakable mc_breakable, func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (
+- pruned 0 orphaned elements
+- TO CHECK: probecover: check the new probe volumes look right next to the existing ones
+
+Follow-up pass (2026-10-29): soundscripts
+- pruned 0 orphaned elements
+
+Follow-up pass (2026-10-29): lights
+- (9 stationary light_omni2 the pass wanted to add to moondome arenas were removed again: the arenas are already lit by light_environment in game)
+- stationary lights: 1 of 29 lights switched Static -> Stationary (directlight 3) across 1 sealed compartments, ranges trimmed so no spot is inside more than 4; 2 compartments open to sky left to light_environment
+- pruned 0 orphaned elements
+- TO CHECK: 1 compartments only partly covered by stationary light (overlap cap) - check weapons are lit there
+
+Radar (2026-10-29): not shipped. The arenas are spread over ~30,000 units, so a single radar draws each one a few pixels wide, and the
+standable-floor test only found 2-6 of them (moondome arenas count as open sky). Needs per-arena handling if wanted.
+
+Also 2026-10-29 (by hand): creeper sprites mc_sprite_1..5 / mc_sprite_boom env_particle_glow -> info_particle_system with following
+particles (particles/yolo/yolo_sprite_number_N / kaboom); mc_creeper_knife OnPlayerPickup -> yolo_io_script CreeperPickup (script carries the
+creeper body, explosion and sprites with the knife carrier). Not run: alpha/assets (CS2 and CS:GO pak01_dir.vpk not staged), facescale/overlayfix
+(no overlays; texture scales look right), beams/steam/doors (none in the map), physpush/gravity/push (yolo_io.js already handles them).

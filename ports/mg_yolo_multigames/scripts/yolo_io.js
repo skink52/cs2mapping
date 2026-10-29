@@ -25,6 +25,8 @@ import { Instance, Entity, BaseModelEntity, CSPlayerPawn, CSPlayerController, CS
 //   NadeWin_T / NadeWin_CT        grenade holes: a team filled all 15 holes -> the other team is slain 60 s later (M4 time)
 //   (automatic)                   volleyball: a ball landing on the other side's floor fires fb_tball_scored / fb_ctball_scored
 //   (automatic)                   spawn_overlay (map credits) only shows in the first two rounds
+//   CreeperPickup                 creeper game: CS:GO parented the creeper body, its env_explosion and countdown sprites to the knife;
+//                                           CS2 parenting to a weapon doesn't follow the carrier, so the script carries them
 //   Weed_1 / Weed_2 / Weed_3      replaces  color_correction weed_co_1..3 (scouts "drugged" game): full-screen HUD overlay,
 //   Weed_Off                                weed_random picks one every 10-25 s; cleared at round start/end (global, like CS:GO)
 //
@@ -120,6 +122,7 @@ Instance.SetThink(() => {
         if (changed) pawn.Move({ velocity: { x, y, z } });
     }
     cubeThink(now);
+    creeperThink();
     knife33Think();
     nadeThink(now);
     physThink(now, dt);
@@ -240,6 +243,33 @@ Instance.OnScriptInput("Weed_1", () => weed(1));
 Instance.OnScriptInput("Weed_2", () => weed(2));
 Instance.OnScriptInput("Weed_3", () => weed(3));
 Instance.OnScriptInput("Weed_Off", () => weed(0));
+
+// ---------------------------------------------------------------- creeper (mc_creeper_knife OnPlayerPickup -> CreeperPickup)
+const CREEPER_PARTS = ["mc_creeper", "mc_creeper_explosive", "mc_sprite_1", "mc_sprite_2", "mc_sprite_3", "mc_sprite_4", "mc_sprite_5", "mc_sprite_boom"];
+const CREEPER_KNIFE_SPAWN = { x: -11620, y: -10272, z: 6963 };   // the parts keep their offset from the knife, now from the carrier's feet
+/** @type {{ pawn: CSPlayerPawn | undefined, parts: { ent: Entity, ofs: { x: number, y: number, z: number } }[] }} */
+const creeper = { pawn: undefined, parts: [] };
+Instance.OnScriptInput("CreeperPickup", ({ activator }) => {
+    const pawn = toPawn(activator);
+    if (!pawn) return;
+    creeper.pawn = pawn; creeper.parts = [];
+    for (const name of CREEPER_PARTS) {
+        for (const ent of Instance.FindEntitiesByName(name)) {
+            const o = ent.GetAbsOrigin();
+            Instance.EntFireAtTarget({ target: ent, input: "ClearParent" });
+            creeper.parts.push({ ent, ofs: { x: o.x - CREEPER_KNIFE_SPAWN.x, y: o.y - CREEPER_KNIFE_SPAWN.y, z: o.z - CREEPER_KNIFE_SPAWN.z } });
+        }
+    }
+});
+function creeperThink() {
+    const pawn = creeper.pawn;
+    if (!pawn) return;
+    if (!pawn.IsValid() || !pawn.IsAlive()) { creeper.pawn = undefined; creeper.parts = []; return; }
+    const p = pawn.GetAbsOrigin();
+    for (const part of creeper.parts) {
+        if (part.ent.IsValid()) part.ent.Teleport({ position: { x: p.x + part.ofs.x, y: p.y + part.ofs.y, z: p.z + part.ofs.z } });
+    }
+}
 
 // ---------------------------------------------------------------- game_ui "cube_gameui": remote-control cube
 // CS:GO: ent_fire_me (+use) switches the hover thrusters "up" on and activates the game_ui (freeze player,
@@ -595,7 +625,7 @@ Instance.OnActivate(() => {
     ensureThink();
 });
 // game_round_end "roundend" OnRoundEnded: switch the scouts game's colour correction off
-Instance.OnRoundStart(() => { roundSignal(); resetNadeGame(); weed(0); });
+Instance.OnRoundStart(() => { roundSignal(); resetNadeGame(); weed(0); creeper.pawn = undefined; creeper.parts = []; });
 Instance.OnRoundEnd(() => {
     weed(0);
     for (const [name, input, delay] of DATA.roundEnd) Instance.EntFireAtName({ name, input, delay });

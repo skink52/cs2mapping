@@ -7,7 +7,8 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 - Translucent cut-out materials given `TextureTranslucency` masks (banners, random button, spawn signs), wireframe material moved to `F_BLEND_MODE 1`, wallhack
   Toggle chains → Enable/Disable, env_sprite particles resized (texture width × 0.25, non-square textures padded), scouts drugged effect → HUD overlay,
-  secret camera teleport disabled. Details in `ports/mg_yolo_multigames/README.md`.
+  secret camera teleport disabled; stage D lightbright/visfit/probecover/lights on the hand-ported vmap; creeper parts carried by script.
+  Details in `ports/mg_yolo_multigames/README.md`.
 
 ## 2026-10-29
 

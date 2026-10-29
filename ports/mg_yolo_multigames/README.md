@@ -29,6 +29,14 @@ Multigames map with a game-picker lobby. Has a separate 3D skybox map (`mg_yolo_
     panels `weed_1..3`, colour-swirl images, breathing scale animation) driven by `Weed_1/2/3/Weed_Off` script inputs from weed_relay / weed_random /
     kill_smoke, cleared at round start and end. Global like the CS:GO color_correction, so nobody is left stuck with it. The PP volumes are left in place.
   - Aim tower secret camera room: its teleport (target `Secret`) is StartDisabled; the room's func_monitor can't work in CS2.
+  - Pipeline passes run on the hand-ported vmap (stage D): `lightbright` (28 lights rebuilt from the CS:GO `_light` values; they were 0),
+    `visfit` (27 hand hints → 95 Low / 99 Lower / 1 Lowest; 102 of 174 sky shells out of vis), `probecover` (the map had no probe volumes:
+    68 added around 141 static breakables/brushes), `lights` (1 light → Stationary; its 9 proposed arena lights removed, arenas are lit by the sun),
+    `soundscripts` (nothing to do). `lights`/`radar` OOM at 32-unit voxels on this ~30k-unit map: run at 64. Radar not shipped (arenas too spread out;
+    standable-floor test finds 2-6 of them). Not run: alpha/assets (no VPKs staged).
+  - Creeper game: the creeper body, env_explosion and countdown sprites were parented to the knife, which CS2 doesn't carry. mc_sprite_* →
+    info_particle_system with following particles (continuous emitter + position lock, size/tint baked), and `CreeperPickup` (knife OnPlayerPickup)
+    makes the script carry all of them at the carrier's feet + their offset from the knife spawn.
   - `compile_yolo_fixes.bat` in the addon compiles the particles, vmats, panorama and script that the command-line build skips, then runs `run_build.bat`.
 
 ## Import report
@@ -49,4 +57,4 @@ Multigames map with a game-picker lobby. Has a separate 3D skybox map (`mg_yolo_
 - The scripted prop-push strengths are guesses.
 - Spawn buttons were silent after the import (their sounds were dropped); check.
 - The wireframe "wallhack" walls are approximated (face borders, not triangle edges).
-- 29 Oct fixes untested in game: sprite sizes (0.25 is estimated from the screenshots), weed overlay look/animation, wallhack walls showing.
+- 29 Oct fixes untested in game: creeper carry, new vis hints, sprite sizes (0.25 is estimated from the screenshots), weed overlay look/animation, wallhack walls showing.
