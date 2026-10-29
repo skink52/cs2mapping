@@ -3,6 +3,15 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-30: probedetail (ttt_minecraft)
+
+- Stage D `probedetail`: finer probe volumes nested over walkable floors (32 outdoors, 24 indoors) above the probefill tiles; priorities -1/0/1/2. ttt_minecraft: 117 outdoor + 72 indoor volumes (~450k probes).
+
+## 2026-10-30: invisible doorsolid doors, play-space probe volumes (ttt_minecraft)
+
+- `doorsolid` brushes are no longer parented in the map (they never rendered); port_logic_auto fires SetParent on spawn and each round. Stage D `doorparent` converts maps already done.
+- New stage D `probefill` (`tools/probefill.py`): probe volumes over the whole play space at priority 0, existing probecover volumes kept at Priority High (`indoor_outdoor_level` 1) (ttt_minecraft's hands/weapons were near black: only probecover's small volumes existed).
+
 ## 2026-10-30: PC folder layout
 
 - `scripts/reorg_pc.ps1` (+ `.bat`): tidies the PC folders into `C:\source1` (porting: runners, VMFs, input BSPs, tools, archive) and `C:\source2`

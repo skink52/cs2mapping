@@ -41,7 +41,7 @@ plus `overlaydepth` (= `overlayfix` + projection depth 8) and `physpush` (opt-in
 
 ### stage_d.py passes
 
-`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, iofix, tesla, overlays, skyshell, water`.
+`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -60,8 +60,9 @@ steps aren't stage D passes: use `run_pass.py`.
 | `physlaunch.py` | `launch` (C, before `push`), `physlaunch` (D) | Physics-only trigger_push launchers (cannons: relay ForceSpawns a template ball, Enables the push for a moment) → `Launch_<pusher>` in the io script puts the ball at the muzzle and fires it (2000 u/s) |
 | `watervol.py` | `water` (D) | Water meshes → func_water (touching ones grouped); underwater post_processing_volume from 16 u under the bottom to 80 u below the surface; master post_processing_volume if none |
 | `postprocess_filmic_underwater.vpost` | template | Underwater post-processing (from ba_jail_seaside), copied to `lighting/postprocessing/` by the `water` pass |
-| `doorsolid.py` | `doorsolid`, `doorhinge` (D) | Doors flagged Non-solid to Player: meshes → never-solid func_brush parented to the door, door keeps a nodraw hinge cube set 2 u into the frame (`doorhinge` moves the cube on maps already done) |
+| `doorsolid.py` | `doorsolid`, `doorhinge` (D) | Doors flagged Non-solid to Player: meshes → never-solid func_brush parented to the door, door keeps a nodraw hinge cube set 2 u into the frame (`doorhinge` moves the cube on maps already done); the brush is parented at spawn by port_logic_auto SetParent, not in the map (`doorparent` converts maps already done) |
 | `ventlight.py` | `ventlight` (D) | Stationary lights in crawl-space ducts behind func_breakable vent grates; covers get Disable Shadows |
+| `probefill.py` | `probefill`, `probedetail` (D) | Light probe volumes over the whole play space (clusters of spawns/teleports/weapons/lights/movers, tiles ≤ 2048 u); keeps existing volumes at Priority High (`indoor_outdoor_level` 1; finer, for static brushes) over the tiles at Normal. `probedetail` nests finer volumes over walkable floors (voxel 32 outdoors, 24 under a ceiling; Priority tiles -1 < outdoor 0 < indoor 1 < earlier small volumes 2). Without it players and weapons render near black |
 | `tesla.py` | `tesla` (D) | point_tesla (not in CS2) → info_particle_system with a generated crackle particle (`particles/port_tesla/`), TurnOn/DoSpark/TurnOff → Start/Stop |
 | `restore_ents.py` | `python3 tools/restore_ents.py <in.vmap> <map.vmf> <out.vmap> <name> [...]` | Puts back named entities the importer dropped, from the decompiled VMF, cloning a same-class CS2 entity as the template (ttt_cg_skyscraper_2017's 1-unit btn1/btn3) |
 | `physpush.py` | `physpush` (opt-in) | Players push physics props (and func_physbox, mass from its size) by CS:GO `.phy` mass, from the io script (`patch_script` adds it to an existing `_io.js`) |

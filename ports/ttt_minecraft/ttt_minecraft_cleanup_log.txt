@@ -77,3 +77,14 @@ Follow-up pass (2026-10-30): tesla, overlays
 - 5 static overlay materials -> csgo_static_overlay with translucency masks from the original alpha: brick.vmat (opaque, 3 overlays -> brick_overlay.vmat), coal.vmat (opaque, 11 overlays -> coal_overlay.vmat), gravel.vmat (opaque, 9 overlays -> gravel_overlay.vmat), iron.vmat (opaque, 8 overlays -> iron_overlay.vmat), stone.vmat (opaque, 2 overlays -> stone_overlay.vmat)
 - pruned 5 orphaned elements
 
+Follow-up pass (2026-10-30): doorparent, probefill, probes
+- doorsolid: 15 door brushes unparented in the map (a parented func_brush never shows in CS2), SetParent from port_logic_auto OnMapSpawn/OnMultiNewRound: I1_Door1, I2_Door1, T1_Creeper_Lever, T1_Door1, T1_Door2, T2_Door, Ttest_Door1, Ttest_Door1_Lever, Ttest_Door2, Ttest_Door2_Lever, Ttest_Frontdoors, Ttest_Frontdoors_2, Ttest_Hatch1, Ttest_Hatch2, Ttest_button_lever
+- probefill: 9 light probe volumes over the play space (3 entity clusters, tiles <= 2048 u, priority 0), 95 existing volumes kept at Priority High (indoor_outdoor_level 1; Valve wiki: highest priority wins, no blending): [-2736, -1584, -248]..[-736, -64, 1792]; [-2736, -64, -248]..[-736, 1456, 1792]; [-736, -1584, -248]..[1264, -64, 1792]; [-736, -64, -248]..[1264, 1456, 1792]; [-1916, -1244, -5407]..[-768, -112, -4644]; [-1916, -112, -5407]..[-768, 1020, -4644]; [-768, -1244, -5407]..[380, -112, -4644]; [-768, -112, -5407]..[380, 1020, -4644]; [-1032, -576, -9120]..[760, 1224, -8170]
+- probes: every static func_breakable / func_brush is inside a light probe volume
+- pruned 1 orphaned elements
+
+Follow-up pass (2026-10-30): probedetail, probes
+- probefill detail: 117 outdoor volumes (voxel 32, Priority Normal, ~202400 probes) and 72 indoor volumes (voxel 24, Priority High, ~244255 probes) over the walkable floors; play tiles set to Low, earlier small volumes to Highest
+- probes: every static func_breakable / func_brush is inside a light probe volume
+- pruned 0 orphaned elements
+

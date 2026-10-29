@@ -11,12 +11,14 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         skyshell (moondome sky shells -> toolsskybox: the sun bakes through toolsskybox, not through a moondome),
         water (water meshes -> func_water, underwater post_processing_volume, master volume),
         doorhinge (maps already through doorsolid: hinge cubes moved into the frame), iofix (logic_auto is_pc global state, output target name case),
-        tesla (point_tesla -> crackle particle), overlays (static overlay materials -> csgo_static_overlay, opaque ones as <name>_overlay)
+        tesla (point_tesla -> crackle particle), doorparent (doorsolid brushes parented at spawn instead of in the map),
+        probefill (light probe volumes over the whole play space, existing ones kept at higher priority),
+        probedetail (finer nested volumes over walkable floors: 32 outdoors, 24 indoors), overlays (static overlay materials -> csgo_static_overlay, opaque ones as <name>_overlay)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import tesla, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, ventlight, doorsolid, watervol
+import tesla, probefill, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, ventlight, doorsolid, watervol
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -60,6 +62,9 @@ def run(addon, root, passes):
     if 'doorsolid' in passes: doorsolid.run(m, c)
     if 'doorhinge' in passes: doorsolid.rebury(m, c)
     if 'tesla' in passes: tesla.run(m, c)
+    if 'doorparent' in passes: doorsolid.unparent(m, c)
+    if 'probefill' in passes: probefill.run(m, c)
+    if 'probedetail' in passes: probefill.detail(m, c, probefill.tiles_of(m))
     if 'overlays' in passes: stage_c.overlays(m, c)
     if 'iofix' in passes: stage_c.io_fixups(m, c)
     if 'water' in passes and watervol.run(m, c) and c.needs_underwater_vpost and not c.exists(watervol.VPOST):

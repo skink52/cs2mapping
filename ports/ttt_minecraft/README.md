@@ -34,7 +34,14 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
 
 - 2026-10-30: z-fighting ore patches: 33 static overlays (coal 11, gravel 9, iron 8, brick 3, stone 2) were csgo_complex → `<name>_overlay.vmat`
   csgo_static_overlay. Win_Tesla (point_tesla, gone in CS2) → info_particle_system `particles/port_tesla/tesla_ffffff.vpcf`. Lighthouse diamond-block
-  trigger works (skink52 tested outside a round; cs2mapTTT now polls prop triggers in every phase, the win input stays round-only). Backup `bak_overlays`.
+  trigger: skink52 tested outside a round; prop triggers (and their win sequence) are live-round only by design, a block placed in warmup fires when the round goes live. Backup `bak_overlays`.
+
+- 2026-10-30 (in-game: doors invisible, hands/weapons near black): `doorparent` (door brushes SetParent at spawn), `probefill` (9 volumes: 4 island
+  tiles voxel 64, 4 nether + 1 End voxel 48; the 95 probecover volumes kept at Priority High (indoor_outdoor_level 1) so brushes keep their finer voxel-32 lighting). skink52's own
+  stationary light at 752 -400 1472 (4.32, range 4000) kept. Backup `bak_probes`.
+
+- 2026-10-30: `probedetail`: 117 outdoor (voxel 32) + 72 indoor (voxel 24) volumes over the walkable floors (~450k probes); priorities tiles -1,
+  outdoor 0, indoor 1, probecover 2. If the bake gets too slow, raise VOX_OUT/VOX_IN in tools/probefill.py.
 
 ## Open / to check
 

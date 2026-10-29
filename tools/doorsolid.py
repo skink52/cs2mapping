@@ -43,6 +43,32 @@ def hinge_box(m, d, panel_bounds):
     return [cx - 1, cy - 1, o[2] - 1], [cx + 1, cy + 1, o[2] + 1]
 
 
+def attach(m, c, doors):
+    """A func_brush with parentname set in the map never shows in CS2 (ttt_minecraft's doors were invisible; ba_jail_seaside's
+    func_rotating brushes wouldn't Enable). The <door>_vis brushes stay unparented in the map and get SetParent from a logic_auto
+    on map spawn and on every new round."""
+    la = [e for e in m.by_class('logic_auto') if m.name(e) == 'port_logic_auto']
+    if la: la = la[0]
+    else:
+        o = m.origin(doors and [e for e in m.entities() if m.name(e) == doors[0]][0] or m.entities()[0])
+        la = m.new_entity('logic_auto', [o[0], o[1], o[2] + 32], {'targetname': 'port_logic_auto', 'spawnflags': '0'})
+    have = {(m.conn_tuple(cn)[0], m.conn_tuple(cn)[1]) for cn in m.conns(la)}
+    for d in doors:
+        for out in ('OnMapSpawn', 'OnMultiNewRound'):
+            if (out, d + '_vis') not in have: m.add_conn(la, out, d + '_vis', 'SetParent', d, 0.0)
+
+
+def unparent(m, c):
+    """maps already through doorsolid: clear parentname on the <door>_vis brushes and parent them at spawn instead (see attach)"""
+    done = []
+    for e in m.by_class('func_brush'):
+        n = m.name(e) or ''
+        if n.endswith('_vis') and m.P(e, 'parentname'):
+            done.append(m.P(e, 'parentname')); m.setp(e, 'parentname', '')
+    attach(m, c, done)
+    c.log.append('doorsolid: %d door brushes unparented in the map (a parented func_brush never shows in CS2), SetParent from port_logic_auto OnMapSpawn/OnMultiNewRound: %s' % (len(done), ', '.join(sorted(done))))
+
+
 def rebury(m, c):
     """maps already through doorsolid: move each door's hinge cube into the frame (see hinge_box)"""
     n = 0
@@ -87,7 +113,7 @@ def run(m, c):
                 if t.lower() == name.lower(): m.add_conn(e, o, new, inp, p, dl, times)
             name = new
         pb = m.bounds(d)
-        vis = m.new_entity('func_brush', m.origin(d), {'targetname': name + '_vis', 'parentname': name, 'Solidity': '1', 'solidbsp': '0',
+        vis = m.new_entity('func_brush', m.origin(d), {'targetname': name + '_vis', 'Solidity': '1', 'solidbsp': '0',
                                                      'spawnflags': '2', 'StartDisabled': '0', 'rendermode': m.P(d, 'rendermode', 'kRenderNormal') or 'kRenderNormal',
                                                      'renderamt': m.P(d, 'renderamt', '255') or '255', 'rendercolor': m.P(d, 'rendercolor', '255 255 255') or '255 255 255',
                                                      'disableshadows': m.P(d, 'disableshadows', '0') or '0'})
@@ -97,6 +123,7 @@ def run(m, c):
         mn, mx = hinge_box(m, d, pb)
         dch[2].append(box(m, tm, tnode, mn, mx, NODRAW))
         done.append(name)
+    attach(m, c, done)
     c.log.append('doorsolid: %d doors flagged Non-solid to Player (solid in CS2): meshes moved to never-solid func_brush <door>_vis parented to the door, '
                  'door left with a 2-unit nodraw cube on its hinge: %s' % (len(done), ', '.join(sorted(set(done)))))
     return len(done)
