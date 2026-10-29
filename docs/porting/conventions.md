@@ -22,7 +22,7 @@ These are the standing rules every port follows. The pipeline applies most of th
 - **Credit the original mapper** in the loading-screen text: `original map by <author> cs2 port by skink52`. Credit a CS:GO porter
   too when the map names one (mg_smee_tower_cs2: "Original map by Mathijs / CS:GO port by WriteX / Ported to CS2 by skink52"). The text
   lives in `game\csgo_addons\<addon>\maps\<map>.txt`, first line `COMMUNITYMAPCREDITS:` (the file Hammer5Tools' Loading Editor writes),
-  and needs no rebuild. Find the author in the map's own credits, its GameBanana page or the BSP's embedded files.
+  and needs no rebuild. No AI-made note in the loading text: the Workshop pages say so (skink52, 29 Oct 2026). Find the author in the map's own credits, its GameBanana page or the BSP's embedded files.
   Chat credits that the map printed through `point_servercommand` keep working through the map's script, with "Ported to CS2 by skink52" added.
 - **Round setup.** A `point_servercommand` driven by a `logic_auto` sets `mp_freezetime 0` and `mp_roundtime 600` on map spawn.
   If the map only has one team's spawns, a `game_player_equip` gives a knife on spawn (unless the map already does that).

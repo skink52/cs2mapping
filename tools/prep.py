@@ -17,7 +17,7 @@ on the PC under OUT/<addon>/pc/<drive path>, plus a manifest.json of
 PC layout produced (same as the manual process):
   C:\\source1\\maps\\<addon>.vmf            Hammer-resave-fixed VMF (import input)
   C:\\source1\\maps\\<addon>.vmx            untouched BSPSource output (backup)
-  C:\\source1\\maps\\<addon>\\...           decompiled embedded files
+  C:\\source1\\maps\\<addon>_embedded[.N].zip  decompiled embedded files (backup only; stage C re-extracts from the BSP)
   C:\\source1\\cs2port\\assets\\<addon>[.N].zip  embedded materials/models (lower-cased), unpacked into csgo\\ by run_import.bat
   <CS2>\\content\\csgo_addons\\<addon>\\sounds\\...   embedded sounds (sanitised names)
   <CS2>\\content\\csgo_addons\\<addon>\\<other>\\...  any other embedded file
@@ -74,16 +74,23 @@ def prep(bsp, addon, out_root, log):
         for dp, _, fs in os.walk(emb):
             for f in fs:
                 src = os.path.join(dp, f); rel = os.path.relpath(src, emb).replace(os.sep, '/')
+                ext = os.path.splitext(f)[1].lower()
+                if re.match(r'^[a-z]:?/', rel, re.I) and rel.split('/')[0].rstrip(':').isalpha() and len(rel.split('/')[0].rstrip(':')) == 1:
+                    low = rel.lower()
+                    if '/csgo/' not in low:
+                        notes.append('skipped %s (absolute path in the pakfile)' % rel); continue
+                    rel = rel[low.index('/csgo/') + 6:]
+                    notes.append('absolute pakfile path stripped to %s' % rel)
+                if ext in SKIP_EXT:
+                    notes.append('skipped %s (CS:GO nav/graph data, not usable in CS2)' % rel); continue
                 put(src, winjoin(S1, 'maps', addon, rel.replace('/', '\\')))
-                top = rel.split('/')[0].lower(); ext = os.path.splitext(f)[1].lower()
+                top = rel.split('/')[0].lower()
                 if top in ('materials', 'models'):
                     put(src, winjoin(CS2, 'csgo', rel.lower().replace('/', '\\')))
                 elif top == 'sound':
                     new = clean_sound(rel.split('/', 1)[1])
                     sound_map[rel.split('/', 1)[1]] = 'sounds/' + new
                     put(src, winjoin(CS2, 'content', 'csgo_addons', addon, 'sounds', new.replace('/', '\\')))
-                elif ext in SKIP_EXT:
-                    notes.append('skipped %s (CS:GO nav/graph data, not usable in CS2)' % rel)
                 else:
                     put(src, winjoin(CS2, 'content', 'csgo_addons', addon, rel.lower().replace('/', '\\')))
     if sound_map:
@@ -100,26 +107,31 @@ def prep(bsp, addon, out_root, log):
                 put(None, winjoin(CS2, side, 'csgo_addons', addon, rel.replace('xxx_mapname_xxx', addon).replace('/', '\\')), data)
     # materials/models -> C:\source1\cs2port\assets\<addon>.zip (+ .2/.3/.4.zip, each <=14 MB) instead of
     # writing into csgo\ directly; run_import.bat unpacks them into csgo\ with tar -k (existing files kept)
-    csg = winjoin(CS2, 'csgo') + '\\'
-    loose = [(s, p) for s, p in manifest if p.startswith(csg)]
-    manifest[:] = [(s, p) for s, p in manifest if not p.startswith(csg)]
-    if loose:
-        import zipfile
-        part, cur, seen, zf = 1, 0, set(), None
-        def zpath(n): return os.path.join(work, 'zips', addon + ('' if n == 1 else '.%d' % n) + '.zip')
+    import zipfile
+    def zipup(prefix, stem, dest_dir, limit):
+        loose = [(s, p) for s, p in manifest if p.startswith(prefix)]
+        manifest[:] = [(s, p) for s, p in manifest if not p.startswith(prefix)]
+        if not loose: return 0
+        part, cur, seen = 1, 0, set()
+        def zpath(n): return os.path.join(work, 'zips', stem + ('' if n == 1 else '.%d' % n) + '.zip')
         os.makedirs(os.path.join(work, 'zips'), exist_ok=True)
         zf = zipfile.ZipFile(zpath(1), 'w', zipfile.ZIP_DEFLATED, compresslevel=9)
         for s, p in loose:
-            rel = p[len(csg):].replace('\\', '/')
-            if rel in seen: continue
-            seen.add(rel); sz = os.path.getsize(s)
-            if cur and cur + sz > 14e6:
+            rel = p[len(prefix):].replace('\\', '/')
+            if rel.lower() in seen: continue
+            seen.add(rel.lower()); sz = os.path.getsize(s)
+            if cur and cur + sz > limit:
                 zf.close(); part += 1; zf = zipfile.ZipFile(zpath(part), 'w', zipfile.ZIP_DEFLATED, compresslevel=9); cur = 0
-            zf.write(s, rel); cur += os.path.getsize(s) // 3
+            zf.write(s, rel); cur += sz // 3
         zf.close()
-        if part > 4: notes.append('WARNING: %d asset zips, run_import.bat only unpacks 4' % part)
         for n in range(1, part + 1):
-            manifest.append((zpath(n), winjoin(S1, 'cs2port', 'assets', os.path.basename(zpath(n)))))
+            manifest.append((zpath(n), winjoin(dest_dir, os.path.basename(zpath(n)))))
+        return part
+    part = zipup(winjoin(CS2, 'csgo') + '\\', addon, winjoin(S1, 'cs2port', 'assets'), 14e6)
+    if part > 4: notes.append('WARNING: %d asset zips, run_import.bat only unpacks 4' % part)
+    # the decompiled embedded files are a backup only (stage C re-extracts them from the BSP into <root>/embedded/<addon>),
+    # so they travel as C:\source1\maps\<addon>_embedded[.N].zip rather than hundreds of loose files
+    zipup(winjoin(S1, 'maps', addon) + '\\', addon + '_embedded', winjoin(S1, 'maps'), 20e6)
     json.dump(manifest, open(os.path.join(work, 'manifest.json'), 'w'), indent=1)
     log.append('%s -> %s: %d files, %d embedded sounds%s' % (base, addon, len(manifest), len(sound_map), ''.join('\n   ' + n for n in notes + vnotes)))
     return manifest

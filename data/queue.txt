@@ -1,9 +1,4 @@
-mg_bob2
-mg_egypt_course
-mg_faohu_course
-mg_galaxy_course
-mg_kohztec_course
-mg_minecraft_adventure
-de_nuketown
-mg_simpsons_course
-mg_metal_course_level_2
+mg_jahoukarail_2015
+mg_pirates
+ttt_cg_skyscraper_2017
+ttt_minecraft

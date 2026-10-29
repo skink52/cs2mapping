@@ -84,3 +84,8 @@ mg_space_racer (f-zero type racing) [*original*] [skink]: (https://steamcommunit
 deathrun playground [ext. original] (https://steamcommunity.com/sharedfiles/filedetails/?id=3164611860) incredible
 deathrun civilisation [ext. original] (https://steamcommunity.com/sharedfiles/filedetails/?id=3188021118) same as playground.
 mg_tomgreens_allinone_v2 [in progress waiting for cs3] [ninja chris]
+mg_n64_goldeneye [in progress, built] [skink]
+mg_jahoukarail_2015 [in progress] [skink]
+mg_pirates [in progress] [skink]
+ttt_cg_skyscraper_2017 [in progress] [skink]
+ttt_minecraft [in progress] [skink]
