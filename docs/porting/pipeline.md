@@ -15,8 +15,11 @@ On the PC this file is `C:\source1\cs2port\cs2_port_pipeline.md`.
 3. Send the files with `device_commit_files` using the manifest pairs, add the map to `existing_ports.txt` (`ports.py add`) and append `addon [vmfname]` to `queue.txt`.
 4. The mapper runs `run_import.bat` (stage B).
 5. Stage the working root (`<root>`, layout in [setup.md](setup.md#cloud-workspace)): the addon's content folder, the VMF, the VPKs.
-6. `grep "missing a needed subkey"` in the import log → `disprestore.py`; if material paths had spaces → `matnames.py`.
-7. Stage C: `python3 tools/stage_c.py <addon> <root>`; then `laserhurt.py` if the log flags damaging lasers, `glowfix.py` if the map has parented glows.
+6. If material paths had spaces → `matnames.py`.
+7. Stage C: `python3 tools/stage_c.py <addon> <root>`; then, on its output: `disprestore.py` if the import log has "missing a needed subkey" (it needs a world mesh
+   as a template, which the importer's vmap may not have until the prefab merge), `skysplit.py` if the map had a `sky_camera`, `stage_d.py … gameui` if it
+   has game_ui, `laserhurt.py` if the log flags damaging lasers, `glowfix.py` if the map has parented glows. A NEED line lists CS:GO files stage C couldn't
+   find: copy them from the extracted CS:GO content (`<CS2>\csgo`) into `<root>/embedded/<addon>/` and rerun (no archive chunks needed).
 8. Back up the PC's `.vmap`, then copy back `<root>/out/<addon>/` (content) and `<root>/out/<addon>_game/` (game) — only changed files.
 9. Write `build_queue.txt` and ask the mapper to run `run_build.bat` (stage D build); read `logs\` afterwards.
 10. Record the port: `ports/<addon>/` README + cleanup log + scripts, a `CHANGELOG.md` line, `CAPABILITIES.md` if something new became possible.
@@ -61,9 +64,9 @@ and `physpush` when named).
   `Gravity_1` (OnEndTouch), so a zone is low-gravity only while you are inside it; a respawn also resets it. `gravity.py`; stage D runs it as `gravity` on an
   already-cleaned map and adds the section to the existing `<addon>_io.js`.
 - **Dead entities** (`dead`): env_sun removed; point_viewcontrols that no output targets (and unnamed ones) removed; prop_hallucination → prop_dynamic (if
-  targeted) or prop_static; func_breakable_surf → func_breakable (glass). Listed as TO CHECK, not converted: env_screenoverlay, point_clientcommand, game_ui,
+  targeted) or prop_static; func_breakable_surf → func_breakable (glass); func_physbox_multiplayer → func_physbox. Listed as TO CHECK, not converted: env_spritetrail, env_screenoverlay, point_clientcommand, game_ui (use the stage D `gameui` pass),
   logic_script, env_entity_igniter, func_precipitation, env_fog_controller, entities with a `vscripts` key, VScript inputs in I/O (RunScriptCode,
-  RunScriptFile, CallScriptFunction), and a CS:GO 3D skybox (`sky_camera`), which needs a separate skybox map in CS2.
+  RunScriptFile, CallScriptFunction), and a CS:GO 3D skybox (`sky_camera`), which needs a separate skybox map in CS2 (`skysplit.py`).
 - **Sounds** (`sounds`): ambient_generic custom sounds → soundevents in `soundevents_addon.vsndevts` ("Play everywhere" uses the stereo base; others a 3D
   event with the original radius). Stock CS:GO sounds are pulled out of CS:GO's VPK into the addon. WAVs that aren't 16-bit PCM are re-encoded (ADPCM is
   flagged). Looping wavs with no cue marker get one (at the `smpl` loop start if there is one), since CS2 only loops wavs with markers.
@@ -187,7 +190,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
 - `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
-  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush` (`physpush` adds its section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
+  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui` (`physpush` and `gameui` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
   - **Daylight** (`daylight`, stage D only; for indoor maps that are still dark after stage C): adds a stationary light_environment using the map's env_sky
@@ -202,9 +205,17 @@ All of these keep your Hammer edits and append to the cleanup log. Exact usage l
   beam; Enable/Disable/Toggle sent to the beam are copied to `<laser>_hurt`.
 - `glowfix.py <vmap in> <vmap out> <addon content root>` converts parented env_particle_glows to following glow particles (see cs2-gotchas). Run it on any
   map that has them; weapon-parented ones also need the glow follow section in `<addon>_io.js` (template: `ports/mg_metal_course_level_2/scripts`).
+- `gameui` (stage D): game_ui → script. Activate/Deactivate outputs become `RunScriptInput GameUIOn_<name>` / `GameUIOff_<name>` on the io script; while a
+  player holds it the script polls their keys every tick and fires the game_ui's own outputs (Pressed/Unpressed*, XAxis/YAxis/AttackAxis/Attack2Axis,
+  PlayerOn/PlayerOff) with the original targets and delays. Freeze Player, +Use / Jump deactivate are kept; Hide Weapon and FieldOfView aren't (TO CHECK).
+  The game_ui entities are removed. mg_pirates (22 cannons and boats, 29 Oct 2026).
+- `skysplit.py <map.vmap in> <main out> <skybox out> <map name> [x0,y0,z0,x1,y1,z1]`: moves an old 3D skybox into `<map>_3dskybox.vmap` (everything inside
+  the box, or the group of meshes around the sky_camera when no box is given), keeps light_environment / env_sky / env_fog_controller in both, sets
+  `mapUsageType skybox`, and adds the `skybox_reference` to the main map. Build it as its own queue line (`<addon> <map>_3dskybox`) before the main map.
+  Check the result with `vmap_preview.py` and give a box when the auto box grabs playable space.
 - `disprestore.py <vmap in> <bsp> <vmap out> [x0,y0,z0,x1,y1,z1 ...]` rebuilds displacements the importer dropped. The import log shows each one as "Found a
   displacement missing a needed subkey." (24 Oct 2026: mg_kohztec_course 61 (all, fixed), de_nuketown 152 (fixed, old 3D skybox skipped), mg_faohu_course 2).
-  After every import, grep the log for that line. It reads dispinfo/dispverts from the BSP and adds each as a closed mesh: the displaced surface with the
+  After every import, grep the log for that line. Run it on the stage C output, not the importer's vmap (it copies an existing world mesh as its template). It reads dispinfo/dispverts from the BSP and adds each as a closed mesh: the displaced surface with the
   CS:GO texture projection, toolsnodraw sides and a flat back. Materials with no CS2 copy get a stand-in from its `SUB` table; custom ones can be built from
   the BSP pakfile with `assets.write_vmat`. The optional boxes skip displacements centred in them (an old 3D skybox).
 - `matnames.py <addon> <root>`: importer-sanitised material refs (spaces → underscores) back to the addon's real file names; run before the `assets` pass (see cs2-gotchas).

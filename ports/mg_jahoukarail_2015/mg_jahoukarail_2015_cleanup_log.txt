@@ -1,0 +1,63 @@
+CS2 post-import clean - mg_jahoukarail_2015 (2026-10-29)
+
+- collapsed 6 prefabs into the map, world offsets kept: mg_jahoukarail_2015_gameplay.vmap (272 nodes, 272 entities), mg_jahoukarail_2015_environment_prefab.vmap (2187 nodes, 273 entities), mg_jahoukarail_2015_lighting_prefab.vmap (3 nodes, 3 entities), mg_jahoukarail_2015_cubemaps_prefab.vmap (10 nodes, 10 entities), mg_jahoukarail_2015_audio_prefab.vmap (13 nodes, 13 entities), mg_jahoukarail_2015_nav_prefab.vmap (0 nodes, 0 entities)
+- outputs restored that the importer dropped: 11 (e.g. trigger_once  -> TemplateMelon.ForceSpawn(); trigger_once  -> !activator.Color(255 255 255); trigger_multiple  -> !activator.Color(255 255 255); trigger_multiple  -> !activator.Color(0 225 225); trigger_multiple  -> !activator.Color(236 236 0); trigger_multiple  -> !activator.Color(255 0 0))
+- game_player_equip (unnamed): CS:GO keys ['weapon_knife'] -> CS2 weapon0..weapon21 slots
+- game_player_equip (unnamed) ran on every spawn in CS:GO (no "Use Only"): the io script now gives weapon_knife on every spawn
+- 25 trigger_push (speeds [200.0, 350.0, 500.0, 750.0, 900.0, 1000.0, 1400.0]; CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500); names/filters/Enable/Disable kept
+- removed 1 point_servercommand; 0 Command outputs -> script Cmd_n (CS2 servers block point_servercommand)
+- added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> mp_freezetime 0, mp_roundtime 600; only T spawns, but the map already has a game_player_equip giving weapon_knife on spawn (unnamed), so no extra knife equip
+- removed 1 game_score (not in CS2); 1 ApplyScore -> script Score_n
+- 9 env_steam -> info_particle_system (4 particles in particles/port_steam, 4 TurnOn/TurnOff inputs -> Start/Stop)
+- 5 ambient_generics pointed at 4 new soundevents (jahoukarail2015.force_field_loop1, jahoukarail2015.soundganesh1, jahoukarail2015.soundganesh2b, jahoukarail2015.soundganesh3) instead of raw .vsnd paths
+- stock CS:GO sounds extracted from the CS:GO VPK into the addon: sounds/ambient/energy/force_field_loop1.wav
+- wavs re-encoded to 16-bit PCM: force_field_loop1.wav (PCM 8-bit -> 16-bit PCM)
+- looping sounds given a cue point (CS2 only loops wavs with markers; start taken from the smpl loop when there is one): sounds/ambient/energy/force_field_loop1.wav
+- 5 Source 1 soundscript names used by entities defined as same-named soundevents: Alert.WarmupTimeoutBeep, ambient.steam01, de_sugarcane.steam, Doors.FullOpen8, FreezeShot.TakeScreenshot
+- soundscript waves copied into the addon from the map's packed files / CS:GO VPK: sounds/ambient/atmosphere/amb_steam_01.wav, sounds/ambient/gas/steam_loop1.wav, sounds/buttons/light_power_on_switch_01.wav, sounds/doors/door_metal_thin_open1.wav, sounds/ui/beep07.wav
+- door sounds: 12 point_soundevents (jahoukarail2015.door_doormove1, jahoukarail2015.door_doormove2, jahoukarail2015.door_heavy_metal_stop1), started by the doors' OnOpen/OnClose (noise1) and OnFullyOpen/OnFullyClosed (noise2); 0 unnamed doors named port_door_N
+- 11 static overlay materials -> csgo_static_overlay with translucency masks from the original alpha: nuklogo01_de.vmat, bills01a.vmat, cs_control_panel.vmat, cs_decal_arrow_long.vmat, decal_signprotection009a.vmat, decalgraffiti033a.vmat, decalgraffiti057a_cs.vmat, decalsigncaution001c.vmat, decalsigndanger002a.vmat, graffiti_germany_05.vmat, infwalldetail04.vmat
+- face texture scales: 8973 brush faces, 8734 matched to one VMF mapping; 29 matched: moved copy of a VMF brush (texture lock); 20 matched: rounded corner (<= 2.5u off the plane); 8683 matched: same plane; 2 matched: same plane (outside the brush); 62 no VMF side on the same plane + material; 177 overlapping VMF brushes with different mappings (left as imported)
+- face texture mapping repaired: 8130 faces re-scaled / re-shifted from the VMF, 8100 faces with texture coordinates rewritten: hospital3 (18), water_sf (46), metalcrate001a_black (6), metalcrate001b_green (5), metalcrate001c_green (6), metalcrate001d_black (78), brickwall053a (9), brickwall056a (26), brickwall_snow01 (85), lolglass (1355), metalfloor003a_black (113), metalfloor003a_red (4), metalfloor003a_white (1), metalwall013a_black (32), metalwall013a_blue (33), metalwall013a_cyan (33), metalwall013a_green (33), metalwall013a_orange (33), metalwall013a_pink (33), metalwall013a_red (33), metalwall013a_white (33), metalwall013a_yellow (33), train_metalceiling_02_blue (4), train_metalceiling_02_white (1), blue_neon (33), green_neon (22), grey_neon (10), orange_neon (18), pink_neon (18), purple_neon (14), red_neon (42), yellow_neon (24), concretefloor026a (283), metalfence007a (2), black (18), nuke_metalfloor_01 (195), nukmetwallab (1), nukmetwalle_cool (1), train_glasswindow_01 (2), train_metalceiling_02 (282),
+- env_sky materials/skybox/jungle.vmat: rebuilt from the six CS:GO faces
+- visfit (16-unit voxels): 3.4 billion cubic units of playable air, 1.5 of it walkable band; hints 24 Low, 15 Lower, 1 Lowest
+- 9 env_laser + 0 env_beam (CS2 cannot spawn them) -> 8 never-solid func_brush beams between their end points (mutual laser pairs drawn once), coloured self-illuminated laser materials materials/lasers/laser_<rgb>.vmat; 2 TurnOn/TurnOff/Toggle -> Enable/Disable/Toggle; 0 StrikeOnce -> Enable, then Disable after the beam life; no damage added
+- 29 lights had brightness = nan from the importer: set to 0 (as a Hammer save does); stage_d lightbright rebuilds real values from the VMF
+- stationary lights: 4 of 30 lights switched Static -> Stationary (directlight 3) across 4 sealed compartments, ranges trimmed so no spot is inside more than 4
+- 8 materials were alpha-tested / translucent in CS:GO but imported opaque - fixed with a mask from the texture alpha: blade (translucent), glasswindow007a (translucent), unbreakable_glass_a_01 (translucent), metalgate004a (translucent), metalgrate013b (alpha test), prodgratea (alpha test), miltree003 (translucent), miltree005 (translucent)
+- radar: rendered from geometry (959 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/mg_jahoukarail_2015_radar_psd.png + game resource/overviews/mg_jahoukarail_2015.txt (pos -3199 2553, scale 6.87)
+- built 18 missing materials from the original CS:GO textures: train_metalceiling_02_blue, train_metalceiling_02_white, blue_neon, green_neon, grey_neon, orange_neon, pink_neon, purple_neon, red_neon, yellow_neon, white_neon, 2x4_metal, citadel_metalwall060a, metalgrate013a2 (alpha), metalroof005a_nobump, metalwall014a_cheap, urban_metalwall01a, infwoodfloor007a
+- CS:GO water materials (no CS2 equivalent shader) -> stock: materials//water_sf.vmat -> materials/liquids/nuke_water.vmat
+- materials missing everywhere swapped for the closest stock CS2 ones: materials/environment_maps/pipeset_metal.vmat -> materials/models/props_pipes/pipeset_metal.vmat
+- $additive materials moved to csgo_unlitgeneric (F_BLEND_MODE 4, additive): combine_binocoverlay
+- $nocull materials -> F_RENDER_BACKFACES: glasswindow007a
+- added point_script mg_jahoukarail_2015_io_script (maps/scripts/mg_jahoukarail_2015_io.js)
+- pruned 62 orphaned elements
+- TO CHECK: the importer leaves these out (they're on its exclusion list, mostly cosmetic): 19 point_spotlight (spotlight beams), 4 func_dustmotes (dust motes)
+- TO CHECK: check the env_steam particles in game (direction along the entity forward axis, size, density)
+- TO CHECK: overlay materials not converted: materials/decals/bills02a.vmat (vmat not in addon); materials/decals/blood7.vmat (colour texture materials\decals\blood7.png missing); materials/decals/blood8.vmat (colour texture materials\decals\blood8.png missing); materials/decals/bloodstain_001.vmat (vmat not in addon); materials/decals/bloodstain_002.vmat (colour texture materials\decals\bloodstain_002.png missing); materials/decals/bloodstain_003.vmat (vmat not in addon); materials/decals/bloodstain_003b.vmat (vmat not in addon); materials/decals/bombsite_left_arrow.vmat (vmat not in addon); materials/decals/cs_01_sign.vmat (vmat not in addon); materials/decals/cs_caution_sign.vmat (vmat not in addon); materials/decals/cs_decal_level_a.vmat (vmat not in addon); materials/decals/cs_decal_level_b.vmat (vmat not in addon); materials/de
+- TO CHECK: 138 static overlays have a projection depth >= 32 (can show as a box with the overlay invisible) - stage_d overlaydepth sets them to 8
+- TO CHECK: faces still with an absurd texture scale (<0.01 or >8), left as imported: combine_binocoverlay x36 (VMF: 0.0937x0.1719/0.0039x0.1719/0.0039x0.0937), red_neon x10 (VMF: 0.25x0.25), orange_neon x8 (VMF: 0.25x0.25), purple_neon x6 (VMF: 0.25x0.25), yellow_neon x6 (VMF: 0.25x0.25), miltree005 x5 (VMF: 0.5332x0.4844/0.25x0.25/0.5332x0.002), green_neon x4 (VMF: 0.25x0.25), unbreakable_glass_a_01 x4 (VMF: 0.25x0.25/0.002x0.25/0.25x0.002), blue_neon x3 (VMF: 0.25x0.25), pink_neon x2 (VMF: 0.25x0.25), white_neon x1 (VMF: 0.25x0.25/0.19x0.08)
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+- TO CHECK: 1 compartments only partly covered by stationary light (overlap cap) - check weapons are lit there
+- TO CHECK: 18 static func_breakable / func_brush meshes are not fully inside an env_combined_light_probe_volume, so their lighting will be wrong (stage_d.py ... probecover adds volumes): func_breakable (unnamed), func_breakable (unnamed), func_brush Brush2, func_brush Brush1, func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable Break1, func_breakable DoorStart2, func_brush (unnamed), func_brush (unnamed), func_breakable DoorStartBreak, func_brush (unnamed), func_brush Laser_3, func_brush Laser_1
+- TO CHECK: check the substituted materials look right: materials/environment_maps/pipeset_metal.vmat -> materials/models/props_pipes/pipeset_metal.vmat
+- TO CHECK: the map has 48 physics props: if player pushes on them feel wrong in game (too easy or too hard for the prop's size), run the physpush step (run_pass.py ... physpush)
+
+Follow-up pass (2026-10-29): assets, alpha, matflags
+- pruned 0 orphaned elements
+
+Follow-up pass (2026-10-29): visfit, lights, radar, overlaydepth, probecover
+- static overlays: projection depth set to 8 on 138 overlays
+- visfit (16-unit voxels): 3.2 billion cubic units of playable air, 1.8 of it walkable band; hints 22 Low, 9 Lower, 1 Lowest (replacing 24 Low, 15 Lower, 1 Lowest)
+- stationary lights: 0 of 30 lights switched Static -> Stationary (directlight 3) across 0 sealed compartments, ranges trimmed so no spot is inside more than 4
+- probecover: added 17 light probe volumes around 18 static func_breakable / func_brush meshes that no volume fully covered: func_breakable (unnamed), func_breakable (unnamed), func_brush Brush2, func_brush Brush1, func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable Break1, func_breakable DoorStart2, func_brush (unnamed), func_brush (unnamed), func_breakable DoorStartBreak, func_brush (unnamed), func_brush Laser_3, func_brush Laser_1
+- radar: rendered from geometry (1099 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/mg_jahoukarail_2015_radar_psd.png + game resource/overviews/mg_jahoukarail_2015.txt (pos -3185 2443, scale 6.84)
+- pruned 160 orphaned elements
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+- TO CHECK: probecover: check the new probe volumes look right next to the existing ones
+
+Follow-up pass (2026-10-29): assets
+- built 2 missing materials from the original CS:GO textures: tarp_ext_01, mudfloor001a_cheap
+- pruned 0 orphaned elements
+

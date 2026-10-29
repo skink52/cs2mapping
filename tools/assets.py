@@ -64,7 +64,7 @@ class Source:
         if not s.vpk.has(path): return None
         arc = s.vpk.archive_of(path)
         if arc != 0x7fff and arc not in s.arcs and s.vpk.files[path][2] > 0:
-            s.c.need.add(arc); return None
+            s.c.need.add(arc); getattr(s.c, 'need_paths', set()).add(path); return None
         return s.vpk.read(path, s.arcs)
 
 def load_vmt(src, vmt):

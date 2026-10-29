@@ -83,7 +83,8 @@ C:\source1\
 <root>/source1/maps/<addon>.vmf       the decompiled VMF (for dropped outputs, sky brushes...)
 <root>/vpk/cs2_pak01_dir.vpk          CS2's game\csgo\pak01_dir.vpk (stock materials/particles list)
 <root>/vpk/csgo_pak01_dir.vpk         CS:GO's pak01_dir.vpk
-<root>/vpk/csgo_pak01_NNN.vpk         only the CS:GO archive chunks stage C asks for ("NEED CS:GO archives: ...")
+<root>/vpk/csgo_pak01_NNN.vpk         only the CS:GO archive chunks stage C asks for ("NEED CS:GO archives: ..."), or instead the listed
+                                      files from the extracted CS:GO content copied into <root>/embedded/<addon>/
 <root>/content_files_<addon>.json     optional listing of the addon folder on the PC (so the tools know what exists without staging it)
 ```
 

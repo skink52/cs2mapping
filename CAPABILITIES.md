@@ -27,10 +27,12 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Merge the importer's separate prefab pieces back into one map.
 - Replace things CS2 no longer has, with scripts that behave like the original:
   push triggers (CS:GO-style speed), low-gravity zones, player speed changers, scoreboard points, server commands, weapon givers (with the right slots),
-  toggling walls, hallucination props, breakable glass.
+  toggling walls, hallucination props, breakable glass, multiplayer physics boxes.
+- Controls that take over the player's movement keys ("game_ui": steering a boat, aiming a cannon) rebuilt in script with the same outputs *(follow-up step)*.
 - Screen overlays rebuilt as on-screen HUD overlays *(by hand per map, e.g. Mario Party)*.
 - Lasers and beams (which CS2 can't create) redrawn as glowing beams in the right colour; lasers that did damage get a damage zone along them (a separate step right after the automatic fixes).
 - Missing skies rebuilt from the original six sky pictures; sky brushes the importer dropped rebuilt as sky shells.
+- Old 3D skyboxes (the miniature scenery CS:GO drew in the distance) moved into their own CS2 skybox map and linked back in *(follow-up step)*.
 - Missing textures rebuilt from CS:GO's own files, water swapped for CS2 water, anything unrecoverable swapped for the closest CS2 texture and flagged.
 - CS2 textures that Valve shipped broken (they show the pink error texture) replaced with the map's original CS:GO version.
 - Transparent textures (fences, glass, decals) that came through solid made transparent again; glowing/additive and double-sided textures restored.
@@ -48,7 +50,7 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Glows attached to moving objects (e.g. thrown grenades) made to follow them again.
 - Visibility hints placed for fast compiles, and huge sky shells taken out of the visibility calculation.
 - A minimap (radar) drawn from the map's own floors with their real textures (tower maps split into levels *(by hand)*).
-- Loading-screen credit to the original author ("original map by … cs2 port by skink52") and loading-screen pictures *(by hand, from the Workshop images you save on the PC)*.
+- Loading-screen credit to the original author ("original map by … / Ported to CS2 by skink52") and loading-screen pictures *(by hand, from the Workshop images you save on the PC)*.
 - Round settings (no freeze time, long rounds, a knife on spawn for one-team maps).
 - A report of everything that still needs a human look.
 

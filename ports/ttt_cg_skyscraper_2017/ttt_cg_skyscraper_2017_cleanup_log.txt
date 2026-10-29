@@ -1,0 +1,48 @@
+CS2 post-import clean - ttt_cg_skyscraper_2017 (2026-10-29)
+
+- collapsed 6 prefabs into the map, world offsets kept: ttt_cg_skyscraper_2017_gameplay.vmap (351 nodes, 351 entities), ttt_cg_skyscraper_2017_environment_prefab.vmap (1852 nodes, 984 entities), ttt_cg_skyscraper_2017_lighting_prefab.vmap (4 nodes, 4 entities), ttt_cg_skyscraper_2017_cubemaps_prefab.vmap (2 nodes, 2 entities), ttt_cg_skyscraper_2017_audio_prefab.vmap (96 nodes, 96 entities), ttt_cg_skyscraper_2017_nav_prefab.vmap (0 nodes, 0 entities)
+- outputs restored that the importer dropped: 6 (e.g. logic_auto  -> tonemap_global.SetAutoExposureMin(0.5); logic_auto  -> tonemap_global.SetAutoExposureMax(4); logic_auto  -> tonemap_global.SetBloomScale(1.2); logic_auto  -> tonemap_global.SetTonemapRate(.1); logic_auto  -> tonemap_global.SetTonemapPercentTarget(65); logic_auto  -> tonemap_global.SetTonemapPercentBrightPixels(2))
+- removed 2 point_servercommand; 1 Command outputs -> script Cmd_n (CS2 servers block point_servercommand)
+- added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> mp_freezetime 0, mp_roundtime 600
+- removed 1 player_speedmod (dead in CS2); 0 ModifySpeed outputs -> script Speed_n (speeds [])
+- 39 func_breakable_surf (gone in CS2) -> func_breakable, material Glass
+- 5 Source 1 soundscript names used by entities defined as same-named soundevents: Door.de_nuke_full_close_01, Door.de_nuke_full_open_01, Door.de_nuke_unlock_01, Wood.ScrapeSmooth, Wood_Solid.ImpactSoft
+- soundscript waves copied into the addon from the map's packed files / CS:GO VPK: sounds/doors/metal_door_full_close_01.wav, sounds/doors/metal_door_full_open_01.wav, sounds/doors/metal_door_open_01.wav, sounds/physics/wood/wood_plank_scrape_smooth_loop1.wav, sounds/physics/wood/wood_solid_impact_soft1.wav, sounds/physics/wood/wood_solid_impact_soft2.wav, sounds/physics/wood/wood_solid_impact_soft3.wav
+- 3 static overlay materials -> csgo_static_overlay with translucency masks from the original alpha: sgnimmy.vmat, decalmetalspeaker002a.vmat, plaster005a.vmat
+- face texture scales: 2736 brush faces, 2709 matched to one VMF mapping; 1 matched: rounded corner (<= 2.5u off the plane); 2708 matched: same plane; 9 no VMF side on the same plane + material; 18 overlapping VMF brushes with different mappings (left as imported)
+- face texture mapping repaired: 1635 faces re-scaled / re-shifted from the VMF, 1631 faces with texture coordinates rewritten: brick_b_fs (80), building_trainstation_template002k (5), carpet004 (4), vertigo_skyscraper_reflective (137), carpet03 (1), hr_ceiling_tile_001_color (5), vertigo_buildingskyline_bk (1), vertigo_buildingskyline_rt (1), baggage_concretefloora (5), cinderwall03b (3), concreteceiling001a (2), concretewall011b (17), hr_conc_f2_tintdark (8), hr_concrete_stair_001 (73), hr_concrete_trim_001 (25), hr_concrete_wall_001 (10), hr_concrete_wall_005 (3), hr_concrete_wall_006 (6), hr_concrete_wall_painted_002_blue_light (268), hr_concrete_wall_painted_002_orange (62), hr_concrete_wall_painted_002_yellow (10), hr_concrete_wall_painted_002_yellow_light (80), roadparkinglot (56), vertigo_concretefloora (2), vertigo_concretewalla (1), black (10), cs_elevator_floor_and_rm_4_5_6_signs (5), cs_elevator_wall_and_door (5), pwtrim1 (9), nuke_metalgrate_01 (4), nuke_metalvent (20), whiteboard_overlay_03_color (1
+- env_sky materials/skybox/clearsky.vmat: rebuilt from the six CS:GO faces
+- restored 12 sky brushes (dropped by the importer) as moondome meshes using materials/skybox/clearsky_moondome.vmat
+- visfit (24-unit voxels): 61.3 billion cubic units of playable air, 2.4 of it walkable band; hints 19 Low, 20 Lower, 1 Lowest
+- visfit: 6 of 12 sky shell meshes set to Exclude from Vis, 6 kept because they close playable air
+- 115 lights had brightness = nan from the importer: set to 0 (as a Hammer save does); stage_d lightbright rebuilds real values from the VMF
+- stationary lights: 0 of 171 lights switched Static -> Stationary (directlight 3) across 0 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 compartments open to sky left to light_environment
+- 5 materials were alpha-tested / translucent in CS:GO but imported opaque - fixed with a mask from the texture alpha: vertigo_buildingskyline_bk (translucent), vertigo_buildingskyline_rt (translucent), offwndwb (translucent), prodwndwa (translucent), unbreakable (translucent)
+- probes: every static func_breakable / func_brush is inside a light probe volume
+- radar: rendered from geometry (270 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/ttt_cg_skyscraper_2017_radar_psd.png + game resource/overviews/ttt_cg_skyscraper_2017.txt (pos -1731 18, scale 1.74)
+- built 6 missing materials from the original CS:GO textures: vertigo_skyscraper_reflective, hr_conc_f2_tintdark, nuke_metalvent (alpha), hr_glass_frosted_001b, hr_metal_wall_a1, hr_tarp_a1
+- $nocull materials -> F_RENDER_BACKFACES: offwndwb, prodwndwa
+- added point_script ttt_cg_skyscraper_2017_io_script (maps/scripts/ttt_cg_skyscraper_2017_io.js)
+- pruned 30 orphaned elements
+- TO CHECK: 2 VMF entities with outputs could not be matched 1:1 in the vmap - their outputs were not checked
+- TO CHECK: the importer leaves these out (they're on its exclusion list, mostly cosmetic): 1 env_fog_controller (fog)
+- TO CHECK: the map had a CS:GO 3D skybox (sky_camera at 36 5507 1051, scale 16): its geometry is now ordinary geometry in the map and CS2 ignores sky_camera - move it to a separate skybox map + skybox_reference, or delete it
+- TO CHECK: overlay materials not converted: materials/decals/decalpapers02.vmat (vmat not in addon); materials/decals/decalstain006a.vmat (vmat not in addon); materials/decals/decalstain009a.vmat (vmat not in addon); materials/decals/decalstain010a.vmat (vmat not in addon); materials/decals/drainage_stain_03.vmat (vmat not in addon); materials/decals/hpe_plaster_decal_decay_brick_03.vmat (vmat not in addon); materials/decals/milswitch001.vmat (vmat not in addon); materials/decals/milswitch002.vmat (vmat not in addon); materials/decals/offpapers03.vmat (vmat not in addon); materials/decals/prodpipestain01.vmat (vmat not in addon); materials/decals/prodplatea.vmat (vmat not in addon); materials/decals/prodventa.vmat (vmat not in addon)
+- TO CHECK: 33 static overlays have a projection depth >= 32 (can show as a box with the overlay invisible) - stage_d overlaydepth sets them to 8
+- TO CHECK: faces still with an absurd texture scale (<0.01 or >8), left as imported: prodwndwa x12 (VMF: 0.1172x0.0039/0.1172x0.0078), urban_plasterwall_05a_nobump x2 (VMF: 10x10)
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+- TO CHECK: the map has 132 physics props: if player pushes on them feel wrong in game (too easy or too hard for the prop's size), run the physpush step (run_pass.py ... physpush)
+
+Follow-up pass (2026-10-29): assets, alpha, matflags
+- built 1 missing materials from the original CS:GO textures: blendgrassgrass001a
+- pruned 0 orphaned elements
+
+Follow-up pass (2026-10-29): visfit, lights, radar, overlaydepth, probes
+- static overlays: projection depth set to 8 on 33 overlays
+- visfit (16-unit voxels): 61.6 billion cubic units of playable air, 2.7 of it walkable band; hints 18 Low, 14 Lower, 1 Lowest (replacing 19 Low, 20 Lower, 1 Lowest)
+- visfit: 0 of 6 sky shell meshes set to Exclude from Vis, 6 kept because they close playable air
+- stationary lights: 0 of 171 lights switched Static -> Stationary (directlight 3) across 0 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 compartments open to sky left to light_environment
+- probes: every static func_breakable / func_brush is inside a light probe volume
+- radar: rendered from geometry (523 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/ttt_cg_skyscraper_2017_radar_psd.png + game resource/overviews/ttt_cg_skyscraper_2017.txt (pos -1731 18, scale 1.74)
+- pruned 160 orphaned elements
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)

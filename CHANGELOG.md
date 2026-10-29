@@ -3,6 +3,15 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-29: mg_pirates, mg_jahoukarail_2015, ttt_cg_skyscraper_2017, ttt_minecraft stage C
+
+- Imported (stage B) and cleaned (stage C + follow-up passes); details and open items in each `ports/<addon>/README.md`. Build queue in `data/build_queue.txt`.
+- New `tools/skysplit.py`: an old 3D skybox → its own `<map>_3dskybox.vmap` + `skybox_reference` (mg_pirates, ttt_cg_skyscraper_2017).
+- New `tools/gameui.py` / stage D `gameui` pass: game_ui → key poll in the io script firing the original outputs (mg_pirates, 22 cannon/boat controllers).
+- Stage C `dead`: func_physbox_multiplayer → func_physbox; env_spritetrail flagged. NEED lists the CS:GO file paths too, so they can be copied from the
+  extracted CS:GO content into `<root>/embedded/<addon>/` instead of staging archive chunks.
+- disprestore runs on the stage C output (it needs an existing world mesh as its template).
+
 ## 2026-10-29: mg_yolo_multigames fixes (Ninja-Chris comparison)
 
 - Translucent cut-out materials given `TextureTranslucency` masks (banners, random button, spawn signs), wireframe material moved to `F_BLEND_MODE 1`, wallhack

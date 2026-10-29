@@ -13,5 +13,5 @@ for rel, data in c.files.items():
 for rel, data in c.game_files.items():
     p = os.path.join(root, 'out', addon + '_game', rel); os.makedirs(os.path.dirname(p), exist_ok=True); open(p, 'wb').write(data)
 print('\n'.join(['- ' + l for l in c.log] + ['TO CHECK: ' + t for t in c.todo]))
-if c.need: print('NEED CS:GO archives:', sorted(c.need))
+if c.need: print('NEED CS:GO archives:', sorted(c.need), '(or these files from the extracted CS:GO content, copied into <root>/embedded/<addon>/:', ', '.join(sorted(c.need_paths)) + ')')
 print('FILES:', sorted(c.files))

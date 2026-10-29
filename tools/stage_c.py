@@ -22,7 +22,7 @@ class Ctx:
         s.out = os.path.join(root, 'out', addon)
         s.log = []; s.todo = []; s.files = {}   # rel path (content-relative, / separated) -> bytes
         s.script = addon + '_io_script'
-        s.push = {}; s.spawn_equips = []; s.equip_items = {}; s.items_js = {}; s.commands = []; s.scores = set(); s.speeds = set(); s.gravities = set(); s.phys = {}; s.soundscript_events = {}; s.src = None; s.cs2v = None; s.need = set(); s.asset_refs = set(); s.game_files = {}
+        s.push = {}; s.spawn_equips = []; s.equip_items = {}; s.items_js = {}; s.commands = []; s.scores = set(); s.speeds = set(); s.gravities = set(); s.phys = {}; s.soundscript_events = {}; s.src = None; s.cs2v = None; s.need = set(); s.need_paths = set(); s.asset_refs = set(); s.game_files = {}
         lp = os.path.join(root, 'content_files_%s.json' % addon)   # listing of the addon content folder on the PC
         s.pc_files = set(x.lower().replace('\\', '/') for x in json.load(open(lp))) if os.path.exists(lp) else set()
     def exists(s, rel):
@@ -340,7 +340,12 @@ def dead_entities(m, c):
     for e in bs:
         m.setp(e, 'classname', 'func_breakable'); m.setp(e, 'material', '0'); m.setp(e, 'health', m.P(e, 'health', '1') or '1')
     if bs: c.log.append('%d func_breakable_surf (gone in CS2) -> func_breakable, material Glass' % len(bs))
-    for cl in ('env_screenoverlay', 'point_clientcommand', 'game_ui', 'logic_script', 'env_entity_igniter', 'func_precipitation', 'env_fog_controller'):
+    pm = m.by_class('func_physbox_multiplayer')
+    for e in pm: m.setp(e, 'classname', 'func_physbox')
+    if pm: c.log.append('%d func_physbox_multiplayer (gone in CS2) -> func_physbox' % len(pm))
+    st = m.by_class('env_spritetrail')
+    if st: c.todo.append('%d env_spritetrail (gone in CS2, cosmetic trails) - left out; a trail particle would replace them' % len(st))
+    for cl in ('env_screenoverlay', 'point_clientcommand', 'game_ui','logic_script', 'env_entity_igniter', 'func_precipitation', 'env_fog_controller'):
         es = m.by_class(cl)
         if es: c.todo.append('%d %s (%s) - not converted automatically, needs a look' % (len(es), cl, ', '.join(sorted(set(m.name(e) or '-' for e in es)))[:200]))
     vs = [e for e in m.entities() if m.P(e, 'vscripts')]
@@ -860,5 +865,5 @@ if __name__ == '__main__':
     for rel, data in c.game_files.items():
         p = os.path.join(root, 'out', addon + '_game', rel); os.makedirs(os.path.dirname(p), exist_ok=True); open(p, 'wb').write(data)
     print('\n'.join(['- ' + l for l in c.log] + ['TO CHECK: ' + t for t in c.todo]))
-    if c.need: print('NEED CS:GO archives:', sorted(c.need))
-    json.dump({'log': c.log, 'todo': c.todo, 'files': sorted(c.files), 'need': sorted(c.need)}, open(os.path.join(root, 'out', addon + '_result.json'), 'w'), indent=1)
+    if c.need: print('NEED CS:GO archives:', sorted(c.need), '(or these files from the extracted CS:GO content, copied into <root>/embedded/<addon>/:', ', '.join(sorted(c.need_paths)) + ')')
+    json.dump({'log': c.log, 'todo': c.todo, 'files': sorted(c.files), 'need': sorted(c.need), 'need_paths': sorted(c.need_paths)}, open(os.path.join(root, 'out', addon + '_result.json'), 'w'), indent=1)

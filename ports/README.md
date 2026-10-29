@@ -40,10 +40,10 @@ which also covers other porters' maps, external ports and skink52's originals: m
 | [mg_bob2](mg_bob2/) | Built (in progress; surf ramps limit playability) |  | 2026-10-16 | cs2port pipeline |
 | [mg_kohztec_course](mg_kohztec_course/) | In progress |  | 2026-10-16 | cs2port pipeline |
 | [mg_antique_course](mg_antique_course/) | In progress |  | 2026-10-24 | cs2port pipeline, unattended |
-| [mg_jahoukarail_2015](mg_jahoukarail_2015/) | Stage A done, waiting for import | | | cs2port pipeline |
-| [mg_pirates](mg_pirates/) | Stage A done, waiting for import | | | cs2port pipeline |
-| [ttt_cg_skyscraper_2017](ttt_cg_skyscraper_2017/) | Stage A done, waiting for import | | | cs2port pipeline (TTT scripting: cs2mapTTT) |
-| [ttt_minecraft](ttt_minecraft/) | Stage A done, waiting for import | | | cs2port pipeline (TTT scripting: cs2mapTTT) |
+| [mg_jahoukarail_2015](mg_jahoukarail_2015/) | Stage C done, waiting for build | | | cs2port pipeline |
+| [mg_pirates](mg_pirates/) | Stage C done, waiting for build | | | cs2port pipeline |
+| [ttt_cg_skyscraper_2017](ttt_cg_skyscraper_2017/) | Stage C done, waiting for build | | | cs2port pipeline (TTT scripting: cs2mapTTT) |
+| [ttt_minecraft](ttt_minecraft/) | Stage C done, waiting for build | | | cs2port pipeline (TTT scripting: cs2mapTTT) |
 
 ## Jailbreak maps (earlier ports)
 

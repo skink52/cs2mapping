@@ -24,6 +24,7 @@ Everything runs in Claude's cloud workspace with Python 3 + numpy, scipy and Pil
 | `disprestore.py` | Rebuilds displacements the importer dropped ("Found a displacement missing a needed subkey.") from the BSP | `python3 disprestore.py <vmap in> <bsp> <vmap out> [x0,y0,z0,x1,y1,z1 ...]` (skip boxes) |
 | `laserhurt.py` | A `trigger_hurt` along every CS:GO env_laser that did damage and has none (after stage C) | `python3 laserhurt.py <vmap in> <csgo vmf> <vmap out>` |
 | `glowfix.py` | Parented env_particle_glows → following glow particles | `python3 glowfix.py <vmap in> <vmap out> <addon content root>` |
+| `skysplit.py` | Old 3D skybox → its own `<map>_3dskybox.vmap` + `skybox_reference` in the main map (after stage C) | `python3 skysplit.py <map.vmap in> <main out> <skybox out> <map name> [x0,y0,z0,x1,y1,z1]` |
 | `matnames.py` | Importer-sanitised material refs (spaces → underscores) back to the real file names; run before `alpha,assets` | `python3 matnames.py <addon> <root>` (needs `<root>/content_files_<addon>.json`) |
 | `bsp2vmf_lite.py` | Minimal VMF from a CS:GO BSP (every brush side with material + uaxis/vaxis from the texinfo, infodecals, info_overlays) and the BSP's embedded files, for `texfix` passes when the decompiled VMF isn't available | `python3 -I bsp2vmf_lite.py <map.bsp> <root>/source1/maps/<addon>.vmf [<root>/embedded/<addon>]` |
 | `vmap_preview.py` | Top-down + four corner renders of any vmap (binary or importer text) | `python3 vmap_preview.py <map.vmap> <out.png> [x0,y0,z0,x1,y1,z1]` |
@@ -37,7 +38,7 @@ plus `overlaydepth` (= `overlayfix` + projection depth 8) and `physpush` (opt-in
 
 ### stage_d.py passes
 
-`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush`.
+`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -52,6 +53,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `assets.py` | `alpha`, `assets` | Missing materials rebuilt from CS:GO's VPK (also stock CS2 stubs listed in `maps/<addon>_stub_materials.txt`), water → `liquids/nuke_water`, closest stock CS2 material otherwise; alpha-test/translucent masks |
 | `soundscripts.py` | `soundscripts` | Source 1 soundscript names used by entities / door noises → same-named soundevents (map soundscripts, then CS:GO's manifest) |
 | `steam.py` | `steam` | env_steam → info_particle_system + generated `particles/port_steam/*.vpcf` (heat wave = refracting sprite) |
+| `gameui.py` | `gameui` (D) | game_ui → key poll in the io script (`GameUIOn_`/`GameUIOff_` inputs fire the original outputs); game_ui entities removed |
 | `physpush.py` | `physpush` (opt-in) | Players push physics props by CS:GO `.phy` mass, from the io script (`patch_script` adds it to an existing `_io.js`) |
 | `texfix.py` | `overlayfix`, `overlaydepth`, `facescale`, `matflags` | Static overlay geometry, brush-face texture scale/shift (match order in pipeline.md), `$additive`/`$nocull`/`$ssbump` material fixes |
 | `sky.py` | `sky` | Six CS:GO sky faces → 2:1 equirect panorama for `sky.vfx` / `csgo_moondome` |

@@ -1,0 +1,56 @@
+CS2 post-import clean - mg_pirates (2026-10-29)
+
+- collapsed 6 prefabs into the map, world offsets kept: mg_pirates_gameplay.vmap (455 nodes, 455 entities), mg_pirates_environment_prefab.vmap (325 nodes, 301 entities), mg_pirates_lighting_prefab.vmap (3 nodes, 3 entities), mg_pirates_cubemaps_prefab.vmap (3 nodes, 3 entities), mg_pirates_audio_prefab.vmap (24 nodes, 24 entities), mg_pirates_nav_prefab.vmap (0 nodes, 0 entities)
+- outputs restored that the importer dropped: 0
+- game_player_equip (unnamed): CS:GO keys ['weapon_knife'] -> CS2 weapon0..weapon21 slots
+- game_player_equip (unnamed) ran on every spawn in CS:GO (no "Use Only"): the io script now strips, then gives weapon_knife on every spawn
+- 40 trigger_push (speeds [1.0, 800.0, 35000.0]; CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500); names/filters/Enable/Disable kept
+- added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> mp_freezetime 0, mp_roundtime 600
+- removed env_sun '' (not in CS2; light_environment draws the sun)
+- 23 ambient_generics pointed at 5 new soundevents (pirates.explode4, pirates.lake_water, pirates.mountain_wind_lp_01, pirates.water_splash3, pirates.wave1) instead of raw .vsnd paths
+- stock CS:GO sounds extracted from the CS:GO VPK into the addon: sounds/ambient/atmosphere/mountain_wind_lp_01.wav, sounds/ambient/water/lake_water.wav, sounds/ambient/water/water_splash3.wav, sounds/ambient/water/wave1.wav, sounds/weapons/hegrenade/explode4.wav
+- wavs re-encoded to 16-bit PCM: wave1.wav (PCM 8-bit -> 16-bit PCM)
+- looping sounds given a cue point (CS2 only loops wavs with markers; start taken from the smpl loop when there is one): sounds/ambient/atmosphere/mountain_wind_lp_01.wav
+- face texture scales: 16165 brush faces, 15411 matched to one VMF mapping; 5 matched: moved copy of a VMF brush (texture lock); 15406 matched: same plane; 16 no VMF side on the same plane + material; 738 overlapping VMF brushes with different mappings (left as imported)
+- face texture mapping repaired: 15391 faces re-scaled / re-shifted from the VMF, 15900 faces with texture coordinates rewritten: carpet001 (36), blue04_ssbump (2), woodm (4), boxsides_t01 (56), cr_miscwood2b (71), picrate1 (188), woodm (534), picrate2 (28), nukmapb (12), pi_grnmetalt (144), pi_rug2 (6), pi_wood3 (72), train_metalceiling_02 (1106), train_oldwindows_01 (4), train_oldwindows_01_transparent (12), inferno_water (2), drainage_beam_01 (656), metal_panel_roof (238), metalfence004a (8), metaltruss009a (654), blendmilground004_2 (4), blendsandweed005a (7), milground016 (5), flag (16), hull_brown (6594), hull_color1 (74), hull_color2 (74), hull_floor (2284), mast (8), piratewar_credit (1), sail (208), trim (178), houseceiling01 (1968), houseceiling02 (16), infdoord (8), plywood01 (522), woodfloor_int_02 (100)
+- restored 10 sky brushes (dropped by the importer) as moondome meshes using materials/skybox/sky_cs15_daylight01_hdr_moondome.vmat
+- visfit (16-unit voxels): 111.7 billion cubic units of playable air, 7.1 of it walkable band; hints 30 Low, 0 Lower, 1 Lowest
+- visfit: 5 of 10 sky shell meshes set to Exclude from Vis, 5 kept because they close playable air
+- 26 lights had brightness = nan from the importer: set to 0 (as a Hammer save does); stage_d lightbright rebuilds real values from the VMF
+- stationary lights: 2 of 26 lights switched Static -> Stationary (directlight 3) across 2 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 compartments open to sky left to light_environment
+- 1 materials were alpha-tested / translucent in CS:GO but imported opaque - fixed with a mask from the texture alpha: mast (translucent)
+- probes: every static func_breakable / func_brush is inside a light probe volume
+- radar: rendered from geometry (2855 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/mg_pirates_radar_psd.png + game resource/overviews/mg_pirates.txt (pos -2150 2150, scale 4.20)
+- built 3 missing materials from the original CS:GO textures: blue04_ssbump, blendmilground004_2, blendsandweed005a
+- CS:GO water materials (no CS2 equivalent shader) -> stock: materials/liquids/inferno_water.vmat -> materials/liquids/nuke_water.vmat
+- added point_script mg_pirates_io_script (maps/scripts/mg_pirates_io.js)
+- pruned 22 orphaned elements
+- TO CHECK: the map had a CS:GO 3D skybox (sky_camera at 0 0 -4384, scale 16): its geometry is now ordinary geometry in the map and CS2 ignores sky_camera - move it to a separate skybox map + skybox_reference, or delete it
+- TO CHECK: 22 game_ui (1c_controller, 2bc1c_controller, 2boat_controller, 2c_controller, 3bc1c_controller, 3c_controller, 4c_controller, 54c_controller, bc1c_controller, boat_controller, c_controller, t_1c_controller, t_2bc) - not converted automatically, needs a look
+- TO CHECK: faces still with an absurd texture scale (<0.01 or >8), left as imported: trim x6 (VMF: 0.35x0.6929/0.25x0.5/0.25x0.25)
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+
+Follow-up pass (2026-10-29): assets, alpha, matflags
+- pruned 0 orphaned elements
+
+Follow-up pass (2026-10-29): visfit, lights, radar, probes
+- visfit (16-unit voxels): 111.6 billion cubic units of playable air, 7.1 of it walkable band; hints 33 Low, 0 Lower, 1 Lowest (replacing 30 Low, 1 Lowest)
+- visfit: 0 of 5 sky shell meshes set to Exclude from Vis, 5 kept because they close playable air
+- stationary lights: 0 of 26 lights switched Static -> Stationary (directlight 3) across 0 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 compartments open to sky left to light_environment
+- probes: every static func_breakable / func_brush is inside a light probe volume
+- radar: rendered from geometry (3023 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/mg_pirates_radar_psd.png + game resource/overviews/mg_pirates.txt (pos -2150 2150, scale 4.20)
+- pruned 124 orphaned elements
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+
+Follow-up pass (2026-10-29): assets
+- built 1 missing materials from the original CS:GO textures: milrock001
+- pruned 0 orphaned elements
+
+Follow-up pass (2026-10-29): gameui
+- 22 game_ui -> script (22 Activate/Deactivate outputs -> GameUIOn_/GameUIOff_; 22 freeze the player while held; 104 outputs fired from the key poll)
+- pruned 192 orphaned elements
+
+Follow-up pass (2026-10-29): dead
+- 18 func_physbox_multiplayer (gone in CS2) -> func_physbox
+- pruned 0 orphaned elements
+- TO CHECK: 18 env_spritetrail (gone in CS2, cosmetic trails) - left out; a trail particle would replace them
