@@ -3,6 +3,12 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-29: mg_yolo_multigames fixes (Ninja-Chris comparison)
+
+- Translucent cut-out materials given `TextureTranslucency` masks (banners, random button, spawn signs), wireframe material moved to `F_BLEND_MODE 1`, wallhack
+  Toggle chains → Enable/Disable, env_sprite particles resized (texture width × 0.25, non-square textures padded), scouts drugged effect → HUD overlay,
+  secret camera teleport disabled. Details in `ports/mg_yolo_multigames/README.md`.
+
 ## 2026-10-29
 
 - **Stage A for mg_jahoukarail_2015, mg_pirates, ttt_cg_skyscraper_2017, ttt_minecraft** (the top level of `mg maps`; no CS2 ports found in existing_ports.txt or on the web). Queued for `run_import.bat`; added to existing_ports.txt `[in progress] [skink]`. The ttt_ maps are plain ports; TTT gameplay comes from github.com/skink52/cs2mapTTT. `prep.py`: pakfile entries with absolute paths (ttt_minecraft's `c:/…/csgo/maps/*.nav`) are cut back to the part after `csgo/` (they made invalid PC paths), nav/graph files are no longer staged anywhere, and the decompiled embedded files travel as `C:\source1\maps\<addon>_embedded.zip` (4 files instead of 841 for this batch). Loading-screen text carries no AI note (conventions.md). Deployed: `tools/prep.py`, `cs2_port_pipeline.md`.

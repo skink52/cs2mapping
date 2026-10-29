@@ -25,6 +25,8 @@ import { Instance, Entity, BaseModelEntity, CSPlayerPawn, CSPlayerController, CS
 //   NadeWin_T / NadeWin_CT        grenade holes: a team filled all 15 holes -> the other team is slain 60 s later (M4 time)
 //   (automatic)                   volleyball: a ball landing on the other side's floor fires fb_tball_scored / fb_ctball_scored
 //   (automatic)                   spawn_overlay (map credits) only shows in the first two rounds
+//   Weed_1 / Weed_2 / Weed_3      replaces  color_correction weed_co_1..3 (scouts "drugged" game): full-screen HUD overlay,
+//   Weed_Off                                weed_random picks one every 10-25 s; cleared at round start/end (global, like CS:GO)
 //
 // The data block below is generated from the map by the port tooling.
 
@@ -229,6 +231,15 @@ Instance.OnScriptInput("Show_spawn_overlay", () => {
     Instance.EntFireAtName({ name: SCRIPT_NAME, input: "RunScriptInput", value: "Hide_spawn_overlay", delay: INTRO_TIME });
 });
 Instance.OnScriptInput("Hide_spawn_overlay", () => setOverlay("spawn_overlay", false));
+
+// scouts "drugged" game: CS:GO cycled three global color_corrections (weed_co_1..3); the post_processing_volume copies showed nothing in CS2
+const WEED = ["weed_1", "weed_2", "weed_3"];
+/** @param {number} n 0 = off */
+function weed(n) { WEED.forEach((id, i) => setOverlay(id, i === n - 1)); }
+Instance.OnScriptInput("Weed_1", () => weed(1));
+Instance.OnScriptInput("Weed_2", () => weed(2));
+Instance.OnScriptInput("Weed_3", () => weed(3));
+Instance.OnScriptInput("Weed_Off", () => weed(0));
 
 // ---------------------------------------------------------------- game_ui "cube_gameui": remote-control cube
 // CS:GO: ent_fire_me (+use) switches the hover thrusters "up" on and activates the game_ui (freeze player,
@@ -584,8 +595,9 @@ Instance.OnActivate(() => {
     ensureThink();
 });
 // game_round_end "roundend" OnRoundEnded: switch the scouts game's colour correction off
-Instance.OnRoundStart(() => { roundSignal(); resetNadeGame(); });
+Instance.OnRoundStart(() => { roundSignal(); resetNadeGame(); weed(0); });
 Instance.OnRoundEnd(() => {
+    weed(0);
     for (const [name, input, delay] of DATA.roundEnd) Instance.EntFireAtName({ name, input, delay });
 });
 // Each round starts with the teleport targets the map was built with (CS:GO respawned map entities each round).
