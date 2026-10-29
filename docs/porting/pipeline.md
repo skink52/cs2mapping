@@ -106,7 +106,7 @@ and `physpush` when named).
   scale. Texture size = the addon's converted colour texture (what Hammer draws), CS:GO VTF as fallback. Faces still absurd are listed with what the VMF
   says for their material.
 - **Sky** (`sky`): an env_sky that CS2 doesn't have is rebuilt from the six CS:GO faces into an equirect panorama (HDR skies tone mapped). Sky brushes the
-  importer dropped come back as `csgo_moondome` boxes. (CS2's new `toolsskyboxocclude` material may replace moondome shells: untested, see
+  importer dropped come back as `csgo_moondome` boxes, or as `toolsskybox` boxes when the map has a 3D skybox (a moondome would hide it). (CS2's new `toolsskyboxocclude` material may replace moondome shells: untested, see
   [cs2-gotchas](../reference/cs2-gotchas.md#sky-and-world).)
 - **Vis: hints fitted to the play space and sky shells out of vis** (`vis` = `visfit.py`; `skyvis` = the older shell-only pass). Playable air is the empty
   space (16-unit voxels; 24 or 32 on very big maps) connected to a spawn or teleport destination, plus sealed rooms holding buttons, doors, triggers, trains

@@ -721,8 +721,10 @@ def sky_pass(m, c, vmfpath):
         c.todo.append('%d sky brushes dropped by the importer were not rebuilt - no usable sky material' % len(boxes)); return
     tm = V.Map(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'box_template.vmap'))
     tnode = tm.children(tm.world)[0]
-    mdome = 'materials/skybox/%s_moondome.vmat' % png
-    if not c.exists(mdome):
+    # a map with a 3D skybox needs real toolsskybox faces: a moondome is drawn on top of the 3D skybox and hides it
+    three_d = 'sky_camera' in open(vmfpath, encoding='utf-8', errors='replace').read().lower() or bool(m.by_class('skybox_reference'))
+    mdome = 'materials/tools/toolsskybox.vmat' if three_d else 'materials/skybox/%s_moondome.vmat' % png
+    if not three_d and not c.exists(mdome):
         c.write(mdome, MOONDOME_VMAT % dict(png=png))
         b = _io.BytesIO(); Image.new('RGB', (4, 4), (255, 255, 255)).save(b, 'PNG'); c.write('materials/skybox/%s_moondome_color.png' % png, b.getvalue())
     for mn, mx in boxes:
@@ -737,7 +739,7 @@ def sky_pass(m, c, vmfpath):
                 ctr = [sum(p[k] for p in pts) / len(pts) for k in range(3)]
                 a[2] = [[mx[k] if p[k] > ctr[k] else mn[k] for k in range(3)] for p in pts]
         dmx.geta(m.E[m.world], b'children')[2].append(j)
-    c.log.append('restored %d sky brushes (dropped by the importer) as moondome meshes using %s' % (len(boxes), mdome))
+    c.log.append('restored %d sky brushes (dropped by the importer) as %s meshes using %s' % (len(boxes), 'toolsskybox (3D skybox map)' if three_d else 'moondome', mdome))
     if odd: c.todo.append('%d non-box sky brushes in the VMF were not rebuilt as moondomes' % odd)
 
 # ------------------------------------------------------------------ visibility hints
