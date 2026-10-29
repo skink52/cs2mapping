@@ -16,6 +16,7 @@ TTT map on a skyscraper. TTT gameplay scripting is done separately ([cs2mapTTT](
 - 2026-10-29: 39 func_breakable_surf → func_breakable; clearsky rebuilt; assets; stage D visfit, lights, radar, overlaydepth (33), probes.
 - 2026-10-29: loading credit `maps/ttt_cg_skyscraper_2017.txt` ("Original map by …" / "Ported to CS2 by skink52"); build queue `ttt_cg_skyscraper_2017 ttt_cg_skyscraper_2017_3dskybox` then `ttt_cg_skyscraper_2017`.
 - 2026-10-29: moondome shells in the 3D skybox map → `toolsskybox` (`skysplit.py --sky`; a moondome hides the 3D skybox). The main map's shells had already been changed to toolsskybox in Hammer. Backup: `prefabs+backups\ttt_cg_skyscraper_2017_3dskybox_2026-10-29_moondome.vmap`.
+- 2026-10-29: vis compile too slow (map is ~15,700 units tall). `visfit_lean`: 18 Low + 14 Lower hints (8.9 + 14.6 billion cubic units) → 10 Lower (10.7 billion) over the walkable band only, everything else Lowest. Backup: `prefabs+backups\\ttt_cg_skyscraper_2017_2026-10-29_previs.vmap`.
 
 ## Open / to check
 

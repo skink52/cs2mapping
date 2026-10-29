@@ -9,6 +9,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   no longer turns physics-only pushes into player pushes. mg_pirates: 18 cannons.
 - New `tools/vmatc.py` (compiled vmat_c → vmat; KV3 v5 with LZ4/zstd) and `tools/waterblend.py` (main-map water fades into the 3D skybox water, from the
   cs2kz mapping guide). mg_pirates water blended.
+- ttt_cg_skyscraper_2017: `visfit_lean` for a slow vis compile (no Low hints; 10 Lower over the walkable band).
 
 ## 2026-10-29: mg_pirates, mg_jahoukarail_2015, ttt_cg_skyscraper_2017, ttt_minecraft stage C
 

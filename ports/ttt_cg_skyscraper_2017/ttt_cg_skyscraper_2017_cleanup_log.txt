@@ -46,3 +46,9 @@ Follow-up pass (2026-10-29): visfit, lights, radar, overlaydepth, probes
 - radar: rendered from geometry (523 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/ttt_cg_skyscraper_2017_radar_psd.png + game resource/overviews/ttt_cg_skyscraper_2017.txt (pos -1731 18, scale 1.74)
 - pruned 160 orphaned elements
 - TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+
+Follow-up pass (2026-10-29): visfit_lean
+- visfit (16-unit voxels): 61.6 billion cubic units of playable air, 2.7 of it walkable band; hints 0 Low, 10 Lower, 1 Lowest (replacing 18 Low, 14 Lower, 1 Lowest)
+- visfit: 0 of 6 sky shell meshes set to Exclude from Vis, 6 kept because they close playable air
+- pruned 132 orphaned elements
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
