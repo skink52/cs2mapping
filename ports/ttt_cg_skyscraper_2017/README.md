@@ -38,3 +38,4 @@ TTT map on a skyscraper. TTT gameplay scripting is done separately ([cs2mapTTT](
 
 What ttt.js still needs for this map (invisibility button, round reset): cs2mapTTT `MAP_REQUIREMENTS.md`.
 - 29 Oct 2026 (evening): the invisibility button (btn1/btn3) isn't in the CS2 vmap, skybox map or gameplay prefab: restore it in the port, then re-run cs2mapTTT `tools/ttt_convert.py` (its `!activator Alpha` rule handles the fade).
+- 29 Oct 2026 (20:25): BSP/VMF vs vmap check: only btn1/btn3 were dropped (1-unit npcclip buttons); restored with `tools/restore_ents.py`, their `!activator Alpha` fade routed through cs2mapTTT. As in the original, btn1 starts locked and nothing unlocks it (its unlock targets a btn2 that the BSP doesn't have), so the invisibility can't be triggered. Not restored, by design: player_speedmod (unused), env_tonemap_controller (post-processing instead), point_servercommand `command` (io script Cmd_0).

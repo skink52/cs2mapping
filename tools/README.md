@@ -62,6 +62,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `postprocess_filmic_underwater.vpost` | template | Underwater post-processing (from ba_jail_seaside), copied to `lighting/postprocessing/` by the `water` pass |
 | `doorsolid.py` | `doorsolid` (D) | Doors flagged Non-solid to Player: meshes → never-solid func_brush parented to the door, door keeps a nodraw hinge cube |
 | `ventlight.py` | `ventlight` (D) | Stationary lights in crawl-space ducts behind func_breakable vent grates; covers get Disable Shadows |
+| `restore_ents.py` | `python3 tools/restore_ents.py <in.vmap> <map.vmf> <out.vmap> <name> [...]` | Puts back named entities the importer dropped, from the decompiled VMF, cloning a same-class CS2 entity as the template (ttt_cg_skyscraper_2017's 1-unit btn1/btn3) |
 | `physpush.py` | `physpush` (opt-in) | Players push physics props (and func_physbox, mass from its size) by CS:GO `.phy` mass, from the io script (`patch_script` adds it to an existing `_io.js`) |
 | `texfix.py` | `overlayfix`, `overlaydepth`, `facescale`, `matflags` | Static overlay geometry, brush-face texture scale/shift (match order in pipeline.md), `$additive`/`$nocull`/`$ssbump` material fixes |
 | `sky.py` | `sky` | Six CS:GO sky faces → 2:1 equirect panorama for `sky.vfx` / `csgo_moondome` |
