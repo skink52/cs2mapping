@@ -130,6 +130,11 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   keep the real attacker from `OnPlayerDamage` for your own scoring (`AddScore`). Armor can still save the victim (health > 1), which is correct.
 - Hidden kill credit leaks through the scoreboard if you `AddScore` the real killer during the round: hold score changes per player and apply them in
   `OnRoundEnd` (cs2mapTTT). Whether CS2 still gives an assist to an earlier hitter on a world kill is untested.
+- **SetHUDVisibility also blocks weapon switching** (cs2mapTTT, in game 29 Oct 2026): players couldn't change from the pistol to other weapons while
+  CS2's HUD was hidden (the weapon selection is part of the HUD). Only use it where the script controls weapons itself.
+- **Don't `SetModel` a spawned `prop_ragdoll`, and don't `Teleport` it** (cs2mapTTT, server crash 29 Oct 2026, read from the minidump): the crash was a
+  null read inside the ragdoll's Teleport (server.dll, a loop over its bone list), called from the script's `Teleport` right after `SetModel`.
+  Spawn ragdolls with the right model in the template and leave them to physics.
 - **Hiding CS2's own HUD:** `Instance.EntFireAtTarget({ target: pawn, input: "SetHUDVisibility", value: false })` (`true` brings it back). All or nothing;
   the map's custom HUD stays. Used in game by the Dogfight addon (`flightNativeHud`, default on after a player test: "way better"); it re-sends it on every
   spawn because a spawn can give the HUD back. It's a server-side pawn input, not a client cvar, so it shouldn't need `sv_cheats` (assumed; Dogfight's
