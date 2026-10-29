@@ -71,3 +71,9 @@ Follow-up (2026-10-30): other dimensions moved far below the island (from skink5
 - Nether (936 nodes fully below the bedrock slab, z -1312..-768) moved down 4096 -> z -5408..-4864. End/win room + gold/diamond holding box (242 nodes above the sky ceiling, z 1760..2816) moved down 11008 -> z -9248..-8192. Island bottom -320; gaps 4544 and 2784 units, no overlap. Teleports into them are point_teleports / destinations inside the moved sets; island-side point_teleports for the blocks unmoved.
 - io script: 6 nether push zones shifted -4096. cs2mapTTT maps/ttt_minecraft.json: nether traitor button (ttt_auto_3) and Pigman_Furnace_Trigger shifted -4096, ttt.js rebuilt.
 - Map-wide Lowest vis hint now spans z -9376..1632.
+
+Follow-up pass (2026-10-30): tesla, overlays
+- tesla: 1 point_tesla (not in CS2) -> info_particle_system with particles/port_tesla crackle particles (Win_Tesla); 2 TurnOn/TurnOff/DoSpark inputs -> Start/Stop
+- 5 static overlay materials -> csgo_static_overlay with translucency masks from the original alpha: brick.vmat (opaque, 3 overlays -> brick_overlay.vmat), coal.vmat (opaque, 11 overlays -> coal_overlay.vmat), gravel.vmat (opaque, 9 overlays -> gravel_overlay.vmat), iron.vmat (opaque, 8 overlays -> iron_overlay.vmat), stone.vmat (opaque, 2 overlays -> stone_overlay.vmat)
+- pruned 5 orphaned elements
+

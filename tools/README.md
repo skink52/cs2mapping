@@ -41,7 +41,7 @@ plus `overlaydepth` (= `overlayfix` + projection depth 8) and `physpush` (opt-in
 
 ### stage_d.py passes
 
-`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, iofix, skyshell, water`.
+`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, iofix, tesla, overlays, skyshell, water`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -62,6 +62,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `postprocess_filmic_underwater.vpost` | template | Underwater post-processing (from ba_jail_seaside), copied to `lighting/postprocessing/` by the `water` pass |
 | `doorsolid.py` | `doorsolid`, `doorhinge` (D) | Doors flagged Non-solid to Player: meshes → never-solid func_brush parented to the door, door keeps a nodraw hinge cube set 2 u into the frame (`doorhinge` moves the cube on maps already done) |
 | `ventlight.py` | `ventlight` (D) | Stationary lights in crawl-space ducts behind func_breakable vent grates; covers get Disable Shadows |
+| `tesla.py` | `tesla` (D) | point_tesla (not in CS2) → info_particle_system with a generated crackle particle (`particles/port_tesla/`), TurnOn/DoSpark/TurnOff → Start/Stop |
 | `restore_ents.py` | `python3 tools/restore_ents.py <in.vmap> <map.vmf> <out.vmap> <name> [...]` | Puts back named entities the importer dropped, from the decompiled VMF, cloning a same-class CS2 entity as the template (ttt_cg_skyscraper_2017's 1-unit btn1/btn3) |
 | `physpush.py` | `physpush` (opt-in) | Players push physics props (and func_physbox, mass from its size) by CS:GO `.phy` mass, from the io script (`patch_script` adds it to an existing `_io.js`) |
 | `texfix.py` | `overlayfix`, `overlaydepth`, `facescale`, `matflags` | Static overlay geometry, brush-face texture scale/shift (match order in pipeline.md), `$additive`/`$nocull`/`$ssbump`/`$alpha`/`$selfillum`/water material fixes |

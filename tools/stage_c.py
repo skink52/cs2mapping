@@ -662,10 +662,22 @@ def overlays(m, c, only=None):
         if colrel in c.files: cp = _io.BytesIO(c.files[colrel])
         elif not os.path.exists(cp): skipped.append(mat + ' (colour texture %s missing)' % col); continue
         im = Image.open(cp)
-        if 'A' not in im.getbands():
-            skipped.append(mat + ' (texture has no alpha)'); continue
-        a = im.getchannel('A')
-        if a.getextrema()[0] == 255: skipped.append(mat + ' (alpha fully opaque)'); continue
+        a = im.getchannel('A') if 'A' in im.getbands() else None
+        if a is None or a.getextrema()[0] == 255:
+            # opaque overlay: still needs csgo_static_overlay, or it z-fights the wall it sits on (ttt_minecraft's coal/iron ore
+            # patches). The material is usually on brush faces too, so the overlays get their own <name>_overlay.vmat (full mask).
+            omat = mat[:-5] + '_overlay.vmat'; mask_rel = os.path.splitext(col)[0] + '_overlaymask.png'
+            b = _io.BytesIO(); Image.new('L', (4, 4), 255).save(b, 'PNG'); c.write(mask_rel.replace('\\', '/'), b.getvalue())
+            c.write(omat, OVERLAY_VMAT % dict(col=col.replace('/', '\\'), mask=mask_rel.replace('/', '\\')))
+            n = 0
+            for node, _ in m.walk():
+                if m.type(node) != b'CMapStaticOverlay': continue
+                md = m.g(node, b'meshData')
+                if md is None: continue
+                ms = dmx.get(m.E[md], b'materials') or []
+                if any(x.lower() == mat.encode() for x in ms):
+                    dmx.set_(m.E[md], b'materials', dmx.ARR + dmx.T_STR, [omat.encode() if x.lower() == mat.encode() else x for x in ms]); n += 1
+            done.append('%s (opaque, %d overlays -> %s)' % (os.path.basename(mat), n, os.path.basename(omat))); continue
         mask_rel = os.path.splitext(col)[0] + '_mask.png'
         b = _io.BytesIO(); a.convert('L').save(b, 'PNG')
         c.write(mask_rel.replace('\\', '/'), b.getvalue())

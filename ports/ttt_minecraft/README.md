@@ -32,6 +32,10 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
   inside the moved sets. io script nether push zones and cs2mapTTT map data (ttt_auto_3, Pigman_Furnace_Trigger) shifted too; Lowest vis hint spans
   z -9376..1632. Backup `maps/ttt_minecraft.vmap.bak_dims`.
 
+- 2026-10-30: z-fighting ore patches: 33 static overlays (coal 11, gravel 9, iron 8, brick 3, stone 2) were csgo_complex → `<name>_overlay.vmat`
+  csgo_static_overlay. Win_Tesla (point_tesla, gone in CS2) → info_particle_system `particles/port_tesla/tesla_ffffff.vpcf`. Lighthouse diamond-block
+  trigger works (skink52 tested outside a round; cs2mapTTT now polls prop triggers in every phase, the win input stays round-only). Backup `bak_overlays`.
+
 ## Open / to check
 
 - Traitor tester: needs the gold block carried (E, cs2mapTTT's carry) into Ttest_CraftTrigger, which unlocks the door buttons; the check itself is `ttt_traitor_check` → `ttt_logic_role`, handled by ttt.js since cs2mapTTT `cfbd4fa`. What ttt.js still needs for this map: cs2mapTTT `MAP_REQUIREMENTS.md`.
