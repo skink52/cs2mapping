@@ -3,7 +3,9 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
-## 2026-10-29: water pass, pirates water material
+## 2026-10-29: water pass, pirates water material, fix_refs format
+
+- `gibfix.py` writes the refs file as `importfilelist { "file" … }`: modelsfromrefs rejected the bare list ("Expecting importfilelist"), so run_fixrefs imported nothing.
 
 - New stage D `water` (`tools/watervol.py` + `postprocess_filmic_underwater.vpost`): water meshes → func_water, underwater post_processing_volume
   80 u below the surface, master volume if missing. Applied to ttt_minecraft (6 func_water) and mg_pirates (1).

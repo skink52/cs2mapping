@@ -118,8 +118,9 @@ def write_refs(path, entries):
     for e in entries:
         if e not in seen: seen.append(e)
     with open(path, 'w', encoding='utf-8', newline='\r\n') as f:
-        f.write('// missing gibs / model materials, from gibfix.py; import with run_fixrefs.bat <addon>\n')
-        for e in seen: f.write('"file" "%s"\n' % e)
+        f.write('importfilelist\n{\n')                 # modelsfromrefs reads this as KeyValues: "Expecting importfilelist" otherwise
+        for e in seen: f.write('\t"file"\t"%s"\n' % e)
+        f.write('}\n')
     return seen
 
 
