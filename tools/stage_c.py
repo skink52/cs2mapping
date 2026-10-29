@@ -832,7 +832,7 @@ def run(addon, root, passes=None):
             if c.overlay_skipped: c.todo.append('overlay materials not converted: %s' % '; '.join(c.overlay_skipped)[:800])
     if 'matflags' in steps: texfix.material_flags(m, c)
     if 'physpush' not in steps and 'dead' in steps and any(m.by_class(*physpush.CLASSES)):
-        c.todo.append('the map has %d physics props: if player pushes on them feel wrong in game (too easy or too hard for the prop's size), run the physpush step (run_pass.py ... physpush)' % len(m.by_class(*physpush.CLASSES)))
+        c.todo.append("the map has %d physics props: if player pushes on them feel wrong in game (too easy or too hard for the prop's size), run the physpush step (run_pass.py ... physpush)" % len(m.by_class(*physpush.CLASSES)))
     jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
     only_phys = c.phys and not (c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js)
     if passes and only_phys and os.path.exists(jp):   # follow-up pass: keep the rest of the existing io script

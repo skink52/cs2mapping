@@ -141,13 +141,13 @@ def run(m, c, vmfpath=None):
             stem, ext = os.path.splitext(rel)
             exts = [ext] if ext else ['.wav', '.mp3']
             src = next(('sounds/' + stem + x for x in exts if c.exists('sounds/' + stem + x)), None)
-            if src is None and c.cs2v and c.cs2v.has('sounds/' + stem + '.vsnd_c'): src = 'sounds/' + stem + '.vsnd'
-            if src is None:
+            if src is None:   # CS:GO wave before stock CS2: some CS2 index entries are stubs with no playable audio (physics/metal/metal_grate_impact_*)
                 for x in exts:
                     if c.src.has('sound/' + stem + x):
                         data = c.src.read('sound/' + stem + x)
                         if data is None: break
                         src = 'sounds/' + stem + x; c.write(src, data); extracted.add(src); break
+            if src is None and c.cs2v and c.cs2v.has('sounds/' + stem + '.vsnd_c'): src = 'sounds/' + stem + '.vsnd'
             if src is None: lost.append(rel); continue
             lp = os.path.join(c.content, src)
             data = c.files.get(src) or (open(lp, 'rb').read() if src.endswith('.wav') and os.path.exists(lp) else None)
@@ -174,7 +174,7 @@ def run(m, c, vmfpath=None):
         i = ev.rstrip().rfind('}')
         c.write('soundevents/soundevents_addon.vsndevts', ev[:i] + block + ev[i:])
         c.log.append('%d Source 1 soundscript names used by entities defined as same-named soundevents: %s' % (len(added), ', '.join(idx[k]['name'] for k in sorted(added))))
-    if extracted: c.log.append('soundscript waves copied into the addon from the map's packed files / CS:GO VPK: %s' % ', '.join(sorted(extracted))[:600])
+    if extracted: c.log.append("soundscript waves copied into the addon from the map's packed files / CS:GO VPK: %s" % ', '.join(sorted(extracted))[:600])
     if converted: c.log.append('soundscript wavs re-encoded to 16-bit PCM: %s' % ', '.join(converted))
     if stock: c.todo.append('soundscript names left alone because CS2 likely has a stock event of that name (an addon copy would replace it map-wide): %s' % ', '.join(stock))
     if partial: c.todo.append('soundscript events built with some waves missing: %s' % '; '.join(partial)[:600])

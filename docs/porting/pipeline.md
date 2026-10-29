@@ -85,6 +85,9 @@ and `physpush` when named).
   x massScale, 50 if no .phy) and the io script pushes them from player contact: speed into the face x 20/(20+mass), min 10 u/s, some spin off-centre;
   props already moving > 400 u/s are left alone and damage from a listed prop moving < 150 u/s is cancelled. Stage C lists maps with physics props in TO
   CHECK; run it when pushing feels wrong in game. Idea from cs2-slop-porting's `push_mass.js`.
+- **Material flags** (`matflags`, `tools/texfix.py`): `$additive` → `csgo_unlitgeneric` `F_BLEND_MODE 4` (`LIT_ADDITIVE = True` keeps lightmapped ones lit with
+  `F_TRANSLUCENT` + `F_ADDITIVE_BLEND`, but a black additive material then draws opaque black in Hammer), `$nocull` → `F_RENDER_BACKFACES` (+
+  `F_DONT_FLIP_BACKFACE_NORMALS` on lit shaders), `$ssbump` bump maps rebuilt as real normal maps (`*_ssbn.png`).
 - **Static overlays** (`overlays`) → `csgo_static_overlay` with a translucency mask taken from the original alpha.
 - **Static overlay geometry** (`overlayfix`, `tools/texfix.py`): the importer's 2x2 placeholder quads are rebuilt from the VMF (texture size x `$decalscale`
   for infodecals, uv extent for info_overlays), laid on the brush face under the decal and the right way up. Hand-edited overlays are skipped. Overlays with
@@ -92,7 +95,13 @@ and `physpush` when named).
 - **Face texture scales** (`facescale`, `tools/texfix.py`): absurd brush-face scales/shifts are restored from the matching VMF side and the stored texture
   coordinates rewritten from the CS:GO texture size. No-op on faces that are already right. A face matches a VMF side when the normals agree
   (near-axis normals snapped) and every corner is within 0.6 u of the side's plane: imported corners can sit ~0.1 u off, which at map coordinates in
-  the thousands moved a one-corner plane distance by 1.5-3 u and skipped the face.
+  the thousands moved a one-corner plane distance by 1.5-3 u and skipped the face. Matching order, first hit wins: same plane + material inside the
+  brush (slivers thinner than 1 u by their corners only; a vmap material missing from the VMF uses the one VMF material with the same file name) →
+  a moved copy of a same-size VMF brush (shift corrected, texture lock) → same plane outside the brush → corners up to 2.5 u off (rounded corners,
+  centre inside the brush) → a flat face pushed up to 6 u off its side → a displacement's base face (coordinates from the face position projected onto
+  the base plane) → absurd scales only: another material's side on the same plane. Unmatched slivers with an absurd scale take their material's usual
+  scale. Texture size = the addon's converted colour texture (what Hammer draws), CS:GO VTF as fallback. Faces still absurd are listed with what the VMF
+  says for their material.
 - **Sky** (`sky`): an env_sky that CS2 doesn't have is rebuilt from the six CS:GO faces into an equirect panorama (HDR skies tone mapped). Sky brushes the
   importer dropped come back as `csgo_moondome` boxes. (CS2's new `toolsskyboxocclude` material may replace moondome shells: untested, see
   [cs2-gotchas](../reference/cs2-gotchas.md#sky-and-world).)

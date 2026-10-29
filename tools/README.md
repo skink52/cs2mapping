@@ -53,7 +53,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `soundscripts.py` | `soundscripts` | Source 1 soundscript names used by entities / door noises → same-named soundevents (map soundscripts, then CS:GO's manifest) |
 | `steam.py` | `steam` | env_steam → info_particle_system + generated `particles/port_steam/*.vpcf` (heat wave = refracting sprite) |
 | `physpush.py` | `physpush` (opt-in) | Players push physics props by CS:GO `.phy` mass, from the io script (`patch_script` adds it to an existing `_io.js`) |
-| `texfix.py` | `overlayfix`, `overlaydepth`, `facescale`, `matflags` | Static overlay geometry, brush-face texture scale/shift, `$additive`/`$nocull` material flags |
+| `texfix.py` | `overlayfix`, `overlaydepth`, `facescale`, `matflags` | Static overlay geometry, brush-face texture scale/shift (match order in pipeline.md), `$additive`/`$nocull`/`$ssbump` material fixes |
 | `sky.py` | `sky` | Six CS:GO sky faces → 2:1 equirect panorama for `sky.vfx` / `csgo_moondome` |
 | `visfit.py` | `vis` (C), `visfit`/`visfit_lower`/`visfit_lean` (D) | Vis hints fitted to the play space (Low / Lower / one Lowest) and sky shells out of vis |
 | `skyvis.py` | `skyvis` | Older pass: sky shells that seal nothing get Exclude from Vis |
