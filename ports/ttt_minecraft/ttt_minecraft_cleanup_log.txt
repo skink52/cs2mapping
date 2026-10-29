@@ -67,5 +67,7 @@ Follow-up pass (2026-10-30): lightbright, iofix, doorhinge, matflags
 - pruned 0 orphaned elements
 
 
-Follow-up (2026-10-30): End room + block holding box moved below the nether
-- 242 nodes above the sky ceiling (z >= 1570: the End/win room, its 29 Win_Teleport point_teleports, lights, fires, probes, vis hint, trigger_hurt, and the gold/diamond holding box with its logic) moved down 4224 u (End now z -2464..-1408, nether bottom -1312). Above the ceiling they were visible through toolsskybox from spawn and shadowed the island (CS2's sun ignores toolsskybox). Every teleport into them is a point_teleport inside the moved set; the block teleports go out to island point_teleports (unmoved). The map-wide Lowest vis hint now spans z -2560..3072.
+Follow-up (2026-10-30): other dimensions moved far below the island (from skink52's Hammer save)
+- Nether (936 nodes fully below the bedrock slab, z -1312..-768) moved down 4096 -> z -5408..-4864. End/win room + gold/diamond holding box (242 nodes above the sky ceiling, z 1760..2816) moved down 11008 -> z -9248..-8192. Island bottom -320; gaps 4544 and 2784 units, no overlap. Teleports into them are point_teleports / destinations inside the moved sets; island-side point_teleports for the blocks unmoved.
+- io script: 6 nether push zones shifted -4096. cs2mapTTT maps/ttt_minecraft.json: nether traitor button (ttt_auto_3) and Pigman_Furnace_Trigger shifted -4096, ttt.js rebuilt.
+- Map-wide Lowest vis hint now spans z -9376..1632.

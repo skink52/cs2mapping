@@ -27,8 +27,10 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
   Diamond ores are placed by `ttt_map_settings` RoundStart (ttt.js `ttt_ms__start`), so they stay in the holding box until a round starts (3+ players).
   Backup `maps/ttt_minecraft.vmap.bak_lighting`.
 - 2026-10-30: the End/win room and the gold/diamond holding box sat above the sky ceiling (z 1760-2816), visible from spawn through toolsskybox and
-  shadowing the island. Moved 4224 u down below the nether (End z -2464..-1408) with all 242 nodes in them; all teleports into them are point_teleports
-  inside the moved set. Map-wide Lowest vis hint extended to z -2560..3072.
+  shadowing the island. From skink52's Hammer save (he added a toolsskybox_occluder slab at 1552-1584 and disableShadows on the ceiling, kept):
+  nether moved -4096 (z -5408..-4864), End + holding box moved -11008 (z -9248..-8192); island bottom -320, no overlaps. Teleports into both are
+  inside the moved sets. io script nether push zones and cs2mapTTT map data (ttt_auto_3, Pigman_Furnace_Trigger) shifted too; Lowest vis hint spans
+  z -9376..1632. Backup `maps/ttt_minecraft.vmap.bak_dims`.
 
 ## Open / to check
 
