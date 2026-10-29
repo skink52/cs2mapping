@@ -132,6 +132,8 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   `OnRoundEnd` (cs2mapTTT). Whether CS2 still gives an assist to an earlier hitter on a world kill is untested.
 - **SetHUDVisibility also blocks weapon switching** (cs2mapTTT, in game 29 Oct 2026): players couldn't change from the pistol to other weapons while
   CS2's HUD was hidden (the weapon selection is part of the HUD). Only use it where the script controls weapons itself.
+  It hides the chat box too: `messagemode` does nothing (cs2mapTTT, in game). cs2mapTTT mirrors `OnPlayerChat` lines on its HUD and lets a key
+  (Ctrl+F) show CS2's HUD for a few seconds to type.
   Workaround (cs2mapTTT): switch weapons from script on a key the script can read: tap F (`LOOK_AT_WEAPON`) → `pawn.SwitchToWeapon(next)` over
   `FindWeaponBySlot(RIFLE/PISTOL/KNIFE)` + `FindWeapon(<grenade/taser/healthshot>)`.
 - **Don't `SetModel` a spawned `prop_ragdoll`, and don't `Teleport` it** (cs2mapTTT, server crash 29 Oct 2026, read from the minidump): the crash was a
