@@ -106,7 +106,8 @@ and `physpush` when named).
   scale. Texture size = the addon's converted colour texture (what Hammer draws), CS:GO VTF as fallback. Faces still absurd are listed with what the VMF
   says for their material.
 - **Sky** (`sky`): an env_sky that CS2 doesn't have is rebuilt from the six CS:GO faces into an equirect panorama (HDR skies tone mapped). Sky brushes the
-  importer dropped come back as `csgo_moondome` boxes, or as `toolsskybox` boxes when the map has a 3D skybox (a moondome would hide it). (CS2's new `toolsskyboxocclude` material may replace moondome shells: untested, see
+  importer dropped come back as `csgo_moondome` boxes (the panorama is built for the moondome even when env_sky is a stock CS2 sky), or as `toolsskybox`
+  boxes when the map has a 3D skybox (`sky_camera`): a moondome would hide it. (CS2's new `toolsskyboxocclude` material may replace moondome shells: untested, see
   [cs2-gotchas](../reference/cs2-gotchas.md#sky-and-world).)
 - **Vis: hints fitted to the play space and sky shells out of vis** (`vis` = `visfit.py`; `skyvis` = the older shell-only pass). Playable air is the empty
   space (16-unit voxels; 24 or 32 on very big maps) connected to a spawn or teleport destination, plus sealed rooms holding buttons, doors, triggers, trains
@@ -211,7 +212,8 @@ All of these keep your Hammer edits and append to the cleanup log. Exact usage l
   The game_ui entities are removed. mg_pirates (22 cannons and boats, 29 Oct 2026).
 - `skysplit.py <map.vmap in> <main out> <skybox out> <map name> [x0,y0,z0,x1,y1,z1]`: moves an old 3D skybox into `<map>_3dskybox.vmap` (everything inside
   the box, or the group of meshes around the sky_camera when no box is given), keeps light_environment / env_sky / env_fog_controller in both, sets
-  `mapUsageType skybox`, and adds the `skybox_reference` to the main map. Build it as its own queue line (`<addon> <map>_3dskybox`) before the main map.
+  `mapUsageType skybox`, adds the `skybox_reference` to the main map, and switches moondome shells in both maps to `toolsskybox` (a moondome hides the
+  3D skybox). `skysplit.py --sky <in> <out>` does only that swap, for a map already split. Build it as its own queue line (`<addon> <map>_3dskybox`) before the main map.
   Check the result with `vmap_preview.py` and give a box when the auto box grabs playable space.
 - `disprestore.py <vmap in> <bsp> <vmap out> [x0,y0,z0,x1,y1,z1 ...]` rebuilds displacements the importer dropped. The import log shows each one as "Found a
   displacement missing a needed subkey." (24 Oct 2026: mg_kohztec_course 61 (all, fixed), de_nuketown 152 (fixed, old 3D skybox skipped), mg_faohu_course 2).

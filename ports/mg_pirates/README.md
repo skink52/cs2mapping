@@ -18,6 +18,7 @@ Pirate ship battle: cannons and boats steered with the movement keys (game_ui).
 - 2026-10-29: game_ui → script (`gameui` pass, first use): 22 game_ui (cannon and boat controllers), 104 outputs fired from the key poll, Freeze Player kept.
 - 2026-10-29: 18 func_physbox_multiplayer → func_physbox.
 - 2026-10-29: loading credit `maps/mg_pirates.txt` ("Original map by …" / "Ported to CS2 by skink52"); build queue `mg_pirates mg_pirates_3dskybox` then `mg_pirates`.
+- 2026-10-29: moondome shells in the 3D skybox map → `toolsskybox` (`skysplit.py --sky`; a moondome hides the 3D skybox, and pirates' moondome used a sky panorama that was never built, so it was an error material). The main map's sky shells had already been changed in Hammer. Backup: `prefabs+backups\mg_pirates_3dskybox_2026-10-29_moondome.vmap`.
 
 ## Open / to check
 

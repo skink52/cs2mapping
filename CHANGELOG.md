@@ -11,6 +11,8 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 - Stage C `dead`: func_physbox_multiplayer → func_physbox; env_spritetrail flagged. NEED lists the CS:GO file paths too, so they can be copied from the
   extracted CS:GO content into `<root>/embedded/<addon>/` instead of staging archive chunks.
 - disprestore runs on the stage C output (it needs an existing world mesh as its template).
+- Moondomes hide a 3D skybox: `skysplit.py` (and `--sky`) switch sky shells to `toolsskybox`; stage C builds the moondome panorama for stock CS2 skies (mg_pirates' moondome was an error material). Applied to the mg_pirates and
+  ttt_cg_skyscraper_2017 skybox maps.
 
 ## 2026-10-29: mg_yolo_multigames fixes (Ninja-Chris comparison)
 

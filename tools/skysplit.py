@@ -7,12 +7,30 @@ Every top-level node whose bounds (an entity's origin when it has no mesh) lie i
 else stays. The skybox map keeps copies of light_environment, env_sky and env_fog_controller, keeps the sky_camera (Editor only
 off, scale 16) and gets mapUsageType skybox. The main map loses the sky_camera and gets a skybox_reference at the origin
 (targetMapName maps/<map>_3dskybox.vmap, fixupNames 1, worldGroupID skyboxWorldGroup0). Build the skybox map as its own
-queue line (`<addon> <map>_3dskybox`)."""
+queue line (`<addon> <map>_3dskybox`).
+
+Both maps also get their moondome shells (stage C's rebuilt sky brushes) switched to tools/toolsskybox: a moondome draws the sky texture
+itself and hides the 3D skybox behind it, toolsskybox shows the 3D skybox and env_sky (skink52, 29 Oct 2026).
+
+  python3 skysplit.py --sky <map.vmap in> <map.vmap out>      only the moondome -> toolsskybox swap (a map already split)"""
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dmx, vmapedit as V
 
 KEEP_BOTH = {'light_environment', 'env_sky', 'env_fog_controller'}
+SKYBOX_MAT = b'materials/tools/toolsskybox.vmat'
+
+
+def moondome_to_skybox(m):
+    """moondome shells -> toolsskybox (they would hide the 3D skybox); returns the number of meshes changed"""
+    n = 0
+    for node, _ in m.walk():
+        if m.type(node) != b'CMapMesh': continue
+        md = m.E[m.g(node, b'meshData')]
+        mats = dmx.get(md, b'materials')
+        if mats and any(b'moondome' in x for x in mats):
+            dmx.set_(md, b'materials', dmx.ARR + dmx.T_STR, [SKYBOX_MAT if b'moondome' in x else x for x in mats]); n += 1
+    return n
 
 
 def node_box(m, n):
@@ -61,14 +79,18 @@ def split(src, main_out, sky_out, name, box=None):
     else: w['attrs'].append([b'mapUsageType', dmx.T_STR, b'skybox'])
     main.new_entity('skybox_reference', (0, 0, 0), {'targetname': 'skybox', 'targetMapName': 'maps/%s_3dskybox.vmap' % name,
                                                    'fixupNames': '1', 'worldGroupID': 'skyboxWorldGroup0'})
+    sm, ss = moondome_to_skybox(main), moondome_to_skybox(sky)
     main.prune(); sky.prune()
     main.save(main_out); sky.save(sky_out)
-    return 'skybox split: %d top-level nodes moved to %s_3dskybox.vmap (box %s .. %s), skybox_reference added, sky_camera moved' % (
-        moved, name, ' '.join('%g' % x for x in lo), ' '.join('%g' % x for x in hi))
+    return 'skybox split: %d top-level nodes moved to %s_3dskybox.vmap (box %s .. %s), skybox_reference added, sky_camera moved; moondome shells -> toolsskybox: %d main, %d skybox' % (
+        moved, name, ' '.join('%g' % x for x in lo), ' '.join('%g' % x for x in hi), sm, ss)
 
 
 if __name__ == '__main__':
     a = sys.argv[1:]
+    if a and a[0] == '--sky':
+        m = V.Map(a[1]); k = moondome_to_skybox(m); m.prune(); m.save(a[2])
+        print('moondome shells -> toolsskybox: %d meshes' % k); sys.exit()
     bx = None
     if len(a) > 4:
         v = [float(x) for x in a[4].split(',')]; bx = (v[:3], v[3:])
