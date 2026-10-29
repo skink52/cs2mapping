@@ -128,6 +128,8 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   the damage with `damageFlags | PREVENT_DEATH`; in `OnPlayerDamage`, if the victim is left on ≤1 hp, queue a world kill for the next tick
   (`TakeDamage({ damage: 1000, damageFlags: FORCE_DEATH | IGNORE_ARMOR })`, no attacker, behind a re-entry flag). The killfeed shows only the death;
   keep the real attacker from `OnPlayerDamage` for your own scoring (`AddScore`). Armor can still save the victim (health > 1), which is correct.
+- Hidden kill credit leaks through the scoreboard if you `AddScore` the real killer during the round: hold score changes per player and apply them in
+  `OnRoundEnd` (cs2mapTTT). Whether CS2 still gives an assist to an earlier hitter on a world kill is untested.
 - The killfeed can't be removed from a map: CS2's HUD draws over custom HUDs, and the client cvar `cl_drawhud_force_deathnotices -1` via
   `ClientCommand` is unreliable and may persist on the player's client. A HUD mask over the feed area is untested.
 - Respawn only in some phases (prep/warmup): flip `mp_respawn_on_death_t/ct` from script per phase (cs2mapTTT).

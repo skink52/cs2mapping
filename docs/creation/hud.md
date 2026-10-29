@@ -90,6 +90,9 @@ pixel-text rows, `char_line`, `preload`, `hide_with_scoreboard`, `write` with it
 
 ### CS2's own HUD zones (keep clear)
 
+Whether a custom HUD draws **above** CS2's killfeed is being tested: cs2mapTTT puts an opaque panel over the kill feed zone (`HUD_IN_KILLFEED`) to use that
+space and hide the feed. Until it's confirmed in game, treat every zone below as drawn over yours.
+
 CS2's HUD can't be hidden from a map and draws over yours. At 1080 high (as `create/hud_check.py` checks them):
 
 | Zone | Area |
