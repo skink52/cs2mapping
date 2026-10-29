@@ -9,6 +9,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   Toggle chains → Enable/Disable, env_sprite particles resized (texture width × 0.25, non-square textures padded), scouts drugged effect → HUD overlay,
   secret camera teleport disabled; stage D lightbright/visfit/probecover/lights on the hand-ported vmap; creeper parts carried by script.
   Details in `ports/mg_yolo_multigames/README.md`.
+- `tools/assets.py` `alpha`: also fixes vmats that already have `F_TRANSLUCENT` / `F_ALPHA_TEST` but no `TextureTranslucency` (they draw opaque).
 
 ## 2026-10-29
 

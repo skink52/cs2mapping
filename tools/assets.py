@@ -171,14 +171,16 @@ def check_models(m, c, cs2_vpk):
 
 
 def fix_alpha(m, c):
-    """imported materials whose CS:GO original was $alphatest / $translucent but came through opaque"""
+    """imported materials whose CS:GO original was $alphatest / $translucent but came through opaque (no flag, or a flag with no mask)"""
     from PIL import Image
     done = []
     for mat in sorted(mesh_materials(m)):
         vp = os.path.join(c.content, mat)
         if not os.path.exists(vp) or c.src is None: continue
         txt = c.files.get(mat, b'').decode() or open(vp, encoding='utf-8', errors='replace').read()
-        if 'F_ALPHA_TEST' in txt or 'F_TRANSLUCENT' in txt or 'csgo_complex' not in txt: continue
+        # skip materials that already have a mask; F_TRANSLUCENT / F_ALPHA_TEST with no TextureTranslucency still draws opaque on
+        # csgo_complex (the colour alpha isn't used - mg_yolo_multigames banners, 29 Oct 2026), so those are fixed too
+        if 'TextureTranslucency' in txt or 'csgo_complex' not in txt: continue
         shader, kv = load_vmt(c.src, mat[:-5] + '.vmt') if c.src.has(mat[:-5] + '.vmt') else (None, None)
         if not kv or not (kv.get('$alphatest') == '1' or kv.get('$translucent') == '1'): continue
         mc = re.search(r'TextureColor"?\s+"([^"]+)"', txt)

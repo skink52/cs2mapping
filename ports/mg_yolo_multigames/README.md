@@ -37,6 +37,8 @@ Multigames map with a game-picker lobby. Has a separate 3D skybox map (`mg_yolo_
   - Creeper game: the creeper body, env_explosion and countdown sprites were parented to the knife, which CS2 doesn't carry. mc_sprite_* →
     info_particle_system with following particles (continuous emitter + position lock, size/tint baked), and `CreeperPickup` (knife OnPlayerPickup)
     makes the script carry all of them at the carrier's feet + their offset from the knife spawn.
+  - With the VPKs staged: `alpha` (dev_measurerails01 mask) and `assets` (dev_measuregeneric01 / 01b vmats were missing: rebuilt). The `alpha` pass now
+    also fixes vmats that have `F_TRANSLUCENT`/`F_ALPHA_TEST` but no `TextureTranslucency` (the cause of the banner bug).
   - `compile_yolo_fixes.bat` in the addon compiles the particles, vmats, panorama and script that the command-line build skips, then runs `run_build.bat`.
 
 ## Import report

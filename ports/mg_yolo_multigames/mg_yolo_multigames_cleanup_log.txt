@@ -31,3 +31,9 @@ Also 2026-10-29 (by hand): creeper sprites mc_sprite_1..5 / mc_sprite_boom env_p
 particles (particles/yolo/yolo_sprite_number_N / kaboom); mc_creeper_knife OnPlayerPickup -> yolo_io_script CreeperPickup (script carries the
 creeper body, explosion and sprites with the knife carrier). Not run: alpha/assets (CS2 and CS:GO pak01_dir.vpk not staged), facescale/overlayfix
 (no overlays; texture scales look right), beams/steam/doors (none in the map), physpush/gravity/push (yolo_io.js already handles them).
+
+Follow-up pass (2026-10-29): alpha, assets
+- 1 materials were alpha-tested / translucent in CS:GO but imported opaque - fixed with a mask from the texture alpha: dev_measurerails01 (translucent)
+- built 2 missing materials from the original CS:GO textures: dev_measuregeneric01, dev_measuregeneric01b
+- pruned 0 orphaned elements
+- TO CHECK: maps/mg_yolo_multigames_stub_materials.txt not staged (vmap_refs.py on the PC writes it during stage B): stock CS2 materials that are error-shader stubs were not checked
