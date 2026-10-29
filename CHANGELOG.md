@@ -3,6 +3,12 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-30: PC folder layout
+
+- `scripts/reorg_pc.ps1` (+ `.bat`): tidies the PC folders into `C:\source1` (porting: runners, VMFs, input BSPs, tools, archive) and `C:\source2`
+  (creation: apps, projects, workshop, notes, archive), emptying `Desktop\CS2`. Runner paths are unchanged. Docs and the weapon builder configs
+  now point at `C:\source2\apps\RadGen.exe` and `C:\source2\projects\trenchwarfare`.
+
 ## 2026-10-30: point_tesla, opaque overlays (ttt_minecraft)
 
 - New stage D `tesla` (`tools/tesla.py`): point_tesla → info_particle_system crackle particle. Stage C `overlays` (also stage D) converts opaque overlay materials to `<name>_overlay.vmat` csgo_static_overlay (z-fighting coal/iron/gravel/brick/stone on ttt_minecraft).

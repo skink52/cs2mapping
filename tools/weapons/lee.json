@@ -1,8 +1,8 @@
 {
  "name": "lee_enfield",
  "sub": "models/weapons/ww1/lee_enfield",
- "out": "C:/source2/trenchwarfare assets/build_out",
- "fbx": "C:/source2/trenchwarfare assets/lee enfield/cgtrader_optimized_lee_enfield_mk1.FBX",
+ "out": "C:/source2/projects/trenchwarfare/build_out",
+ "fbx": "C:/source2/projects/trenchwarfare/lee enfield/cgtrader_optimized_lee_enfield_mk1.FBX",
  "axes": "zxy",
  "stock": "ssg08",
  "shift_wo": [

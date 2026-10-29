@@ -1,8 +1,8 @@
 {
  "name": "colt_m1911",
  "sub": "models/weapons/ww1/colt_m1911",
- "out": "C:/source2/trenchwarfare assets/build_out",
- "glb": "C:/source2/trenchwarfare assets/colt_m1911.glb",
+ "out": "C:/source2/projects/trenchwarfare/build_out",
+ "glb": "C:/source2/projects/trenchwarfare/colt_m1911.glb",
  "scale": 0.01,
  "axes": "XYz",
  "stock": "hkp2000",

@@ -23,6 +23,8 @@ folders but can't start programs there.
 
 ## PC folders
 
+Laid out by `scripts/reorg_pc.ps1` (30 Oct 2026; `C:\source2\reorg_undo.ps1` reverses it). Put new things where they belong here.
+
 ```
 C:\source1\
     bspsrc-windows\            BSPSource (jlink image, bin\bspsrc.bat) and the input BSPs:
@@ -44,6 +46,18 @@ C:\source1\
         tools\                 this repo's tools/ (vmap_refs.py loads dmx.py and kv2.py from here); README.md = the tool index
         cs2_port_pipeline.md   docs/porting/pipeline.md
     pak01_dir.vpk              CS:GO's VPK directory (staged into the workspace for the missing-material pass)
+    gameinfo.txt, sound\, expressions\   CS:GO files from the original importer setup (left in place)
+    tools\                     mappacker\, crowbar\, source2converter\, disk_report\
+    archive\                   old manual import kit, screenshots, Blender/Crowbar leftovers, old vpks (unused by any pipeline)
+C:\source2\                   original addons (creation)
+    apps\                      RadGen.exe, Source2Viewer.exe, Hammer5Tools.lnk
+    projects\<project>\        source assets per project: trenchwarfare\ (GLBs, weapon FBXs, stock\, tools\ = the weapon builder,
+                               design notes.txt), dogfight\ (install_dogfight.bat), hellmatch\freedoom-0.13.0\, apache\, space-racer\,
+                               reference\kz_infinite_water_template\
+    workshop\<addon>\          Workshop icons, galleries, descriptions, videos (hellmatch\, space-racer\, ttt\, slime-servers\);
+                               ports\ = port icons, unsorted\ = images not yet matched to an addon
+    notes\                     server details, old notes and snippets
+    archive\                   unused: Neon Racer's Tripo GLBs, dogfight.rar, jb_clouds.vpk, loose texture work
 <CS2>\
     csgo\                      CS:GO content the importer reads (gameinfo.txt, materials\, models\...). C:\cscontent is a junction to it
     content\csgo_addons\<addon>\   addon sources (vmap, materials, scripts...)
@@ -66,7 +80,7 @@ C:\source1\
    (`mklink /J C:\cscontent "<CS2>\csgo"`). A `.lnk` shortcut won't work because Python doesn't follow those.
 6. Only for the older `post_import_cleanup.py` texture cascade: VTFEdit-Reloaded's `VTFCmd.exe` at `C:\VTF\VTFEdit\VTFCmd.exe`, with staging
    folders `C:\VTF\VTFInput` and `C:\VTF\VTFOutput`. The current pipeline rebuilds missing materials in stage C instead, so this is optional.
-7. **Radar tool (optional):** RadGen at `C:\source2\RadGen.exe`. The pipeline renders its own radars, but RadGen was used for the jail maps.
+7. **Radar tool (optional):** RadGen at `C:\source2\apps\RadGen.exe`. The pipeline renders its own radars, but RadGen was used for the jail maps.
 8. **Loading-screen text:** set with Hammer5Tools.
 
 ## Cloud workspace

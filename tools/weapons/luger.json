@@ -1,8 +1,8 @@
 {
  "name": "luger_p08",
  "sub": "models/weapons/ww1/luger_p08",
- "out": "C:/source2/trenchwarfare assets/build_out",
- "glb": "C:/source2/trenchwarfare assets/luger_p08.glb",
+ "out": "C:/source2/projects/trenchwarfare/build_out",
+ "glb": "C:/source2/projects/trenchwarfare/luger_p08.glb",
  "scale": 0.01,
  "axes": "Yxz",
  "stock": "glock18",

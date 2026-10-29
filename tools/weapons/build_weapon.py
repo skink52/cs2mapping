@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fbxmesh, dmxmodel, dmx, hull, scope, scope2, glbmesh
 
-STOCK = os.environ.get("WW1_STOCK", "C:/source2/trenchwarfare assets/stock")
+STOCK = os.environ.get("WW1_STOCK", "C:/source2/projects/trenchwarfare/stock")
 ANIMS = ['dropped', 'reload', 'shoot', 'inventory_inspect', 'inventory_icon']
 
 def parse_skeleton(vmdl_text):
