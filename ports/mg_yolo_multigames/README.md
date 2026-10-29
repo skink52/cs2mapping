@@ -48,6 +48,16 @@ Multigames map with a game-picker lobby. Has a separate 3D skybox map (`mg_yolo_
     `CreeperStart`: the script takes the storage set (found by class + name prefix + distance, so point_template name fixup doesn't matter),
     removes its knife, carries body/explosion/sprites, runs the sprite countdown and Explode at 7 s on those handles, kills them at 9 s, applies
     SetAlpha_0 / Speed_1.2, and fires mc_pickup_relay (sounds, template ForceSpawn at 0.2 s, teleporter re-enable at 8 s).
+  - Overlay layer edges showed in game (Panorama squished the 250% layers): parents `overflow: noclip noclip`, layers 4000 px. Only one layer per
+    look spins (12/14/10 s), the other is still: two counter-rotating layers caused motion sickness. `compile_yolo_script.bat`
+    recompiles just the script and HUD files.
+  - Scouts gravity: the port already lowers it like CS:GO, `sv_gravity 200` from weed_relay / knife_relay through point_servercommand `cmd`
+    (works on skink52's test server). Scouts made slightly weaker on request: `sv_gravity 160`. Knife stays 200 (matches CS:GO). The script
+    now also sets `sv_gravity 800` every round start (CS:GO only reset it from logic_auto). A per-player `Gravity_0.8` added earlier was removed
+    (it would have stacked with sv_gravity).
+  - Soccer balls (foot_ball, foot_ball_end template, fb volleyballs, ele_ball) weren't kickable: now `prop_physics_multiplayer` with
+    `overridescript "mass,1"`, `physicsmode 0`, copied from skink52's working soccer.vmap test map; the script's run-into push is off for them
+    (shots/knife still launch). Volleyballs no longer get dropped when fb_relay colours them: they wait asleep at the serve spot as in CS:GO.
   - `compile_yolo_fixes.bat` in the addon compiles the particles, vmats, panorama and script that the command-line build skips, then runs `run_build.bat`.
 
 ## Import report

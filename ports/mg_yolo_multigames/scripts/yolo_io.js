@@ -206,8 +206,7 @@ for (const [target, [r, g, b]] of DATA.colors) {
     Instance.OnScriptInput(`Color_${target}__${r}_${g}_${b}`, () => {
         for (const ent of Instance.FindEntitiesByName(target)) {
             if (ent instanceof BaseModelEntity) ent.SetColor({ r, g, b, a: ent.GetColor().a });
-            // volleyball start (fb_relay colours the balls): the balls start asleep in the air - drop them
-            if (VOLLEY.some(v => v.ball === target)) wake(ent);
+            // volleyball start (fb_relay colours the balls): the balls stay asleep in the air at the serve spot, as in CS:GO, until hit
         }
     });
 }
@@ -275,8 +274,10 @@ Instance.OnScriptInput("CreeperStart", ({ activator }) => {
             if (!CREEPER_PREFIXES.some(p => name.startsWith(p))) continue;
             const o = ent.GetAbsOrigin();
             if (Math.hypot(o.x - CREEPER_STORE.x, o.y - CREEPER_STORE.y, o.z - CREEPER_STORE.z) > 400) continue;   // only the set in storage
-            if (cls === "weapon_knife") { ent.Remove(); continue; }                // the knife isn't needed any more
-            Instance.EntFireAtTarget({ target: ent, input: "ClearParent" });
+            // the knife isn't needed any more, but removing it at once also removes everything still parented to it (the whole creeper):
+            // unparent first (below, synchronously), then kill the knife a moment later
+            if (cls === "weapon_knife") { Instance.EntFireAtTarget({ target: ent, input: "Kill", delay: 0.5 }); continue; }
+            ent.SetParent(undefined);
             parts.push({ ent, ofs: { x: o.x - CREEPER_STORE.x, y: o.y - CREEPER_STORE.y, z: o.z - CREEPER_STORE.z } });
         }
     }
@@ -487,10 +488,12 @@ function resetNadeGame() {
 // BLOCKS: shot blocks are pushed away from the shooter.
 // Volleyball balls fall at 1/4 gravity (CS:GO's fb_gravity trigger_gravity 0.25 also applied to physics objects).
 /** @type {{ prefix: string, hit: number, lift: number, run: boolean, gravity: number }[]} hit < 0 = towards the shooter */
+// The soccer balls are prop_physics_multiplayer with mass 1 (as in skink52's working soccer.vmap), so players kick them on contact
+// themselves: run: false for them, the script only adds shot / knife hits.
 const PHYS = [
-    { prefix: "foot_ball", hit: 900, lift: 200, run: true, gravity: 1 },
-    { prefix: "fb_terroristball", hit: 650, lift: 300, run: true, gravity: 0.25 },
-    { prefix: "fb_counterterroristball", hit: 650, lift: 300, run: true, gravity: 0.25 },
+    { prefix: "foot_ball", hit: 900, lift: 200, run: false, gravity: 1 },
+    { prefix: "fb_terroristball", hit: 650, lift: 300, run: false, gravity: 0.25 },
+    { prefix: "fb_counterterroristball", hit: 650, lift: 300, run: false, gravity: 0.25 },
     { prefix: "physics_block", hit: 1100, lift: 100, run: false, gravity: 1 },
     { prefix: "aim_boxes", hit: 300, lift: 60, run: false, gravity: 1 },
 ];
@@ -659,7 +662,9 @@ Instance.OnActivate(() => {
     ensureThink();
 });
 // game_round_end "roundend" OnRoundEnded: switch the scouts game's colour correction off
-Instance.OnRoundStart(() => { roundSignal(); resetNadeGame(); weed(0); creeper.pawn = undefined; creeper.parts = []; });
+// scouts (weed_relay, sv_gravity 160) and knife (knife_relay, sv_gravity 200) games lower the server gravity through point_servercommand
+// "cmd"; logic_auto put it back to 800 at map spawn in CS:GO. Put it back every round too, so the next game never starts in low gravity.
+Instance.OnRoundStart(() => { roundSignal(); resetNadeGame(); weed(0); creeper.pawn = undefined; creeper.parts = []; Instance.ServerCommand("sv_gravity 800"); });
 Instance.OnRoundEnd(() => {
     weed(0);
     for (const [name, input, delay] of DATA.roundEnd) Instance.EntFireAtName({ name, input, delay });
