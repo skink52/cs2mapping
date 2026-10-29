@@ -24,3 +24,9 @@ TTT map on a skyscraper. TTT gameplay scripting is done separately ([cs2mapTTT](
 - If the 3D skybox doesn't render: untick Editor only on the skybox map's sky_camera.
 - 132 physics props: physpush is optional.
 - Vis: if anything pops in or out of view where players stand, raise the nearest hint (Lower → Low → Medium).
+
+## TTT game mode (cs2mapTTT, 29 Oct 2026)
+
+- [cs2mapTTT](https://github.com/skink52/cs2mapTTT) `tools/ttt_convert.py` added `ttt_script` (maps/scripts/ttt.js), `ttt_hud` and the body template
+  (the map has no ttt_* entities; its own info_map_parameters is used). Backup: `maps/ttt_cg_skyscraper_2017.vmap.bak_ttt` on the PC.
+- Its 132 physics props can be carried (hold E). Open: build and test (cs2mapTTT TESTING.md).
