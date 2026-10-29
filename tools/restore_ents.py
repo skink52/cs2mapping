@@ -1,7 +1,7 @@
 """restore_ents.py: put back entities the importer dropped (e.g. 1-unit tool-brush func_buttons), from the decompiled VMF.
 Clones a same-class entity already in the CS2 map as the template (full key set, mesh settings), copies the VMF keys the
 template has, the outputs and the brush box (one box per entity: the bounds of its solids).
-usage: restore_btns.py <in.vmap> <map.vmf> <out.vmap> <name> [<name> ...]"""
+usage: python3 tools/restore_ents.py <in.vmap> <map.vmf> <out.vmap> <name> [<name> ...]"""
 import sys, re
 sys.path.insert(0, __import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 import vmapedit as V, vmf as vmfmod, dmx
