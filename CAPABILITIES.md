@@ -125,5 +125,5 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 ## What it can't do
 
 - Run Valve's tools on your PC by itself: you double-click the import/build batch files and play-test.
-- Hide or move CS2's own HUD, read number keys from script, or change the camera's near clipping.
+- Move parts of CS2's own HUD (it can only be hidden all at once), read number keys from script, or change the camera's near clipping.
 - Guarantee anything untested in game: every write-up marks what was confirmed in CS2 and what wasn't.

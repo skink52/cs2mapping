@@ -130,7 +130,11 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   keep the real attacker from `OnPlayerDamage` for your own scoring (`AddScore`). Armor can still save the victim (health > 1), which is correct.
 - Hidden kill credit leaks through the scoreboard if you `AddScore` the real killer during the round: hold score changes per player and apply them in
   `OnRoundEnd` (cs2mapTTT). Whether CS2 still gives an assist to an earlier hitter on a world kill is untested.
-- The killfeed can't be removed from a map: CS2's HUD draws over custom HUDs, and the client cvar `cl_drawhud_force_deathnotices -1` via
+- **Hiding CS2's own HUD:** `Instance.EntFireAtTarget({ target: pawn, input: "SetHUDVisibility", value: false })` (`true` brings it back). All or nothing;
+  the map's custom HUD stays. Used in game by the Dogfight addon (`flightNativeHud`, default on after a player test: "way better"); it re-sends it on every
+  spawn because a spawn can give the HUD back. It's a server-side pawn input, not a client cvar, so it shouldn't need `sv_cheats` (assumed; Dogfight's
+  tests were standalone). Dogfight skips it when a server plugin owns the HUD bits. cs2mapTTT uses it to drop the killfeed and draws its own health/ammo/crosshair.
+- Without that input, the killfeed can't be removed: CS2's HUD draws over custom HUDs, and the client cvar `cl_drawhud_force_deathnotices -1` via
   `ClientCommand` is unreliable and may persist on the player's client. A HUD mask over the feed area is untested.
 - Respawn only in some phases (prep/warmup): flip `mp_respawn_on_death_t/ct` from script per phase (cs2mapTTT).
 - Round winner without an `info_map_parameters`: `mp_default_team_winner_no_objective 2|3`, `mp_ignore_round_win_conditions 0`, `SetRoundRemainingTime(1)` (cs2mapTTT fallback, unverified).
