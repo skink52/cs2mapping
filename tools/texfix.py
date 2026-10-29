@@ -506,7 +506,7 @@ def face_scales(m, c, vmfpath):
                 fc['u'][fi] = u0[:3] + [u0[3] * r[0]]; fc['v'][fi] = v0[:3] + [v0[3] * r[1]]
                 cnt[0 if fc['ratio'] else 1] += 1
             sc2, u2, v2 = fc['sc'][fi], fc['u'][fi], fc['v'][fi]
-            if ts and fc['uv'] and not _bad(sc2):
+            if ts and fc['uv'] and not _bad(sc2) and (fix or fc['ratio']):   # only faces with a VMF side: generated geometry (beams, shells) keeps its own UVs
                 flat = (lambda P: P) if not (tg and tg.get('disp')) else (lambda P, s=tg: [P[k] - s['n'][k] * (dot(s['n'], P) - s['d']) for k in range(3)])
                 wrong = fix
                 if not wrong:

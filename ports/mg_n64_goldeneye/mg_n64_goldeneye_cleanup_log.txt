@@ -71,3 +71,9 @@ Follow-up pass (2026-10-27): lightbright
 - light brightness rebuilt from the CS:GO _light values for 567 lights (0 had brightness = nan from the importer, which crashes CS2 on map load)
 - pruned 1 orphaned elements
 
+Follow-up pass (2026-10-29): facescale, matflags
+- face texture scales: 12948 brush faces, 10722 matched to one VMF mapping; 12 matched: absurd scale, mapping of another material on the same plane; 8313 matched: same plane; 2397 matched: same plane (outside the brush); 1088 no VMF side on the same plane + material; 1138 overlapping VMF brushes with different mappings (left as imported)
+- face texture mapping repaired: 775 faces re-scaled / re-shifted from the VMF, 803 faces with texture coordinates rewritten: concretefloor001a (205), concretewall004a (43), woodm (122), hpe_plaster_tan_wall (1), nuke_metalvent (4), train_metalceiling_02 (58), dev_measureice01 (7), glass01b (13), offwndwb (1), metalbar (31), blackmetal (8), ceilingtile (5), diamondplate (10), metal_blackframe_outter (25), wires01 (2), crate01 (1), crate02 (3), concretewall01 (69), concretewall02 (34), door_metal_hr (3), door_swing_hr (2), rail_rust (1), wall_concrete1_hr (1), wall_concrete2_hr (1), glass04 (1), metalfence007a (2), metalrail003a (10), metalwall014a (52), metalwall030a (3), library008 (4), library012 (1), wood (97)
+- $additive materials moved to csgo_unlitgeneric (F_BLEND_MODE 4, additive): glass04
+- pruned 0 orphaned elements
+- TO CHECK: faces still with an absurd texture scale (<0.01 or >8), left as imported: metalwall014a x347 (VMF: 0.01x0.01/0.0078x0.0078/0.0195x0.0195), dev_measuregeneric20 x12 (VMF: 0.125x0.1719), door_metal_hr x7 (VMF: 0.1836x0.1836/0.0117x0.0918/0.0117x0.1836), nuke_metalvent x4 (VMF: 0.2188x0.2188/0.25x0.25), offwndwb x1 (not in the VMF)

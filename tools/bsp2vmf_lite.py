@@ -6,7 +6,8 @@ python3 bsp2vmf_lite.py <map.bsp> <out.vmf> [embedded_dir]
 Writes every brush (world and brush entities) as a `solid` with one `side` per non-bevel brush side: the plane as three points,
 the material, and uaxis/vaxis rebuilt from the texinfo (axis = textureVec / |textureVec|, scale = 1 / |textureVec|, shift = offset),
 which is exactly what BSPSource writes. Entities: every infodecal from the entity lump and every info_overlay from the overlay lump
-(BasisOrigin/U/V/Normal, uv0..uv3, StartU/EndU/StartV/EndV). Nothing else (no point entities, no displacements).
+(BasisOrigin/U/V/Normal, uv0..uv3, StartU/EndU/StartV/EndV). Displacement sides get a minimal dispinfo (elevation 0, one row of
+distances = the largest vertex offset), enough for texfix to recognise faces over a displacement. Nothing else (no point entities).
 """
 import struct, sys, os, re, io, zipfile, lzma
 
@@ -50,6 +51,17 @@ def main(src, out, emb=None):
     assert d[:4] == b'VBSP', 'not a BSP'
     planes = lump(d, 1); texdata = lump(d, 2); texinfo = lump(d, 6); brushes = lump(d, 18); sides = lump(d, 19)
     sdata = lump(d, 43); stab = lump(d, 44); ents = lump(d, 0).decode('latin-1', 'replace'); ovl = lump(d, 45)
+    faces = lump(d, 7); dinfo = lump(d, 26); dverts = lump(d, 33)
+    disp_reach = {}   # (planenum, texinfo) -> largest displacement vertex offset
+    for i in range(len(dinfo) // 176):
+        vstart, = struct.unpack_from('<i', dinfo, 176 * i + 12); power, = struct.unpack_from('<i', dinfo, 176 * i + 20)
+        mf, = struct.unpack_from('<H', dinfo, 176 * i + 40)
+        if mf * 56 + 56 > len(faces): continue
+        pn_, = struct.unpack_from('<H', faces, 56 * mf); tx_, = struct.unpack_from('<h', faces, 56 * mf + 10)
+        nv = ((1 << power) + 1) ** 2; r = 0.0
+        for k in range(vstart, min(vstart + nv, len(dverts) // 20)):
+            r = max(r, abs(struct.unpack_from('<f', dverts, 20 * k + 12)[0]))
+        key = (pn_ & ~1, tx_); disp_reach[key] = max(disp_reach.get(key, 0.0), r)
     names = []
     for i in range(len(stab) // 4):
         o, = struct.unpack_from('<i', stab, 4 * i); e = sdata.index(b'\0', o); names.append(sdata[o:e].decode('latin-1'))
@@ -61,7 +73,7 @@ def main(src, out, emb=None):
         l = (vec[0] ** 2 + vec[1] ** 2 + vec[2] ** 2) ** 0.5 or 1.0
         return '[%g %g %g %g] %g' % (vec[0] / l, vec[1] / l, vec[2] / l, vec[3], 1.0 / l)
     o = ['world\n{\n"classname" "worldspawn"\n']
-    nb = ns = 0
+    nb = ns = ndisp = 0
     for b in range(len(brushes) // 12):
         first, num, contents = struct.unpack_from('<iii', brushes, 12 * b)
         sl = []; allp = []
@@ -76,8 +88,11 @@ def main(src, out, emb=None):
             nx, ny, nz, dist = struct.unpack_from('<4f', planes, 20 * pn)
             u, v, mat = ti(tix)
             pts = plane_points((nx, ny, nz), dist, cen)
-            sl.append('side\n{\n"plane" "%s"\n"material" "%s"\n"uaxis" "%s"\n"vaxis" "%s"\n}\n'
-                      % (' '.join('(%g %g %g)' % tuple(p) for p in pts), mat, axis(u), axis(v)))
+            dr = disp_reach.get((pn & ~1, tix))
+            di = '' if dr is None else 'dispinfo\n{\n"elevation" "0"\ndistances\n{\n"row0" "%g"\n}\n}\n' % dr
+            if dr is not None: ndisp += 1
+            sl.append('side\n{\n"plane" "%s"\n"material" "%s"\n"uaxis" "%s"\n"vaxis" "%s"\n%s}\n'
+                      % (' '.join('(%g %g %g)' % tuple(p) for p in pts), mat, axis(u), axis(v), di))
         if len(sl) >= 4:
             o.append('solid\n{\n' + ''.join(sl) + '}\n'); nb += 1; ns += len(sl)
     o.append('}\n')
@@ -106,7 +121,7 @@ def main(src, out, emb=None):
         for k in range(4): kv['uv%d' % k] = '%g %g %g' % uv[k]
         o.append('entity\n{\n' + ''.join('"%s" "%s"\n' % (k, v) for k, v in kv.items()) + '}\n'); no += 1
     open(out, 'w', encoding='utf-8').write(''.join(o))
-    print('%s: %d brushes, %d sides, %d infodecals, %d info_overlays' % (out, nb, ns, nd, no))
+    print('%s: %d brushes, %d sides (%d displacement), %d infodecals, %d info_overlays' % (out, nb, ns, ndisp, nd, no))
     if emb:
         pak = lump(d, 40)
         with zipfile.ZipFile(io.BytesIO(pak)) as z:
