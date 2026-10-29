@@ -128,6 +128,17 @@ foreach ($m in $moves) {
 }
 
 if ($Apply) {
+  # the WW1 weapon builder's configs name their own folder
+  $old = 'C:/source2/trenchwarfare assets'; $new = 'C:/source2/projects/trenchwarfare'; $enc = New-Object Text.UTF8Encoding $false
+  $fixed = @(Get-ChildItem -LiteralPath "$P\trenchwarfare\tools" -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in '.json', '.py' } |
+    Where-Object { [IO.File]::ReadAllText($_.FullName).Contains($old) })
+  foreach ($f in $fixed) {
+    [IO.File]::WriteAllText($f.FullName, [IO.File]::ReadAllText($f.FullName).Replace($old, $new), $enc); Write-Host "paths   $($f.FullName)"
+  }
+  if ($fixed) {
+    $undoLines.Insert(0, "foreach (`$f in @('" + (($fixed | ForEach-Object { $_.FullName -replace "'", "''" }) -join "','") +
+      "')) { [IO.File]::WriteAllText(`$f, [IO.File]::ReadAllText(`$f).Replace('$new', '$old'), (New-Object Text.UTF8Encoding `$false)) }")
+  }
   $undoLines | Add-Content -LiteralPath $undo -Encoding UTF8
   foreach ($e in @("$S1\STORE\maps", "$S1\STORE", "$S1\crowbarassets", "$S1\Blender Assets", "$S2\demo videos", $D)) {
     if ((Test-Path -LiteralPath $e) -and -not (Get-ChildItem -LiteralPath $e -Force)) { Remove-Item -LiteralPath $e; Write-Host "removed empty $e" -ForegroundColor DarkGray }
