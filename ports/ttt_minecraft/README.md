@@ -26,6 +26,9 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
   doorways). Traitor buttons: all 5 relays match the VMF outputs; only dead targets are `Trap_Nether_Light` / `Ttest_Light_Test`, missing in the original too.
   Diamond ores are placed by `ttt_map_settings` RoundStart (ttt.js `ttt_ms__start`), so they stay in the holding box until a round starts (3+ players).
   Backup `maps/ttt_minecraft.vmap.bak_lighting`.
+- 2026-10-30: the End/win room and the gold/diamond holding box sat above the sky ceiling (z 1760-2816), visible from spawn through toolsskybox and
+  shadowing the island. Moved 4224 u down below the nether (End z -2464..-1408) with all 242 nodes in them; all teleports into them are point_teleports
+  inside the moved set. Map-wide Lowest vis hint extended to z -2560..3072.
 
 ## Open / to check
 

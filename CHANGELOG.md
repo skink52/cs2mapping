@@ -9,7 +9,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 - `matflags`: CS:GO water → see-through `F_TRANSLUCENT` (0.55, back faces); `$alpha` → opacity; `$selfillum` → `F_SELF_ILLUM`.
 - Stage C `io` / stage D `iofix`: logic_auto `is_pc` global state cleared (never fired in CS2), case-only output target mismatches fixed.
 - `doorsolid` hinge cube sits 2 u inside the frame; stage D `doorhinge` moves it on maps already done.
-- Applied to ttt_minecraft (lightbright, iofix, doorhinge, matflags).
+- Applied to ttt_minecraft (lightbright, iofix, doorhinge, matflags). Its End room and block holding box moved from above the sky ceiling to below the nether.
 
 ## 2026-10-30: non-commercial licence
 

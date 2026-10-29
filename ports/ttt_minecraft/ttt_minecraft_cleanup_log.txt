@@ -66,3 +66,6 @@ Follow-up pass (2026-10-30): lightbright, iofix, doorhinge, matflags
 - output targets fixed to the exact entity name (case): Trap_lava->Trap_Lava, Trap_water->Trap_Water
 - pruned 0 orphaned elements
 
+
+Follow-up (2026-10-30): End room + block holding box moved below the nether
+- 242 nodes above the sky ceiling (z >= 1570: the End/win room, its 29 Win_Teleport point_teleports, lights, fires, probes, vis hint, trigger_hurt, and the gold/diamond holding box with its logic) moved down 4224 u (End now z -2464..-1408, nether bottom -1312). Above the ceiling they were visible through toolsskybox from spawn and shadowed the island (CS2's sun ignores toolsskybox). Every teleport into them is a point_teleport inside the moved set; the block teleports go out to island point_teleports (unmoved). The map-wide Lowest vis hint now spans z -2560..3072.
