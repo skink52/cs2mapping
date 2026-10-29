@@ -73,8 +73,8 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 **Whole games inside one map, no server plugins** ([guide](docs/creation/guide.md))
 - Script-driven minigames where the map itself runs the game: deathmatch arenas, racing, fighting, grid bomb arenas, platform/KZ courses with monsters,
   team battles with mortars and aircraft.
-- A drop-in game mode for any existing map: Trouble in Terrorist Town (hidden traitors, body searching, a shop, karma) added to a map with one script
-  and two entities ([cs2mapTTT](https://github.com/skink52/cs2mapTTT)).
+- A drop-in game mode for any existing map: Trouble in Terrorist Town (hidden traitors, carryable bodies to search, a shop, karma, its own Tab scoreboard
+  and a panel that hides the killfeed) added to a map with one script and a few entities ([cs2mapTTT](https://github.com/skink52/cs2mapTTT)).
 - Several arenas in one map for big servers (e.g. 4 × 16 players), with automatic arena sizing, modes that change each round, spectating, AFK handling,
   bots, chat commands, and round results.
 - Real CS2 kills and scores from script, so server ranking plugins count them; podium/kill-share systems for games without shooting.
