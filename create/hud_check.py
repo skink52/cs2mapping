@@ -8,7 +8,7 @@ and draws them with the real HUD pictures. Then it checks:
   - only the panel types a custom HUD supports (Panel, Label, Image, Button), no duplicate ids, no id on the
     top panel (CS2's CustomHud validation refuses it);
   - CS2's own HUD zones: nothing of ours under the kill feed, the team counter, the money / health row or the chat
-    (CS2 draws those on top of a custom HUD). See cs2_zones().
+    (CS2 draws those on top of a custom HUD, except the kill feed: an opaque custom panel hides it, cs2mapTTT 30 Oct 2026). See cs2_zones().
 It prints every problem as "LAYOUT: ..." and exits 1 if there is any, so a build script can stop on it.
 
 usage:
@@ -393,7 +393,8 @@ class Hud:
 
 # ---------------------------------------------------------------- CS2's own HUD: ours keeps out of its places
 def cs2_zones(W, chat_top=600):
-    """CS2 draws chat, the kill feed, the team counter and the money / health row on top of a custom HUD (numbers from
+    """CS2 draws chat, the team counter and the money / health row on top of a custom HUD; the kill feed is drawn under it
+    (an opaque panel there hides it: cs2mapTTT, verified 30 Oct 2026), so cover it on purpose or keep clear of it (numbers from
     CS2's hudchat / huddeathnotice / hud styles, 1080 high). Checked at 16:9 and wider; on 4:3 the chat is 40% of the
     screen's width, so long centre lines can reach it there.
     Chat: box x 18-571 (text 28-561); its last few lines always show (up from ~y 934), the whole box (from y 609)

@@ -169,3 +169,5 @@ model Panorama's alignment rules.
 - Don't place `cs_minimap_boundary` entities: CS2 then draws its own minimap instead of your image.
 - mg_trenchwarfare's painted radar adds a 16×16 lettered grid (A–P across, 1–16 down) and a `!pos` chat command that prints the player's grid square, to check
   alignment in game. `sv_disable_radar 1` turns the radar off (games with parked pawns: the radar would show everyone in the booth).
+
+- **The kill feed is drawn under a custom HUD** (cs2mapTTT, verified in game 30 Oct 2026): an opaque panel at the top right (`horizontal-align: right; margin-top: 64px`, 480×300) hides it completely, so a map can hide kill notices with no plugin. The Tab scoreboard is also under the custom HUD; the Esc menu's scoreboard is not.

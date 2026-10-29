@@ -53,6 +53,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-10-30
 
+- **Verified**: an opaque custom HUD panel hides CS2's kill feed (cs2mapTTT); `hud_check.py` and hud.md updated.
 - **cs2mapTTT**: bodies from real agent models (characters/models placeholders showed as boxes), carryable; tap/hold/Shift E on bodies; HUD backgrounds from a banner (`tools/hud_theme.py`).
 - **build_maps.ps1**: the asset pass also compiles panorama `*.xml`/`*.css` (custom HUDs, e.g. cs2mapTTT's ttt_hud), so `run_build.bat` picks up HUD changes.
 - **cs2mapTTT**: own Tab scoreboard over CS2's (dead listed alive until the body is found), opaque killfeed cover, top-bar cover.
