@@ -85,8 +85,8 @@ pixel-text rows, `char_line`, `preload`, `hide_with_scoreboard`, `write` with it
   stylesheet doesn't style your class names. Hide your HUD while Tab is held with `.HUD_SCOREBOARD_VISIBLE .MyRoot.hidescores { visibility: collapse; }`
   (`hidescores` = a per-player opt-in class, Hellmatch `!hud scores`; `Hud.hide_with_scoreboard`).
 - A layout that fails to compile is ignored silently: CS2 keeps the last good `.vxml` (Puppet Brawl ran a 3-day-old HUD). Compile it with
-  `resourcecompiler.exe -f -i "…\panorama\layout\custom_game\<name>.xml"` (and the `.css`) and check for "1 compiled"; the command-line build's pre-pass
-  never compiles them. Changes need a full reload (`disconnect`, load again).
+  `resourcecompiler.exe -f -i "…\panorama\layout\custom_game\<name>.xml"` (and the `.css`) and check for "1 compiled"; the porting build's asset pass (`build_maps.ps1`)
+  compiles them since 30 Oct 2026; Hammer's own build doesn't. Changes need a full reload (`disconnect`, load again).
 
 ### CS2's own HUD zones (keep clear)
 

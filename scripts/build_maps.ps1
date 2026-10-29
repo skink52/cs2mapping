@@ -5,7 +5,7 @@
 #
 #   run_build.bat                     builds every line of build_queue.txt  ("addon" or "addon mapname")
 #   build_maps.ps1 mg_fred_all ...    builds just the addons given
-#   a line "assets mg_x" compiles mg_x's materials/radar/sounds/scripts only, without rebuilding the map
+#   a line "assets mg_x" compiles mg_x's materials/radar/HUD xml+css/sounds/scripts only, without rebuilding the map
 # Logs: C:\source1\cs2port\logs\<addon>_build.log and logs\stage_d_done.txt
 # Successful builds are marked [in progress, built] in existing_ports.txt.
 
@@ -86,8 +86,8 @@ foreach ($q in $queue) {
     $content = Join-Path $CS2 "content\csgo_addons\$addon"
     $alog = Join-Path $Logs "${addon}_assets.log"
     Set-Content -Path $alog -Value "asset pre-compile $(Get-Date)"
-    Write-Host "     compiling addon assets (materials, radar, sounds, scripts)..."
-    foreach ($spec in @('materials|*.vmat', 'models|*.vmdl', 'panorama|*.vtex', 'soundevents|*.vsndevts', 'sounds|*.wav', 'sounds|*.mp3', 'maps\scripts|*.js')) {
+    Write-Host "     compiling addon assets (materials, radar, HUD, sounds, scripts)..."
+    foreach ($spec in @('materials|*.vmat', 'models|*.vmdl', 'panorama|*.vtex', 'panorama|*.xml', 'panorama|*.css', 'soundevents|*.vsndevts', 'sounds|*.wav', 'sounds|*.mp3', 'maps\scripts|*.js')) {
         $d, $pat = $spec -split '\|'
         $dir = Join-Path $content $d
         if (-not (Get-ChildItem $dir -Recurse -Filter $pat -File -ErrorAction SilentlyContinue | Select-Object -First 1)) { continue }

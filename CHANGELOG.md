@@ -51,6 +51,11 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   Details in `ports/mg_yolo_multigames/README.md`.
 - `tools/assets.py` `alpha`: also fixes vmats that already have `F_TRANSLUCENT` / `F_ALPHA_TEST` but no `TextureTranslucency` (they draw opaque).
 
+## 2026-10-30
+
+- **build_maps.ps1**: the asset pass also compiles panorama `*.xml`/`*.css` (custom HUDs, e.g. cs2mapTTT's ttt_hud), so `run_build.bat` picks up HUD changes.
+- **cs2mapTTT**: `HIDE_NATIVE_HUD` off by default (CS2 HUD, weapon switching and chat kept; hidden killers via world deaths are enough).
+
 ## 2026-10-29
 
 - **cs_script-notes / cs2-gotchas**: SetHUDVisibility blocks weapon switching; SetModel + Teleport on a spawned prop_ragdoll crashes the server (found from a CS2 minidump); how to read CS2 minidumps. cs2mapTTT fixed.
