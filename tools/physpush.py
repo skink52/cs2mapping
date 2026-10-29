@@ -25,6 +25,7 @@ const physBySlot = new Map();
 let physLast = 0;
 function physMass(ent) {
     if (!ent || !ent.IsValid()) return undefined;
+    if (ent.GetOwner() instanceof CSPlayerPawn) return undefined;        // held by a player (cs2mapTTT carry sets the owner)
     const cls = ent.GetClassName();
     if (cls !== "prop_physics" && cls !== "prop_physics_multiplayer" && cls !== "prop_physics_override" && cls !== "func_physbox") return undefined;
     return PHYS[ent.GetEntityName().toLowerCase()];
@@ -116,8 +117,16 @@ def run(m, c):
     c.log.append('physpush: %d physics props pushed by mass from the io script (masses %s)' % (len(props), ', '.join('%s %g' % kv for kv in sorted(c.phys.items()))[:500]))
     if guessed: c.todo.append('physpush: no CS:GO .phy mass for %s - used 50' % ', '.join(sorted(set(guessed)))[:400])
 
+def _need_pawn_import(js):
+    m = re.match(r'import \{([^}]*)\} from "cs_script/point_script";', js)
+    if not m: return 'import { Instance, CSPlayerPawn } from "cs_script/point_script";\n\n' + js
+    names = [x.strip() for x in m.group(1).split(',') if x.strip()]
+    if 'CSPlayerPawn' in names: return js
+    return js[:m.start()] + 'import { %s } from "cs_script/point_script";' % ', '.join(names + ['CSPlayerPawn']) + js[m.end():]
+
 def patch_script(js, phys):
     """add (or replace) the physics-push section in an existing <addon>_io.js (stage D)"""
+    js = _need_pawn_import(js)
     sec = js_section(phys)
     mark = '// ---------------------------------------------------------------- physics prop pushing'
     if mark in js:

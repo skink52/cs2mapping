@@ -37,3 +37,4 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
 ## Water (29 Oct 2026)
 
 - `water` pass: water meshes → func_water, underwater post_processing_volume 80 u below the surface (master volume already there). Not yet built.
+- 29 Oct 2026 (evening): cs2mapTTT covers MAP_REQUIREMENTS.md (status in cs2mapTTT `docs/MAP_REQUIREMENTS.md`): gold block / tester trigger through ttt.js with polling, crouch prompt for T2, sandbox texts removed from logic_auto, io script skips props held by a player (physpush owner check).

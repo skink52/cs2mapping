@@ -37,3 +37,4 @@ TTT map on a skyscraper. TTT gameplay scripting is done separately ([cs2mapTTT](
 - 29 Oct 2026: the 6 rebuilt sky slabs (clearsky_moondome) retextured to toolsskybox so the 3D skybox (city) shows through; stage C fixed for future 3D-skybox maps.
 
 What ttt.js still needs for this map (invisibility button, round reset): cs2mapTTT `MAP_REQUIREMENTS.md`.
+- 29 Oct 2026 (evening): the invisibility button (btn1/btn3) isn't in the CS2 vmap, skybox map or gameplay prefab: restore it in the port, then re-run cs2mapTTT `tools/ttt_convert.py` (its `!activator Alpha` rule handles the fade).

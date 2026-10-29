@@ -252,6 +252,10 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
 - **Carrying / tethering by velocity spring** (seen in workshop map jb_watermelon_v2, id 3480208667, its medibeam gun drags a live player; cs2mapTTT uses
   the same idea for props and bodies): each tick, `ent.Teleport({ velocity })` toward the hold point with speed = gain × distance (cap it), angular velocity 0.
   Velocity-only Teleports don't hit the "teleported props aren't drawn" problem. Drop when too far, or when the holder stands on the object.
+- Two scripts, one prop: mark a carried prop with `SetOwner(pawn)` so other scripts can skip it (`ent.GetOwner() instanceof CSPlayerPawn`); the generated io
+  script's physics push does (`tools/physpush.py`, cs2mapTTT carry).
+- Debris physics objects (func_physbox with the Debris flag, e.g. ttt_minecraft's gold block): the aim trace may miss them and triggers may not see them when
+  moved by script. cs2mapTTT picks the carryable nearest the aim line and polls the object against the trigger's box (untested in game which of these is needed).
 - Seen in that map's scripts but not in our `point_script.d.ts` copy: `Instance.OnGameEvent("round_start", cb)`, player inputs `AddAttribute`/`RemoveAttribute`
   (attribute filters), weapon inputs `SetAmmoAmount`/`SetReserveAmmoAmount`. Check Valve's current `point_script.d.ts` before relying on them.
 - **Server-side bodies** (cs2mapTTT, untested in game): a `point_template` of a `prop_ragdoll` (stock agent model); on death `ForceSpawn` at the pawn, `SetModel` to the
