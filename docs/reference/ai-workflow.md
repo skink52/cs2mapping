@@ -22,6 +22,7 @@ What has worked for porting and building CS2 maps with Claude, and the practical
 - **Ask or check the repos** when information is missing, so every chat uses the same facts. This repo is the shared memory: record pipeline changes,
   port fixes and CS2 discoveries here in the same session.
 - Public repos carry a short "AI-generated code" disclaimer.
+- **Scripts that copy a working folder into a repo** (e.g. trenchwarfare-cs2 `sync_repo.sh`) pull first, never delete, copy only files that are newer and changed, and skip repo-owned files (README, NOTES, licences, files mastered in this repo via `create/libsync.json`). Another session's older working folder must not undo newer commits.
 
 ## Transfer limits and traps
 
