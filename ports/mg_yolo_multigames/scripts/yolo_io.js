@@ -25,6 +25,7 @@ import { Instance, Entity, BaseModelEntity, CSPlayerPawn, CSPlayerController, CS
 //   NadeWin_T / NadeWin_CT        grenade holes: a team filled all 15 holes -> the other team is slain 60 s later (M4 time)
 //   (automatic)                   volleyball: a ball landing on the other side's floor fires fb_tball_scored / fb_ctball_scored
 //   (automatic)                   spawn_overlay (map credits) only shows in the first two rounds
+//   Item_aim_deagle / Item_hacks_equip  item_assaultsuit from those game_player_equips (an item_* in an equip slot crashes CS2 on map load)
 //   CreeperPickup                 creeper game: CS:GO parented the creeper body, its env_explosion and countdown sprites to the knife;
 //                                           CS2 parenting to a weapon doesn't follow the carrier, so the script carries them
 //   Weed_1 / Weed_2 / Weed_3      replaces  color_correction weed_co_1..3 (scouts "drugged" game): full-screen HUD overlay,
@@ -243,6 +244,11 @@ Instance.OnScriptInput("Weed_1", () => weed(1));
 Instance.OnScriptInput("Weed_2", () => weed(2));
 Instance.OnScriptInput("Weed_3", () => weed(3));
 Instance.OnScriptInput("Weed_Off", () => weed(0));
+
+// ---------------------------------------------------------------- equip items (item_* in a game_player_equip slot crashes the server on map load)
+for (const equip of ["aim_deagle", "hacks_equip"]) {
+    Instance.OnScriptInput("Item_" + equip, ({ activator }) => { toPawn(activator)?.GiveNamedItem("item_assaultsuit", false); });
+}
 
 // ---------------------------------------------------------------- creeper (mc_creeper_knife OnPlayerPickup -> CreeperPickup)
 const CREEPER_PARTS = ["mc_creeper", "mc_creeper_explosive", "mc_sprite_1", "mc_sprite_2", "mc_sprite_3", "mc_sprite_4", "mc_sprite_5", "mc_sprite_boom"];

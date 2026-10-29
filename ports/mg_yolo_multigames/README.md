@@ -39,6 +39,9 @@ Multigames map with a game-picker lobby. Has a separate 3D skybox map (`mg_yolo_
     makes the script carry all of them at the carrier's feet + their offset from the knife spawn.
   - With the VPKs staged: `alpha` (dev_measurerails01 mask) and `assets` (dev_measuregeneric01 / 01b vmats were missing: rebuilt). The `alpha` pass now
     also fixes vmats that have `F_TRANSLUCENT`/`F_ALPHA_TEST` but no `TextureTranslucency` (the cause of the banner bug).
+  - Map-load crash (server.dll null read; dump strings aim_deagle / item_assaultsuit): `item_assaultsuit` in the aim_deagle and hacks_equip
+    game_player_equip slots (the goldeneye crash, which appeared with a CS2 update after this port was built). Taken out of the slots; the script
+    gives it (`Item_aim_deagle` / `Item_hacks_equip` from aim_setup / hacks_setup).
   - `compile_yolo_fixes.bat` in the addon compiles the particles, vmats, panorama and script that the command-line build skips, then runs `run_build.bat`.
 
 ## Import report
