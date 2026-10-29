@@ -116,8 +116,9 @@ Checks before handing a map over: `create/check_mesh.py <vmap>` (half-edge valid
   enclosed in a moondome (sky-material shell) with a `tools/skybox` shell 1 unit inside it for environment lighting, **single-sky maps only**: several skies
   need one moondome per box with its own sky material and no toolsskybox shell (Space Racer). For the new `toolsskyboxocclude` material see
   [cs2-gotchas, Sky and world](../reference/cs2-gotchas.md#sky-and-world) (untested).
-- **Vis hints:** Lowest over everything (the void), Low only over the playable band (Space Racer: a chain of Low hints along the track centre line, 40 samples per
-  chunk, padded 900 sideways, 350 down, 1100 up; `vmapgen.path_hints`), Lower (`hintType` 8) for big volumes, Medium only around very complex meshes.
+- **Vis hints:** Lowest over everything (the void), Low only where something can actually block sight (sealed rooms, arenas with walls). Where nothing occludes (props-only tracks over a void), Low hints buy nothing:
+  Space Racer's chain of Low hints along every road (`vmapgen.path_hints`) gave Neon Racer 3.7 million vis clusters, so since 28 Oct 2026 it uses one Lowest over the whole map
+  and Low only in the lobby rooms, Lower (`hintType` 8) for big volumes, Medium only around very complex meshes.
   Sky shells around sealed rooms: Exclude from Vis.
 - **Lighting:** enough stationary lights that weapons aren't black; one `env_combined_light_probe_volume` per room/arena (`vmapgen.probe_volume`) that fully covers every static func_breakable / func_brush (check with `tools/probecover.py` via `stage_d.py … probes`);
   `toolslightmapres` shells over the player space (`vmapgen.lmres_*`: 64-grid occupancy, floor −8 to +128); probe-lit (`bakelighting 0`) foliage and small props;

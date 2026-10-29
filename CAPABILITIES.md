@@ -118,6 +118,9 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Workshop images; trailers and GIFs with original music *(project repos)*.
 - Keeping an addon safe to publish: no copyrighted names, art or ripped models; credits and licences in place.
 
+**Keeping the projects in step** ([details](create/README.md#keeping-the-repos-in-step))
+- A fix to a shared tool reaches every game that uses it: one master copy here, checked and copied out to each game's repo, and a warning when a game's own version of a tool changes and the shared one hasn't caught up.
+
 ---
 
 ## Reference for anyone

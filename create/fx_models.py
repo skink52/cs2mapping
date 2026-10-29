@@ -1,7 +1,7 @@
 """Self-lit effect models for scripts (prop_dynamic, non-solid, forward = +x so a script can orient them by yaw/pitch):
 a glowing tracer streak (origin at its head), a ground ring marker with ticks (aim point, landing spot), a ring-and-cross sight
 facing +x (a gunsight pip for a camera behind it), and a finned bomb as an example of a plain shaded model.
-Glow comes from a csgo_vertexlitgeneric + F_SELF_ILLUM material (emissive_vmat); every quad is double-sided.
+Glow comes from a csgo_vertexlitgeneric + F_SELF_ILLUM material (emissive_vmat); every quad is double-sided unless built with double=False.
 
 usage: fx_models.py <addon content dir> [--prefix fx] [--only tracer,marker,sight,bomb]
 Writes models/<CS2_MODEL_PREFIX>/<prefix>/<name>/<name>.{smd,vmdl} and materials/models/<CS2_MODEL_PREFIX>/<prefix>/*.vmat/png.
@@ -41,28 +41,28 @@ Layer0
     return f'{rel_t}/{name}.vmat'
 
 
-def quads(V2, F, z, axis):
-    """flat 2D shape -> double-sided mesh, in the XY plane (axis='z') or the YZ plane facing +x (axis='x')"""
+def quads(V2, F, z, axis, double=True):
+    """flat 2D shape -> mesh (double-sided unless double=False: then only the face towards +z / +x draws), in the XY plane (axis='z') or the YZ plane facing +x (axis='x')"""
     V = np.array([(x, y, z) for x, y in V2], float)
     if axis == 'x': V = V[:, [2, 0, 1]]
     F = np.array(F, np.int64)
-    V = np.concatenate([V, V]); F = np.concatenate([F, F[:, ::-1] + len(V2)])
+    if double: V = np.concatenate([V, V]); F = np.concatenate([F, F[:, ::-1] + len(V2)])
     m = geo.Mesh(); m.V = V; m.N = np.tile([0, 0, 1.0] if axis == 'z' else [1.0, 0, 0], (len(V), 1)); m.F = F
     return m
 
 
-def ring(r0, r1, n=48, z=0.0, axis='z'):
+def ring(r0, r1, n=48, z=0.0, axis='z', double=True):
     th = np.linspace(0, 2 * np.pi, n + 1); V = []; F = []
     for k in range(n):
         a, b = th[k], th[k + 1]
         i0 = len(V)
         V += [(r0 * math.cos(a), r0 * math.sin(a)), (r1 * math.cos(a), r1 * math.sin(a)), (r1 * math.cos(b), r1 * math.sin(b)), (r0 * math.cos(b), r0 * math.sin(b))]
         F += [(i0, i0 + 1, i0 + 2), (i0, i0 + 2, i0 + 3)]
-    return quads(V, F, z, axis)
+    return quads(V, F, z, axis, double)
 
 
-def bar(x0, y0, x1, y1, z=0.0, axis='z'):
-    return quads([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], [(0, 1, 2), (0, 2, 3)], z, axis)
+def bar(x0, y0, x1, y1, z=0.0, axis='z', double=True):
+    return quads([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], [(0, 1, 2), (0, 2, 3)], z, axis, double)
 
 
 def merge(ms):
@@ -88,7 +88,8 @@ def build(out, prefix='fx', only=None):
     if want('tracer'):        # glowing streak behind its head; fly it at a few thousand u/s, every Nth round
         tr = geo.tube([(-110, 0, 0), (0, 0, 0)], [0.5, 1.4], sides=6, mat='m')
         made['tracer'] = write(out, rel_m, 'fx_tracer', tr, emissive(out, rel_t, 'fx_tracer', (255, 196, 90), 40.0))
-    if want('marker'):        # ground ring with four ticks, lies flat
+    if want('marker'):        # ground ring with four ticks, lies flat. For a marker only one viewer should see (a pilot's bomb sight held
+        # between their camera and the landing point, facing it), build it with double=False: players below see the undrawn back face
         mk = merge([ring(108, 118), ring(14, 20)] + [bar(*b) for b in ((126, -3, 168, 3), (-168, -3, -126, 3), (-3, 126, 3, 168), (-3, -168, 3, -126))])
         made['marker'] = write(out, rel_m, 'fx_marker', mk, emissive(out, rel_t, 'fx_marker', (255, 70, 40), 12.0))
     if want('sight'):         # ring + cross facing +x

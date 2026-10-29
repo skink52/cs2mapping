@@ -11,7 +11,7 @@ A theme is a dict (colours are (r, g, b), usually names from retro.py):
 After make_sky(), skies.LAST_PLANET is (x, y, radius) of the big body at 512 x 256 scale (for framing pictures).
 
 usage:
-    skies.py <out.png> [theme] [seed]          theme = one of EXAMPLE_THEMES (default dusk)
+    skies.py <out.png> [theme] [seed] [style]  theme = one of EXAMPLE_THEMES (default dusk); style = pixel | neon | depth
     import skies; img = skies.make_sky(dict(sky=(BLACK, NAVY, TEAL), glow=MINT, planet=(SKYBLUE, 'ringed')), 'city', 3)
 
 From space-racer-cs2/tools/skies.py (MIT), made project-neutral.
@@ -131,8 +131,11 @@ def horizon(img, rng, kind, col):
             img[hy - h:hy + 1, x] = INK
             img[hy - h, x] = col
 
-def make_sky(th, scenery=None, seed=1):
-    """one equirect sky (2048 x 1024 RGB uint8) from a theme dict (see the top of this file); scenery overrides th['scenery']"""
+def make_sky(th, scenery=None, seed=1, style='pixel'):
+    """one equirect sky (2048 x 1024 RGB uint8) from a theme dict (see the top of this file); scenery overrides th['scenery'].
+    style: 'pixel' (retro palette), 'neon' (black sky, glowing horizon grid and skyline), 'depth' (underwater: surface, light shafts)"""
+    if style == 'neon': return make_sky_neon(th, scenery or th.get('scenery', 'city'), seed)
+    if style == 'depth': return make_sky_depth(th, scenery or th.get('scenery', 'mountains'), seed)
     scenery = scenery or th.get('scenery', 'mountains')
     rng = np.random.RandomState(seed)
     top, mid, hor = th['sky']
@@ -143,6 +146,163 @@ def make_sky(th, scenery=None, seed=1):
     horizon(img, rng, scenery, th['glow'])
     q = quantize(img, 30)
     return up(q, 4)
+
+
+def _neon_palette():
+    hues = [(0, 235, 255), (255, 40, 200), (255, 140, 20), (110, 255, 60), (150, 80, 255), (255, 40, 70), (255, 210, 60),
+            (60, 120, 255)]
+    pal = [(0, 0, 0), (6, 8, 16), (14, 16, 30), (26, 28, 48), (255, 255, 255), (200, 240, 255), (255, 230, 245)]
+    for h in hues:
+        for k in (1.0, 0.6, 0.3, 0.14):
+            pal.append(tuple(int(c * k) for c in h))
+    return pal
+def _depth_palette():
+    """the deep sea: blue-black water, teal and green glow, coral and amber life, a pale surface light"""
+    hues = [(0, 210, 190), (60, 220, 255), (70, 255, 150), (255, 110, 90), (255, 190, 60), (150, 90, 255), (255, 90, 200),
+            (40, 120, 200)]
+    pal = [(0, 0, 0), (2, 8, 20), (6, 18, 34), (12, 32, 52), (24, 54, 74), (235, 250, 255), (170, 230, 240), (60, 70, 90), (30, 36, 50)]
+    for h in hues:
+        for k in (1.0, 0.6, 0.3, 0.14):
+            pal.append(tuple(int(c * k) for c in h))
+    return pal
+NEON_PAL, DEPTH_PAL = _neon_palette(), _depth_palette()
+
+def pixelate(img, k=4, spread=14.0, palette=None):
+    """full-size float image -> shrink k x (box average), dither to the palette, nearest-neighbour back up"""
+    a = np.asarray(img, np.float32)
+    h, w = a.shape[0] // k * k, a.shape[1] // k * k
+    small = a[:h, :w].reshape(h // k, k, w // k, k, 3).mean((1, 3))
+    return up(quantize(small, spread, palette), k)
+
+# ---------------------------------------------------------------- neon style (from Neon Racer)
+def make_sky_neon(th, scenery=None, seed=1):
+    """black sky over a glowing horizon, a perspective grid floor below it, a striped sun (or a ringed planet drawn in
+    lines), a skyline whose edges glow, and a few stars. Smooth, not pixel art."""
+    Wn, Hn = 2048, 1024
+    rng = np.random.RandomState(seed)
+    top, mid, hor = [np.array(c, np.float32) for c in th['sky']]
+    glow = np.array(th['glow'], np.float32); acc = np.array(th.get('accent', th['glow']), np.float32)
+    yy, xx = np.mgrid[0:Hn, 0:Wn].astype(np.float32)
+    lat = 1 - yy / (Hn / 2)                          # 1 up, 0 horizon, -1 down
+    img = np.zeros((Hn, Wn, 3), np.float32)
+    up_ = np.clip(lat, 0, 1)[..., None]
+    img += top * up_ ** 0.6 + mid * (1 - up_ ** 0.6)
+    img += glow * 0.55 * np.exp(-np.abs(lat) / 0.06)[..., None] + glow * 0.18 * np.exp(-np.abs(lat) / 0.25)[..., None]
+    # stars
+    for _ in range(700):
+        x, y = rng.randint(0, Wn), int(rng.rand() ** 1.4 * Hn * 0.42)
+        img[y, x] += 160 + 95 * rng.rand()
+    # the grid floor: lines across that close up towards the horizon, lines along that fan out
+    below = lat < 0
+    depth = 1.0 / np.maximum(-lat, 1e-3)              # distance-ish
+    rows = np.abs(((depth * 2.0) % 1.0) - 0.5)
+    rowline = np.exp(-(0.5 - rows) * 40.0 / np.maximum(depth, 1) ** 0.2)
+    ang = (xx / Wn * 2 * math.pi)
+    cols = np.abs(((ang / (2 * math.pi) * 64) % 1.0) - 0.5)
+    colline = np.exp(-(0.5 - cols) * 30.0 * np.clip(-lat * 6, 0.3, 4))
+    fade = np.clip(-lat * 4, 0, 1)
+    img += (glow * (np.maximum(rowline, colline) * fade * below)[..., None])
+    img[below] *= 0.85
+    # sun or planet
+    cx, cy = rng.randint(300, Wn - 300), Hn // 2 - 150
+    global LAST_PLANET
+    if th['planet'][1] == 'sun':
+        R = 190; cy = Hn // 2 - 110
+        d = np.hypot(xx - cx, yy - cy)
+        t = np.clip((yy - (cy - R)) / (2 * R), 0, 1)
+        col = (np.array((255, 230, 90), np.float32)[None, None] * (1 - t[..., None]) + acc[None, None] * t[..., None])
+        stripe = (t > 0.45) & (((yy - cy) % np.maximum(8, 30 - t * 22)) < (4 + t * 10))
+        m = (d < R) & ~stripe & (yy < Hn // 2)
+        img[m] = col[m]
+        img += acc * 0.5 * np.exp(-np.maximum(d - R, 0) / 40)[..., None] * (yy < Hn // 2)[..., None]
+    else:
+        R = 150
+        d = np.hypot(xx - cx, yy - cy)
+        img[d < R] = img[d < R] * 0.2 + np.array((4, 4, 10), np.float32)
+        img += acc * np.exp(-np.abs(d - R) / 3.0)[..., None]
+        for k in range(4):
+            img += acc * 0.35 * np.exp(-np.abs(d - R * (0.85 - k * 0.2)) / 1.5)[..., None] * (d < R)[..., None]
+        if th['planet'][1] in ('ringed', 'banded'):
+            e = np.hypot((xx - cx) / (R * 1.9), (yy - cy) / (R * 0.35))
+            ring = np.exp(-np.abs(e - 1) * 60) * ((yy > cy) | (d > R))
+            img += glow * ring[..., None]
+    LAST_PLANET = (cx // 4, cy // 4, (190 if th['planet'][1] == 'sun' else 150) // 4)   # in the pixel skies' 512 x 256 units
+    # skyline: towers (city) or crystal spikes, black with glowing outlines
+    hy = Hn // 2
+    x = 0
+    sil = np.zeros((Hn, Wn), bool)
+    while x < Wn:
+        w = rng.randint(14, 60); h = rng.randint(14, 110) if scenery == 'city' else rng.randint(10, 70)
+        if scenery == 'city':
+            sil[hy - h:hy, x:x + w] = True
+        else:
+            for c in range(w):
+                hh = int(h * (1 - abs(c - w / 2) / (w / 2)))
+                sil[hy - hh:hy, (x + c) % Wn] = True
+        x += w + rng.randint(0, 10)
+    edge = sil & ~(np.roll(sil, 1, 0) & np.roll(sil, -1, 0) & np.roll(sil, 1, 1) & np.roll(sil, -1, 1))
+    img[sil] = np.array((3, 3, 8), np.float32)
+    img[edge] = glow
+    lit = sil & (rng.rand(Hn, Wn) < 0.012)
+    img[lit] = acc
+    return pixelate(np.clip(img, 0, 255), 4, 10.0, NEON_PAL)
+
+# ---------------------------------------------------------------- depth style: underwater (from Depth Racer)
+def make_sky_depth(th, scenery=None, seed=1):
+    """looking round under the sea: the rippling bright surface overhead with light shafts slanting down, the water
+    darkening to the abyss below, a far ridge of rock and kelp along the 'horizon', drifting marine snow, and the
+    silhouette of something very big in the distance. Pixelated like the neon skies."""
+    global LAST_PLANET
+    Wn, Hn = 2048, 1024
+    rng = np.random.RandomState(seed)
+    top, mid, low = [np.array(c, np.float32) for c in th['sky']]
+    glow = np.array(th['glow'], np.float32); acc = np.array(th.get('accent', th['glow']), np.float32)
+    yy, xx = np.mgrid[0:Hn, 0:Wn].astype(np.float32)
+    lat = 1 - yy / (Hn / 2)
+    up_ = np.clip(lat, 0, 1)[..., None]; dn = np.clip(-lat, 0, 1)[..., None]
+    img = mid * (1 - up_) + top * up_ ** 1.6
+    img = img * (1 - dn) + low * dn ** 0.5 + mid * 0.25 * (1 - dn) * (lat < 0)[..., None]
+    # the surface: a bright rippling band at the very top
+    ang = xx / Wn * 2 * math.pi
+    rip = 0.5 + 0.5 * np.sin(ang * 40 + 3 * np.sin(ang * 7)) * np.sin(ang * 23)
+    surf = np.clip((lat - 0.86) / 0.14, 0, 1) ** 1.5
+    img += np.array((150, 230, 240), np.float32) * (surf * (0.4 + 0.6 * rip))[..., None]
+    # light shafts: slanted bright bands fading down into the water
+    for _ in range(18):
+        x0 = rng.uniform(0, Wn); w = rng.uniform(40, 120); slant = rng.uniform(-0.3, 0.3); k = rng.uniform(0.08, 0.2)
+        d = np.abs(((xx - x0 - (yy * slant)) + Wn / 2) % Wn - Wn / 2)
+        shaft = np.clip(1 - d / w, 0, 1) * np.clip(lat + 0.1, 0, 1) ** 1.5
+        img += np.array((120, 200, 210), np.float32) * (shaft * k)[..., None]
+    # something huge far away: a whale's silhouette, side on, high in the water
+    cx, cy = rng.randint(300, Wn - 300), int(Hn * 0.30)
+    L_, H_ = 420, 90
+    body = (((xx - cx) / L_) ** 2 + ((yy - cy) / H_) ** 2 <= 1) | (((xx - cx + L_ * 1.05) / 70) ** 2 + ((yy - cy) / 60) ** 2 <= 1) & (xx < cx - L_ * 0.9)
+    fluke = (np.abs(xx - (cx - L_ * 1.12)) < 30) & (np.abs(yy - cy) < 110 - np.abs(xx - (cx - L_ * 1.12)) * 2)
+    sil = body | fluke
+    img[sil] = img[sil] * 0.45 + np.array((4, 14, 24), np.float32) * 0.55
+    LAST_PLANET = (cx // 4, cy // 4, L_ // 8)
+    # the far seabed: a ridge of rock, with kelp and coral silhouettes standing on it and a glowing rim
+    hy = Hn // 2
+    ridge = (30 + 40 * np.sin(np.arange(Wn) / Wn * 2 * math.pi * 3 + seed) + 22 * np.sin(np.arange(Wn) / 37.0)).astype(int)
+    sil = np.zeros((Hn, Wn), bool)
+    for x in range(Wn):
+        sil[hy - ridge[x]:hy + 160, x] = True
+    for _ in range(140):
+        x = rng.randint(0, Wn); h = rng.randint(30, 200); base = hy - ridge[x]
+        for k in range(h):
+            xo = int(x + 6 * math.sin(k / 18.0 + x))
+            if 0 <= xo < Wn and base - k > 0: sil[base - k, max(0, xo - 1):xo + 2] = True
+    edge = sil & ~(np.roll(sil, 1, 0) & np.roll(sil, -1, 0) & np.roll(sil, 1, 1) & np.roll(sil, -1, 1))
+    img[sil] = np.array((3, 10, 18), np.float32)
+    img[edge] = glow * 0.7
+    lit = sil & (rng.rand(Hn, Wn) < 0.004)
+    img[lit] = acc
+    # marine snow: specks drifting everywhere
+    for _ in range(1600):
+        x, y = rng.randint(0, Wn), rng.randint(0, Hn)
+        img[y, x] += 60 + 80 * rng.rand()
+    return pixelate(np.clip(img, 0, 255), 4, 10.0, DEPTH_PAL)
+
 
 
 EXAMPLE_THEMES = {
@@ -160,6 +320,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2: sys.exit(__doc__)
     name = sys.argv[2] if len(sys.argv) > 2 else 'dusk'
     seed = int(sys.argv[3]) if len(sys.argv) > 3 else 1
-    img = make_sky(EXAMPLE_THEMES[name], seed=seed)
+    style = sys.argv[4] if len(sys.argv) > 4 else 'pixel'
+    img = make_sky(EXAMPLE_THEMES[name], seed=seed, style=style)
     Image.fromarray(img).save(sys.argv[1])
     print('sky', name, img.shape[1], 'x', img.shape[0], '->', sys.argv[1], 'planet at', LAST_PLANET)

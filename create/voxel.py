@@ -117,6 +117,23 @@ class Grid:
 
 
 # ---------------------------------------------------------------- greedy mesher (voxels -> quads)
+
+
+def edge_trim(g, trim, only=None):
+    """neon look (from Neon Racer): voxels on the body's top outline (open above, open to a side, outermost across in
+    their column) take colour index `trim`. Use a dark hull colour and put `trim` in palette(glow=...) so the lines glow.
+    only: colour indices that may become trim (default all)"""
+    o = np.pad(g.occ, 1)
+    up_ = ~o[1:-1, 1:-1, 2:]
+    lat = ~o[1:-1, 2:, 1:-1] | ~o[1:-1, :-2, 1:-1]
+    ys = np.arange(g.W)[None, :, None]
+    outer = (ys == np.where(g.occ, ys, -1).max(1, keepdims=True)) | (ys == np.where(g.occ, ys, 999).min(1, keepdims=True))
+    edge = g.occ & up_ & lat & outer
+    if only is not None: edge &= np.isin(g.col, only)
+    g.col[edge] = trim
+    return edge
+
+
 def mesh_voxels(occ, col, origin, scale, n_entries, mat='pal', fx_mat='fx', fx_uv=None):
     """exposed faces merged into rectangles of one colour. origin: world position of voxel (0,0,0)'s corner;
     returns s2 triangles [(material, ((x,y,z,u,v) x3), normal)]. Colours >= FX0 use fx_mat with fx_uv(c)."""

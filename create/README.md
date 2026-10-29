@@ -19,6 +19,7 @@ The guide that explains how these fit together: [docs/creation/guide.md](../docs
 | File | What it does |
 |---|---|
 | `dmx.py` | Lossless binary DMX (encoding binary 9) reader/writer: `DMX.load(path)` → elements; `save` reproduces the bytes. |
+| `dmx9.py` | Binary DMX v9 reader/writer used by cs2-fighter, cs21.6 and trenchwarfare-cs2 (master copy; kept in step by `libsync.py`). |
 | `vmaplib.py` | Writes Hammer map nodes into a vmap: entities (`ent`), meshes, groups, vis groups. |
 | `vmesh.py` | `CMapMesh` writer that supports open meshes (boundary half-edges with face −1, as Valve's maps use). |
 | `check_mesh.py <vmap>...` | Validates every half-edge mesh (opposite/next chains, face loops, vertex and face-vertex counts). Run before handing a generated map over. |
@@ -52,8 +53,8 @@ The porting side's `tools/vmapedit.py` (also reads the importer's keyvalues2 map
 | `build_all_props.py <p_mod1,p_mod2 \| list.json> [names] [--no-preview]` | Builds every prop from spec modules (`specs()` → `{name: spec}`, or one `spec()`), records model, triangle counts and bounds in `props.json` next to `$CS2_ADDON_OUT`. |
 | `clean_stale.py [props.json] [--dry-run]` | Deletes files under `materials/models/<prefix>/<prop>/` that the prop's vmdl no longer uses. Run before zipping a delivery. |
 | `split_parts.py <model.smd> --name prop --axis x --min 120 [--hubs hubs.json]` | Splits a part (propeller, wheel, turret) into its own `prop_dynamic` model with its origin on the hub. The part is every welded piece entirely past the threshold. Re-runnable (keeps the unsplit SMD); writes the hub offset for the script. |
-| `fx_models.py <addon> [--prefix fx] [--only tracer,marker,sight,bomb]` | Self-lit effect models (tracer streak, ground ring marker, ring-and-cross sight, finned bomb) with a `csgo_vertexlitgeneric` + `F_SELF_ILLUM` material writer `emissive()`. Double-sided quads, forward = +x. |
-| `voxel.py <addon_out> [preview.png]` | Voxel models: `Grid` (box, ellipsoid, taper, cylinders, flame), greedy mesher with palette UVs, palette textures (4 face shades per colour) as unlit materials, skins as material groups (`Skin` input index = group order), `render_voxels` pictures, `star_tris` crossed quads, `null_model`, an `F_TEXTURE_ANIMATION` strip material. The CLI builds a demo ship. |
+| `fx_models.py <addon> [--prefix fx] [--only tracer,marker,sight,bomb]` | Self-lit effect models (tracer streak, ground ring marker, ring-and-cross sight, finned bomb) with a `csgo_vertexlitgeneric` + `F_SELF_ILLUM` material writer `emissive()`. Double-sided quads, forward = +x. `ring()/bar()/quads(..., double=False)` make one-sided shapes: a bomb sight held between a pilot's camera and the ground, facing the camera, is invisible to players below. |
+| `voxel.py <addon_out> [preview.png]` | Voxel models: `Grid` (box, ellipsoid, taper, cylinders, flame), greedy mesher with palette UVs, palette textures (4 face shades per colour) as unlit materials, skins as material groups (`Skin` input index = group order), `render_voxels` pictures, `star_tris` crossed quads, `null_model`, an `F_TEXTURE_ANIMATION` strip material. The CLI builds a demo ship. `edge_trim(g, trim)` turns the body's top outline into a glowing trim colour (Neon Racer's look: dark hull, trim index in `palette(glow=...)`). |
 | `smd_view.py <addon_out> <out.png> --model m.vmdl[@x,y,z,yaw] --eye=x,y,z --at=x,y,z [--sky png] [--skin NAME]` | Software render of generated SMD + vmdl + unlit vmat textures: textured z-buffer, `_trans` alpha test, near clipping, equirect sky, CS2's FOV (90° at 4:3 = 106° at 16:9). Use `--eye=` with "=" for negative values. |
 | `vpkdir.py`, `vtexread.py` | Index a CS2 VPK directory, pull files out of the chunks, list a `vmat_c`'s textures, decode `vtex_c` mip 0 to PNG (LZ4/uncompressed; DXT1/5, BC4/5/7, RGBA8888). |
 
@@ -73,7 +74,7 @@ Example: `CS2_ADDON_OUT=out/addon python3 -c "import build_prop, p_sandbag; buil
 |---|---|
 | `pixfont.py` | Original 8×8 arcade pixel font: `render` (outline/shadow), `draw` onto a numpy canvas, `logo` (gradient + drop shadow), `text_voxels` for voxel signs. Credit "Space Racer for CS2 by skink52" if you ship the glyphs. |
 | `retro.py` | 32-colour palette with named colours, Bayer `quantize`/`quantize_rgba`, `up` (nearest ×k), `shade`, `nearest`, `scanlines`, value `noise`, `pixel_sphere` planets. |
-| `skies.py <out.png> [theme] [seed]` | Pixel-art equirect skies (2048×1024): gradient, dithered nebula, stars, planet/sun, city or mountain horizon. Theme dict `sky=(top, mid, horizon)`, `glow`, `planet=(colour, kind)`, `scenery`; `EXAMPLE_THEMES` has six. |
+| `skies.py <out.png> [theme] [seed] [style]` | Pixel-art equirect skies (2048×1024): gradient, dithered nebula, stars, planet/sun, city or mountain horizon. Theme dict `sky=(top, mid, horizon)`, `glow`, `planet=(colour, kind)`, `scenery`; `EXAMPLE_THEMES` has six. `style='neon'` (black sky, glowing horizon grid, line-drawn sun/planet, glowing skyline; Neon Racer) and `style='depth'` (underwater surface, light shafts, far silhouette, marine snow; Depth Racer), pixelated to `NEON_PAL` / `DEPTH_PAL` via `pixelate()`. |
 
 ## Sound
 
@@ -131,6 +132,20 @@ Readers for CS2's compiled resources (`*_c`), straight from the game's VPKs (`--
 | `test/mock_point_script.mjs <script.js> [entities.json] [key=value …]` | Runs the real script on a stand-in engine: joins, inputs, damage, kills, respawns, chat, disconnects, round flow; options for traces, engine-call counts, timing percentiles, churn/slot-reuse/warmup scenarios and HUD checks. Exits 1 on any exception or call outside the API. Works on port `_io.js` scripts too. All options: [test/README.md](test/README.md). |
 
 Node sims of the pure game (balance, soak) live in each project; the method is in [guide.md](../docs/creation/guide.md#6-testing-before-cs2).
+
+## Keeping the repos in step
+
+`libsync.py` + `libsync.json`: shared files (`vmaplib.py`, `dmx.py`, `dmx9.py`, `point_script.d.ts`, the trenchwarfare mesh/bake libs, Space Racer's `s2.py`/`synth.py`, `tools/vpk.py`)
+are mastered here and copied byte-for-byte into the game repos, which stay buildable on their own. The neutral tools above that started in a game repo
+are tracked as forks: when the origin changes, `check` says so and lists the commits to review.
+
+| Command (repos checked out side by side) | |
+|---|---|
+| `python3 libsync.py check` | Drift report: copies that differ (with which side is newer) and forks whose origin changed. Exit 1 if anything is out. |
+| `python3 libsync.py push [repo ...]` | Copies the masters out. Commit in each repo. |
+| `python3 libsync.py pull <file> <repo>` | A fix was made in a game repo's copy: make it the master, then `push`. |
+| `python3 libsync.py ack <neutral file\|all>` | A fork's origin changes were reviewed (generic parts ported here): mark them seen. |
+| `python3 libsync.py add <file> <repo> <path>` | Track another copy. |
 
 ## Elsewhere in this repo
 

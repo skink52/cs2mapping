@@ -3,6 +3,14 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-30: libsync (shared files across the repos), sky/fx/voxel ports, point_tesla
+
+- `create/libsync.py` + `libsync.json`: shared libs are mastered in cs2mapping and pushed byte-identical into the game repos; forks of game-repo tools are
+  flagged when their origin changes. First run: `point_script.d.ts` in cs21.6 and cs2-fighter normalised to the master (CRLF only); `dmx9.py` added to `create/`.
+- Ported from the game repos: `skies.py` neon and depth styles (Neon/Depth Racer), `fx_models.py` one-sided shapes (trenchwarfare bomb sight),
+  `voxel.py` `edge_trim` (Neon Racer car trim). Vis note: Low hints over non-occluding space made 3.7 million clusters on Neon Racer (guide + gotchas).
+- `point_tesla` is deprecated in CS2 (gotchas, conventions); no replacement yet.
+
 ## 2026-10-30: ttt_minecraft lighting, water, logic_auto, door hinges
 
 - Stage C `lights` rebuilds light brightness from the VMF (`fix_brightness`) instead of leaving every light at 0 (= 265). ttt_minecraft's 88 lights were all equal.

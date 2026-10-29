@@ -1,0 +1,166 @@
+{
+ "copies": {
+  "create/bake.py": {
+   "trenchwarfare-cs2": "tools/bake.py"
+  },
+  "create/check_mesh.py": {
+   "trenchwarfare-cs2": "tools/check_mesh.py"
+  },
+  "create/dmx.py": {
+   "hellmatch-cs2": "tools/dmx.py",
+   "space-racer-cs2": "tools/dmx.py",
+   "trenchwarfare-cs2": "tools/dmx.py"
+  },
+  "create/dmx9.py": {
+   "cs2-fighter": "tools/dmx9.py",
+   "cs21.6": "tools/dmx9.py",
+   "trenchwarfare-cs2": "tools/dmx9.py"
+  },
+  "create/geo.py": {
+   "trenchwarfare-cs2": "tools/geo.py"
+  },
+  "create/lod_decimate.py": {
+   "trenchwarfare-cs2": "tools/lod_decimate.py"
+  },
+  "create/noise.py": {
+   "trenchwarfare-cs2": "tools/noise.py"
+  },
+  "create/p_sandbag.py": {
+   "trenchwarfare-cs2": "tools/p_sandbag.py"
+  },
+  "create/render.py": {
+   "trenchwarfare-cs2": "tools/render.py"
+  },
+  "create/s2.py": {
+   "space-racer-cs2": "tools/s2.py"
+  },
+  "create/shaders.py": {
+   "trenchwarfare-cs2": "tools/shaders.py"
+  },
+  "create/synth.py": {
+   "space-racer-cs2": "tools/synth.py"
+  },
+  "create/test/point_script.d.ts": {
+   "cs2-fighter": "test/tscheck/point_script.d.ts",
+   "cs21.6": "test/types/point_script.d.ts",
+   "hellmatch-cs2": "test/types/point_script.d.ts",
+   "space-racer-cs2": "test/types/point_script.d.ts",
+   "trenchwarfare-cs2": "test/point_script.d.ts"
+  },
+  "create/vmaplib.py": {
+   "hellmatch-cs2": "tools/vmaplib.py",
+   "space-racer-cs2": "tools/vmaplib.py",
+   "trenchwarfare-cs2": "tools/vmaplib.py"
+  },
+  "create/vmesh.py": {
+   "trenchwarfare-cs2": "tools/vmesh.py"
+  },
+  "create/vpkdir.py": {
+   "trenchwarfare-cs2": "tools/vpkdir.py"
+  },
+  "create/weld_cracks.py": {
+   "trenchwarfare-cs2": "tools/weld_cracks.py"
+  },
+  "tools/vpk.py": {
+   "cs21.6": "tools/vpk.py"
+  }
+ },
+ "forks": {
+  "create/build_all_props.py": {
+   "origin": "trenchwarfare-cs2:tools/build_all_props.py",
+   "seen": "a83a97945f7dda979e366161a27f6df658954368"
+  },
+  "create/build_prop.py": {
+   "origin": "trenchwarfare-cs2:tools/build_prop.py",
+   "seen": "83e8daffe131e2a64ae5760ed5c210896a569eda"
+  },
+  "create/chiptune.py": {
+   "origin": "space-racer-cs2:tools/sounds.py",
+   "seen": "103134f27f463404d6e5d0ff70787718b1163ba0"
+  },
+  "create/clean_stale.py": {
+   "origin": "trenchwarfare-cs2:tools/clean_stale.py",
+   "seen": "f3e71cbb20373cc6cfcbcbd1398bfefe0e324bfe"
+  },
+  "create/fx_models.py": {
+   "origin": "trenchwarfare-cs2:tools/fx_models.py",
+   "seen": "aed3da3c0005a4a9db50a7a0cd98a2cd095d317d"
+  },
+  "create/hud_check.py": {
+   "origin": "space-racer-cs2:preview/hud_render.py",
+   "seen": "75a1a69804c3a0305f8202c313dac2c1a27fa915"
+  },
+  "create/loading.py": {
+   "origin": "space-racer-cs2:tools/loading.py",
+   "seen": "6aa12331f587f953c2722d6058069ebf233af214"
+  },
+  "create/make_skybox.py": {
+   "origin": "trenchwarfare-cs2:tools/make_skybox.py",
+   "seen": "29dbeb70afd32714806629f7d1f5315a1ac3ae6d"
+  },
+  "create/merge_snd.py": {
+   "origin": "space-racer-cs2:tools/sounds.py",
+   "seen": "103134f27f463404d6e5d0ff70787718b1163ba0"
+  },
+  "create/modelio.py": {
+   "origin": "trenchwarfare-cs2:tools/modelio.py",
+   "seen": "6c5037dc495812c0977f6c80f472d9e8bf7cd397"
+  },
+  "create/music_analysis.py": {
+   "origin": "hellmatch-cs2:tools/music_analysis.py",
+   "seen": "d91f9e0991c352e6f95312b6a837eb02ec79affd"
+  },
+  "create/panorama.py": {
+   "origin": "space-racer-cs2:tools/hud.py",
+   "seen": "4ab6021f562898836038f5097a54d9b3c889928b"
+  },
+  "create/patch_vmap.py": {
+   "origin": "trenchwarfare-cs2:tools/patch_vmap.py",
+   "seen": "2da590a97e70d1e707f87f5bf3117382c4cf00f6"
+  },
+  "create/pixfont.py": {
+   "origin": "space-racer-cs2:tools/pixfont.py",
+   "seen": "b46824f06050e7a3b5018073ae85481e2b3d58bb"
+  },
+  "create/placer.py": {
+   "origin": "trenchwarfare-cs2:tools/placer.py",
+   "seen": "ed28584facf11360c08435436da3050c7cadf989"
+  },
+  "create/retro.py": {
+   "origin": "space-racer-cs2:tools/retro.py",
+   "seen": "c81d5f2f834dc5fbe4e0ef5d2eaf559bfda28090"
+  },
+  "create/skies.py": {
+   "origin": "space-racer-cs2:tools/skies.py",
+   "seen": "e00d136d43dac3bae54670ebbf0ec0292eae1104"
+  },
+  "create/smd_view.py": {
+   "origin": "space-racer-cs2:preview/chase_view.py",
+   "seen": "b9fb826e70d0e061221634128b12043357997bbf"
+  },
+  "create/sndevents.py": {
+   "origin": "space-racer-cs2:tools/sounds.py",
+   "seen": "103134f27f463404d6e5d0ff70787718b1163ba0"
+  },
+  "create/split_parts.py": {
+   "origin": "trenchwarfare-cs2:tools/split_props.py",
+   "seen": "1a1b65ddcc2b88e00a2ec9c12ce91c544854831a"
+  },
+  "create/stock.py": {
+   "origin": "trenchwarfare-cs2:tools/stock.py",
+   "seen": "b92a2f1159a2e16b69ab5500a0c48c016e817483"
+  },
+  "create/synth.py": {
+   "origin": "hellmatch-cs2:tools/synth.py",
+   "seen": "20ccc7e831437dc120f9c4fcd05c9ad4b476ddae"
+  },
+  "create/vmapgen.py": {
+   "origin": "space-racer-cs2:tools/vmap.py",
+   "seen": "c74c66167cdf5d4e889fc8d825d3d046836f88d3"
+  },
+  "create/voxel.py": {
+   "origin": "space-racer-cs2:tools/cars.py",
+   "seen": "0b3991f869b21bd84481eb633ffe945d8324aad9"
+  }
+ }
+}

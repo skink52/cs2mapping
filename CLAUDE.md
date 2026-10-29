@@ -37,6 +37,10 @@ in the same session.
   `docs/reference/cs2-gotchas.md`. cs_script API findings go in `docs/reference/cs_script-notes.md`.
 - When an original addon project learns something reusable (a model method, HUD trick, engine limit), add it to the creation docs and, if it's a tool,
   a project-neutral copy in `create/`.
+- **Shared files are mastered here.** `create/libsync.json` lists the files copied into the game repos and the neutral tools forked from them.
+  Edit a shared file here (or `pull` a fix made in a game repo), then `python3 create/libsync.py push` and commit every repo it touched.
+  Before committing in any skink52 CS2 repo, run `python3 create/libsync.py check` with the repos checked out side by side; port the generic part of any
+  `ORIGIN CHANGED` fork into `create/` and `ack` it. New shared tools go in the manifest (`add`).
 - Commit messages say what changed and which map or pass it was for.
 - New repos get the standard non-commercial licence files ([docs/creation/workshop.md](docs/creation/workshop.md#licence)).
 - Hammer must be closed while editing a map on the PC. Back up the `.vmap` before editing it, and send only changed files.
