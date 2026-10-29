@@ -6,12 +6,14 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         lightbright (rebuild light brightness from the VMF: the importer's brightness = nan / too dim), equipitems (item_* out of equip slots),
         steam (env_steam -> particles), soundscripts (Source 1 soundscript names -> same-named soundevents), physpush (players push physics props by mass),
         gameui (game_ui -> key polling in the io script), physlaunch (physics-only trigger_push cannons -> script launch),
-        renderamt (renderamt 255 where rendermode is Normal), ventlight (stationary lights in vents behind func_breakable grates)
+        renderamt (renderamt 255 where rendermode is Normal), ventlight (stationary lights in vents behind func_breakable grates),
+        doorsolid (doors flagged Non-solid to Player: meshes -> never-solid func_brush parented to the door),
+        skyshell (moondome sky shells -> toolsskybox: the sun bakes through toolsskybox, not through a moondome)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, ventlight
+import vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, ventlight, doorsolid
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -52,6 +54,11 @@ def run(addon, root, passes):
                 m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
     if 'renderamt' in passes: stage_c.render_alpha(m, c)
     if 'ventlight' in passes: ventlight.run(m, c)
+    if 'doorsolid' in passes: doorsolid.run(m, c)
+    if 'skyshell' in passes:
+        import skysplit
+        n = skysplit.moondome_to_skybox(m)
+        c.log.append('skyshell: %d moondome sky shells -> toolsskybox (areas under them baked black: the sun only bakes through toolsskybox)' % n)
     if 'lights' in passes: lighting.run(m, c)
     if 'alpha' in passes and c.src: assets.fix_alpha(m, c)
     if 'daylight' in passes: daylight.run(m, c)

@@ -3,6 +3,11 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-29: ttt_minecraft doors, sky shells, minecarts
+
+- New stage D `doorsolid` (`tools/doorsolid.py`): doors flagged Non-solid to Player stay non-solid in CS2. New `skyshell` pass; stage C rebuilds
+  dropped sky brushes as toolsskybox by default (moondome shells baked black). `physpush` covers func_physbox. Applied to ttt_minecraft.
+
 ## 2026-10-29: lighting rules, vents, gibs (skyscraper, jahoukarail, pirates, minecraft)
 
 - `lighting.py`: light_environment Static → Stationary; open-to-sky compartments (and outdoor space on maps with no sky shell) get stationary lights

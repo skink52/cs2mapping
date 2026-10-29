@@ -106,8 +106,9 @@ and `physpush` when named).
   scale. Texture size = the addon's converted colour texture (what Hammer draws), CS:GO VTF as fallback. Faces still absurd are listed with what the VMF
   says for their material.
 - **Sky** (`sky`): an env_sky that CS2 doesn't have is rebuilt from the six CS:GO faces into an equirect panorama (HDR skies tone mapped). Sky brushes the
-  importer dropped come back as `csgo_moondome` boxes (the panorama is built for the moondome even when env_sky is a stock CS2 sky), or as `toolsskybox`
-  boxes when the map has a 3D skybox (`sky_camera`): a moondome would hide it. (CS2's new `toolsskyboxocclude` material may replace moondome shells: untested, see
+  importer dropped come back as `toolsskybox` boxes: the sun and sky light bake through toolsskybox but not through a moondome (ttt_minecraft's open
+  areas under moondome shells baked pitch black), and a moondome would hide a 3D skybox. `MOONDOME_SHELLS = True` in stage_c.py brings back csgo_moondome
+  boxes (the panorama is then built even when env_sky is a stock CS2 sky). Stage D `skyshell` switches existing moondome shells to toolsskybox. (CS2's new `toolsskyboxocclude` material may replace moondome shells: untested, see
   [cs2-gotchas](../reference/cs2-gotchas.md#sky-and-world).)
 - **Vis: hints fitted to the play space and sky shells out of vis** (`vis` = `visfit.py`; `skyvis` = the older shell-only pass). Playable air is the empty
   space (16-unit voxels; 24 or 32 on very big maps) connected to a spawn or teleport destination, plus sealed rooms holding buttons, doors, triggers, trains
@@ -193,7 +194,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
 - `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
-  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
+  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, skyshell` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
   - **Daylight** (`daylight`, stage D only; for indoor maps that are still dark after stage C): adds a stationary light_environment using the map's env_sky
@@ -214,6 +215,10 @@ All of these keep your Hammer edits and append to the cleanup log. Exact usage l
   The game_ui entities are removed. mg_pirates (22 cannons and boats, 29 Oct 2026).
 - `renderamt` (stage D; stage C step after `dead`): renderamt 255 wherever rendermode is Normal. CS:GO ignored renderamt then; CS2 applies it, so
   props came out see-through (ttt_cg_skyscraper_2017's office chairs at 180).
+- `doorsolid` (stage D): func_door / func_door_rotating flagged "Non-solid to Player" (spawnflags 4) are solid in CS2. The door's meshes move to a
+  never-solid func_brush `<door>_vis` parented to the door, the door keeps a 2-unit nodraw cube on its hinge, so it looks and moves the same but
+  blocks nothing, as in CS:GO (ttt_minecraft's hut doors: the open panel left 32 units, too narrow to pass). Double doors sharing a name are split
+  (`<name>_2`, outputs copied).
 - `ventlight` (stage D): crawl-space vents capped by func_breakable grates (thin, ≤160 u, not glass) bake pitch black in CS2. Each duct behind a cover
   (opening no wider than the cover, ≥48 u deep) gets a dim, unshadowed stationary light_omni2; the covers get Disable Shadows.
 - `lightbright` also handles CS:GO lights with `_fifty_percent_distance` (and linear/constant attenuation): vrad falls back to linear falloff for them

@@ -46,3 +46,9 @@ Follow-up pass (2026-10-29): renderamt, lights
 - stationary lights: 2 of 88 lights switched Static -> Stationary (directlight 3) across 1 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 of the compartments are open to sky (one stationary light each, on top of light_environment)
 - pruned 0 orphaned elements
 
+Follow-up pass (2026-10-29): doorsolid, skyshell, physpush
+- physpush: 22 physics props pushed by mass from the io script (masses brickblock_1 0.4, brickblock_2 0.4, clay 0.4, diablock 0.4, diaore_1 0.4, diaore_2 0.4, diaore_3 0.4, diaore_4 0.4, diaore_5 0.4, diaore_6 0.4, diaore_7 0.4, diaore_8 0.4, diaore_9 0.4, goldblock 8.2, minecart 144.1)
+- doorsolid: 15 doors flagged Non-solid to Player (solid in CS2): meshes moved to never-solid func_brush <door>_vis parented to the door, door left with a 2-unit nodraw cube on its hinge: I1_Door1, I2_Door1, T1_Creeper_Lever, T1_Door1, T1_Door2, T2_Door, Ttest_Door1, Ttest_Door1_Lever, Ttest_Door2, Ttest_Door2_Lever, Ttest_Frontdoors, Ttest_Frontdoors_2, Ttest_Hatch1, Ttest_Hatch2, Ttest_button_lever
+- skyshell: 11 moondome sky shells -> toolsskybox (areas under them baked black: the sun only bakes through toolsskybox)
+- pruned 0 orphaned elements
+

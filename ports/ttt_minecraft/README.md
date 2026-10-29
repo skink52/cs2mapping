@@ -16,8 +16,11 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
 - 2026-10-29: Stage D overlaydepth (35), probecover (95 volumes).
 - 2026-10-29: loading credit `maps/ttt_minecraft.txt` ("Original map by …" / "Ported to CS2 by skink52"); build queue `ttt_minecraft`.
 - 2026-10-29: vis compile inefficient (~200,900 regions): `visfit_lean` (50 Low + 40 Lower → 48 Lower). 2026-10-29: lighting rules: light_environment Static → Stationary; open-to-sky space gets stationary lights too (`lights`); renderamt fixed where rendermode was Normal. Backup `prefabs+backups\\ttt_minecraft_2026-10-29_prelights.vmap`.
+- 2026-10-29 (in-game test): hut doors too narrow when open → `doorsolid` (15 doors were Non-solid to Player in CS:GO; now never-solid func_brush visuals parented to nodraw-hinge doors; Ttest_Frontdoors' second door renamed Ttest_Frontdoors_2 with copied outputs). Open areas pitch black → `skyshell` (11 moondome sky shells → toolsskybox), sun Stationary (earlier). Minecarts unpushable → `physpush` on the 22 func_physbox (minecarts mass ~144, blocks 0.4, gold block 8); two carts at -1348 44 sit on top of each other in the original too. Backup `prefabs+backups\\ttt_minecraft_2026-10-29_predoors.vmap`.
 
 ## Open / to check
+
+- Traitor tester: needs the gold block carried (E, cs2mapTTT's carry) into Ttest_CraftTrigger, which unlocks the door buttons; the check itself is `ttt_traitor_check` → `ttt_logic_role` (CheckForTraitor / TestActivator), which ttt.js doesn't handle yet (TTT chat).
 
 - point_clientcommand T2_Command (forces +duck in a tunnel) not converted.
 - Stinger sounds music/stingers/industrial_suspense1/2 not found in the CS:GO content: those ambient_generics are silent.

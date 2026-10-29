@@ -689,6 +689,8 @@ Layer0
 	TextureCubeMap "materials\\skybox\\%(png)s.png"
 }
 """
+MOONDOME_SHELLS = False      # True: rebuild dropped sky brushes as csgo_moondome boxes instead of toolsskybox
+
 def vmf_sky_brushes(vmfpath):
     root = vmfmod.parse(open(vmfpath, encoding='utf-8', errors='replace').read())
     boxes = []; odd = 0
@@ -737,8 +739,11 @@ def sky_pass(m, c, vmfpath):
     tnode = tm.children(tm.world)[0]
     # a map with a 3D skybox needs real toolsskybox faces: a moondome is drawn on top of the 3D skybox and hides it
     three_d = 'sky_camera' in open(vmfpath, encoding='utf-8', errors='replace').read().lower() or bool(m.by_class('skybox_reference'))
-    mdome = 'materials/tools/toolsskybox.vmat' if three_d else 'materials/skybox/%s_moondome.vmat' % png
-    if not three_d and not c.exists('materials/skybox/%s.png' % png):
+    # toolsskybox by default: the sun and sky light bake through it, but not through a moondome (ttt_minecraft: open areas under the
+    # rebuilt sky brushes baked pitch black, 29 Oct 2026). Moondomes only when asked for (MOONDOME_SHELLS, e.g. several skies in one map).
+    use_moondome = MOONDOME_SHELLS and not three_d
+    mdome = 'materials/skybox/%s_moondome.vmat' % png if use_moondome else 'materials/tools/toolsskybox.vmat'
+    if use_moondome and not c.exists('materials/skybox/%s.png' % png):
         # stock CS2 sky: the moondome still needs the panorama as its cube map, or it compiles as an error material (mg_pirates)
         faces, half = skymod.load_faces(c.src, png) if c.src else (None, 'no CS:GO source')
         if faces is None and png.endswith('_hdr') and c.src: faces, half = skymod.load_faces(c.src, png[:-4])

@@ -1,6 +1,6 @@
 """Stage C step / stage D pass `physpush` (opt-in): players push the map's physics props in proportion to the prop's mass, from the io script.
 
-Every prop_physics / prop_physics_multiplayer / prop_physics_override gets a name (unnamed ones become port_phys_<n>) and a mass:
+Every prop_physics / prop_physics_multiplayer / prop_physics_override / func_physbox gets a name (unnamed ones become port_phys_<n>) and a mass:
 the CS:GO model's .phy mass (map files first, then CS:GO's VPK) x the entity's massScale, or 50 when there's no .phy. Each tick the
 script sweeps every live player's box a few units along their movement; when it touches one of those props it gives the prop
 speed along the touched face's normal: player speed into the face x 20 / (20 + mass), at least 10 u/s, plus a little spin when the
@@ -26,7 +26,7 @@ let physLast = 0;
 function physMass(ent) {
     if (!ent || !ent.IsValid()) return undefined;
     const cls = ent.GetClassName();
-    if (cls !== "prop_physics" && cls !== "prop_physics_multiplayer" && cls !== "prop_physics_override") return undefined;
+    if (cls !== "prop_physics" && cls !== "prop_physics_multiplayer" && cls !== "prop_physics_override" && cls !== "func_physbox") return undefined;
     return PHYS[ent.GetEntityName().toLowerCase()];
 }
 THINKERS.push(() => {
@@ -78,7 +78,7 @@ Instance.OnModifyPlayerDamage(({ inflictor }) => {
     if (Math.hypot(pv.x, pv.y, pv.z) < PHYS_SAFE) return { abort: true };
 });'''
 
-CLASSES = ('prop_physics', 'prop_physics_multiplayer', 'prop_physics_override')
+CLASSES = ('prop_physics', 'prop_physics_multiplayer', 'prop_physics_override', 'func_physbox')
 
 def phy_mass(data):
     """total of the "mass" values in a .phy file's text section, or None"""
@@ -102,7 +102,11 @@ def run(m, c):
         mdl = (m.P(e, 'model') or '').lower().replace('\\', '/')
         phy = mdl[:-5] + '.phy' if mdl.endswith('.vmdl') else None
         mass = None
-        if phy and c.src and c.src.has(phy): mass = phy_mass(c.src.read(phy))
+        if m.cls(e) == 'func_physbox':
+            # brush physbox: mass from its size (~ a 40x40x20 minecart = 64), there's no .phy
+            b = m.bounds(e)
+            if b: mass = min(max((b[1][0] - b[0][0]) * (b[1][1] - b[0][1]) * (b[1][2] - b[0][2]) / 500.0, 2.0), 400.0)
+        elif phy and c.src and c.src.has(phy): mass = phy_mass(c.src.read(phy))
         if mass is None: mass = 50.0; guessed.append(os.path.basename(mdl) or name)
         try: ms = float(m.P(e, 'massScale', m.P(e, 'massscale', '0')) or 0)
         except ValueError: ms = 0
