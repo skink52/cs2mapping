@@ -26,8 +26,8 @@ import { Instance, Entity, BaseModelEntity, CSPlayerPawn, CSPlayerController, CS
 //   (automatic)                   volleyball: a ball landing on the other side's floor fires fb_tball_scored / fb_ctball_scored
 //   (automatic)                   spawn_overlay (map credits) only shows in the first two rounds
 //   Item_aim_deagle / Item_hacks_equip  item_assaultsuit from those game_player_equips (an item_* in an equip slot crashes CS2 on map load)
-//   CreeperPickup                 creeper game: CS:GO parented the creeper body, its env_explosion and countdown sprites to the knife;
-//                                           CS2 parenting to a weapon doesn't follow the carrier, so the script carries them
+//   CreeperStart                  creeper game (mc_teleporter): the script carries the creeper body, explosion and countdown sprites
+//                                           with the player and runs the countdown (was a weapon-parented knife pickup)
 //   Weed_1 / Weed_2 / Weed_3      replaces  color_correction weed_co_1..3 (scouts "drugged" game): full-screen HUD overlay,
 //   Weed_Off                                weed_random picks one every 10-25 s; cleared at round start/end (global, like CS:GO)
 //
@@ -250,31 +250,59 @@ for (const equip of ["aim_deagle", "hacks_equip"]) {
     Instance.OnScriptInput("Item_" + equip, ({ activator }) => { toPawn(activator)?.GiveNamedItem("item_assaultsuit", false); });
 }
 
-// ---------------------------------------------------------------- creeper (mc_creeper_knife OnPlayerPickup -> CreeperPickup)
-const CREEPER_PARTS = ["mc_creeper", "mc_creeper_explosive", "mc_sprite_1", "mc_sprite_2", "mc_sprite_3", "mc_sprite_4", "mc_sprite_5", "mc_sprite_boom"];
-const CREEPER_KNIFE_SPAWN = { x: -11620, y: -10272, z: 6963 };   // the parts keep their offset from the knife, now from the carrier's feet
+// ---------------------------------------------------------------- creeper (mc_teleporter OnStartTouch -> CreeperStart)
+// CS:GO: the sweeping mc_teleporter sent a player onto mc_creeper_knife in a storage room; picking it up started the countdown and a
+// brief trigger_teleport sent them back. The creeper body, its env_explosion and the countdown sprites were parented to the knife.
+// CS2 doesn't carry weapon-parented entities and the pickup / brief teleport left players stuck in the storage room, so mc_teleporter
+// now sends the player straight to mc_backtoland and the script does the rest: it takes the storage set (body, explosion, sprites -
+// whatever names point_template gave the copies), carries it at the player's feet, runs the 5-4-3-2-1-boom sprites and explodes at 7 s.
+// mc_pickup_relay keeps the sounds, the template respawn (0.2 s, after the storage set is taken) and the teleporter re-enable (8 s).
+const CREEPER_STORE = { x: -11620, y: -10272, z: 6963 };   // knife spawn; the parts keep their offset from it
+const CREEPER_PREFIXES = ["mc_creeper", "mc_sprite_"];
+const CREEPER_STEPS = [["mc_sprite_5", 2, 3], ["mc_sprite_4", 3, 4], ["mc_sprite_3", 4, 5], ["mc_sprite_2", 5, 6], ["mc_sprite_1", 6, 7], ["mc_sprite_boom", 6.9, 8.5]];
 /** @type {{ pawn: CSPlayerPawn | undefined, parts: { ent: Entity, ofs: { x: number, y: number, z: number } }[] }} */
 const creeper = { pawn: undefined, parts: [] };
-Instance.OnScriptInput("CreeperPickup", ({ activator }) => {
+/** @param {Entity} ent */
+function creeperBase(ent) { return ent.GetEntityName().split("&")[0].replace(/_\d{4,}$/, ""); }
+Instance.OnScriptInput("CreeperStart", ({ activator }) => {
     const pawn = toPawn(activator);
-    if (!pawn) return;
-    creeper.pawn = pawn; creeper.parts = [];
-    for (const name of CREEPER_PARTS) {
-        for (const ent of Instance.FindEntitiesByName(name)) {
+    if (!pawn || !pawn.IsAlive()) return;
+    /** @type {{ ent: Entity, ofs: { x: number, y: number, z: number } }[]} */
+    const parts = [];
+    for (const cls of ["func_rotating", "env_explosion", "info_particle_system", "weapon_knife"]) {
+        for (const ent of Instance.FindEntitiesByClass(cls)) {
+            const name = ent.GetEntityName();
+            if (!CREEPER_PREFIXES.some(p => name.startsWith(p))) continue;
             const o = ent.GetAbsOrigin();
+            if (Math.hypot(o.x - CREEPER_STORE.x, o.y - CREEPER_STORE.y, o.z - CREEPER_STORE.z) > 400) continue;   // only the set in storage
+            if (cls === "weapon_knife") { ent.Remove(); continue; }                // the knife isn't needed any more
             Instance.EntFireAtTarget({ target: ent, input: "ClearParent" });
-            creeper.parts.push({ ent, ofs: { x: o.x - CREEPER_KNIFE_SPAWN.x, y: o.y - CREEPER_KNIFE_SPAWN.y, z: o.z - CREEPER_KNIFE_SPAWN.z } });
+            parts.push({ ent, ofs: { x: o.x - CREEPER_STORE.x, y: o.y - CREEPER_STORE.y, z: o.z - CREEPER_STORE.z } });
         }
     }
+    creeper.pawn = pawn; creeper.parts = parts;
+    Instance.EntFireAtName({ name: SCRIPT_NAME, input: "RunScriptInput", value: "SetAlpha_0", activator: pawn });
+    Instance.EntFireAtName({ name: SCRIPT_NAME, input: "RunScriptInput", value: "Speed_1.2", activator: pawn });
+    if (!pawn.FindWeaponBySlot(CSGearSlot.KNIFE)) pawn.GiveNamedItem("weapon_knife", true);
+    for (const p of parts) {
+        const base = creeperBase(p.ent);
+        const step = CREEPER_STEPS.find(s => s[0] === base);
+        if (step) {
+            Instance.EntFireAtTarget({ target: p.ent, input: "Start", delay: Number(step[1]) });
+            Instance.EntFireAtTarget({ target: p.ent, input: "DestroyImmediately", delay: Number(step[2]) });
+        }
+        if (base === "mc_creeper_explosive") Instance.EntFireAtTarget({ target: p.ent, input: "Explode", delay: 7 });
+        Instance.EntFireAtTarget({ target: p.ent, input: "Kill", delay: 9 });
+    }
+    Instance.EntFireAtName({ name: "mc_pickup_relay", input: "Trigger", activator: pawn });
 });
 function creeperThink() {
     const pawn = creeper.pawn;
     if (!pawn) return;
     if (!pawn.IsValid() || !pawn.IsAlive()) { creeper.pawn = undefined; creeper.parts = []; return; }
     const p = pawn.GetAbsOrigin();
-    for (const part of creeper.parts) {
-        if (part.ent.IsValid()) part.ent.Teleport({ position: { x: p.x + part.ofs.x, y: p.y + part.ofs.y, z: p.z + part.ofs.z } });
-    }
+    creeper.parts = creeper.parts.filter(part => part.ent.IsValid());
+    for (const part of creeper.parts) part.ent.Teleport({ position: { x: p.x + part.ofs.x, y: p.y + part.ofs.y, z: p.z + part.ofs.z } });
 }
 
 // ---------------------------------------------------------------- game_ui "cube_gameui": remote-control cube

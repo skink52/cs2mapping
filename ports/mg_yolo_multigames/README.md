@@ -42,6 +42,12 @@ Multigames map with a game-picker lobby. Has a separate 3D skybox map (`mg_yolo_
   - Map-load crash (server.dll null read; dump strings aim_deagle / item_assaultsuit): `item_assaultsuit` in the aim_deagle and hacks_equip
     game_player_equip slots (the goldeneye crash, which appeared with a CS2 update after this port was built). Taken out of the slots; the script
     gives it (`Item_aim_deagle` / `Item_hacks_equip` from aim_setup / hacks_setup).
+  - In-game test 29 Oct: wallhack walls and buyzone sprites fixed; drugged overlay good. Follow-ups: the overlay now has two layers per look
+    spinning opposite ways (rotateZ keyframes in 90° steps, layers 250% of the screen so corners never show). Creeper: players were left stuck in
+    the storage room (no knife pickup / the 0.5 s back-to-land teleport never fired). mc_teleporter now targets mc_backtoland and fires
+    `CreeperStart`: the script takes the storage set (found by class + name prefix + distance, so point_template name fixup doesn't matter),
+    removes its knife, carries body/explosion/sprites, runs the sprite countdown and Explode at 7 s on those handles, kills them at 9 s, applies
+    SetAlpha_0 / Speed_1.2, and fires mc_pickup_relay (sounds, template ForceSpawn at 0.2 s, teleporter re-enable at 8 s).
   - `compile_yolo_fixes.bat` in the addon compiles the particles, vmats, panorama and script that the command-line build skips, then runs `run_build.bat`.
 
 ## Import report
