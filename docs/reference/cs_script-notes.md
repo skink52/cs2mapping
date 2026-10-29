@@ -302,3 +302,4 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
 - Removing an entity (`Remove()` or a `Kill` input) also removes everything still parented to it. To keep the children, unparent them first
   with `ent.SetParent(undefined)` (synchronous; an EntFire `ClearParent` is queued and runs too late) and remove the parent afterwards
   (mg_yolo_multigames creeper: removing the knife took the whole creeper with it, 29 Oct 2026; inferred from the in-game result).
+- **Replacing the Tab scoreboard** (cs2mapTTT): a `custom_hud_layout` is drawn over CS2's scoreboard, so an opaque panel shown by `.HUD_SCOREBOARD_VISIBLE .Board.stOn { opacity: 1; }` covers it with no script lag; the script fills its rows (dialog variables, row classes) about once a second and on `IsInputPressed(CSInputs.SHOW_SCORES)`. The same trick covers the top bar's alive avatars. Unverified in game: full coverage at every aspect ratio.

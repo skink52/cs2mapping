@@ -54,6 +54,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 ## 2026-10-30
 
 - **build_maps.ps1**: the asset pass also compiles panorama `*.xml`/`*.css` (custom HUDs, e.g. cs2mapTTT's ttt_hud), so `run_build.bat` picks up HUD changes.
+- **cs2mapTTT**: own Tab scoreboard over CS2's (dead listed alive until the body is found), opaque killfeed cover, top-bar cover.
 - **cs2mapTTT**: `HIDE_NATIVE_HUD` off by default (CS2 HUD, weapon switching and chat kept; hidden killers via world deaths are enough).
 
 ## 2026-10-29
