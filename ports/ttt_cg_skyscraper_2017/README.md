@@ -35,3 +35,5 @@ TTT map on a skyscraper. TTT gameplay scripting is done separately ([cs2mapTTT](
   (the map has no ttt_* entities; its own info_map_parameters is used). Backup: `maps/ttt_cg_skyscraper_2017.vmap.bak_ttt` on the PC.
 - Its 132 physics props can be carried (hold E). Open: build and test (cs2mapTTT TESTING.md).
 - 29 Oct 2026: the 6 rebuilt sky slabs (clearsky_moondome) retextured to toolsskybox so the 3D skybox (city) shows through; stage C fixed for future 3D-skybox maps.
+
+What ttt.js still needs for this map (invisibility button, round reset): cs2mapTTT `MAP_REQUIREMENTS.md`.

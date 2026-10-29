@@ -20,7 +20,7 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
 
 ## Open / to check
 
-- Traitor tester: needs the gold block carried (E, cs2mapTTT's carry) into Ttest_CraftTrigger, which unlocks the door buttons; the check itself is `ttt_traitor_check` → `ttt_logic_role` (CheckForTraitor / TestActivator), which ttt.js doesn't handle yet (TTT chat).
+- Traitor tester: needs the gold block carried (E, cs2mapTTT's carry) into Ttest_CraftTrigger, which unlocks the door buttons; the check itself is `ttt_traitor_check` → `ttt_logic_role`, handled by ttt.js since cs2mapTTT `cfbd4fa`. What ttt.js still needs for this map: cs2mapTTT `MAP_REQUIREMENTS.md`.
 
 - point_clientcommand T2_Command (forces +duck in a tunnel) not converted.
 - Stinger sounds music/stingers/industrial_suspense1/2 not found in the CS:GO content: those ambient_generics are silent.
