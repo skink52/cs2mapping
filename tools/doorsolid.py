@@ -29,6 +29,40 @@ def box(m, tm, tnode, mn, mx, mat):
     return j
 
 
+def hinge_box(m, d, panel_bounds):
+    """2-unit cube for a door's hinge, pushed 2 units away from the panel so it sits inside the frame instead of the doorway
+    (ttt_minecraft: a cube centred on the hinge stuck 1-3 units into a 36-unit doorway and snagged players)"""
+    o = m.origin(d)
+    if m.cls(d) == 'func_door' or not panel_bounds:
+        if m.cls(d) == 'func_door' and panel_bounds:
+            b = panel_bounds; o = [(b[0][i] + b[1][i]) / 2 for i in range(3)]
+        return [o[0] - 1, o[1] - 1, o[2] - 1], [o[0] + 1, o[1] + 1, o[2] + 1]
+    ctr = [(panel_bounds[0][i] + panel_bounds[1][i]) / 2 for i in range(2)]
+    dx, dy = ctr[0] - o[0], ctr[1] - o[1]; ln = (dx * dx + dy * dy) ** 0.5 or 1.0
+    cx, cy = o[0] - 2 * dx / ln, o[1] - 2 * dy / ln
+    return [cx - 1, cy - 1, o[2] - 1], [cx + 1, cy + 1, o[2] + 1]
+
+
+def rebury(m, c):
+    """maps already through doorsolid: move each door's hinge cube into the frame (see hinge_box)"""
+    n = 0
+    for d in m.by_class('func_door_rotating'):
+        vis = [e for e in m.by_class('func_brush') if m.name(e) == (m.name(d) or '#') + '_vis']
+        cubes = [ch for ch in m.children(d) if m.type(ch) == b'CMapMesh']
+        if not vis or len(cubes) != 1: continue
+        mn, mx = hinge_box(m, d, m.bounds(vis[0]))
+        md = m.g(cubes[0], b'meshData')
+        dmx.set_(m.E[cubes[0]], b'origin', dmx.T_V3, [0.0, 0.0, 0.0])
+        for st in m.g(m.g(md, b'vertexData'), b'streams'):
+            if m.E[st]['name'].startswith(b'position'):
+                a = dmx.geta(m.E[st], b'data'); pts = a[2]
+                ctr = [sum(p[k] for p in pts) / len(pts) for k in range(3)]
+                a[2] = [[mx[k] if p[k] > ctr[k] else mn[k] for k in range(3)] for p in pts]
+        n += 1
+    c.log.append('doorsolid: %d door hinge cubes moved 2 units into the door frame (out of the doorway)' % n)
+    return n
+
+
 def run(m, c):
     doors = [e for e in m.by_class('func_door', 'func_door_rotating') if int(float(m.P(e, 'spawnflags', '0') or 0)) & 4]
     if not doors: return 0
@@ -52,9 +86,7 @@ def run(m, c):
                 o, t, inp, p, dl, times = m.conn_tuple(cn)
                 if t.lower() == name.lower(): m.add_conn(e, o, new, inp, p, dl, times)
             name = new
-        o = m.origin(d)
-        if m.cls(d) == 'func_door':
-            b = m.bounds(d); o = [(b[0][i] + b[1][i]) / 2 for i in range(3)]
+        pb = m.bounds(d)
         vis = m.new_entity('func_brush', m.origin(d), {'targetname': name + '_vis', 'parentname': name, 'Solidity': '1', 'solidbsp': '0',
                                                      'spawnflags': '2', 'StartDisabled': '0', 'rendermode': m.P(d, 'rendermode', 'kRenderNormal') or 'kRenderNormal',
                                                      'renderamt': m.P(d, 'renderamt', '255') or '255', 'rendercolor': m.P(d, 'rendercolor', '255 255 255') or '255 255 255',
@@ -62,7 +94,8 @@ def run(m, c):
         dch = dmx.geta(m.E[d], b'children')
         dch[2] = [x for x in dch[2] if x not in meshes]
         dmx.geta(m.E[vis], b'children')[2].extend(meshes)
-        dch[2].append(box(m, tm, tnode, [o[0] - 1, o[1] - 1, o[2] - 1], [o[0] + 1, o[1] + 1, o[2] + 1], NODRAW))
+        mn, mx = hinge_box(m, d, pb)
+        dch[2].append(box(m, tm, tnode, mn, mx, NODRAW))
         done.append(name)
     c.log.append('doorsolid: %d doors flagged Non-solid to Player (solid in CS2): meshes moved to never-solid func_brush <door>_vis parented to the door, '
                  'door left with a 2-unit nodraw cube on its hinge: %s' % (len(done), ', '.join(sorted(set(done)))))

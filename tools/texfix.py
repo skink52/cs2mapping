@@ -553,9 +553,53 @@ def ssbump_to_normal(img):
     n /= np.maximum(np.linalg.norm(n, axis=2, keepdims=True), 1e-6)
     return Image.fromarray(np.clip((n * 0.5 + 0.5) * 255.0 + 0.5, 0, 255).astype(np.uint8), 'RGB')
 
+WATER_OPACITY = 0.55   # CS:GO water refracted the bottom through the surface; CS2's csgo_complex can't refract, so it gets plain see-through
+
+
+def _png_rel(txt, key):
+    mm = re.search(key + r'"?\s+"([^"]+)"', txt)
+    return mm.group(1).replace('\\', '/') if mm else None
+
+
+def _opacity_and_glow(c, kv, sh, txt, ins, base, water, alpha, glow):
+    """$alpha / %compilewater -> F_TRANSLUCENT + g_flOpacityScale; $selfillum -> F_SELF_ILLUM with the base texture alpha as mask.
+    Only csgo_complex world materials (the importer's default); anything already translucent or self-lit is left alone."""
+    import io as _io
+    if 'csgo_complex' not in sh: return
+    col = _png_rel(txt, 'TextureColor')
+    def write_mask(suffix, img):
+        rel = os.path.splitext(col)[0] + suffix + '.png'; b = _io.BytesIO(); img.save(b, 'PNG'); c.write(rel, b.getvalue()); return rel.replace('/', '\\')
+    def colour():
+        from PIL import Image
+        if col in c.files: return Image.open(_io.BytesIO(c.files[col]))
+        p = os.path.join(c.content, col)
+        return Image.open(p) if os.path.exists(p) else None
+    try: a = float(kv.get('$alpha', '1') or 1)
+    except ValueError: a = 1.0
+    is_water = kv.get('%compilewater') == '1' or '$abovewater' in kv   # the vmt parser drops %keys
+    if (is_water or a < 0.999) and 'F_TRANSLUCENT' not in txt and 'F_ALPHA_TEST' not in txt and col:
+        from PIL import Image
+        op = min(a, WATER_OPACITY) if is_water else a
+        ins.append('F_TRANSLUCENT 1'); ins.append('g_flOpacityScale "%.3f"' % op)
+        if not _png_rel(txt, 'TextureTranslucency'):
+            img = colour()
+            m_ = img.convert('RGBA').getchannel('A') if img is not None else Image.new('L', (4, 4), 255)
+            ins.append('TextureTranslucency "%s"' % write_mask('_trans', m_))
+        if is_water:
+            if 'F_RENDER_BACKFACES' not in txt: ins.append('F_RENDER_BACKFACES 1')
+            water.append(base)
+        else: alpha.append('%s %g' % (base, a))
+    if kv.get('$selfillum') == '1' and 'F_SELF_ILLUM' not in txt and col:
+        img = colour()
+        if img is None: return
+        ins.append('F_SELF_ILLUM 1'); ins.append('g_flSelfIllumScale "1.000"')
+        ins.append('TextureSelfIllumMask "%s"' % write_mask('_selfillum', img.convert('RGBA').getchannel('A')))
+        glow.append(base)
+
+
 def material_flags(m, c):
     import assets
-    add, back, unlit, ssb = [], [], [], []
+    add, back, unlit, ssb, water, alpha, glow = [], [], [], [], [], [], []
     for mat in sorted(assets.mesh_materials(m)):
         if not mat.endswith('.vmat') or mat.startswith('materials/tools/'): continue
         vp = os.path.join(c.content, mat)
@@ -591,6 +635,7 @@ def material_flags(m, c):
                 new = new[:ms.start(1)] + 'csgo_unlitgeneric.vfx' + new[ms.end(1):]
                 new = re.sub(r'(?im)^\s*"?F_(ALPHA_TEST|TRANSLUCENT|BLEND_MODE|ADDITIVE_BLEND)"?\s+"?\d"?\s*$\n?', '', new)
                 ins.append('F_BLEND_MODE 4'); unlit.append(os.path.basename(mat)[:-5])
+        _opacity_and_glow(c, kv, sh, new, ins, os.path.basename(mat)[:-5], water, alpha, glow)
         if 'csgo_unlitgeneric' in new: ins = [x for x in ins if 'DONT_FLIP' not in x]
         if not ins:
             if new != txt: c.write(mat, new)
@@ -602,4 +647,7 @@ def material_flags(m, c):
     if unlit: c.log.append('$additive materials moved to csgo_unlitgeneric (F_BLEND_MODE 4, additive): %s' % ', '.join(unlit))
     if back: c.log.append('$nocull materials -> F_RENDER_BACKFACES: %s' % ', '.join(back))
     if ssb: c.log.append('$ssbump bump maps converted to real normal maps (*_ssbn.png): %s' % ', '.join(ssb))
+    if water: c.log.append('%%compilewater materials (CS:GO water, see-through) -> F_TRANSLUCENT, opacity %g, back faces drawn: %s' % (WATER_OPACITY, ', '.join(water)))
+    if alpha: c.log.append('$alpha materials -> F_TRANSLUCENT with that opacity: %s' % ', '.join(alpha))
+    if glow: c.log.append('$selfillum materials -> F_SELF_ILLUM (mask from the texture alpha): %s' % ', '.join(glow))
 

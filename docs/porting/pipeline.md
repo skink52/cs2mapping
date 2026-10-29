@@ -48,7 +48,9 @@ and `physpush` when named).
 
 - **Prefabs** (`merge`): every prefab (lighting/nav/audio/cubemaps/environment/gameplay) collapsed into the map with world offsets kept; a 3D skybox prefab stays a prefab.
 - **Dropped outputs** (`io`): puts back outputs the importer dropped (diffs every entity's outputs against the decompiled VMF), and reports the cosmetic
-  entities the importer leaves out (point_spotlight, func_dustmotes, func_precipitation, env_lightglow, fog, colour correction).
+  entities the importer leaves out (point_spotlight, func_dustmotes, func_precipitation, env_lightglow, fog, colour correction). Then `io_fixups`:
+  logic_auto "Global State to Read" `is_pc` is cleared (CS2 never sets it, so the logic_auto never fired), and output targets that match an entity
+  only case-insensitively get the exact name (stage D `iofix` for maps already past stage C).
 - **func_wall_toggle** (`wall`) → func_brush (Solidity Toggle; StartDisabled from "Starts Invisible"). TurnOn/TurnOff → Enable/Disable.
 - **game_player_equip** (`equip`) → weapon0..weapon21 slots, and `Use` inputs on them → `TriggerForActivatedPlayer`. Equips without "Use Only" (CS:GO ran them
   on every spawn) are run by the io script one tick after `OnPlayerReset`: strip first if flagged, then give only the items the player doesn't already have.
@@ -89,7 +91,9 @@ and `physpush` when named).
   props already moving > 400 u/s are left alone and damage from a listed prop moving < 150 u/s is cancelled. Stage C lists maps with physics props in TO
   CHECK; run it when pushing feels wrong in game. Idea from cs2-slop-porting's `push_mass.js`.
 - **Material flags** (`matflags`, `tools/texfix.py`): `$additive` → `csgo_unlitgeneric` `F_BLEND_MODE 4` (`LIT_ADDITIVE = True` keeps lightmapped ones lit with
-  `F_TRANSLUCENT` + `F_ADDITIVE_BLEND`, but a black additive material then draws opaque black in Hammer), `$nocull` → `F_RENDER_BACKFACES` (+
+  `F_TRANSLUCENT` + `F_ADDITIVE_BLEND`, but a black additive material then draws opaque black in Hammer), CS:GO water (`%compilewater` / `$abovewater`)
+  → `F_TRANSLUCENT` at opacity 0.55 with back faces (csgo_complex can't refract; the importer left it a solid sheet), `$alpha` → `F_TRANSLUCENT` with
+  that opacity, `$selfillum` → `F_SELF_ILLUM` (mask from the texture alpha), `$nocull` → `F_RENDER_BACKFACES` (+
   `F_DONT_FLIP_BACKFACE_NORMALS` on lit shaders), `$ssbump` bump maps rebuilt as real normal maps (`*_ssbn.png`).
 - **Static overlays** (`overlays`) → `csgo_static_overlay` with a translucency mask taken from the original alpha.
 - **Static overlay geometry** (`overlayfix`, `tools/texfix.py`): the importer's 2x2 placeholder quads are rebuilt from the VMF (texture size x `$decalscale`
@@ -127,6 +131,9 @@ and `physpush` when named).
   Enable plus a Disable after the beam's `life`. Stage C adds no damage: a damaging laser with no trigger_hurt along it is flagged; then run `laserhurt.py`
   (below).
 - **Probe coverage** (`probes`). Static `func_breakable` and `func_brush` meshes (not parented to a door, mover, train, rotator or physics object) are lit from light probes, not lightmaps: the **whole mesh** must sit inside an `env_combined_light_probe_volume`, or its lighting is wrong (skink52, 27 Oct 2026). Stage C `probes` lists any that aren't; `stage_d.py … probecover` adds a volume around each uncovered group.
+- **Light brightness** (`lights`, with the VMF staged): every light's brightness is rebuilt from its CS:GO `_light` value (`lighting.fix_brightness`,
+  same as stage D `lightbright`). Before 30 Oct 2026 stage C only set the importer's `nan` values to 0 (= legacy 1, a 265 `_light`), so every light
+  in a map came out the same strength (ttt_minecraft's 50-200 lights all at 265).
 - **Stationary lights** (`lights`). CS:GO lights import as Static, which leaves weapons and players black. The world is voxelised and flood-filled into
   sealed compartments. Each compartment gets at least one light switched to `directlight 3` (Stationary; in the FGD 3 = Stationary and 2 = fully Dynamic),
   smallest rooms first. More lights are added only to cover the rest of a room. Ranges are trimmed so no spot is inside more than 4 stationary lights. A
@@ -155,7 +162,7 @@ and `physpush` when named).
   `models/player/` and `maps/<addon>_skip_models.txt`, because they drag in the whole t/ct_animations set and hang cs_mdl_import; swap them for a stock CS2
   character, `characters/models/...`.)
 - **Material flags** (`matflags`, after `assets`): CS:GO `$additive` → `F_TRANSLUCENT` + `F_ADDITIVE_BLEND` (lightmapped) or `csgo_unlitgeneric`
-  `F_BLEND_MODE 4`; `$nocull` → `F_RENDER_BACKFACES`.
+  `F_BLEND_MODE 4`; water → see-through `F_TRANSLUCENT`; `$alpha` → opacity; `$selfillum` → `F_SELF_ILLUM`; `$nocull` → `F_RENDER_BACKFACES`.
 - **The io script** (end of the run): if any step needs it, `maps/scripts/<addon>_io.js` is generated (`gen_script.py` + `push_tail.js`) and a
   `point_script` `<addon>_io_script` is added. Then `maps/<addon>_cleanup_log.txt` is written, with TO CHECK lines for everything that needs a human look.
 
@@ -194,7 +201,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
 - `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
-  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, skyshell, water` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
+  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, iofix, skyshell, water` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
   - **Daylight** (`daylight`, stage D only; for indoor maps that are still dark after stage C): adds a stationary light_environment using the map's env_sky

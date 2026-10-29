@@ -277,6 +277,29 @@ def servercommand(m, c):
     c.log.append('removed %d point_servercommand; %d Command outputs -> script Cmd_n (CS2 servers block point_servercommand)' % (len(sc), n))
     if any(x.lower().startswith('say') for x in c.commands): c.todo.append('chat messages use "say" from cs_script ServerCommand - if a server blocks it the messages just will not show')
 
+def io_fixups(m, c):
+    """Source 1 I/O that CS2 reads differently.
+    - logic_auto with Global State to Read = is_pc: Source 1's engine set is_pc on every PC, CS2 never does, so the logic_auto never
+      fires (ttt_minecraft: the gold block never teleported in, the clouds never moved, the vclips stayed on). The key is cleared.
+    - output targets that only match an entity name case-insensitively (Source 1 names ignore case): set to the exact name."""
+    n = 0
+    for e in m.by_class('logic_auto'):
+        if (m.P(e, 'globalstate') or '').lower() == 'is_pc': m.setp(e, 'globalstate', ''); n += 1
+    if n: c.log.append('logic_auto: Global State "is_pc" cleared on %d (CS2 never sets it, so they never fired)' % n)
+    names = {}
+    for e in m.entities():
+        nm = m.name(e)
+        if nm: names.setdefault(nm.lower(), set()).add(nm)
+    fixed = []
+    for e, cn in m.all_conns():
+        t = dmx.get(cn, b'targetName').decode()
+        exact = names.get(t.lower())
+        if not t or t.startswith('!') or '*' in t or not exact or t in exact: continue
+        if len(exact) == 1:
+            new = next(iter(exact)); dmx.set_(cn, b'targetName', dmx.T_STR, new.encode()); fixed.append('%s->%s' % (t, new))
+    if fixed: c.log.append('output targets fixed to the exact entity name (case): %s' % ', '.join(sorted(set(fixed))))
+
+
 def round_setup(m, c):
     """House rule: a point_servercommand driven by a logic_auto sets mp_freezetime 0 / mp_roundtime 600 on map spawn.
     Maps with only one spawn type (only CT or only T spawns) also get a game_player_equip handing out a knife, fired OnMapSpawn.
@@ -821,6 +844,7 @@ def run(addon, root, passes=None):
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
     if 'io' in steps and os.path.exists(vmfp): restore_io(m, c, vmfp); dropped_report(m, c, vmfp)
+    if 'io' in steps: io_fixups(m, c)
     if 'wall' in steps: wall_toggle(m, c)
     if 'equip' in steps: player_equip(m, c)
     if 'launch' in steps: physlaunch.run(m, c)       # before push: physics-only launchers (cannons) aren't player pushes
@@ -849,7 +873,7 @@ def run(addon, root, passes=None):
     if 'vis' in steps: visfit.run(m, c)                  # hints fitted to the play space + sky shells out of vis
     elif 'skyvis' in steps: skyvis.run(m, c)
     if 'beams' in steps: beammod.run(m, c)
-    if 'lightbright' in steps: lighting.fix_brightness(m, c, vmfp)
+    if ('lightbright' in steps or 'lights' in steps) and os.path.exists(vmfp): lighting.fix_brightness(m, c, vmfp)   # real values, not 0 (= 265, ttt_minecraft)
     elif 'lights' in steps: lighting.fix_nan_brightness(m, c)
     if 'lights' in steps: lighting.run(m, c)
     if 'alpha' in steps and c.src: assets.fix_alpha(m, c)

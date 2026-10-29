@@ -18,6 +18,15 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
 - 2026-10-29: vis compile inefficient (~200,900 regions): `visfit_lean` (50 Low + 40 Lower → 48 Lower). 2026-10-29: lighting rules: light_environment Static → Stationary; open-to-sky space gets stationary lights too (`lights`); renderamt fixed where rendermode was Normal. Backup `prefabs+backups\\ttt_minecraft_2026-10-29_prelights.vmap`.
 - 2026-10-29 (in-game test): hut doors too narrow when open → `doorsolid` (15 doors were Non-solid to Player in CS:GO; now never-solid func_brush visuals parented to nodraw-hinge doors; Ttest_Frontdoors' second door renamed Ttest_Frontdoors_2 with copied outputs). Open areas pitch black → `skyshell` (11 moondome sky shells → toolsskybox), sun Stationary (earlier). Minecarts unpushable → `physpush` on the 22 func_physbox (minecarts mass ~144, blocks 0.4, gold block 8); two carts at -1348 44 sit on top of each other in the original too. Backup `prefabs+backups\\ttt_minecraft_2026-10-29_predoors.vmap`.
 
+- 2026-10-30 (in-game test: lighting off, water solid, doorframes, traitor wiring, gold/diamond blocks): compared against the BSP.
+  `lightbright`: all 88 lights had brightness 0 (= `_light` 265) from stage C; rebuilt from the VMF (50-200, quadratic). `matflags`: water_static was an
+  opaque sheet → translucent 0.55 with back faces; cloud 0.9, portal 0.95, trap_lava 0.9 ($alpha); glowstone self-lit ($selfillum), as in CS:GO.
+  `iofix`: the main logic_auto read global state `is_pc` (never set in CS2) so it never fired: gold block never teleported in, clouds never moved,
+  Relay_Vclips never ran; cleared. `Trap_water`/`Trap_lava` outputs → exact names. `doorhinge`: hinge cubes moved 2 u into the frames (they stuck into the
+  doorways). Traitor buttons: all 5 relays match the VMF outputs; only dead targets are `Trap_Nether_Light` / `Ttest_Light_Test`, missing in the original too.
+  Diamond ores are placed by `ttt_map_settings` RoundStart (ttt.js `ttt_ms__start`), so they stay in the holding box until a round starts (3+ players).
+  Backup `maps/ttt_minecraft.vmap.bak_lighting`.
+
 ## Open / to check
 
 - Traitor tester: needs the gold block carried (E, cs2mapTTT's carry) into Ttest_CraftTrigger, which unlocks the door buttons; the check itself is `ttt_traitor_check` → `ttt_logic_role`, handled by ttt.js since cs2mapTTT `cfbd4fa`. What ttt.js still needs for this map: cs2mapTTT `MAP_REQUIREMENTS.md`.

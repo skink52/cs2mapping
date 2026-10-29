@@ -9,7 +9,8 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         renderamt (renderamt 255 where rendermode is Normal), ventlight (stationary lights in vents behind func_breakable grates),
         doorsolid (doors flagged Non-solid to Player: meshes -> never-solid func_brush parented to the door),
         skyshell (moondome sky shells -> toolsskybox: the sun bakes through toolsskybox, not through a moondome),
-        water (water meshes -> func_water, underwater post_processing_volume, master volume)
+        water (water meshes -> func_water, underwater post_processing_volume, master volume),
+        doorhinge (maps already through doorsolid: hinge cubes moved into the frame), iofix (logic_auto is_pc global state, output target name case)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
@@ -56,6 +57,8 @@ def run(addon, root, passes):
     if 'renderamt' in passes: stage_c.render_alpha(m, c)
     if 'ventlight' in passes: ventlight.run(m, c)
     if 'doorsolid' in passes: doorsolid.run(m, c)
+    if 'doorhinge' in passes: doorsolid.rebury(m, c)
+    if 'iofix' in passes: stage_c.io_fixups(m, c)
     if 'water' in passes and watervol.run(m, c) and c.needs_underwater_vpost and not c.exists(watervol.VPOST):
         c.write(watervol.VPOST, open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'postprocess_filmic_underwater.vpost'), 'rb').read())
     if 'skyshell' in passes:

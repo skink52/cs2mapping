@@ -3,6 +3,14 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-30: ttt_minecraft lighting, water, logic_auto, door hinges
+
+- Stage C `lights` rebuilds light brightness from the VMF (`fix_brightness`) instead of leaving every light at 0 (= 265). ttt_minecraft's 88 lights were all equal.
+- `matflags`: CS:GO water → see-through `F_TRANSLUCENT` (0.55, back faces); `$alpha` → opacity; `$selfillum` → `F_SELF_ILLUM`.
+- Stage C `io` / stage D `iofix`: logic_auto `is_pc` global state cleared (never fired in CS2), case-only output target mismatches fixed.
+- `doorsolid` hinge cube sits 2 u inside the frame; stage D `doorhinge` moves it on maps already done.
+- Applied to ttt_minecraft (lightbright, iofix, doorhinge, matflags).
+
 ## 2026-10-30: non-commercial licence
 
 - All skink52 repos (cs2mapping, hellmatch-cs2, space-racer-cs2, cs2-fighter, trenchwarfare-cs2, cs2mapTTT, cs21.6) moved from MIT / CC BY / none

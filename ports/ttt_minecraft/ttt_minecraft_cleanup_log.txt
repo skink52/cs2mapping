@@ -56,3 +56,13 @@ Follow-up pass (2026-10-29): water
 - water: 29 water meshes -> 6 func_water; 1 underwater post_processing_volumes (lighting/postprocessing/postprocess_filmic_underwater.vpost, top 80 u below the surface); master post_processing_volume already there
 - pruned 0 orphaned elements
 
+Follow-up pass (2026-10-30): lightbright, iofix, doorhinge, matflags
+- %compilewater materials (CS:GO water, see-through) -> F_TRANSLUCENT, opacity 0.55, back faces drawn: water_static
+- $alpha materials -> F_TRANSLUCENT with that opacity: cloud 0.9, portal 0.95, trap_lava 0.9
+- $selfillum materials -> F_SELF_ILLUM (mask from the texture alpha): glowstone
+- light brightness rebuilt from the CS:GO _light values for 88 lights (0 had brightness = nan from the importer, which crashes CS2 on map load)
+- doorsolid: 15 door hinge cubes moved 2 units into the door frame (out of the doorway)
+- logic_auto: Global State "is_pc" cleared on 1 (CS2 never sets it, so they never fired)
+- output targets fixed to the exact entity name (case): Trap_lava->Trap_Lava, Trap_water->Trap_Water
+- pruned 0 orphaned elements
+
