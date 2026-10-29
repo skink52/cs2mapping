@@ -194,7 +194,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
 - `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
-  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, skyshell` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
+  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, skyshell, water` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
   - **Daylight** (`daylight`, stage D only; for indoor maps that are still dark after stage C): adds a stationary light_environment using the map's env_sky
@@ -215,6 +215,11 @@ All of these keep your Hammer edits and append to the cleanup log. Exact usage l
   The game_ui entities are removed. mg_pirates (22 cannons and boats, 29 Oct 2026).
 - `renderamt` (stage D; stage C step after `dead`): renderamt 255 wherever rendermode is Normal. CS:GO ignored renderamt then; CS2 applies it, so
   props came out see-through (ttt_cg_skyscraper_2017's office chairs at 180).
+- `water` (stage D): CS2 only treats water as water (swimming, splashes) inside a **func_water**. Water meshes (material name contains "water") in the
+  world or a func_water_analog are grouped by contact and each group becomes one func_water. Groups deeper than 64 u get an underwater
+  post_processing_volume (`lighting/postprocessing/postprocess_filmic_underwater.vpost`, copied from ba_jail_seaside; master 0, exposure 0–0.3, fade 0.1,
+  spawnflags 4097, toolsnodraw) from 16 u under the bottom to **80 u below the surface** (the volume tests the player's feet). A master
+  post_processing_volume (`filmic_default.vpost`, master 1) is added if the map has none.
 - `doorsolid` (stage D): func_door / func_door_rotating flagged "Non-solid to Player" (spawnflags 4) are solid in CS2. The door's meshes move to a
   never-solid func_brush `<door>_vis` parented to the door, the door keeps a 2-unit nodraw cube on its hinge, so it looks and moves the same but
   blocks nothing, as in CS:GO (ttt_minecraft's hut doors: the open panel left 32 units, too narrow to pass). Double doors sharing a name are split

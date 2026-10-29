@@ -52,3 +52,7 @@ Follow-up pass (2026-10-29): doorsolid, skyshell, physpush
 - skyshell: 11 moondome sky shells -> toolsskybox (areas under them baked black: the sun only bakes through toolsskybox)
 - pruned 0 orphaned elements
 
+Follow-up pass (2026-10-29): water
+- water: 29 water meshes -> 6 func_water; 1 underwater post_processing_volumes (lighting/postprocessing/postprocess_filmic_underwater.vpost, top 80 u below the surface); master post_processing_volume already there
+- pruned 0 orphaned elements
+

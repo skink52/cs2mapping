@@ -31,3 +31,8 @@ Pirate ship battle: cannons and boats steered with the movement keys (game_ui).
 - If the 3D skybox doesn't render: untick Editor only on the skybox map's sky_camera.
 - 6 trim faces with an absurd texture scale left as imported.
 - Vis: if anything pops in or out of view where players stand, raise the nearest hint (Lower → Low → Medium).
+
+## Water (29 Oct 2026)
+
+- `water` pass: water meshes → func_water, underwater post_processing_volume 80 u below the surface (master volume already there). Not yet built.
+- `pirates_water.vmat` failed to compile (textures pointed at `.vtex`); regenerated with `.vtex_c`.

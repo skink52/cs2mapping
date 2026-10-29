@@ -33,3 +33,7 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
   `info_map_parameters`, and converted the 42 ttt_* entities (5 traitor buttons, 5 testers, 8 role tests, 12 texts, 8 damage owners, a credit adjust,
   ttt_win, map settings) into logic_relays driven by ttt.js; the 6 weapon_ttt_* became CS2 weapons. Map data: cs2mapTTT `maps/ttt_minecraft.json`.
 - Backup of the map before this: `maps/ttt_minecraft.vmap.bak_ttt` on the PC. Open: build and test (cs2mapTTT TESTING.md).
+
+## Water (29 Oct 2026)
+
+- `water` pass: water meshes → func_water, underwater post_processing_volume 80 u below the surface (master volume already there). Not yet built.

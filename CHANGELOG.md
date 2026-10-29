@@ -3,6 +3,12 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-29: water pass, pirates water material
+
+- New stage D `water` (`tools/watervol.py` + `postprocess_filmic_underwater.vpost`): water meshes → func_water, underwater post_processing_volume
+  80 u below the surface, master volume if missing. Applied to ttt_minecraft (6 func_water) and mg_pirates (1).
+- `vmatc.py` writes textures as `.vtex_c`: `pirates_water.vmat` failed to compile ("An output texture can only point to a .vtex_c file").
+
 ## 2026-10-29: ttt_minecraft doors, sky shells, minecarts
 
 - New stage D `doorsolid` (`tools/doorsolid.py`): doors flagged Non-solid to Player stay non-solid in CS2. New `skyshell` pass; stage C rebuilds

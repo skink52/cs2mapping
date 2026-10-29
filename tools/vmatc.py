@@ -4,7 +4,7 @@
 
 Reads the resource's DATA block: KV3 version 5 with LZ4 (method 1) or zstd (method 2, decoded with node's zlib). The layout (strings + aux
 values in buffer 1; object counts, bytes, ints, doubles and types in buffer 2) was worked out from CS2's water materials (29 Oct 2026).
-Textures are written as the compiled param (g_tFoo "...vtex"): the stock .vtex is used as is. Int/float/vector params keep their g_ names.
+Textures are written as the compiled param pointing at the compiled file (g_tFoo "...vtex_c"): the stock texture is used as is. Int/float/vector params keep their g_ names.
 """
 import struct, sys, os, subprocess
 
@@ -125,7 +125,8 @@ def to_vmat(kv, src=''):
     for p in kv.get('m_vectorParams') or []:
         if p['m_name'].startswith('Texture'): continue          # default colours of unset texture inputs
         L.append('\t%s "[%s]"' % (p['m_name'], ' '.join('%.6f' % x for x in p['m_value'])))
-    for p in kv.get('m_textureParams') or []: L.append('\t%s "%s"' % (p['m_name'], p['m_pValue']))
+    for p in kv.get('m_textureParams') or []:    # a compiled texture has to be named with its _c extension ("An output texture can only point to a .vtex_c file")
+        v = p['m_pValue']; L.append('\t%s "%s"' % (p['m_name'], v + '_c' if v.endswith('.vtex') else v))
     attrs = [(a['m_name'], a['m_nValue']) for a in kv.get('m_intAttributes') or [] if not a['m_name'].startswith('Representative')]
     if attrs: L += ['', '\tAttributes', '\t{'] + ['\t\t%s "%d"' % a for a in attrs] + ['\t}']
     sattrs = [(a['m_name'], a['m_value']) for a in kv.get('m_stringAttributes') or []]

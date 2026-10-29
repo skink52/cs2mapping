@@ -8,12 +8,13 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         gameui (game_ui -> key polling in the io script), physlaunch (physics-only trigger_push cannons -> script launch),
         renderamt (renderamt 255 where rendermode is Normal), ventlight (stationary lights in vents behind func_breakable grates),
         doorsolid (doors flagged Non-solid to Player: meshes -> never-solid func_brush parented to the door),
-        skyshell (moondome sky shells -> toolsskybox: the sun bakes through toolsskybox, not through a moondome)
+        skyshell (moondome sky shells -> toolsskybox: the sun bakes through toolsskybox, not through a moondome),
+        water (water meshes -> func_water, underwater post_processing_volume, master volume)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, ventlight, doorsolid
+import vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, ventlight, doorsolid, watervol
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -55,6 +56,8 @@ def run(addon, root, passes):
     if 'renderamt' in passes: stage_c.render_alpha(m, c)
     if 'ventlight' in passes: ventlight.run(m, c)
     if 'doorsolid' in passes: doorsolid.run(m, c)
+    if 'water' in passes and watervol.run(m, c) and c.needs_underwater_vpost and not c.exists(watervol.VPOST):
+        c.write(watervol.VPOST, open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'postprocess_filmic_underwater.vpost'), 'rb').read())
     if 'skyshell' in passes:
         import skysplit
         n = skysplit.moondome_to_skybox(m)

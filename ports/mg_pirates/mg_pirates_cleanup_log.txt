@@ -69,3 +69,7 @@ Follow-up pass (2026-10-29): renderamt, lights
 - stationary lights: 3 of 26 lights switched Static -> Stationary (directlight 3) across 1 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 of the compartments are open to sky (one stationary light each, on top of light_environment)
 - pruned 0 orphaned elements
 
+Follow-up pass (2026-10-29): water
+- water: 1 water meshes -> 1 func_water; 1 underwater post_processing_volumes (lighting/postprocessing/postprocess_filmic_underwater.vpost, top 80 u below the surface); master post_processing_volume already there
+- pruned 0 orphaned elements
+

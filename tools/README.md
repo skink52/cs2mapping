@@ -26,7 +26,7 @@ Everything runs in Claude's cloud workspace with Python 3 + numpy, scipy and Pil
 | `glowfix.py` | Parented env_particle_glows → following glow particles | `python3 glowfix.py <vmap in> <vmap out> <addon content root>` |
 | `waterblend.py` | Main-map water fades into the 3D skybox water (decompiled stock water with MapUV + fade, sea bed cut back, skybox sea bed lowered, skybox probe volumes over the water) | `python3 waterblend.py <main.vmap> <skybox.vmap> <main out> <skybox out> <addon content root> <name> <cs2 pak01_dir.vpk> [fade]` |
 | `gibfix.py` | Build log `Failed loading resource` → refs file of missing gib models / model materials for `run_fixrefs.bat`; generic CS:GO chunks for vmdls with a Metal/Wooden/Glass propdata base and no gibs | `python3 gibfix.py <build log> <out refs.txt> [addon .vmdl ...]` |
-| `vmatc.py` | Compiled vmat_c (KV3 v5, LZ4/zstd) → editable vmat (g_ params, stock `.vtex` textures) | `python3 vmatc.py <pak01_dir.vpk> <materials/...vmat> <out.vmat>` (the pak01_NNN.vpk next to the dir file) |
+| `vmatc.py` | Compiled vmat_c (KV3 v5, LZ4/zstd) → editable vmat (g_ params, textures as `.vtex_c`) | `python3 vmatc.py <pak01_dir.vpk> <materials/...vmat> <out.vmat>` (the pak01_NNN.vpk next to the dir file) |
 | `skysplit.py` | Old 3D skybox → its own `<map>_3dskybox.vmap` + `skybox_reference` in the main map (after stage C) | `python3 skysplit.py <map.vmap in> <main out> <skybox out> <map name> [x0,y0,z0,x1,y1,z1]` · `python3 skysplit.py --sky <in> <out>` (moondome shells → toolsskybox only) |
 | `matnames.py` | Importer-sanitised material refs (spaces → underscores) back to the real file names; run before `alpha,assets` | `python3 matnames.py <addon> <root>` (needs `<root>/content_files_<addon>.json`) |
 | `bsp2vmf_lite.py` | Minimal VMF from a CS:GO BSP (every brush side with material + uaxis/vaxis from the texinfo, infodecals, info_overlays) and the BSP's embedded files, for `texfix` passes when the decompiled VMF isn't available | `python3 -I bsp2vmf_lite.py <map.bsp> <root>/source1/maps/<addon>.vmf [<root>/embedded/<addon>]` |
@@ -41,7 +41,7 @@ plus `overlaydepth` (= `overlayfix` + projection depth 8) and `physpush` (opt-in
 
 ### stage_d.py passes
 
-`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, skyshell`.
+`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, skyshell, water`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -58,6 +58,8 @@ steps aren't stage D passes: use `run_pass.py`.
 | `steam.py` | `steam` | env_steam → info_particle_system + generated `particles/port_steam/*.vpcf` (heat wave = refracting sprite) |
 | `gameui.py` | `gameui` (D) | game_ui → key poll in the io script (`GameUIOn_`/`GameUIOff_` inputs fire the original outputs); game_ui entities removed |
 | `physlaunch.py` | `launch` (C, before `push`), `physlaunch` (D) | Physics-only trigger_push launchers (cannons: relay ForceSpawns a template ball, Enables the push for a moment) → `Launch_<pusher>` in the io script puts the ball at the muzzle and fires it (2000 u/s) |
+| `watervol.py` | `water` (D) | Water meshes → func_water (touching ones grouped); underwater post_processing_volume from 16 u under the bottom to 80 u below the surface; master post_processing_volume if none |
+| `postprocess_filmic_underwater.vpost` | template | Underwater post-processing (from ba_jail_seaside), copied to `lighting/postprocessing/` by the `water` pass |
 | `doorsolid.py` | `doorsolid` (D) | Doors flagged Non-solid to Player: meshes → never-solid func_brush parented to the door, door keeps a nodraw hinge cube |
 | `ventlight.py` | `ventlight` (D) | Stationary lights in crawl-space ducts behind func_breakable vent grates; covers get Disable Shadows |
 | `physpush.py` | `physpush` (opt-in) | Players push physics props (and func_physbox, mass from its size) by CS:GO `.phy` mass, from the io script (`patch_script` adds it to an existing `_io.js`) |
