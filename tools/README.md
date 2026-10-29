@@ -25,6 +25,7 @@ Everything runs in Claude's cloud workspace with Python 3 + numpy, scipy and Pil
 | `laserhurt.py` | A `trigger_hurt` along every CS:GO env_laser that did damage and has none (after stage C) | `python3 laserhurt.py <vmap in> <csgo vmf> <vmap out>` |
 | `glowfix.py` | Parented env_particle_glows → following glow particles | `python3 glowfix.py <vmap in> <vmap out> <addon content root>` |
 | `waterblend.py` | Main-map water fades into the 3D skybox water (decompiled stock water with MapUV + fade, sea bed cut back, skybox sea bed lowered, skybox probe volumes over the water) | `python3 waterblend.py <main.vmap> <skybox.vmap> <main out> <skybox out> <addon content root> <name> <cs2 pak01_dir.vpk> [fade]` |
+| `gibfix.py` | Build log `Failed loading resource` → refs file of missing gib models / model materials for `run_fixrefs.bat`; generic CS:GO chunks for vmdls with a Metal/Wooden/Glass propdata base and no gibs | `python3 gibfix.py <build log> <out refs.txt> [addon .vmdl ...]` |
 | `vmatc.py` | Compiled vmat_c (KV3 v5, LZ4/zstd) → editable vmat (g_ params, stock `.vtex` textures) | `python3 vmatc.py <pak01_dir.vpk> <materials/...vmat> <out.vmat>` (the pak01_NNN.vpk next to the dir file) |
 | `skysplit.py` | Old 3D skybox → its own `<map>_3dskybox.vmap` + `skybox_reference` in the main map (after stage C) | `python3 skysplit.py <map.vmap in> <main out> <skybox out> <map name> [x0,y0,z0,x1,y1,z1]` · `python3 skysplit.py --sky <in> <out>` (moondome shells → toolsskybox only) |
 | `matnames.py` | Importer-sanitised material refs (spaces → underscores) back to the real file names; run before `alpha,assets` | `python3 matnames.py <addon> <root>` (needs `<root>/content_files_<addon>.json`) |
@@ -34,13 +35,13 @@ Everything runs in Claude's cloud workspace with Python 3 + numpy, scipy and Pil
 
 ### Stage C step keys (run order, from `stage_c.run()`)
 
-`merge, io, wall, equip, launch, push, cmd, roundcfg, score, speed, gravity, dead, steam, sounds, soundscripts, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags`,
+`merge, io, wall, equip, launch, push, cmd, roundcfg, score, speed, gravity, dead, renderamt, steam, sounds, soundscripts, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags`,
 plus `overlaydepth` (= `overlayfix` + projection depth 8) and `physpush` (opt-in) when named. `vis` runs `visfit.py`; `skyvis` (the older shell-only pass) runs only when `vis` isn't in the list.
 `alpha` and `assets` need `<root>/vpk/cs2_pak01_dir.vpk` and are skipped silently without it. `daylight` is **not** a stage C step.
 
 ### stage_d.py passes
 
-`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch`.
+`beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -57,6 +58,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `steam.py` | `steam` | env_steam → info_particle_system + generated `particles/port_steam/*.vpcf` (heat wave = refracting sprite) |
 | `gameui.py` | `gameui` (D) | game_ui → key poll in the io script (`GameUIOn_`/`GameUIOff_` inputs fire the original outputs); game_ui entities removed |
 | `physlaunch.py` | `launch` (C, before `push`), `physlaunch` (D) | Physics-only trigger_push launchers (cannons: relay ForceSpawns a template ball, Enables the push for a moment) → `Launch_<pusher>` in the io script puts the ball at the muzzle and fires it (2000 u/s) |
+| `ventlight.py` | `ventlight` (D) | Stationary lights in crawl-space ducts behind func_breakable vent grates; covers get Disable Shadows |
 | `physpush.py` | `physpush` (opt-in) | Players push physics props by CS:GO `.phy` mass, from the io script (`patch_script` adds it to an existing `_io.js`) |
 | `texfix.py` | `overlayfix`, `overlaydepth`, `facescale`, `matflags` | Static overlay geometry, brush-face texture scale/shift (match order in pipeline.md), `$additive`/`$nocull`/`$ssbump` material fixes |
 | `sky.py` | `sky` | Six CS:GO sky faces → 2:1 equirect panorama for `sky.vfx` / `csgo_moondome` |

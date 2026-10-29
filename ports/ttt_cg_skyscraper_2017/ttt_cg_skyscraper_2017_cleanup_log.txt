@@ -52,3 +52,13 @@ Follow-up pass (2026-10-29): visfit_lean
 - visfit: 0 of 6 sky shell meshes set to Exclude from Vis, 6 kept because they close playable air
 - pruned 132 orphaned elements
 - TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+
+Follow-up pass (2026-10-29): lightbright, renderamt, ventlight, lights, probecover
+- light brightness rebuilt from the CS:GO _light values for 171 lights (0 had brightness = nan from the importer, which crashes CS2 on map load); 51 lights with _fifty_percent_distance / linear falloff matched to CS:GO at 128 units, range 1600 x sqrt(legacy)
+- 6 entities had renderamt < 255 with rendermode Normal (ignored in CS:GO, see-through in CS2): renderamt 255
+- ventlight: 9 of 9 thin func_breakables are vent covers, 8 stationary lights placed in the ducts behind them (no shadows, dim); covers set to Disable Shadows
+- stationary lights: 0 of 179 lights switched Static -> Stationary (directlight 3) across 0 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 of the compartments are open to sky (one stationary light each, on top of light_environment)
+- probes: every static func_breakable / func_brush is inside a light probe volume
+- pruned 0 orphaned elements
+
+- light_environment: Static -> Stationary (directlight 3), so the sun lights players and weapons

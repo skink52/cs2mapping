@@ -14,10 +14,18 @@ Usage:
     imports below resolve), edit the CONFIG block, then run:
 
         python modelsfromrefs.py
+    or, without editing CONFIG (run_fixrefs.bat does this):
+        python modelsfromrefs.py <addon> <refs file>
+
+Material entries in the refs file ("materials/....vmt", e.g. model materials the
+map import missed, written by tools/gibfix.py from a build log) are imported and
+compiled too, along with the materials of the imported models.
 """
 
 import os
+import re
 import subprocess
+import sys
 import time
 
 from utils import utlc as utl
@@ -77,7 +85,11 @@ def strip_mdls_from_refs(filename):
         for x in mdls:
             f.write(x + "\n")
 
-    return mdlfilename, mdls
+    mtls = []
+    for x in others:
+        m = re.search(r'(materials[\\/][^"\s]+\.vmt)', str(x), re.I)
+        if m: mtls.append(m.group(1).replace("\\", "/"))
+    return mdlfilename, mdls, mtls
 
 
 def main():
@@ -97,17 +109,17 @@ def main():
         return
 
     print("Reading refs file: %s" % REFS_FILE)
-    mdl_lst_file, mdlfiles = strip_mdls_from_refs(REFS_FILE)
-    print("Found %d model entries." % len([m for m in mdlfiles if not m.startswith("-")]))
+    mdl_lst_file, mdlfiles, refmtls = strip_mdls_from_refs(REFS_FILE)
+    print("Found %d model entries, %d material entries." % (len([m for m in mdlfiles if not m.startswith("-")]), len(refmtls)))
 
-    if len(mdlfiles) < 1:
-        print("No MDLs found in refs file. Nothing to do.")
+    if len(mdlfiles) < 1 and not refmtls:
+        print("No MDLs or materials found in refs file. Nothing to do.")
         return
 
     failed_imports = []
     failed_material_compiles = []
     failed_model_compiles = []
-    mdlmtls = set()
+    mdlmtls = set(refmtls)
     extraoptions = ""
 
     # ---------------------------------------------------------------
@@ -223,4 +235,8 @@ def main():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) >= 3:   # modelsfromrefs.py <addon> <refs file>
+        S2_ADDON_NAME = sys.argv[1]
+        S2_CONTENT_ADDON = os.path.join(os.path.dirname(S2_CONTENT_ADDON), S2_ADDON_NAME)
+        REFS_FILE = sys.argv[2]
     main()

@@ -34,3 +34,15 @@ Follow-up pass (2026-10-29): overlaydepth, probecover
 - probecover: added 95 light probe volumes around 202 static func_breakable / func_brush meshes that no volume fully covered: func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush Portal_Nether_Brush, func_brush Barricade_1, func_brush Barricade_2, func_brush Barricade_3, func_brush (unnamed), func_brush T1_Door1_Clip, func_brush T1_Door2_Clip, func_brush (unnamed), func_brush (unnamed), func_brush Portal_Shed_T_Brush, func_brush I1_Door1_Clip, func_breakable (unnamed), func_breakable (unnamed), func_brush I2_Door1_Clip, func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_breakable Trap_Creeper_Wall, func_brush Trap_Creeper_TNT, func_brush (unnamed), func_brush (unn
 - pruned 0 orphaned elements
 - TO CHECK: probecover: check the new probe volumes look right next to the existing ones
+
+Follow-up pass (2026-10-29): visfit_lean
+- visfit (16-unit voxels): 44.5 billion cubic units of playable air, 7.8 of it walkable band; hints 0 Low, 48 Lower, 1 Lowest (replacing 50 Low, 40 Lower, 1 Lowest)
+- visfit: 0 of 11 sky shell meshes set to Exclude from Vis, 11 kept because they close playable air
+- pruned 364 orphaned elements
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+
+Follow-up pass (2026-10-29): renderamt, lights
+- light_environment: Static -> Stationary (directlight 3), so the sun lights players and weapons
+- stationary lights: 2 of 88 lights switched Static -> Stationary (directlight 3) across 1 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 of the compartments are open to sky (one stationary light each, on top of light_environment)
+- pruned 0 orphaned elements
+

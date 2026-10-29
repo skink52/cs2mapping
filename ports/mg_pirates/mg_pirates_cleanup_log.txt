@@ -64,3 +64,8 @@ Follow-up (2026-10-29): waterblend.py (3D skybox water blend, cs2kz mapping guid
 - skybox: water -> materials/pirates/pirates_water_skybox.vmat (same look, no fade); sea bed moved 64 below the water (1024 world units); light probe volume grown over the whole skybox water
 - TO CHECK: the water edge in game (fade width: g_flSkyBoxFadeRange in pirates_water.vmat); waves/debris use the stock compiled textures (g_t... .vtex): if the water looks flat, say so
 
+Follow-up pass (2026-10-29): renderamt, lights
+- light_environment: Static -> Stationary (directlight 3), so the sun lights players and weapons
+- stationary lights: 3 of 26 lights switched Static -> Stationary (directlight 3) across 1 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 of the compartments are open to sky (one stationary light each, on top of light_environment)
+- pruned 0 orphaned elements
+

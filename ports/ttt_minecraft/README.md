@@ -15,6 +15,7 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
 - 2026-10-29: Pakfile entries with absolute paths fixed in prep.py; minecraft sky rebuilt; 10 alpha masks (glass, doors, ladder, tracks, flowers, signs).
 - 2026-10-29: Stage D overlaydepth (35), probecover (95 volumes).
 - 2026-10-29: loading credit `maps/ttt_minecraft.txt` ("Original map by …" / "Ported to CS2 by skink52"); build queue `ttt_minecraft`.
+- 2026-10-29: vis compile inefficient (~200,900 regions): `visfit_lean` (50 Low + 40 Lower → 48 Lower). 2026-10-29: lighting rules: light_environment Static → Stationary; open-to-sky space gets stationary lights too (`lights`); renderamt fixed where rendermode was Normal. Backup `prefabs+backups\\ttt_minecraft_2026-10-29_prelights.vmap`.
 
 ## Open / to check
 

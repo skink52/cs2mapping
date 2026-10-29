@@ -225,6 +225,19 @@ def equip_items(m, c):
         c.items_js = {k: v for k, v in c.equip_items.items() if not k.startswith('__unnamed_')}
         c.log.append('item_* taken out of game_player_equip weapon slots (CS2 crashes on map load with them there), given by the io script instead: %s' % '; '.join(moved))
 
+def render_alpha(m, c):
+    """CS:GO ignored renderamt when rendermode was Normal (0); CS2 applies it, so those props come out see-through
+    (ttt_cg_skyscraper_2017's office chairs, renderamt 180). Set renderamt 255 wherever rendermode is normal."""
+    n = 0
+    for e in m.entities():
+        ra = m.P(e, 'renderamt')
+        if ra is None: continue
+        try: amt = float(ra)
+        except ValueError: continue
+        if amt < 255 and (m.P(e, 'rendermode', '0') or '0') in ('0', 'kRenderNormal'):
+            m.setp(e, 'renderamt', '255'); n += 1
+    if n: c.log.append('%d entities had renderamt < 255 with rendermode Normal (ignored in CS:GO, see-through in CS2): renderamt 255' % n)
+
 def trigger_push(m, c):
     # physics-only pushes (flag 8 without 1) don't move players: the `launch` step handles the cannon pattern, the rest stay trigger_push
     ps = [e for e in m.by_class('trigger_push') if not (int(float(m.P(e, 'spawnflags', '0') or 0)) & 9 == 8)]
@@ -799,7 +812,7 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'steam', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'facescale', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'probes', 'radar', 'assets', 'matflags']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'renderamt', 'steam', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'facescale', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'probes', 'radar', 'assets', 'matflags']
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
     if 'io' in steps and os.path.exists(vmfp): restore_io(m, c, vmfp); dropped_report(m, c, vmfp)
@@ -813,6 +826,7 @@ def run(addon, root, passes=None):
     if 'speed' in steps: speedmod(m, c)
     if 'gravity' in steps: gravity.run(m, c)
     if 'dead' in steps: dead_entities(m, c)
+    if 'renderamt' in steps: render_alpha(m, c)
     vd = os.path.join(root, 'vpk')
     if os.path.exists(os.path.join(vd, 'cs2_pak01_dir.vpk')):
         c.cs2v = vpk.VPK(os.path.join(vd, 'cs2_pak01_dir.vpk')); csgov = vpk.VPK(os.path.join(vd, 'csgo_pak01_dir.vpk'))

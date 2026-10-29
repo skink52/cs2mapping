@@ -3,6 +3,14 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-29: lighting rules, vents, gibs (skyscraper, jahoukarail, pirates, minecraft)
+
+- `lighting.py`: light_environment Static → Stationary; open-to-sky compartments (and outdoor space on maps with no sky shell) get stationary lights
+  too (skink52's rule); `lightbright` handles `_fifty_percent_distance` lights (linear falloff). Applied to all four maps of the batch.
+- New `ventlight` pass (`tools/ventlight.py`), stage C/D `renderamt`, `tools/gibfix.py` + `scripts/run_fixrefs.bat` (modelsfromrefs.py takes
+  `<addon> <refs>` and imports material entries) for gibs and model materials missing after a build.
+- ttt_minecraft: `visfit_lean`.
+
 ## 2026-10-29: mg_pirates cannons and skybox water
 
 - New `tools/physlaunch.py` (stage C `launch` before `push`, stage D `physlaunch`): physics-only trigger_push cannons → script launch. Stage C's `push`

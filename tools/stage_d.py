@@ -5,12 +5,13 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         probes (report static func_breakable/func_brush outside probe volumes), probecover (add volumes for them),
         lightbright (rebuild light brightness from the VMF: the importer's brightness = nan / too dim), equipitems (item_* out of equip slots),
         steam (env_steam -> particles), soundscripts (Source 1 soundscript names -> same-named soundevents), physpush (players push physics props by mass),
-        gameui (game_ui -> key polling in the io script), physlaunch (physics-only trigger_push cannons -> script launch)
+        gameui (game_ui -> key polling in the io script), physlaunch (physics-only trigger_push cannons -> script launch),
+        renderamt (renderamt 255 where rendermode is Normal), ventlight (stationary lights in vents behind func_breakable grates)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch
+import vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, ventlight
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -49,6 +50,8 @@ def run(addon, root, passes):
             if not any(m.name(e) == c.script for e in m.by_class('point_script')):
                 sp = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]; o = m.origin(sp)
                 m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
+    if 'renderamt' in passes: stage_c.render_alpha(m, c)
+    if 'ventlight' in passes: ventlight.run(m, c)
     if 'lights' in passes: lighting.run(m, c)
     if 'alpha' in passes and c.src: assets.fix_alpha(m, c)
     if 'daylight' in passes: daylight.run(m, c)

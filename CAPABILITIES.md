@@ -35,6 +35,8 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Old 3D skyboxes (the miniature scenery CS:GO drew in the distance) moved into their own CS2 skybox map and linked back in *(follow-up step)*; the map's water
   faded into the skybox's water so the sea has no visible edge *(follow-up step)*.
 - Cannons that fire physics balls made to fire again.
+- Breakable props given back the pieces they break into (and the materials imported models were missing).
+- Vents behind breakable grates given their own light; props the old engine drew solid but CS2 draws see-through fixed.
 - Valve's own compiled materials turned back into editable ones, so a stock material can be copied and tuned.
 - Missing textures rebuilt from CS:GO's own files, water swapped for CS2 water, anything unrecoverable swapped for the closest CS2 texture and flagged.
 - CS2 textures that Valve shipped broken (they show the pink error texture) replaced with the map's original CS:GO version.

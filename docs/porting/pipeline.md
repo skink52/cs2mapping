@@ -129,7 +129,9 @@ and `physpush` when named).
 - **Stationary lights** (`lights`). CS:GO lights import as Static, which leaves weapons and players black. The world is voxelised and flood-filled into
   sealed compartments. Each compartment gets at least one light switched to `directlight 3` (Stationary; in the FGD 3 = Stationary and 2 = fully Dynamic),
   smallest rooms first. More lights are added only to cover the rest of a room. Ranges are trimmed so no spot is inside more than 4 stationary lights. A
-  compartment open to sky is left to light_environment, if the map has one. A sealed room with spawns or teleport destinations but no light gets a new
+  compartment open to sky (or, on a map with no sky shell, the outdoor space players are in) gets at least one stationary light too, on top of
+  light_environment (skink52's rule, 29 Oct 2026), topped up to 3; and light_environment itself goes from Static to Stationary (`directlight 3`), since
+  the importer's Static sun lights nothing that moves (mg_jahoukarail_2015 looked unlit). A sealed room with spawns or teleport destinations but no light gets a new
   stationary light_omni2. (Maps still too dark afterwards: the stage D `daylight` pass, below.)
 - **Alpha** (`alpha`). Materials that were $alphatest/$translucent in CS:GO but imported opaque get F_ALPHA_TEST/F_TRANSLUCENT with a mask from the texture alpha.
 - **Radar** (`radar`). Rendered from the geometry. Only floors you can stand on are drawn (the space above them has lights, spawns or teleports, or is an
@@ -191,7 +193,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
 - `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
-  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
+  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
   - **Daylight** (`daylight`, stage D only; for indoor maps that are still dark after stage C): adds a stationary light_environment using the map's env_sky
@@ -210,6 +212,20 @@ All of these keep your Hammer edits and append to the cleanup log. Exact usage l
   player holds it the script polls their keys every tick and fires the game_ui's own outputs (Pressed/Unpressed*, XAxis/YAxis/AttackAxis/Attack2Axis,
   PlayerOn/PlayerOff) with the original targets and delays. Freeze Player, +Use / Jump deactivate are kept; Hide Weapon and FieldOfView aren't (TO CHECK).
   The game_ui entities are removed. mg_pirates (22 cannons and boats, 29 Oct 2026).
+- `renderamt` (stage D; stage C step after `dead`): renderamt 255 wherever rendermode is Normal. CS:GO ignored renderamt then; CS2 applies it, so
+  props came out see-through (ttt_cg_skyscraper_2017's office chairs at 180).
+- `ventlight` (stage D): crawl-space vents capped by func_breakable grates (thin, ≤160 u, not glass) bake pitch black in CS2. Each duct behind a cover
+  (opening no wider than the cover, ≥48 u deep) gets a dim, unshadowed stationary light_omni2; the covers get Disable Shadows.
+- `lightbright` also handles CS:GO lights with `_fifty_percent_distance` (and linear/constant attenuation): vrad falls back to linear falloff for them
+  (I x 100 / d), and the importer gave them ~8x the brightness of a normal light and a 9,000-17,000 unit range. They are matched to CS:GO at 128 units
+  with an inverse-square range of 1600 x sqrt(legacy) (ttt_cg_skyscraper_2017: lower floors much brighter than in CS:GO).
+- **Missing gibs and model materials** (after a build): `tools/gibfix.py <build log> <out refs> [addon vmdl …]` turns every
+  `Failed loading resource` in the build log into a refs file (gib models → `.mdl`, model materials → `.vmt`, a material whose texture never converted
+  → its `.vmt`); a vmdl given on the command line whose propdata base is Metal/Wooden/Glass and that has no gibs gets CS:GO's generic chunks
+  (models/gibs/metal_gib1-5, wood_gib01a-e, glass_shard01-06). Put the refs at `maps\<addon>_fix_refs.txt`; the mapper runs
+  `run_fixrefs.bat <addon>` (cs_mdl_import + source1import via `modelsfromrefs.py`) and then the build. CS2 has no `models/gibs` at all, and some stock
+  CS2 models point at gibs it never shipped (watermelon01a → props_junk/watermelon01_chunk*): importing the CS:GO ones at the same path fixes those too.
+  The build log is also the check that imported models' textures exist (the cleanup report only covers the map's own refs).
 - `physlaunch` (stage D; stage C step `launch`, before `push`): CS:GO cannons that fire a physics ball with a physics-only trigger_push (a relay
   ForceSpawns a point_template ball and Enables the push for a moment). CS2's trigger_push doesn't throw physics objects, and the `push` step used to
   turn these into player pushes. The Enable becomes `RunScriptInput Launch_<pusher>` 0.05 s later; the script takes the new ball near the cannon, puts it

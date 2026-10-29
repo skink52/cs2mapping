@@ -61,3 +61,8 @@ Follow-up pass (2026-10-29): assets
 - built 2 missing materials from the original CS:GO textures: tarp_ext_01, mudfloor001a_cheap
 - pruned 0 orphaned elements
 
+Follow-up pass (2026-10-29): renderamt, lights
+- light_environment: Static -> Stationary (directlight 3), so the sun lights players and weapons
+- stationary lights: 1 of 30 lights switched Static -> Stationary (directlight 3) across 1 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 of the compartments are open to sky (one stationary light each, on top of light_environment)
+- pruned 1 orphaned elements
+
