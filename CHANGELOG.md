@@ -3,6 +3,13 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-29: mg_pirates cannons and skybox water
+
+- New `tools/physlaunch.py` (stage C `launch` before `push`, stage D `physlaunch`): physics-only trigger_push cannons → script launch. Stage C's `push`
+  no longer turns physics-only pushes into player pushes. mg_pirates: 18 cannons.
+- New `tools/vmatc.py` (compiled vmat_c → vmat; KV3 v5 with LZ4/zstd) and `tools/waterblend.py` (main-map water fades into the 3D skybox water, from the
+  cs2kz mapping guide). mg_pirates water blended.
+
 ## 2026-10-29: mg_pirates, mg_jahoukarail_2015, ttt_cg_skyscraper_2017, ttt_minecraft stage C
 
 - Imported (stage B) and cleaned (stage C + follow-up passes); details and open items in each `ports/<addon>/README.md`. Build queue in `data/build_queue.txt`.

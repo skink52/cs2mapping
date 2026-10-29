@@ -6,6 +6,7 @@ import { Instance, CSPlayerPawn, CSPlayerController, CSGearSlot, CSInputs, CSMov
 //   PushIn_<n> / PushOut_<n>   replaces the trigger_push brushes (CS:GO "set speed" behaviour)
 //   (automatic) replaces game_player_equips without "Use Only" (CS:GO ran them on every spawn, CS2 does not)
 //   GameUIOn_<name> / GameUIOff_<name>  replaces game_ui (Activate / Deactivate): keys polled every tick, outputs fired from here
+//   Launch_<pusher>               replaces physics-only trigger_push launchers (cannons): the spawned ball is fired from script
 
 // ---------------------------------------------------------------- shared think loop
 /** @type {(() => boolean)[]} each returns true while it still needs ticks */
@@ -1739,3 +1740,282 @@ THINKERS.push(() => {
     }
     return gameuiHeld.size > 0;
 });
+
+// ---------------------------------------------------------------- physics launchers (CS:GO cannons: physics-only trigger_push)
+// Launch_<pusher>: the relay just ForceSpawned the ball. Take the newest still copy near the cannon, put it at the muzzle and fire it
+// along the barrel (pivot -> muzzle destination), or along the pusher's pushdir turned by its angles when there's no destination.
+/** @type {Record<string, { balls: string[], dest: string, pivot: string, speed: number, dir: number[] }>} */
+const LAUNCH = {
+ "4c_pusher": {
+  "balls": [
+   "4c_ball"
+  ],
+  "dest": "4c_dest",
+  "pivot": "4c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "54c_pusher": {
+  "balls": [
+   "54c_ball"
+  ],
+  "dest": "54c_dest",
+  "pivot": "54c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "t_4c_pusher": {
+  "balls": [
+   "t_4c_ball"
+  ],
+  "dest": "t_4c_dest",
+  "pivot": "t_4c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "t_bc1c_pusher": {
+  "balls": [
+   "t_bc1c_ball"
+  ],
+  "dest": "t_bc1c_dest",
+  "pivot": "t_bc1c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "t_2bc1c_pusher": {
+  "balls": [
+   "t_2bc1c_ball"
+  ],
+  "dest": "t_2bc1c_dest",
+  "pivot": "t_2bc1c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "t_3bc1c_pusher": {
+  "balls": [
+   "t_3bc1c_ball"
+  ],
+  "dest": "t_3bc1c_dest",
+  "pivot": "t_3bc1c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "t_c_pusher": {
+  "balls": [
+   "t_c_ball"
+  ],
+  "dest": "t_c_dest",
+  "pivot": "t_c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "t_1c_pusher": {
+  "balls": [
+   "t_1c_ball"
+  ],
+  "dest": "t_1c_dest",
+  "pivot": "t_1c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "t_2c_pusher": {
+  "balls": [
+   "t_2c_ball"
+  ],
+  "dest": "t_2c_dest",
+  "pivot": "t_2c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "t_3c_pusher": {
+  "balls": [
+   "t_3c_ball"
+  ],
+  "dest": "t_3c_dest",
+  "pivot": "t_3c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "t_54c_pusher": {
+  "balls": [
+   "t_54c_ball"
+  ],
+  "dest": "t_54c_dest",
+  "pivot": "t_54c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "bc1c_pusher": {
+  "balls": [
+   "bc1c_ball"
+  ],
+  "dest": "bc1c_dest",
+  "pivot": "bc1c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "2bc1c_pusher": {
+  "balls": [
+   "2bc1c_ball"
+  ],
+  "dest": "2bc1c_dest",
+  "pivot": "2bc1c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "3bc1c_pusher": {
+  "balls": [
+   "3bc1c_ball"
+  ],
+  "dest": "3bc1c_dest",
+  "pivot": "3bc1c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "c_pusher": {
+  "balls": [
+   "c_ball"
+  ],
+  "dest": "c_dest",
+  "pivot": "c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "1c_pusher": {
+  "balls": [
+   "1c_ball"
+  ],
+  "dest": "1c_dest",
+  "pivot": "1c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "2c_pusher": {
+  "balls": [
+   "2c_ball"
+  ],
+  "dest": "2c_dest",
+  "pivot": "2c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "3c_pusher": {
+  "balls": [
+   "3c_ball"
+  ],
+  "dest": "3c_dest",
+  "pivot": "3c_barrel",
+  "speed": 2000,
+  "dir": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ }
+};
+/** @param {{ pitch: number, yaw: number, roll: number }} a @param {number[]} v local x forward, y left, z up */
+function launchRotate(a, v) {
+    const p = a.pitch * Math.PI / 180, y = a.yaw * Math.PI / 180, r = a.roll * Math.PI / 180;
+    const sp = Math.sin(p), cp = Math.cos(p), sy = Math.sin(y), cy = Math.cos(y), sr = Math.sin(r), cr = Math.cos(r);
+    const f = [cp * cy, cp * sy, -sp];
+    const rt = [-sr * sp * cy + cr * sy, -sr * sp * sy - cr * cy, -sr * cp];
+    const u = [cr * sp * cy + sr * sy, cr * sp * sy - sr * cy, cr * cp];
+    return [0, 1, 2].map(k => f[k] * v[0] - rt[k] * v[1] + u[k] * v[2]);
+}
+for (const [pusher, L] of Object.entries(LAUNCH)) {
+    Instance.OnScriptInput("Launch_" + pusher, () => {
+        const pe = Instance.FindEntityByName(pusher);
+        const de = L.dest ? Instance.FindEntityByName(L.dest) : undefined;
+        const pv = L.pivot ? Instance.FindEntityByName(L.pivot) : undefined;
+        /** @type {number[]} */ let dir;
+        let from;
+        if (de && pv) {
+            const a = pv.GetAbsOrigin(); from = de.GetAbsOrigin();
+            dir = [from.x - a.x, from.y - a.y, from.z - a.z];
+        } else if (pe) {
+            from = pe.GetAbsOrigin(); dir = launchRotate(pe.GetAbsAngles(), L.dir);
+        } else return;
+        const len = Math.hypot(dir[0], dir[1], dir[2]) || 1;
+        dir = dir.map(x => x / len);
+        const near = pv ? pv.GetAbsOrigin() : from;
+        let best, bestD = 400;
+        for (const name of L.balls) {
+            for (const ent of Instance.FindEntitiesByName(name)) {
+                const o = ent.GetAbsOrigin(), v = ent.GetAbsVelocity();
+                const d = Math.hypot(o.x - near.x, o.y - near.y, o.z - near.z);
+                if (Math.hypot(v.x, v.y, v.z) < 100 && d <= bestD) { best = ent; bestD = d; }
+            }
+        }
+        if (!best) return;
+        const velocity = { x: dir[0] * L.speed, y: dir[1] * L.speed, z: dir[2] * L.speed };
+        if (de) best.Teleport({ position: from, velocity }); else best.Teleport({ velocity });
+    });
+}

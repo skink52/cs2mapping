@@ -54,3 +54,13 @@ Follow-up pass (2026-10-29): dead
 - 18 func_physbox_multiplayer (gone in CS2) -> func_physbox
 - pruned 0 orphaned elements
 - TO CHECK: 18 env_spritetrail (gone in CS2, cosmetic trails) - left out; a trail particle would replace them
+
+Follow-up pass (2026-10-29): physlaunch
+- 18 physics launchers (cannons): trigger_push Enable/Disable -> script Launch_<pusher> (ball put at the muzzle, 2000 u/s along the barrel): 1c_pusher, 2bc1c_pusher, 2c_pusher, 3bc1c_pusher, 3c_pusher, 4c_pusher, 54c_pusher, bc1c_pusher, c_pusher, t_1c_pusher, t_2bc1c_pusher, t_2c_pusher, t_3bc1c_pusher, t_3c_pusher, t_4c_pusher, t_54c_pusher, t_bc1c_pusher, t_c_pusher
+- pruned 73 orphaned elements
+
+Follow-up (2026-10-29): waterblend.py (3D skybox water blend, cs2kz mapping guide "Infinite water")
+- main map: water -> materials/pirates/pirates_water.vmat (nuke_water decompiled with vmatc.py; fades out over 0.1 of its width from each edge, MapUV -3040 -2784 .. 3040 2784); sea bed cut back to -2432 -2227.2 .. 2432 2227.2 so it doesn't show through the fade
+- skybox: water -> materials/pirates/pirates_water_skybox.vmat (same look, no fade); sea bed moved 64 below the water (1024 world units); light probe volume grown over the whole skybox water
+- TO CHECK: the water edge in game (fade width: g_flSkyBoxFadeRange in pirates_water.vmat); waves/debris use the stock compiled textures (g_t... .vtex): if the water looks flat, say so
+

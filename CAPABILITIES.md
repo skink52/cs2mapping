@@ -32,7 +32,10 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Screen overlays rebuilt as on-screen HUD overlays *(by hand per map, e.g. Mario Party)*.
 - Lasers and beams (which CS2 can't create) redrawn as glowing beams in the right colour; lasers that did damage get a damage zone along them (a separate step right after the automatic fixes).
 - Missing skies rebuilt from the original six sky pictures; sky brushes the importer dropped rebuilt as sky shells.
-- Old 3D skyboxes (the miniature scenery CS:GO drew in the distance) moved into their own CS2 skybox map and linked back in *(follow-up step)*.
+- Old 3D skyboxes (the miniature scenery CS:GO drew in the distance) moved into their own CS2 skybox map and linked back in *(follow-up step)*; the map's water
+  faded into the skybox's water so the sea has no visible edge *(follow-up step)*.
+- Cannons that fire physics balls made to fire again.
+- Valve's own compiled materials turned back into editable ones, so a stock material can be copied and tuned.
 - Missing textures rebuilt from CS:GO's own files, water swapped for CS2 water, anything unrecoverable swapped for the closest CS2 texture and flagged.
 - CS2 textures that Valve shipped broken (they show the pink error texture) replaced with the map's original CS:GO version.
 - Transparent textures (fences, glass, decals) that came through solid made transparent again; glowing/additive and double-sided textures restored.

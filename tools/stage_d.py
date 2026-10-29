@@ -5,12 +5,12 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         probes (report static func_breakable/func_brush outside probe volumes), probecover (add volumes for them),
         lightbright (rebuild light brightness from the VMF: the importer's brightness = nan / too dim), equipitems (item_* out of equip slots),
         steam (env_steam -> particles), soundscripts (Source 1 soundscript names -> same-named soundevents), physpush (players push physics props by mass),
-        gameui (game_ui -> key polling in the io script)
+        gameui (game_ui -> key polling in the io script), physlaunch (physics-only trigger_push cannons -> script launch)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush
+import vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -70,6 +70,15 @@ def run(addon, root, passes):
         jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
         js = open(jp, encoding='utf-8').read() if os.path.exists(jp) else 'import { Instance } from "cs_script/point_script";\n'
         c.write('maps/scripts/%s_io.js' % addon, gameui.patch_script(js, c.gameuis, gravity.THINK_JS))
+        if not any(m.name(e) == c.script for e in m.by_class('point_script')):
+            spawn = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]
+            o = m.origin(spawn)
+            m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
+            c.log.append('added point_script %s (maps/scripts/%s_io.js)' % (c.script, addon))
+    if 'physlaunch' in passes and physlaunch.run(m, c):
+        jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
+        js = open(jp, encoding='utf-8').read() if os.path.exists(jp) else 'import { Instance } from "cs_script/point_script";\n'
+        c.write('maps/scripts/%s_io.js' % addon, physlaunch.patch_script(js, c.launch))
         if not any(m.name(e) == c.script for e in m.by_class('point_script')):
             spawn = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]
             o = m.origin(spawn)

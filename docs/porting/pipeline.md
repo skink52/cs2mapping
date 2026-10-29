@@ -191,7 +191,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
 - `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
-  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui` (`physpush` and `gameui` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
+  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
   - **Daylight** (`daylight`, stage D only; for indoor maps that are still dark after stage C): adds a stationary light_environment using the map's env_sky
@@ -210,6 +210,17 @@ All of these keep your Hammer edits and append to the cleanup log. Exact usage l
   player holds it the script polls their keys every tick and fires the game_ui's own outputs (Pressed/Unpressed*, XAxis/YAxis/AttackAxis/Attack2Axis,
   PlayerOn/PlayerOff) with the original targets and delays. Freeze Player, +Use / Jump deactivate are kept; Hide Weapon and FieldOfView aren't (TO CHECK).
   The game_ui entities are removed. mg_pirates (22 cannons and boats, 29 Oct 2026).
+- `physlaunch` (stage D; stage C step `launch`, before `push`): CS:GO cannons that fire a physics ball with a physics-only trigger_push (a relay
+  ForceSpawns a point_template ball and Enables the push for a moment). CS2's trigger_push doesn't throw physics objects, and the `push` step used to
+  turn these into player pushes. The Enable becomes `RunScriptInput Launch_<pusher>` 0.05 s later; the script takes the new ball near the cannon, puts it
+  at the muzzle (the info_teleport_destination on the barrel) and gives it 2000 u/s along the barrel. mg_pirates (18 cannons, 29 Oct 2026). Physics-only
+  pushes that don't fit the pattern stay trigger_push and are listed in TO CHECK.
+- `waterblend.py <main.vmap> <skybox.vmap> <main out> <skybox out> <addon content root> <name> <cs2 pak01_dir.vpk> [fade]` (after `skysplit.py`, for maps
+  with water in the 3D skybox; method from the cs2kz mapping guide, "Infinite water"): the main map renders over the 3D skybox, so its water must fade
+  out at the edges. The water material (stock csgo_water_fancy, decompiled with `vmatc.py`) is copied to `materials/<name>/<name>_water.vmat` with
+  `g_vMapUVMin/Max` = the water's XY extent and `g_flSkyBoxFadeRange` = fade (0.1), and to `<name>_water_skybox.vmat` (no fade) for the skybox. Main-map
+  meshes under the water are cut back out of the fade band (they would hide the skybox water), the skybox sea bed goes down 1024 world units so the fog
+  hides it like the main map's, and skybox probe volumes whose edges cross the water are grown over all of it.
 - `skysplit.py <map.vmap in> <main out> <skybox out> <map name> [x0,y0,z0,x1,y1,z1]`: moves an old 3D skybox into `<map>_3dskybox.vmap` (everything inside
   the box, or the group of meshes around the sky_camera when no box is given), keeps light_environment / env_sky / env_fog_controller in both, sets
   `mapUsageType skybox`, adds the `skybox_reference` to the main map, and switches moondome shells in both maps to `toolsskybox` (a moondome hides the

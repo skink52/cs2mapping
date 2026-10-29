@@ -19,10 +19,13 @@ Pirate ship battle: cannons and boats steered with the movement keys (game_ui).
 - 2026-10-29: 18 func_physbox_multiplayer → func_physbox.
 - 2026-10-29: loading credit `maps/mg_pirates.txt` ("Original map by …" / "Ported to CS2 by skink52"); build queue `mg_pirates mg_pirates_3dskybox` then `mg_pirates`.
 - 2026-10-29: moondome shells in the 3D skybox map → `toolsskybox` (`skysplit.py --sky`; a moondome hides the 3D skybox, and pirates' moondome used a sky panorama that was never built, so it was an error material). The main map's sky shells had already been changed in Hammer. Backup: `prefabs+backups\mg_pirates_3dskybox_2026-10-29_moondome.vmap`.
+- 2026-10-29: cannons didn't fire (in-game test): each shot was a template ball teleported to the muzzle and thrown by a physics-only trigger_push for 0.15 s, which stage C had turned into a player push (and CS2's trigger_push doesn't throw physics objects anyway). New `physlaunch` pass: the 18 `*_fire` relays now send `Launch_<pusher>`, the script puts the new ball at the muzzle and gives it 2000 u/s along the barrel. Backup: `prefabs+backups\\mg_pirates_2026-10-29_precannon.vmap`.
+- 2026-10-29: 3D skybox water didn't blend into the map water. `waterblend.py`: both waters are copies of nuke_water (decompiled with `vmatc.py`); the main one fades out over its last 10% to each edge (`materials/pirates/pirates_water.vmat`), the sea bed under the fade band was cut back, the skybox sea bed lowered 1024 world units and the skybox probe volume (its edges crossed the water) grown over the whole water. Backup: `prefabs+backups\\mg_pirates_3dskybox_2026-10-29_prewater.vmap`.
 
 ## Open / to check
 
-- game_ui emulation untested in game: cannons aiming/firing, boats steering, release on +use/jump.
+- Cannons: check the shot speed and arc in game (2000 u/s, `MAX_SPEED` in `tools/physlaunch.py` / `speed` in the io script's LAUNCH table). Aiming and boats otherwise untested.
+- Water edge: fade width is `g_flSkyBoxFadeRange` in `pirates_water.vmat` (0.1). The water textures are the stock compiled ones (`g_t… .vtex`): if the water looks flat, the vmat needs the `Texture…` inputs instead.
 - 18 env_spritetrail (cosmetic trails) left out; a trail particle would replace them.
 - If the 3D skybox doesn't render: untick Editor only on the skybox map's sky_camera.
 - 6 trim faces with an absurd texture scale left as imported.

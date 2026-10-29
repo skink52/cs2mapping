@@ -11,7 +11,7 @@ dead, steam, sounds, soundscripts, doors, overlays, overlayfix, facescale, sky, 
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush
+import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch
 
 CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 
@@ -22,7 +22,7 @@ class Ctx:
         s.out = os.path.join(root, 'out', addon)
         s.log = []; s.todo = []; s.files = {}   # rel path (content-relative, / separated) -> bytes
         s.script = addon + '_io_script'
-        s.push = {}; s.spawn_equips = []; s.equip_items = {}; s.items_js = {}; s.commands = []; s.scores = set(); s.speeds = set(); s.gravities = set(); s.phys = {}; s.soundscript_events = {}; s.src = None; s.cs2v = None; s.need = set(); s.need_paths = set(); s.asset_refs = set(); s.game_files = {}
+        s.push = {}; s.spawn_equips = []; s.equip_items = {}; s.items_js = {}; s.commands = []; s.scores = set(); s.speeds = set(); s.gravities = set(); s.phys = {}; s.launch = {}; s.soundscript_events = {}; s.src = None; s.cs2v = None; s.need = set(); s.need_paths = set(); s.asset_refs = set(); s.game_files = {}
         lp = os.path.join(root, 'content_files_%s.json' % addon)   # listing of the addon content folder on the PC
         s.pc_files = set(x.lower().replace('\\', '/') for x in json.load(open(lp))) if os.path.exists(lp) else set()
     def exists(s, rel):
@@ -226,7 +226,8 @@ def equip_items(m, c):
         c.log.append('item_* taken out of game_player_equip weapon slots (CS2 crashes on map load with them there), given by the io script instead: %s' % '; '.join(moved))
 
 def trigger_push(m, c):
-    ps = m.by_class('trigger_push')
+    # physics-only pushes (flag 8 without 1) don't move players: the `launch` step handles the cannon pattern, the rest stay trigger_push
+    ps = [e for e in m.by_class('trigger_push') if not (int(float(m.P(e, 'spawnflags', '0') or 0)) & 9 == 8)]
     if not ps: return
     for e in ps:
         b = m.bounds(e)
@@ -798,12 +799,13 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'steam', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'facescale', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'probes', 'radar', 'assets', 'matflags']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'steam', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'facescale', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'probes', 'radar', 'assets', 'matflags']
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
     if 'io' in steps and os.path.exists(vmfp): restore_io(m, c, vmfp); dropped_report(m, c, vmfp)
     if 'wall' in steps: wall_toggle(m, c)
     if 'equip' in steps: player_equip(m, c)
+    if 'launch' in steps: physlaunch.run(m, c)       # before push: physics-only launchers (cannons) aren't player pushes
     if 'push' in steps: trigger_push(m, c)
     if 'cmd' in steps: servercommand(m, c)
     if 'roundcfg' in steps: round_setup(m, c)
@@ -854,8 +856,9 @@ def run(addon, root, passes=None):
     only_phys = c.phys and not (c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js)
     if passes and only_phys and os.path.exists(jp):   # follow-up pass: keep the rest of the existing io script
         c.write('maps/scripts/%s_io.js' % addon, physpush.patch_script(open(jp, encoding='utf-8').read(), c.phys))
-    if not (passes and only_phys and os.path.exists(jp)) and (c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js or c.phys):
+    if not (passes and only_phys and os.path.exists(jp)) and (c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js or c.phys or c.launch):
         js = gen_script.build(addon, c.script, c.push, c.commands, c.scores, c.speeds, c.gravities, c.spawn_equips, c.items_js, c.phys)
+        if c.launch: js = physlaunch.patch_script(js, c.launch)
         c.write('maps/scripts/%s_io.js' % addon, js)
         if not any(m.name(e) == c.script for e in m.by_class('point_script')):
             spawn = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]
