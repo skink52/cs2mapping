@@ -564,7 +564,8 @@ fire('OnRoundStart');
 const inputNames = opt('inputs', '') ? opt('inputs').split(',') : null;
 const chat = opt('chat', '').split(',').filter(Boolean);
 const HOLD = [[IN.FORWARD, 0.02, 0.01], [IN.BACK, 0.003, 0.1], [IN.LEFT, 0.01, 0.05], [IN.RIGHT, 0.01, 0.05], [IN.WALK, 0.002, 0.05], [IN.DUCK, 0.003, 0.05],
-  [IN.JUMP, 0.006, 0.3], [IN.USE, 0.004, 0.3], [IN.ATTACK, 0.01, 0.04], [IN.ATTACK2, 0.003, 0.2], [IN.RELOAD, 0.002, 0.4]];
+  [IN.JUMP, 0.006, 0.3], [IN.USE, 0.004, 0.3], [IN.ATTACK, 0.01, 0.04], [IN.ATTACK2, 0.003, 0.2], [IN.RELOAD, 0.002, 0.4],
+  [IN.LOOK_AT_WEAPON, 0.003, 0.15]];
 function attack(p) {
   const w = p.active; if (!w || !w._ok) return;
   if (w._type === WT.KNIFE) fire('OnKnifeAttack', { weapon: w, attackType: 0 });

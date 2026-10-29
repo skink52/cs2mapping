@@ -45,7 +45,7 @@ These are the multiplayer edge cases that have broken script games on real serve
 
 | Scenario | What happens |
 |---|---|
-| `held` | Players hold keys for seconds at a time and tap the rest, as people do, instead of random single keys. Use it for timing. |
+| `held` | Players hold keys for seconds at a time and tap the rest, as people do, instead of random single keys (F / LOOK_AT_WEAPON included). Use it for timing. |
 | `churn` | From 15 s, every 5 s: a join (CS2 kicks a bot and the newcomer reuses its slot; they connect with no team and pick one 2 s later), a team swap or a leaver. |
 | `silent` | Churn with no `OnPlayerConnect`/`OnPlayerDisconnect`: a slot changes hands unannounced and the newcomer is already on a team with a pawn. |
 | `norespawn` | CS2 never respawns killed players (a no-respawn plugin), whatever the script's `mp_respawn_on_death_*` says. |
