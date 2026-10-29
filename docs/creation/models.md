@@ -105,6 +105,13 @@ with the cell size held to about a pixel at the switch distance, then keep the d
 models with no LODs at all (28k-tri petrol cans, 55k-tri tanks) are usually the worst offenders per instance. Barbed wire and other
 geometry thinner than a cell keeps a generated low LOD instead.
 
+LODs cost lightmap space. The baker charts every LOD x material of every `bakelighting 1` instance ("Charting N unique meshes"), and
+each disconnected piece is a chart that needs atlas room and edge-seam memory. Per-face corners in a decimated LOD (every triangle its
+own vertices) make every triangle a chart: mg_trenchwarfare went to 5.6M charts and vrad3 ran out of memory welding seams. So LOD
+vertices must be shared (one normal + UV per cluster and LOD0 chart), and lightmapped props should carry two decimated LODs at most
+(`lod_decimate.py --lightmapped-from <vmap>`); probe-lit props can keep all four. If the bake needs an ever larger
+`lightmapMaxResolution` to pack, count the charts: instances x LODs x materials x pieces.
+
 Seam cracks on a converted body: if the source mesh is split at every seam and the copies get different skin weights (e.g. weights
 transferred per vertex from a donor), re-posing pulls them apart and the model shows see-through specks. Weld the source first; to
 repair a finished DMX, `create/weld_cracks.py` merges the cracked boundary vertices.
