@@ -3,6 +3,12 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-30: non-commercial licence
+
+- All skink52 repos (cs2mapping, hellmatch-cs2, space-racer-cs2, cs2-fighter, trenchwarfare-cs2, cs2mapTTT, cs21.6) moved from MIT / CC BY / none
+  to PolyForm Noncommercial 1.0.0 (code) + CC BY-NC 4.0 (assets), with server use (incl. donation/VIP servers) allowed. Standard in
+  [docs/creation/workshop.md](docs/creation/workshop.md#licence).
+
 ## 2026-10-29: water pass, pirates water material, fix_refs format
 
 - `gibfix.py` writes the refs file as `importfilelist { "file" … }`: modelsfromrefs rejected the bare list ("Expecting importfilelist"), so run_fixrefs imported nothing.

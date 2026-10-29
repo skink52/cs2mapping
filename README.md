@@ -54,7 +54,7 @@ No map content: no BSPs, decompiled VMFs, `.vmap` files, or textures, models and
 
 ## Licence
 
-MIT ([LICENSE](LICENSE)): copy, change and reuse anything here, including the tools, docs and cs_script files, as long as the licence notice goes with it.
+Free for non-commercial use: copy, change, share and run anything here, including the tools, docs and cs_script files, and on game servers (donation/VIP servers are fine). Not to be sold, paywalled or built into a paid product or service. Code and docs: [PolyForm Noncommercial 1.0.0](LICENSE); art, sounds and maps: [CC BY-NC 4.0](LICENSE-CC-BY-NC-4.0.txt). Versions before 30 Oct 2026 were MIT.
 It covers this repo's own work only. Valve's tools and files (the import scripts `scripts/` runs alongside, `create/test/point_script.d.ts`), and the original maps,
 assets and sounds credited in each port, belong to their owners.
 

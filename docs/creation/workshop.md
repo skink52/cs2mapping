@@ -43,6 +43,19 @@ Practical rules used for every original addon (not legal advice); checklist temp
 - Fan-ripped models (e.g. a weapon mesh named "BF1 All weapons") are a DMCA risk: replace them with CC-licensed or generated ones before publishing.
 - Synthesised sound and music avoid copyright claims on YouTube trailers too.
 
+## Licence
+
+Standard for every skink52 repo (from 30 Oct 2026): free for non-commercial use, no selling or paid products/services.
+- `LICENSE`: short header (what's covered, extra permission, what's excluded) + PolyForm Noncommercial 1.0.0 full text (code, scripts, tools, docs).
+  Keep the `Required Notice: Copyright (c) 2026 skink52 (https://github.com/skink52)` line.
+- `LICENSE-CC-BY-NC-4.0.txt`: full CC BY-NC 4.0 text (art, models, textures, sounds, music, maps). Attribution "<project> by skink52".
+- Extra permission in the header: game-server use is allowed, including donation/VIP servers, as long as the work itself isn't sold or paywalled.
+- Third-party parts keep their own licence and are listed as "Not covered" (Freedoom BSD in Hellmatch, vendored MIT code, CC BY models, Valve files).
+  Don't relicense GPL-derived code as non-commercial (GPL forbids extra restrictions); keep it GPL or reimplement it.
+- Build scripts copy both licence files into the addon (`out/game`) next to CREDITS.
+- Earlier MIT / CC BY releases stay under those terms; only new versions change. Contributors' code needs their OK before relicensing
+  (ideas reimplemented from Ninja-Chris's cs2-slop-porting are fresh code, so fine).
+
 Examples: the bomb-arena game (original tilesets and chibi T/CT characters instead of GPL BomberClone art, title without "Bomberman"),
 Space Racer (`docs/WORKSHOP_COMPLIANCE.md` in its repo), mg_deku_tree (no ROM assets, no fan models of the game's characters).
 

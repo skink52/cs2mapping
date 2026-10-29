@@ -38,4 +38,5 @@ in the same session.
 - When an original addon project learns something reusable (a model method, HUD trick, engine limit), add it to the creation docs and, if it's a tool,
   a project-neutral copy in `create/`.
 - Commit messages say what changed and which map or pass it was for.
+- New repos get the standard non-commercial licence files ([docs/creation/workshop.md](docs/creation/workshop.md#licence)).
 - Hammer must be closed while editing a map on the PC. Back up the `.vmap` before editing it, and send only changed files.
