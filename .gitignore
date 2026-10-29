@@ -33,3 +33,8 @@ __pycache__/
 out/
 prep_out/
 logs/*.log
+
+# workspace-only (Valve template, BSPSource extraction)
+tools/addon_template/
+tools/bspsrc.sh
+tools/jimg/
