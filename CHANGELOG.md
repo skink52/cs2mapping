@@ -3,6 +3,10 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-30: mg_yolo_multigames soccer revert
+
+- Soccer/volleyball balls back to `prop_physics_override` with the script's run-into push; FootPushOn and the volleyball serve-spot change removed. Other 29 Oct fixes kept.
+
 ## 2026-10-30: probedetail (ttt_minecraft)
 
 - Stage D `probedetail`: finer probe volumes nested over walkable floors (32 outdoors, 24 indoors) above the probefill tiles; priorities -1/0/1/2. ttt_minecraft: 117 outdoor + 72 indoor volumes (~450k probes).
