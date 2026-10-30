@@ -55,7 +55,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `gravity.py` | `gravity` | trigger_gravity → trigger_multiple + script `Gravity_<scale>`; stage D patches the existing `_io.js` |
 | `assets.py` | `alpha`, `assets` | Missing materials rebuilt from CS:GO's VPK (also stock CS2 stubs listed in `maps/<addon>_stub_materials.txt`), water → `liquids/nuke_water`, closest stock CS2 material otherwise; alpha-test/translucent masks |
 | `soundscripts.py` | `soundscripts` | Source 1 soundscript names used by entities / door noises → same-named soundevents (map soundscripts, then CS:GO's manifest) |
-| `droppedio.py` | `droppedio` | Report: VMF outputs missing from the finished vmap (LOSS / SPECIAL / GONE; pipeline-handled ones listed apart) → `maps/<addon>_dropped_io.txt` |
+| `droppedio.py` | `droppedio` | Report: VMF outputs missing from the finished vmap (LOSS / SPECIAL / GONE; pipeline- and cs2mapTTT-handled ones listed apart) → `maps/<addon>_dropped_io.txt` |
 | `ovlquad.py` | `ovlquads` | Static overlays that land only on one brush entity (func_breakable, door…) → translucent quad parented to it (`<material>_quad.vmat`); mixed/slanted ones stay overlays (TO CHECK) |
 | `steam.py` | `steam` | env_steam → info_particle_system + generated `particles/port_steam/*.vpcf` (heat wave = refracting sprite) |
 | `gameui.py` | `gameui` (D) | game_ui → key poll in the io script (`GameUIOn_`/`GameUIOff_` inputs fire the original outputs); game_ui entities removed |
