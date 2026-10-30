@@ -885,7 +885,8 @@ def run(addon, root, passes=None):
     if 'vis' in steps: visfit.run(m, c)                  # hints fitted to the play space + sky shells out of vis
     elif 'skyvis' in steps: skyvis.run(m, c)
     if 'beams' in steps: beammod.run(m, c)
-    if ('lightbright' in steps or 'lights' in steps) and os.path.exists(vmfp): lighting.fix_brightness(m, c, vmfp)   # real values, not 0 (= 265, ttt_minecraft)
+    if ('relight' in steps or 'lights' in steps) and 'lightbright' not in steps and os.path.exists(vmfp): lighting.relight(m, c, vmfp)   # every light rebuilt from the VMF
+    elif 'lightbright' in steps and os.path.exists(vmfp): lighting.fix_brightness(m, c, vmfp)   # keep the imported lights, fix values in place
     elif 'lights' in steps: lighting.fix_nan_brightness(m, c)
     if 'lights' in steps: lighting.run(m, c)
     if 'alpha' in steps and c.src: assets.fix_alpha(m, c)

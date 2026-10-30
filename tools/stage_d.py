@@ -3,7 +3,8 @@
 python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
         overlayfix (rebuild placeholder overlay quads), overlaydepth (same + projection depth 8 on every overlay), facescale, matflags,
         probes (report static func_breakable/func_brush outside probe volumes), probecover (add volumes for them),
-        lightbright (rebuild light brightness from the VMF: the importer's brightness = nan / too dim), equipitems (item_* out of equip slots),
+        lightbright (rebuild light brightness from the VMF: the importer's brightness = nan / too dim), relight (delete every light and rebuild it
+        from the VMF; run before lights), equipitems (item_* out of equip slots),
         steam (env_steam -> particles), soundscripts (Source 1 soundscript names -> same-named soundevents), physpush (players push physics props by mass),
         gameui (game_ui -> key polling in the io script), physlaunch (physics-only trigger_push cannons -> script launch),
         renderamt (renderamt 255 where rendermode is Normal), ventlight (stationary lights in vents behind func_breakable grates),
@@ -36,7 +37,8 @@ def run(addon, root, passes):
     if 'beams' in passes: beams.run(m, c)
     if 'skyvis' in passes: skyvis.run(m, c)
     if 'visfit' in passes or 'visfit_lower' in passes or 'visfit_lean' in passes: visfit.run(m, c, all_lower='visfit_lower' in passes, lean='visfit_lean' in passes)
-    if 'lightbright' in passes: lighting.fix_brightness(m, c, vmfp)
+    if 'relight' in passes: lighting.relight(m, c, vmfp)
+    elif 'lightbright' in passes: lighting.fix_brightness(m, c, vmfp)
     if 'equipitems' in passes:
         stage_c.equip_items(m, c)
         if c.items_js:

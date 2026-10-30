@@ -9,6 +9,10 @@ Idea from github.com/Ninja-Chris/cs2-slop-porting (env_steam particles), written
 """
 import os, re, io, math
 
+# Source 1 keeps the heat-wave distortion in sprites/heatwave.vmt ($refractamount -0.007 in CS:GO): near-invisible, as in the original.
+# 0.25 (the stock CS2 reference particle) was far too strong. Finding from cs2-slop-porting 2026-10-29h (MIT).
+HEAT_REFRACT = -0.007
+
 HDR = '<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:vpcf1:version{d47d07e6-072c-49cb-9718-5bfd8d6c3d21} -->\n'
 CLASSES = ('env_steam', 'env_steamjet')
 KEYS = ('Speed', 'SpreadSpeed', 'StartSize', 'EndSize', 'Rate', 'JetLength', 'rollspeed', 'renderamt', 'rendercolor', 'spawnflags', 'type', 'InitialState')
@@ -39,7 +43,7 @@ def vpcf(kv, tex):
     emissive = int(_f(kv, 'spawnflags')) & 1; heat = int(_f(kv, 'type')) == 1
     r, g, b = (255, 255, 255) if heat else (_col(kv) if emissive else UNLIT)
     if heat:
-        rend = '\t\t\tm_bRefract = true\n\t\t\tm_flRefractAmount = 0.25\n\t\t\tm_nRefractBlurRadius = 1\n'
+        rend = '\t\t\tm_bRefract = true\n\t\t\tm_flRefractAmount = %g\n' % HEAT_REFRACT + '\t\t\tm_nRefractBlurRadius = 1\n'
         roll = 120.0
     else:
         rend = '\t\t\tm_flSelfIllumAmount = 1.0\n' if emissive else ''

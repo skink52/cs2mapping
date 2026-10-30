@@ -150,6 +150,11 @@ def run(m, c, vs=32.0):
                 overlap[-len(pts_r):] += (np.linalg.norm(pts_r - p, axis=1) < rg)
     unlit = [r for r in play if r and r not in exterior and r not in by_region and sizes[r] >= 8]     # sealed or open to sky
     tmpl = next(iter(m.by_class('light_omni2')), None)
+    def _leg(e):
+        try: v = float(m.P(e, 'brightness_legacy', '') or 'nan'); return v if math.isfinite(v) and v > 0 else None
+        except ValueError: return None
+    _legs = sorted(x for x in (_leg(e) for e in m.by_class('light_omni2')) if x)
+    med_leg = _legs[len(_legs) // 2] if _legs else None     # added lights get the map's median brightness, not whatever the first light had
     added = 0
     for r in unlit:
         idx = np.argwhere(lab == r)
@@ -159,7 +164,11 @@ def run(m, c, vs=32.0):
         rg = float(np.linalg.norm((idx - v) * vs, axis=1).max()) + 64
         while rg > 128 and (overlap[np.linalg.norm(all_samples - p, axis=1) < rg] >= MAX_OVERLAP).any(): rg *= 0.85
         props = {a[0].decode(): a[2].decode() for a in m.props(tmpl)['attrs'] if a[0] not in (b'classname', b'targetname')} if tmpl else {}
-        props.update({'directlight': '3', 'range': '%.0f' % rg, 'enabled': '1', 'color': '255 255 255'})
+        props.update({'directlight': '3', 'range': '%.0f' % rg, 'enabled': '1', 'color': '255 255 255', 'colormode': '0', 'castshadows': '0',
+                      'light_style': '', 'targetname': ''})
+        if med_leg: props.update({'brightness_legacy': '%g' % round(med_leg, 6), 'brightness': '%g' % round(math.log2(med_leg), 6),
+                                  'brightness_lumens': '%d' % round(1000 * med_leg), 'brightness_candelas': '%d' % round(1000 * med_leg / (4 * math.pi)),
+                                  'brightness_nits': '%d' % round(9816 * med_leg)})
         m.new_entity('light_omni2', p, props); added += 1
         overlap += (np.linalg.norm(all_samples - p, axis=1) < rg)
     if added: c.log.append('added %d stationary light_omni2 to sealed rooms with spawns / teleport destinations that had no light at all' % added)
@@ -261,6 +270,35 @@ def falloff_ratio(e):
     return (attn(100.0) / attn(d)) / (1e4 / (d * d))
 
 
+# Source 1 light style presets (a = dark, m = normal, z = double); from cs2-slop-porting rebuild_lighting.py (MIT)
+LIGHT_STYLES = {1: 'mmnmmommommnonmmonqnmmo', 2: 'abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcba', 3: 'mmmmmaaaaammmmmaaaaaabcdefgabcdefg',
+                4: 'mamamamamama', 5: 'jklmnopqrstuvwxyzyxwvutsrqponmlkj', 6: 'nmonqnmomnmomomno', 7: 'mmmaaaabcdefgmmmmaaaammmaamm',
+                8: 'mmmaaammmaaammmabcdefaaaammmmabcdefmmmaaaa', 9: 'aaaaaaaazzzzzzzz', 10: 'mmamammmmammamamaaamammma',
+                11: 'abcdefghijklmnopqrrqponmlkjihgfedcba'}
+
+
+def vmf_light(e):
+    """VMF light -> (r, g, b normalised to 255, effective intensity), using the HDR values CS2 renders: _lightHDR "-1 -1 -1 s" means
+    _light times s, otherwise it replaces colour and intensity; times _lightscaleHDR; times (max rgb/255)^2.2 because the colour is normalised."""
+    def fl(v, d):
+        try: return float(v)
+        except (TypeError, ValueError): return d
+    lv = [fl(x, 255.0) for x in (e.get('_light') or '255 255 255 200').split()[:4]]
+    if len(lv) == 1: lv = lv * 3
+    r, g, b = (lv + [255.0] * 3)[:3]
+    inten = lv[3] if len(lv) > 3 else 255.0
+    hdr = ([fl(x, -1.0) for x in (e.get('_lightHDR') or '-1 -1 -1 1').split()] + [-1.0, -1.0, -1.0, 1.0])[:4]
+    if min(hdr[:3]) >= 0:
+        r, g, b = hdr[:3]; inten = hdr[3] if hdr[3] > 0 else inten
+    elif hdr[3] > 0:
+        inten *= hdr[3]
+    sc = fl(e.get('_lightscaleHDR'), 1.0)
+    inten *= sc if sc > 0 else 1.0
+    mx = max(r, g, b)
+    if mx <= 0: return 255.0, 255.0, 255.0, 0.0
+    return r * 255.0 / mx, g * 255.0 / mx, b * 255.0 / mx, inten * (mx / 255.0) ** 2.2
+
+
 def fix_brightness(m, c, vmfpath):
     """Valve's importer stores log2(intensity/265) in brightness_legacy and then log2 of that in brightness, so every CS:GO light
     dimmer than ~265 (3-value _light, linear attenuation, most maps) gets brightness = nan, which crashes the server on map load,
@@ -276,19 +314,28 @@ def fix_brightness(m, c, vmfpath):
     if not os.path.exists(vmfpath): return
     root = vmfmod.parse(open(vmfpath, encoding='utf-8', errors='replace').read())
     src = []
+    targeted = {(cn.get(k) or '').split(',')[0].split('\x1b')[0].lower() for e in root.ch if e.name == 'entity'
+                for cn in e.ch if cn.name == 'connections' for k, _ in cn.kv}
+    targeted.discard('')
+    sunspread = 0.0
     for e in root.ch:
         cls = (e.get('classname') or '').lower()
+        if e.name == 'entity' and cls == 'light_environment':
+            try: sunspread = float(e.get('SunSpreadAngle') or 0)
+            except ValueError: pass
         if e.name != 'entity' or cls not in ('light', 'light_spot') or not e.get('origin'): continue
-        lv = [float(x) for x in (e.get('_light') or '255 255 255 200').split()[:4]]
-        if len(lv) == 1: lv = lv * 3
-        sc = lv[3] if len(lv) > 3 else 255.0
-        mx = max(lv[:3]) or 1.0
-        ieff = sc * (mx / 255.0) ** 2.2
+        r, g, b, ieff = vmf_light(e)
         ratio = falloff_ratio(e)
-        src.append((cls, [float(x) for x in e.get('origin').split()], ieff * ratio, ratio != 1.0))
+        try: style = int(float(e.get('style') or 0))
+        except ValueError: style = 0
+        try: dark = int(float(e.get('spawnflags') or 0)) & 1
+        except ValueError: dark = 0
+        name = (e.get('targetname') or '').lower()
+        src.append((cls, [float(x) for x in e.get('origin').split()], ieff * ratio, ratio != 1.0,
+                    '%d %d %d' % (round(r), round(g), round(b)), style, dark, bool(name and name in targeted)))
     lights = [(e, m.origin(e)) for e in m.by_class('light_omni2', 'light_barn')]
-    used = set(); fixed = nan = nspecial = 0
-    for cls, o, ieff, special in src:
+    used = set(); fixed = nan = nspecial = ndyn = nstyle = 0
+    for cls, o, ieff, special, col, style, dark, switched in src:
         want = 'light_omni2' if cls == 'light' else 'light_barn'
         cand = [(sum((a - b) ** 2 for a, b in zip(p, o)), e) for e, p in lights if m.cls(e) == want and e not in used]
         if not cand: continue
@@ -303,6 +350,11 @@ def fix_brightness(m, c, vmfpath):
         old_leg = num('brightness_legacy', 1.0)
         leg = max(ieff / 265.0, 1e-4)
         m.setp(e, 'brightness_legacy', '%g' % round(leg, 6)); m.setp(e, 'brightness', '%g' % round(math.log2(leg), 6))
+        m.setp(e, 'color', col); m.setp(e, 'colormode', '0')     # the importer writes a 6600 K white (colour temperature)
+        if dark: m.setp(e, 'enabled', '0')
+        if style in LIGHT_STYLES: m.setp(e, 'light_style', LIGHT_STYLES[style]); nstyle += 1
+        if (dark or switched or style) and m.P(e, 'directlight') not in ('2', '3'):
+            m.setp(e, 'directlight', '2'); ndyn += 1             # a Static (baked) light cannot be switched or flicker
         if special:
             m.setp(e, 'range', '%.0f' % max(256.0, RANGE_Q * math.sqrt(leg))); nspecial += 1
         if m.cls(e) == 'light_omni2':
@@ -322,3 +374,115 @@ def fix_brightness(m, c, vmfpath):
     c.log.append('light brightness rebuilt from the CS:GO _light values for %d lights (%d had brightness = nan from the importer, which crashes CS2 on map load)%s%s'
                  % (fixed, nan, '; %d unmatched lights set to brightness 0' % len(left) if left else '',
                     '; %d lights with _fifty_percent_distance / linear falloff matched to CS:GO at %d units, range %d x sqrt(legacy)' % (nspecial, FIT_DIST, RANGE_Q) if nspecial else ''))
+    if ndyn: c.log.append('%d switched / start-dark / styled lights set to Dynamic (directlight 2)' % ndyn)
+    if nstyle: c.todo.append('%d lights got a CS:GO light style pattern in light_style: check they flicker in game' % nstyle)
+    if sunspread > 0:
+        for e in m.by_class('light_environment'):
+            try: cur = float(m.P(e, 'angulardiameter', '0') or 0)
+            except ValueError: cur = 0.0
+            if cur == 0: m.setp(e, 'angulardiameter', '%g' % sunspread)
+
+
+# ------------------------------------------------------------------ relight: delete every light and rebuild it from the VMF
+# Hammer-saved light_omni2 / light_barn properties (from cs2-slop-porting rebuild_lighting.py, MIT); everything not set from the VMF
+_LIGHT_COMMON = {
+    'vscripts': '', 'parentname': '', 'parentAttachmentName': '', 'useLocalOffset': '0', 'local.origin': '', 'local.angles': '', 'local.scales': '',
+    'clientSideEntity': '1', 'brightness_units': '1', 'enabled': '1', 'directlight': '1', 'colormode': '0', 'colortemperature': '6600',
+    'skirt': '0', 'bouncelight': '1', 'bouncescale': '1.0', 'lightcookie': '', 'bakespeculartocubemaps': '0', 'minroughness': '0', 'castshadows': '2',
+    'shadowmapsize': '-1', 'shadowpriority': '-1', 'pvs_modify_entity': '0', 'shadowfade_size_start': '.10', 'shadowfade_size_end': '.05',
+    'brightnessscale': '1.0', 'rendertocubemaps': '1', 'fade_size_start': '.05', 'fade_size_end': '.025', 'light_style': '',
+    'light_style_output_event0': '', 'light_style_output_event1': '', 'light_style_output_event2': '', 'light_style_output_event3': '',
+    'light_style_target0': '', 'light_style_target1': '', 'light_style_target2': '', 'light_style_target3': '',
+    'bakespeculartocubemaps_scale': '1.0', 'transmit_always': '0'}
+OMNI_DEFAULTS = dict(_LIGHT_COMMON, shape='0', size_params='2.0 24.0 0.15', outer_angle='180.0', inner_angle='180.0', showlight='0')
+BARN_DEFAULTS = dict(_LIGHT_COMMON, skirt_near='0', luminaire_shape='1', luminaire_size='4', luminaire_anisotropy='0', shape='1', shear='0.0 0.0',
+                     bakespeculartocubemaps_size='6.0 6.0 0.0', forceshadowsenabled='0')
+DELETE_LIGHTS = ('light_omni2', 'light_barn', 'light_rect', 'light_capsule', 'light_omni', 'light_ortho', 'light_spot', 'light')
+OMNI_RANGE_K = 3.3856e6      # range^2 = legacy x K for a quadratic light with no _distance (fits the importer: I=200 -> 1598)
+
+
+def _cone_solid_angle(outer_deg):
+    t = math.tan(math.radians(min(max(outer_deg, 1.0), 89.0))); s2 = t * t / (1.0 + t * t)
+    return 4.0 * math.asin(min(s2, 1.0))
+
+
+def relight(m, c, vmfpath, scale=1.0):
+    """Stage D pass `relight`: the importer's lights are wrong in several ways at once (nan brightness, 6600 K white, HDR ignored, switched lights
+    Static, spot cones approximated), so throw every point/spot light away and build each one again from the VMF: light -> light_omni2,
+    light_spot -> light_barn (cone -> size/softness, pitch / target entity -> direction), real colour, HDR intensity with our CS:GO falloff fit,
+    range from _zero_percent_distance / _distance, start-dark / switched / styled lights Dynamic. light_environment is kept. Lights the stationary
+    pass or ventlight added are deleted too, so run `lights` (and `ventlight` if used) afterwards. Method from cs2-slop-porting rebuild_lighting.py (MIT)."""
+    import vmf as vmfmod
+    if not os.path.exists(vmfpath):
+        c.todo.append('relight: no VMF at %s - lights left as imported' % vmfpath); return 0
+    root = vmfmod.parse(open(vmfpath, encoding='utf-8', errors='replace').read())
+    ents = [e for e in root.ch if e.name == 'entity']
+    targeted = {(cn.get(k) or '').split(',')[0].split('\x1b')[0].lower() for e in ents for cn in e.ch if cn.name == 'connections' for k, _ in cn.kv}
+    targeted.discard('')
+    by_name = {(e.get('targetname') or '').lower(): e for e in ents if e.get('targetname')}
+    gone = 0
+    for e in [e for e in m.entities() if m.cls(e) in DELETE_LIGHTS]:
+        m.remove_node(e); gone += 1
+    def fv(s, n=3):
+        try: return ([float(x) for x in (s or '').split()] + [0.0] * n)[:n]
+        except ValueError: return [0.0] * n
+    def fl(s, d=0.0):
+        try: return float(s)
+        except (TypeError, ValueError): return d
+    n_omni = n_barn = n_dyn = n_style = n_tgt = n_skip = n_fit = 0
+    for e in ents:
+        cls = (e.get('classname') or '').lower()
+        if cls not in ('light', 'light_spot') or not e.get('origin'): continue
+        o = fv(e.get('origin'))
+        r, g, b, inten = vmf_light(e)
+        if inten <= 0: n_skip += 1; continue
+        ratio = falloff_ratio(e)
+        leg = max(inten * ratio / 265.0 * scale, 1e-4)
+        zero, dist = fl(e.get('_zero_percent_distance')), fl(e.get('_distance'))
+        if ratio != 1.0: rng = max(256.0, RANGE_Q * math.sqrt(leg)); n_fit += 1
+        elif zero > 0: rng = zero
+        elif dist > 0: rng = dist
+        else: rng = math.sqrt(leg * OMNI_RANGE_K)
+        name = e.get('targetname') or ''
+        dark = int(fl(e.get('spawnflags'))) & 1
+        style = int(fl(e.get('style')))
+        switched = bool(name and name.lower() in targeted)
+        p = dict(OMNI_DEFAULTS if cls == 'light' else BARN_DEFAULTS)
+        p.update({'targetname': name, 'parentname': e.get('parentname') or '', 'color': '%d %d %d' % (round(r), round(g), round(b)),
+                  'range': '%g' % round(rng, 1), 'brightness_legacy': '%g' % round(leg, 6), 'brightness': '%g' % round(math.log2(leg), 6),
+                  'enabled': '0' if dark else '1'})
+        ang = (0.0, 0.0, 0.0)
+        if cls == 'light':
+            lum = 1000.0 * leg
+            p.update({'brightness_lumens': '%d' % max(1, round(lum)), 'brightness_candelas': '%d' % max(1, round(lum / (4 * math.pi))),
+                      'brightness_nits': '%d' % max(1, round(9816 * leg))})
+            n_omni += 1
+        else:
+            outer = min(max(fl(e.get('_cone'), 45.0), 1.0), 89.0); inner = fl(e.get('_inner_cone'), 30.0)
+            t_out = math.tan(math.radians(outer)); soft = 1.0 - math.tan(math.radians(min(inner, outer))) / t_out
+            p.update({'brightness_lumens': '%d' % max(1, round(leg * 1000.0 / (4 * math.pi) * _cone_solid_angle(outer))),
+                      'size_params': '1.000000 1.000000 %.6f' % t_out, 'soft_x': '%.6f' % max(0.0, min(1.0, soft)), 'soft_y': '%.6f' % max(0.0, min(1.0, soft))})
+            a = fv(e.get('angles'))
+            pitch = -fl(e.get('pitch')) if (e.get('pitch') or '') != '' else a[0]     # the pitch key is negative-down, angles positive-down
+            yaw, roll = a[1], a[2]
+            t = by_name.get((e.get('target') or '').lower())
+            if t is not None and t.get('origin'):
+                d = [x - y for x, y in zip(fv(t.get('origin')), o)]
+                if any(d):
+                    pitch = math.degrees(math.atan2(-d[2], math.hypot(d[0], d[1]))); yaw = math.degrees(math.atan2(d[1], d[0])); n_tgt += 1
+            ang = (pitch, yaw, roll); n_barn += 1
+        if style in LIGHT_STYLES: p['light_style'] = LIGHT_STYLES[style]; n_style += 1
+        if dark or switched or style: p['directlight'] = '2'; n_dyn += 1
+        m.new_entity('light_omni2' if cls == 'light' else 'light_barn', o, p, angles=ang)
+    for e in ents:
+        if (e.get('classname') or '').lower() == 'light_environment' and fl(e.get('SunSpreadAngle')) > 0:
+            for le in m.by_class('light_environment'):
+                if fl(m.P(le, 'angulardiameter', '0')) == 0: m.setp(le, 'angulardiameter', '%g' % fl(e.get('SunSpreadAngle')))
+    c.log.append('relight: deleted %d imported lights; rebuilt from the VMF %d light -> light_omni2, %d light_spot -> light_barn (colour, HDR intensity, '
+                 'range, cone%s); %d Dynamic (start dark / switched / style)%s%s%s'
+                 % (gone, n_omni, n_barn, ', %d aimed at their target' % n_tgt if n_tgt else '', n_dyn,
+                    '; %d with linear / fifty-percent falloff fitted to CS:GO at %d u' % (n_fit, FIT_DIST) if n_fit else '',
+                    '; %d zero-intensity lights skipped' % n_skip if n_skip else '', '; all scaled by %g' % scale if scale != 1.0 else ''))
+    if n_style: c.todo.append('relight: %d lights got a CS:GO light style pattern in light_style - check they flicker in game' % n_style)
+    c.todo.append('relight: brightness scale (1000 lumens per 265 _light) is not checked against a real CS2 bake - compare a few rooms with CS:GO')
+    return n_omni + n_barn

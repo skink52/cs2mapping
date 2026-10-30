@@ -84,7 +84,7 @@ and `physpush` when named).
 - **env_steam** (`steam`, `tools/steam.py`): doesn't exist in CS2. Each becomes an `info_particle_system` playing `particles/port_steam/<values>.vpcf`, built
   from its keyvalues the way Source 1 drew it: lifetime JetLength/Speed, Speed along the entity's forward axis with ±SpreadSpeed sideways,
   StartSize→EndSize, ±rollspeed spin, fade in/out at renderamt alpha, rendercolor when Emissive (self-illuminated), light grey otherwise. Type 1 (heat
-  wave) is a refracting sprite with a generated soft normal map. InitialState → `start_active`; TurnOn/TurnOff → Start/Stop (Toggle and the value inputs
+  wave) is a refracting sprite with a generated soft normal map, refract amount -0.007 (CS:GO `sprites/heatwave.vmt`; 0.25 was far too strong). InitialState → `start_active`; TurnOn/TurnOff → Start/Stop (Toggle and the value inputs
   are flagged). env_steams the importer dropped are added back from the VMF. Untested in game: check direction and density on the first port that has one.
 - **Physics prop pushing** (`physpush`, opt-in, `tools/physpush.py`): every prop_physics(_multiplayer/_override) gets a name and a mass (CS:GO `.phy` mass
   x massScale, 50 if no .phy) and the io script pushes them from player contact: speed into the face x 20/(20+mass), min 10 u/s, some spin off-centre;
@@ -131,16 +131,24 @@ and `physpush` when named).
   Enable plus a Disable after the beam's `life`. Stage C adds no damage: a damaging laser with no trigger_hurt along it is flagged; then run `laserhurt.py`
   (below).
 - **Probe coverage** (`probes`). Static `func_breakable` and `func_brush` meshes (not parented to a door, mover, train, rotator or physics object) are lit from light probes, not lightmaps: the **whole mesh** must sit inside an `env_combined_light_probe_volume`, or its lighting is wrong (skink52, 27 Oct 2026). Stage C `probes` lists any that aren't; `stage_d.py … probecover` adds a volume around each uncovered group.
-- **Light brightness** (`lights`, with the VMF staged): every light's brightness is rebuilt from its CS:GO `_light` value (`lighting.fix_brightness`,
-  same as stage D `lightbright`). Before 30 Oct 2026 stage C only set the importer's `nan` values to 0 (= legacy 1, a 265 `_light`), so every light
+- **Relight** (`lights`, with the VMF staged; since 30 Oct 2026, from cs2-slop-porting `rebuild_lighting.py`, MIT): every imported point/spot light is
+  deleted and rebuilt from the VMF (`lighting.relight`, also stage D `relight`): light → light_omni2, light_spot → light_barn (`_cone`/`_inner_cone` →
+  size and softness, `pitch` or the `target` entity → direction), real colour with `colormode 0`, `_lightHDR`/`_lightscaleHDR` intensity with our
+  CS:GO falloff fit, range from `_zero_percent_distance` / `_distance`, start-dark / switched / styled lights Dynamic, style pattern → `light_style`,
+  `SunSpreadAngle` → `angulardiameter`; light_environment kept. Run on a map already hand-lit, it throws those edits away: use `lightbright` instead
+  (stage C step or stage D pass), which keeps the imported lights and fixes their values in place (`lighting.fix_brightness`). Before 30 Oct 2026 stage C only set the importer's `nan` values to 0 (= legacy 1, a 265 `_light`), so every light
   in a map came out the same strength (ttt_minecraft's 50-200 lights all at 265).
+  Since 30 Oct 2026 it also uses `_lightHDR` / `_lightscaleHDR` (what CS2 renders), restores the real colour (`color`, `colormode 0`; the importer
+  writes a 6600 K white), sets start-dark lights (spawnflags 1) to `enabled 0`, makes lights that are switched by an output, start dark or have a
+  `style` Dynamic (`directlight 2`; a Static light can't be switched), copies the Source 1 style pattern into `light_style` (CS2 flicker unverified),
+  and copies light_environment `SunSpreadAngle` to `angulardiameter` when that is 0. From cs2-slop-porting `rebuild_lighting.py` (MIT).
 - **Stationary lights** (`lights`). CS:GO lights import as Static, which leaves weapons and players black. The world is voxelised and flood-filled into
   sealed compartments. Each compartment gets at least one light switched to `directlight 3` (Stationary; in the FGD 3 = Stationary and 2 = fully Dynamic),
   smallest rooms first. More lights are added only to cover the rest of a room. Ranges are trimmed so no spot is inside more than 4 stationary lights. A
   compartment open to sky (or, on a map with no sky shell, the outdoor space players are in) gets at least one stationary light too, on top of
   light_environment (skink52's rule, 29 Oct 2026), topped up to 3; and light_environment itself goes from Static to Stationary (`directlight 3`), since
   the importer's Static sun lights nothing that moves (mg_jahoukarail_2015 looked unlit). A sealed room with spawns or teleport destinations but no light gets a new
-  stationary light_omni2. (Maps still too dark afterwards: the stage D `daylight` pass, below.)
+  stationary light_omni2 (map median brightness, no shadows, since 30 Oct 2026; it used to copy the first light's). (Maps still too dark afterwards: the stage D `daylight` pass, below.)
 - **Alpha** (`alpha`). Materials that were $alphatest/$translucent in CS:GO but imported opaque get F_ALPHA_TEST/F_TRANSLUCENT with a mask from the texture alpha.
 - **Radar** (`radar`). Rendered from the geometry. Only floors you can stand on are drawn (the space above them has lights, spawns or teleports, or is an
   enclosed non-sky room; tested at the centroid and halfway to each vertex, since one point missed faces with a prop on it and left wedge-shaped holes). Each
@@ -200,7 +208,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
-- `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
+- `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, relight, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
   equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
@@ -227,6 +235,9 @@ All of these keep your Hammer edits and append to the cleanup log. Exact usage l
   post_processing_volume (`lighting/postprocessing/postprocess_filmic_underwater.vpost`, copied from ba_jail_seaside; master 0, exposure 0–0.3, fade 0.1,
   spawnflags 4097, toolsnodraw) from 16 u under the bottom to **80 u below the surface** (the volume tests the player's feet). A master
   post_processing_volume (`filmic_default.vpost`, master 1) is added if the map has none.
+  Water at least 48 u deep also gets a sparse grid of dim, unshadowed light_omni2 (map median brightness clamped to 60–250 lumens, range 512,
+  ≤16 per volume, none where an existing light already reaches): Source 1 water was lit by the lightmap, CS2 water needs lights. Heuristic,
+  listed in TO CHECK. From cs2-slop-porting `rebuild_lighting.py` (MIT).
 - `doorsolid` (stage D): func_door / func_door_rotating flagged "Non-solid to Player" (spawnflags 4) are solid in CS2. The door's meshes move to a
   never-solid func_brush `<door>_vis` parented to the door, the door keeps a 2-unit nodraw cube on its hinge, so it looks and moves the same but
   blocks nothing, as in CS:GO (ttt_minecraft's hut doors: the open panel left 32 units, too narrow to pass). Double doors sharing a name are split
