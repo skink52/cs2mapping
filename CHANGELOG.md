@@ -3,6 +3,14 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-30: cs2-slop-porting 2.0 features (lighting rebuild, overlay quads, dropped IO)
+
+- Ninja-Chris's repo is now MIT (Ninja-Chris + skink52). New since 29 Oct: `vmap_asset_slop_import.py` 2.0 (2026-10-29h) and `rebuild_lighting.py`.
+- **`relight`** (stage C `lights` default, stage D pass): every imported light deleted and rebuilt from the VMF: colour (`colormode 0`; importer wrote 6600 K white), `_lightHDR`/`_lightscaleHDR`, spot cone/softness and target aim, range, start-dark/switched/styled → Dynamic, `light_style`, `SunSpreadAngle`. `lightbright` gets the same fixes in place (keeps hand edits). Stationary pass's added lights use the map median brightness, no shadows.
+- **`water`**: underwater lights in water volumes no light reaches. **`steam`**: heat-wave refract -0.007 (CS:GO `sprites/heatwave.vmt`; 0.25 was far too strong).
+- **`ovlquads`**: overlays on one brush entity → parented translucent quads. **`droppedio`**: report of VMF outputs missing from the finished vmap.
+- Synthetic tests only; check the first real port's lighting bake, water and entity decals in Hammer/game.
+
 ## 2026-10-30: mg_yolo_multigames soccer revert
 
 - Soccer/volleyball balls back to `prop_physics_override` with the script's run-into push; FootPushOn removed; volleyballs wait at the serve spot (start and after each point) until knifed/shot. Other 29 Oct fixes kept.

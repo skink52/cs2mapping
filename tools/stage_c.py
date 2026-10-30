@@ -6,12 +6,12 @@ python3 stage_c.py <addon> <local_root>
 Writes changed files to <local_root>/out/<addon>/... (content), <local_root>/out/<addon>_game/... (game-side files)
 and <local_root>/out/<addon>_result.json (log, TO CHECK lines, file list, CS:GO archives still needed).
 Step keys, in run order (run_pass.py takes any of them): merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity,
-dead, steam, sounds, soundscripts, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags, droppedio
+dead, steam, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags, droppedio
 (+ overlaydepth, physpush when asked). daylight is a stage_d.py pass only.
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch, droppedio
+import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch, droppedio, ovlquad
 
 CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 
@@ -852,7 +852,7 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'renderamt', 'steam', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'facescale', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'probes', 'radar', 'assets', 'matflags', 'droppedio']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'renderamt', 'steam', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'probes', 'radar', 'assets', 'matflags', 'droppedio']
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
     if 'io' in steps and os.path.exists(vmfp): restore_io(m, c, vmfp); dropped_report(m, c, vmfp)
@@ -880,6 +880,7 @@ def run(addon, root, passes=None):
     if 'doors' in steps: door_sounds(m, c, vmfp)
     if 'overlays' in steps: overlays(m, c)
     if 'overlayfix' in steps or 'overlaydepth' in steps: texfix.overlay_geometry(m, c, vmfp, depth=8.0 if 'overlaydepth' in steps else None)
+    if 'ovlquads' in steps: ovlquad.run(m, c)   # overlays on brush entities -> parented quads
     if 'facescale' in steps: texfix.face_scales(m, c, vmfp)
     if 'sky' in steps: sky_pass(m, c, vmfp)
     if 'vis' in steps: visfit.run(m, c)                  # hints fitted to the play space + sky shells out of vis

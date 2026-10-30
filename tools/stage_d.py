@@ -19,7 +19,7 @@ Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/conte
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import tesla, probefill, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ventlight, doorsolid, watervol
+import tesla, probefill, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -32,6 +32,7 @@ def run(addon, root, passes):
         c.src = assets.Source(c, csgov, arcs)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
     if 'overlayfix' in passes or 'overlaydepth' in passes: texfix.overlay_geometry(m, c, vmfp, depth=8.0 if 'overlaydepth' in passes else None)
+    if 'ovlquads' in passes: ovlquad.run(m, c)   # overlays on brush entities -> parented quads
     if 'facescale' in passes: texfix.face_scales(m, c, vmfp)
     if 'matflags' in passes: texfix.material_flags(m, c)
     if 'beams' in passes: beams.run(m, c)
