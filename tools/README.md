@@ -35,13 +35,13 @@ Everything runs in Claude's cloud workspace with Python 3 + numpy, scipy and Pil
 
 ### Stage C step keys (run order, from `stage_c.run()`)
 
-`merge, io, wall, equip, launch, push, cmd, roundcfg, score, speed, gravity, dead, renderamt, steam, sounds, soundscripts, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags`,
+`merge, io, wall, equip, launch, push, cmd, roundcfg, score, speed, gravity, dead, renderamt, steam, sounds, soundscripts, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags, droppedio`,
 plus `overlaydepth` (= `overlayfix` + projection depth 8) and `physpush` (opt-in) when named. `vis` runs `visfit.py`; `skyvis` (the older shell-only pass) runs only when `vis` isn't in the list.
 `alpha` and `assets` need `<root>/vpk/cs2_pak01_dir.vpk` and are skipped silently without it. `daylight` is **not** a stage C step.
 
 ### stage_d.py passes
 
-`beams, lights, relight, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water`.
+`beams, lights, relight, lightbright, droppedio, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -55,6 +55,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `gravity.py` | `gravity` | trigger_gravity → trigger_multiple + script `Gravity_<scale>`; stage D patches the existing `_io.js` |
 | `assets.py` | `alpha`, `assets` | Missing materials rebuilt from CS:GO's VPK (also stock CS2 stubs listed in `maps/<addon>_stub_materials.txt`), water → `liquids/nuke_water`, closest stock CS2 material otherwise; alpha-test/translucent masks |
 | `soundscripts.py` | `soundscripts` | Source 1 soundscript names used by entities / door noises → same-named soundevents (map soundscripts, then CS:GO's manifest) |
+| `droppedio.py` | `droppedio` | Report: VMF outputs missing from the finished vmap (LOSS / SPECIAL / GONE; pipeline-handled ones listed apart) → `maps/<addon>_dropped_io.txt` |
 | `steam.py` | `steam` | env_steam → info_particle_system + generated `particles/port_steam/*.vpcf` (heat wave = refracting sprite) |
 | `gameui.py` | `gameui` (D) | game_ui → key poll in the io script (`GameUIOn_`/`GameUIOff_` inputs fire the original outputs); game_ui entities removed |
 | `physlaunch.py` | `launch` (C, before `push`), `physlaunch` (D) | Physics-only trigger_push launchers (cannons: relay ForceSpawns a template ball, Enables the push for a moment) → `Launch_<pusher>` in the io script puts the ball at the muzzle and fires it (2000 u/s) |

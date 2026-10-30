@@ -19,7 +19,7 @@ Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/conte
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import tesla, probefill, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, ventlight, doorsolid, watervol
+import tesla, probefill, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ventlight, doorsolid, watervol
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -110,6 +110,7 @@ def run(addon, root, passes):
             o = m.origin(spawn)
             m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
             c.log.append('added point_script %s (maps/scripts/%s_io.js)' % (c.script, addon))
+    if 'droppedio' in passes and os.path.exists(vmfp): droppedio.run(m, c, vmfp)   # last, so it sees what our steps converted
     c.log.append('pruned %d orphaned elements' % m.prune())
     c.write('maps/%s.vmap' % addon, m.dumps())
     lp = os.path.join(c.content, 'maps', addon + '_cleanup_log.txt')

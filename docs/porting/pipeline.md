@@ -42,7 +42,7 @@ On the PC this file is `C:\source1\cs2port\cs2_port_pipeline.md`.
 ## Stage C fixes (automatic; the importer's main .vmap is keyvalues2 text and is saved back as binary)
 
 Step keys in run order (from `stage_c.run()`; `run_pass.py` takes these names): `merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity, dead,
-steam, sounds, soundscripts, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags` (plus `overlaydepth`
+steam, sounds, soundscripts, doors, overlays, overlayfix, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags, droppedio` (plus `overlaydepth`
 and `physpush` when named).
 `alpha` and `assets` need CS2's `pak01_dir.vpk` staged as `<root>/vpk/cs2_pak01_dir.vpk`. `skyvis` runs only when `vis` isn't in the list.
 
@@ -81,6 +81,9 @@ and `physpush` when named).
 - **Door sounds** (`doors`): the importer drops func_door / func_door_rotating / func_movelinear `noise1`/`noise2`. They are read from the VMF, made into
   soundevents (addon file, stock CS2 sound, or extracted from CS:GO's VPK), and each door gets a `point_soundevent` per sound (source entity = the door;
   unnamed doors become `port_door_N`) started from OnOpen/OnClose (noise1) and OnFullyOpen/OnFullyClosed (noise2).
+- **Dropped IO report** (`droppedio`, last stage C step, also a stage D pass; `tools/droppedio.py`, from cs2-slop-porting, MIT): every VMF output
+  missing from the finished vmap, grouped by owner, in `maps/<addon>_dropped_io.txt`: LOSS (target still exists), SPECIAL (`!activator` etc.), GONE
+  (target not in the map). Outputs our steps moved into the io script or onto replacement entities are listed separately as handled. Report only.
 - **env_steam** (`steam`, `tools/steam.py`): doesn't exist in CS2. Each becomes an `info_particle_system` playing `particles/port_steam/<values>.vpcf`, built
   from its keyvalues the way Source 1 drew it: lifetime JetLength/Speed, Speed along the entity's forward axis with ±SpreadSpeed sideways,
   StartSize→EndSize, ±rollspeed spin, fade in/out at renderamt alpha, rendercolor when Emissive (self-illuminated), light grey otherwise. Type 1 (heat
@@ -208,7 +211,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
-- `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, relight, lightbright, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
+- `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, relight, lightbright, droppedio, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
   equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
