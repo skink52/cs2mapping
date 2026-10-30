@@ -59,8 +59,8 @@ Multigames map with a game-picker lobby. Has a separate 3D skybox map (`mg_yolo_
     `overridescript "mass,1"`, `physicsmode 0`, copied from skink52's working soccer.vmap test map; the script's run-into push is off for them
     (shots/knife still launch). Volleyballs no longer get dropped when fb_relay colours them: they wait asleep at the serve spot as in CS:GO.
   - 30 Oct 2026: the soccer/volleyball changes above (and an unrecorded 29 Oct FootPushOn script push for foot_ball_end, wired from
-    foot_Tgoal/foot_CTgoal) were reverted on request: balls are `prop_physics_override` again, run-into push back on, volleyballs dropped
-    when fb_relay colours them. Pre-revert vmap kept as `_backup/mg_yolo_multigames_pre_soccer_revert.vmap`. Other 29 Oct fixes kept.
+    foot_Tgoal/foot_CTgoal) were reverted on request: balls are `prop_physics_override` again, run-into push back on, volleyballs (kept from 29 Oct, extended)
+    wait asleep at the serve spot at the start and after each point until knifed/shot; no run-into push on them. Pre-revert vmap kept as `_backup/mg_yolo_multigames_pre_soccer_revert.vmap`. Other 29 Oct fixes kept.
   - `compile_yolo_fixes.bat` in the addon compiles the particles, vmats, panorama and script that the command-line build skips, then runs `run_build.bat`.
 
 ## Import report

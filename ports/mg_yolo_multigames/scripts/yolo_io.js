@@ -206,8 +206,7 @@ for (const [target, [r, g, b]] of DATA.colors) {
     Instance.OnScriptInput(`Color_${target}__${r}_${g}_${b}`, () => {
         for (const ent of Instance.FindEntitiesByName(target)) {
             if (ent instanceof BaseModelEntity) ent.SetColor({ r, g, b, a: ent.GetColor().a });
-            // volleyball start (fb_relay colours the balls): the balls start asleep in the air - drop them
-            if (VOLLEY.some(v => v.ball === target)) wake(ent);
+            // volleyball start (fb_relay colours the balls): the balls stay asleep at the serve spot, as in CS:GO, until hit
         }
     });
 }
@@ -491,8 +490,8 @@ function resetNadeGame() {
 /** @type {{ prefix: string, hit: number, lift: number, run: boolean, gravity: number }[]} hit < 0 = towards the shooter */
 const PHYS = [
     { prefix: "foot_ball", hit: 900, lift: 200, run: true, gravity: 1 },
-    { prefix: "fb_terroristball", hit: 650, lift: 300, run: true, gravity: 0.25 },
-    { prefix: "fb_counterterroristball", hit: 650, lift: 300, run: true, gravity: 0.25 },
+    { prefix: "fb_terroristball", hit: 650, lift: 300, run: false, gravity: 0.25 },
+    { prefix: "fb_counterterroristball", hit: 650, lift: 300, run: false, gravity: 0.25 },
     { prefix: "physics_block", hit: 1100, lift: 100, run: false, gravity: 1 },
     { prefix: "aim_boxes", hit: 300, lift: 60, run: false, gravity: 1 },
 ];
@@ -556,7 +555,7 @@ function volleyScore(ball, p, now) {
     const dest = Instance.FindEntityByName(v.dest);
     if (dest && dest.IsValid()) ball.Teleport({ position: dest.GetAbsOrigin(), velocity: { x: 0, y: 0, z: 0 }, angularVelocity: { x: 0, y: 0, z: 0 } });
     Instance.EntFireAtName({ name: v.relay, input: "Trigger" });
-    wakeAt.set(ball, now + 0.15);                                      // after the relay's DisableMotion / EnableMotion
+    // the ball then waits at its serve spot, as in CS:GO, until hit (knife / shot)
     return true;
 }
 /** @type {{ ent: Entity, rule: { prefix: string, hit: number, lift: number, run: boolean, gravity: number } }[]} */

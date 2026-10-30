@@ -5,7 +5,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-10-30: mg_yolo_multigames soccer revert
 
-- Soccer/volleyball balls back to `prop_physics_override` with the script's run-into push; FootPushOn and the volleyball serve-spot change removed. Other 29 Oct fixes kept.
+- Soccer/volleyball balls back to `prop_physics_override` with the script's run-into push; FootPushOn removed; volleyballs wait at the serve spot (start and after each point) until knifed/shot. Other 29 Oct fixes kept.
 
 ## 2026-10-30: probedetail (ttt_minecraft)
 
