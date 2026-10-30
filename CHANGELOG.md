@@ -15,6 +15,10 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 - Soccer/volleyball balls back to `prop_physics_override` with the script's run-into push; FootPushOn removed; volleyballs wait at the serve spot (start and after each point) until knifed/shot. Other 29 Oct fixes kept.
 
+## 2026-10-30 (night): ttt_minecraft doors reverted
+
+- The `doorsolid` brushes stayed invisible even with SetParent at spawn: ttt_minecraft's 15 doors back to the original; `doorsolid` marked unproven in the tool index and gotchas.
+
 ## 2026-10-30 (evening): droppedio knows cs2mapTTT; ttt_minecraft underwater lights
 
 - `droppedio.py`: on TTT maps (a `ttt_script` entity), outputs moved into cs2mapTTT `<owner>__<event>` relays (renamed inputs too), `ttt_*` owners and targets,

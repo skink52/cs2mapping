@@ -49,6 +49,10 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
   nether / End were moved; the lights already carry .vmf brightness/colour and none are named/styled/start-dark. Droppedio here used a .vmf copy with
   the nether / End shifted to match. Backup `bak_eve`.
 
+- 2026-10-30 (night): doors still invisible in game with the `<door>_vis` brushes parented at spawn, so all 15 doors were reverted to the original
+  (meshes back in the door, hinge cubes, `_vis` brushes and SetParent outputs removed, Ttest_Frontdoors' pair shares its name again). Mesh counts match the
+  .vmf. The doors are solid again (Non-solid to Player is ignored); skink52 is doing his own workaround. Backup `bak_doors`.
+
 ## Open / to check
 
 - Traitor tester: needs the gold block carried (E, cs2mapTTT's carry) into Ttest_CraftTrigger, which unlocks the door buttons; the check itself is `ttt_traitor_check` → `ttt_logic_role`, handled by ttt.js since cs2mapTTT `cfbd4fa`. What ttt.js still needs for this map: cs2mapTTT `MAP_REQUIREMENTS.md`.
