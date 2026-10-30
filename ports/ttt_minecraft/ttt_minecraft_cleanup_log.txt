@@ -88,3 +88,9 @@ Follow-up pass (2026-10-30): probedetail, probes
 - probes: every static func_breakable / func_brush is inside a light probe volume
 - pruned 0 orphaned elements
 
+Follow-up (2026-10-30 evening): cs2-slop-porting 2.0 features (cs2mapping 145e47e / 12880f3 / 460ab9c)
+- water: 15 underwater light_omni2 (map median brightness, range 512, no shadows) in the 6 func_water where no light reaches
+- ovlquads: no static overlay on a brush entity (all 35 sit on world faces), nothing converted
+- dropped I/O report (maps/ttt_minecraft_dropped_io.txt): 173 .vmf owners with 627 outputs, 153 matched; 0 outputs missing with the target still there (probable losses), 0 with the target gone, 0 to !special targets; 153 handled by our own steps (script / converted); 0 owners not found (0 outputs not compared)
+- relight NOT run: it rebuilds every light at its .vmf position, and the nether / End were moved (-4096 / -11008); lights already carry the .vmf brightness and colour (colormode 0), none are named, styled or start dark, so lightbright's new switched/styled handling changes nothing here. skink52's stationary light at 752 -400 1472 kept.
+- TO CHECK: underwater lights are a heuristic (Source water was lightmap-lit): check the pools after the bake; the Trap_Water lake's lights stay when the trap turns it to lava

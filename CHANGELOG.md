@@ -15,6 +15,12 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 - Soccer/volleyball balls back to `prop_physics_override` with the script's run-into push; FootPushOn removed; volleyballs wait at the serve spot (start and after each point) until knifed/shot. Other 29 Oct fixes kept.
 
+## 2026-10-30 (evening): droppedio knows cs2mapTTT; ttt_minecraft underwater lights
+
+- `droppedio.py`: on TTT maps (a `ttt_script` entity), outputs moved into cs2mapTTT `<owner>__<event>` relays (renamed inputs too), `ttt_*` owners and targets,
+  `ttt:duck` crouch commands and logic_auto sandbox texts count as handled; unnamed owners also match cs2mapTTT's `ttt_pt_<k>` names. ttt_minecraft: 0 losses.
+- ttt_minecraft: 15 underwater lights (`watervol.underwater_lights`); relight skipped (moved dimensions, lights already right).
+
 ## 2026-10-30: probedetail (ttt_minecraft)
 
 - Stage D `probedetail`: finer probe volumes nested over walkable floors (32 outdoors, 24 indoors) above the probefill tiles; priorities -1/0/1/2. ttt_minecraft: 117 outdoor + 72 indoor volumes (~450k probes).

@@ -11,6 +11,7 @@ run(m, c, vmfpath) -> number of probable losses. Writes maps/<addon>_dropped_io.
 - outputs moved into the io script (RunScriptInput Cmd_ / Score_ / Speed_ / GameUIOn_ / GameUIOff_ / Launch_)
 - owners the pipeline replaced or removed (point_servercommand, game_score, player_speedmod, game_ui, env_laser, env_beam,
   point_tesla, env_sun, point_viewcontrol)
+- cs2mapTTT conversions on TTT maps (outputs moved into <owner>__<event> relays, ttt_* targets, crouch commands, logic_auto sandbox texts)
 Those are listed in a separate section of the report. Run it last (end of stage C, or as a stage D pass) so they're all in place."""
 import os, math, fnmatch, collections
 import vmf as vmfmod
@@ -137,6 +138,13 @@ def run(m, c, vmfpath):
 
     def is_script(x): return x == script or x.endswith('_io_script')
 
+    # cs2mapTTT (tools/ttt_convert.py) moves outputs into logic_relays named <owner>__<event> and re-aims ttt_* targets at its script
+    relays = collections.defaultdict(list)
+    for x in ments:
+        if x['cls'] == 'logic_relay' and '__' in x['name']:
+            relays[x['name'].lower().rsplit('__', 1)[0]] += [(t[1], t[2], t[3], round(t[4], 2)) for t in x['conns']]
+    ttt_map = any(x['name'].lower() == 'ttt_script' for x in ments)
+
     lost = collections.OrderedDict()      # owner -> [(status, conn, note)]
     handled = []                          # (owner, conn, note)
     notfound = []
@@ -148,13 +156,15 @@ def run(m, c, vmfpath):
             cand = [x for x in pool if x['name'].lower() == nl]
             if not cand: cand = [x for x in pool if x['name'].lower().startswith(nl + '_')]     # doorsolid renames the 2nd of a shared-name pair
         else:
-            cand = [x for x in pool if not x['name'] or x['name'].startswith('port_')]           # doorsolid names unnamed doors port_door_<k>
+            cand = [x for x in pool if not x['name'] or x['name'].startswith(('port_', 'ttt_pt_'))]   # doorsolid's port_door_<k>, cs2mapTTT's ttt_pt_<k>
         best = min(cand, key=lambda x: dist(v, x), default=None)
         if best is not None and not v['name']:
             d = dist(v, best)
             if d > (3.0 if v['bbox'] else 1.0) and not (v['bbox'] and d < 1064.0): best = None   # brush: bounds within 3 u, else origin within 64 u
         if best is None:
-            if v['cls'] in REPLACED:
+            if ttt_map and v['cls'].startswith('ttt_'):
+                for t in v['conns']: handled.append((v, t, 'TTT: %s replaced by cs2mapTTT (logic_relays fired from ttt.js)' % v['cls']))
+            elif v['cls'] in REPLACED:
                 for t in v['conns']: handled.append((v, t, ('SCRIPT: ' if v['cls'] in SCRIPT_OWNERS else 'OWNER REPLACED: ') + REPLACED[v['cls']]))
             else: notfound.append(v)
             continue
@@ -181,6 +191,16 @@ def run(m, c, vmfpath):
                     if hit: extra.remove(hit); note = 'SCRIPT: -> io script %s (target was %s)' % (hit[3], tc); break
                     if tc == 'trigger_push' and inp == 'disable' and any(x[0] == o and is_script(x[1]) and x[3].startswith('Launch_') for x in best['conns']):
                         note = 'SCRIPT: Disable dropped, the launcher is fired from the io script (Launch_)'; break
+            if not note and ttt_map:
+                if any(tc.startswith('ttt_') for tc in tcls):
+                    note = 'TTT: target was %s, handled by cs2mapTTT (ttt.js)' % '/'.join(sorted(tcls))
+                elif best['name'] and any((tg, i2, p, round(d, 2)) in relays.get(best['name'].lower(), [])
+                                          for i2 in (inp,) + tuple(a for tc in tcls for a in RENAMED.get(tc, {}).get(inp, ()))):
+                    note = 'TTT: moved into cs2mapTTT relay %s__*' % best['name']
+                elif 'point_clientcommand' in tcls and any(x[2] == 'runscriptinput' and x[3].startswith('ttt:duck') for x in best['conns']):
+                    note = 'TTT: crouch command -> cs2mapTTT ttt:duck prompt'
+                elif v['cls'] == 'logic_auto' and 'game_text' in tcls and inp == 'display':
+                    note = 'TTT: cs2mapTTT drops the map\'s logic_auto texts (sandbox-mode warnings)'
             if note: handled.append((v, orig, note)); continue
             st = target_status(tg)
             tn = ''

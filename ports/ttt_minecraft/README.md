@@ -43,6 +43,12 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
 - 2026-10-30: `probedetail`: 117 outdoor (voxel 32) + 72 indoor (voxel 24) volumes over the walkable floors (~450k probes); priorities tiles -1,
   outdoor 0, indoor 1, probecover 2. If the bake gets too slow, raise VOX_OUT/VOX_IN in tools/probefill.py.
 
+- 2026-10-30 (evening, cs2-slop-porting 2.0 features): 15 underwater lights in the 6 func_water (`watervol.underwater_lights`); `ovlquads` found
+  no overlays on brush entities; `droppedio` clean (0 losses) once it knows cs2mapTTT's relays (droppedio now treats `<owner>__<event>` relays,
+  `ttt_*` owners/targets, ttt:duck crouch and logic_auto sandbox texts as handled). `relight` not run: it rebuilds lights at .vmf positions and the
+  nether / End were moved; the lights already carry .vmf brightness/colour and none are named/styled/start-dark. Droppedio here used a .vmf copy with
+  the nether / End shifted to match. Backup `bak_eve`.
+
 ## Open / to check
 
 - Traitor tester: needs the gold block carried (E, cs2mapTTT's carry) into Ttest_CraftTrigger, which unlocks the door buttons; the check itself is `ttt_traitor_check` → `ttt_logic_role`, handled by ttt.js since cs2mapTTT `cfbd4fa`. What ttt.js still needs for this map: cs2mapTTT `MAP_REQUIREMENTS.md`.

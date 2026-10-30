@@ -143,7 +143,8 @@ and `physpush` when named).
   size and softness, `pitch` or the `target` entity → direction), real colour with `colormode 0`, `_lightHDR`/`_lightscaleHDR` intensity with our
   CS:GO falloff fit, range from `_zero_percent_distance` / `_distance`, start-dark / switched / styled lights Dynamic, style pattern → `light_style`,
   `SunSpreadAngle` → `angulardiameter`; light_environment kept. Run on a map already hand-lit, it throws those edits away: use `lightbright` instead
-  (stage C step or stage D pass), which keeps the imported lights and fixes their values in place (`lighting.fix_brightness`). Before 30 Oct 2026 stage C only set the importer's `nan` values to 0 (= legacy 1, a 265 `_light`), so every light
+  (stage C step or stage D pass), which keeps the imported lights and fixes their values in place (`lighting.fix_brightness`). Don't relight a map whose
+  geometry was moved after import (ttt_minecraft's nether / End): it puts the lights back at their .vmf positions. Before 30 Oct 2026 stage C only set the importer's `nan` values to 0 (= legacy 1, a 265 `_light`), so every light
   in a map came out the same strength (ttt_minecraft's 50-200 lights all at 265).
   Since 30 Oct 2026 it also uses `_lightHDR` / `_lightscaleHDR` (what CS2 renders), restores the real colour (`color`, `colormode 0`; the importer
   writes a 6600 K white), sets start-dark lights (spawnflags 1) to `enabled 0`, makes lights that are switched by an output, start dark or have a
