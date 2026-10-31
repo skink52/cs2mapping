@@ -63,3 +63,4 @@ probecover: added 1 light probe volumes around 1 static func_breakable / func_br
 TODO
 probecover: check the new probe volumes look right next to the existing ones
 bump mines: 5 bumpminebutton -> bumpscript bump_give; awp spawner weapon_bumpmine -> weapon_decoy; bumpscript + 8 pooled prop_dynamic bumpmine_N (w_eq_bumpmine_dropped, non-solid, parked at z -1064) + land/detonate point_soundevents
+bump mines v2: start button -> bump_on (3 s, with the unlock), end button -> bump_off; custom_hud_layout bumphud (keimusho_bump.xml/css); mines only in the arena box while on; flying decoy hidden with a bump mine prop following it

@@ -41,7 +41,10 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
 - **Bump mines** ([`keimusho_bumpmine.js`](scripts/keimusho_bumpmine.js), `bumpscript`; `weapon_bumpmine` isn't in CS2): the 5 `bumpminebutton`s also fire
   `bump_give`; `awp spawner` now strips and gives `weapon_decoy`. A player with charges (3) throws decoys; on its first bounce the decoy is removed and one of
   8 pooled `bumpmine_N` prop_dynamics (CS:GO `w_eq_bumpmine_dropped`, non-solid, parked under the map) is put there with a land sound; after 0.3 s the first
-  player within 36 u is launched (900 u/s away, 750 up) with the detonate sound. Mines expire after 60 s / round start. Model: CS:GO files written loose
+  player within 36 u is launched (900 u/s away, 750 up) with the detonate sound. Mines expire after 60 s / round start. Only while the game is on (start
+  button → `bump_on` at 3 s, end button → `bump_off`) and inside the arena box, so spleef's decoys stay decoys. In the hand it's a decoy; in flight the
+  decoy is hidden (alpha 0) and a pooled mine follows it, spinning. HUD: `custom_hud_layout bumphud` ([`panorama/`](panorama/)) shows "BUMP MINE READY -
+  MOUSE1 THROW" + charges while the player holds the decoy in the arena. Model: CS:GO files written loose
   into `csgo\models\weapons` + `csgo\materials\models\weapons\v_models\bump_mine`, imported with `run_fixrefs.bat ba_jail_keimusho`
   (`maps/ba_jail_keimusho_fix_refs.txt`); sounds `sounds/bumpmine/` + `keimusho.bumpmine.land/detonate` events.
 - **Radar** 2048 px (`radar.py` size 2048 + `radar_props.py`): textures from the map's embedded VTFs, 3201 props drawn from their CS:GO models
