@@ -41,7 +41,7 @@ plus `overlaydepth` (= `overlayfix` + projection depth 8) and `physpush` (opt-in
 
 ### stage_d.py passes
 
-`beams, lights, lightcover, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water`.
+`beams, lights, lightcover, visfit_detail, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -70,7 +70,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `physpush.py` | `physpush` (opt-in) | Players push physics props (and func_physbox, mass from its size) by CS:GO `.phy` mass, from the io script (`patch_script` adds it to an existing `_io.js`) |
 | `texfix.py` | `overlayfix`, `overlaydepth`, `facescale`, `matflags` | Static overlay geometry, brush-face texture scale/shift (match order in pipeline.md), `$additive`/`$nocull`/`$ssbump`/`$alpha`/`$selfillum`/water material fixes |
 | `sky.py` | `sky` | Six CS:GO sky faces → 2:1 equirect panorama for `sky.vfx` / `csgo_moondome` |
-| `visfit.py` | `vis` (C), `visfit`/`visfit_lower`/`visfit_lean` (D) | Vis hints fitted to the play space (Low / Lower / one Lowest) and sky shells out of vis |
+| `visfit.py` | `vis` (C), `visfit`/`visfit_lower`/`visfit_lean`/`visfit_detail` (D) | Vis hints fitted to the play space (Low / Lower / one Lowest) and sky shells out of vis. `visfit_detail`: also works on maps open to the void (play air = under geometry or within 320 u of a floor), Medium over busy enclosed cells (mesh faces + props), open-sky cells with nothing standing in them left to Lowest, other open-sky cells Lower |
 | `skyvis.py` | `skyvis` | Older pass: sky shells that seal nothing get Exclude from Vis |
 | `beams.py` | `beams` | env_laser / env_beam → never-solid func_brush beams (damage: `laserhurt.py`) |
 | `lighting.py` | `lights`, `relight`, `lightbright` (D) | `relight` (default in stage C `lights`): delete every light and rebuild it from the VMF (colour, HDR, cone, target, switching). Minimal set of Stationary lights per sealed compartment, max 4 overlapping; importer `brightness = nan` set to 0 (stage C) or rebuilt from the VMF `_light` values (`lightbright`) |
@@ -78,6 +78,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `probecover.py` | `probes` (C, report) / `probecover` (D, fix) | Static func_breakable / func_brush meshes outside every light probe volume: listed in TO CHECK, or a volume added around each uncovered group |
 | `daylight.py` | `daylight` (D only) | Stationary sun, ceilings without shadows, probe volumes, maxexposure 2 for dark indoor maps |
 | `radar.py` | `radar` | Radar png + vtex + `resource/overviews/<map>.txt` from the standable floors, painted with their materials |
+| `firefx.py` | `firefx.run(m, c)` (port scripts) | env_fire (doesn't burn in CS2) → info_particle_system with generated additive flames `particles/port_fire/fire_<size>.vpcf` (+ `materials/port_fire/flame.png/.vtex`); StartFire → Start, Extinguish/Disable → Stop, Enable dropped (ba_jail_keimusho) |
 | `spotbeam.py` | `python3 -c` / port scripts: `spotbeam.run(m, c, spots)` | point_spotlight (importer exclusion list) → never-solid func_brush cone, additive fading `materials/spotlights/spot_<rgb>.vmat`, cut at the first wall/floor; LightOn/LightOff → Enable/Disable (ba_jail_keimusho) |
 | `radar_props.py` | (radar) | Props on the radar: each prop's up-facing CS:GO model triangles (embedded files, then CS:GO pak01) as `radar.run(extra_polys=...)`, coloured by the texture's average; roofs/ceilings/canopies skipped; also writes world material textures from VTFs as PNGs for radartex (ba_jail_keimusho) |
 | `mdlmesh.py` | (radar_props) | CS:GO `.mdl` + `.vvd` + `.dx90.vtx` → LOD0 triangles per material |

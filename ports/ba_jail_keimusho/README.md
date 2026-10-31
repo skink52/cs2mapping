@@ -78,16 +78,22 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
 - Validation script: [`validate_20261031.py`](validate_20261031.py) (every RunScriptInput has a script input, no missing targets, v3 output diff,
   dead classes, equips, renderamt, lights, probe coverage). All 7 scripts pass tsc + the mock engine.
 
+## 2026-10-31, third pass
+
+- **env_fire** (24: fire game fire1-20, roulette deathfire1-4) doesn't burn in CS2 (skink52, seen on ttt_minecraft) -> info_particle_system with a generated
+  flame particle `particles/port_fire/fire_96.vpcf` (new `tools/firefx.py`); 90 StartFire/Extinguish/Disable -> Start/Stop, 24 Enable outputs dropped.
+- **Vis** (the map had no hints): `visfit_detail` (new): 12 Medium over the busiest enclosed cells, 193 Low over enclosed walkable space, 176 Lower over
+  open-sky play areas and air above the walkable band, one Lowest over everything else (1,702 open cells with nothing standing in them stay Lowest).
+- Stock materials confirmed present by skink52 (the map reports no missing textures).
+
 ## Open
 
 - Not tested in game: all of the above. Build, then check the doors, gun room equips, skipping rope cases, samurai mask (speed/invisibility/mask
-  position), water race, rock pushing, push pads, lighting bake, radar alignment (overview scale 5.53).
+  position), water race, rock pushing, push pads, lighting bake, radar alignment (overview scale 5.53), fire particles (look/size), vis compile time and pop-in.
 - Run `run_fixrefs.bat ba_jail_keimusho` before building (bump mine model), then check the mines in game: throw feel, launch strength, the decoy as
   the thrown item.
 - Left as found (flagged): 2 placed `weapon_tagrenade` (not in CS2, they spawn nothing); `skippingpole` rotating sound `Concrete.ScrapeSmooth` relies on
-  CS2 having that stock soundevent; `env_fire` (24, fire game) not yet seen working in CS2; `func_rotating`/`func_tanktrain` untouched.
-- Stock CS2 materials the vmap uses that couldn't be checked without CS2's VPK: cs_italy/black, cs_italy/cr_miscwood2b, cs_italy/hpe_plaster_wall_red,
-  wood/plywood02, de_train/train_metalceiling_02, de_mirage plaster_brick4, hr_dust_plaster_06, hr_massive/wood_planks_1, terracotta_pot_02 (model).
+  CS2 having that stock soundevent; `func_rotating`/`func_tanktrain` untouched.
 - Loading slides are generated art; replace with in-game screenshots when there are some.
 
 ## Files

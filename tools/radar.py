@@ -27,7 +27,7 @@ VTEX = '''<!-- dmx encoding keyvalues2_noids 1 format vtex 1 -->
     "m_outputFormat" "string" "BC7"
     "m_outputClearColor" "vector4" "0 0 0 0"
     "m_nOutputMinDimension" "int" "0"
-    "m_nOutputMaxDimension" "int" "%(maxdim)d"
+    "m_nOutputMaxDimension" "int" "1024"
     "m_textureOutputChannelArray" "element_array"
     [
         "CDmeTextureOutputChannel"
@@ -154,7 +154,7 @@ def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None):   # extra_p
     img = Image.alpha_composite(img, edge).resize((size, size), Image.LANCZOS)
     b = io.BytesIO(); img.save(b, 'PNG')
     c.write('panorama/images/overheadmaps/%s_radar_psd.png' % c.addon, b.getvalue())
-    c.write('panorama/images/overheadmaps/%s_radar_psd.vtex' % c.addon, VTEX % dict(map=c.addon, maxdim=max(1024, size)))
+    c.write('panorama/images/overheadmaps/%s_radar_psd.vtex' % c.addon, VTEX.replace('"int" "1024"', '"int" "%d"' % max(1024, size)) % dict(map=c.addon))
     def frac(cls):
         es = m.by_class(cls)
         if not es: return 0.5, 0.5

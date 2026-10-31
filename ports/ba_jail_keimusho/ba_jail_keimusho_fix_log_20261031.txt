@@ -74,3 +74,5 @@ climb balls: ballscript (keimusho_balls.js) pushes ball1-7 when players walk int
 underwater lights (watervol.underwater_lights) in func_water volumes 48 u+ deep with no light inside: 24 added
 door pair: trigger_multiple [-1081, 356, 292] OnStartTouch -> slepdoor6.Open (missed earlier)
 overlay material decals/hr_decals/plaster_stain_10 (stock CS:GO, not in the addon) ported as csgo_static_overlay from CS:GO VPK
+visfit (16-unit voxels): 82.7 billion cubic units of playable air, 16.0 of it walkable band; hints 12 Medium, 193 Low, 176 Lower, 1 Lowest (detail split: {'medium': 20, 'open_lower': 195, 'open_lowest': 1702, 'face_threshold': 150, 'faces_pct': [2, 65, 129, 197]})
+env_fire: 24 -> info_particle_system with generated particles/port_fire/fire_<size>.vpcf (sizes [96]); 90 StartFire/Extinguish/Disable -> Start/Stop, 24 Enable outputs dropped

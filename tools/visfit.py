@@ -37,7 +37,10 @@ PHYS_PASS = ('materials/tools/toolstrigger', 'materials/tools/toolshint', 'mater
              'materials/tools/toolsbombsite', 'materials/tools/toolsareaportal', 'materials/tools/toolsoccluder', 'materials/tools/toolsvisblocker')
 CELL = 256.0
 BAND = 160.0
-CODE = {'Low': '3', 'Lower': '8', 'Lowest': '9'}
+MED_FACES = 150
+PROP_WEIGHT = 10
+OPEN_FILL = 0.004
+CODE = {'Medium': '2', 'Low': '3', 'Lower': '8', 'Lowest': '9'}
 
 def is_shell(mats):
     return bool(mats) and all('moondome' in x or x == 'materials/tools/toolsskybox.vmat' for x in mats)
@@ -129,7 +132,7 @@ def merge_boxes(boxes, own, other, fill=0.75):
         boxes = [bx for k, bx in enumerate(boxes) if not ins[k]] + [(a, b)]
     return boxes
 
-def plan(m, all_lower=False, extra_visex_box=None, vs=None, margin=256.0, lean=False):
+def plan(m, all_lower=False, extra_visex_box=None, vs=None, margin=256.0, lean=False, detail=False):
     ms = meshes(m)
     world = [x for x in ms if x['ent'] is None]
     allp = np.array([p for x in world for _, l in x['polys'] for p in l])
@@ -155,8 +158,20 @@ def plan(m, all_lower=False, extra_visex_box=None, vs=None, margin=256.0, lean=F
     act = {comp_at(m.origin(e), 2) for e in m.entities() if m.cls(e) in ACTIVE or m.cls(e).startswith('weapon_')} - {0}
     border = _border(lab)
     comps = (seeds | act) - border
+    leak = (seeds | act) & border
+    if detail and leak:
+        # map open to the void (no sky shells): keep the leaking play components, but only the air that has geometry above it
+        # (rooms, under roofs) or lies within 2 x BAND above a floor in its column (open yards), inside the map's footprint
+        comps |= leak
     P = np.isin(lab, list(comps))
     del lab
+    if detail and leak:
+        g = phys & (sh == 0)
+        above = np.flip(np.cumsum(np.flip(g, 2), 2), 2) > 0
+        nb = int(2 * BAND / vs); near = np.zeros(shape, bool)
+        for k in range(1, nb + 1): near[:, :, k:] |= g[:, :, :-k]
+        P &= (above | near)
+        del above, near, g
     solid = phys | (sh > 0) | ent
     band = np.zeros(shape, bool)
     for k in range(1, int(BAND / vs) + 1):
@@ -168,13 +183,16 @@ def plan(m, all_lower=False, extra_visex_box=None, vs=None, margin=256.0, lean=F
         return set(map(tuple, np.floor((lo + (idx + 0.5) * vs) / CELL).astype(int)))
     pc, bc = cells_of(P), cells_of(band)
     geo = cells_of((phys & (sh == 0)) | visg | ent)
-    low = set(bc); lower = (pc - low) & geo
+    low = set(bc); lower = (pc - low) & geo; medium = set(); dstats = {}
     if all_lower: lower |= low; low = set()
     if lean: lower = set(low) | (lower & bc); low = set()      # only the walkable band gets a box (Lower); all other air falls to Lowest
+    if detail and low:
+        props = [m.origin(e) for e in m.entities() if m.cls(e).startswith('prop_')]
+        medium, low, lower, dstats = _detail_split(ms, props, low, lower, band, visg, phys, sh, lo, vs, shape)
+    sets = [('Medium', medium), ('Low', low), ('Lower', lower)]
     for fill in (0.75, 0.6, 0.5):
-        hints = [('Low', a, b) for a, b in merge_boxes(boxes_from_cells(low), low, lower, fill)] + \
-                [('Lower', a, b) for a, b in merge_boxes(boxes_from_cells(lower), lower, low, fill)]
-        if len(hints) <= 100: break
+        hints = [(t, a, b) for t, own in sets if own for a, b in merge_boxes(boxes_from_cells(own), own, set().union(*[o for tt, o in sets if tt != t]), fill)]
+        if len(hints) <= 120: break
     hints = [(t, np.array(a) * CELL, np.array(b) * CELL) for t, a, b in hints]
     hints.append(('Lowest', np.floor(allp.min(0) / 256) * 256 - 256, np.ceil(allp.max(0) / 256) * 256 + 256))
     # sky shells: keep the ones bordering playable air that is open once all sky shells are gone
@@ -192,8 +210,58 @@ def plan(m, all_lower=False, extra_visex_box=None, vs=None, margin=256.0, lean=F
             bb = m.bounds(x['n'])
             if bb and (np.array(bb[0]) >= a).all() and (np.array(bb[1]) <= b).all(): extra.append(x)
     stats = dict(vs=vs, play=P.sum() * vs ** 3 / 1e9, band=band.sum() * vs ** 3 / 1e9, shells=len(shells), kept=len(shells) - len(exclude),
-                 hints=dict(collections.Counter(h[0] for h in hints)))
+                 hints=dict(collections.Counter(h[0] for h in hints)), detail=dstats)
     return dict(hints=hints, exclude=exclude, extra=extra, stats=stats)
+
+def _detail_split(meshes_all, props, low, lower, band, visg, phys, sh, lo, vs, shape):
+    """detail=True (stage D visfit_detail): split the walkable-band cells three ways.
+    Medium: roofed cells that are busy to draw: mesh faces (world + brush entities) + PROP_WEIGHT per prop, per 256 cell, in the top 8%
+    of the band cells and >= MED_FACES. Finer clusters there let the engine cull more of that detail behind walls.
+    Lowest (no box): open-sky cells with almost nothing standing in them or around them (vertical vis geometry < OPEN_FILL of the
+    3x3 cell column neighbourhood): nothing there can hide anything, so finer clusters only cost compile time.
+    Lower: the rest of the open-sky cells. Low: everything else (enclosed play space)."""
+    n = int(CELL / vs)
+    faces = collections.Counter()
+    for p in props: faces[tuple(np.floor(np.array(p, float) / CELL).astype(int))] += PROP_WEIGHT
+    for x in meshes_all:
+        if x['shell']: continue
+        for mt, l in x['polys']:
+            if not vis_relevant(mt) or mt.startswith('materials/tools/'): continue
+            c0 = np.asarray(l, float).mean(0)
+            faces[tuple(np.floor(c0 / CELL).astype(int))] += 1
+    roofed = np.zeros(shape, bool); seen = np.zeros(shape[:2], bool)
+    for z in range(shape[2] - 1, -1, -1):
+        roofed[:, :, z] = seen; seen |= (phys[:, :, z] & (sh[:, :, z] == 0))
+    # vertical geometry: vis voxels with empty space beside them horizontally (walls, pillars), not floors/ceilings
+    vert = visg & (~np.roll(visg, 1, 0) | ~np.roll(visg, -1, 0) | ~np.roll(visg, 1, 1) | ~np.roll(visg, -1, 1))
+    vert &= np.roll(visg, 1, 2) | np.roll(visg, -1, 2)
+    def cell_slices(c):
+        a = (np.array(c) * CELL - lo) / vs
+        return tuple(slice(max(0, int(a[k])), max(0, min(shape[k], int(a[k]) + n))) for k in range(3))
+    cnt = sorted(faces.get(c, 0) for c in low)
+    thr = max(MED_FACES, cnt[int(len(cnt) * 0.92)] if cnt else MED_FACES)
+    med, opn, lowest = set(), set(), set()
+    for c in low:
+        sl = cell_slices(c)
+        b = band[sl]
+        if not b.any(): continue
+        rf = roofed[sl][b].mean()
+        if rf >= 0.5:
+            if faces.get(c, 0) >= thr: med.add(c)
+            continue
+        # open sky: how much vertical vis geometry stands in the 3x3 neighbourhood around this cell's band height
+        zs = sl[2]; tot = 0; vv = 0
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                s2 = cell_slices((c[0] + dx, c[1] + dy, c[2]))
+                tot += np.prod([q.stop - q.start for q in s2]); vv += int(vert[s2].sum())
+        if tot and vv / tot < OPEN_FILL: lowest.add(c)
+        elif rf < 0.1: opn.add(c)
+    low = low - med - opn - lowest
+    lower = (lower | opn) - lowest
+    rc = sorted(faces.get(c, 0) for c in low | med)
+    return med, low, lower, dict(medium=len(med), open_lower=len(opn), open_lowest=len(lowest), face_threshold=thr,
+                                 faces_pct=[rc[int(len(rc) * q)] for q in (0.5, 0.9, 0.97, 0.99)] if rc else [])
 
 def apply(m, pl):
     for e in m.by_class('visibility_hint'): m.remove_node(e)
@@ -206,14 +274,15 @@ def apply(m, pl):
         if a: a[2] = True
         else: dmx.set_(m.E[x['n']], b'visexclude', dmx.T_BOOL, True)
 
-def run(m, c, all_lower=False, extra_visex_box=None, lean=False):
+def run(m, c, all_lower=False, extra_visex_box=None, lean=False, detail=False):
     old = collections.Counter({'3': 'Low', '8': 'Lower', '9': 'Lowest', '2': 'Medium', '0': 'High', '1': 'Normal', '10': 'Reduced'}
                               .get(m.P(e, 'hintType', ''), '?') for e in m.by_class('visibility_hint'))
-    pl = plan(m, all_lower, extra_visex_box, lean=lean)
+    pl = plan(m, all_lower, extra_visex_box, lean=lean, detail=detail)
     apply(m, pl)
     s = pl['stats']; h = s['hints']
-    c.log.append('visfit (%g-unit voxels): %.1f billion cubic units of playable air, %.1f of it walkable band; hints %d Low, %d Lower, %d Lowest%s'
-                 % (s['vs'], s['play'], s['band'], h.get('Low', 0), h.get('Lower', 0), h.get('Lowest', 0),
+    c.log.append('visfit (%g-unit voxels): %.1f billion cubic units of playable air, %.1f of it walkable band; hints %d Medium, %d Low, %d Lower, %d Lowest%s%s'
+                 % (s['vs'], s['play'], s['band'], h.get('Medium', 0), h.get('Low', 0), h.get('Lower', 0), h.get('Lowest', 0),
+                    (' (detail split: %s)' % s['detail']) if s.get('detail') else '',
                     (' (replacing ' + ', '.join('%d %s' % (v, k) for k, v in old.items()) + ')') if old else ''))
     if s['shells']:
         c.log.append('visfit: %d of %d sky shell meshes set to Exclude from Vis, %d kept because they close playable air'

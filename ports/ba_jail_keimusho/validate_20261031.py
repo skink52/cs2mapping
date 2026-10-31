@@ -40,7 +40,7 @@ for e in E:
 vm=collections.Counter(norm((m.cls(e),)+m.conn_tuple(cc)[:5]) for e,cc in m.all_conns())
 P('v3 outputs still missing',[k for k in (bsp-vm)])
 # 4 entity classes that don't exist / dead
-dead=('player_speedmod','env_sun','game_ui','point_clientcommand','env_screenoverlay','env_laser','env_beam','func_wall_toggle','func_breakable_surf','prop_hallucination','env_sprite','env_spritetrail','logic_script','game_score','item_ammo','trigger_gravity','phys_thruster','env_steam','point_tesla','func_monitor','func_physbox_multiplayer','light_dynamic','color_correction','cs_minimap_boundary','sky_camera','move_rope','logic_auto')
+dead=('env_fire','point_spotlight','player_speedmod','env_sun','game_ui','point_clientcommand','env_screenoverlay','env_laser','env_beam','func_wall_toggle','func_breakable_surf','prop_hallucination','env_sprite','env_spritetrail','logic_script','game_score','item_ammo','trigger_gravity','phys_thruster','env_steam','point_tesla','func_monitor','func_physbox_multiplayer','light_dynamic','color_correction','cs_minimap_boundary','sky_camera','move_rope','logic_auto')
 P('dead classes present',collections.Counter(m.cls(e) for e in m.entities() if m.cls(e) in dead))
 # 5 AddOutput / Alpha / Color on players, SetRemoteDestination, Use on equips
 odd=[(m.cls(e),m.name(e),m.conn_tuple(cc)[:4]) for e,cc in m.all_conns() if m.conn_tuple(cc)[2].lower() in ('addoutput','alpha','color','setremotedestination','modifyspeed','use') ]

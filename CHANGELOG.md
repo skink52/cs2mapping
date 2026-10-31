@@ -5,6 +5,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-10-31: ba_jail_keimusho fixes, `lightcover` pass
 
+- ba_jail_keimusho third pass: env_fire → generated fire particles (new `tools/firefx.py`), vis hints with `visfit_detail` (new stage D pass: Medium over busy enclosed cells, maps open to the void). Fixed `radar.VTEX` staying usable as a template for tesla/steam/glowfix.
 - ba_jail_keimusho second pass against the v3 BSP: lights from v3, climb-ball pushing, trigger sweeps (hurt + teleport) for triggers enabled with players inside, door and button sounds, point_spotlight beams (new `tools/spotbeam.py`), underwater lights, a stock decal, script-moved props drawn with `Move`, validation script. `radar.py` skips beam materials; `radar_props.py` skips weapon/player models.
 
 - ba_jail_keimusho: 9 double doors given back their second-leaf opener, 12 equips → weapon0 slots + TriggerForActivatedPlayer, skipping-rope case values as float strings, trigger_push → script push zones, samurai-mask power-up (speedmod x3, gravity, invisibility, 200 HP) and water-race gravity in separate cs_scripts, rock dodgeball push via seaside's pushscale.js, lights rebuilt from v2 `_light`, stationary lighting, radar, loading slides and credits. Details: [ports/ba_jail_keimusho](ports/ba_jail_keimusho/README.md).

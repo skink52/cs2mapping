@@ -15,6 +15,7 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         tesla (point_tesla -> crackle particle), doorparent (doorsolid brushes parented at spawn instead of in the map),
         probefill (light probe volumes over the whole play space, existing ones kept at higher priority),
         probedetail (finer nested volumes over walkable floors: 32 outdoors, 24 indoors),
+        visfit_detail (visfit + Medium over busy enclosed cells, open-sky cells with nothing standing in them left to Lowest, maps open to the void),
         lightcover (stationary lights by line-of-sight floor cover per roofed compartment + open-sky fills; for maps that are one open compartment), overlays (static overlay materials -> csgo_static_overlay, opaque ones as <name>_overlay)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
@@ -38,7 +39,8 @@ def run(addon, root, passes):
     if 'matflags' in passes: texfix.material_flags(m, c)
     if 'beams' in passes: beams.run(m, c)
     if 'skyvis' in passes: skyvis.run(m, c)
-    if 'visfit' in passes or 'visfit_lower' in passes or 'visfit_lean' in passes: visfit.run(m, c, all_lower='visfit_lower' in passes, lean='visfit_lean' in passes)
+    if 'visfit' in passes or 'visfit_lower' in passes or 'visfit_lean' in passes or 'visfit_detail' in passes:
+        visfit.run(m, c, all_lower='visfit_lower' in passes, lean='visfit_lean' in passes, detail='visfit_detail' in passes)
     if 'relight' in passes: lighting.relight(m, c, vmfp)
     elif 'lightbright' in passes: lighting.fix_brightness(m, c, vmfp)
     if 'equipitems' in passes:
