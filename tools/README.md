@@ -41,7 +41,7 @@ plus `overlaydepth` (= `overlayfix` + projection depth 8) and `physpush` (opt-in
 
 ### stage_d.py passes
 
-`beams, lights, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water`.
+`beams, lights, lightcover, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -74,6 +74,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `skyvis.py` | `skyvis` | Older pass: sky shells that seal nothing get Exclude from Vis |
 | `beams.py` | `beams` | env_laser / env_beam → never-solid func_brush beams (damage: `laserhurt.py`) |
 | `lighting.py` | `lights`, `relight`, `lightbright` (D) | `relight` (default in stage C `lights`): delete every light and rebuild it from the VMF (colour, HDR, cone, target, switching). Minimal set of Stationary lights per sealed compartment, max 4 overlapping; importer `brightness = nan` set to 0 (stage C) or rebuilt from the VMF `_light` values (`lightbright`) |
+| `lightcover.py` | `lightcover` (D) | Stationary lights for maps whose rooms all connect to the sky (`lights` then sees one compartment and switches only a few): roofed compartments (doors/brushes count as walls) each get lights switched until 90% of the walkable floor is lit with line of sight (range ≤ 640, ≤ 4 overlapping); uncovered pockets near spawns/buttons/triggers/weapons get new unshadowed stationary omnis; open-to-sky play areas get a stationary fill each. Never deletes lights (ba_jail_keimusho) |
 | `probecover.py` | `probes` (C, report) / `probecover` (D, fix) | Static func_breakable / func_brush meshes outside every light probe volume: listed in TO CHECK, or a volume added around each uncovered group |
 | `daylight.py` | `daylight` (D only) | Stationary sun, ceilings without shadows, probe volumes, maxexposure 2 for dark indoor maps |
 | `radar.py` | `radar` | Radar png + vtex + `resource/overviews/<map>.txt` from the standable floors, painted with their materials |

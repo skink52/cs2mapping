@@ -1,0 +1,64 @@
+door pair: func_button [-1027, -1563, 266] OnPressed -> outsidebigdoor1.Toggle
+door pair: trigger_multiple [-1004, -1741, 298] OnStartTouch -> outsideoutsidedoorleft.Open
+door pair: trigger_multiple [-1083, -1361, 292] OnStartTouch -> aboveoutsidedoorright.Open
+door pair: func_button [-1027, -1533, 266] OnPressed -> belowoutsidedoorleft.Toggle
+door pair: trigger_multiple [-632, -346, 298] OnStartTouch -> grdoorleft.Open
+door pair: filter_activator_team [-765, -338, 320] OnPass -> grdoorleft.Open
+door pair: trigger_multiple [-98, -89, 292] OnStartTouch -> slepdoor2.Open
+door pair: trigger_multiple [-492, 220, 292] OnStartTouch -> slepdoor3.Open
+door pair: trigger_multiple [-674, 931, 292] OnStartTouch -> slepdoor12.Open
+game_player_equip deagle_equip: CS:GO keys ['weapon_deagle'] -> CS2 weapon0..weapon21 slots
+game_player_equip fiveseven_equip: CS:GO keys ['weapon_fiveseven'] -> CS2 weapon0..weapon21 slots
+game_player_equip negev_equip: CS:GO keys ['weapon_negev'] -> CS2 weapon0..weapon21 slots
+game_player_equip elite_equip: CS:GO keys ['weapon_elite'] -> CS2 weapon0..weapon21 slots
+game_player_equip ssg08_equip: CS:GO keys ['weapon_ssg08'] -> CS2 weapon0..weapon21 slots
+game_player_equip xm1014_equip: CS:GO keys ['weapon_xm1014'] -> CS2 weapon0..weapon21 slots
+game_player_equip scar20_equip: CS:GO keys ['weapon_scar20'] -> CS2 weapon0..weapon21 slots
+game_player_equip awp_equip: CS:GO keys ['weapon_awp'] -> CS2 weapon0..weapon21 slots
+game_player_equip knife spawner: CS:GO keys ['weapon_knife'] -> CS2 weapon0..weapon21 slots
+game_player_equip decoy spawner: CS:GO keys ['weapon_decoy'] -> CS2 weapon0..weapon21 slots
+game_player_equip awp spawner: CS:GO keys ['weapon_bumpmine'] -> CS2 weapon0..weapon21 slots
+game_player_equip ak47_equip: CS:GO keys ['weapon_ak47'] -> CS2 weapon0..weapon21 slots
+22 Use inputs on game_player_equips -> TriggerForActivatedPlayer
+skippingcase: case values -> "N.000000" (math_counter OutValue arrives as a float string)
+samurai mask trigger_once: 5 dead outputs (speedmod 3, gravity 0.5, Alpha, rendermode, health 200) -> samuraiscript samurai_on; player_speedmod removed
+water race trigger OnStartTouch: AddOutput gravity -1 -> gravityscript Gravity_-1
+water race trigger OnEndTouch: AddOutput gravity 1 -> gravityscript Gravity_1
+rock dodgeball: rockbuttonon/off also fire pushscale push_on/push_off (script push of rock6-9 by guns/knife; sm_cvar outputs left in place)
+4 trigger_push (speeds [350.0, 700.0]; CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500); names/filters/Enable/Disable kept
+light brightness rebuilt from the CS:GO _light values for 72 lights (0 had brightness = nan from the importer, which crashes CS2 on map load)
+brightness: 72 lights matched to v2 _light (omni range = sqrt(legacy x 3.3856e+06)); 60 v3-moved/new lights copied from the nearest matched light
+light_environment -> Stationary
+  new light 321 [-1919, 621, 171] r304
+  new light 321 [-1887, 909, 331] r310
+  new light 321 [-1887, 1229, 331] r191
+  new light 321 [-1887, 1389, 331] r185
+  new light 321 [-1727, -883, 171] r270
+  new light 321 [-1439, -787, 587] r259
+  new light 321 [-767, -435, 459] r334
+  new light 321 [-671, 973, 843] r522
+  new light 321 [-511, -915, 587] r399
+  new light 321 [-383, 2029, 235] r517
+  new light 321 [-479, -915, 171] r282
+  new light 14 [-3871, -2867, -437] r640
+  new light 14 [-3551, -3379, 171] r197
+  new light 14 [-3295, -3027, 11] r227
+  new light 306 [-1439, -2835, 235] r640
+  new light 306 [321, -3251, 363] r555
+  new light 306 [769, -2995, 235] r505
+  new light 306 [1249, -3315, 235] r579
+  new light 306 [1441, -2515, 235] r632
+stationary: 34 existing lights -> Stationary (line-of-sight cover of the walkable floor per roofed compartment, cap 640 u, <= 4 overlapping); 19 new unshadowed stationary light_omni2 in uncovered play pockets; per compartment (lights, switched, new, cover): [(321, 117, 30, 11, 0.92), (14, 13, 3, 3, 0.59), (306, 1, 1, 5, 0.57)]
+  fill 27 [1259, -460, 851]
+  fill 27 [-1884, 2094, 697]
+  fill 3 [-2874, -6324, -6]
+  fill 3 [-684, -3906, 90]
+  fill 3 [-3338, -4804, -104]
+  fill 279 [580, 1137, 841]
+  fill 279 [-1058, 135, 667]
+  fill 214 [-1458, -750, 969]
+outdoor: 8 unshadowed stationary fill lights over the open-to-sky play areas (on top of the stationary sun)
+probecover: added 1 light probe volumes around 1 static func_breakable / func_brush meshes that no volume fully covered: func_brush firebrush
+
+TODO
+probecover: check the new probe volumes look right next to the existing ones

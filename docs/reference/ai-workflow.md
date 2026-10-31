@@ -26,6 +26,7 @@ What has worked for porting and building CS2 maps with Claude, and the practical
 
 ## Transfer limits and traps
 
+- **Big single files (a 27 MB `.vmap`):** `device_commit_files` with a `stagedPath` failed with "HTTP 400 fetching session file". Send the file with `SendUserFile` first and commit it by its `fileUuid` (works up to 30 MB; ba_jail_keimusho, 31 Oct 2026). Backups can go as a zip (a vmap zips ~4:1).
 - **File size:** uploads of 25 MB+ failed, so keep each file or zip under about 20 MB. `prep.py` cuts asset zips at 14 MB as a safety margin (big maps
   get `.2`/`.3`/`.4.zip`). The 24 Oct CHANGELOG entry for de_nuketown's `disprestore.py` cites a "30 MB transfer limit" instead; ~20 MB is the
   figure from failed uploads, so use that. About 50 files and ~90 MB per write batch;

@@ -3,6 +3,12 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-10-31: ba_jail_keimusho fixes, `lightcover` pass
+
+- ba_jail_keimusho: 9 double doors given back their second-leaf opener, 12 equips → weapon0 slots + TriggerForActivatedPlayer, skipping-rope case values as float strings, trigger_push → script push zones, samurai-mask power-up (speedmod x3, gravity, invisibility, 200 HP) and water-race gravity in separate cs_scripts, rock dodgeball push via seaside's pushscale.js, lights rebuilt from v2 `_light`, stationary lighting, radar, loading slides and credits. Details: [ports/ba_jail_keimusho](ports/ba_jail_keimusho/README.md).
+- New `tools/lightcover.py` (stage D `lightcover`): stationary lights by line-of-sight floor cover per roofed compartment, for maps that `lights` sees as one open compartment.
+- Gotchas: func_tanktrain exists in CS2; AddOutput gravity/health on players; no-script logic_case float-string variant (unverified). ai-workflow: >25 MB files go through SendUserFile + fileUuid.
+
 ## 2026-10-30: cs2-slop-porting 2.0 features (lighting rebuild, overlay quads, dropped IO)
 
 - Ninja-Chris's repo is now MIT (Ninja-Chris + skink52). New since 29 Oct: `vmap_asset_slop_import.py` 2.0 (2026-10-29h) and `rebuild_lighting.py`.

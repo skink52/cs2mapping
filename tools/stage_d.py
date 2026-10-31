@@ -14,7 +14,8 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         doorhinge (maps already through doorsolid: hinge cubes moved into the frame), iofix (logic_auto is_pc global state, output target name case),
         tesla (point_tesla -> crackle particle), doorparent (doorsolid brushes parented at spawn instead of in the map),
         probefill (light probe volumes over the whole play space, existing ones kept at higher priority),
-        probedetail (finer nested volumes over walkable floors: 32 outdoors, 24 indoors), overlays (static overlay materials -> csgo_static_overlay, opaque ones as <name>_overlay)
+        probedetail (finer nested volumes over walkable floors: 32 outdoors, 24 indoors),
+        lightcover (stationary lights by line-of-sight floor cover per roofed compartment + open-sky fills; for maps that are one open compartment), overlays (static overlay materials -> csgo_static_overlay, opaque ones as <name>_overlay)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
@@ -76,6 +77,9 @@ def run(addon, root, passes):
         import skysplit
         n = skysplit.moondome_to_skybox(m)
         c.log.append('skyshell: %d moondome sky shells -> toolsskybox (areas under them baked black: the sun only bakes through toolsskybox)' % n)
+    if 'lightcover' in passes:
+        import lightcover
+        lightcover.run(m, c)
     if 'lights' in passes: lighting.run(m, c)
     if 'alpha' in passes and c.src: assets.fix_alpha(m, c)
     if 'daylight' in passes: daylight.run(m, c)

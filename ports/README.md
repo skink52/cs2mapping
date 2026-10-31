@@ -49,7 +49,7 @@ which also covers other porters' maps, external ports and skink52's originals: m
 
 | Map | Status | Workshop | Imported | How |
 |---|---|---|---|---|
-| [ba_jail_keimusho](ba_jail_keimusho/) | Import started (only the main map shell so far) |  | 2026-10-07 | Valve importer |
+| [ba_jail_keimusho](ba_jail_keimusho/) | Ported; 31 Oct fixes awaiting build/test | Crycelia | 2026-10-07 | Valve importer + Hammer |
 | [ba_jail_lightsout](ba_jail_lightsout/) | Ported, with added scripted features (jailbreak map) |  | 2026-10-01 | manual; the environment prefab was too heavy to collapse in Hammer, so its contents were pasted in with Paste Special |
 | [ba_jail_seaside](ba_jail_seaside/) | Ported, with added scripted features (jailbreak map) |  | 2026-08-24 | manual |
 | [ba_jail_skylight](ba_jail_skylight/) | Ported, with added scripted features (jailbreak map) |  | 2026-08-30 | manual |
