@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image
 import vtf, mdlmesh
 
-SKIP_NAMES = ('roof', 'ceiling', 'cloud', 'skybox', 'mountain', 'leaves', 'canopy', 'tree_d', 'sky_')
+SKIP_NAMES = ('roof', 'ceiling', 'cloud', 'skybox', 'mountain', 'leaves', 'canopy', 'tree_d', 'sky_', 'models/weapons/', 'models/player/')
 PROP_CLASSES = ('prop_static', 'prop_dynamic', 'prop_physics', 'prop_physics_override', 'prop_physics_multiplayer', 'prop_dynamic_override')
 
 class Source:

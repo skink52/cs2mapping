@@ -125,7 +125,7 @@ Instance.SetThink(() => {
     for (const [p, mine] of flying) {
         if (!p.IsValid()) { flying.delete(p); retire(mine); continue; }
         const o = p.GetAbsOrigin(), spin = (now * 720) % 360;
-        mine.ent.Teleport({ position: o, angles: { pitch: 0, yaw: spin, roll: 0 } });
+        mine.ent.Move({ position: o, angles: { pitch: 0, yaw: spin, roll: 0 } });
     }
     const pawns = [];
     for (const c of Instance.GetAllPlayerControllers()) {

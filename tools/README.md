@@ -78,6 +78,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `probecover.py` | `probes` (C, report) / `probecover` (D, fix) | Static func_breakable / func_brush meshes outside every light probe volume: listed in TO CHECK, or a volume added around each uncovered group |
 | `daylight.py` | `daylight` (D only) | Stationary sun, ceilings without shadows, probe volumes, maxexposure 2 for dark indoor maps |
 | `radar.py` | `radar` | Radar png + vtex + `resource/overviews/<map>.txt` from the standable floors, painted with their materials |
+| `spotbeam.py` | `python3 -c` / port scripts: `spotbeam.run(m, c, spots)` | point_spotlight (importer exclusion list) → never-solid func_brush cone, additive fading `materials/spotlights/spot_<rgb>.vmat`, cut at the first wall/floor; LightOn/LightOff → Enable/Disable (ba_jail_keimusho) |
 | `radar_props.py` | (radar) | Props on the radar: each prop's up-facing CS:GO model triangles (embedded files, then CS:GO pak01) as `radar.run(extra_polys=...)`, coloured by the texture's average; roofs/ceilings/canopies skipped; also writes world material textures from VTFs as PNGs for radartex (ba_jail_keimusho) |
 | `mdlmesh.py` | (radar_props) | CS:GO `.mdl` + `.vvd` + `.dx90.vtx` → LOD0 triangles per material |
 | `radartex.py` | (radar, vmap_preview) | Material name → tiled source texture or a colour guessed from the name |

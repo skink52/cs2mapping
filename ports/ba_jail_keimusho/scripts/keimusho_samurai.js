@@ -121,7 +121,7 @@ Instance.SetThink(() => {
         if (slot === maskSlot && mask && mask.IsValid()) {
             const eye = pawn.GetEyePosition();
             const yaw = pawn.GetEyeAngles().yaw;
-            mask.Teleport({ position: { x: eye.x, y: eye.y, z: eye.z - 2 }, angles: { pitch: 0, yaw: yaw + 180, roll: 0 } });
+            mask.Move({ position: { x: eye.x, y: eye.y, z: eye.z - 2 }, angles: { pitch: 0, yaw: yaw + 180, roll: 0 } });
         }
     }
     if (powered.size > 0) Instance.SetNextThink(now); else thinking = false;

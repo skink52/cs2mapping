@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Status | Ported (v3 import, skink52's Hammer work on top); fixes 2026-10-31 awaiting build + in-game test |
-| Source BSP | `ba_jail_os_keimusho_v3` (imported); comparison copy on the PC is `ba_jail_os_keimusho_v2.bsp` |
+| Source BSP | `ba_jail_os_keimusho_v3` (imported); `ba_jail_os_keimusho_v3.bsp` and `_v2.bsp` are in `C:\source1\bspsrc-windows\bsp's` |
 | Original map | Crycelia |
 | Imported | 2026-10-07 |
 | Map last changed | 2026-10-31 |
@@ -12,6 +12,9 @@
 Loading text: `Map by Crycelia` / `CS2 Port by skink52 for Slime Servers`.
 
 ## v2 vs v3
+
+Update (later on 31 Oct): with the v3 BSP on the PC the vmap matches v3 exactly apart from the outputs the importer dropped (the door pairs
+below), so nothing in the vmap is a later addition; the v2 notes below are kept for history.
 
 Only a v2 BSP is on the PC; the vmap is v3. Everything in the vmap with no v2 equivalent is treated as planned and kept: death roulette
 (`roulbutton`/`roulcase`), spleef (`spleefon`/`spleefoff`, decoy spawners), rock dodgeball (`rockbuttonon`/`off`, `rocktemp6-9`), the ssg08 gun-room
@@ -53,14 +56,38 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
 - Scripts are separate files in `maps/scripts/` with their own point_script each (`samuraiscript`, `gravityscript`, `pushscale`, `pushscript`).
 - Backup of the vmap before the edit: `maps/ba_jail_keimusho_vmap_backup_20261031.zip`.
 
+## 2026-10-31, second pass (v3 BSP)
+
+- Lights re-matched to the v3 `_light` values (132 of 132 matched; v2 had only matched 72); lightcover's 27 added lights set to the v3 median.
+- **Climb balls** `ball1-7` (func_physbox, spawned by `climbtemp1-7`): `ballscript` ([`keimusho_balls.js`](scripts/keimusho_balls.js)) gives a ball the
+  player's speed along the contact when a player walks into it (x1.15, min 60 u/s).
+- **Triggers enabled with players inside** (CS2 doesn't re-check them): 30 trigger_hurt / trigger_teleport (roulette, fire game, parkour, spleef end
+  teleport, skipping rope, bump mine kill plane, water race loser teleport) get `sweepscript Sweep_<name>` 0.1 s after each Enable and `Unsweep_<name>`
+  with each Disable ([`keimusho_sweep.js`](scripts/keimusho_sweep.js)): teleports send everyone inside once; hurts damage everyone who was inside at the
+  sweep (trigger damage per second, 0.5 s steps) until they leave the box.
+- **Door sounds**: the importer dropped noise1/noise2 (22 `doors/wood_gate_open_01`, 4 `pushbardoor_open/close`): 30 point_soundevents started by the
+  doors' own outputs, waves from CS:GO. **Button sounds**: 19 buttons with CS:GO `sounds 10` -> `use_sound keimusho.button10`.
+- **point_spotlight** (15, importer exclusion list): beams rebuilt as additive func_brush cones (new `tools/spotbeam.py`).
+- **Underwater lights**: 24 dim static lights in the three deep water volumes (water race and pools) where no light reached (`watervol.underwater_lights`).
+- **Decal** `decals/hr_decals/plaster_stain_10` (stock CS:GO, not in the addon) ported as csgo_static_overlay.
+- Script-moved props (`bumpmine_N`, `mask2`): `model_archetype ""`, moved with `Move` (a prop Teleported every tick isn't drawn); mask2 non-solid.
+- `slepdoor6` opener added (missed in the first pass). `map_asset_references` += spotlight vmat, bump mine vmdl, bump HUD layout.
+- Checked, nothing to do: `water1` (func_water_analog) has no mesh and nothing moves it, and a func_water already covers that pool; displacements (1,388
+  in v3) are in the vmap; the 5 overlays have real sizes; ssbump normals were already converted; foliage alpha test / backfaces and the lantern self-illum
+  are set; no `msmusic`/`mssound` entity exists in v3 either (the knife trigger's PlaySound target never existed).
+- Validation script: [`validate_20261031.py`](validate_20261031.py) (every RunScriptInput has a script input, no missing targets, v3 output diff,
+  dead classes, equips, renderamt, lights, probe coverage). All 7 scripts pass tsc + the mock engine.
+
 ## Open
 
 - Not tested in game: all of the above. Build, then check the doors, gun room equips, skipping rope cases, samurai mask (speed/invisibility/mask
   position), water race, rock pushing, push pads, lighting bake, radar alignment (overview scale 5.53).
 - Run `run_fixrefs.bat ba_jail_keimusho` before building (bump mine model), then check the mines in game: throw feel, launch strength, the decoy as
   the thrown item.
-- Left as found (flagged): `water1` is a `func_water_analog` (not swimmable), `func_physbox` balls ball1-7 can't be pushed by players,
-  `mssound` target doesn't exist (v2 too).
+- Left as found (flagged): 2 placed `weapon_tagrenade` (not in CS2, they spawn nothing); `skippingpole` rotating sound `Concrete.ScrapeSmooth` relies on
+  CS2 having that stock soundevent; `env_fire` (24, fire game) not yet seen working in CS2; `func_rotating`/`func_tanktrain` untouched.
+- Stock CS2 materials the vmap uses that couldn't be checked without CS2's VPK: cs_italy/black, cs_italy/cr_miscwood2b, cs_italy/hpe_plaster_wall_red,
+  wood/plywood02, de_train/train_metalceiling_02, de_mirage plaster_brick4, hr_dust_plaster_06, hr_massive/wood_planks_1, terracotta_pot_02 (model).
 - Loading slides are generated art; replace with in-game screenshots when there are some.
 
 ## Files

@@ -64,3 +64,13 @@ TODO
 probecover: check the new probe volumes look right next to the existing ones
 bump mines: 5 bumpminebutton -> bumpscript bump_give; awp spawner weapon_bumpmine -> weapon_decoy; bumpscript + 8 pooled prop_dynamic bumpmine_N (w_eq_bumpmine_dropped, non-solid, parked at z -1064) + land/detonate point_soundevents
 bump mines v2: start button -> bump_on (3 s, with the unlock), end button -> bump_off; custom_hud_layout bumphud (keimusho_bump.xml/css); mines only in the arena box while on; flying decoy hidden with a bump mine prop following it
+brightness re-done from the v3 BSP _light values (132 of 132 v3 lights matched); the 27 lights added by lightcover set to the v3 median (legacy 0.301887); stationary ranges kept at their trimmed value
+point_spotlight: 15 beams rebuilt as never-solid func_brush cones (additive, fading, cut at the first wall/floor; materials/spotlights/); 0 LightOn/LightOff -> Enable/Disable
+door sounds: 30 point_soundevents (jailkeimusho.door_pushbardoor_close, jailkeimusho.door_pushbardoor_open, jailkeimusho.door_wood_gate_open_01), started by the doors' OnOpen/OnClose (noise1) and OnFullyOpen/OnFullyClosed (noise2); 0 unnamed doors named port_door_N
+func_button: 19 buttons with CS:GO "sounds 10" -> use_sound keimusho.button10 (buttons/button10.wav from CS:GO)
+triggers enabled with players already inside (CS2 does not re-check them): 30 trigger_hurt / trigger_teleport get sweepscript Sweep_<name> 0.1 s after each Enable and Unsweep_<name> with each Disable (71 outputs added; keimusho_sweep.js)
+mask2 + bumpmine_N: model_archetype "" (script-moved props), mask2 non-solid; scripts move them with Move (a prop Teleported every tick is not drawn)
+climb balls: ballscript (keimusho_balls.js) pushes ball1-7 when players walk into them; map_asset_references += spotlight vmat, bump mine vmdl, bump HUD layout
+underwater lights (watervol.underwater_lights) in func_water volumes 48 u+ deep with no light inside: 24 added
+door pair: trigger_multiple [-1081, 356, 292] OnStartTouch -> slepdoor6.Open (missed earlier)
+overlay material decals/hr_decals/plaster_stain_10 (stock CS:GO, not in the addon) ported as csgo_static_overlay from CS:GO VPK

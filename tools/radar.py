@@ -70,7 +70,7 @@ OVERVIEW = '''// Overview (radar) description for %(map)s: rendered from the map
 	"TSpawn_y"	"%(ty).2f"
 }
 '''
-SKIP = ('materials/tools/', 'moondome', 'skybox')
+SKIP = ('materials/tools/', 'moondome', 'skybox', 'materials/spotlights/', 'materials/lasers/')   # beams aren't floors or walls
 
 def textures_for(c, tile_units=128.0):
     """Textures from the addon's own source images (content/<addon>/materials, <root>/embedded/<addon>/materials);
