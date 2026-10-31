@@ -55,7 +55,7 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Material names the importer mangled (spaces in folder names) pointed back at the real files.
 - Glows attached to moving objects (e.g. thrown grenades) made to follow them again.
 - Visibility hints placed for fast compiles, and huge sky shells taken out of the visibility calculation.
-- A minimap (radar) drawn from the map's own floors with their real textures (tower maps split into levels *(by hand)*).
+- A minimap (radar) drawn from the map's own floors with their real textures, plus the props from their original models, up to 2048 px (tower maps split into levels *(by hand)*).
 - Loading-screen credit to the original author ("original map by … / Ported to CS2 by skink52") and loading-screen pictures *(by hand, from the Workshop images you save on the PC)*.
 - Round settings (no freeze time, long rounds, a knife on spawn for one-team maps).
 - A report of everything that still needs a human look.

@@ -27,7 +27,7 @@ VTEX = '''<!-- dmx encoding keyvalues2_noids 1 format vtex 1 -->
     "m_outputFormat" "string" "BC7"
     "m_outputClearColor" "vector4" "0 0 0 0"
     "m_nOutputMinDimension" "int" "0"
-    "m_nOutputMaxDimension" "int" "1024"
+    "m_nOutputMaxDimension" "int" "%(maxdim)d"
     "m_textureOutputChannelArray" "element_array"
     [
         "CDmeTextureOutputChannel"
@@ -78,14 +78,16 @@ def textures_for(c, tile_units=128.0):
     import os
     return radartex.Textures([os.path.join(c.content, 'materials'), os.path.join(c.root, 'embedded', c.addon, 'materials')], tile_units)
 
-def run(m, c, size=1024, ss=2, pct=0.5, tex=None):   # pct: percentile trimmed off each edge of the floor extent (0 = keep every floor); tex: radartex.Textures to paint floors with their materials
+def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None):   # extra_polys: [(material, Nx3 loop)] drawn as floors too (radar_props.py: prop tops)   # pct: percentile trimmed off each edge of the floor extent (0 = keep every floor); tex: radartex.Textures to paint floors with their materials
     polys = list(lighting.world_polys(m))
     for e in m.entities():                         # solid brush entities (doors, func_brush, breakables...) count too
         if m.cls(e).startswith(('trigger_', 'func_buyzone', 'func_bomb_target', 'func_water', 'visibility')): continue
         for ch in m.children(e):
             if m.type(ch) == b'CMapMesh': polys.extend(lighting.mesh_polys(m, ch))
+    nworld = len(polys)
+    if extra_polys: polys.extend(extra_polys)
     floors, walls = [], []
-    for mat, loop in polys:
+    for k, (mat, loop) in enumerate(polys):
         if any(s in mat for s in SKIP) or len(loop) < 3: continue
         P = np.array(loop)
         Q = np.roll(P, -1, axis=0)                     # Newell normal: right for concave faces and collinear first vertices
@@ -94,7 +96,7 @@ def run(m, c, size=1024, ss=2, pct=0.5, tex=None):   # pct: percentile trimmed o
         if ln < 1e-6: continue
         n /= ln
         if n[2] > 0.6: floors.append((mat, P))
-        elif abs(n[2]) < 0.3: walls.append(P)
+        elif abs(n[2]) < 0.3 and k < nworld: walls.append(P)
     if not floors: return
     if tex is None and getattr(c, 'textures', None): tex = c.textures
     # keep only floors you can stand on: the space just above them must be a room with lights / spawns / teleports in it
@@ -152,7 +154,7 @@ def run(m, c, size=1024, ss=2, pct=0.5, tex=None):   # pct: percentile trimmed o
     img = Image.alpha_composite(img, edge).resize((size, size), Image.LANCZOS)
     b = io.BytesIO(); img.save(b, 'PNG')
     c.write('panorama/images/overheadmaps/%s_radar_psd.png' % c.addon, b.getvalue())
-    c.write('panorama/images/overheadmaps/%s_radar_psd.vtex' % c.addon, VTEX % dict(map=c.addon))
+    c.write('panorama/images/overheadmaps/%s_radar_psd.vtex' % c.addon, VTEX % dict(map=c.addon, maxdim=max(1024, size)))
     def frac(cls):
         es = m.by_class(cls)
         if not es: return 0.5, 0.5

@@ -62,3 +62,4 @@ probecover: added 1 light probe volumes around 1 static func_breakable / func_br
 
 TODO
 probecover: check the new probe volumes look right next to the existing ones
+bump mines: 5 bumpminebutton -> bumpscript bump_give; awp spawner weapon_bumpmine -> weapon_decoy; bumpscript + 8 pooled prop_dynamic bumpmine_N (w_eq_bumpmine_dropped, non-solid, parked at z -1064) + land/detonate point_soundevents

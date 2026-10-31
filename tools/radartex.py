@@ -50,6 +50,8 @@ class Textures:
         """(tile RGB uint8 array of px_per_tile x px_per_tile, is_texture). Flat colour arrays are 1x1."""
         key = (mat, px_per_tile)
         if key in s.cache: return s.cache[key]
+        if mat.startswith('#rgb:'):                     # flat colour given by the caller (radar_props.py: a prop's average texture colour)
+            out = (np.array([int(x) for x in mat[5:].split(',')], dtype=np.uint8).reshape(1, 1, 3), False); s.cache[key] = out; return out
         p = s.find(mat); out = None
         if p:
             try:
