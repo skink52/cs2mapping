@@ -133,13 +133,16 @@ def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None):   # extra_p
                 return any(ok(lab_at(q + [0, 0, 40])) for q in [c0] + [(c0 + v) / 2 for v in P])
             kept = [f for f in floors if face_ok(f[1])]
             if kept: floors = kept
-    for mat, loop in water:                        # func_water tops: kept whatever the room test says
+    # water: func_water tops and floors with a water material. Their meshes are usually boxes far bigger than the water you
+    # can see, so they're drawn only where the top floor under them (terrain, pool bottom, props) is below the water line.
+    wfaces = [f for f in floors if 'water' in f[0].lower()]
+    floors = [f for f in floors if 'water' not in f[0].lower()]
+    for mat, loop in water:
         if len(loop) < 3: continue
         P = np.array(loop); Q = np.roll(P, -1, axis=0)
         nz = ((P[:, 0] - Q[:, 0]) * (P[:, 1] + Q[:, 1])).sum()
-        area = abs(nz) / 2
-        if area > 1 and nz > 0: floors.append(('water:' + mat, P))
-    land = [f for f in floors if 'water' not in f[0].lower()] or floors    # a sea plane shouldn't set the map extent
+        if abs(nz) / 2 > 1 and nz > 0 and not any(x in mat for x in SKIP): wfaces.append(('water:' + mat, P))   # a nodraw top is no visible surface
+    land = floors or wfaces                        # a sea plane shouldn't set the map extent
     allp = np.concatenate([f[1] for f in land])
     lo = np.percentile(allp, pct, axis=0); hi = np.percentile(allp, 100 - pct, axis=0)
     span = max(hi[0] - lo[0], hi[1] - lo[1]) * 1.06 + 256
@@ -150,12 +153,31 @@ def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None):   # extra_p
     def to_img(P): return [((x - px) / scale * ss, (py - y) / scale * ss) for x, y in P[:, :2]]
     zlo, zhi = np.percentile(allp[:, 2], 2), np.percentile(allp[:, 2], 98)
     img = Image.new('RGBA', (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    zbuf = Image.new('F', (S, S), -1e9); dz = ImageDraw.Draw(zbuf)   # height of the top floor drawn at each pixel
     for mat, P in sorted(floors, key=lambda f: f[1][:, 2].mean()):
         t = float(np.clip((P[:, 2].mean() - zlo) / max(zhi - zlo, 1), 0, 1))
+        if wfaces: dz.polygon(to_img(P), fill=float(P[:, 2].mean()))
         if tex is None:
             col = (int(70 + 120 * t), int(80 + 120 * t), int(95 + 125 * t), 255)
             d.polygon(to_img(P), fill=col); continue
         paint_face(img, to_img(P), P, mat, t, tex, px, py, scale, ss)
+    wstat = []
+    if wfaces:
+        Z = np.asarray(zbuf)
+        for mat, P in sorted(wfaces, key=lambda f: f[1][:, 2].mean()):
+            wz = float(P[:, 2].max())
+            area = Image.new('L', (S, S), 0); ImageDraw.Draw(area).polygon(to_img(P), fill=255)
+            inside = np.asarray(area) > 0
+            vis = inside & (Z > -1e8) & (Z <= wz + 2)    # a floor under it, nothing standing above the water line
+            wstat.append('%s z%d %d%%' % (mat.split('/')[-1].replace('.vmat', ''), wz, 100 * vis.sum() / max(inside.sum(), 1)))
+            if not vis.any(): continue
+            ys, xs = np.nonzero(vis); y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+            t = float(np.clip((wz - zlo) / max(zhi - zlo, 1), 0, 1))
+            tile, _ = (tex.get(mat, 4) if tex is not None else (np.array([[[40, 90, 130]]], np.uint8), False))
+            col = np.clip(tile.reshape(-1, 3).mean(0) * (0.55 + 0.5 * t), 0, 255).astype(np.uint8)
+            patch = Image.new('RGBA', (int(x1 - x0), int(y1 - y0)), tuple(int(v) for v in col) + (255,))
+            mask = Image.fromarray((vis[y0:y1, x0:x1] * 190).astype(np.uint8), 'L')
+            img.paste(patch, (int(x0), int(y0)), mask)
     edge = Image.new('RGBA', (S, S), (0, 0, 0, 0)); de = ImageDraw.Draw(edge)
     for P in walls:
         if P[:, 2].max() - P[:, 2].min() < 40: continue        # skip low lips and steps
@@ -172,6 +194,7 @@ def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None):   # extra_p
         return float(np.clip((o[0] - px) / span, 0, 1)), float(np.clip((py - o[1]) / span, 0, 1))
     ctx, cty = frac('info_player_counterterrorist'); tx, ty = frac('info_player_terrorist')
     c.game_files['resource/overviews/%s.txt' % c.addon] = (OVERVIEW % dict(map=c.addon, px=px, py=py, scale=scale, ctx=ctx, cty=cty, tx=tx, ty=ty)).encode()
+    if wstat: c.log.append('radar water (share of each water face drawn): ' + ', '.join(wstat))
     c.log.append('radar: rendered from geometry (%d floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/%s_radar_psd.png + game resource/overviews/%s.txt (pos %d %d, scale %.2f)'
                  % (len(floors), c.addon, c.addon, px, py, scale))
 
@@ -196,7 +219,6 @@ def paint_face(img, pts, P, mat, t, tex, px, py, scale, ss):
     fill *= 0.55 + 0.5 * t
     fill = np.clip(fill, 0, 255).astype(np.uint8)
     mask = Image.new('L', (w, h), 0)
-    alpha = 90 if 'glass' in mat.lower() else 190 if mat.startswith('water:') else 255   # glass and func_water: see the floor below
-    ImageDraw.Draw(mask).polygon([(x - x0, y - y0) for x, y in pts], fill=alpha)
+    ImageDraw.Draw(mask).polygon([(x - x0, y - y0) for x, y in pts], fill=90 if 'glass' in mat.lower() else 255)   # glass: see the floor below
     patch = Image.fromarray(fill, 'RGB').convert('RGBA')
     img.paste(patch, (x0, y0), mask)

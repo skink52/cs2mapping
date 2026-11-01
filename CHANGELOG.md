@@ -5,7 +5,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-11-02: ba_jail_keimusho cell doors
 
-- `radar.py`: func_water tops drawn as see-through water (pool floors show through); ba_jail_keimusho radar re-rendered with its 7 water volumes.
+- `radar.py`: water (func_water tops and water-material floors) drawn see-through, and only where the top floor under it (terrain, pool bed, props) is below the water line: func_water boxes are usually much bigger than the visible water. Nodraw water tops skipped. Log line gives the share of each water face drawn. ba_jail_keimusho radar re-rendered.
 
 - ba_jail_keimusho: the 4 push-zone trigger_multiples put back (skink52 had swapped them for func_conveyors, which didn't push); slide pushes 350 → 150.
 
