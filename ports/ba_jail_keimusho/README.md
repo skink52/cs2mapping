@@ -92,6 +92,9 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
   (bodygroup choices with no name): choices named `studio`, and `glow` = `on` (default, mines glow) / `off`. Original kept as `.vmdl.bak`.
 - Bump mines stopped appearing after the first round: the script kept the round-1 `bumpmine_N` entities (map entities are re-created each
   round). The pool is now re-found whenever an entry is invalid, and reset on round start.
+- Still not working (reported): the thrower now comes from the projectile (`GetThrower`; with one decoy the weapon has no owner by the time
+  OnGrenadeThrow fires), a landing fallback (decoy at rest or 3 s without a bounce event), and a `bump_debug` toggle (RunScriptInput or cheat
+  command) that prints every give/throw/landing; `bump_on` cheat command for testing.
 
 ## Open
 

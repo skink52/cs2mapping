@@ -22,12 +22,15 @@ const POOL_SIZE = 8;
 const REGIVE_DELAY = 0.6;
 const ARENA = { min: { x: -2530, y: -4600, z: -420 }, max: { x: -1490, y: -3900, z: 40 } };
 const HUD_NAME = "bumphud";
+const LAND_FALLBACK = 3.0;            // no bounce event this long after the throw: place the mine where the decoy is
+let debug = false;
+function dbg(t) { if (debug) Instance.Msg("[bumpmine] " + t); }
 
 /** @type {Map<number, number>} player slot -> charges left */
 const charges = new Map();
 /** @type {Map<any, any>} decoy projectile -> the pooled mine flying with it */
 const flying = new Map();
-/** @type {{ ent: any, home: any, live: boolean, flying: boolean, armAt: number, dieAt: number, pos: any, name: string }[]} */
+/** @type {{ ent: any, home: any, live: boolean, flying: boolean, thrownAt?: number, armAt: number, dieAt: number, pos: any, name: string }[]} */
 let pool = [];
 /** @type {{ at: number, slot: number }[]} */
 let regive = [];
@@ -76,6 +79,7 @@ function giveDecoy(slot) {
 Instance.OnScriptInput("bump_give", ({ activator }) => {
     const pawn = toPawn(activator);
     const slot = pawn?.GetPlayerController()?.GetPlayerSlot();
+    dbg(`give: slot=${slot} gameOn=${gameOn} inArena=${pawn ? inArena(pawn.GetAbsOrigin()) : "-"}`);
     if (slot === undefined || !gameOn || !inArena(pawn.GetAbsOrigin())) return;
     charges.set(slot, CHARGES);
     regive.push({ at: Instance.GetGameTime() + 0.1, slot });
@@ -83,16 +87,20 @@ Instance.OnScriptInput("bump_give", ({ activator }) => {
 });
 
 Instance.OnGrenadeThrow(({ weapon, projectile }) => {
-    const owner = weapon.GetOwner();
+    // the thrower comes from the projectile: with one decoy in hand the weapon is already gone (no owner) when this fires
+    let owner = projectile && projectile.IsValid() ? projectile.GetThrower() : undefined;
+    if (!owner || !owner.IsValid()) owner = weapon && weapon.IsValid() ? weapon.GetOwner() : undefined;
     const slot = owner?.GetPlayerController()?.GetPlayerSlot();
-    if (slot === undefined || !gameOn || !charges.get(slot) || projectile.GetGrenadeType() !== CSGrenadeType.DECOY) return;
-    if (!owner.IsValid() || !inArena(owner.GetAbsOrigin())) return;
+    const isDecoy = projectile && projectile.IsValid() && projectile.GetGrenadeType() === CSGrenadeType.DECOY;
+    dbg(`throw: slot=${slot} decoy=${isDecoy} gameOn=${gameOn} charges=${slot === undefined ? "-" : charges.get(slot)} inArena=${owner ? inArena(owner.GetAbsOrigin()) : "-"}`);
+    if (slot === undefined || !gameOn || !charges.get(slot) || !isDecoy) return;
+    if (!inArena(owner.GetAbsOrigin())) return;
     const left = charges.get(slot) - 1;
     if (left > 0) { charges.set(slot, left); regive.push({ at: Instance.GetGameTime() + REGIVE_DELAY, slot }); }
     else charges.delete(slot);
     const mine = takeMine();
     if (!mine) return;
-    mine.live = false; mine.flying = true;
+    mine.live = false; mine.flying = true; mine.thrownAt = Instance.GetGameTime();
     projectile.SetColor({ r: 255, g: 255, b: 255, a: 0 });
     flying.set(projectile, mine);
     wake();
@@ -110,9 +118,7 @@ function takeMine() {
     return mine;
 }
 
-Instance.OnGrenadeBounce(({ projectile }) => {
-    const mine = flying.get(projectile);
-    if (!mine) return;
+function land(projectile, mine) {
     flying.delete(projectile);
     const pos = projectile.IsValid() ? projectile.GetAbsOrigin() : mine.ent.GetAbsOrigin();
     if (projectile.IsValid()) projectile.Remove();
@@ -120,7 +126,12 @@ Instance.OnGrenadeBounce(({ projectile }) => {
     mine.flying = false; mine.live = true; mine.armAt = now + ARM_DELAY; mine.dieAt = now + MINE_LIFE; mine.pos = pos;
     mine.ent.Teleport({ position: pos, angles: { pitch: 0, yaw: Math.random() * 360, roll: 0 }, velocity: { x: 0, y: 0, z: 0 } });
     Instance.EntFireAtName({ name: mine.name + "_land", input: "StartSound", delay: 0.02 });
+    dbg(`landed ${mine.name} at ${pos.x.toFixed(0)} ${pos.y.toFixed(0)} ${pos.z.toFixed(0)}`);
     wake();
+}
+Instance.OnGrenadeBounce(({ projectile }) => {
+    const mine = flying.get(projectile);
+    if (mine) land(projectile, mine);
 });
 
 Instance.SetThink(() => {
@@ -128,6 +139,8 @@ Instance.SetThink(() => {
     regive = regive.filter((r) => { if (now < r.at) return true; giveDecoy(r.slot); return false; });
     for (const [p, mine] of flying) {
         if (!p.IsValid()) { flying.delete(p); retire(mine); continue; }
+        const v = p.GetAbsVelocity();
+        if (now - mine.thrownAt > LAND_FALLBACK || (now - mine.thrownAt > 0.3 && Math.hypot(v.x, v.y, v.z) < 20)) { land(p, mine); continue; }
         const o = p.GetAbsOrigin(), spin = (now * 720) % 360;
         mine.ent.Move({ position: o, angles: { pitch: 0, yaw: spin, roll: 0 } });
     }
@@ -165,7 +178,11 @@ Instance.SetThink(() => {
     else thinking = false;
 });
 
-Instance.OnScriptInput("bump_on", () => { gameOn = true; wake(); });
+Instance.OnScriptInput("bump_on", () => { gameOn = true; dbg("game on"); wake(); });
+// debug: "ent_fire bumpscript RunScriptInput bump_debug" (or the bump_debug console command with sv_cheats 1) prints every give/throw/landing
+Instance.OnScriptInput("bump_debug", () => { debug = !debug; Instance.Msg("[bumpmine] debug " + (debug ? "on" : "off")); });
+Instance.RegisterCheatCommand("bump_debug", () => { debug = !debug; Instance.Msg("[bumpmine] debug " + (debug ? "on" : "off")); });
+Instance.RegisterCheatCommand("bump_on", () => { gameOn = true; Instance.Msg("[bumpmine] game on"); wake(); });
 Instance.OnScriptInput("bump_off", () => { gameOn = false; charges.clear(); for (const s of [...hudSent.keys()]) setHud(s, ""); });
 
 function reset() {
