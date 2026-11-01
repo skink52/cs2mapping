@@ -5,6 +5,8 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-11-02: ba_jail_keimusho cell doors
 
+- ba_jail_keimusho: the 4 push-zone trigger_multiples put back (skink52 had swapped them for func_conveyors, which didn't push); slide pushes 350 → 150.
+
 - Stage C `io` step pads vector/angle keys with fewer than 3 numbers (CS2's compile drops the entity otherwise).
 
 - ba_jail_keimusho: the celldoor2 cell doors didn't open. The compile dropped the 6 func_movelinears, so the props had no parent. Cause: their `movedir` was `0 90` (2 numbers), which CS2's compile rejects; now `0 90 0` (confirmed). Not Solid was also cleared on the way; the doors were also given unique names (`celldoor2_1..6`), with the buttons firing all 6.

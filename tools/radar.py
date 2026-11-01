@@ -79,9 +79,13 @@ def textures_for(c, tile_units=128.0):
     return radartex.Textures([os.path.join(c.content, 'materials'), os.path.join(c.root, 'embedded', c.addon, 'materials')], tile_units)
 
 def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None):   # extra_polys: [(material, Nx3 loop)] drawn as floors too (radar_props.py: prop tops)   # pct: percentile trimmed off each edge of the floor extent (0 = keep every floor); tex: radartex.Textures to paint floors with their materials
-    polys = list(lighting.world_polys(m))
+    polys = list(lighting.world_polys(m)); water = []
     for e in m.entities():                         # solid brush entities (doors, func_brush, breakables...) count too
-        if m.cls(e).startswith(('trigger_', 'func_buyzone', 'func_bomb_target', 'func_water', 'visibility')): continue
+        if m.cls(e) == 'func_water':               # water surfaces go on as see-through floors (pools show their bottom)
+            for ch in m.children(e):
+                if m.type(ch) == b'CMapMesh': water.extend(lighting.mesh_polys(m, ch))
+            continue
+        if m.cls(e).startswith(('trigger_', 'func_buyzone', 'func_bomb_target', 'visibility')): continue
         for ch in m.children(e):
             if m.type(ch) == b'CMapMesh': polys.extend(lighting.mesh_polys(m, ch))
     nworld = len(polys)
@@ -129,6 +133,12 @@ def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None):   # extra_p
                 return any(ok(lab_at(q + [0, 0, 40])) for q in [c0] + [(c0 + v) / 2 for v in P])
             kept = [f for f in floors if face_ok(f[1])]
             if kept: floors = kept
+    for mat, loop in water:                        # func_water tops: kept whatever the room test says
+        if len(loop) < 3: continue
+        P = np.array(loop); Q = np.roll(P, -1, axis=0)
+        nz = ((P[:, 0] - Q[:, 0]) * (P[:, 1] + Q[:, 1])).sum()
+        area = abs(nz) / 2
+        if area > 1 and nz > 0: floors.append(('water:' + mat, P))
     land = [f for f in floors if 'water' not in f[0].lower()] or floors    # a sea plane shouldn't set the map extent
     allp = np.concatenate([f[1] for f in land])
     lo = np.percentile(allp, pct, axis=0); hi = np.percentile(allp, 100 - pct, axis=0)
@@ -186,6 +196,7 @@ def paint_face(img, pts, P, mat, t, tex, px, py, scale, ss):
     fill *= 0.55 + 0.5 * t
     fill = np.clip(fill, 0, 255).astype(np.uint8)
     mask = Image.new('L', (w, h), 0)
-    ImageDraw.Draw(mask).polygon([(x - x0, y - y0) for x, y in pts], fill=90 if 'glass' in mat.lower() else 255)   # glass: see the floor below
+    alpha = 90 if 'glass' in mat.lower() else 190 if mat.startswith('water:') else 255   # glass and func_water: see the floor below
+    ImageDraw.Draw(mask).polygon([(x - x0, y - y0) for x, y in pts], fill=alpha)
     patch = Image.fromarray(fill, 'RGB').convert('RGBA')
     img.paste(patch, (x0, y0), mask)
