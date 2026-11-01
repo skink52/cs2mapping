@@ -52,7 +52,7 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
   into `csgo\models\weapons` + `csgo\materials\models\weapons\v_models\bump_mine`, imported with `run_fixrefs.bat ba_jail_keimusho`
   (`maps/ba_jail_keimusho_fix_refs.txt`); sounds `sounds/bumpmine/` + `keimusho.bumpmine.land/detonate` events.
 - **Radar** 2048 px (`radar.py` size 2048 + `radar_props.py`): textures from the map's embedded VTFs, 3201 props drawn from their CS:GO models
-  (embedded + CS:GO pak01 chunks 033/053/065/068/072/073/088/092/101/105/109), roofs/ceilings/canopies left out ([`radar_20261031.py`](radar_20261031.py)).
+  (embedded + CS:GO pak01 chunks 033/053/065/068/072/073/088/092/101/105/109), roofs/ceilings/canopies left out ([`radar_20261031.py`](radar_20261031.py)). 2026-11-02: water (7 func_water volumes) added as see-through blue.
   2 loading slides (generated title + radar art, Way 1 layout). Credits file.
 - Scripts are separate files in `maps/scripts/` with their own point_script each (`samuraiscript`, `gravityscript`, `pushscale`, `pushscript`).
 - Backup of the vmap before the edit: `maps/ba_jail_keimusho_vmap_backup_20261031.zip`.

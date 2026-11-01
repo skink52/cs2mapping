@@ -5,6 +5,8 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-11-02: ba_jail_keimusho cell doors
 
+- `radar.py`: func_water tops drawn as see-through water (pool floors show through); ba_jail_keimusho radar re-rendered with its 7 water volumes.
+
 - ba_jail_keimusho: the 4 push-zone trigger_multiples put back (skink52 had swapped them for func_conveyors, which didn't push); slide pushes 350 → 150.
 
 - Stage C `io` step pads vector/angle keys with fewer than 3 numbers (CS2's compile drops the entity otherwise).
