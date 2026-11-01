@@ -5,7 +5,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-11-02: ba_jail_keimusho cell doors
 
-- ba_jail_keimusho: the celldoor2 cell doors didn't open (CS2 can't parent to a name shared by 6 entities). Each func_movelinear now has its own name and the buttons fire all 6.
+- ba_jail_keimusho: the celldoor2 cell doors didn't open. The compile dropped the 6 func_movelinears (Not Solid + clip-only mesh), so the props had no parent. Not Solid cleared; the doors were also given unique names (`celldoor2_1..6`), with the buttons firing all 6.
 
 ## 2026-11-01: trigger_push emulation rewritten (ba_jail_keimusho slide game)
 

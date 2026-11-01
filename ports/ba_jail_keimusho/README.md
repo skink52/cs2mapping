@@ -29,7 +29,7 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
 - **game_player_equip** (12): legacy `weapon_x` keys → `weapon0`; 22 `Use`/`use` → `TriggerForActivatedPlayer` (the `!activator` param cleared).
 - **skippingcase:** case values `1` → `1.000000` (math_counter sends a float string). Unverified; the tested fix is script forwarding.
 - `func_tanktrain skippingtrain` left as is (exists in CS2).
-- **Cell doors `celldoor2`** (2026-11-02): 6 func_movelinears shared the name and 6 celldoor props were parented to it, so CS2 didn't parent them ("unrecognized parent"). Renamed `celldoor2_1..6`, each prop parented to its door, the two func_button outputs (Open/Close) split into one per door.
+- **Cell doors `celldoor2`** (2026-11-02): 6 func_movelinears shared the name and 6 celldoor props were parented to it, and CS2 logged "unrecognized parent". Real cause: the compile dropped the movelinears (Not Solid + toolsclip-only mesh). Not Solid cleared; also renamed `celldoor2_1..6`, each prop parented to its door, the two func_button outputs (Open/Close) split into one per door.
 - **trigger_push** (4, speeds 350/700) → trigger_multiple + `keimusho_push.js` push zones. 2026-11-01: rewritten to CS:GO base velocity (players run/strafe on top of the push, momentum kept on exit, the 700 up-pushes over the slide-game boxes are near-zero gravity instead of a launch); the old set-speed version made the slide game's box jumps impossible.
 - **Samurai mask** (trigger_once by the floor knife `knife`): the dead outputs (player_speedmod `value` x3, `AddOutput gravity 0.5`, `Alpha ###`,
   `rendermode 1`, `health 200`) → `samuraiscript` `samurai_on` ([`keimusho_samurai.js`](scripts/keimusho_samurai.js)): 3x ground speed (weapon speed x
