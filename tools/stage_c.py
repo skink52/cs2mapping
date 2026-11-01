@@ -281,7 +281,8 @@ def io_fixups(m, c):
     """Source 1 I/O that CS2 reads differently.
     - logic_auto with Global State to Read = is_pc: Source 1's engine set is_pc on every PC, CS2 never does, so the logic_auto never
       fires (ttt_minecraft: the gold block never teleported in, the clouds never moved, the vclips stayed on). The key is cleared.
-    - output targets that only match an entity name case-insensitively (Source 1 names ignore case): set to the exact name."""
+    - output targets that only match an entity name case-insensitively (Source 1 names ignore case): set to the exact name.
+    - vector/angle keys with fewer than 3 numbers (movedir "0 90"): padded with 0, or CS2's compile drops the entity."""
     n = 0
     for e in m.by_class('logic_auto'):
         if (m.P(e, 'globalstate') or '').lower() == 'is_pc': m.setp(e, 'globalstate', ''); n += 1
@@ -298,6 +299,15 @@ def io_fixups(m, c):
         if len(exact) == 1:
             new = next(iter(exact)); dmx.set_(cn, b'targetName', dmx.T_STR, new.encode()); fixed.append('%s->%s' % (t, new))
     if fixed: c.log.append('output targets fixed to the exact entity name (case): %s' % ', '.join(sorted(set(fixed))))
+    # Source 1 read short vectors with sscanf ("0 90" = 0 90 0); CS2's compile drops the whole entity (ba_jail_keimusho's
+    # celldoor2 func_movelinears vanished, their parented props logged "unrecognized parent").
+    padded = []
+    for e in m.entities():
+        for k in ('movedir', 'angles', 'pushdir', 'gibdir', 'origin'):
+            v = m.P(e, k)
+            if v and 0 < len(v.split()) < 3:
+                m.setp(e, k, ' '.join(v.split() + ['0'] * (3 - len(v.split())))); padded.append('%s %s "%s"' % (m.cls(e), k, v))
+    if padded: c.log.append('short vectors padded to 3 numbers (CS2 drops the entity otherwise): %s' % ', '.join(sorted(set(padded))))
 
 
 def round_setup(m, c):

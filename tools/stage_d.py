@@ -11,7 +11,7 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         doorsolid (doors flagged Non-solid to Player: meshes -> never-solid func_brush parented to the door),
         skyshell (moondome sky shells -> toolsskybox: the sun bakes through toolsskybox, not through a moondome),
         water (water meshes -> func_water, underwater post_processing_volume, master volume),
-        doorhinge (maps already through doorsolid: hinge cubes moved into the frame), iofix (logic_auto is_pc global state, output target name case),
+        doorhinge (maps already through doorsolid: hinge cubes moved into the frame), iofix (logic_auto is_pc global state, output target name case, short vectors),
         tesla (point_tesla -> crackle particle), doorparent (doorsolid brushes parented at spawn instead of in the map),
         probefill (light probe volumes over the whole play space, existing ones kept at higher priority),
         probedetail (finer nested volumes over walkable floors: 32 outdoors, 24 indoors),

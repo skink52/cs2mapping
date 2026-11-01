@@ -50,7 +50,8 @@ and `physpush` when named).
 - **Dropped outputs** (`io`): puts back outputs the importer dropped (diffs every entity's outputs against the decompiled VMF), and reports the cosmetic
   entities the importer leaves out (point_spotlight, func_dustmotes, func_precipitation, env_lightglow, fog, colour correction). Then `io_fixups`:
   logic_auto "Global State to Read" `is_pc` is cleared (CS2 never sets it, so the logic_auto never fired), and output targets that match an entity
-  only case-insensitively get the exact name (stage D `iofix` for maps already past stage C).
+  only case-insensitively get the exact name (stage D `iofix` for maps already past stage C). Vector/angle keys with fewer than 3 numbers
+  (`movedir "0 90"`) are padded with 0: CS2's compile drops the whole entity otherwise.
 - **func_wall_toggle** (`wall`) → func_brush (Solidity Toggle; StartDisabled from "Starts Invisible"). TurnOn/TurnOff → Enable/Disable.
 - **game_player_equip** (`equip`) → weapon0..weapon21 slots, and `Use` inputs on them → `TriggerForActivatedPlayer`. Equips without "Use Only" (CS:GO ran them
   on every spawn) are run by the io script one tick after `OnPlayerReset`: strip first if flagged, then give only the items the player doesn't already have.
