@@ -86,6 +86,11 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
   open-sky play areas and air above the walkable band, one Lowest over everything else (1,702 open cells with nothing standing in them stay Lowest).
 - Stock materials confirmed present by skink52 (the map reports no missing textures).
 
+## 2026-11-01
+
+- `maps/ba_jail_keimusho_fix_refs.txt` rewritten in the `importfilelist` format. The imported `models/weapons/w_eq_bumpmine_dropped.vmdl` didn't compile
+  (bodygroup choices with no name): choices named `studio`, and `glow` = `on` (default, mines glow) / `off`. Original kept as `.vmdl.bak`.
+
 ## Open
 
 - Not tested in game: all of the above. Build, then check the doors, gun room equips, skipping rope cases, samurai mask (speed/invisibility/mask
