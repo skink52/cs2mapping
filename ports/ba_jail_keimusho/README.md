@@ -100,6 +100,9 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
   hides it again when parked.
 - Real cause (build log): the compile DELETES a prop_dynamic whose model has prop_data. Removed the prop_data block from
   `w_eq_bumpmine_dropped.vmdl`. (The move into the arena stays; it does no harm.)
+- Fire game lit everything at once: `firerelay` sent `firetimer` a `RefireTime` with an empty value 1 s after start (in the original v3 too),
+  read as 0 in CS2. Output removed: 2 random fires (one from fire1-10, one from fire11-20) every 8 s; each fire's button (`fireNbrush`, at the
+  fire, +use) puts it out.
 
 ## Open
 
