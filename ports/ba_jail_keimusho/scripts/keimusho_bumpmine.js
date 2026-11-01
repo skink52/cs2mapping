@@ -98,8 +98,12 @@ Instance.OnGrenadeThrow(({ weapon, projectile }) => {
     wake();
 });
 
+// Map entities are re-created every round, so pool entries from an earlier round go stale (the mines then never appeared after the
+// first round). Re-find the pool whenever it's empty or any entry is no longer valid.
+function poolOk() { return pool.length > 0 && pool.every((p) => p.ent && p.ent.IsValid()); }
 function takeMine() {
-    if (pool.length === 0) buildPool();
+    if (!poolOk()) buildPool();
+    if (pool.length === 0) { Instance.Msg("[bumpmine] no bumpmine_1..8 props found - mine not placed"); return undefined; }
     let mine = pool.find((p) => !p.live && !p.flying);
     if (!mine) mine = pool.filter((p) => !p.flying).reduce((a, b) => (!a || b.dieAt < a.dieAt ? b : a), undefined);
     if (mine) mine.flying = true;
@@ -141,6 +145,7 @@ Instance.SetThink(() => {
     }
     for (const mine of pool) {
         if (!mine.live) continue;
+        if (!mine.ent || !mine.ent.IsValid()) { mine.live = false; continue; }
         if (now > mine.dieAt || !mine.ent.IsValid()) { retire(mine); continue; }
         if (now < mine.armAt) continue;
         for (const pw of pawns) {
@@ -168,8 +173,7 @@ function reset() {
     charges.clear(); flying.clear(); regive = [];
     const h = hud(); if (h) h.Reset();
     hudSent.clear();
-    buildPool();
-    for (const p of pool) retire(p);
+    pool = [];                      // re-found on first use: at round start the new round's props may not exist yet
 }
 Instance.OnActivate(reset);
 Instance.OnRoundStart(reset);

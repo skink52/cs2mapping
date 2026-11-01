@@ -90,6 +90,8 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
 
 - `maps/ba_jail_keimusho_fix_refs.txt` rewritten in the `importfilelist` format. The imported `models/weapons/w_eq_bumpmine_dropped.vmdl` didn't compile
   (bodygroup choices with no name): choices named `studio`, and `glow` = `on` (default, mines glow) / `off`. Original kept as `.vmdl.bak`.
+- Bump mines stopped appearing after the first round: the script kept the round-1 `bumpmine_N` entities (map entities are re-created each
+  round). The pool is now re-found whenever an entry is invalid, and reset on round start.
 
 ## Open
 
