@@ -97,7 +97,9 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
   command) that prints every give/throw/landing; `bump_on` cheat command for testing.
 - In game: "no bumpmine_1..8 props found": the pool props parked under the map (z -1064, outside the playable world) weren't there at runtime.
   Moved (with their point_soundevents) into the bump arena at -2144 -4544 -73, renderamt 0; the script shows a mine with alpha 255 and
-  hides it again when parked. Unconfirmed cause: entities placed in the void don't make it into the compiled map.
+  hides it again when parked.
+- Real cause (build log): the compile DELETES a prop_dynamic whose model has prop_data. Removed the prop_data block from
+  `w_eq_bumpmine_dropped.vmdl`. (The move into the arena stays; it does no harm.)
 
 ## Open
 
