@@ -95,6 +95,9 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
 - Still not working (reported): the thrower now comes from the projectile (`GetThrower`; with one decoy the weapon has no owner by the time
   OnGrenadeThrow fires), a landing fallback (decoy at rest or 3 s without a bounce event), and a `bump_debug` toggle (RunScriptInput or cheat
   command) that prints every give/throw/landing; `bump_on` cheat command for testing.
+- In game: "no bumpmine_1..8 props found": the pool props parked under the map (z -1064, outside the playable world) weren't there at runtime.
+  Moved (with their point_soundevents) into the bump arena at -2144 -4544 -73, renderamt 0; the script shows a mine with alpha 255 and
+  hides it again when parked. Unconfirmed cause: entities placed in the void don't make it into the compiled map.
 
 ## Open
 

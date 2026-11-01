@@ -1,4 +1,4 @@
-import { Instance, CSPlayerPawn, CSPlayerController, CSGrenadeType, CSGearSlot, CustomHudLayout } from "cs_script/point_script";
+import { Instance, CSPlayerPawn, CSPlayerController, CSGrenadeType, CSGearSlot, CustomHudLayout, BaseModelEntity } from "cs_script/point_script";
 
 // ba_jail_keimusho: CS:GO bump mines rebuilt in cs_script (weapon_bumpmine doesn't exist in CS2).
 // The floor buttons (bumpminebutton) fire the equip "awp spawner" (strip + weapon_decoy) and bumpscript -> RunScriptInput
@@ -62,12 +62,12 @@ function buildPool() {
     pool = [];
     for (let i = 1; i <= POOL_SIZE; i++) {
         const ent = Instance.FindEntityByName(POOL_PREFIX + i);
-        if (ent && ent.IsValid()) pool.push({ ent, home: ent.GetAbsOrigin(), live: false, flying: false, armAt: 0, dieAt: 0, pos: undefined, name: POOL_PREFIX + i });
+        if (ent && ent.IsValid() && ent instanceof BaseModelEntity) { ent.SetColor({ r: 255, g: 255, b: 255, a: 0 }); pool.push({ ent, home: ent.GetAbsOrigin(), live: false, flying: false, armAt: 0, dieAt: 0, pos: undefined, name: POOL_PREFIX + i }); }
     }
 }
 function retire(mine) {
     mine.live = false; mine.flying = false;
-    if (mine.ent.IsValid()) mine.ent.Teleport({ position: mine.home, velocity: { x: 0, y: 0, z: 0 } });
+    if (mine.ent.IsValid()) { mine.ent.Teleport({ position: mine.home, velocity: { x: 0, y: 0, z: 0 } }); mine.ent.SetColor({ r: 255, g: 255, b: 255, a: 0 }); }
 }
 function giveDecoy(slot) {
     const pawn = Instance.GetPlayerController(slot)?.GetPlayerPawn();
@@ -111,10 +111,14 @@ Instance.OnGrenadeThrow(({ weapon, projectile }) => {
 function poolOk() { return pool.length > 0 && pool.every((p) => p.ent && p.ent.IsValid()); }
 function takeMine() {
     if (!poolOk()) buildPool();
-    if (pool.length === 0) { Instance.Msg("[bumpmine] no bumpmine_1..8 props found - mine not placed"); return undefined; }
+    if (pool.length === 0) {
+        const named = Instance.FindEntitiesByClass("prop_dynamic").map((e) => e.GetEntityName()).filter((n) => n && n.toLowerCase().includes("bump"));
+        Instance.Msg("[bumpmine] no bumpmine_1..8 props found - mine not placed (prop_dynamics named *bump*: " + (named.join(", ") || "none") + ")");
+        return undefined;
+    }
     let mine = pool.find((p) => !p.live && !p.flying);
     if (!mine) mine = pool.filter((p) => !p.flying).reduce((a, b) => (!a || b.dieAt < a.dieAt ? b : a), undefined);
-    if (mine) mine.flying = true;
+    if (mine) { mine.flying = true; mine.ent.SetColor({ r: 255, g: 255, b: 255, a: 255 }); }
     return mine;
 }
 
