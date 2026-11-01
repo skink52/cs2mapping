@@ -3,6 +3,10 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-01: trigger_push emulation rewritten (ba_jail_keimusho slide game)
+
+- `tools/push_tail.js`: pushes now copy CS:GO base velocity instead of holding the velocity at the push speed: position moved by push×dt, own speed untouched (run/strafe on top), momentum handed over on exit, vertical push as acceleration, no ground friction under an upward push. ba_jail_keimusho's `keimusho_push.js` regenerated. The other ports' `_io.js` scripts in `ports/` still have the old push and pick up the new one when their io script is regenerated.
+
 ## 2026-10-31: ba_jail_keimusho fixes, `lightcover` pass
 
 - ba_jail_keimusho third pass: env_fire → generated fire particles (new `tools/firefx.py`), vis hints with `visfit_detail` (new stage D pass: Medium over busy enclosed cells, maps open to the void). Fixed `radar.VTEX` staying usable as a template for tesla/steam/glowfix.

@@ -54,7 +54,7 @@ and `physpush` when named).
 - **func_wall_toggle** (`wall`) → func_brush (Solidity Toggle; StartDisabled from "Starts Invisible"). TurnOn/TurnOff → Enable/Disable.
 - **game_player_equip** (`equip`) → weapon0..weapon21 slots, and `Use` inputs on them → `TriggerForActivatedPlayer`. Equips without "Use Only" (CS:GO ran them
   on every spawn) are run by the io script one tick after `OnPlayerReset`: strip first if flagged, then give only the items the player doesn't already have.
-- **trigger_push** (`push`) → trigger_multiple plus `maps/scripts/<addon>_io.js` push zones (`PushIn_n`/`PushOut_n`) that hold CS:GO "set speed" behaviour
+- **trigger_push** (`push`) → trigger_multiple plus `maps/scripts/<addon>_io.js` push zones (`PushIn_n`/`PushOut_n`) that copy CS:GO's base-velocity push (players keep their own speed on top; see the trigger_push gotcha)
   (clamped to 3500). Names, filters and Enable/Disable are kept.
 - **point_servercommand** (`cmd`) → script `Cmd_n`, with "Ported to CS2 by skink52" added after CS:GO port credits.
 - **Round setup** (`roundcfg`): a point_servercommand `port_servercommand` + logic_auto set `mp_freezetime 0` / `mp_roundtime 600` OnMapSpawn. Maps with
