@@ -53,7 +53,7 @@ def build(cfg):
     print('skeleton', jnames, 'weapon origin', wo)
 
     if 'glb' in cfg:
-        g, gb, parts = glbmesh.load(cfg['glb'], cfg.get('scale', 1.0), cfg.get('axes'))
+        g, gb, parts = glbmesh.load(cfg['glb'], cfg.get('scale', 1.0), cfg.get('axes'), parts=True)
         for i, p in enumerate(parts): p.index = i
     else:
         parts = fbxmesh.load(cfg['fbx'], cfg.get('axes', 'zxy'), cfg.get('scale', 1.0), cfg.get('flipv', False))

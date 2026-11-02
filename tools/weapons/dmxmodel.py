@@ -3,7 +3,7 @@ import os, sys
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dmx
-from dmx import Element, Attr, T_ELEMENT, T_INT, T_FLOAT, T_BOOL, T_STRING, T_VEC2, T_VEC3, T_VEC4, T_QUAT, AOFF
+from dmx import ModelElement as Element, Attr, T_ELEMENT, T_INT, T_FLOAT, T_BOOL, T_STRING, T_VEC2, T_VEC3, T_VEC4, T_QUAT, AOFF
 
 def transform(name, pos=(0,0,0), orient=(0,0,0,1)):
     e = Element('DmeTransform', name)
