@@ -4,35 +4,38 @@ Faces on these charts skip the atlas bake and get real-scale tiling UVs (per fac
 modes: plank  - board parts (part frame x = length, y = width, z = thickness) mapped onto one board strip of a boards texture
        box    - model-space box projection, S units per texture tile
        cyl    - around the part's long axis (posts, trunks), S units per tile
+
+From trenchwarfare-cs2/tools/stock.py (MIT), made project-neutral.
 """
 import os
+PREFIX = os.environ.get('CS2_MODEL_PREFIX', 'props')   # stock material copies go to materials/models/<PREFIX>/stock
 import numpy as np
 
 STOCK = {
     'boards': dict(vmat='materials/de_train/hr_train_s2/wood/hrts2_wood_floor_boards_02_wet.vmat', mode='plank', strips=4, tex=(1024, 512), box_S=64.0),
-    'boards_dark': dict(vmat='materials/models/tw/stock/boards_dark.vmat', mode='plank', strips=4, tex=(1024, 512), box_S=64.0),
-    'boards_warm': dict(vmat='materials/models/tw/stock/boards_warm.vmat', mode='plank', strips=4, tex=(1024, 512), box_S=64.0),
+    'boards_dark': dict(vmat='materials/models/' + PREFIX + '/stock/boards_dark.vmat', mode='plank', strips=4, tex=(1024, 512), box_S=64.0),
+    'boards_warm': dict(vmat='materials/models/' + PREFIX + '/stock/boards_warm.vmat', mode='plank', strips=4, tex=(1024, 512), box_S=64.0),
     'boards_v': dict(vmat='materials/de_train/hr_train_s2/wood/hrts2_wood_floor_boards_02_wet.vmat', mode='box', S=17.0, swap=True),
     'boards_box': dict(vmat='materials/de_train/hr_train_s2/wood/hrts2_wood_floor_boards_02_wet.vmat', mode='box', S=40.0),
     'rust': dict(vmat='materials/de_overpass/metal/rusty_metal_1.vmat', mode='box', S=96.0),
     'rust_fine': dict(vmat='materials/de_overpass/metal/rusty_metal_1.vmat', mode='box', S=36.0),
     'mud': dict(vmat='materials/de_ancient/hr_ancient_ground_mud_03_wet.vmat', mode='box', S=160.0),
     'mud_fine': dict(vmat='materials/de_ancient/hr_ancient_ground_mud_03_wet.vmat', mode='box', S=40.0),
-    'bark': dict(vmat='materials/models/tw/stock/bark_maple.vmat', mode='cyl', S=72.0),
-    # exported from the game files into materials/models/tw/stock (their own vmats are foliage/blend shaders)
-    'hessian': dict(vmat='materials/models/tw/stock/hessian.vmat', mode='chart', S=28.0),
-    'hessian_b': dict(vmat='materials/models/tw/stock/hessian_b.vmat', mode='chart', S=28.0),
-    'hessian_c': dict(vmat='materials/models/tw/stock/hessian_c.vmat', mode='chart', S=28.0),
-    'paint_white': dict(vmat='materials/models/tw/stock/paint_white.vmat', mode='box', S=40.0),
-    'canvas': dict(vmat='materials/models/tw/stock/canvas.vmat', mode='chart', S=64.0),
-    'canvas_dark': dict(vmat='materials/models/tw/stock/canvas_dark.vmat', mode='chart', S=64.0),
-    'paint_feld': dict(vmat='materials/models/tw/stock/paint_feldgrau.vmat', mode='box', S=56.0),
-    'paint_khaki': dict(vmat='materials/models/tw/stock/paint_khaki.vmat', mode='box', S=56.0),
-    'paint_dark': dict(vmat='materials/models/tw/stock/paint_dark.vmat', mode='box', S=56.0),
-    'paint_khaki_l': dict(vmat='materials/models/tw/stock/paint_khaki.vmat', mode='box', S=130.0),
-    'brass': dict(vmat='materials/models/tw/stock/brass.vmat', mode='box', S=24.0),
-    'steel': dict(vmat='materials/models/tw/stock/steel.vmat', mode='box', S=48.0),
-    'rope': dict(vmat='materials/models/tw/stock/rope.vmat', mode='cyl', S=6.0, swap=True),
+    'bark': dict(vmat='materials/models/' + PREFIX + '/stock/bark_maple.vmat', mode='cyl', S=72.0),
+    # exported from the game files into materials/models/<PREFIX>/stock (their own vmats are foliage/blend shaders)
+    'hessian': dict(vmat='materials/models/' + PREFIX + '/stock/hessian.vmat', mode='chart', S=28.0),
+    'hessian_b': dict(vmat='materials/models/' + PREFIX + '/stock/hessian_b.vmat', mode='chart', S=28.0),
+    'hessian_c': dict(vmat='materials/models/' + PREFIX + '/stock/hessian_c.vmat', mode='chart', S=28.0),
+    'paint_white': dict(vmat='materials/models/' + PREFIX + '/stock/paint_white.vmat', mode='box', S=40.0),
+    'canvas': dict(vmat='materials/models/' + PREFIX + '/stock/canvas.vmat', mode='chart', S=64.0),
+    'canvas_dark': dict(vmat='materials/models/' + PREFIX + '/stock/canvas_dark.vmat', mode='chart', S=64.0),
+    'paint_feld': dict(vmat='materials/models/' + PREFIX + '/stock/paint_feldgrau.vmat', mode='box', S=56.0),
+    'paint_khaki': dict(vmat='materials/models/' + PREFIX + '/stock/paint_khaki.vmat', mode='box', S=56.0),
+    'paint_dark': dict(vmat='materials/models/' + PREFIX + '/stock/paint_dark.vmat', mode='box', S=56.0),
+    'paint_khaki_l': dict(vmat='materials/models/' + PREFIX + '/stock/paint_khaki.vmat', mode='box', S=130.0),
+    'brass': dict(vmat='materials/models/' + PREFIX + '/stock/brass.vmat', mode='box', S=24.0),
+    'steel': dict(vmat='materials/models/' + PREFIX + '/stock/steel.vmat', mode='box', S=48.0),
+    'rope': dict(vmat='materials/models/' + PREFIX + '/stock/rope.vmat', mode='cyl', S=6.0, swap=True),
     'rust_heavy': dict(vmat='materials/shared_base/metal/metal_rust_001.vmat', mode='box', S=64.0),
 }
 
@@ -68,9 +71,9 @@ def _vtex(key, maxsize):
 
 
 def export_custom(outdir, maxsize=1024):
-    """decode the game textures named in CUSTOM and write csgo_complex vmats (+ derived colour/roughness PNGs) into materials/models/tw/stock"""
+    """decode the game textures named in CUSTOM and write csgo_complex vmats (+ derived colour/roughness PNGs) into materials/models/<PREFIX>/stock"""
     from PIL import Image
-    rel = 'materials/models/tw/stock'
+    rel = 'materials/models/%s/stock' % PREFIX
     d = os.path.join(outdir, rel); os.makedirs(d, exist_ok=True)
     nrm_done = {}
     for name, c in CUSTOM.items():
@@ -87,7 +90,7 @@ def export_custom(outdir, maxsize=1024):
         # untouched colour textures are shared between the tinted variants
         cfile = '%s/%s.png' % (rel, (name + '_color') if c.get('chip') else c['c'].split('/')[-1].split('_tga_')[0].split('_psd_')[0])
         Image.fromarray((col.clip(0, 1) * 255).astype(np.uint8)).save(os.path.join(outdir, cfile))
-        lines = ['// %s: CS2 game texture (Valve) re-used for mg_trenchwarfare props' % name, '', 'Layer0', '{', '\tshader "csgo_complex.vfx"', '\tF_SPECULAR 1',
+        lines = ['// %s: CS2 game texture (Valve) re-used for procedural props' % name, '', 'Layer0', '{', '\tshader "csgo_complex.vfx"', '\tF_SPECULAR 1',
                  '\tTextureColor "%s"' % cfile, '\tg_vColorTint "[%.3f %.3f %.3f 0.000000]"' % tuple(c.get('tint', (1, 1, 1))), '\tg_flMetalness "%.3f"' % c.get('metal', 0.0)]
         if rough is not None:
             rfile = '%s/%s_rough.png' % (rel, name)
@@ -218,10 +221,10 @@ def uv_for(mesh, fsel, key):
 
 
 def export_bark(outdir):
-    """writes materials/models/tw/stock/bark_maple.vmat + textures decoded from the game's maple bark (csgo_complex, no wind)"""
+    """writes materials/models/<PREFIX>/stock/bark_maple.vmat + textures decoded from the game's maple bark (csgo_complex, no wind)"""
     import vtexread as V
     from PIL import Image
-    rel = 'materials/models/tw/stock'
+    rel = 'materials/models/%s/stock' % PREFIX
     d = os.path.join(outdir, rel); os.makedirs(d, exist_ok=True)
     base = 'models/foliage/trees/maple/maple_01/'
     refs = V.refs(V.vpk_read(base + 'maple_tree_bark_1.vmat_c'))
@@ -236,7 +239,7 @@ def export_bark(outdir):
     z = np.sqrt(np.clip(1 - x * x - y * y, 0, 1))
     Image.fromarray((np.stack([x, y, z], -1) * 127.5 + 127.5).clip(0, 255).astype(np.uint8)).save(os.path.join(d, 'bark_maple_normal.png'))
     if 'ao' in got: V.decode_vtex(V.vpk_read(got['ao'] + '_c')).convert('L').save(os.path.join(d, 'bark_maple_ao.png'))
-    lines = ['// maple bark from the CS2 game files (Valve), re-used without wind animation for mg_trenchwarfare posts and trunks', '',
+    lines = ['// maple bark from the CS2 game files (Valve), re-used without wind animation for posts and trunks', '',
              'Layer0', '{', '\tshader "csgo_complex.vfx"', '\tF_SPECULAR 1',
              '\tTextureColor "%s/bark_maple_color.png"' % rel, '\tTextureNormal "%s/bark_maple_normal.png"' % rel,
              '\tTextureRoughness "[0.900000 0.900000 0.900000 0.000000]"', '\tg_flMetalness "0.000"']

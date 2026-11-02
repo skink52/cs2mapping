@@ -1,5 +1,5 @@
 """glTF binary (.glb) -> CS2 static prop with every material: SMD (render + convex hull), csgo_complex vmats, PNG textures.
-Handles multi-material models (Sketchfab etc.). Output goes under models/<CS2_MODEL_PREFIX or 'ext'>/<name> unless --sub is given.
+Handles multi-material models (Sketchfab etc.). Output goes under models/<CS2_MODEL_PREFIX, default props>/ext/<name> (where placer.py and ext_smd.py look) unless --sub is given.
 
 usage: glb2cs2_multi.py model.glb <addon content root> <name> [--length L | --scale S] [--yaw deg] [--maxtex 2048] [--surface metal]
   --length: scale so the longest horizontal side is L units; otherwise metres -> inches (x39.37)
@@ -19,7 +19,7 @@ ap.add_argument('--drop', default='', help='comma list of node/mesh name substri
 ap.add_argument('--credit', default='')
 A = ap.parse_args()
 name = A.name
-sub = A.sub or 'models/%s/%s' % (os.environ.get('CS2_MODEL_PREFIX', 'ext'), name)
+sub = A.sub or 'models/%s/ext/%s' % (os.environ.get('CS2_MODEL_PREFIX', 'props'), name)
 mdir = os.path.join(A.out, sub); tdir = os.path.join(A.out, 'materials', sub)
 os.makedirs(mdir, exist_ok=True); os.makedirs(tdir, exist_ok=True)
 

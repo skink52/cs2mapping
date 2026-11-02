@@ -4,13 +4,19 @@ import struct, io, re, os, pickle
 import numpy as np
 from PIL import Image
 
-VPK_DIR = '/mnt/user-data/uploads/game/csgo'
+LEGACY_DIR, LEGACY_IDX = '/mnt/user-data/uploads/game/csgo', '/tmp/claude-0/vpkidx.pkl'   # where earlier sessions staged them
+VPK_DIR = os.environ.get('CS2_VPK_DIR') or (LEGACY_DIR if os.path.isdir(LEGACY_DIR) else '')   # folder holding pak01_dir.vpk + needed chunks
+VPK_INDEX = os.environ.get('CS2_VPK_INDEX') or LEGACY_IDX   # optional pickled vpkdir.read_dir() result, used when present
 _idx = None
 
 
 def index():
     global _idx
-    if _idx is None: _idx = pickle.load(open('/tmp/claude-0/vpkidx.pkl', 'rb'))
+    if _idx is None:
+        if os.path.exists(VPK_INDEX): _idx = pickle.load(open(VPK_INDEX, 'rb'))
+        else:
+            import vpkdir
+            _idx = vpkdir.read_dir(os.path.join(VPK_DIR, 'pak01_dir.vpk'))
     return _idx
 
 

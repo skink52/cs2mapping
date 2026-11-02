@@ -25,10 +25,17 @@ PROPS_JSON = os.path.join(os.path.dirname(os.path.abspath(OUT)), 'props.json')
 
 # stock CS2 models: (lo, hi) in model units. Example values (estimated, conservative), not measured from the compiled models.
 STOCK = {
+    'models/generic/ammo_artillery_01/ammo_artillery_small_01.vmdl': ((-14, -10, 0), (14, 10, 14)),
+    'models/generic/ammo_artillery_01/ammo_artillery_small_01b.vmdl': ((-14, -10, 0), (14, 10, 14)),
     'models/generic/barrel_kit_01/barrel_01_a.vmdl': ((-13, -13, 0), (13, 13, 44)),
-    'models/generic/crate_wooden_01/crate_wooden_01_a.vmdl': ((-16, -16, 0), (16, 16, 32)),
+    'models/generic/barrel_kit_01/barrel_02_a.vmdl': ((-13, -13, 0), (13, 13, 44)),
+    'models/generic/barrel_kit_01/barrel_03_a.vmdl': ((-13, -13, 0), (13, 13, 44)),
     'models/de_inferno/wood_pallet_01/inferno_pallet_wood_01.vmdl': ((-24, -20, 0), (24, 20, 6)),
+    'models/generic/crate_wooden_01/crate_wooden_01_a.vmdl': ((-16, -16, 0), (16, 16, 32)),
+    'models/generic/crate_wooden_01/crate_wooden_01_b.vmdl': ((-16, -16, 0), (16, 16, 32)),
+    'models/generic/crate_wooden_01/crate_wooden_01_c.vmdl': ((-16, -16, 0), (16, 16, 32)),
     'models/de_overpass/junk/wheelbarrow01a/wheelbarrow01a.vmdl': ((-30, -14, 0), (30, 14, 26)),
+    'models/props/de_ancient/ancient_lighting/ancient_lighting_candle_cluster_01_lit.vmdl': ((-4, -4, 0), (4, 4, 6)),
 }
 # trunk radius by name fragment (canopies overlap freely); 0 = no footprint (grass, weeds)
 TREE_R = {'maple': 14, 'poplar': 12, 'beech': 9, 'dogwood': 20, 'viburnum': 18, 'weed': 0, 'grass': 0, 'leaves': 0}
@@ -36,8 +43,10 @@ DEFAULT = ((-12, -12, 0), (12, 12, 24))
 
 
 class Bounds:
-    def __init__(self, props_json=PROPS_JSON, out=OUT, prefix=PREFIX, table=None):
-        self.out, self.prefix = out, prefix
+    """missing_ext: what a converted model with no SMD yet gets: 'default' (name rules, then DEFAULT) or 'zero' (a zero-size box;
+    mg_trenchwarfare's original behaviour)"""
+    def __init__(self, props_json=PROPS_JSON, out=OUT, prefix=PREFIX, table=None, missing_ext='default'):
+        self.out, self.prefix, self.missing_ext = out, prefix, missing_ext
         self.props = json.load(open(props_json)) if props_json and os.path.exists(props_json) else {}
         self.table = dict(STOCK); self.table.update(table or {})
         self.cache = {}
@@ -66,17 +75,30 @@ class Bounds:
             base = name[:-4] if name.endswith('_dyn') else name
             smd = os.path.join(self.out, mine + 'ext/%s/%s.smd' % (base, base))
             if os.path.exists(smd): return self.smd_bounds(smd)
-        elif name in self.props:
+            if self.missing_ext == 'zero': return (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)
+        elif model.startswith(mine) and name in self.props:
             return tuple(self.props[name]['mins']), tuple(self.props[name]['maxs'])
         for k, r in TREE_R.items():
             if k in model: return (-r, -r, 0), (r, r, 300 if r > 10 else 60)
         return DEFAULT
 
 
+_default_bounds = None
+
+
+def bounds(model):
+    """(lo, hi) of a model from a shared default Bounds()"""
+    global _default_bounds
+    if _default_bounds is None: _default_bounds = Bounds()
+    return _default_bounds(model)
+
+
 class Placer:
-    def __init__(self, cell=192.0, bounds=None):
+    """skip_degenerate: a footprint with a zero half-extent (e.g. grass, pad 0) never overlaps anything (default); False tests it
+    like any other box (mg_trenchwarfare's original behaviour)"""
+    def __init__(self, cell=192.0, bounds=None, skip_degenerate=True):
         self.cell = cell; self.grid = {}; self.items = []
-        self.bounds = bounds or Bounds()
+        self.bounds = bounds or Bounds(); self.skip_degenerate = skip_degenerate
 
     def footprint(self, model, x, y, z, yaw, scale=(1, 1, 1), pad=0.0):
         lo, hi = self.bounds(model)
@@ -92,10 +114,10 @@ class Placer:
         return (c, s), (-s, c)
 
     @staticmethod
-    def overlap(f, g):
+    def overlap(f, g, skip_degenerate=True):
         """oriented boxes in plan (separating axes) and their z ranges"""
         if f['z'][1] <= g['z'][0] or g['z'][1] <= f['z'][0]: return False
-        if min(f['h']) <= 0 or min(g['h']) <= 0: return False
+        if skip_degenerate and (min(f['h']) <= 0 or min(g['h']) <= 0): return False
         d = (g['c'][0] - f['c'][0], g['c'][1] - f['c'][1])
         fa, ga = Placer._axes(f), Placer._axes(g)
         for ax in fa + ga:
@@ -117,7 +139,7 @@ class Placer:
             for idx in self.grid.get(k, ()):
                 if idx in seen: continue
                 seen.add(idx)
-                if self.overlap(f, self.items[idx]): return self.items[idx]
+                if self.overlap(f, self.items[idx], self.skip_degenerate): return self.items[idx]
         return None
 
     def add(self, f):
@@ -143,7 +165,7 @@ class Placer:
             for k in self._keys(f):
                 for j in self.grid.get(k, ()):
                     if j <= i or skip(self.items[j]): continue
-                    if self.overlap(f, self.items[j]): out.add((i, j))
+                    if self.overlap(f, self.items[j], self.skip_degenerate): out.add((i, j))
         return sorted(out)
 
     def write_audit(self, path, top=25):

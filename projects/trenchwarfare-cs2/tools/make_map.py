@@ -5,6 +5,7 @@ edited in Hammer replaces only that group.
 usage: make_map.py <template_or_current.vmap> <out.vmap> <addon_content_out>
 """
 import os, sys, json, math, copy
+os.environ.setdefault('CS2_MODEL_PREFIX', 'tw')   # shared create/ tools: models/tw, models/tw/ext, materials/models/tw/stock
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 sys.path.insert(0, os.path.dirname(__file__))
@@ -357,7 +358,7 @@ print('parapets: %d quads' % pq)
 # ---------------------------------------------------------------- prop helper
 props_placed = {}
 import placer
-PL = placer.Placer()
+PL = placer.Placer(bounds=placer.Bounds(missing_ext='zero'), skip_degenerate=False)
 for _c in world.get('children'):          # the user's own placements are obstacles for generated dressing
     if _c.get('customVisGroup', '') == USER_GROUP and _c.type == 'CMapEntity' and (_c.get('entity_properties').get('model') or '').endswith('.vmdl'):
         _o = _c.get('origin'); PL.add(PL.footprint(_c.get('entity_properties').get('model'), _o[0], _o[1], _o[2], _c.get('angles')[1], tuple(_c.get('scales')), 0.0))
@@ -367,7 +368,7 @@ PROBED_KEYS = ('tree', 'poplar', 'beech', 'maple', 'bush', 'shrub', 'dogwood', '
 def probed(model, scale):
     """foliage, wire and small clutter are light-probed: they would add thousands of lightmap charts (bake charting time) for little gain"""
     if any(k in model for k in PROBED_KEYS): return True
-    lo, hi = placer.bounds(model)
+    lo, hi = PL.bounds(model)
     return max((hi[i] - lo[i]) * abs(scale[i]) for i in range(3)) < 40.0
 def prop(name, x, y, z, yaw=0.0, pitch=0.0, roll=0.0, scale=(1, 1, 1), stock=None, solid='6', shadows='0', reg=True, check=False, pad=0.0, **kw):
     """reg: record the footprint; check: only place if it touches nothing already recorded (returns None when skipped)"""
@@ -522,7 +523,7 @@ for s in (-1, 1):
         return float(LY.ground_low(np.array([x]), np.array([y]))[0]) - LY.DEPTH
     def at_wall(model, cx, cy, ux, uy, nx_, ny_, t, side, inset=5.0, yaw_off=0.0, lean=None, dz=0.0, z=None, pad=1.5):
         """place model with its long axis along the trench (u), its back `inset` off the wall on `side`"""
-        lo, hi = placer.bounds(model)
+        lo, hi = PL.bounds(model)
         long_x = (hi[0] - lo[0]) >= (hi[1] - lo[1])
         depth = (hi[1] - lo[1]) if long_x else (hi[0] - lo[0])
         off = LY.HW - inset - depth / 2
@@ -543,7 +544,7 @@ for s in (-1, 1):
     def in_trench(x, y):
         return any(x0 <= x <= x1 and y0 <= y <= y1 for (x0, y0, x1, y1, k) in RECTS_)
     def half_len(model):
-        lo, hi = placer.bounds(model)
+        lo, hi = PL.bounds(model)
         return max(hi[0] - lo[0], hi[1] - lo[1]) / 2
     nat = 'gb' if s > 0 else 'de'
     BAY = [(TW('tl_bucket'), 3), (TW('tl_tins'), 3), (TW('crate_long' if s > 0 else 'crate_german'), 2), (TW('crate_shells'), 1), (TW('tl_bagpile'), 2),

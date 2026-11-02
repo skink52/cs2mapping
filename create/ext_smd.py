@@ -5,7 +5,7 @@ from PIL import Image
 import geo
 
 ADDON = os.environ.get('CS2_ADDON_OUT', os.path.join(os.path.dirname(__file__), '..', 'out', 'addon'))
-SUB = os.environ.get('CS2_MODEL_PREFIX', 'ext')
+SUB = os.environ.get('CS2_MODEL_PREFIX', 'props') + '/ext'   # converted models live in models/<CS2_MODEL_PREFIX>/ext/<name>
 
 
 def load(name):

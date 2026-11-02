@@ -1,4 +1,4 @@
-"""Writes out/entities.json (named point entities + spawns) from a vmap, for test/mock.mjs."""
+"""Writes named point entities + spawns from a vmap as JSON, for the mock engine.  usage: dump_entities.py <vmap> <out.json>"""
 import sys, json, dmx
 d = dmx.DMX.load(sys.argv[1]); out = []
 def walk(n):

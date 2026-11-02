@@ -4,12 +4,13 @@ import numpy as np
 from PIL import Image
 import geo
 
-ADDON = os.path.join(os.path.dirname(__file__), '..', 'out', 'addon')
+ADDON = os.environ.get('CS2_ADDON_OUT', os.path.join(os.path.dirname(__file__), '..', 'out', 'addon'))
+SUB = os.environ.get('CS2_MODEL_PREFIX', 'props') + '/ext'   # converted models live in models/<CS2_MODEL_PREFIX>/ext/<name>
 
 
 def load(name):
     """{material: dict(P (n,3,3), N (n,3,3), UV (n,3,2), bone)} in SMD coordinates + header lines"""
-    path = os.path.join(ADDON, 'models/tw/ext/%s/%s.smd' % (name, name))
+    path = os.path.join(ADDON, 'models/%s/%s/%s.smd' % (SUB, name, name))
     L = open(path).read().split('\n')
     i = L.index('triangles')
     head = L[:i + 1]
@@ -29,7 +30,7 @@ def load(name):
 
 
 def save(name, mats, head, path=None):
-    path = path or os.path.join(ADDON, 'models/tw/ext/%s/%s.smd' % (name, name))
+    path = path or os.path.join(ADDON, 'models/%s/%s/%s.smd' % (SUB, name, name))
     out = list(head)
     for m, g in mats.items():
         for t in range(len(g['P'])):
@@ -42,8 +43,8 @@ def save(name, mats, head, path=None):
 
 
 def vmat_tex(name, mat, key='TextureColor'):
-    p = os.path.join(ADDON, 'materials/models/tw/ext/%s/%s.vmat' % (name, mat))
-    if not os.path.exists(p): p = os.path.join(ADDON, 'materials/models/tw/ext/%s/%s.vmat' % (name, mat.split('/')[-1]))
+    p = os.path.join(ADDON, 'materials/models/%s/%s/%s.vmat' % (SUB, name, mat))
+    if not os.path.exists(p): p = os.path.join(ADDON, 'materials/models/%s/%s/%s.vmat' % (SUB, name, mat.split('/')[-1]))
     m = re.search(r'%s "([^"]+)"' % key, open(p).read())
     return m.group(1) if m else None
 
