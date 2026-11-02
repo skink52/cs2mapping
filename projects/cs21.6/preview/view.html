@@ -1,0 +1,70 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c"></canvas>
+<script>
+// Minimal WebGL2 viewer for scene.json/scene.bin (textured, sun + ambient, sky panorama on moondome faces).
+const q = new URLSearchParams(location.search);
+const cam = JSON.parse(q.get('cam') || '{"x":0,"y":0,"z":0,"yaw":0,"pitch":0,"fov":90}');
+const root = q.get('root') || '../out/addon/';
+const scenePath = q.get('scene') || 'build/';
+const cv = document.getElementById('c');
+cv.width = innerWidth; cv.height = innerHeight;
+const gl = cv.getContext('webgl2', { antialias: true });
+const vs = `#version 300 es
+in vec3 p; in vec2 t; uniform mat4 m; out vec2 vt; out vec3 vp;
+void main(){ vt=t; vp=p; gl_Position=m*vec4(p,1.0); }`;
+const fs = `#version 300 es
+precision highp float; in vec2 vt; in vec3 vp; uniform sampler2D tc; uniform sampler2D tt; uniform int kind; uniform int hasT;
+uniform float op; uniform vec3 eye; out vec4 o;
+void main(){
+  if(kind==1){ vec3 d=normalize(vp-eye); float yaw=atan(d.y,d.x); float pit=asin(clamp(d.z,-1.0,1.0));
+    vec2 uv=vec2(0.5-yaw/6.2831853, 0.5-pit/3.1415926); o=vec4(texture(tc,uv).rgb,1.0); return; }
+  vec4 c=texture(tc,vt); float a=1.0; if(hasT==1){ a=texture(tt,vt).r; if(a<0.5) discard; }
+  vec3 n=normalize(cross(dFdx(vp),dFdy(vp))); vec3 l=normalize(vec3(-0.35,-0.33,0.87));
+  float sh=0.45+0.55*max(dot(n,l),0.0)+0.15*abs(n.z);
+  o=vec4(c.rgb*sh, op);
+}`;
+function sh(type, src){ const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s); if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(s); return s; }
+const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr); gl.useProgram(pr);
+const U = n => gl.getUniformLocation(pr, n);
+function tex(url){ return new Promise(r => { const im=new Image(); im.onload=()=>{ const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,im); gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT); r(t); };
+  im.onerror=()=>r(null); im.src=root+url; }); }
+function persp(fov, asp, n, f){ const t=1/Math.tan(fov*Math.PI/360); return [t/asp,0,0,0, 0,t,0,0, 0,0,(f+n)/(n-f),-1, 0,0,2*f*n/(n-f),0]; }
+function mul(a,b){ const r=new Array(16).fill(0); for(let i=0;i<4;i++)for(let j=0;j<4;j++)for(let k=0;k<4;k++) r[j*4+i]+=a[k*4+i]*b[j*4+k]; return r; }
+function view(c){ // Source axes: x forward, y left, z up -> GL: -z forward
+  const y=c.yaw*Math.PI/180, p=c.pitch*Math.PI/180;
+  const f=[Math.cos(p)*Math.cos(y), Math.cos(p)*Math.sin(y), -Math.sin(p)];
+  const up0=[0,0,1]; const r=[f[1]*up0[2]-f[2]*up0[1], f[2]*up0[0]-f[0]*up0[2], f[0]*up0[1]-f[1]*up0[0]];
+  const rl=Math.hypot(...r); r[0]/=rl; r[1]/=rl; r[2]/=rl;
+  const u=[r[1]*f[2]-r[2]*f[1], r[2]*f[0]-r[0]*f[2], r[0]*f[1]-r[1]*f[0]];
+  const e=[c.x,c.y,c.z]; const d=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  return [r[0],u[0],-f[0],0, r[1],u[1],-f[1],0, r[2],u[2],-f[2],0, -d(r,e),-d(u,e),d(f,e),1];
+}
+(async () => {
+  const meta = await (await fetch(scenePath + 'scene.json')).json();
+  const bin = await (await fetch(scenePath + 'scene.bin')).arrayBuffer();
+  gl.enable(gl.DEPTH_TEST); gl.clearColor(0.1,0.1,0.12,1); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  const M = mul(persp(cam.fov||90, cv.width/cv.height, 4, 30000), view(cam));
+  gl.uniformMatrix4fv(U('m'), false, new Float32Array(M)); gl.uniform3f(U('eye'), cam.x, cam.y, cam.z);
+  const pl = gl.getAttribLocation(pr,'p'), tl = gl.getAttribLocation(pr,'t');
+  const draws = [];
+  for (const b of meta) {
+    const pos = new Float32Array(bin, b.off, b.n*3), uv = new Float32Array(bin, b.off + b.n*12, b.n*2);
+    const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+    let buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, pos, gl.STATIC_DRAW); gl.enableVertexAttribArray(pl); gl.vertexAttribPointer(pl,3,gl.FLOAT,false,0,0);
+    buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW); gl.enableVertexAttribArray(tl); gl.vertexAttribPointer(tl,2,gl.FLOAT,false,0,0);
+    const tc = b.color ? await tex(b.color) : null; const tt = b.trans ? await tex(b.trans) : null;
+    draws.push({ b, vao, tc, tt });
+  }
+  const one = (d) => { gl.bindVertexArray(d.vao); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, d.tc); gl.uniform1i(U('tc'),0);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, d.tt); gl.uniform1i(U('tt'),1);
+    gl.uniform1i(U('kind'), d.b.kind==='sky'?1:0); gl.uniform1i(U('hasT'), d.tt?1:0); gl.uniform1f(U('op'), d.b.opacity);
+    gl.drawArrays(gl.TRIANGLES, 0, d.b.n); };
+  for (const d of draws) if (d.b.opacity >= 1) one(d);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+  for (const d of draws) if (d.b.opacity < 1) one(d);
+  gl.finish(); document.title = 'done';
+})().catch(e => { document.title = 'done'; document.body.insertAdjacentHTML('beforeend', '<pre style="color:red">'+e+'</pre>'); });
+</script></body></html>

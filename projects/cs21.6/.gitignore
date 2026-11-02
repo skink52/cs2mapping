@@ -1,0 +1,7 @@
+# built from the player's own 1.6 files: never in git
+out/
+build/
+preview/build/
+node_modules/
+__pycache__/
+*.pyc
