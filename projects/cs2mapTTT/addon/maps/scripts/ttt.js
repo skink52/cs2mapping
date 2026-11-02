@@ -1,4 +1,4 @@
-// ttt.js: Trouble in Terrorist Town for any CS2 map, one cs_script. AI-generated (Claude), MIT. github.com/skink52/cs2mapTTT
+// ttt.js: Trouble in Terrorist Town for any CS2 map, one cs_script. AI-generated (Claude), MIT. github.com/skink52/cs2mapping/tree/main/projects/cs2mapTTT
 import { Instance, CSPlayerPawn, CSPlayerController, CustomHudLayout, PointTemplate, BaseModelEntity, CSGearSlot, CSWeaponType, CSInputs,
          CSDamageFlags, CSDamageTypes, CSRoundEndReason, CSMoveType } from "cs_script/point_script";
 

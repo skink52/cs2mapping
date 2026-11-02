@@ -1,6 +1,6 @@
 """Convert a TTT map's ttt_* entities for cs2mapTTT, add the TTT entities, write the map data for ttt.js.
 
-usage: python3 tools/ttt_convert.py <in.vmap> <out.vmap> <map name> [--cs2mapping ../cs2mapping]
+usage: python3 tools/ttt_convert.py <in.vmap> <out.vmap> <map name> [--cs2mapping ../..]
 
 CS2 has no ttt_* classes, so each one becomes a logic_relay (or nothing) and every input aimed at it is re-aimed at
 ttt_script RunScriptInput "ttt:<op>:<id>". Its outputs move onto relays "<id>__<event>" that ttt.js fires with the
@@ -11,7 +11,7 @@ import sys, os, json, argparse
 
 ap = argparse.ArgumentParser()
 ap.add_argument('src'); ap.add_argument('out'); ap.add_argument('map')
-ap.add_argument('--cs2mapping', default=os.path.join(os.path.dirname(__file__), '..', '..', 'cs2mapping'))
+ap.add_argument('--cs2mapping', default=os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 ap.add_argument('--data', default=os.path.join(os.path.dirname(__file__), '..', 'maps'))
 A = ap.parse_args()
 sys.path.insert(0, os.path.join(A.cs2mapping, 'create'))

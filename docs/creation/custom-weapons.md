@@ -7,7 +7,7 @@ Engine facts (viewmodel unreachable from script, Source 2 Viewer dev build for `
 
 The weapon list and status (Lee-Enfield → `weapon_ssg08`, Gewehr 98 → `weapon_awp`, Luger → `weapon_glock`, Colt M1911 → `weapon_hkp2000`, Lewis →
 `weapon_scar20`, Mondragón → `weapon_g3sg1`) and the PC folders of that session are a project handover:
-[trenchwarfare-cs2 `docs/weapons_handover.md`](https://github.com/skink52/trenchwarfare-cs2/blob/main/docs/weapons_handover.md). Before the Workshop, the
+[trenchwarfare-cs2 `docs/weapons_handover.md`](https://github.com/skink52/cs2mapping/blob/main/projects/trenchwarfare-cs2/docs/weapons_handover.md). Before the Workshop, the
 Gewehr 98 mesh (a "BF1 All weapons" rip) must be replaced ([workshop.md](workshop.md#keeping-it-safe-to-publish-ip)).
 
 ## How it works

@@ -7,7 +7,7 @@
 | Imported | 2026-10-29 |
 | How | cs2port pipeline (stage A–C + follow-up passes) |
 
-TTT map on a skyscraper. TTT gameplay scripting is done separately ([cs2mapTTT](https://github.com/skink52/cs2mapTTT)); this is the map port only.
+TTT map on a skyscraper. TTT gameplay scripting is done separately ([cs2mapTTT](https://github.com/skink52/cs2mapping/tree/main/projects/cs2mapTTT)); this is the map port only.
 
 ## History
 
@@ -31,7 +31,7 @@ TTT map on a skyscraper. TTT gameplay scripting is done separately ([cs2mapTTT](
 
 ## TTT game mode (cs2mapTTT, 29 Oct 2026)
 
-- [cs2mapTTT](https://github.com/skink52/cs2mapTTT) `tools/ttt_convert.py` added `ttt_script` (maps/scripts/ttt.js), `ttt_hud` and the body template
+- [cs2mapTTT](https://github.com/skink52/cs2mapping/tree/main/projects/cs2mapTTT) `tools/ttt_convert.py` added `ttt_script` (maps/scripts/ttt.js), `ttt_hud` and the body template
   (the map has no ttt_* entities; its own info_map_parameters is used). Backup: `maps/ttt_cg_skyscraper_2017.vmap.bak_ttt` on the PC.
 - Its 132 physics props can be carried (hold E). Open: build and test (cs2mapTTT TESTING.md).
 - 29 Oct 2026: the 6 rebuilt sky slabs (clearsky_moondome) retextured to toolsskybox so the 3D skybox (city) shows through; stage C fixed for future 3D-skybox maps.

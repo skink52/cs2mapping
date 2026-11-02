@@ -1,6 +1,6 @@
 # Space Racer for CS2 - credits
 
-An anti-gravity racing minigame for Counter-Strike 2, by skink52. Source: https://github.com/skink52/space-racer-cs2
+An anti-gravity racing minigame for Counter-Strike 2, by skink52. Source: https://github.com/skink52/cs2mapping/tree/main/projects/space-racer-cs2
 
 All art (cars, tracks, textures, skies, HUD, the pixel font), all sounds and music, the track designs and the code
 are original work made for this addon. The code was written by an AI coding agent (Claude, by Anthropic) under skink52's direction.

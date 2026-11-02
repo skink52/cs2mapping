@@ -55,13 +55,19 @@ No map content: no BSPs, decompiled VMFs, `.vmap` files, or textures, models and
 ## Licence
 
 Free for non-commercial use: copy, change, share and run anything here, including the tools, docs and cs_script files, and on game servers (donation/VIP servers are fine). Not to be sold, paywalled or built into a paid product or service. Code and docs: [PolyForm Noncommercial 1.0.0](LICENSE); art, sounds and maps: [CC BY-NC 4.0](LICENSE-CC-BY-NC-4.0.txt). Versions before 30 Oct 2026 were MIT.
-It covers this repo's own work only. Valve's tools and files (the import scripts `scripts/` runs alongside, `create/test/point_script.d.ts`), and the original maps,
+It covers this repo's own work only (Hellmatch's Freedoom-derived content stays under Freedoom's licence). Valve's tools and files (the import scripts `scripts/` runs alongside, `create/test/point_script.d.ts`), and the original maps,
 assets and sounds credited in each port, belong to their owners.
 
-## Projects built with this
+## Projects
 
-- [Hellmatch CS2](https://github.com/skink52/hellmatch-cs2): Doom-style deathmatch from Freedoom's levels, 4 arenas × 16 players, entirely in cs_script.
-- [Space Racer](https://github.com/skink52/space-racer-cs2): 32-car anti-grav racer with eight generated tracks.
-- [mg_trenchwarfare](https://github.com/skink52/trenchwarfare-cs2): WW1 trenches with procedural props, mortars, biplanes and custom rifles.
-- [Puppet Brawl](https://github.com/skink52/cs2-fighter): 2.5D fighting game with mocap-based animation.
-- The ported maps in [`ports/`](ports/README.md).
+Each original addon lives in [`projects/`](projects), with its full history (merged here in Nov 2026; the old repos are archived and point here).
+
+| Project | Folder |
+|---|---|
+| Hellmatch CS2: Doom-style deathmatch from Freedoom's levels, 4 arenas × 16 players, entirely in cs_script (Freedoom content under [its own licence](projects/hellmatch-cs2/FREEDOOM_LICENSE.txt)) | [projects/hellmatch-cs2](projects/hellmatch-cs2) |
+| Space Racer (plus Neon and Depth themes): 32-car anti-grav racer with generated tracks | [projects/space-racer-cs2](projects/space-racer-cs2) |
+| mg_trenchwarfare: WW1 trenches with procedural props, mortars, biplanes and custom rifles | [projects/trenchwarfare-cs2](projects/trenchwarfare-cs2) |
+| Puppet Brawl: 2.5D fighting game with mocap-based animation | [projects/cs2-fighter](projects/cs2-fighter) |
+| TTT for CS2: drop-in Trouble in Terrorist Town cs_script for any map | [projects/cs2mapTTT](projects/cs2mapTTT) |
+| CS 1.6 in CS2 (mg_cs16): 1.6 maps and rules in one CS2 map | [projects/cs21.6](projects/cs21.6) |
+| The ported maps | [ports/](ports/README.md) |

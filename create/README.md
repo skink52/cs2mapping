@@ -1,8 +1,8 @@
 # create/: toolkit for original CS2 addons
 
 > **AI-generated code.** Written by Claude for skink52's CS2 addons; collected here from
-> [trenchwarfare-cs2](https://github.com/skink52/trenchwarfare-cs2), [hellmatch-cs2](https://github.com/skink52/hellmatch-cs2),
-> [space-racer-cs2](https://github.com/skink52/space-racer-cs2), [cs2-fighter](https://github.com/skink52/cs2-fighter/tree/anim-v3) and made project-neutral.
+> [trenchwarfare-cs2](https://github.com/skink52/cs2mapping/tree/main/projects/trenchwarfare-cs2), [hellmatch-cs2](https://github.com/skink52/cs2mapping/tree/main/projects/hellmatch-cs2),
+> [space-racer-cs2](https://github.com/skink52/cs2mapping/tree/main/projects/space-racer-cs2), [cs2-fighter](https://github.com/skink52/cs2mapping/tree/archive/cs2-fighter-anim-v3) and made project-neutral.
 > MIT, like the rest of the repo. Every file's header says where it came from. Tested offline only unless the guide says it ran in CS2.
 
 Python 3 with numpy, scipy and Pillow (ffmpeg for audio analysis and MP4 previews); Node 18+ for the tests, **Node 22.15+** for `anim/` and `s2/`
@@ -89,7 +89,7 @@ Example: `CS2_ADDON_OUT=out/addon python3 -c "import build_prop, p_sandbag; buil
 ## Animation
 
 Animated bodies: your own clips for CS2's agent skeleton (from CMU mocap or keyed poses), checked and shipped as an invisible rig model
-that a script plays clips on, with a stock agent bone-merged on top. From [cs2-fighter](https://github.com/skink52/cs2-fighter/tree/anim-v3) (Puppet Brawl).
+that a script plays clips on, with a stock agent bone-merged on top. From [cs2-fighter](https://github.com/skink52/cs2mapping/tree/archive/cs2-fighter-anim-v3) (Puppet Brawl).
 The whole pipeline, the rig's vmdl format and the exact Hammer/script setup: [anim/README.md](anim/README.md).
 
 | File | What it does |
@@ -133,17 +133,17 @@ Readers for CS2's compiled resources (`*_c`), straight from the game's VPKs (`--
 
 Node sims of the pure game (balance, soak) live in each project; the method is in [guide.md](../docs/creation/guide.md#6-testing-before-cs2).
 
-## Keeping the repos in step
+## Keeping the projects in step
 
 `libsync.py` + `libsync.json`: shared files (`vmaplib.py`, `dmx.py`, `dmx9.py`, `point_script.d.ts`, the trenchwarfare mesh/bake libs, Space Racer's `s2.py`/`synth.py`, `tools/vpk.py`)
-are mastered here and copied byte-for-byte into the game repos, which stay buildable on their own. The neutral tools above that started in a game repo
+are mastered here and copied byte-for-byte into each `projects/<name>/` folder, which stays buildable on its own (and deploys to the PC as-is). The neutral tools above that started in a game repo
 are tracked as forks: when the origin changes, `check` says so and lists the commits to review.
 
-| Command (repos checked out side by side) | |
+| Command (from the repo root; `--root DIR` for separate checkouts) | |
 |---|---|
 | `python3 libsync.py check` | Drift report: copies that differ (with which side is newer) and forks whose origin changed. Exit 1 if anything is out. |
-| `python3 libsync.py push [repo ...]` | Copies the masters out. Commit in each repo. |
-| `python3 libsync.py pull <file> <repo>` | A fix was made in a game repo's copy: make it the master, then `push`. |
+| `python3 libsync.py push [repo ...]` | Copies the masters out to the project folders. |
+| `python3 libsync.py pull <file> <repo>` | A fix was made in a project's copy: make it the master, then `push`. |
 | `python3 libsync.py ack <neutral file\|all>` | A fork's origin changes were reviewed (generic parts ported here): mark them seen. |
 | `python3 libsync.py add <file> <repo> <path>` | Track another copy. |
 

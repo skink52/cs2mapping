@@ -4,6 +4,25 @@ This repo (`cs2mapping`, formerly `cs2portdocs`) is the shared memory for skink5
 the PC runners, the per-map records) and original CS2 addons (the creation toolkit and guides), plus what was learned along the way. Keep it current. If you change the pipeline, fix a port, or discover a CS2 behaviour, record it here
 in the same session.
 
+## Start here: which project?
+
+The user names a project ("work out of cs2mapping, we're on TTT maps"). Find it below, read the project's own instructions file, then work in that folder.
+One clone of this repo covers everything; there are no other repos to clone or push.
+
+| User says | Folder | Read first |
+|---|---|---|
+| TTT, TTT script, ttt_ maps | `projects/cs2mapTTT/` (the script) + `ports/ttt_*/` (map ports) | `projects/cs2mapTTT/CLAUDE.md` |
+| Hellmatch, FreeDM, Freedoom DM | `projects/hellmatch-cs2/` | `projects/hellmatch-cs2/docs/STATUS.md` |
+| Space Racer, Neon Racer, Depth Racer, racing | `projects/space-racer-cs2/` (themes via `SPR_THEME`) | `projects/space-racer-cs2/README.md`, `docs/DESIGN.md` |
+| Puppet Brawl, fighter, fighting game | `projects/cs2-fighter/` | `projects/cs2-fighter/README.md` |
+| Trench warfare, WW1, mg_trenchwarfare, custom rifles | `projects/trenchwarfare-cs2/` | `projects/trenchwarfare-cs2/NOTES.md` |
+| CS 1.6, mg_cs16 | `projects/cs21.6/` | `projects/cs21.6/README.md` |
+| Porting, a CS:GO map name, mg_/jb_/ba_ ports | `ports/<map>/`, `tools/`, `scripts/` | `docs/porting/pipeline.md` |
+| A new original addon | new `projects/<name>/` | `docs/creation/guide.md` |
+
+Bomb Arena (BomberClone-style) has no folder yet; create `projects/<name>/` when its source is first committed.
+New projects get their own folder under `projects/`, a README (with the AI disclaimer), the licence files, and a row in this table and in `README.md`.
+
 ## Layout
 
 - `tools/`: cs2port pipeline (runs in the cloud workspace). Entry points: `prep.py` (stage A), `stage_c.py` (stage C), `stage_d.py` / `run_pass.py`
@@ -18,6 +37,9 @@ in the same session.
   and mirrored in the claude.ai project as `claude/cs2_port_pipeline.md`. The tool index `tools/README.md` deploys with `tools/` as
   `C:\source1\cs2port\tools\README.md`; it links to pipeline.md rather than copying it.
 - `docs/porting/setup.md`: which repo file goes where on the PC.
+- `projects/<name>/`: one folder per original addon (imported Nov 2026 from its own repo with full history; the old repos are archived and point here).
+  Each keeps its own layout, docs and tests; run its commands from inside its folder.
+  `archive/cs2-fighter-anim-v3` and `archive/cs2-fighter-polish` are the fighter's unmerged side branches (original paths, not under `projects/`).
 - `ports/<addon>/`: `README.md` (status, history, open issues), the cleanup log/report, and the map's own `scripts/*.js`.
 - `CHANGELOG.md`: dated history, newest first.
 - `data/existing_ports.txt`: snapshot only. The live file is `C:\source1\cs2port\existing_ports.txt` on the PC.
@@ -39,8 +61,9 @@ in the same session.
   a project-neutral copy in `create/`.
 - **Shared files are mastered here.** `create/libsync.json` lists the files copied into the game repos and the neutral tools forked from them.
   Edit a shared file here (or `pull` a fix made in a game repo), then `python3 create/libsync.py push` and commit every repo it touched.
-  Before committing in any skink52 CS2 repo, run `python3 create/libsync.py check` with the repos checked out side by side; port the generic part of any
+  `copies` paths are inside `projects/<name>/`. Before committing, run `python3 create/libsync.py check`; port the generic part of any
   `ORIGIN CHANGED` fork into `create/` and `ack` it. New shared tools go in the manifest (`add`).
-- Commit messages say what changed and which map or pass it was for.
-- New repos get the standard non-commercial licence files ([docs/creation/workshop.md](docs/creation/workshop.md#licence)).
+- Commit messages start with the area in brackets, e.g. `[ttt]`, `[hellmatch]`, `[port mg_pirates]`, `[create]`, and say what changed.
+- Project discoveries that apply beyond the project go in the root docs (gotchas, cs_script notes, creation guides) as well as the project's notes.
+- New projects get the standard non-commercial licence files ([docs/creation/workshop.md](docs/creation/workshop.md#licence)).
 - Hammer must be closed while editing a map on the PC. Back up the `.vmap` before editing it, and send only changed files.

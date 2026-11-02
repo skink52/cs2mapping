@@ -16,7 +16,7 @@
 # From space-racer-cs2/tools/build_all.sh and hellmatch-cs2/tools/build_all.sh (MIT), made project-neutral.
 set -e
 cd "$(dirname "$0")/.."
-CREATE=${CREATE:-../cs2mapping/create}
+CREATE=${CREATE:-../../create}
 NAME=${MYGAME_NAME:-mygame}
 MAP=${MYGAME_MAP:-mg_$NAME}
 export CS2_ADDON_OUT=out/addon

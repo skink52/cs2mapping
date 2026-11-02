@@ -40,4 +40,4 @@ The entity names are Space Racer's, with the script name `neon_racer`. The `poin
     for winners, cyan before a team is picked.
 - **Music**: four original electro pieces: two race loops at 124 and 128 bpm, a 96 bpm lobby loop and a results sting.
 
-Source: github.com/skink52/space-racer-cs2. `SPR_THEME=neon sh tools/build_all.sh` builds this addon.
+Source: github.com/skink52/cs2mapping/tree/main/projects/space-racer-cs2. `SPR_THEME=neon sh tools/build_all.sh` builds this addon.

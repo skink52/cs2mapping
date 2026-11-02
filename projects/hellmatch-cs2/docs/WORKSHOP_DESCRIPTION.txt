@@ -28,7 +28,7 @@ Music too loud or too quiet? It follows the [b]Main Menu Music[/b] slider in the
 Chat commands (! or /): [b]!ffa !tdm !elim !lms !boss[/b] vote for the next mode while the ballot is up, [b]!help[/b] controls, [b]!hud[/b] status bar size, [b]!hud scores[/b] hide the game HUD while the scoreboard is open, [b]!spec[/b] watch other arenas, [b]!afk[/b] sit out, [b]!back[/b] rejoin.
 
 [h2]How it was made[/h2]
-The code (the map script, the level converter, the build tools) and most of the engineering were done with an AI coding assistant (Claude, by Anthropic), directed, tested and tuned by skink52. The four "GEN" music tracks were generated for this map (original, CC0). Everything else you see and hear is the Freedoom project's work, used under its BSD licence (below). Source code: https://github.com/skink52/hellmatch-cs2
+The code (the map script, the level converter, the build tools) and most of the engineering were done with an AI coding assistant (Claude, by Anthropic), directed, tested and tuned by skink52. The four "GEN" music tracks were generated for this map (original, CC0). Everything else you see and hear is the Freedoom project's work, used under its BSD licence (below). Source code: https://github.com/skink52/cs2mapping/tree/main/projects/hellmatch-cs2
 
 Hellmatch is an unofficial fan project. It is not affiliated with or endorsed by the Freedoom project, id Software, Bethesda or Valve; Freedoom is named only to credit its content. (Earlier published as FreeDM Arena.)
 

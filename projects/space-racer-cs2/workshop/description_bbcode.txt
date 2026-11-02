@@ -63,5 +63,5 @@ The light cars win a little more often; the heavy ones wreck more rivals.
 
 [h2]Credits[/h2]
 Made by skink52 with Claude (Anthropic's AI), which wrote the code and generated the art, sound and music. Everything is original.
-Source: [url=https://github.com/skink52/space-racer-cs2]github.com/skink52/space-racer-cs2[/url] (code MIT, art and sound CC BY 4.0).
+Source: [url=https://github.com/skink52/cs2mapping/tree/main/projects/space-racer-cs2]github.com/skink52/cs2mapping/tree/main/projects/space-racer-cs2[/url] (code MIT, art and sound CC BY 4.0).
 Not affiliated with Valve or any racing-game publisher.

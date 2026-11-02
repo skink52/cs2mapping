@@ -54,4 +54,4 @@ fast car's jump flattens so that a straight launch lands before the road bends. 
 shoved in the air, can still put you out. Bots line up straight for jumps. Sim: at most 0.5 fly-outs a race per track
 with 32 bots.
 
-Source: github.com/skink52/space-racer-cs2. `SPR_THEME=depth sh tools/build_all.sh` builds this addon.
+Source: github.com/skink52/cs2mapping/tree/main/projects/space-racer-cs2. `SPR_THEME=depth sh tools/build_all.sh` builds this addon.
