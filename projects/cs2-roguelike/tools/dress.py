@@ -28,7 +28,19 @@ RUGS = ['decalrug003a', 'milrug001', 'tides_redcarpet']
 MURALS = ['mural_flower_01', 'mural_flower_02', 'mural_flower_03']
 BLOOD = ['blood3', 'bloodstain_001']
 MISC = ['decalsigndanger001c', 'decal_paintsplatter002']
-BRIGHT = {'graffiti': 0.45, 'stain': 0.35, 'floor': 0.4, 'rug': 0.5, 'mural': 0.5, 'blood': 0.35, 'misc': 0.45}
+BRIGHT = {'graffiti': 0.55, 'stain': 0.6, 'floor': 0.55, 'rug': 0.55, 'mural': 0.55, 'blood': 0.45, 'misc': 0.5}
+# stock CS2 overlays used straight from the game files (HR static overlays from Inferno, Overpass, Train, Cache)
+WALL_GRIME = ['materials/decals/hr_decals/plaster_stain_%d.vmat' % i for i in range(1, 12)] + [
+    'materials/decals/hr_decals/water_stain_1.vmat', 'materials/decals/hr_decals/venice_grime_1.vmat', 'materials/decals/hr_decals/large_stain_a.vmat',
+    'materials/de_train/hr_train_s2/decals/hrts2_decal_wall_stains_01.vmat']
+LEAKS = ['materials/de_cache/overlays/ch2_leakage_001.vmat', 'materials/decals/hr_decals/water_stain_1.vmat', 'materials/decals/drainage_stain_02.vmat',
+         'materials/decals/drainage_stain_04.vmat', 'materials/cs_italy/decals/concrete_leak_decal_1.vmat']
+FLOOR_GRIME = ['materials/de_overpass/overlays/top_grime_%d.vmat' % i for i in (1, 2, 3, 4)] + [
+    'materials/de_overpass/overlays/grime_patch_1.vmat', 'materials/de_train/hr_train_s2/decals/hrts2_decal_floor_dirt_01.vmat',
+    'materials/decals/hr_decals/dirt_rows.vmat', 'materials/decals/hr_decals/dirt_rows_b.vmat', 'materials/decals/mud_stain_a.vmat']
+CORNER_DIRT = 'materials/de_overpass/nature/dirt_corner_static_overlay_1.vmat'
+MOSS = ['materials/decals/hr_decals/moss.vmat', 'materials/decals/hpe_aztec_decal_moss.vmat']
+SCORCH = ['materials/decals/scorch/scorch%d.vmat' % i for i in (1, 2, 3, 4)]
 PUDDLE = 'materials/de_nuke/hr_nuke/puddle_sheet_001.vmat'      # stock static overlay, compiled in the game files
 
 # ---------------------------------------------------------------- stock props (bounds from create/s2/prop_mesh.mjs; z = floor offset of the origin)
@@ -59,6 +71,8 @@ EXHIBIT_LIGHT = 'models/anubis/lights/anubis_exhibit_light03.vmdl'
 HOLO_PANEL = 'models/anubis/signs/anubis_exhibition_panel_01.vmdl'                         # 32 x 36 x 105
 INFO_PANEL = 'models/anubis/signs/anubis_info_panel_01.vmdl'                               # 16 x 31 x 95
 SERVER = 'models/props/de_train/hr_t/server_a/server_a.vmdl'                               # 35 x 54 x 96 centred
+RACK = 'models/nt/props/nt_server/nt_server.vmdl'                                          # skink52's server console (tools/import_glb.py --kind props), 28 x 56 x 85
+BREAKER = 'models/nt/props/nt_breaker/nt_breaker.vmdl'                                     # wall-mount breaker box, 22 wide x 35 tall, back at x=0
 CRATE_ANCIENT = 'models/props/crates/crate_aus2025_promo_de_ancient.vmdl'                  # 77 x 10 x 27
 FOUNTAIN = 'models/anubis/unique/a_site_fountain.vmdl'                                     # r 81, 88 tall
 BANNERS = 'models/anubis/unique/banners_a.vmdl'                                            # 630 x 730, z 40..141
@@ -308,11 +322,47 @@ def clutter_pass(ctx, rng, S, dais=None, n_candles=3, n_pots=3, n_piles=1, n_mar
             if p: ctx.prop(RUG, (p[0], p[1], 0.5), rng.choice([0, 90]), solid='0', bake='0')
 
 
-def cyber_pass(ctx, rng, box, panel_offsets=(-256, 256), monitors=2, wire_runs=2, exhibit=2, z_panel=160, lights=True):
-    """the nanite infusion: wall monitors on the carved panels, exhibit lights pooling onto them, cable runs under the conduit"""
+def cyber_pass(ctx, rng, box, panel_offsets=(-256, 256), monitors=2, wire_runs=2, exhibit=2, z_panel=160, lights=True,
+               S=None, racks=0, glow='cyan', neon=True, floor_grid=False, grid_step=256):
+    """the nanite infusion: wall monitors on the carved panels, exhibit lights pooling onto them, cable runs under the conduit and along
+    the ceiling, server racks with a lamp in the room colour, a neon strip along the top of every wall and columns beside the panels,
+    and (lobby, staging) a light grid in the floor"""
     walls = wall_list(box)
     x0, y0, z0, x1, y1, z1 = box
+    mat = ctx.glow.get(glow) if getattr(ctx, 'glow', None) else None
+    lamp_rgb = {'cyan': '40 225 255', 'magenta': '255 60 200', 'amber': '255 170 40'}[glow]
     spots = [(w, w[3] / 2 + o) for w in walls for o in panel_offsets]; rng.shuffle(spots)
+    if mat and neon:
+        for w in walls:
+            L = w[3]
+            wall_quad(ctx, mat, w, L / 2, z1 - 10, L - 24, 2.5, off=0.8)                      # the edge strip under the ceiling
+            for o in panel_offsets:                                                           # a thin column either side of each panel
+                for side in (-110, 110):
+                    wall_quad(ctx, mat, w, L / 2 + o + side, (z1 - 16 + 80) / 2, 2.5, z1 - 16 - 80, off=0.8)
+    if mat and floor_grid:
+        xs = [x for x in range(int(x0 - x0 % grid_step) + grid_step, int(x1), grid_step)]; ys = [y for y in range(int(y0 - y0 % grid_step) + grid_step, int(y1), grid_step)]
+        for x in xs: floor_quad(ctx, mat, x, (y0 + y1) / 2, 2.0, (y1 - y0) - 32, 0, z=0.6)
+        for y in ys: floor_quad(ctx, mat, (x0 + x1) / 2, y, (x1 - x0) - 32, 2.0, 0, z=0.6)
+    if S is not None:
+        for _ in range(racks * 3):
+            if racks <= 0: break
+            sp = S.near_wall(30, inset=30)
+            if not sp: continue
+            racks -= 1
+            ctx.prop(RACK if rng.random() < 0.6 else SERVER, (sp[0], sp[1], 0), sp[3], solid='6', bake='0')
+            nx, ny = math.cos(math.radians(sp[3])), math.sin(math.radians(sp[3]))
+            ctx.lamp((sp[0] + nx * 44, sp[1] + ny * 44, 60), 150, 170, color=lamp_rgb, shadows=False, baked_only=True)
+            if rng.random() < 0.5: ctx.prop(rng.choice(WIRE32), (sp[0] + nx * 10, sp[1] + ny * 10, 96), sp[3] + 90, solid='0', bake='0')
+    for (w, along) in spots[monitors + exhibit:monitors + exhibit + max(1, monitors // 2)]:       # breaker boxes beside the panels, a cable dropping to the conduit
+        z = z_panel - 10 + rng.uniform(-10, 10); a = along + rng.choice([-150, 150])
+        ctx.prop(BREAKER, wall_point(w, a, 1.0, z), w[1], solid='0', bake='0')
+        for k in range(int((z - 20 - 70) / 32)):
+            ctx.prop(rng.choice(WIRE32), wall_point(w, a + 6, 2.5, z - 24 - k * 32), w[1] + 90, solid='0', bake='0')
+    for _ in range(max(1, wire_runs // 2)):                                                    # cable runs along the ceiling edge
+        w = rng.choice(walls); L = w[3]
+        n = rng.randrange(6, 12); start = rng.uniform(40, max(41, L - 40 - n * 32)); z = z1 - 20 - rng.uniform(0, 8)
+        for k in range(n):
+            ctx.prop(rng.choice(WIRE32), wall_point(w, start + (k + 1) * 32, 2.5, z), w[1] + 90, solid='0', bake='0')
     for (w, along) in spots[:monitors]:
         p = wall_point(w, along + rng.uniform(-60, 60), 22, z_panel + rng.uniform(20, 50))
         ctx.prop(WALL_MONITOR, p, w[1] + 90, solid='0', bake='0')       # the monitor's +y is its back: turn it to face the room
@@ -330,6 +380,38 @@ def cyber_pass(ctx, rng, box, panel_offsets=(-256, 256), monitors=2, wire_runs=2
             ctx.prop(rng.choice(WIRE32), p, w[1] + 90, solid='0', bake='0')
 
 
+def grime_pass(ctx, rng, box, S, level=1.0, moss=0, scorch=1, leaks=True):
+    """discolouration everywhere: a band of stains along every wall base, big stains mid-wall, leaks running down from the ceiling,
+    dirt in the floor corners, grime patches across the floor, moss where it's damp, scorch where fires were"""
+    x0, y0, z0, x1, y1, z1 = box
+    for w in wall_list(box):
+        L = w[3]
+        for _ in range(max(2, int(L / 200 * level))):                                            # base band
+            h = rng.uniform(44, 90); wd = rng.uniform(150, 320)
+            wall_quad(ctx, rng.choice(WALL_GRIME), w, rng.uniform(wd / 2 + 10, L - wd / 2 - 10), 8 + h / 2 + rng.uniform(0, 16), wd, h, off=0.5, flip=rng.random() < 0.5)
+        for _ in range(max(1, int(L / 330 * level))):                                            # mid-wall
+            s = rng.uniform(110, 260)
+            wall_quad(ctx, rng.choice(WALL_GRIME), w, rng.uniform(s / 2 + 20, L - s / 2 - 20), rng.uniform(100, z1 - 90), s * rng.uniform(0.8, 1.6), s, off=0.5, flip=rng.random() < 0.5)
+        if leaks:
+            for _ in range(max(1, int(L / 420 * level))):                                        # leaks from the ceiling line
+                h = rng.uniform(110, 170); wd = rng.uniform(60, 120)
+                wall_quad(ctx, rng.choice(LEAKS), w, rng.uniform(wd, L - wd), z1 - 6 - h / 2, wd, h, off=0.55)
+    for (cx, cy, yaw) in ((x0 + 90, y0 + 90, 0), (x1 - 90, y0 + 90, 90), (x1 - 90, y1 - 90, 180), (x0 + 90, y1 - 90, 270)):
+        floor_quad(ctx, CORNER_DIRT, cx, cy, 180, 180, yaw + rng.choice([0, 90]), z=0.35)
+    area = (x1 - x0) * (y1 - y0)
+    for _ in range(max(3, int(area / (512 * 512) * 4 * level))):                                # floor grime
+        s = rng.uniform(180, 380)
+        floor_quad(ctx, rng.choice(FLOOR_GRIME), rng.uniform(x0 + s / 2, x1 - s / 2), rng.uniform(y0 + s / 2, y1 - s / 2), s, s * rng.uniform(0.7, 1.3), rng.uniform(0, 360), z=0.3)
+    for _ in range(moss):
+        s = rng.uniform(120, 260)
+        if rng.random() < 0.5: floor_quad(ctx, rng.choice(MOSS), rng.uniform(x0 + s, x1 - s), rng.uniform(y0 + s, y1 - s), s, s, rng.uniform(0, 360), z=0.45)
+        else:
+            w = rng.choice(wall_list(box)); wall_quad(ctx, rng.choice(MOSS), w, rng.uniform(s, w[3] - s), 8 + s / 2, s * 1.3, s, off=0.6)
+    for _ in range(scorch):
+        s = rng.uniform(100, 200)
+        floor_quad(ctx, rng.choice(SCORCH), rng.uniform(x0 + s, x1 - s), rng.uniform(y0 + s, y1 - s), s, s, rng.uniform(0, 360), z=0.5)
+
+
 # ---------------------------------------------------------------- per area
 def vault(ctx, rm, pillars_placed):
     """rm: layout room dict. Density: a AAA pass, not a sprinkle."""
@@ -341,12 +423,14 @@ def vault(ctx, rm, pillars_placed):
     for (x, y) in rm['statues']: S.block(x, y, 60)
     S.block(rm['entry'][0], rm['entry'][1], 140); S.block(rm['exit'][0], rm['exit'][1], 140)
     k = rm['kind']
-    graffiti_pass(ctx, rng, b, n_graffiti=4 if k != 'archive' else 6, n_stains=4)
+    graffiti_pass(ctx, rng, b, n_graffiti=5 if k != 'archive' else 7, n_stains=6)
+    grime_pass(ctx, rng, b, S, level={'garden': 1.3, 'ruin': 1.5, 'archive': 0.8, 'shrine': 0.9}.get(k, 1.0),
+               moss={'garden': 6, 'ruin': 4, 'ring': 2}.get(k, 1), scorch={'ruin': 3, 'shrine': 2}.get(k, 1))
     floor_pass(ctx, rng, S, n_trash=2 if k in ('shrine', 'garden') else 3, n_debris=3 if k == 'ruin' else 2, n_puddles=3 if k == 'garden' else 2, n_leaves=2 if k == 'garden' else 1)
     if k == 'garden':
         plant_pass(ctx, rng, b, S, rm['pillars'], n_wall_ivy=5, n_pillar_ivy=len(rm['pillars']), n_hang=5, n_grass=4, n_tufts=12, n_vines=5)
         clutter_pass(ctx, rng, S, rm['dais'], n_candles=4, n_pots=5, n_piles=1, n_market=0, n_debris=1, n_small=4, n_rugs=0)
-        cyber_pass(ctx, rng, b, monitors=1, wire_runs=1, exhibit=1)
+        cyber_pass(ctx, rng, b, monitors=2, wire_runs=2, exhibit=1, S=S, racks=1)
     elif k == 'archive':
         plant_pass(ctx, rng, b, S, rm['pillars'], n_wall_ivy=1, n_pillar_ivy=0, n_hang=1, n_grass=0, n_tufts=2, n_vines=1)
         # server racks along one wall, monitors on crates, holo panels by the pillars
@@ -366,7 +450,7 @@ def vault(ctx, rm, pillars_placed):
         for _ in range(3):
             sp = S.near_wall(20, inset=30)
             if sp: ctx.prop(rng.choice(JUNK), (sp[0], sp[1], 0), rng.uniform(0, 360), solid='0', bake='0')
-        cyber_pass(ctx, rng, b, monitors=4, wire_runs=5, exhibit=3)
+        cyber_pass(ctx, rng, b, monitors=6, wire_runs=8, exhibit=3, S=S, racks=6)
     elif k == 'ruin':
         plant_pass(ctx, rng, b, S, rm['pillars'], n_wall_ivy=3, n_hang=3, n_grass=2, n_tufts=6, n_vines=3)
         c = S.corner(70)
@@ -378,7 +462,7 @@ def vault(ctx, rm, pillars_placed):
                 name = rng.choice(BLOOD); mat = decal_mat(ctx, name, 'blood')
                 if mat: floor_quad(ctx, mat, p[0], p[1], 72, 72, rng.uniform(0, 360), z=0.7)
                 S.taken.pop()
-        cyber_pass(ctx, rng, b, monitors=1, wire_runs=2, exhibit=2)
+        cyber_pass(ctx, rng, b, monitors=2, wire_runs=3, exhibit=2, S=S, racks=2)
     elif k == 'shrine':
         plant_pass(ctx, rng, b, S, rm['pillars'], n_wall_ivy=2, n_hang=2, n_grass=1, n_tufts=4, n_vines=2)
         clutter_pass(ctx, rng, S, rm['dais'], n_candles=4, n_pots=4, n_piles=1, n_market=1, n_debris=0, n_small=3, n_rugs=2)
@@ -386,11 +470,11 @@ def vault(ctx, rm, pillars_placed):
             if S.free(x, y, 16): S.block(x, y, 16); ctx.prop(STATUE_SMALL, (x, y, z), math.degrees(math.atan2(rm['dais']['cy'] - y, rm['dais']['cx'] - x)), solid='6', bake='0')
         for (px, py) in rm['pillars']:
             ctx.prop(LANTERN, (px + 50, py, 140), 0, solid='0', bake='0')
-        cyber_pass(ctx, rng, b, monitors=2, wire_runs=2, exhibit=2)
+        cyber_pass(ctx, rng, b, monitors=3, wire_runs=4, exhibit=2, S=S, racks=2)
     else:
         plant_pass(ctx, rng, b, S, rm['pillars'], n_wall_ivy=2, n_hang=2, n_grass=2, n_tufts=5, n_vines=2)
         clutter_pass(ctx, rng, S, rm['dais'], n_candles=3, n_pots=3, n_piles=1, n_market=1, n_debris=1, n_small=4, n_rugs=1)
-        cyber_pass(ctx, rng, b, monitors=2, wire_runs=3, exhibit=2)
+        cyber_pass(ctx, rng, b, monitors=4, wire_runs=5, exhibit=2, S=S, racks=3)
         if k == 'ring':
             for (px, py) in rm['pillars'][::2]: ctx.prop(LANTERN, (px, py, 272 - 8), 0, solid='0', bake='0')
     return S
@@ -410,11 +494,12 @@ def lobby(ctx, L, spawn_rows):
         x, y = cx + dx * 260, cy + dy * 260
         S.block(x, y, 30); ctx.prop(HOLO_PANEL, (x, y, 0), math.degrees(math.atan2(dy, dx)) + 180, solid='6', bake='0')
         ctx.prop(INFO_PANEL, (x + dy * 70, y - dx * 70, 0), math.degrees(math.atan2(dy, dx)) + 180, solid='6', bake='0')
-    graffiti_pass(ctx, rng, b, n_graffiti=6, n_stains=5, panel_offsets=(-384, 0, 384))
-    floor_pass(ctx, rng, S, n_trash=3, n_debris=2, n_puddles=3, n_leaves=2, rugs=2)
+    graffiti_pass(ctx, rng, b, n_graffiti=8, n_stains=8, panel_offsets=(-384, 0, 384))
+    grime_pass(ctx, rng, b, S, level=1.2, moss=4, scorch=2)
+    floor_pass(ctx, rng, S, n_trash=4, n_debris=3, n_puddles=4, n_leaves=3, rugs=2)
     plant_pass(ctx, rng, b, S, [(cx + sx * 512, cy + sy * 512) for sx in (-1, 1) for sy in (-1, 1)], n_wall_ivy=6, n_pillar_ivy=4, n_hang=6, n_grass=4, n_tufts=10, n_vines=4)
     clutter_pass(ctx, rng, S, None, n_candles=6, n_pots=6, n_piles=2, n_market=3, n_debris=1, n_small=5, n_rugs=2)
-    cyber_pass(ctx, rng, b, panel_offsets=(-384, 0, 384), monitors=4, wire_runs=4, exhibit=4, z_panel=160)
+    cyber_pass(ctx, rng, b, panel_offsets=(-384, 0, 384), monitors=8, wire_runs=8, exhibit=4, z_panel=160, S=S, racks=8, glow='cyan', floor_grid=True)
 
 
 def staging(ctx, st):
@@ -422,7 +507,8 @@ def staging(ctx, st):
     S.block(st['pad'][0], st['pad'][1], 90)
     x0, y0, z0, x1, y1, z1 = b
     S.block(x0 + 30, y0 + 64, 32); S.block(x0 + 30, y1 - 64, 32)
-    graffiti_pass(ctx, rng, b, n_graffiti=3, n_stains=3, panel_offsets=(), zrange=(90, 150))
+    graffiti_pass(ctx, rng, b, n_graffiti=3, n_stains=4, panel_offsets=(), zrange=(90, 150))
+    grime_pass(ctx, rng, b, S, level=1.0, moss=1, scorch=1)
     floor_pass(ctx, rng, S, n_trash=2, n_debris=1, n_puddles=1, n_leaves=0)
     for _ in range(4):
         sp = S.near_wall(22, inset=28)
@@ -433,7 +519,7 @@ def staging(ctx, st):
         ctx.prop(rng.choice(RETRO_MONITOR), (sp[0], sp[1], 26.6), sp[3] + rng.uniform(-20, 20), solid='0', bake='0')
     plant_pass(ctx, rng, b, S, [], n_wall_ivy=1, n_pillar_ivy=0, n_hang=1, n_grass=0, n_tufts=2, n_vines=1)
     clutter_pass(ctx, rng, S, None, n_candles=1, n_pots=1, n_piles=0, n_market=1, n_debris=0, n_small=2, n_rugs=0)
-    cyber_pass(ctx, rng, b, panel_offsets=(-96, 96), monitors=2, wire_runs=3, exhibit=1, z_panel=130)
+    cyber_pass(ctx, rng, b, panel_offsets=(-96, 96), monitors=3, wire_runs=4, exhibit=1, z_panel=130, S=S, racks=2, glow='magenta', floor_grid=True, grid_step=128)
 
 
 def arena(ctx, A):
@@ -452,8 +538,9 @@ def arena(ctx, A):
     for _ in range(8):
         sp = S.near_wall(40, inset=rng.uniform(60, 200))
         if sp: ctx.prop(rng.choice(STONE_PILES), (sp[0], sp[1], 0), rng.uniform(0, 360), solid='6', bake='0')
-    graffiti_pass(ctx, rng, b, n_graffiti=12, n_stains=10, panel_offsets=(-1152, -384, 384, 1152), zrange=(110, 220))
-    floor_pass(ctx, rng, S, n_trash=6, n_debris=6, n_puddles=6, n_leaves=3)
+    graffiti_pass(ctx, rng, b, n_graffiti=14, n_stains=14, panel_offsets=(-1152, -384, 384, 1152), zrange=(110, 220))
+    grime_pass(ctx, rng, b, S, level=1.4, moss=6, scorch=5)
+    floor_pass(ctx, rng, S, n_trash=8, n_debris=8, n_puddles=8, n_leaves=4)
     plant_pass(ctx, rng, b, S, A['dais_pillars'], n_wall_ivy=10, n_pillar_ivy=2, n_hang=8, n_grass=6, n_tufts=16, n_vines=0)
     # grass and candles along the tier edge, lanterns on the balconies, banners over the dais
     for i in range(12):
@@ -469,4 +556,4 @@ def arena(ctx, A):
     ctx.prop(BANNERS, (cx, cy, A['box'][5] - 150), 0, solid='0', bake='0')
     ctx.prop(BANNERS, (cx, cy, A['box'][5] - 190), 90, solid='0', bake='0')
     clutter_pass(ctx, rng, S, None, n_candles=6, n_pots=8, n_piles=0, n_market=4, n_debris=4, n_small=12, n_rugs=0)
-    cyber_pass(ctx, rng, b, panel_offsets=(-1152, -384, 384, 1152), monitors=6, wire_runs=8, exhibit=6, z_panel=200)
+    cyber_pass(ctx, rng, b, panel_offsets=(-1152, -384, 384, 1152), monitors=10, wire_runs=12, exhibit=6, z_panel=200, S=S, racks=10, glow='amber')

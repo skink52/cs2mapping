@@ -48,7 +48,7 @@ function teleportSquad(members, toName) {
   const t = findTele(toName); if (!t) { Instance.Msg(`[${CONFIG.TAG}] MISSING teleport target ${toName}`); return; }
   const live = members.map((s) => PL.get(s)).filter((p) => p && p.alive);
   const spots = ringPositions(t.pos, live.length);
-  live.forEach((p, i) => { teleportPawn(p.pawn, spots[i], t.yaw); p.exitSince = 0; });
+  live.forEach((p, i) => { teleportPawn(p.pawn, spots[i], t.yaw); p.exitSince = 0; p.immuneUntil = E.now + CONFIG.TELEPORT_IMMUNITY; });
   if (live.length) sfx('teleport', t.pos);
 }
 function runOrders() {
@@ -249,6 +249,12 @@ Instance.OnKnifeAttack(({ weapon, attackType }) => { if (G.match) knifeHit(G, we
 Instance.OnPlayerChat(({ player, text }) => {
   if (!player) return;
   const p = playerFor(player); const t = text.trim().toLowerCase();
+  if (CONFIG.DEV_COMMANDS && /^[!\/](skip|nt skip)\b/.test(t)) {
+    // testing: kill every guardian in the room you stand in (counts as your kills)
+    const R = p.roomId >= 0 ? roomState(p.roomId) : null; let n = 0;
+    if (R) { R.spawnQueue.length = 0; for (const en of R.enemies.slice()) if (en.alive) { hurtEnemy(G, en, 1e6, p, false); n++; } }
+    msgTo([p.slot], n ? `SKIPPED ${n} GUARDIANS` : 'NOTHING TO SKIP HERE', 'dev command', 3); return;
+  }
   const m = t.match(/^[!\/](class|vector|warden|echo|ninja|monk|chrono|nt|help)\s*(\w*)/); if (!m) return;
   const word = m[1] === 'class' ? m[2] : m[1];
   const key = CLASS_BY_CHAT[word];

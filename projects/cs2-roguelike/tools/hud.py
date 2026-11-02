@@ -33,6 +33,7 @@ vig.save(os.path.join(img_dir, 'vignette.png'))
 
 CY = '#3ee6ff'; CYd = '#1b6f80'; BG = '#070b0ecc'; TXT = '#eaf7fa'; DIM = '#9ab8c0'; AMB = '#ffb43c'; MAG = '#ff3cc8'
 FONT = panorama.FONT
+SLIDES = len([f for f in os.listdir(os.path.join(OUT, 'panorama', 'images', 'map_icons', 'screenshots', '1080p')) if f.endswith('.png')]) if os.path.isdir(os.path.join(OUT, 'panorama', 'images', 'map_icons', 'screenshots', '1080p')) else 0
 h = panorama.Hud(img_url='file://{images}/%s/' % IMG, img_dir=img_dir, place_prefix='NtL')
 h.rule('.NtHost', width='100%', height='100%')
 h.rule('.Nt', width='100%', height='100%', opacity='0', font_family=FONT)
@@ -91,7 +92,7 @@ body = P('Nt', 'Nt', [
     P('Sub', 'Sub', tag='Label', extra='text="{s:u}"'),
     P('Pick', 'Pick', [P(None, 'PickTitle', tag='Label', extra='text="CLASS   chat !vector !warden !echo, or E at a kiosk"')] + pick_rows +
                      [P(None, 'PickHelp', tag='Label', extra='text="nanites = your money: buy in the staging room"')]),
-    h.preload(MAP, slides=2, radar=False, icon=False),
+    h.preload(MAP, slides=SLIDES, radar=False, icon=False),   # only slides that exist: a preload of a missing image fails the whole css compile
 ])
 h.write(OUT, NAME, body, dynamic=r'^st[A-Z]\w*$', wrap_cls='NtHost', gen_dir=os.path.join(OUT, '_gen'))
 

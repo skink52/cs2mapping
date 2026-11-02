@@ -1,6 +1,6 @@
 """Tripo (or any) GLB -> a CS2 static prop for the guardian pool: models/nt/enemies/<name>/<name>.vmdl.
 
-usage: python tools/import_glb.py <model.glb> <name> [--length L] [--yaw deg] [--maxtex 2048]
+usage: python tools/import_glb.py <model.glb> <name> [--kind enemies|props] [--length L] [--yaw deg] [--glow cyan|magenta|amber] [--credit text]
   --length: longest horizontal side in units (default 64). The model's origin is the centre of its footprint at its lowest point.
 
 Output goes to ref/models_src/ (not in git: Tripo output is binary); tools/build_all.sh copies it into out/addon, and tools/vmap.py's
@@ -12,13 +12,15 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 CREATE = os.environ.get('CREATE', os.path.join(ROOT, '..', '..', 'create'))
 ap = argparse.ArgumentParser()
 ap.add_argument('src'); ap.add_argument('name')
+ap.add_argument('--kind', default='enemies', help='enemies (default) or props: the models/nt/<kind>/<name> folder')
+ap.add_argument('--credit', default='generated with Tripo3D for Nanite Temple')
 ap.add_argument('--glow', default='', help="hue of the baked-in glow to turn into self-illum: cyan | magenta | amber | none")
 ap.add_argument('--length', type=float, default=64); ap.add_argument('--yaw', type=float, default=0); ap.add_argument('--maxtex', type=int, default=2048)
 A = ap.parse_args()
 out = os.path.join(ROOT, 'ref', 'models_src'); os.makedirs(out, exist_ok=True)
-sub = 'models/nt/enemies/%s' % A.name
+sub = 'models/nt/%s/%s' % (A.kind, A.name)
 cmd = [sys.executable, os.path.join(CREATE, 'glb2cs2_multi.py'), A.src, out, A.name, '--length', str(A.length), '--yaw', str(A.yaw),
-       '--maxtex', str(A.maxtex), '--surface', 'concrete', '--sub', sub, '--credit', 'generated with Tripo3D for Nanite Temple']
+       '--maxtex', str(A.maxtex), '--surface', 'concrete', '--sub', sub, '--credit', A.credit]
 subprocess.check_call(cmd)
 info = json.load(open(os.path.join(out, sub, A.name + '.json')))
 mins, maxs = info['mins'], info['maxs']

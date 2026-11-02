@@ -1,6 +1,7 @@
 # Nanite Temple: in-game test checklist (first build, 3 Nov 2026)
 
-Only report what fails. Load with `map mg_nanite_temple` (bots off; `bot_add` later to fill squads: bots are players here).
+Only report what fails. Load with `map mg_nanite_temple` (bots off; `bot_add` later to fill squads: bots are players here). Solo works: one player is
+one squad, the showdown runs down its clock. Chat `!skip` kills every guardian in the room you stand in (CONFIG.DEV_COMMANDS; off for release).
 
 1. **Console on load** prints `[nanite] v0.1.0 ready: 12 vaults, 8 staging rooms, 8 balconies, pool 160` with nothing `MISSING`.
    Then once a minute `[nanite] script time: avg X ms, max Y ms per server tick`. Note X and Y with your player count.

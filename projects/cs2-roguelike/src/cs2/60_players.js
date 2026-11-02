@@ -8,7 +8,7 @@ function newPlayer(slot, ctrl) {
            dome: null,                       // { pos, until, pawnSlot }
            chrono: null,                     // { pos, yaw, until, saved }
            prevUse: false, prevReload: false, prevF: false, exitSince: 0, lastRoom: -1, lastPos: { x: 0, y: 0, z: 0 },
-           meleeKills: 0, alive: false, pendingSave: false, roomId: -1, hud: new Map(), msg: '', msgSub: '', msgUntil: 0 };
+           meleeKills: 0, alive: false, pendingSave: false, immuneUntil: 0, roomId: -1, hud: new Map(), msg: '', msgSub: '', msgUntil: 0 };
 }
 
 function playerFor(ctrl) {

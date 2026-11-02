@@ -5,7 +5,11 @@ const VERSION = '0.1.0';
 const CONFIG = {
   APPLY_CVARS: true,          // servers that keep their own config set this false (chat: it is a const in the script)
   TAG: 'nanite',
-  MIN_PLAYERS: 2,             // humans + bots needed to start a run (two squads of one is the smallest game)
+  MIN_PLAYERS: 1,             // humans + bots needed to start a run; one player runs the vaults alone and the showdown ends on the clock
+  DEV_COMMANDS: true,         // chat !skip clears the room you stand in (testing); turn off for the workshop release
+  WAVE_GRACE: 3.0, WAVE_TRICKLE: 0.6,   // seconds after a squad lands before the first guardian wakes, and between wakings
+  SPAWN_MIN_DIST: 560,        // guardians never rise closer than this to the entry plate
+  TELEPORT_IMMUNITY: 2.5,     // seconds of guardian immunity after a teleport (not against players)
   SQUAD_MAX: 8, SQUAD_MIN: 1, SQUADS_MAX: 8,
   FLOORS: 3,                  // rooms per squad before the breach
   FLOOR_TIME: 150,            // seconds per room before the squad is pushed on (clears early when the room is cleared)

@@ -6,7 +6,8 @@ const PHASE = { LOBBY: 'LOBBY', FLOORS: 'FLOORS', STAGING: 'STAGING', SHOWDOWN: 
 
 // how many squads of what size for n players: as many squads as possible up to SQUADS_MAX, sizes as even as possible
 function squadPlan(n) {
-  if (n < 2) return [];
+  if (n < 1) return [];
+  if (n === 1) return [1];   // solo: one squad, the showdown runs down the clock (checkWinner needs 2+ squads)
   // about five per squad: 10 -> 2x5, 20 -> 4x5, 32 -> 6, 48 -> 8x6, 64 -> 8x8; never fewer than 2 squads or more than SQUADS_MAX
   const k = clamp(Math.round(n / 5), 2, CONFIG.SQUADS_MAX);
   return Array.from({ length: k }, (_, i) => Math.floor(n / k) + (i < n % k ? 1 : 0));

@@ -15,12 +15,17 @@ function spawnWave(G, roomId, count, floor, boss) {
   R.cleared = false; R.exitOpen = false; R.waveLeft = 0; R.spawnQueue = [];
   const mix = WAVE_MIX[Math.min(WAVE_MIX.length - 1, floor - 1)];
   const bag = []; for (const k in mix) for (let i = 0; i < mix[k]; i++) bag.push(k);
-  const spots = G.rng.shuffle(rm.spots.slice());
+  // never right on top of the squad: spots at least SPAWN_MIN_DIST from the entry plate (all spots if the room is too small for that)
+  const ex = rm.entry; let spots = rm.spots.filter((s) => Math.hypot(s[0] - ex[0], s[1] - ex[1]) >= CONFIG.SPAWN_MIN_DIST);
+  if (spots.length < 6) spots = rm.spots.slice();
+  spots = G.rng.shuffle(spots);
   const kinds = [];
   for (let i = 0; i < count; i++) kinds.push(G.rng.pick(bag));
   if (boss) { kinds.push('golem', 'golem'); }
   // sentinels stand on the dais or against the far wall; the rest take any spot
-  kinds.forEach((k, i) => { const s = spots[i % spots.length]; R.spawnQueue.push({ kind: k, x: s[0], y: s[1], floor }); });
+  // the wave wakes one guardian at a time: the first after WAVE_GRACE, then one every WAVE_TRICKLE (sentinels first so the room reads at a glance)
+  kinds.sort((a, b) => (a === 'sentinel' ? 0 : 1) - (b === 'sentinel' ? 0 : 1));
+  kinds.forEach((k, i) => { const s = spots[i % spots.length]; R.spawnQueue.push({ kind: k, x: s[0], y: s[1], floor, wakeAt: E.now + CONFIG.WAVE_GRACE + i * CONFIG.WAVE_TRICKLE }); });
   R.waveLeft = R.spawnQueue.length;
 }
 
@@ -28,10 +33,12 @@ function spawnOne(G, R, q) {
   const kind = ENEMIES[q.kind];
   const hp = Math.round(kind.hp * (1 + 0.25 * (q.floor - 1)));
   const pos = { x: q.x, y: q.y, z: kind.z };
-  const p = poolTake(kind.model, pos, G.rng.int(360), kind.scale, kind.tint === false ? undefined : kind.color);
+  const rm = LAYOUT.rooms[R.id]; const yaw0 = kind.turn === false ? V.yawTo(pos, { x: rm.entry[0], y: rm.entry[1] }) : G.rng.int(360);
+  // it rises out of the floor over the last second before it wakes (parked under the floor until then: the vault box hides it)
+  const p = poolTake(kind.model, { x: pos.x, y: pos.y, z: pos.z - kind.height - 8 }, yaw0, kind.scale, kind.tint === false ? undefined : kind.color);
   if (!p) return false;
-  const en = { id: p.id, prop: p, kind, key: q.kind, hp, maxHp: hp, pos, yaw: 0, room: R.id, nextAttack: E.now + 1.5 + G.rng.next() * 2,
-               telegraphAt: 0, target: null, bob: G.rng.next() * 6.28, alive: true, hitFlash: 0, hitSndAt: 0 };
+  const en = { id: p.id, prop: p, kind, key: q.kind, hp, maxHp: hp, pos, yaw: yaw0, room: R.id, nextAttack: (q.wakeAt || E.now) + 1.0 + G.rng.next() * 1.5,
+               telegraphAt: 0, target: null, bob: G.rng.next() * 6.28, alive: true, hitFlash: 0, hitSndAt: 0, wakeAt: q.wakeAt || E.now, awake: false, moving: false };
   R.enemies.push(en);
   return true;
 }
@@ -43,6 +50,13 @@ function enemyTick(G, R, members) {
   const alive = members.filter((m) => m.alive);
   for (const en of R.enemies) {
     if (!en.alive) continue;
+    if (!en.awake) {
+      // dormant: rise through the floor over the last second, no moving, no attacking (bullets still count)
+      const t = clamp(1 - (en.wakeAt - E.now), 0, 1); const kk = en.kind;
+      if (t > 0) poolMove(en.prop, { x: en.pos.x, y: en.pos.y, z: kk.z - (kk.height + 8) * (1 - t) }, en.yaw);
+      if (E.now >= en.wakeAt) { en.awake = true; if (kk.speed > 200) sfx('drone_lunge', en.pos); }
+      continue;
+    }
     // nearest living squad member
     let best = null, bd = 1e9;
     for (const m of alive) { const d = V.dist2d(m.lastPos, en.pos); if (d < bd) { bd = d; best = m; } }
@@ -58,12 +72,14 @@ function enemyTick(G, R, members) {
       for (const [qx, qy] of rm.pillars) { const d = V.dist2d({ x: qx, y: qy }, en.pos); if (d < k.radius + 48 && d > 0.1) { px += 2 * (en.pos.x - qx) / d; py += 2 * (en.pos.y - qy) / d; } }
       let nx = en.pos.x + (dir.x + px * 0.5) * step, ny = en.pos.y + (dir.y + py * 0.5) * step;
       const b = rm.box; nx = clamp(nx, b[0] + k.radius + 8, b[3] - k.radius - 8); ny = clamp(ny, b[1] + k.radius + 8, b[4] - k.radius - 8);
-      en.pos.x = nx; en.pos.y = ny;
-      en.yaw = V.yawTo(en.pos, best.lastPos);
-    } else if (best) en.yaw = V.yawTo(en.pos, best.lastPos);
-    en.bob += E.dt * 3;
-    const z = k.z + (k.speed > 200 ? Math.sin(en.bob) * 6 : 0);
-    poolMove(en.prop, { x: en.pos.x, y: en.pos.y, z }, en.yaw);
+      en.pos.x = nx; en.pos.y = ny; en.moving = true;
+      if (k.turn !== false) en.yaw = V.yawTo(en.pos, best.lastPos);
+    } else { en.moving = false; if (best && k.turn !== false) en.yaw = V.yawTo(en.pos, best.lastPos); }
+    // procedural motion: drones hover and sway, walkers stomp (a bob with a pitch/roll rock per step), turrets sit still
+    let z = k.z, pitch = 0, roll = 0;
+    if (k.speed > 200) { en.bob += E.dt * 3; z += Math.sin(en.bob) * 6; roll = Math.sin(en.bob * 0.7) * 6; pitch = en.moving ? 8 : 0; }
+    else if (k.speed > 0 && en.moving) { en.bob += E.dt * (k.height > 100 ? 5 : 7); const s = Math.sin(en.bob); z += Math.abs(s) * (k.height > 100 ? 5 : 3); roll = s * (k.height > 100 ? 4 : 2.5); pitch = Math.cos(en.bob * 2) * 1.5; }
+    poolMove(en.prop, { x: en.pos.x, y: en.pos.y, z }, en.yaw, pitch, roll);
     // attacks
     if (best && E.now >= en.nextAttack) {
       if (k.attack === 'melee') {
@@ -106,7 +122,7 @@ function enemyTick(G, R, members) {
 }
 
 function hurtPlayer(G, m, dmg, en, armorIgnore) {
-  if (!m.alive) return;
+  if (!m.alive || E.now < (m.immuneUntil || 0)) return;
   let flags = CSDamageFlags.NONE; if (armorIgnore) flags |= CSDamageFlags.IGNORE_ARMOR;
   try { m.pawn.TakeDamage({ damage: dmg, inflictor: en.prop.ent, damageTypes: en.kind.attack === 'melee' ? CSDamageTypes.CLUB : CSDamageTypes.BULLET, damageFlags: flags }); } catch (e) { /* */ }
 }

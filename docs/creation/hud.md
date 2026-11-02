@@ -84,7 +84,9 @@ pixel-text rows, `char_line`, `preload`, `hide_with_scoreboard`, `write` with it
 - CS2 hosts custom HUDs in `<Panel class="WindowRoot"><CSGOCustomHud id="CustomHud" style="width:100%;height:100%;flow-children:none;">`; its own
   stylesheet doesn't style your class names. Hide your HUD while Tab is held with `.HUD_SCOREBOARD_VISIBLE .MyRoot.hidescores { visibility: collapse; }`
   (`hidescores` = a per-player opt-in class, Hellmatch `!hud scores`; `Hud.hide_with_scoreboard`).
-- A layout that fails to compile is ignored silently: CS2 keeps the last good `.vxml` (Puppet Brawl ran a 3-day-old HUD). Compile it with
+- A layout that fails to compile is ignored silently: CS2 keeps the last good `.vxml` (Puppet Brawl ran a 3-day-old HUD), or shows no HUD at all when there
+  never was one (Nanite Temple, 3 Nov 2026: `Hud.preload` named two loading-screen slides that didn't exist yet, the css failed with "Tried to register an
+  empty resource weak-reference" and the xml with "Associate compile failed"; preload only images that exist). Compile it with
   `resourcecompiler.exe -f -i "…\panorama\layout\custom_game\<name>.xml"` (and the `.css`) and check for "1 compiled"; the porting build's asset pass (`build_maps.ps1`)
   compiles them since 30 Oct 2026; Hammer's own build doesn't. Changes need a full reload (`disconnect`, load again).
 

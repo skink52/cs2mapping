@@ -97,18 +97,19 @@ function poolTake(model, pos, yaw = 0, scale = 1, color) {
   try {
     if (p.model !== model) { p.ent.SetModel(model); p.model = model; }
     if (p.scale !== scale) { p.ent.SetModelScale(scale); p.scale = scale; }
-    placeProp(p, { position: pos, angles: { pitch: 0, yaw, roll: 0 } });
+    placeProp(p, { position: pos, angles: { pitch: 0, yaw, roll: 0 } }); p.ang.pitch = 0; p.ang.roll = 0;
     if (color) p.ent.SetColor(color);
   } catch (e) { Instance.Msg(`[${CONFIG.TAG}] pool take failed: ${e}`); p.used = false; E.poolFree.push(p); return null; }
   p.pos = { x: pos.x, y: pos.y, z: pos.z }; p.ang.yaw = yaw; p.lastMove = E.tick;
   return p;
 }
-function poolMove(p, pos, yaw) {
-  if (Math.abs(pos.x - p.pos.x) + Math.abs(pos.y - p.pos.y) + Math.abs(pos.z - p.pos.z) < 0.01 && (yaw === undefined || yaw === p.ang.yaw)) return;
+function poolMove(p, pos, yaw, pitch = 0, roll = 0) {
+  if (Math.abs(pos.x - p.pos.x) + Math.abs(pos.y - p.pos.y) + Math.abs(pos.z - p.pos.z) < 0.01 && (yaw === undefined || yaw === p.ang.yaw) && pitch === p.ang.pitch && roll === p.ang.roll) return;
   if (yaw !== undefined) p.ang.yaw = yaw;
+  p.ang.pitch = pitch; p.ang.roll = roll;
   const far = V.dist(pos, p.pos) > 400;
   p.pos = { x: pos.x, y: pos.y, z: pos.z };
-  const nv = { position: p.pos, angles: { pitch: 0, yaw: p.ang.yaw, roll: 0 } };
+  const nv = { position: p.pos, angles: { pitch, yaw: p.ang.yaw, roll } };
   if (far) placeProp(p, nv); else p.ent.Move(nv);
 }
 function poolGive(p, park = true) {

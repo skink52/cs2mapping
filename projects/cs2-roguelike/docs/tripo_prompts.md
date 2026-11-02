@@ -45,4 +45,12 @@ Negative: `human face detail, cloth, weapon, gun barrel, background, blurry, sof
 | nt_drone | shard drone, as above | 1,500 / 1,373 | `--length 44 --yaw 90 --glow cyan` |
 | nt_sentinel | turret, second try: "framed by one smooth plain ring of magenta light and a few simple straight carved grooves. No runes, no glyphs, no letters, no symbols, no writing, no text anywhere on the model" (the first try ringed the lens with gibberish runes) | 4,000 / 3,778 | `--length 88 --yaw 90 --glow magenta` -> 77 tall |
 
-220 studio credits in all (4 x 55). Lesson: say "no runes, no glyphs, no text" whenever a prompt mentions glyph channels, or Tripo paints nonsense script.
+| nt_lancer | "hovering ancient stone lancer construct: a slender vertical obelisk body of dark basalt ... long crystal spear point at the front glowing amber ... No runes ..." (came out as a floating basalt blade, point down; kept) | 2,500 / 2,359 | `--length 24 --yaw 90 --glow amber` -> 123 tall, hovers at z 36 |
+
+275 studio credits in all (5 x 55). Lesson: say "no runes, no glyphs, no text" whenever a prompt mentions glyph channels, or Tripo paints nonsense script.
+
+## Supplied props (not Tripo)
+
+skink52 dropped two free game-ready GLBs in `C:\source1` on 3 Nov 2026: `server_v2_console.glb` and `breaker_box__game_ready__free - wall mount.glb`
+(kept as `ref/ext/`). Imported with `--kind props`: `nt_server` (`--length 56 --yaw 90`, 29 x 56 x 85) and `nt_breaker` (`--length 22 --yaw 90`, a 22 x 35 wall plate).
+`tools/dress.py` mixes the rack in with Train's server_a and hangs breaker boxes beside the wall panels. The source licences are the uploaders' (check before the workshop release).
