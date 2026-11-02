@@ -3,14 +3,16 @@ moves to a stock material or an atlas is renamed). Run it before zipping a deliv
 
 usage: clean_stale.py [props.json] [--dry-run]
 Props come from props.json (build_all_props.py); without it, every folder under models/<prefix>/ that has <name>/<name>.vmdl.
-Uses $CS2_ADDON_OUT and $CS2_MODEL_PREFIX.
+Uses $CS2_ADDON_OUT and $CS2_MODEL_PREFIX, or toolkit.json out_env / model_prefix (see modelio.CONF).
 
 From trenchwarfare-cs2/tools/clean_stale.py (MIT), made project-neutral.
 """
 import os, re, sys, json
 
-OUT = os.environ.get('CS2_ADDON_OUT', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'out', 'addon'))
-PREFIX = os.environ.get('CS2_MODEL_PREFIX', 'props')
+_cp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'toolkit.json')
+CONF = json.load(open(_cp)) if os.path.exists(_cp) else {}
+OUT = os.environ.get(CONF.get('out_env', 'CS2_ADDON_OUT'), os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'out', 'addon'))
+PREFIX = CONF.get('model_prefix') or os.environ.get('CS2_MODEL_PREFIX', 'props')
 
 
 def clean(names, dry=False):

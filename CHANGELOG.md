@@ -3,6 +3,19 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-02: monorepo (all skink52 CS2 repos merged)
+
+- hellmatch-cs2, space-racer-cs2, cs2-fighter, trenchwarfare-cs2, cs21.6 and cs2mapTTT imported into `projects/<name>/` with full history (`git subtree`);
+  cs2-fighter's unmerged `anim-v3` and `polish` branches kept as `archive/cs2-fighter-*`. Old repos get a pointer README and are archived.
+- `CLAUDE.md` routes "we're working on X" to the project folder. Old repo links, Workshop description sources and sibling paths (`../cs2mapping`) repointed.
+- Shared tools reconciled: every diverged copy now has one master with the other behaviours kept as options (`toolkit.json` for trench settings), and all
+  copies are byte-identical in `libsync.json`. Merged: dmx (three APIs), glbmesh, vpk, synth, music_analysis, merge_snd (+sndevents), pixfont, retro, skies,
+  build_prop, build_all_props, clean_stale, fx_models, make_skybox, modelio, placer, ext_smd, glb2cs2_multi, vtexread, dump_entities, stock. Each checked
+  old vs new on real or test inputs: identical (trench prop build 424 files, seeded WAVs, 20 track skies, 3000-placement placer run, vmap round-trips).
+  Left separate (different programs, same name): loading, shot, hud_preview, vmap, vmf, assets, patch_vmap, per-game hud/sounds/make_map/build_all and src/*.js.
+- Fixes: neutral ext_smd/glb2cs2_multi wrote models outside the folder placer reads (now `<prefix>/ext/`); TTT `run_mock.sh` exited early with no args.
+- `scripts/make_links.bat` + setup.md: the `C:\source1\links\` junction layout so Claude Code works from `C:\source1` alone.
+
 ## 2026-11-02: cs2-slop-porting 3.5 features (pipeline)
 
 - New stage C steps (also stage D passes): `fire` (env_fire → stock `burning_fx/env_fire_*` particle + 2/s burn trigger_hurt with CS:GO fire.cpp I/O; env_spark → spark particle), `splitfaces` (lit faces over 512² cut on a 512 grid), `waterprobe` (one probe volume per water surface crossed by several), `culled` (faces culled under water rebuilt from the VMF), `displaybrush`, `trigmat`, `toolpaths`, `trigsplit` (skink52: multi-mesh trigger_teleport/hurt/multiple → one entity per piece), `origindup` (C reports, D deletes), `nullparams` (runs with `io`; fixes doubled outputs after restore_io). New `tools/repair.py`, `splitfaces.py`, `waterprobe.py`, `vpcf66.py`; `firefx.py` rewritten.

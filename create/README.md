@@ -8,9 +8,12 @@
 Python 3 with numpy, scipy and Pillow (ffmpeg for audio analysis and MP4 previews); Node 18+ for the tests, **Node 22.15+** for `anim/` and `s2/`
 (zstd-compressed CS2 files). Run the tools from this folder (they import each other).
 Environment variables instead of hard-coded project paths:
-`CS2_ADDON_OUT` (generated content tree, default `../out/addon`), `CS2_MODEL_PREFIX` (folder under `models/` and `materials/models/`, default `props`/`ext`),
+`CS2_ADDON_OUT` (generated content tree, default `../out/addon`), `CS2_MODEL_PREFIX` (folder under `models/` and `materials/models/`, default `props`; converted models go in `<prefix>/ext/`),
 `CS2_PREVIEW_DIR` (turntable renders), `CS2_VPK_DIR` (folder with CS2's `pak01_dir.vpk` + the chunks you need), `CS2_SINGLE_LOD` (props that ship LOD0 only),
-`CS2_SKELETON` / `CS2_BVH_DIR` / `CS2_AGENT_DIR` (animation), `CS2_SCRIPT_NAME` (script build). Run Python tools with `python3 -I` when they read downloaded files.
+`CS2_SKELETON` / `CS2_BVH_DIR` / `CS2_AGENT_DIR` (animation), `CS2_SCRIPT_NAME` (script build), `CS2_VPK_INDEX` (pickled VPK index, optional).
+A project copy of these tools can carry a `toolkit.json` next to them instead (model_prefix, out_env, tag, preview dirs, single_lod, the prop list,
+fx names, skybox defaults; see `modelio.py`); `projects/trenchwarfare-cs2/tools/toolkit.json` is the example. Its values win over the environment.
+Project copies are byte-identical to these masters (`libsync.json` copies), so project differences go in options or toolkit.json, never in the copy. Run Python tools with `python3 -I` when they read downloaded files.
 
 The guide that explains how these fit together: [docs/creation/guide.md](../docs/creation/guide.md).
 

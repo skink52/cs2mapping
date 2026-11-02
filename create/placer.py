@@ -17,10 +17,11 @@ usage (audit of a vmap's props): placer.py <map.vmap> [props.json] [overlaps.jso
 From trenchwarfare-cs2/tools/placer.py (MIT), made project-neutral.
 """
 import os, sys, json, math
+_TK = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'toolkit.json')   # project settings (see modelio.CONF)
 import numpy as np
 
 OUT = os.environ.get('CS2_ADDON_OUT', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'out', 'addon'))
-PREFIX = os.environ.get('CS2_MODEL_PREFIX', 'props')
+PREFIX = (json.load(open(_TK)).get('model_prefix') if os.path.exists(_TK) else None) or os.environ.get('CS2_MODEL_PREFIX', 'props')
 PROPS_JSON = os.path.join(os.path.dirname(os.path.abspath(OUT)), 'props.json')
 
 # stock CS2 models: (lo, hi) in model units. Example values (estimated, conservative), not measured from the compiled models.

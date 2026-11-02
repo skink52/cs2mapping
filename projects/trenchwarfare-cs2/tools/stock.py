@@ -7,8 +7,9 @@ modes: plank  - board parts (part frame x = length, y = width, z = thickness) ma
 
 From trenchwarfare-cs2/tools/stock.py (MIT), made project-neutral.
 """
-import os
-PREFIX = os.environ.get('CS2_MODEL_PREFIX', 'props')   # stock material copies go to materials/models/<PREFIX>/stock
+import os, json
+_TK = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'toolkit.json')   # project settings (see modelio.CONF)
+PREFIX = (json.load(open(_TK)).get('model_prefix') if os.path.exists(_TK) else None) or os.environ.get('CS2_MODEL_PREFIX', 'props')   # stock material copies go to materials/models/<PREFIX>/stock
 import numpy as np
 
 STOCK = {

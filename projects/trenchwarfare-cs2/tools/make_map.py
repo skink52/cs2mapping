@@ -5,7 +5,6 @@ edited in Hammer replaces only that group.
 usage: make_map.py <template_or_current.vmap> <out.vmap> <addon_content_out>
 """
 import os, sys, json, math, copy
-os.environ.setdefault('CS2_MODEL_PREFIX', 'tw')   # shared create/ tools: models/tw, models/tw/ext, materials/models/tw/stock
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 sys.path.insert(0, os.path.dirname(__file__))

@@ -1,12 +1,22 @@
-"""Bakes and writes one prop: LOD meshes (same chart layout), atlas textures, vmat, vmdl, physics hulls, preview."""
+"""Bakes and writes one prop: LOD meshes (same chart layout), atlas textures, vmat, vmdl, physics hulls, preview.
+Settings (toolkit.json next to this file, see modelio.CONF; env vars otherwise): out_env (env var naming the output dir, default
+CS2_ADDON_OUT), model_prefix ($CS2_MODEL_PREFIX, default props), preview_dir ($CS2_PREVIEW_DIR), stock_preview_dir
+($STOCK_PREVIEW_DIR), tag (prefixed to the vmat comment). Relative paths in toolkit.json are relative to this folder.
+
+From trenchwarfare-cs2/tools/build_prop.py (MIT), made project-neutral.
+"""
 import os, sys, time
 import numpy as np
 from PIL import Image
 import bake, modelio, render, stock
 
-OUT = os.environ.get('TW_OUT', os.path.join(os.path.dirname(__file__), '..', 'out', 'addon'))
-PREV = os.path.join(os.path.dirname(__file__), '..', 'preview')
-ROOT = 'tw'
+CONF = modelio.CONF
+HERE = os.path.dirname(__file__)
+OUT = os.environ.get(CONF.get('out_env', 'CS2_ADDON_OUT'), os.path.join(HERE, '..', 'out', 'addon'))
+PREV = os.path.join(HERE, CONF['preview_dir']) if 'preview_dir' in CONF else \
+    os.environ.get('CS2_PREVIEW_DIR', os.path.join(os.path.dirname(os.path.abspath(OUT)), 'preview'))
+ROOT = CONF.get('model_prefix') or os.environ.get('CS2_MODEL_PREFIX', 'props')
+TAG = CONF.get('tag', '')
 
 
 def build(name, spec, preview=True, cam=None):
@@ -53,7 +63,7 @@ def build(name, spec, preview=True, cam=None):
         else:
             alpha = None
         vm = '%s/%s.vmat' % (mat_rel, tname)
-        modelio.write_vmat(OUT, vm, tex, comment='mg_trenchwarfare %s (procedural, AI-generated)' % tname, alpha=alpha,
+        modelio.write_vmat(OUT, vm, tex, comment=(TAG + ' ' if TAG else '') + '%s (procedural, AI-generated)' % tname, alpha=alpha,
                            backfaces=g.get('backfaces', False))
         vmats[key] = vm
         if g.get('alpha') is not None:
@@ -86,7 +96,7 @@ def build(name, spec, preview=True, cam=None):
         hull_names.append(hn)
     remaps = [(('stock_%s.vmat' % k[1:]) if k.startswith('~') else ('%s_%s.vmat' % (name, k)), v) for k, v in vmats.items()]
     txt = modelio.vmdl_text(name, rel_dir, meshes, remaps, hull_names, surface=spec.get('surface', 'default'),
-                            lod_thresholds=spec.get('lod_thresholds'), entity='')
+                            lod_thresholds=spec.get('lod_thresholds'), entity='', single_lod=spec.get('single_lod'))
     open(os.path.join(OUT, rel_dir, name + '.vmdl'), 'w', newline='\n').write(txt)
     lo, hi = m0.bounds()
     info = dict(model='%s/%s.vmdl' % (rel_dir, name), tris=[int(m.tri_count()) for m in lods], mins=lo.round(1).tolist(), maxs=hi.round(1).tolist())
@@ -150,13 +160,14 @@ def stock_preview(m, fsel, fuv, key):
     """(mesh, uv, textures) for the turntable: stock faces unshared so each corner keeps its own uv"""
     import geo
     if key not in _STOCK_PREV:
-        p = os.path.join('/tmp/claude-0/stockprev', key + '.png')
+        p = os.path.join(HERE, CONF['stock_preview_dir'], key + '.png') if 'stock_preview_dir' in CONF else \
+            os.path.join(os.environ.get('STOCK_PREVIEW_DIR', os.path.join(__import__('tempfile').gettempdir(), 'stockprev')), key + '.png')
         try:
             if not os.path.exists(p):
                 import vtexread as V
                 os.makedirs(os.path.dirname(p), exist_ok=True)
                 vm = stock.STOCK[key]['vmat']
-                if vm.startswith('materials/models/tw/'):
+                if os.path.exists(os.path.join(OUT, vm)):   # our own exported copy; otherwise read the game's from the VPK
                     import re
                     txt = open(os.path.join(OUT, vm)).read()
                     tc = re.search(r'TextureColor "([^"]+)"', txt).group(1)
@@ -168,7 +179,8 @@ def stock_preview(m, fsel, fuv, key):
                     r = [x for x in V.refs(V.vpk_read(vm + '_c')) if '_color' in x][0]
                     V.decode_vtex(V.vpk_read(r + '_c'), 1).convert('RGB').save(p)
             col = np.asarray(Image.open(p).convert('RGB'), np.float32) / 255.0
-        except Exception:
+        except Exception as ex:      # no exported copy and no VPK access: grey stand-in, say why
+            print('preview: %s shown grey (%s: %s)' % (key, type(ex).__name__, ex))
             col = np.full((4, 4, 3), 0.5)
         h, w = col.shape[:2]
         _STOCK_PREV[key] = dict(color=col, normal=np.tile([0, 0, 1.0], (h, w, 1)), rough=np.full((h, w), 0.8), ao=np.ones((h, w)), metal=np.zeros((h, w)))

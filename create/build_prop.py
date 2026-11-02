@@ -1,4 +1,7 @@
 """Bakes and writes one prop: LOD meshes (same chart layout), atlas textures, vmat, vmdl, physics hulls, preview.
+Settings (toolkit.json next to this file, see modelio.CONF; env vars otherwise): out_env (env var naming the output dir, default
+CS2_ADDON_OUT), model_prefix ($CS2_MODEL_PREFIX, default props), preview_dir ($CS2_PREVIEW_DIR), stock_preview_dir
+($STOCK_PREVIEW_DIR), tag (prefixed to the vmat comment). Relative paths in toolkit.json are relative to this folder.
 
 From trenchwarfare-cs2/tools/build_prop.py (MIT), made project-neutral.
 """
@@ -7,9 +10,13 @@ import numpy as np
 from PIL import Image
 import bake, modelio, render, stock
 
-OUT = os.environ.get('CS2_ADDON_OUT', os.path.join(os.path.dirname(__file__), '..', 'out', 'addon'))
-PREV = os.environ.get('CS2_PREVIEW_DIR', os.path.join(os.path.dirname(os.path.abspath(OUT)), 'preview'))
-ROOT = os.environ.get('CS2_MODEL_PREFIX', 'props')
+CONF = modelio.CONF
+HERE = os.path.dirname(__file__)
+OUT = os.environ.get(CONF.get('out_env', 'CS2_ADDON_OUT'), os.path.join(HERE, '..', 'out', 'addon'))
+PREV = os.path.join(HERE, CONF['preview_dir']) if 'preview_dir' in CONF else \
+    os.environ.get('CS2_PREVIEW_DIR', os.path.join(os.path.dirname(os.path.abspath(OUT)), 'preview'))
+ROOT = CONF.get('model_prefix') or os.environ.get('CS2_MODEL_PREFIX', 'props')
+TAG = CONF.get('tag', '')
 
 
 def build(name, spec, preview=True, cam=None):
@@ -56,7 +63,7 @@ def build(name, spec, preview=True, cam=None):
         else:
             alpha = None
         vm = '%s/%s.vmat' % (mat_rel, tname)
-        modelio.write_vmat(OUT, vm, tex, comment='%s (procedural, AI-generated)' % tname, alpha=alpha,
+        modelio.write_vmat(OUT, vm, tex, comment=(TAG + ' ' if TAG else '') + '%s (procedural, AI-generated)' % tname, alpha=alpha,
                            backfaces=g.get('backfaces', False))
         vmats[key] = vm
         if g.get('alpha') is not None:
@@ -153,7 +160,8 @@ def stock_preview(m, fsel, fuv, key):
     """(mesh, uv, textures) for the turntable: stock faces unshared so each corner keeps its own uv"""
     import geo
     if key not in _STOCK_PREV:
-        p = os.path.join(os.environ.get('STOCK_PREVIEW_DIR', os.path.join(__import__('tempfile').gettempdir(), 'stockprev')), key + '.png')
+        p = os.path.join(HERE, CONF['stock_preview_dir'], key + '.png') if 'stock_preview_dir' in CONF else \
+            os.path.join(os.environ.get('STOCK_PREVIEW_DIR', os.path.join(__import__('tempfile').gettempdir(), 'stockprev')), key + '.png')
         try:
             if not os.path.exists(p):
                 import vtexread as V

@@ -1,11 +1,12 @@
 """read/write the converted glb props (single SMD + per-material csgo_complex vmats) for re-texturing and previews"""
-import os, re
+import os, re, json
+_TK = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'toolkit.json')   # project settings (see modelio.CONF)
 import numpy as np
 from PIL import Image
 import geo
 
 ADDON = os.environ.get('CS2_ADDON_OUT', os.path.join(os.path.dirname(__file__), '..', 'out', 'addon'))
-SUB = os.environ.get('CS2_MODEL_PREFIX', 'props') + '/ext'   # converted models live in models/<CS2_MODEL_PREFIX>/ext/<name>
+SUB = ((json.load(open(_TK)).get('model_prefix') if os.path.exists(_TK) else None) or os.environ.get('CS2_MODEL_PREFIX', 'props')) + '/ext'   # converted models live in models/<CS2_MODEL_PREFIX>/ext/<name>
 
 
 def load(name):

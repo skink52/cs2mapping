@@ -8,7 +8,7 @@ Needs Python 3 with numpy, scipy, Pillow; Node 18+ for the tests.
 | Step | Command |
 |---|---|
 | props (procedural, baked PBR) | `python3 tools/build_all_props.py [names]` -> `out/addon/models/tw`, `materials/models/tw`, previews in `preview/` |
-| downloaded glb models | `CS2_MODEL_PREFIX=tw python3 tools/glb2cs2_multi.py <file.glb> out/addon <name> --length <units>` -> `models/tw/ext/<name>` |
+| downloaded glb models | `python3 tools/glb2cs2_multi.py <file.glb> out/addon <name> --length <units>` -> `models/tw/ext/<name>` |
 | map | `python3 tools/make_map.py <current .vmap> out/addon/maps/mg_trenchwarfare.vmap out/addon` (terrain is in the map itself, ~47 MB vmap; everything generated is in vis group `tw_gen`, so re-running on a map edited in Hammer only replaces that group) |
 | targeting screens, radar, paper map | `python3 tools/render_top.py out/addon out/game` |
 | HUD | `python3 tools/tw_hud.py out/addon` |

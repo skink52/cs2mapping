@@ -6,6 +6,9 @@ Glow comes from a csgo_vertexlitgeneric + F_SELF_ILLUM material (emissive_vmat);
 usage: fx_models.py <addon content dir> [--prefix fx] [--only tracer,marker,sight,bomb]
 Writes models/<CS2_MODEL_PREFIX>/<prefix>/<name>/<name>.{smd,vmdl} and materials/models/<CS2_MODEL_PREFIX>/<prefix>/*.vmat/png.
 Python: fx_models.emissive(out, rel, 'fx_red', (255, 60, 40), 12.0) for your own glowing materials, ring()/bar()/merge() for shapes.
+Options (build() keywords, defaults from toolkit.json "fx", see modelio.CONF): stems {kind: file stem} (default the kind itself),
+model_tag (model name = <model_tag>_<stem>, default fx; materials are always fx_<stem>), one_sided (kinds built with double=False,
+default none), comment (vmat header line).
 
 From trenchwarfare-cs2/tools/fx_models.py (MIT), made project-neutral.
 """
@@ -14,16 +17,18 @@ import numpy as np
 from PIL import Image
 import geo, modelio
 
-PREFIX = os.environ.get('CS2_MODEL_PREFIX', 'props')
+CONF = modelio.CONF.get('fx', {})
+PREFIX = modelio.CONF.get('model_prefix') or os.environ.get('CS2_MODEL_PREFIX', 'props')
+COMMENT = CONF.get('comment', 'self-lit effect material (AI-generated)')
 BOMB_MAT = 'materials/de_overpass/metal/rusty_metal_1.vmat'      # stock material for the plain example
 
 
-def emissive(out, rel_t, name, rgb, bright):
+def emissive(out, rel_t, name, rgb, bright, comment=None):
     """self-lit material: flat colour, full self-illum mask; brightness 12 for markers, ~40 for a tracer seen in daylight"""
     d = os.path.join(out, rel_t); os.makedirs(d, exist_ok=True)
     Image.new('RGB', (4, 4), tuple(rgb)).save(os.path.join(d, name + '_color.png'))
     Image.new('L', (4, 4), 255).save(os.path.join(d, 'fx_mask.png'))
-    open(os.path.join(d, name + '.vmat'), 'w', newline='\n').write(f"""// self-lit effect material (AI-generated)
+    open(os.path.join(d, name + '.vmat'), 'w', newline='\n').write(f"""// {comment or COMMENT}
 Layer0
 {{
 	shader "csgo_vertexlitgeneric.vfx"
@@ -81,21 +86,30 @@ def write(out, rel_m, name, mesh, mat_vmat, uv=None):
     return f'{rel_m}/{name}/{name}.vmdl'
 
 
-def build(out, prefix='fx', only=None):
+def build(out, prefix='fx', only=None, stems=None, model_tag=None, one_sided=None, comment=None):
     rel_m = 'models/%s/%s' % (PREFIX, prefix); rel_t = 'materials/models/%s/%s' % (PREFIX, prefix)
+    stems = dict(CONF.get('stems', {}), **(stems or {}))
+    model_tag = model_tag or CONF.get('model_tag', 'fx')
+    one_sided = set(CONF.get('one_sided', ()) if one_sided is None else one_sided)
+    st = lambda k: stems.get(k, k)
+    mn = lambda k: '%s_%s' % (model_tag, st(k))
+    em = lambda k, rgb, bright: emissive(out, rel_t, 'fx_' + st(k), rgb, bright, comment)
     made = {}
     want = lambda k: only is None or k in only
     if want('tracer'):        # glowing streak behind its head; fly it at a few thousand u/s, every Nth round
         tr = geo.tube([(-110, 0, 0), (0, 0, 0)], [0.5, 1.4], sides=6, mat='m')
-        made['tracer'] = write(out, rel_m, 'fx_tracer', tr, emissive(out, rel_t, 'fx_tracer', (255, 196, 90), 40.0))
+        made['tracer'] = write(out, rel_m, mn('tracer'), tr, em('tracer', (255, 196, 90), 40.0))
     if want('marker'):        # ground ring with four ticks, lies flat. For a marker only one viewer should see (a pilot's bomb sight held
-        # between their camera and the landing point, facing it), build it with double=False: players below see the undrawn back face
-        mk = merge([ring(108, 118), ring(14, 20)] + [bar(*b) for b in ((126, -3, 168, 3), (-168, -3, -126, 3), (-3, 126, 3, 168), (-3, -168, 3, -126))])
-        made['marker'] = write(out, rel_m, 'fx_marker', mk, emissive(out, rel_t, 'fx_marker', (255, 70, 40), 12.0))
+        # between their camera and the landing point, facing it), build it one-sided (one_sided={'marker'}): players below see the undrawn back face
+        db = 'marker' not in one_sided
+        mk = merge([ring(108, 118, double=db), ring(14, 20, double=db)] +
+                   [bar(*b, double=db) for b in ((126, -3, 168, 3), (-168, -3, -126, 3), (-3, 126, 3, 168), (-3, -168, 3, -126))])
+        made['marker'] = write(out, rel_m, mn('marker'), mk, em('marker', (255, 70, 40), 12.0))
     if want('sight'):         # ring + cross facing +x
-        gs = merge([ring(34, 38, axis='x'), ring(0.0, 4, n=12, axis='x')] +
-                   [bar(*b, axis='x') for b in ((44, -1.5, 66, 1.5), (-66, -1.5, -44, 1.5), (-1.5, 44, 1.5, 66), (-1.5, -66, 1.5, -44))])
-        made['sight'] = write(out, rel_m, 'fx_sight', gs, emissive(out, rel_t, 'fx_sight', (255, 220, 120), 12.0))
+        db = 'sight' not in one_sided
+        gs = merge([ring(34, 38, axis='x', double=db), ring(0.0, 4, n=12, axis='x', double=db)] +
+                   [bar(*b, axis='x', double=db) for b in ((44, -1.5, 66, 1.5), (-66, -1.5, -44, 1.5), (-1.5, 44, 1.5, 66), (-1.5, -66, 1.5, -44))])
+        made['sight'] = write(out, rel_m, mn('sight'), gs, em('sight', (255, 220, 120), 12.0))
     if want('bomb'):          # 46 long, nose at +x, four tail fins, stock metal
         prof = [(0.01, -24), (3.2, -22), (3.4, -12), (5.6, -6), (6.0, 6), (5.4, 14), (3.6, 20), (1.2, 23), (0.01, 23.5)]
         body = geo.lathe(prof, sides=14, mat='m')
@@ -106,7 +120,7 @@ def build(out, prefix='fx', only=None):
             f.V = (f.V + np.array([-19, 0, 5.5])) @ R.T; f.N = f.N @ R.T
             fins.append(f)
         bomb = merge([body] + fins)
-        made['bomb'] = write(out, rel_m, 'fx_bomb', bomb, BOMB_MAT, uv=bomb.V[:, [0, 2]] / 48.0)
+        made['bomb'] = write(out, rel_m, mn('bomb'), bomb, BOMB_MAT, uv=bomb.V[:, [0, 2]] / 48.0)
     for k, v in made.items(): print('%-7s %s' % (k, v))
     return made
 

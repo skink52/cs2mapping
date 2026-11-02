@@ -1,10 +1,16 @@
 """Writes baked meshes as Source 2 content: SMD render/physics meshes, csgo_complex .vmat + PNGs, .vmdl.
+CONF: optional toolkit.json next to this file with project settings for modelio, build_prop, build_all_props, fx_models, make_skybox
+(model_prefix, tag, preview_dir, stock_preview_dir, single_lod, props, fx, skybox); none = project-neutral defaults.
 
 From trenchwarfare-cs2/tools/modelio.py (MIT), made project-neutral.
 """
 import os, json
 import numpy as np
 from PIL import Image
+
+CONF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'toolkit.json')
+CONF = json.load(open(CONF_PATH)) if os.path.exists(CONF_PATH) else {}
+
 
 def to8(x):
     return (np.clip(x, 0, 1) * 255 + 0.5).astype(np.uint8)
@@ -89,9 +95,9 @@ def _filter():
 
 LOD_SCALE = 16.0         # LOD switches 16x further out than the per-prop values (playtest: swaps visible at ~300 units, then still noticeable at 4x)
 # props whose low LOD is not a faithful copy of LOD0 (measured p95 shape deviation >= ~2 units): ship LOD0 only.
-# Empty by default; set it from your build script (modelio.SINGLE_LOD.update({...})) or the env var
+# Empty by default; set it from your build script (modelio.SINGLE_LOD.update({...})), toolkit.json "single_lod" or the env var
 # CS2_SINGLE_LOD="name1,name2". Example from mg_trenchwarfare: shattered trees, stumps, shelter, wreck_tank.
-SINGLE_LOD = {n.strip() for n in os.environ.get('CS2_SINGLE_LOD', '').split(',') if n.strip()}
+SINGLE_LOD = {n.strip() for n in os.environ.get('CS2_SINGLE_LOD', '').split(',') if n.strip()} | set(CONF.get('single_lod', ()))
 
 
 def vmdl_text(name, rel_dir, meshes, remaps, hulls, surface='default', lod_thresholds=None, archetype='static_prop_model', entity='prop_static', single_lod=None):

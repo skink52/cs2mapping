@@ -10,7 +10,6 @@ The Sketchfab sources are clean toy-like colours on ~50 materials, yawed ~30 deg
   4. writes one SMD material (+ colour/normal/roughness/metalness/ao), compound physics hulls, both vmdls.
 usage: weather_ext.py [plane_spad7] [plane_dr1]"""
 import os, sys, re, json, math
-os.environ.setdefault('CS2_MODEL_PREFIX', 'tw')   # shared create/ tools: models/tw/ext
 import numpy as np
 from PIL import Image
 import geo, bake, modelio, render

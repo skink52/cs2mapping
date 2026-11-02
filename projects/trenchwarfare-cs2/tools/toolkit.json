@@ -1,0 +1,33 @@
+{
+ "out_env": "TW_OUT",
+ "model_prefix": "tw",
+ "tag": "mg_trenchwarfare",
+ "preview_dir": "../preview",
+ "stock_preview_dir": "/tmp/claude-0/stockprev",
+ "single_lod": ["tree_shattered_a", "tree_shattered_b", "tree_shattered_c", "tree_shattered_d", "tunnel_set", "hangar", "stump_a", "stump_b",
+                "log_fallen", "shelter", "wire_coil", "wreck_tank"],
+ "props": {
+  "modules": ["p_trench", "p_wire", "p_trees", "p_wreck", "p_misc", "p_minenwerfer", "p_trenchlife"],
+  "calls": {
+   "sandbag_wall_a": ["p_sandbag.spec", [0], {"courses": 3}],
+   "sandbag_wall_b": ["p_sandbag.spec", [1], {"courses": 3}],
+   "sandbag_wall_c": ["p_sandbag.spec", [2], {"courses": 3}],
+   "sandbag_low": ["p_sandbag.spec", [5], {"courses": 2}],
+   "sandbag_low_128": ["p_sandbag.spec", [6], {"courses": 2, "length": 128}],
+   "sandbag_wall_128": ["p_sandbag.spec", [7], {"courses": 3, "length": 128}]
+  }
+ },
+ "fx": {
+  "model_tag": "tw",
+  "stems": {"marker": "bombsight", "sight": "gunsight"},
+  "one_sided": ["marker"],
+  "comment": "mg_trenchwarfare effect material"
+ },
+ "skybox": {
+  "layout": "layout",
+  "group": "tw_sky",
+  "seed": 1918,
+  "noise_seed": 0,
+  "plain": true
+ }
+}

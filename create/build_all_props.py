@@ -6,6 +6,8 @@ usage: build_all_props.py <module>[,<module>...] [prop names...] [--no-preview]
        build_all_props.py props.list.json [prop names...]      JSON: {"modules": ["p_sandbag", "p_crates"]}
 Prop names limit the build to those props; props.json keeps entries from earlier runs. Spec modules are imported from this
 folder or from the current directory. Output: $CS2_ADDON_OUT (models/<CS2_MODEL_PREFIX>/<name>/...), props.json next to it.
+toolkit.json "props" (see modelio.CONF) = {"modules": [...], "calls": {name: ["module.func", [args], {kwargs}]}} sets the project's
+props; then every argument is a prop name: build_all_props.py [prop names...] [--no-preview].
 
 From trenchwarfare-cs2/tools/build_all_props.py (MIT), made project-neutral.
 """
@@ -16,8 +18,11 @@ import build_prop
 PROPS_JSON = os.path.join(os.path.dirname(os.path.abspath(build_prop.OUT)), 'props.json')
 
 
-def all_specs(modules):
+def all_specs(modules, calls=None):
     sp = {}
+    for n, (fn, args, kw) in (calls or {}).items():
+        mod, f = fn.rsplit('.', 1)
+        sp[n] = getattr(importlib.import_module(mod), f)(*args, **kw)
     for name in modules:
         mod = importlib.import_module(name)
         if hasattr(mod, 'specs'): sp.update(mod.specs())
@@ -29,12 +34,16 @@ def all_specs(modules):
 def main(argv):
     preview = '--no-preview' not in argv
     argv = [a for a in argv if a != '--no-preview']
-    if not argv:
+    conf = build_prop.CONF.get('props')
+    if conf:
+        modules, calls, names = conf.get('modules', []), conf.get('calls'), argv
+    elif not argv:
         print(__doc__); return 2
-    first, names = argv[0], argv[1:]
-    modules = json.load(open(first))['modules'] if first.endswith('.json') else [m for m in first.split(',') if m]
+    else:
+        first, names, calls = argv[0], argv[1:], None
+        modules = json.load(open(first))['modules'] if first.endswith('.json') else [m for m in first.split(',') if m]
     info = json.load(open(PROPS_JSON)) if os.path.exists(PROPS_JSON) else {}
-    sp = all_specs(modules)
+    sp = all_specs(modules, calls)
     bad = 0
     for n in (names or sorted(sp)):
         if n not in sp: print('no spec', n); bad += 1; continue

@@ -4,7 +4,7 @@ their project-neutral copy in create/ was made.
 The game projects live in this repo under projects/<name>/ (merged Nov 2026); a repo name in libsync.json means that folder.
 Older side-by-side checkouts still work with --root DIR. A missing project is skipped.
 The list lives in libsync.json next to this file:
-  copies: canonical file in cs2mapping -> {repo: path}. Must be byte-identical everywhere. cs2mapping holds the master.
+  copies: canonical file in cs2mapping -> {repo: path or [paths]}. Must be byte-identical everywhere. cs2mapping holds the master.
   forks:  neutral file in create/ -> {origin: "repo:path", seen: git blob of the origin when it was last reviewed}.
           A changed origin means a fix or feature there may belong in the neutral copy too.
 
@@ -40,6 +40,11 @@ def rpath(repo, path): return os.path.join(REPO if repo == 'cs2mapping' else os.
 def have(repo): return os.path.isdir(rpath(repo, '' if MONO and repo != 'cs2mapping' else '.git'))
 
 
+def pairs(outs):
+    """(repo, path) for each copy; a repo may list several paths"""
+    return [(r, q) for r, v in sorted(outs.items()) for q in ([v] if isinstance(v, str) else v)]
+
+
 def blob(p): return subprocess.run(['git', 'hash-object', p], capture_output=True, text=True).stdout.strip() if os.path.exists(p) else None
 
 
@@ -52,7 +57,7 @@ def check():
     c = load(); bad = 0; skipped = set()
     for canon, outs in sorted(c['copies'].items()):
         cb = blob(rpath('cs2mapping', canon))
-        for repo, path in sorted(outs.items()):
+        for repo, path in pairs(outs):
             if not have(repo): skipped.add(repo); continue
             b = blob(rpath(repo, path))
             if b == cb: continue
@@ -84,7 +89,7 @@ def push(repos):
     c = load(); n = 0
     for canon, outs in sorted(c['copies'].items()):
         src = rpath('cs2mapping', canon)
-        for repo, path in sorted(outs.items()):
+        for repo, path in pairs(outs):
             if repos and repo not in repos or not have(repo): continue
             dst = rpath(repo, path)
             if blob(dst) == blob(src): continue
