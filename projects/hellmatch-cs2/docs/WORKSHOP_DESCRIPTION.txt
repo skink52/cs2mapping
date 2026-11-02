@@ -1,0 +1,70 @@
+[h1]Hellmatch[/h1]
+A retro 90s-style deathmatch that runs inside one CS2 map. Up to 64 players, split into 1 to 4 arenas, play Free for All, Team Deathmatch, Team Elimination, Last Man Standing or Boss Battle (co-op against waves of monsters) on 32 classic levels, with the old-school movement, weapons, pickups and status bar. No plugins: the whole game is the map's own script. To try it, subscribe and start it from Play > Workshop Maps with a few bots (bot_quota 6).
+
+[h2]Server requirements[/h2]
+[list]
+[*]Map: mg_hellmatch. Load it by Workshop ID: host_workshop_map 3820099820. Game type Custom.
+[*]Nothing to install. The map sets its own rules while arenas run: mp_ignore_round_win_conditions, respawn on/off per mode, mp_teammates_are_enemies in free-for-all rounds, buying and money off, radar off. Set APPLY_CVARS to false in maps/scripts/freedm.js to keep your own config instead.
+[*]Plugins that get in the way: AFK managers, no-respawn plugins, spawn protection, teamkill punishment and anything that blocks scripted damage (kills are applied through the map script so the killfeed and scoreboard work).
+[*]CS2 bots play using the game's own bot AI; bot_quota fills empty slots.
+[*]Server load: under 1 ms of script time per tick with 32 players, about 2 to 2.5 ms with 64; the console prints "script time" once a minute so you can check.
+[*]Monster kills in Boss Battle add points to the Score column (AddScore). The Kills column and rank plugins only see player kills; MONSTER_KILL_COMMAND in the script's settings can hand each monster kill to a server plugin.
+[*]Early build. Please report problems in the discussions, with the console lines if you have them.
+[/list]
+
+[h2]What's in it[/h2]
+[list]
+[*]32 deathmatch levels from the Freedoom project's FreeDM, rebuilt as CS2 geometry
+[*]One mode per round, the same in every arena: Free for All, Team Deathmatch (T = red, CT = blue), Boss Battle, Team Elimination, Last Man Standing. Players vote for the next one at the end of each round (top fraggers' votes count more, never three of the same in a row)
+[*]Boss Battle: everyone in the arena against four waves of creatures and then a boss (an assault tripod, twin tripods, a large technospider, a summoner swarm or a pack of pain lords), three lives each, on the larger levels, with its own music. Monster kills score points on the scoreboard
+[*]Now and then a deathmatch arena has monsters loose in it, or starts everyone with a particular weapon
+[*]Every frag is a real CS2 kill (killfeed, scoreboard, rank plugins); late joiners take a bot's place instead of waiting
+[*]Music: a theme at the start of each round, then original tracks and the levels' own FM soundtrack (the Main Menu Music volume slider controls it, not the in-game Music slider)
+[/list]
+
+[h2]Controls[/h2]
+W A S D move (always running), Shift walk, mouse aim, Mouse 1 fire, E or Space use (doors, lifts, switches), R or Mouse 2 next weapon, F previous weapon. While watching: Mouse 1 / Mouse 2 change player, E or Space change arena. End-of-round vote: Mouse 1 free for all, Mouse 2 team deathmatch, E team elimination, R last man standing, F Boss Battle.
+Music too loud or too quiet? It follows the [b]Main Menu Music[/b] slider in the audio settings (snd_menumusic_volume).
+Chat commands (! or /): [b]!ffa !tdm !elim !lms !boss[/b] vote for the next mode while the ballot is up, [b]!help[/b] controls, [b]!hud[/b] status bar size, [b]!hud scores[/b] hide the game HUD while the scoreboard is open, [b]!spec[/b] watch other arenas, [b]!afk[/b] sit out, [b]!back[/b] rejoin.
+
+[h2]How it was made[/h2]
+The code (the map script, the level converter, the build tools) and most of the engineering were done with an AI coding assistant (Claude, by Anthropic), directed, tested and tuned by skink52. The four "GEN" music tracks were generated for this map (original, CC0). Everything else you see and hear is the Freedoom project's work, used under its BSD licence (below). Source code: https://github.com/skink52/hellmatch-cs2
+
+Hellmatch is an unofficial fan project. It is not affiliated with or endorsed by the Freedoom project, id Software, Bethesda or Valve; Freedoom is named only to credit its content. (Earlier published as FreeDM Arena.)
+
+[h2]Credits[/h2]
+Levels, textures, sprites, sounds and level music: the Freedoom project (freedoom.github.io). Level music rendered from Freedoom's MIDI files with libADLMIDI (Nuked OPL3) and the DMXOPL3 instrument bank by Shannon "Sneakernets" Freeman (MIT licence): DM05 "Music for Freedoom 9" by Jeremy "Vandalorian" Emerson; DM10 "Paranoia" and DM14 "The Heroic Battle" by Tyler "Picklehammer" P.; DM17 "Panic" by Anthony "Ajanddino" Pierce; DM21 "Friendly Fire" by Korp; DM26 "World of Pain" by J.Astartes; DM02 "Descent from Grace" by Lola "BlueWorrior" Harvey; DM23 "Shells" by Ospaggi; DM29 "SevenFour" by Ralph "Ralphis" Vickers. Boss Battle: E1M8 "On the Next Day" by Kevin "Velvetic" Martins; E2M8 "Treble Dissension" by Korp; E3M8 "The Zenith" by Lola "BlueWorrior" Harvey; E4M8 "Vs. The Assault Quindecapod" by continuum.mid. Theme: the Hellmatch trailer track by skink52.
+
+[h2]Freedoom licence[/h2]
+Copyright © 2001-2024
+Contributors to the Freedoom project.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+  * Neither the name of the Freedoom project nor the names of its
+    contributors may be used to endorse or promote products derived from
+    this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS
+IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+For a list of contributors to the Freedoom project, see the file
+CREDITS.
+
+(Freedoom's contributor list ships in the addon as FREEDOOM_CREDITS.txt, and is at https://github.com/freedoom/freedoom/blob/master/CREDITS.)

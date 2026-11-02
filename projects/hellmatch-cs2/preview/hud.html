@@ -1,0 +1,596 @@
+<!doctype html><html><head><style>body{margin:0;width:1920px;height:1080px;overflow:hidden;background:url('bg.png') center/cover} 
+div { position: absolute; left: 0; top: 0; box-sizing: border-box; }
+.Line > div { position: relative; flex: none; }
+.Screen { left: calc(50% - 720px) !important; top: auto; bottom: 0; }
+.CtrLine { left: 50%; transform: translateX(-50%); }
+.SpecLine { left: 50%; transform: translateX(-50%); }
+.InfLine1, .InfLine2 { left: auto; right: 0; }
+ .FdmRoot { width: 100%; height: 100%; display: none; }
+.FdmRoot.On { display: block; }
+.Flash { width: 100%; height: 100%; background-color: #00000000; }
+.Flash.red1 { background-color: #ff00001c; }
+.Flash.red2 { background-color: #ff000039; }
+.Flash.red3 { background-color: #ff000056; }
+.Flash.red4 { background-color: #ff000072; }
+.Flash.red5 { background-color: #ff00008f; }
+.Flash.red6 { background-color: #ff0000ac; }
+.Flash.red7 { background-color: #ff0000c8; }
+.Flash.red8 { background-color: #ff0000e5; }
+.Flash.gold1 { background-color: #d7ba451f; }
+.Flash.gold2 { background-color: #d7ba453f; }
+.Flash.gold3 { background-color: #d7ba455f; }
+.Flash.gold4 { background-color: #d7ba457f; }
+.Flash.invul { background-color: #ffffff30; }
+.Screen { width: 1440px; height: 1080px; horizontal-align: center; vertical-align: bottom; }
+.Wpn { width: 1440px; height: 1080px; transition-property: transform; transition-duration: 0.03s; }
+.Wpn.sy0 { transform: translateY(0.0px); }
+.Wpn.sy1 { transform: translateY(21.6px); }
+.Wpn.sy2 { transform: translateY(43.2px); }
+.Wpn.sy3 { transform: translateY(64.8px); }
+.Wpn.sy4 { transform: translateY(86.4px); }
+.Wpn.sy5 { transform: translateY(108.0px); }
+.Wpn.sy6 { transform: translateY(129.6px); }
+.Wpn.sy7 { transform: translateY(151.2px); }
+.Wpn.sy8 { transform: translateY(172.8px); }
+.Wpn.sy9 { transform: translateY(194.4px); }
+.Wpn.sy10 { transform: translateY(216.0px); }
+.Wpn.sy11 { transform: translateY(237.6px); }
+.Wpn.sy12 { transform: translateY(259.2px); }
+.Wpn.sy13 { transform: translateY(280.8px); }
+.Wpn.sy14 { transform: translateY(302.4px); }
+.Wpn.sy15 { transform: translateY(324.0px); }
+.Wpn.sy16 { transform: translateY(345.6px); }
+.Wpn.sy17 { transform: translateY(367.2px); }
+.Wpn.sy18 { transform: translateY(388.8px); }
+.Wpn.sy19 { transform: translateY(410.4px); }
+.Wpn.sy20 { transform: translateY(432.0px); }
+.Wpn.sy21 { transform: translateY(453.6px); }
+.Wpn.sy22 { transform: translateY(475.2px); }
+.Wpn.sy23 { transform: translateY(496.8px); }
+.Wpn.sy24 { transform: translateY(518.4px); }
+.WBob { width: 1440px; height: 1080px; }
+@keyframes fdmbob1 { 0% { transform: translateX(31.5px) translateY(0px); } 25% { transform: translateX(0px) translateY(37.8px); } 50% { transform: translateX(-31.5px) translateY(0px); } 75% { transform: translateX(0px) translateY(37.8px); } 100% { transform: translateX(31.5px) translateY(0px); } }
+@keyframes fdmbob2 { 0% { transform: translateX(72.0px) translateY(0px); } 25% { transform: translateX(0px) translateY(86.4px); } 50% { transform: translateX(-72.0px) translateY(0px); } 75% { transform: translateX(0px) translateY(86.4px); } 100% { transform: translateX(72.0px) translateY(0px); } }
+.WBob.bob1 { animation-name: fdmbob1; animation-duration: 1.83s; animation-iteration-count: infinite; animation-timing-function: linear; }
+.WBob.bob2 { animation-name: fdmbob2; animation-duration: 1.83s; animation-iteration-count: infinite; animation-timing-function: linear; }
+.WSpr { width: 0px; height: 0px; }
+.WSpr.w_pung_a { width: 378.0px; height: 302.4px; margin-left: 292.5px; margin-top: 691.2px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_punga0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_pung_b { width: 1296.0px; height: 259.2px; margin-left: 148.5px; margin-top: 734.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_pungb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_pung_c { width: 724.5px; height: 405.0px; margin-left: 868.5px; margin-top: 588.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_pungc0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_pung_d { width: 1044.0px; height: 475.2px; margin-left: 616.5px; margin-top: 518.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_pungd0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_pisg_a { width: 252.0px; height: 367.2px; margin-left: 607.5px; margin-top: 626.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_pisga0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_pisg_b { width: 270.0px; height: 410.4px; margin-left: 603.0px; margin-top: 583.2px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_pisgb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_pisg_c { width: 261.0px; height: 410.4px; margin-left: 603.0px; margin-top: 583.2px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_pisgc0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_pisf_a { width: 144.0px; height: 216.0px; margin-left: 652.5px; margin-top: 513.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_pisfa0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_shtg_a { width: 301.5px; height: 334.8px; margin-left: 553.5px; margin-top: 664.2px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_shtga0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_shtg_b { width: 396.0px; height: 691.2px; margin-left: 333.0px; margin-top: 405.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_shtgb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_shtg_c { width: 423.0px; height: 772.2px; margin-left: 157.5px; margin-top: 232.2px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_shtgc0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_shtg_d { width: 486.0px; height: 696.6px; margin-left: 193.5px; margin-top: 351.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_shtgd0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_shtf_a { width: 162.0px; height: 253.8px; margin-left: 643.5px; margin-top: 615.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_shtfa0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_shtf_b { width: 261.0px; height: 297.0px; margin-left: 594.0px; margin-top: 572.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_shtfb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sht2_a { width: 351.0px; height: 302.4px; margin-left: 553.5px; margin-top: 691.2px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sht2a0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sht2_b { width: 405.0px; height: 302.4px; margin-left: 526.5px; margin-top: 691.2px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sht2b0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sht2_c { width: 310.5px; height: 237.6px; margin-left: 616.5px; margin-top: 756.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sht2c0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sht2_d { width: 594.0px; height: 259.2px; margin-left: 436.5px; margin-top: 734.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sht2d0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sht2_e { width: 504.0px; height: 280.8px; margin-left: 616.5px; margin-top: 712.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sht2e0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sht2_f { width: 414.0px; height: 280.8px; margin-left: 724.5px; margin-top: 712.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sht2f0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sht2_g { width: 414.0px; height: 248.4px; margin-left: 616.5px; margin-top: 745.2px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sht2g0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sht2_h { width: 405.0px; height: 237.6px; margin-left: 526.5px; margin-top: 756.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sht2h0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sht2_i { width: 216.0px; height: 172.8px; margin-left: 616.5px; margin-top: 626.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sht2i0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sht2_j { width: 324.0px; height: 205.2px; margin-left: 562.5px; margin-top: 594.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sht2j0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_chgg_a { width: 477.0px; height: 275.4px; margin-left: 486.0px; margin-top: 718.2px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_chgga0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_chgg_b { width: 477.0px; height: 253.8px; margin-left: 486.0px; margin-top: 739.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_chggb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_chgf_a { width: 306.0px; height: 199.8px; margin-left: 571.5px; margin-top: 615.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_chgfa0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_chgf_b { width: 288.0px; height: 124.2px; margin-left: 580.5px; margin-top: 685.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_chgfb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_misg_a { width: 445.5px; height: 345.6px; margin-left: 504.0px; margin-top: 648.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_misga0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_misg_b { width: 477.0px; height: 334.8px; margin-left: 486.0px; margin-top: 658.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_misgb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_misf_a { width: 450.0px; height: 340.2px; margin-left: 499.5px; margin-top: 621.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_misfa0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_misf_b { width: 450.0px; height: 367.2px; margin-left: 499.5px; margin-top: 594.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_misfb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_misf_c { width: 441.0px; height: 345.6px; margin-left: 504.0px; margin-top: 604.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_misfc0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_misf_d { width: 405.0px; height: 340.2px; margin-left: 522.0px; margin-top: 577.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_misfd0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sawg_c { width: 1111.5px; height: 540.0px; margin-left: 724.5px; margin-top: 523.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sawgc0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sawg_d { width: 1107.0px; height: 540.0px; margin-left: 733.5px; margin-top: 523.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sawgd0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sawg_a { width: 697.5px; height: 599.4px; margin-left: 679.5px; margin-top: 405.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sawga0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_sawg_b { width: 697.5px; height: 599.4px; margin-left: 679.5px; margin-top: 410.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_sawgb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_plsg_a { width: 549.0px; height: 345.6px; margin-left: 535.5px; margin-top: 648.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_plsga0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_plsg_b { width: 526.5px; height: 378.0px; margin-left: 333.0px; margin-top: 615.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_plsgb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_plsf_a { width: 549.0px; height: 394.2px; margin-left: 535.5px; margin-top: 599.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_plsfa0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_plsf_b { width: 549.0px; height: 442.8px; margin-left: 535.5px; margin-top: 550.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_plsfb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_bfgg_a { width: 576.0px; height: 324.0px; margin-left: 436.5px; margin-top: 669.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_bfgga0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_bfgg_b { width: 576.0px; height: 324.0px; margin-left: 436.5px; margin-top: 669.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_bfggb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_bfgf_a { width: 648.0px; height: 421.2px; margin-left: 400.5px; margin-top: 572.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_bfgfa0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.WSpr.w_bfgf_b { width: 648.0px; height: 432.0px; margin-left: 400.5px; margin-top: 561.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/w_bfgfb0.png"); background-size: 100% 100%; background-repeat: no-repeat; }
+.SBar { width: 1440.0px; height: 172.8px; margin-top: 907.2px; }
+.SBarBg { width: 1440.0px; height: 172.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stbar.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 0.0px; margin-top: 0.0px; }
+.Dig { width: 0px; height: 0px; background-size: 100% 100%; background-repeat: no-repeat; }
+.Dig.bn0 { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/bn0.png"); }
+.Dig.yn0 { width: 18.0px; height: 32.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/yn0.png"); }
+.Dig.bn1 { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/bn1.png"); }
+.Dig.yn1 { width: 18.0px; height: 32.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/yn1.png"); }
+.Dig.bn2 { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/bn2.png"); }
+.Dig.yn2 { width: 18.0px; height: 32.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/yn2.png"); }
+.Dig.bn3 { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/bn3.png"); }
+.Dig.yn3 { width: 18.0px; height: 32.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/yn3.png"); }
+.Dig.bn4 { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/bn4.png"); }
+.Dig.yn4 { width: 18.0px; height: 32.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/yn4.png"); }
+.Dig.bn5 { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/bn5.png"); }
+.Dig.yn5 { width: 18.0px; height: 32.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/yn5.png"); }
+.Dig.bn6 { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/bn6.png"); }
+.Dig.yn6 { width: 18.0px; height: 32.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/yn6.png"); }
+.Dig.bn7 { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/bn7.png"); }
+.Dig.yn7 { width: 18.0px; height: 32.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/yn7.png"); }
+.Dig.bn8 { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/bn8.png"); }
+.Dig.yn8 { width: 18.0px; height: 32.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/yn8.png"); }
+.Dig.bn9 { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/bn9.png"); }
+.Dig.yn9 { width: 18.0px; height: 32.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/yn9.png"); }
+.Dig.bnm { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/bnm.png"); }
+#fdm_ammo0 { margin-left: 22.5px; margin-top: 16.2px; }
+#fdm_ammo1 { margin-left: 81.0px; margin-top: 16.2px; }
+#fdm_ammo2 { margin-left: 139.5px; margin-top: 16.2px; }
+#fdm_hp0 { margin-left: 229.5px; margin-top: 16.2px; }
+#fdm_hp1 { margin-left: 288.0px; margin-top: 16.2px; }
+#fdm_hp2 { margin-left: 346.5px; margin-top: 16.2px; }
+#fdm_frag0 { margin-left: 445.5px; margin-top: 16.2px; }
+#fdm_frag1 { margin-left: 504.0px; margin-top: 16.2px; }
+#fdm_frag2 { margin-left: 562.5px; margin-top: 16.2px; }
+#fdm_ar0 { margin-left: 819.0px; margin-top: 16.2px; }
+#fdm_ar1 { margin-left: 877.5px; margin-top: 16.2px; }
+#fdm_ar2 { margin-left: 936.0px; margin-top: 16.2px; }
+.PctH { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/sttprcnt.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 405.0px; margin-top: 16.2px; }
+.PctA { width: 58.5px; height: 86.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/sttprcnt.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 994.5px; margin-top: 16.2px; }
+#fdm_am0c0 { margin-left: 1242.0px; margin-top: 27.0px; }
+#fdm_am0c1 { margin-left: 1260.0px; margin-top: 27.0px; }
+#fdm_am0c2 { margin-left: 1278.0px; margin-top: 27.0px; }
+#fdm_am0m0 { margin-left: 1359.0px; margin-top: 27.0px; }
+#fdm_am0m1 { margin-left: 1377.0px; margin-top: 27.0px; }
+#fdm_am0m2 { margin-left: 1395.0px; margin-top: 27.0px; }
+#fdm_am1c0 { margin-left: 1242.0px; margin-top: 59.4px; }
+#fdm_am1c1 { margin-left: 1260.0px; margin-top: 59.4px; }
+#fdm_am1c2 { margin-left: 1278.0px; margin-top: 59.4px; }
+#fdm_am1m0 { margin-left: 1359.0px; margin-top: 59.4px; }
+#fdm_am1m1 { margin-left: 1377.0px; margin-top: 59.4px; }
+#fdm_am1m2 { margin-left: 1395.0px; margin-top: 59.4px; }
+#fdm_am2c0 { margin-left: 1242.0px; margin-top: 124.2px; }
+#fdm_am2c1 { margin-left: 1260.0px; margin-top: 124.2px; }
+#fdm_am2c2 { margin-left: 1278.0px; margin-top: 124.2px; }
+#fdm_am2m0 { margin-left: 1359.0px; margin-top: 124.2px; }
+#fdm_am2m1 { margin-left: 1377.0px; margin-top: 124.2px; }
+#fdm_am2m2 { margin-left: 1395.0px; margin-top: 124.2px; }
+#fdm_am3c0 { margin-left: 1242.0px; margin-top: 91.8px; }
+#fdm_am3c1 { margin-left: 1260.0px; margin-top: 91.8px; }
+#fdm_am3c2 { margin-left: 1278.0px; margin-top: 91.8px; }
+#fdm_am3m0 { margin-left: 1359.0px; margin-top: 91.8px; }
+#fdm_am3m1 { margin-left: 1377.0px; margin-top: 91.8px; }
+#fdm_am3m2 { margin-left: 1395.0px; margin-top: 91.8px; }
+.FaceB { width: 157.5px; height: 167.4px; margin-left: 643.5px; margin-top: 5.4px; opacity: 0.55; }
+.FaceB.fb0 { background-color: #3c7a28; }
+.FaceB.fb1 { background-color: #3c5aff; }
+.FaceB.fb2 { background-color: #966432; }
+.FaceB.fb3 { background-color: #e61e1e; }
+.FaceB.fb4 { background-color: #c8c8c8; }
+.FaceB.fb5 { background-color: #fadc28; }
+.FaceB.fb6 { background-color: #28dcdc; }
+.FaceB.fb7 { background-color: #dc3cdc; }
+.FaceB.fb8 { background-color: #ff8c1e; }
+.FaceB.fb9 { background-color: #783cc8; }
+.FaceB.fb10 { background-color: #5aa028; }
+.FaceB.fb11 { background-color: #ff78aa; }
+.FaceB.fb12 { background-color: #646464; }
+.FaceB.fb13 { background-color: #1e7878; }
+.FaceB.fb14 { background-color: #b48c5a; }
+.FaceB.fb15 { background-color: #ffffff; }
+.Face { width: 0px; height: 0px; background-size: 100% 100%; background-repeat: no-repeat; }
+.Face.f0 { width: 108.0px; height: 156.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst00.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f1 { width: 108.0px; height: 156.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst01.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f2 { width: 108.0px; height: 156.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst02.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f3 { width: 117.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stftr00.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 657.0px; margin-top: 10.8px; }
+.Face.f4 { width: 117.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stftl00.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Face.f5 { width: 108.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfouch0.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Face.f6 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfevl0.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f7 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfkill0.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f8 { width: 108.0px; height: 156.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst10.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f9 { width: 108.0px; height: 156.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst11.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f10 { width: 108.0px; height: 156.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst12.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f11 { width: 117.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stftr10.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 657.0px; margin-top: 10.8px; }
+.Face.f12 { width: 117.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stftl10.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f13 { width: 108.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfouch1.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Face.f14 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfevl1.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f15 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfkill1.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f16 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst20.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f17 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst21.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f18 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst22.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f19 { width: 121.5px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stftr20.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 661.5px; margin-top: 5.4px; }
+.Face.f20 { width: 121.5px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stftl20.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 661.5px; margin-top: 5.4px; }
+.Face.f21 { width: 108.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfouch2.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Face.f22 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfevl2.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f23 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfkill2.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f24 { width: 108.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst30.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Face.f25 { width: 108.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst31.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Face.f26 { width: 108.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst32.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Face.f27 { width: 126.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stftr30.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 657.0px; margin-top: 10.8px; }
+.Face.f28 { width: 130.5px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stftl30.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 652.5px; margin-top: 5.4px; }
+.Face.f29 { width: 108.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfouch3.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Face.f30 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfevl3.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f31 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfkill3.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f32 { width: 108.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst40.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Face.f33 { width: 108.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst41.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Face.f34 { width: 108.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfst42.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Face.f35 { width: 126.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stftr40.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 657.0px; margin-top: 10.8px; }
+.Face.f36 { width: 135.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stftl40.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 648.0px; margin-top: 5.4px; }
+.Face.f37 { width: 108.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfouch4.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Face.f38 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfevl4.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f39 { width: 108.0px; height: 162.0px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfkill4.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f40 { width: 108.0px; height: 156.6px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfgod0.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 10.8px; }
+.Face.f41 { width: 108.0px; height: 167.4px; background-image: url("../out/addon/panorama/images/custom_game/fdm/stfdead0.png"); background-size: 100% 100%; background-repeat: no-repeat; margin-left: 666.0px; margin-top: 5.4px; }
+.Line { display: flex; flex-direction: row; position: absolute; height: 43.2px; }
+.Ch { width: 0px; height: 43.2px; background-size: 100% 100%; background-repeat: no-repeat; }
+.Ch.csp { width: 18.0px; }
+.Big .Ch { height: 86.4px; }
+.Big .Ch.csp { width: 36.0px; }
+.Ch.c33 { width: 18.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c33.png"); margin-top: 0px; }
+.Big .Ch.c33 { width: 36.0px; height: 75.6px; }
+.Ch.c34 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c34.png"); margin-top: 0px; }
+.Big .Ch.c34 { width: 63.0px; height: 75.6px; }
+.Ch.c35 { width: 40.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c35.png"); margin-top: 0px; }
+.Big .Ch.c35 { width: 81.0px; height: 75.6px; }
+.Ch.c36 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c36.png"); margin-top: 0px; }
+.Big .Ch.c36 { width: 63.0px; height: 75.6px; }
+.Ch.c37 { width: 40.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c37.png"); margin-top: 0px; }
+.Big .Ch.c37 { width: 81.0px; height: 75.6px; }
+.Ch.c38 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c38.png"); margin-top: 0px; }
+.Big .Ch.c38 { width: 72.0px; height: 75.6px; }
+.Ch.c39 { width: 18.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c39.png"); margin-top: 0px; }
+.Big .Ch.c39 { width: 36.0px; height: 75.6px; }
+.Ch.c40 { width: 27.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c40.png"); margin-top: 0px; }
+.Big .Ch.c40 { width: 54.0px; height: 75.6px; }
+.Ch.c41 { width: 27.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c41.png"); margin-top: 0px; }
+.Big .Ch.c41 { width: 54.0px; height: 75.6px; }
+.Ch.c42 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c42.png"); margin-top: 0px; }
+.Big .Ch.c42 { width: 72.0px; height: 75.6px; }
+.Ch.c43 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c43.png"); margin-top: 0px; }
+.Big .Ch.c43 { width: 63.0px; height: 75.6px; }
+.Ch.c44 { width: 18.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c44.png"); margin-top: 0px; }
+.Big .Ch.c44 { width: 36.0px; height: 75.6px; }
+.Ch.c45 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c45.png"); margin-top: 0px; }
+.Big .Ch.c45 { width: 63.0px; height: 75.6px; }
+.Ch.c46 { width: 18.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c46.png"); margin-top: 0px; }
+.Big .Ch.c46 { width: 36.0px; height: 75.6px; }
+.Ch.c47 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c47.png"); margin-top: 0px; }
+.Big .Ch.c47 { width: 63.0px; height: 75.6px; }
+.Ch.c48 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c48.png"); margin-top: 0px; }
+.Big .Ch.c48 { width: 63.0px; height: 75.6px; }
+.Ch.c49 { width: 22.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c49.png"); margin-top: 0px; }
+.Big .Ch.c49 { width: 45.0px; height: 75.6px; }
+.Ch.c50 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c50.png"); margin-top: 0px; }
+.Big .Ch.c50 { width: 63.0px; height: 75.6px; }
+.Ch.c51 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c51.png"); margin-top: 0px; }
+.Big .Ch.c51 { width: 63.0px; height: 75.6px; }
+.Ch.c52 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c52.png"); margin-top: 0px; }
+.Big .Ch.c52 { width: 63.0px; height: 75.6px; }
+.Ch.c53 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c53.png"); margin-top: 0px; }
+.Big .Ch.c53 { width: 63.0px; height: 75.6px; }
+.Ch.c54 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c54.png"); margin-top: 0px; }
+.Big .Ch.c54 { width: 63.0px; height: 75.6px; }
+.Ch.c55 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c55.png"); margin-top: 0px; }
+.Big .Ch.c55 { width: 63.0px; height: 75.6px; }
+.Ch.c56 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c56.png"); margin-top: 0px; }
+.Big .Ch.c56 { width: 72.0px; height: 75.6px; }
+.Ch.c57 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c57.png"); margin-top: 0px; }
+.Big .Ch.c57 { width: 63.0px; height: 75.6px; }
+.Ch.c58 { width: 18.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c58.png"); margin-top: 0px; }
+.Big .Ch.c58 { width: 36.0px; height: 75.6px; }
+.Ch.c59 { width: 18.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c59.png"); margin-top: 0px; }
+.Big .Ch.c59 { width: 36.0px; height: 75.6px; }
+.Ch.c60 { width: 27.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c60.png"); margin-top: 0px; }
+.Big .Ch.c60 { width: 54.0px; height: 75.6px; }
+.Ch.c61 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c61.png"); margin-top: 0px; }
+.Big .Ch.c61 { width: 63.0px; height: 75.6px; }
+.Ch.c62 { width: 27.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c62.png"); margin-top: 0px; }
+.Big .Ch.c62 { width: 54.0px; height: 75.6px; }
+.Ch.c63 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c63.png"); margin-top: 0px; }
+.Big .Ch.c63 { width: 63.0px; height: 75.6px; }
+.Ch.c64 { width: 40.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c64.png"); margin-top: 0px; }
+.Big .Ch.c64 { width: 81.0px; height: 75.6px; }
+.Ch.c65 { width: 40.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c65.png"); margin-top: 0px; }
+.Big .Ch.c65 { width: 81.0px; height: 75.6px; }
+.Ch.c66 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c66.png"); margin-top: 0px; }
+.Big .Ch.c66 { width: 72.0px; height: 75.6px; }
+.Ch.c67 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c67.png"); margin-top: 0px; }
+.Big .Ch.c67 { width: 72.0px; height: 75.6px; }
+.Ch.c68 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c68.png"); margin-top: 0px; }
+.Big .Ch.c68 { width: 72.0px; height: 75.6px; }
+.Ch.c69 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c69.png"); margin-top: 0px; }
+.Big .Ch.c69 { width: 63.0px; height: 75.6px; }
+.Ch.c70 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c70.png"); margin-top: 0px; }
+.Big .Ch.c70 { width: 63.0px; height: 75.6px; }
+.Ch.c71 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c71.png"); margin-top: 0px; }
+.Big .Ch.c71 { width: 63.0px; height: 75.6px; }
+.Ch.c72 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c72.png"); margin-top: 0px; }
+.Big .Ch.c72 { width: 63.0px; height: 75.6px; }
+.Ch.c73 { width: 27.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c73.png"); margin-top: 0px; }
+.Big .Ch.c73 { width: 54.0px; height: 75.6px; }
+.Ch.c74 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c74.png"); margin-top: 0px; }
+.Big .Ch.c74 { width: 63.0px; height: 75.6px; }
+.Ch.c75 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c75.png"); margin-top: 0px; }
+.Big .Ch.c75 { width: 63.0px; height: 75.6px; }
+.Ch.c76 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c76.png"); margin-top: 0px; }
+.Big .Ch.c76 { width: 63.0px; height: 75.6px; }
+.Ch.c77 { width: 40.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c77.png"); margin-top: 0px; }
+.Big .Ch.c77 { width: 81.0px; height: 75.6px; }
+.Ch.c78 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c78.png"); margin-top: 0px; }
+.Big .Ch.c78 { width: 72.0px; height: 75.6px; }
+.Ch.c79 { width: 40.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c79.png"); margin-top: 0px; }
+.Big .Ch.c79 { width: 81.0px; height: 75.6px; }
+.Ch.c80 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c80.png"); margin-top: 0px; }
+.Big .Ch.c80 { width: 72.0px; height: 75.6px; }
+.Ch.c81 { width: 40.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c81.png"); margin-top: 0px; }
+.Big .Ch.c81 { width: 81.0px; height: 75.6px; }
+.Ch.c82 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c82.png"); margin-top: 0px; }
+.Big .Ch.c82 { width: 63.0px; height: 75.6px; }
+.Ch.c83 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c83.png"); margin-top: 0px; }
+.Big .Ch.c83 { width: 72.0px; height: 75.6px; }
+.Ch.c84 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c84.png"); margin-top: 0px; }
+.Big .Ch.c84 { width: 72.0px; height: 75.6px; }
+.Ch.c85 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c85.png"); margin-top: 0px; }
+.Big .Ch.c85 { width: 72.0px; height: 75.6px; }
+.Ch.c86 { width: 40.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c86.png"); margin-top: 0px; }
+.Big .Ch.c86 { width: 81.0px; height: 75.6px; }
+.Ch.c87 { width: 40.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c87.png"); margin-top: 0px; }
+.Big .Ch.c87 { width: 81.0px; height: 75.6px; }
+.Ch.c88 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c88.png"); margin-top: 0px; }
+.Big .Ch.c88 { width: 72.0px; height: 75.6px; }
+.Ch.c89 { width: 36.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c89.png"); margin-top: 0px; }
+.Big .Ch.c89 { width: 72.0px; height: 75.6px; }
+.Ch.c90 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c90.png"); margin-top: 0px; }
+.Big .Ch.c90 { width: 63.0px; height: 75.6px; }
+.Ch.c91 { width: 27.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c91.png"); margin-top: 0px; }
+.Big .Ch.c91 { width: 54.0px; height: 75.6px; }
+.Ch.c92 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c92.png"); margin-top: 0px; }
+.Big .Ch.c92 { width: 63.0px; height: 75.6px; }
+.Ch.c93 { width: 27.0px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c93.png"); margin-top: 0px; }
+.Big .Ch.c93 { width: 54.0px; height: 75.6px; }
+.Ch.c94 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c94.png"); margin-top: 0px; }
+.Big .Ch.c94 { width: 63.0px; height: 75.6px; }
+.Ch.c95 { width: 31.5px; height: 37.8px; background-image: url("../out/addon/panorama/images/custom_game/fdm/c95.png"); margin-top: 0px; }
+.Big .Ch.c95 { width: 63.0px; height: 75.6px; }
+.MsgLine { margin-left: 4.5px; margin-top: 5.4px; }
+.CtrLine { horizontal-align: center; margin-top: 324.0px; }
+.InfLine1 { horizontal-align: right; margin-right: 9.0px; margin-top: 5.4px; }
+.InfLine2 { horizontal-align: right; margin-right: 9.0px; margin-top: 54.0px; }
+.SpecLine { horizontal-align: center; margin-top: 853.2px; }
+.Team { width: 1440.0px; height: 10.8px; margin-top: 896.4px; }
+.Team.teamred { background-color: #e61e1ecc; }
+.Team.teamblue { background-color: #3c5affcc; }
+</style></head>
+<body>
+<div id="fdm_root" class="FdmRoot" hittest="false">
+<div id="fdm_flash" class="Flash" hittest="false"></div>
+<div id="fdm_screen" class="Screen" hittest="false">
+<div id="fdm_wpn" class="Wpn" hittest="false">
+<div id="fdm_wbob" class="WBob" hittest="false">
+<div id="fdm_wspr" class="WSpr" hittest="false"></div>
+<div id="fdm_wflash" class="WSpr" hittest="false"></div>
+</div>
+</div>
+<div id="fdm_team" class="Team" hittest="false"></div>
+<div id="fdm_sbar" class="SBar" hittest="false">
+<div class="SBarBg" hittest="false"></div>
+<div id="fdm_ammo0" class="Dig Big" hittest="false"></div>
+<div id="fdm_ammo1" class="Dig Big" hittest="false"></div>
+<div id="fdm_ammo2" class="Dig Big" hittest="false"></div>
+<div id="fdm_hp0" class="Dig Big" hittest="false"></div>
+<div id="fdm_hp1" class="Dig Big" hittest="false"></div>
+<div id="fdm_hp2" class="Dig Big" hittest="false"></div>
+<div id="fdm_frag0" class="Dig Big" hittest="false"></div>
+<div id="fdm_frag1" class="Dig Big" hittest="false"></div>
+<div id="fdm_frag2" class="Dig Big" hittest="false"></div>
+<div id="fdm_ar0" class="Dig Big" hittest="false"></div>
+<div id="fdm_ar1" class="Dig Big" hittest="false"></div>
+<div id="fdm_ar2" class="Dig Big" hittest="false"></div>
+<div class="PctH" hittest="false"></div>
+<div class="PctA" hittest="false"></div>
+<div id="fdm_am0c0" class="Dig Small" hittest="false"></div>
+<div id="fdm_am0c1" class="Dig Small" hittest="false"></div>
+<div id="fdm_am0c2" class="Dig Small" hittest="false"></div>
+<div id="fdm_am0m0" class="Dig Small" hittest="false"></div>
+<div id="fdm_am0m1" class="Dig Small" hittest="false"></div>
+<div id="fdm_am0m2" class="Dig Small" hittest="false"></div>
+<div id="fdm_am1c0" class="Dig Small" hittest="false"></div>
+<div id="fdm_am1c1" class="Dig Small" hittest="false"></div>
+<div id="fdm_am1c2" class="Dig Small" hittest="false"></div>
+<div id="fdm_am1m0" class="Dig Small" hittest="false"></div>
+<div id="fdm_am1m1" class="Dig Small" hittest="false"></div>
+<div id="fdm_am1m2" class="Dig Small" hittest="false"></div>
+<div id="fdm_am2c0" class="Dig Small" hittest="false"></div>
+<div id="fdm_am2c1" class="Dig Small" hittest="false"></div>
+<div id="fdm_am2c2" class="Dig Small" hittest="false"></div>
+<div id="fdm_am2m0" class="Dig Small" hittest="false"></div>
+<div id="fdm_am2m1" class="Dig Small" hittest="false"></div>
+<div id="fdm_am2m2" class="Dig Small" hittest="false"></div>
+<div id="fdm_am3c0" class="Dig Small" hittest="false"></div>
+<div id="fdm_am3c1" class="Dig Small" hittest="false"></div>
+<div id="fdm_am3c2" class="Dig Small" hittest="false"></div>
+<div id="fdm_am3m0" class="Dig Small" hittest="false"></div>
+<div id="fdm_am3m1" class="Dig Small" hittest="false"></div>
+<div id="fdm_am3m2" class="Dig Small" hittest="false"></div>
+<div id="fdm_faceb" class="FaceB" hittest="false"></div>
+<div id="fdm_face" class="Face" hittest="false"></div>
+</div>
+<div class="Line MsgLine" hittest="false">
+<div id="fdm_msg0" class="Ch" hittest="false"></div>
+<div id="fdm_msg1" class="Ch" hittest="false"></div>
+<div id="fdm_msg2" class="Ch" hittest="false"></div>
+<div id="fdm_msg3" class="Ch" hittest="false"></div>
+<div id="fdm_msg4" class="Ch" hittest="false"></div>
+<div id="fdm_msg5" class="Ch" hittest="false"></div>
+<div id="fdm_msg6" class="Ch" hittest="false"></div>
+<div id="fdm_msg7" class="Ch" hittest="false"></div>
+<div id="fdm_msg8" class="Ch" hittest="false"></div>
+<div id="fdm_msg9" class="Ch" hittest="false"></div>
+<div id="fdm_msg10" class="Ch" hittest="false"></div>
+<div id="fdm_msg11" class="Ch" hittest="false"></div>
+<div id="fdm_msg12" class="Ch" hittest="false"></div>
+<div id="fdm_msg13" class="Ch" hittest="false"></div>
+<div id="fdm_msg14" class="Ch" hittest="false"></div>
+<div id="fdm_msg15" class="Ch" hittest="false"></div>
+<div id="fdm_msg16" class="Ch" hittest="false"></div>
+<div id="fdm_msg17" class="Ch" hittest="false"></div>
+<div id="fdm_msg18" class="Ch" hittest="false"></div>
+<div id="fdm_msg19" class="Ch" hittest="false"></div>
+<div id="fdm_msg20" class="Ch" hittest="false"></div>
+<div id="fdm_msg21" class="Ch" hittest="false"></div>
+<div id="fdm_msg22" class="Ch" hittest="false"></div>
+<div id="fdm_msg23" class="Ch" hittest="false"></div>
+<div id="fdm_msg24" class="Ch" hittest="false"></div>
+<div id="fdm_msg25" class="Ch" hittest="false"></div>
+<div id="fdm_msg26" class="Ch" hittest="false"></div>
+<div id="fdm_msg27" class="Ch" hittest="false"></div>
+<div id="fdm_msg28" class="Ch" hittest="false"></div>
+<div id="fdm_msg29" class="Ch" hittest="false"></div>
+<div id="fdm_msg30" class="Ch" hittest="false"></div>
+<div id="fdm_msg31" class="Ch" hittest="false"></div>
+<div id="fdm_msg32" class="Ch" hittest="false"></div>
+<div id="fdm_msg33" class="Ch" hittest="false"></div>
+<div id="fdm_msg34" class="Ch" hittest="false"></div>
+<div id="fdm_msg35" class="Ch" hittest="false"></div>
+<div id="fdm_msg36" class="Ch" hittest="false"></div>
+<div id="fdm_msg37" class="Ch" hittest="false"></div>
+<div id="fdm_msg38" class="Ch" hittest="false"></div>
+<div id="fdm_msg39" class="Ch" hittest="false"></div>
+</div>
+<div class="Line CtrLine Big" hittest="false">
+<div id="fdm_ctr0" class="Ch" hittest="false"></div>
+<div id="fdm_ctr1" class="Ch" hittest="false"></div>
+<div id="fdm_ctr2" class="Ch" hittest="false"></div>
+<div id="fdm_ctr3" class="Ch" hittest="false"></div>
+<div id="fdm_ctr4" class="Ch" hittest="false"></div>
+<div id="fdm_ctr5" class="Ch" hittest="false"></div>
+<div id="fdm_ctr6" class="Ch" hittest="false"></div>
+<div id="fdm_ctr7" class="Ch" hittest="false"></div>
+<div id="fdm_ctr8" class="Ch" hittest="false"></div>
+<div id="fdm_ctr9" class="Ch" hittest="false"></div>
+<div id="fdm_ctr10" class="Ch" hittest="false"></div>
+<div id="fdm_ctr11" class="Ch" hittest="false"></div>
+<div id="fdm_ctr12" class="Ch" hittest="false"></div>
+<div id="fdm_ctr13" class="Ch" hittest="false"></div>
+<div id="fdm_ctr14" class="Ch" hittest="false"></div>
+<div id="fdm_ctr15" class="Ch" hittest="false"></div>
+<div id="fdm_ctr16" class="Ch" hittest="false"></div>
+<div id="fdm_ctr17" class="Ch" hittest="false"></div>
+<div id="fdm_ctr18" class="Ch" hittest="false"></div>
+<div id="fdm_ctr19" class="Ch" hittest="false"></div>
+<div id="fdm_ctr20" class="Ch" hittest="false"></div>
+<div id="fdm_ctr21" class="Ch" hittest="false"></div>
+<div id="fdm_ctr22" class="Ch" hittest="false"></div>
+<div id="fdm_ctr23" class="Ch" hittest="false"></div>
+</div>
+<div class="Line InfLine1" hittest="false">
+<div id="fdm_inf1_0" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_1" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_2" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_3" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_4" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_5" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_6" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_7" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_8" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_9" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_10" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_11" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_12" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_13" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_14" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_15" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_16" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_17" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_18" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_19" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_20" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_21" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_22" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_23" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_24" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_25" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_26" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_27" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_28" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_29" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_30" class="Ch" hittest="false"></div>
+<div id="fdm_inf1_31" class="Ch" hittest="false"></div>
+</div>
+<div class="Line InfLine2" hittest="false">
+<div id="fdm_inf2_0" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_1" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_2" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_3" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_4" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_5" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_6" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_7" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_8" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_9" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_10" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_11" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_12" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_13" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_14" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_15" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_16" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_17" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_18" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_19" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_20" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_21" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_22" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_23" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_24" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_25" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_26" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_27" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_28" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_29" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_30" class="Ch" hittest="false"></div>
+<div id="fdm_inf2_31" class="Ch" hittest="false"></div>
+</div>
+<div class="Line SpecLine" hittest="false">
+<div id="fdm_spec0" class="Ch" hittest="false"></div>
+<div id="fdm_spec1" class="Ch" hittest="false"></div>
+<div id="fdm_spec2" class="Ch" hittest="false"></div>
+<div id="fdm_spec3" class="Ch" hittest="false"></div>
+<div id="fdm_spec4" class="Ch" hittest="false"></div>
+<div id="fdm_spec5" class="Ch" hittest="false"></div>
+<div id="fdm_spec6" class="Ch" hittest="false"></div>
+<div id="fdm_spec7" class="Ch" hittest="false"></div>
+<div id="fdm_spec8" class="Ch" hittest="false"></div>
+<div id="fdm_spec9" class="Ch" hittest="false"></div>
+<div id="fdm_spec10" class="Ch" hittest="false"></div>
+<div id="fdm_spec11" class="Ch" hittest="false"></div>
+<div id="fdm_spec12" class="Ch" hittest="false"></div>
+<div id="fdm_spec13" class="Ch" hittest="false"></div>
+<div id="fdm_spec14" class="Ch" hittest="false"></div>
+<div id="fdm_spec15" class="Ch" hittest="false"></div>
+<div id="fdm_spec16" class="Ch" hittest="false"></div>
+<div id="fdm_spec17" class="Ch" hittest="false"></div>
+<div id="fdm_spec18" class="Ch" hittest="false"></div>
+<div id="fdm_spec19" class="Ch" hittest="false"></div>
+<div id="fdm_spec20" class="Ch" hittest="false"></div>
+<div id="fdm_spec21" class="Ch" hittest="false"></div>
+<div id="fdm_spec22" class="Ch" hittest="false"></div>
+<div id="fdm_spec23" class="Ch" hittest="false"></div>
+<div id="fdm_spec24" class="Ch" hittest="false"></div>
+<div id="fdm_spec25" class="Ch" hittest="false"></div>
+<div id="fdm_spec26" class="Ch" hittest="false"></div>
+<div id="fdm_spec27" class="Ch" hittest="false"></div>
+<div id="fdm_spec28" class="Ch" hittest="false"></div>
+<div id="fdm_spec29" class="Ch" hittest="false"></div>
+<div id="fdm_spec30" class="Ch" hittest="false"></div>
+<div id="fdm_spec31" class="Ch" hittest="false"></div>
+</div>
+</div>
+</div>
+
+<script>
+const st = {"fdm_root": "On", "fdm_wspr": "w_pisg_a", "fdm_wpn": "sy0", "fdm_faceb": "fb0", "fdm_face": "f1", "fdm_flash": "red2", "fdm_ammo1": "bn5", "fdm_ammo2": "bn0", "fdm_hp0": "bn1", "fdm_hp1": "bn0", "fdm_hp2": "bn0", "fdm_frag2": "bn7", "fdm_ar2": "bn0", "fdm_am0c1": "yn5", "fdm_am0c2": "yn0", "fdm_am0m0": "yn2", "fdm_am0m1": "yn0", "fdm_am0m2": "yn0", "fdm_am1c2": "yn0", "fdm_am1m1": "yn5", "fdm_am1m2": "yn0", "fdm_am2c2": "yn0", "fdm_am2m0": "yn3", "fdm_am2m1": "yn0", "fdm_am2m2": "yn0", "fdm_am3c2": "yn0", "fdm_am3m1": "yn5", "fdm_am3m2": "yn0", "fdm_msg0": "Ch c80", "fdm_msg1": "Ch c73", "fdm_msg2": "Ch c67", "fdm_msg3": "Ch c75", "fdm_msg4": "Ch c69", "fdm_msg5": "Ch c68", "fdm_msg6": "Ch csp", "fdm_msg7": "Ch c85", "fdm_msg8": "Ch c80", "fdm_msg9": "Ch csp", "fdm_msg10": "Ch c65", "fdm_msg11": "Ch csp", "fdm_msg12": "Ch c83", "fdm_msg13": "Ch c72", "fdm_msg14": "Ch c79", "fdm_msg15": "Ch c84", "fdm_msg16": "Ch c71", "fdm_msg17": "Ch c85", "fdm_msg18": "Ch c78", "fdm_msg19": "Ch c46", "fdm_ctr0": "Ch c70", "fdm_ctr1": "Ch c73", "fdm_ctr2": "Ch c71", "fdm_ctr3": "Ch c72", "fdm_ctr4": "Ch c84", "fdm_ctr5": "Ch c33", "fdm_inf1_0": "Ch c70", "fdm_inf1_1": "Ch c82", "fdm_inf1_2": "Ch c69", "fdm_inf1_3": "Ch c69", "fdm_inf1_4": "Ch csp", "fdm_inf1_5": "Ch c70", "fdm_inf1_6": "Ch c79", "fdm_inf1_7": "Ch c82", "fdm_inf1_8": "Ch csp", "fdm_inf1_9": "Ch c65", "fdm_inf1_10": "Ch c76", "fdm_inf1_11": "Ch c76", "fdm_inf1_12": "Ch csp", "fdm_inf1_13": "Ch c45", "fdm_inf1_14": "Ch csp", "fdm_inf1_15": "Ch c70", "fdm_inf1_16": "Ch c73", "fdm_inf1_17": "Ch c82", "fdm_inf1_18": "Ch c83", "fdm_inf1_19": "Ch c84", "fdm_inf1_20": "Ch csp", "fdm_inf1_21": "Ch c84", "fdm_inf1_22": "Ch c79", "fdm_inf1_23": "Ch csp", "fdm_inf1_24": "Ch c50", "fdm_inf1_25": "Ch c48", "fdm_inf2_0": "Ch c76", "fdm_inf2_1": "Ch c69", "fdm_inf2_2": "Ch c65", "fdm_inf2_3": "Ch c68", "fdm_inf2_4": "Ch c69", "fdm_inf2_5": "Ch c82", "fdm_inf2_6": "Ch csp", "fdm_inf2_7": "Ch c66", "fdm_inf2_8": "Ch c79", "fdm_inf2_9": "Ch c84", "fdm_inf2_10": "Ch c51", "fdm_inf2_11": "Ch csp", "fdm_inf2_12": "Ch c55"};
+for (const [id, cls] of Object.entries(st)) { const e = document.getElementById(id); if (e) e.classList.add(...cls.split(' ')); }
+document.title='done';
+</script></body></html>

@@ -1,0 +1,57 @@
+<!doctype html><html><body style="margin:0;background:#000">
+<canvas id="c"></canvas>
+<script>
+const P = new URLSearchParams(location.search);
+const cam = JSON.parse(P.get('cam'));   // {x,y,z,yaw,pitch,fov}
+const W = +(P.get('w') || 960), H = +(P.get('h') || 600), NEAR = P.get('nearest') === '1';
+document.getElementById('c').width = W; document.getElementById('c').height = H;
+const gl = document.getElementById('c').getContext('webgl2', {antialias:false, preserveDrawingBuffer:true});
+const vs = `attribute vec3 p; attribute vec2 uv; uniform mat4 M; varying vec2 vuv; varying float d;
+void main(){ vec4 q = M*vec4(p,1.0); gl_Position=q; vuv=uv; d=q.w; }`;
+const fs = `precision mediump float; varying vec2 vuv; varying float d; uniform sampler2D t; uniform sampler2D a;
+uniform vec3 tint; uniform float useA; uniform float fogEnd;
+void main(){ vec4 c = texture2D(t, vuv); if(useA>0.5 && texture2D(a,vuv).r<0.5) discard;
+ float f = clamp(d/fogEnd,0.0,0.85); gl_FragColor = vec4(c.rgb*tint*(1.0-f),1.0); }`;
+function sh(t,s){const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(o);return o;}
+const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,vs));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pr);gl.useProgram(pr);
+gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK); gl.frontFace(gl.CCW);
+function tex(url){return new Promise(r=>{const i=new Image();i.onload=()=>{const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);
+ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,i);
+ const flt=NEAR?gl.NEAREST:gl.LINEAR; gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,flt);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,flt);
+ const pot=(i.width&(i.width-1))==0&&(i.height&(i.height-1))==0;
+ const w=gl.REPEAT; gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,w);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,w);
+ t.pot=pot; r(t);};i.onerror=()=>r(null);i.src=url;});}
+function mat4mul(a,b){const o=new Float32Array(16);for(let i=0;i<4;i++)for(let j=0;j<4;j++){let s=0;for(let k=0;k<4;k++)s+=a[k*4+j]*b[i*4+k];o[i*4+j]=s;}return o;}
+(async()=>{
+ const sc = await (await fetch('scene.json')).json();
+ const buf = new Float32Array(await (await fetch('scene.bin')).arrayBuffer());
+ const vb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,vb); gl.bufferData(gl.ARRAY_BUFFER,buf,gl.STATIC_DRAW);
+ const lp=gl.getAttribLocation(pr,'p'), lu=gl.getAttribLocation(pr,'uv');
+ gl.enableVertexAttribArray(lp); gl.enableVertexAttribArray(lu);
+ gl.vertexAttribPointer(lp,3,gl.FLOAT,false,20,0); gl.vertexAttribPointer(lu,2,gl.FLOAT,false,20,12);
+ // camera: CS2 axes (x fwd at yaw 0, y left, z up)
+ const yaw=cam.yaw*Math.PI/180, pit=cam.pitch*Math.PI/180;
+ const f=[Math.cos(pit)*Math.cos(yaw),Math.cos(pit)*Math.sin(yaw),-Math.sin(pit)];
+ const up0=[0,0,1]; const r=[f[1]*up0[2]-f[2]*up0[1],f[2]*up0[0]-f[0]*up0[2],f[0]*up0[1]-f[1]*up0[0]];
+ const rl=Math.hypot(...r); r[0]/=rl;r[1]/=rl;r[2]/=rl;
+ const u=[r[1]*f[2]-r[2]*f[1],r[2]*f[0]-r[0]*f[2],r[0]*f[1]-r[1]*f[0]];
+ const e=[cam.x,cam.y,cam.z]; const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+ const V=new Float32Array([r[0],u[0],-f[0],0, r[1],u[1],-f[1],0, r[2],u[2],-f[2],0, -dot(r,e),-dot(u,e),dot(f,e),1]);
+ const asp=W/H, near=4, far=40000; const th=Math.tan((cam.fov||90)*Math.PI/360)*(3/4); // 4:3 horizontal fov basis
+ const fy=1/th, fx=fy/asp;
+ const Pm=new Float32Array([fx,0,0,0, 0,fy,0,0, 0,0,(far+near)/(near-far),-1, 0,0,2*far*near/(near-far),0]);
+ gl.uniformMatrix4fv(gl.getUniformLocation(pr,'M'),false,mat4mul(Pm,V));
+ gl.uniform1f(gl.getUniformLocation(pr,'fogEnd'), cam.fog||3500);
+ const CL=(P.get('clear')||'0.25,0.3,0.45').split(',').map(Number); gl.clearColor(CL[0],CL[1],CL[2],1); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ const base='../out/addon/';
+ for(const m of sc.mats){
+   const t=await tex(base+m.color); if(!t) continue;
+   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,t); gl.uniform1i(gl.getUniformLocation(pr,'t'),0);
+   let ua=0; if(m.trans){const a=await tex(base+m.trans); if(a){gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,a);gl.uniform1i(gl.getUniformLocation(pr,'a'),1);ua=1;}}
+   gl.uniform1f(gl.getUniformLocation(pr,'useA'),ua);
+   gl.uniform3f(gl.getUniformLocation(pr,'tint'),...m.tint);
+   gl.drawArrays(gl.TRIANGLES,m.offset/5,m.count);
+ }
+ document.title='done';
+})();
+</script></body></html>
