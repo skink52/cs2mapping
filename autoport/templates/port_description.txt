@@ -1,0 +1,13 @@
+[h1]{title}[/h1]
+{original_credit_cap}, ported from CS:GO to CS2.
+{map_section}
+[h2]Hosting[/h2]
+[list]
+[*]Game mode: Custom.
+{hosting}[/list]
+
+[h2]Known limits[/h2]
+[list]
+{known_limits}[/list]
+
+{credits}

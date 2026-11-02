@@ -3,6 +3,18 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-02: Steam descriptions, model explosions, partial builds, no focus-stealing windows
+
+- `build_maps.ps1`: `entities <addon>` / `lighting <addon>` queue lines run skink52's entity-only / lighting-only Hammer builds from the current
+  .vpk (ttt_island17 entity build: under a minute instead of 10–15). autoport: `review redo <addon> build --mode entities|lighting`. Build logs
+  written with `-html` are read correctly.
+- Windows autoport opens (worker, monitor) start minimised and never take focus, so they can't pull you out of a fullscreen game.
+
+- autoport writes `<addon> STEAM DESCRIPTION.txt` into every content addon folder (`autoport/templates/`: the cs2mapTTT blocks for TTT, a port
+  template for the rest), built from what the port has. A hand-edited one is never overwritten. Written for ttt_terrortrain and ttt_island17.
+- `tools/propexplode.py`: cs_mdl_import drops a model's prop_data explosion, so only props with their own ExplodeDamage exploded. Props now get
+  their CS:GO model's values (ttt_island17: 4 barrels and a gas can besides phys26; ttt_terrortrain: 4 barrels). autoport runs it in fixups.
+
 ## 2026-11-02: map checks (entities, z-fighting, gibs), respawning props, model compile fix, Anubis water
 
 - New tools: `mapcheck.py` (Hammer's Check for Problems against CS2's own .fgd files, removing dangling outputs and converting or deleting classes

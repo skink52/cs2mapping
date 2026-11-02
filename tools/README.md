@@ -35,6 +35,7 @@ Everything runs with Python 3 + numpy, scipy and Pillow, normally on the PC itse
 | `mapcheck.py` | Hammer-style entity check against CS2's `.fgd` files: excluded / unknown classes, dangling outputs, bad inputs / outputs; with an out path removes dangling outputs and `SAFE_REMOVE` classes, converts `CONVERT` classes | `python3 mapcheck.py <map.vmap> [<out.vmap>]` |
 | `zfight.py` | Coplanar overlapping visible faces; with an out path hides fully covered ones (toolsnodraw) and moves the smaller of two partly overlapping materials 0.25 u forward | `python3 zfight.py <map.vmap> [<out.vmap>] [<addon content>]` |
 | `respawnable.py` | prop_physics_respawnable → prop_physics + point_template + env_entity_maker (respawns after RespawnTime, no script) | `python3 respawnable.py <vmap in> <vmap out>` |
+| `propexplode.py` | Copies each CS:GO model's prop_data explosion (explosive_damage / radius, which cs_mdl_import drops) onto props with ExplodeDamage / Radius 0 or unset | `python3 propexplode.py <vmap in> <vmap out> <CS:GO content root> [<embedded root>]` |
 | `vmdlfix.py` | Names the empty bodygroup choices cs_mdl_import writes (CS2 won't compile a model with any) | `python3 vmdlfix.py <addon content folder or .vmdl> [...]` |
 | `setup_bspsrc.sh` | Extracts BSPSource from its jlink image and patches the class files to Java 21; writes `<dest>/bspsrc.sh` | `sh setup_bspsrc.sh <staged bspsrc-windows/lib/modules> <dest dir>` (use `<dest>` = `tools/` so prep.py finds it, or set `BSPSRC=`) |
 

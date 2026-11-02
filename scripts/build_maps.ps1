@@ -6,6 +6,9 @@
 #   run_build.bat                     builds every line of build_queue.txt  ("addon" or "addon mapname")
 #   build_maps.ps1 mg_fred_all ...    builds just the addons given
 #   a line "assets mg_x" compiles mg_x's materials/radar/HUD xml+css/sounds/scripts only, without rebuilding the map
+#   a line "entities mg_x [map]" recompiles only the entities (Hammer's entity-only build: no world, vis or nav) - for entity edits
+#   a line "lighting mg_x [map]" recompiles the world and lighting but not vis or nav - for texture / material changes with no brush moved
+#   Both need an earlier full build: they start from the map's current .vpk in game\, and fall back to a full build when there is none.
 # Logs: C:\source1\cs2port\logs\<addon>_build.log and logs\stage_d_done.txt
 # Successful builds are marked [in progress, built] in existing_ports.txt.
 
@@ -52,9 +55,10 @@ $lines = $(if ($Maps -and $Maps.Count) { $Maps } else {
 foreach ($ln in $lines) {
     $p = @(($ln -replace '#.*$', '').Trim() -split '\s+' | Where-Object { $_ })
     if (-not $p.Count) { continue }
-    $assetsOnly = $false
+    $assetsOnly = $false; $mode = 'full'
     if ($p[0] -ieq 'assets' -and $p.Count -gt 1) { $assetsOnly = $true; $p = @($p[1..($p.Count - 1)]) }
-    $queue += ,@($p[0], $(if ($p.Count -gt 1) { $p[1] } else { $p[0] }), $assetsOnly)
+    elseif ($p[0] -in @('entities', 'lighting') -and $p.Count -gt 1) { $mode = $p[0].ToLower(); $p = @($p[1..($p.Count - 1)]) }
+    $queue += ,@($p[0], $(if ($p.Count -gt 1) { $p[1] } else { $p[0] }), $assetsOnly, $mode)
 }
 
 # CS2 / Hammer holding a map open stops the vpk being replaced
@@ -69,13 +73,16 @@ while (Get-Process -Name resourcecompiler -ErrorAction SilentlyContinue) {
 
 $summary = @()
 foreach ($q in $queue) {
-    $addon = $q[0]; $map = $q[1]; $assetsOnly = $q[2]
+    $addon = $q[0]; $map = $q[1]; $assetsOnly = $q[2]; $mode = $q[3]
     $vmap  = Join-Path $CS2 "content\csgo_addons\$addon\maps\$map.vmap"
     $built = Join-Path $OutRoot "csgo_addons\$addon\maps\$map.vpk"
     $dest  = Join-Path $CS2 "game\csgo_addons\$addon\maps\$map.vpk"
     $log   = Join-Path $Logs "${addon}_build.log"
     Write-Host ''
-    Write-Host "==== $addon : $(if ($assetsOnly) { 'assets only' } else { "compiling $map.vmap" }) ====" -ForegroundColor Cyan
+    if ($mode -ne 'full' -and -not (Test-Path $dest)) {
+        Write-Host "     no earlier build of $map.vpk in game\, so this is a full build instead of '$mode'" -ForegroundColor Yellow; $mode = 'full'
+    }
+    Write-Host "==== $addon : $(if ($assetsOnly) { 'assets only' } elseif ($mode -ne 'full') { "compiling $map.vmap ($mode only)" } else { "compiling $map.vmap" }) ====" -ForegroundColor Cyan
     if (-not $assetsOnly -and -not (Test-Path $vmap)) {
         Write-Host "     FAILED - $vmap not found" -ForegroundColor Red
         $summary += "$addon FAILED (no vmap)"; continue
@@ -124,11 +131,22 @@ foreach ($q in $queue) {
     }
 
     $in = ($vmap -replace '\\', '/').ToLower()
-    $rcArgs = @('-threads', '5', '-fshallow', '-maxtextureres', '256', '-quiet', '-unbufferedio', '-i', $in,
-        '-noassert', '-world', '-rebake_surfacegraph', '-bakelighting', '-lightmapMaxResolution', '1024',
-        '-lightmapVRadQuality', '1', '-phys', '-vis', '-nav', '-sareverb', '-sareverb_threads', '6', '-sapaths',
-        '-sareverb_threads', '6', '-sacustomdata', '-sacustomdata_threads', '6', '-breakpad', '-nop4',
-        '-outroot', $OutRoot)
+    if ($mode -eq 'full') {
+        $rcArgs = @('-threads', '5', '-fshallow', '-maxtextureres', '256', '-quiet', '-unbufferedio', '-i', $in,
+            '-noassert', '-world', '-rebake_surfacegraph', '-bakelighting', '-lightmapMaxResolution', '1024',
+            '-lightmapVRadQuality', '1', '-phys', '-vis', '-nav', '-sareverb', '-sareverb_threads', '6', '-sapaths',
+            '-sareverb_threads', '6', '-sacustomdata', '-sacustomdata_threads', '6', '-breakpad', '-nop4',
+            '-outroot', $OutRoot)
+    } else {
+        # skink52's Hammer arguments for an entity-only / lighting-only build. They update the map's existing build, so the current .vpk goes back
+        # into the outroot first (the copy keeps its old date, so a compile that writes nothing still counts as failed below)
+        $part = $(if ($mode -eq 'entities') { '-entities' } else { '-world' })
+        $rcArgs = @('-threads', '5', '-fshallow', '-maxtextureres', '256', '-quiet', '-html', '-unbufferedio', '-i', $in,
+            '-noassert', $part, '-rebake_surfacegraph', '-bakelighting', '-lightmapMaxResolution', '2048',
+            '-lightmapVRadQuality', '2', '-breakpad', '-nop4', '-outroot', $OutRoot)
+        New-Item -ItemType Directory -Force -Path (Split-Path $built) | Out-Null
+        Copy-Item $dest $built -Force
+    }
     $t0 = Get-Date
     & $RC @rcArgs 2>&1 | ForEach-Object { "$_" } | Tee-Object -FilePath $log
     $code = $LASTEXITCODE

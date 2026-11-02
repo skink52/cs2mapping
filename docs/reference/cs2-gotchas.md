@@ -54,6 +54,7 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 | Problem | Fix |
 |---|---|
 | Running `cs_mdl_import -r` with a bare `*.mdl` scans the entire stock model tree and can crash (access violation) on an unrelated stock model, losing the whole batch. | Give it an explicit `-l` file list (`legacy/mdltovmdl.py`). |
+| cs_mdl_import keeps a model's prop_data health but drops `explosive_damage` / `explosive_radius`, so props that relied on the model (ExplodeDamage 0 or unset) don't explode in CS2; ones with their own ExplodeDamage still do (ttt_island17: phys26 exploded, the other explosive barrels didn't). | `tools/propexplode.py` copies the model's values onto each such prop; CS2 still has the entity keys. |
 | cs_mdl_import writes bodygroup choices with no name, and resourcecompiler refuses the whole model ("Invalid empty body group choice name in bodygroup 'X'. Non-empty choice names are required."), so every prop using it is missing in game (ttt_island17: 23 window bars and a door). | `tools/vmdlfix.py` names them `choice<N>` by index; maps switch bodygroups by index, so nothing changes. autoport runs it after every import. |
 | One `.mdl`/`.dx90.vtx` checksum mismatch crashes the run and everything queued after it. | `legacy/newcheck.py` finds all the mismatched pairs first (studiohdr checksum at offset 8 vs the VTX header at offset 16). Exclude them, then fix them separately (Crowbar decompile/recompile). |
 | cs_mdl_import converts geometry only. | Materials need their own pass (`post_import_cleanup.py` phases 2–3). |

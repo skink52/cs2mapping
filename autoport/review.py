@@ -5,6 +5,7 @@
   ready <addon> --note "..."    fixed: clear the held items and build it
   accept <addon> --note "..."   already built and fine as it is: clear the items with no rebuild
   redo <addon> <step> --note .. rerun from a step (changes to tools or the map's inputs), then it is checked again
+  redo <addon> build --mode entities|lighting --note ..   a quick partial build: entity edits only, or textures / materials with no brush moved
   hold <addon> --note "..."     stop a map from building until someone clears it
   skip <addon> --note "..."     give up on this map
   close <addon> --note "..."    finished and recorded: drop it from the list
@@ -56,6 +57,7 @@ def main(argv):
     ap = argparse.ArgumentParser(prog='autoport.py review', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('command', choices=['list', 'show', 'ready', 'accept', 'redo', 'hold', 'skip', 'close'])
     ap.add_argument('addon', nargs='?'); ap.add_argument('step', nargs='?'); ap.add_argument('--note', default='')
+    ap.add_argument('--mode', choices=['full', 'entities', 'lighting'], help='with "redo <addon> build": entities = entity edits only, lighting = textures / materials changed but no brush moved')
     a = ap.parse_args(argv)
     if a.command == 'list': return cmd_list()
     if not a.addon: ap.error('which map?')
@@ -63,9 +65,11 @@ def main(argv):
     if a.command == 'show': return cmd_show(a.addon)
     if not a.note: ap.error('--note is required, so the log says why')
     if a.command == 'redo' and a.step not in STEPS: ap.error('redo needs a step: ' + ' '.join(STEPS))
-    post_command({'cmd': a.command, 'addon': a.addon, 'step': a.step, 'note': a.note})
+    if a.mode and not (a.command == 'redo' and a.step == 'build'): ap.error('--mode goes with "redo <addon> build"')
+    post_command({'cmd': a.command, 'addon': a.addon, 'step': a.step, 'note': a.note, 'mode': a.mode})
     log('review', a.addon, a.command, a.note)
-    if worker_pid(): print('Sent to the running worker (pid %d).' % worker_pid())
+    pid = worker_pid()   # once: the worker can finish between two calls
+    if pid: print('Sent to the running worker (pid %d).' % pid)
     else:
-        start_worker(); print('Started a worker in a new window to carry this out.')
+        start_worker(); print('Started a worker to carry this out (minimised on the taskbar).')
     print('Check progress with: python %s review list' % os.path.join(HERE, 'autoport.py'))

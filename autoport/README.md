@@ -57,12 +57,14 @@ Set by the addon's prefix in [profiles.py](profiles.py). Every type also gets th
 | When | Check | Fixes by itself |
 |---|---|---|
 | After import | `vmdlfix.py`: bodygroup choices cs_mdl_import left unnamed | Names them, so the models compile |
+| Fixups | `propexplode.py`: props that used their model's explosion | Copies the CS:GO model's explosive_damage / radius onto them |
 | Fixups | `respawnable.py` when the map has prop_physics_respawnable | prop_physics + point_template + env_entity_maker, respawning with no script |
 | End of passes | `mapcheck.py`: Hammer's Check for Problems against CS2's `.fgd` files | Removes dangling outputs and classes CS2 doesn't need; converts trigger_waterydeath and func_wall |
 | End of passes | `zfight.py`: coplanar overlapping faces | Hides fully covered faces; moves the smaller of two partly overlapping materials 0.25 units forward |
 | Audit | Entity classes that vanished with no known conversion, tool messages no rule knows | - |
 | Before the build | Gibs for every addon model | Generic CS:GO chunks for Metal / Wooden / Glass props with none; imports missing gib models |
 | After the build | Compile errors, unknown log lines, `unrecognized parent`, missing physics hulls; TTT script and HUD compiled | - |
+| Last | Steam Workshop description | Writes `<addon> STEAM DESCRIPTION.txt` in the content addon folder (from `templates/`); never overwrites a hand-edited one |
 
 Water materials become `anubis/anubis_water_canal`.
 
@@ -94,7 +96,21 @@ python C:\source1\cs2port\autoport\autoport.py review list
 python C:\source1\cs2port\autoport\autoport.py review ready ttt_x --note "restored the missing model"
 ```
 
-`ready`, `accept`, `redo`, `hold`, `skip` and `close` all need a note, which goes in the log. If no worker is running, the command starts one in a new window, so closing the window never strands a map.
+For a change that doesn't need the full build, add a mode to a rebuild. Both mode builds start from the map's current `.vpk`, and use skink52's Hammer arguments:
+
+```bash
+python C:\source1\cs2port\autoport\autoport.py review redo ttt_x build --mode entities --note "explosions copied onto props"
+```
+
+| `--mode` | When | What it builds | Island17 took |
+|---|---|---|---|
+| `entities` | Only entities changed | `-entities` with lighting, no world, vis or nav | under 1 min (full: 10–15) |
+| `lighting` | Textures or materials changed, no brush moved | `-world` with lighting, no vis or nav | - |
+| `full` | Anything moved, the first build | Everything (the default) | - |
+
+`build_maps.ps1` takes the same as queue prefixes (`entities <addon>`, `lighting <addon>`), and does a full build if there is no earlier `.vpk`.
+
+`ready`, `accept`, `redo`, `hold`, `skip` and `close` all need a note, which goes in the log. If no worker is running, the command starts one in its own console, minimised and never activated, so it can't pull you out of a fullscreen game. Closing a window never strands a map.
 
 Only the worker writes map state. Commands go through `work\autoport_state\inbox`, so a review can't collide with a running step.
 

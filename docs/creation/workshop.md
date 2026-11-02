@@ -25,6 +25,7 @@ Engine/platform facts (game folder is what uploads, renamed-map leftovers, `host
 ## Description
 
 - Steam BBCode, 8,000-character limit (Space Racer used ~6,400). Keep it in the repo (`docs/WORKSHOP_DESCRIPTION.txt` or `workshop/description_bbcode.txt`).
+- Every map gets one in its content addon folder, `<addon> STEAM DESCRIPTION.txt` (skink52, 2 Nov 2026). Ports get it from autoport's last step.
 - For script-run games add a **Server requirements** block (Hellmatch): map name and `host_workshop_map <id>`, game type Custom; the cvars the map sets
   and the `APPLY_CVARS` opt-out; plugin types that break it (AFK managers, no-respawn, spawn protection, TK punishment, anything blocking scripted damage);
   measured server load and how to check it (the once-a-minute "script time" console line); bots.

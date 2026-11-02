@@ -172,6 +172,7 @@ def fixups(m):
     if any('did damage in CS:GO' in t for t in out_todos(m)):
         if m.tool('laserhurt', m.out, os.path.join(S1, 'maps', m.addon + '.vmf'), m.out): m.note('io', 'laserhurt.py failed, so damaging lasers are only visual: see ' + m.log('laserhurt'))
         else: m.state['resolved'].append('did damage in CS:GO')
+    explode(m, m.out)
     if vmf_has(m, 'prop_physics_respawnable'):
         if m.tool('respawnable', m.out, m.out): m.note('error', 'respawnable.py failed, so prop_physics_respawnable props are still an unknown class: see ' + m.log('respawnable'))
         else: m.note('playtest', 'prop_physics_respawnable props are prop_physics + point_template now: break one and check it comes back after its RespawnTime.')
@@ -179,6 +180,15 @@ def fixups(m):
         if m.tool('glowfix', m.out, m.out, os.path.join(WORK, 'out', m.addon)): m.note('minor', 'glowfix.py failed, see ' + m.log('glowfix'))
     if vmf_has(m, 'sky_camera'): skybox(m)
     m.apply()
+
+def explode(m, vm):
+    """Model explosions cs_mdl_import drops (prop_data explosive_damage / radius) onto every prop that relied on them."""
+    if m.tool('propexplode', vm, vm, os.path.join(CS2, 'csgo'), os.path.join(WORK, 'embedded', m.addon)):
+        m.note('error', 'propexplode.py failed, so explosive props may not explode: see ' + m.log('propexplode')); return
+    n = re.findall(r"props given their model's explosion: (\d+)", read(m.log('propexplode')))
+    if n and int(n[-1]):
+        m.note('minor', "%s props given their CS:GO model's explosion (cs_mdl_import drops it): see %s" % (n[-1], m.log('propexplode')))
+        m.note('playtest', 'Explosive props: shoot an explosive barrel or gas can and check it explodes.')
 
 def skybox(m):
     """Split off the 3D skybox, unless the automatic box took a player spawn with it (then the box needs a person or an agent to choose it)."""
@@ -299,14 +309,23 @@ def entity_audit(m):
 
 # ------------------------------------------------------------------ build
 def compile_(m, budget=False):
+    """build_maps.ps1 for every map of the addon. build_mode 'entities' / 'lighting' (set by "review redo <addon> build --mode ...") does skink52's
+    partial Hammer builds, which start from the current .vpk: no vis, so no vis budget either."""
     done = os.path.join(PORT, 'logs', 'stage_d_done.txt'); seen = len(read(done).splitlines())
-    lines = ['%s %s' % (m.addon, n) for n in m.state['maps']]
-    extra = ['--slow-phase', 'Building map visibility', 'Visibility complete', str(m.opts.vis_budget * 60)] if budget else []
+    mode = m.state.get('build_mode', 'full')
+    lines = [('%s %s %s' % (mode, m.addon, n)) if mode != 'full' else '%s %s' % (m.addon, n) for n in m.state['maps']]
+    extra = ['--slow-phase', 'Building map visibility', 'Visibility complete', str(m.opts.vis_budget * 60)] if budget and mode == 'full' else []
     code = m.run('build', ['powershell', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', os.path.join(PORT, 'build_maps.ps1')] + lines, stall=1800, limit=8 * 3600, extra=extra)
     return code, [l for l in read(done).splitlines()[seen:] if m.addon in l]
 
+def build_log(path):
+    """A build log as plain lines. Partial builds run with -html, which writes HTML-escaped text joined by <br/>."""
+    import html
+    t = read(path)
+    return html.unescape(t.replace('<br/>', '\n')) if '<br/>' in t else t
+
 def missing(blog):
-    return sorted(set(re.findall(r'Failed loading resource "([^"]+)"', read(blog))) - BUILD_NOISE)
+    return sorted(set(re.findall(r'Failed loading resource "([^"]+)"', build_log(blog))) - BUILD_NOISE)
 
 def fixrefs_helped(m):
     t = read(os.path.join(PORT, 'logs', m.addon + '_fixrefs.log'))
@@ -353,12 +372,13 @@ def build(m):
     left = missing(blog)
     if left: m.note('missing', '%d resources failed to load in the build (first 20): %s. Build log: %s; import attempt: logs\\%s_fixrefs.log' % (len(left), ', '.join(left[:20]), blog, m.addon))
     if not res or any('FAILED' in l for l in res): raise StepFail('Build failed: %s. Log: %s and logs\\%s_assets.log' % ('; '.join(res) or 'no result line', blog, m.addon))
+    m.state['build_mode'] = 'full'   # a partial build is a one-off; the next one is full unless asked again
 
 BUILD_KNOWN = r'ERROR_FILEOPEN|RESOURCE COMPILE ERROR|empty resource weak-reference|ERROR: \d+ compiled|Compile ERRORS|These errors|-noassert|Add-Content|FullyQualifiedErrorId|CategoryInfo'
 
 def report(m):
     """Read the build's logs for what its summary doesn't say."""
-    t = read(os.path.join(PORT, 'logs', m.addon + '_build.log')) + read(os.path.join(PORT, 'logs', m.addon + '_assets.log'))
+    t = build_log(os.path.join(PORT, 'logs', m.addon + '_build.log')) + build_log(os.path.join(PORT, 'logs', m.addon + '_assets.log'))
     errs = sorted(set(re.findall(r'RESOURCE COMPILE ERROR: ([^\r\n]+)', t)))
     if errs: m.note('missing', '%d compile errors (first 8): %s. See logs\\%s_assets.log' % (len(errs), '; '.join(e[:100] for e in errs[:8]), m.addon))
     if 'unrecognized parent' in t: m.note('io', 'The build log says "unrecognized parent": a parented entity was dropped. See logs\\%s_build.log' % m.addon)
@@ -367,7 +387,58 @@ def report(m):
     if other: m.note('unknown', 'Lines in the build logs no rule knows (first 5): ' + ' | '.join(other[:5]))
     if m.profile.name == 'ttt': profiles.ttt_check(m)
 
-FUNCS = {'prep': prep, 'deliver': deliver, 'import': import_, 'root': root, 'stage_c': stage_c, 'fixups': fixups, 'passes': passes, 'profile': profile, 'credit': credit, 'audit': audit, 'build': build, 'report': report}
+PREFIXES = r'^(ttt|mg|jb|ba_jail|ba|de|cs|ar|dm|gg|aim|awp|fy|surf|bhop|kz|ze|zm|hns|am)_'
+
+def pretty(addon):
+    words = re.sub(PREFIXES, '', addon).split('_')
+    return ' '.join(w[:1].upper() + w[1:] for w in words if w)
+
+def description(m):
+    """A Steam Workshop description (BBCode, Steam's 8,000-character limit) in the content addon folder, as '<addon> STEAM DESCRIPTION.txt'.
+    Written from what the port actually has. A copy someone has edited is never overwritten: the new one goes next to it as .new.txt."""
+    import hashlib
+    vmf = read(os.path.join(S1, 'maps', m.addon + '.vmf'))
+    count = lambda cls: vmf.count('"classname" "%s"' % cls)
+    credit = read(os.path.join(CS2, 'game', 'csgo_addons', m.addon, 'maps', m.addon + '.txt'))
+    author = (re.findall(r'Original map by ([^\r\n/]+)', credit) or [''])[0].strip()
+    title = ('TTT ' if m.profile.name == 'ttt' else '') + pretty(m.addon)
+    who = "%s's %s" % (author, pretty(m.addon)) if author else pretty(m.addon)
+    items = []
+    script = read(os.path.join(m.content, 'maps', 'scripts', m.addon + '_io.js'))
+    data = os.path.join(WORK, 'ttt_project', 'maps', m.addon + '.json')
+    if m.profile.name == 'ttt' and os.path.exists(data):
+        d = json.load(open(data))
+        if d.get('buttons'): items.append('[*][b]Traitor traps:[/b] %d traitor buttons. Traitors aim at them and press E.' % len(d['buttons']))
+        if d.get('checks'): items.append('[*][b]Traitor tester:[/b] the map\'s own tester works.')
+    weapons = sum(n for c, n in collections.Counter(re.findall(r'"classname" "(weapon_\w+)"', vmf)).items())
+    if weapons: items.append('[*][b]Weapons:[/b] %d placed around the map.' % weapons)
+    if count('prop_physics_respawnable'): items.append('[*][b]Breakables come back:[/b] %d props respawn where they were a while after they break.' % count('prop_physics_respawnable'))
+    if 'Score_' in script: items.append('[*][b]Finish score:[/b] reaching the end awards points, as in CS:GO.')
+    if re.search(r'push', script, re.I): items.append('[*][b]Push pads[/b] work as in CS:GO.')
+    if count('move_rope') or count('keyframe_rope'): items.append('[*][b]Ropes and cables[/b] rebuilt for CS2.')
+    if count('func_water_analog') or 'water' in read(os.path.join(m.content, 'maps', m.addon + '_cleanup_log.txt')).lower(): items.append('[*][b]Water[/b] you can swim in.')
+    map_section = '\n[h2]The map[/h2]\n[list]\n' + '\n'.join(items) + '\n[/list]\n' if items else ''
+    limits = []
+    if 'env_fog_controller' in read(os.path.join(m.content, 'maps', m.addon + '_cleanup_log.txt')): limits.append('[*]No fog: CS2 has no CS:GO fog controller.')
+    if m.profile.name != 'ttt': limits.append('[*]Ported with automated tools and checked by hand; report anything that looks or plays wrong in the comments.')
+    hosting = []
+    if 'mp_roundtime' in read(os.path.join(m.content, 'maps', m.addon + '_cleanup_log.txt')) or 'mp_roundtime' in script:
+        hosting.append('[*]The map sets [i]mp_freezetime 0[/i] and [i]mp_roundtime[/i] itself. Servers that block point_servercommand need them set by hand.')
+    credits = ('Original map by %s. ' % (author or '[ORIGINAL AUTHOR]')) + 'Ported to CS2 by skink52' + ('; TTT script by skink52 with AI assistance.' if m.profile.name == 'ttt' else ' with AI-assisted tools.')
+    tpl = read(os.path.join(HERE, 'templates', 'ttt_description.txt' if m.profile.name == 'ttt' else 'port_description.txt'))
+    text = tpl.format(title=title, original_credit=who, original_credit_cap=who[:1].upper() + who[1:], map_section=map_section, known_limits=''.join(l + '\n' for l in limits),
+                      hosting=''.join(h + '\n' for h in hosting), credits=credits)
+    path = os.path.join(m.content, '%s STEAM DESCRIPTION.txt' % m.addon)
+    md5 = hashlib.md5(text.encode()).hexdigest()
+    if os.path.exists(path) and hashlib.md5(read(path).encode()).hexdigest() != m.state.get('description_md5'):
+        path = path[:-4] + '.new.txt'; m.note('review', 'The Steam description was edited by hand, so the new one is next to it: ' + path)
+    with open(path, 'w', encoding='utf-8', newline='\r\n') as f: f.write(text)
+    if not path.endswith('.new.txt'): m.state['description_md5'] = md5
+    if len(text) > 8000: m.note('review', 'Steam description is %d characters, over Steam\'s 8,000: shorten %s' % (len(text), path))
+    if not author: m.note('review', 'Steam description says [ORIGINAL AUTHOR]: fill in the original mapper in %s (and the loading screen credit).' % path)
+    m.note('review', 'Steam description written: %s. Check the title (%s) and add screenshots before publishing.' % (path, title))
+
+FUNCS = {'prep': prep, 'deliver': deliver, 'import': import_, 'root': root, 'stage_c': stage_c, 'fixups': fixups, 'passes': passes, 'profile': profile, 'credit': credit, 'audit': audit, 'build': build, 'report': report, 'description': description}
 
 # ------------------------------------------------------------------ the worker
 def run_steps(m, steps):
@@ -430,6 +501,7 @@ def handle(c, maps, a, run_dir):
     elif c['cmd'] == 'accept':
         m.clear(note); m.set_status('built')
     elif c['cmd'] == 'redo':
+        if c.get('mode'): m.state['build_mode'] = c['mode']
         m.rewind(c['step']); m.set_status('queued' if c['step'] in PREP_STEPS else 'ready')   # what earlier steps found still stands
     elif c['cmd'] == 'hold':
         m.note('io', 'Held by hand: ' + note, reopen=True); m.set_status('held')

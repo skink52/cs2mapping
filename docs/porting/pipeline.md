@@ -231,6 +231,11 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
   `point_script` `<addon>_io_script` is added. Then `maps/<addon>_cleanup_log.txt` is written, with TO CHECK lines for everything that needs a human look.
 
 ## Stage D: command-line build (`build_maps.ps1`)
+- **Partial builds** (skink52's Hammer arguments, 2 Nov 2026): a queue line `entities <addon> [map]` recompiles only the entities
+  (`-entities -rebake_surfacegraph -bakelighting -lightmapMaxResolution 2048 -lightmapVRadQuality 2`, no world, vis or nav: ttt_island17 in under a
+  minute instead of 10–15); `lighting <addon> [map]` uses `-world` the same way, for textures or materials changed with no brush moved. Both start
+  from the map's current .vpk, which the script copies back into the outroot, and fall back to a full build when there is none. A full build is still
+  needed for anything moved and for the first build. autoport: `review redo <addon> build --mode entities|lighting`.
 - `run_build.bat` runs `build_maps.ps1` on `build_queue.txt` (one addon per line, optionally `addon mapname`). `build_maps.ps1 mg_a mg_b` builds just those maps. For assets only from the command line, pass the line as one quoted argument: `run_build.bat "assets mg_x"`.
 - **Assets first.** The command-line map build does not compile materials or textures; Hammer normally compiles them when it loads a map. So anything Claude added outside Hammer (laser materials, alpha masks, radar) would be missing, and missing materials are fatal for those meshes. For each addon the script first runs `resourcecompiler -r -i <content addon>/<dir>/*.<ext>` for materials `*.vmat`, models `*.vmdl`, panorama `*.vtex` (radar) and `*.xml`/`*.css` (custom HUDs), soundevents, sounds `*.wav`/`*.mp3` and `maps/scripts/*.js`, logging to `logs\<addon>_assets.log`. Only out-of-date files are recompiled. If a content .vmat that a map vmap (or a model) uses still has no compiled `_c` in `game\`, that map is skipped and the materials are listed; uncompiled leftovers nothing uses are only listed as a note. A queue line `assets <addon>` compiles the assets only, with no map build.
 - The pre-pass compiles `maps/scripts/*.js` and `panorama/*.vtex` only. Scripts in the older `scripts/` layout and Panorama `layout/custom_game/*.xml` /
@@ -339,6 +344,12 @@ All of these keep your Hammer edits and append to the cleanup log. Exact usage l
   with Claude doing stage C in between, is only needed in the cloud route.)
 - `respawnable.py <vmap in> <vmap out>`: prop_physics_respawnable (kept by the importer, but CS2 has no such class) → prop_physics + point_template +
   env_entity_maker, no script: the copy respawns at the spot RespawnTime seconds after the prop breaks, once there's room (ttt_island17, 58 props).
+- `propexplode.py <vmap in> <vmap out> <CS:GO content> [<embedded>]`: CS:GO props with ExplodeDamage / ExplodeRadius 0 or unset used their model's prop_data
+  explosion (oildrum001_explosive 120 / 256), which cs_mdl_import drops, so only props with their own values exploded in CS2. Each such prop gets the
+  model's numbers (ttt_island17: 4 barrels and a gas can; ttt_terrortrain: 4 barrels). autoport runs it in fixups.
+- **Workshop description:** autoport's last step writes `<addon> STEAM DESCRIPTION.txt` (Steam BBCode, under 8,000 characters) into the content addon
+  folder from what the port has (weapons, traitor buttons, respawning props, ropes, water, finish score, round cvars), using `autoport/templates/`
+  (TTT ports get the cs2mapTTT how-it-plays, features, hosting and rules blocks). A copy edited by hand is never overwritten (the new one is `.new.txt`).
 - `vmdlfix.py <addon content folder>`: names the empty bodygroup choices cs_mdl_import writes; CS2 won't compile a model with any (ttt_island17's window
   bars and door). autoport runs it after every import.
 

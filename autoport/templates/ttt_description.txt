@@ -1,0 +1,108 @@
+[h1]{title}[/h1]
+Trouble in Terrorist Town on {original_credit}, ported to CS2. Everything runs inside the map: no plugins or mods, just host it and play.
+
+[h2]How it plays[/h2]
+[list]
+[*][b]Preparation (25 s):[/b] explore and grab weapons. Players can't hurt each other yet, but the world still can.
+[*][b]Roles:[/b] about 1 in 4 players are secretly [b]Traitors[/b]. From 8 players, a public [b]Detective[/b] joins the Innocents.
+[*][b]Win:[/b] Innocents kill every Traitor or outlast the clock. Traitors kill everyone else.
+[*][b]Haste clock:[/b] 3:30 to start, +20 s for every innocent death, up to 6:00.
+[/list]
+{map_section}
+[h2]Features[/h2]
+[list]
+[*][b]Hidden deaths:[/b] every death shows as a world death and the killfeed is fully covered. Scores are held back until the round ends.
+[*][b]TTT scoreboard (Tab):[/b] Terrorists / Missing in action / Confirmed dead. The dead stay listed as alive until someone finds their body.
+[*][b]Bodies:[/b] real ragdolls. Tap E to identify (announced to everyone), Shift+E to search covertly, hold E to drag the body away and hide it.
+[*][b]Detectives:[/b] searching a body gives the weapon, the time of death and a 45 s DNA trail to the killer. Trap kills point to the Traitor who pressed the button.
+[*][b]Shops:[/b] Traitors and Detectives hold F (W/S select, E buy, F close). Traitor items include an assassin knife, radar, silenced M4, AWP and grenades. They earn credits as the round goes on.
+[*][b]Karma:[/b] hurting your own side costs karma and weakens your damage. It recovers each round, and faster when you play clean.
+[*][b]Props:[/b] hold E to pick up physics props. E drops them, R throws them.
+[/list]
+
+[h2]Hosting[/h2]
+[list]
+[*]Minimum 3 players. Use [i]bot_quota 0[/i] (bots ignore roles).
+[*]The map sets the cvars it needs.
+[*]Plugins that force teams, respawn players or punish team kills will break it.
+[*]Karma resets on map change.
+[/list]
+
+[h2]Known limits[/h2]
+[list]
+[*]The Esc menu still shows CS2's own scoreboard.
+{known_limits}[/list]
+
+Type [b]!ttt[/b] in chat for controls.
+
+[h2]SUGGESTED RULES[/h2]
+
+[b]1. No RDM (random deathmatch)[/b]
+Only kill someone when you have a valid reason:
+[list]
+[*]You saw them kill or shoot an innocent player.
+[*]They shot at you or threw a grenade at you.
+[*]They failed the traitor tester, or ran from it when asked to test.
+[*]They were called KOS by someone with a reason you can trust (the Detective, or a player who saw the kill).
+[*]They are using a traitor-only item or a traitor trap.
+[*]You are a Traitor (Innocents and Detectives are fair game).
+[/list]
+"He looked suspicious" or "he was standing near a body" is not a reason. Ask questions, follow them, or call them out instead.
+
+[b]2. KOS calls[/b]
+[list]
+[*]A KOS ("kill on sight") call must include a reason: "KOS Bob, he shot Carol in the kitchen."
+[*]Don't call KOS on a hunch or for revenge. False KOS calls count as RDM.
+[*]If you're called KOS by mistake, explain yourself in chat; don't start shooting back unless you're attacked.
+[/list]
+
+[b]3. Dead players[/b]
+[list]
+[*]No ghosting. The dead must not tell the living anything: no voice, Discord, party or Steam chat about who killed them, where Traitors are, or who is dead.
+[*]Dead players can talk to other dead players and spectators freely.
+[/list]
+
+[b]4. No metagaming or exploiting[/b]
+[list]
+[*]Don't use the Esc menu scoreboard, console commands, HUD tricks or a second account to find out who is dead.
+[*]Don't use map bugs to get out of the map or into places you shouldn't be.
+[*]Don't change your name to dodge low karma.
+[/list]
+
+[b]5. Traitors[/b]
+[list]
+[*]Don't kill or deliberately expose your fellow Traitors.
+[*]Don't announce your role to the Innocents.
+[*]Traitor traps and buttons are fair play; using them on fellow Traitors is not.
+[/list]
+
+[b]6. Innocents and the Detective[/b]
+[list]
+[*]Protect the Detective; don't kill them without strong proof.
+[*]Don't shoot the Detective for searching bodies or giving orders.
+[*]Detectives: make fair calls based on DNA and evidence, not guesses.
+[/list]
+
+[b]7. Bodies[/b]
+[list]
+[*]Identify bodies when you find them (tap E). Use Shift+E only if you need to search quietly.
+[*]Moving or hiding bodies is a Traitor tactic; an Innocent hiding bodies may be treated as suspicious.
+[/list]
+
+[b]8. Fair play[/b]
+[list]
+[*]Don't stall the round. Hiding in an unreachable spot as the last player alive isn't fun; the haste clock will end it.
+[*]No spawn camping, mic spam or griefing (blocking doorways, pushing people off ledges for fun).
+[*]Karma is your reputation. Hurting your own side lowers your karma and your damage. Play clean and it recovers every round.
+[/list]
+
+[b]9. Mistakes[/b]
+[list]
+[*]Accidents happen. If you RDM by mistake, own up in chat and carry on.
+[*]Repeated RDM, ghosting or exploiting will get you kicked or banned by server admins.
+[/list]
+
+Type [b]!rules[/b] in game for the short version.
+
+{credits}
+[url=https://github.com/skink52/cs2mapping/tree/main/projects/cs2mapTTT]cs2mapTTT on GitHub[/url]

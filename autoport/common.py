@@ -15,7 +15,7 @@ LOCK = os.path.join(STATE, 'worker.lock')
 CLEANUP = os.path.join(LOGS, 'cleanup_list.md')
 
 PREP_STEPS = ['prep', 'deliver', 'import', 'root', 'stage_c', 'fixups', 'passes', 'profile', 'credit', 'audit']
-BUILD_STEPS = ['build', 'report']
+BUILD_STEPS = ['build', 'report', 'description']
 STEPS = PREP_STEPS + BUILD_STEPS
 
 # error/missing/unknown/io hold a map back from the build until someone clears them; the rest only go on the list
@@ -95,5 +95,8 @@ def post_command(cmd):
     os.replace(tmp, os.path.join(INBOX, name))
 
 def start_worker():
+    """Its own console, so closing anything else doesn't stop it, but minimised and never activated: it must not pull the user out of a
+    fullscreen game (skink52)."""
     import subprocess
-    subprocess.Popen([sys.executable, os.path.join(HERE, 'autoport.py'), 'serve'], creationflags=subprocess.CREATE_NEW_CONSOLE, cwd=PORT)
+    si = subprocess.STARTUPINFO(); si.dwFlags |= subprocess.STARTF_USESHOWWINDOW; si.wShowWindow = 7   # SW_SHOWMINNOACTIVE
+    subprocess.Popen([sys.executable, os.path.join(HERE, 'autoport.py'), 'serve'], creationflags=subprocess.CREATE_NEW_CONSOLE, startupinfo=si, cwd=PORT)
