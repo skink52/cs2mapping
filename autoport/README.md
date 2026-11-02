@@ -61,6 +61,8 @@ Set by the addon's prefix in [profiles.py](profiles.py). Every type also gets th
 | Fixups | `respawnable.py` when the map has prop_physics_respawnable | prop_physics + point_template + env_entity_maker, respawning with no script |
 | End of passes | `mapcheck.py`: Hammer's Check for Problems against CS2's `.fgd` files | Removes dangling outputs and classes CS2 doesn't need; converts trigger_waterydeath and func_wall |
 | End of passes | `zfight.py`: coplanar overlapping faces | Hides fully covered faces; moves the smaller of two partly overlapping materials 0.25 units forward |
+| End of passes | `lightwall.py`: lights a few units off a wall | Moves them 24 units out |
+| End of passes | `uvflip.py`: upside-down torch textures | Flips them |
 | Audit | Entity classes that vanished with no known conversion, tool messages no rule knows | - |
 | Before the build | Gibs for every addon model | Generic CS:GO chunks for Metal / Wooden / Glass props with none; imports missing gib models |
 | After the build | Compile errors, unknown log lines, `unrecognized parent`, missing physics hulls; TTT script and HUD compiled | - |
@@ -127,6 +129,21 @@ Only the worker writes map state. Commands go through `work\autoport_state\inbox
 [monitor.py](monitor.py) is the live window: each map's status and steps, what is running, CPU, disk, idle time against the limit, newest log lines and kills. It only reads, so closing it doesn't affect the run. `run_autoport.bat` opens it, or run `python C:\source1\cs2port\autoport\monitor.py`.
 
 If CS2 or Hammer is open, autoport waits for it to close before editing or building a map, rather than failing.
+
+## Polishing maps ported before autoport
+
+`polish.py` brings an already-ported map up to today's rules without rerunning Stage C, so hand edits stay. It works on the content vmap,
+backed up first, and builds nothing:
+
+```bash
+python C:\source1\cs2port\autoport\polish.py mg_antique_course mg_lego_course
+```
+
+It runs round setup (only the commands a map lacks), fires, respawning props, the entity check, z-fighting, model explosions, lights off walls,
+upside-down torches and the bodygroup fix. Round setup also sets any other `sv_airaccelerate` the map's script sends to 2000 (content and
+`ports/<addon>/scripts` copies), and on a prefab-split import whose main vmap has no entities it edits `prefabs/<map>/<map>_gameplay.vmap`.
+`--only roundcfg` does just the round setup; `--all-ports` takes every `ports/<addon>`. The report,
+`logs\autoport\polish_<time>.md`, lists what each map got and what is left for a person.
 
 ## Setup on a new PC
 

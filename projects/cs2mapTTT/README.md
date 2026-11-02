@@ -22,6 +22,15 @@ A map's `info_map_parameters` is used to end rounds if present; otherwise the ro
 `python3 tools/ttt_convert.py <in.vmap> <out.vmap> <map name> --cs2mapping ../cs2mapping` turns the GMod/CS:GO TTT entities CS2 doesn't have into
 relays driven by `ttt.js`, re-aims every input at them, adds the TTT entities (and an `info_map_parameters` if missing), and writes `maps/<map>.json`.
 Then `python3 tools/build_data.py` bakes all `maps/*.json` into `ttt.js` (one script for every map; it picks its entry by map name).
+**Round reset** (ttt_convert, 2 Nov 2026): in CS2 what a round did to map entities is still there next round (ttt_minecraft: the lava stayed
+lava, the furnace count stayed at 7), so the converter makes each round's preparation (`ttt_ms__prep`) put back every entity the map's logic
+switches or recolours: Enable/Disable to its start state (StartDisabled, or what a logic_auto sets on map spawn), Color to its rendercolor, a
+math_counter to its start value. Kill on an entity that can be switched off becomes Disable; a Killed func_water / func_breakable / func_button
+comes back from a point_template (`<name>_ttt_respawn`). Which inputs a class has comes from CS2's .fgd files (cs2mapping `tools/mapcheck.py`).
+A `ttt_traitor_check` marked StartDisabled that nothing enables counts as on (the TTT entity ignores the key; ttt_minecraft's tester never answered).
+
+Keys you can add by hand to a map's json, which ttt_convert keeps on a rerun: `post_time` (seconds between the win and the next round, instead of
+`CONFIG.POST_TIME`; ttt_minecraft uses 20 so the diamond win's trip to the End can be seen).
 
 | Entity | In CS2 |
 |---|---|

@@ -3,7 +3,7 @@ import { Instance, CSPlayerPawn, CSPlayerController } from "cs_script/point_scri
 // mg_lego_course: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.
 // Everything here is driven by `mg_lego_course_io_script` -> RunScriptInput <input name>, with the touching player as activator.
 //
-//   Cmd_<n>     replaces the two point_servercommand entities (map credits in chat, sv_airaccelerate 150)
+//   Cmd_<n>     replaces the two point_servercommand entities (map credits in chat, sv_airaccelerate 2000)
 //   Score_<pts> replaces game_score score1 (ApplyScore on the laser finish triggers)
 
 // ---------------------------------------------------------------- point_servercommand replacement
@@ -21,7 +21,7 @@ const COMMANDS = [
     "say *** 4 seconds ***",
     "say *** 1 second ***",
     "say *** Map ported to CS:GO by Hallucinogenic Troll ***",
-    "sv_airaccelerate 150",
+    "sv_airaccelerate 2000",
     "say *** Map by The_Prodigy ***",
     "say *** Ported to CS:GO by Hallucinogenic Troll ***",
     "say *** Ported to CS2 by skink52 ***",

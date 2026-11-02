@@ -323,7 +323,7 @@ const COMMANDS = [
     "say --> Map By ScHoOuFi, CS2 By Skink52 <--",
     "say --> Spawn Protection Enabled <--",
     "say --> Spawn Protection in 40 Seconds <--",
-    "sv_airaccelerate 900"
+    "sv_airaccelerate 2000"
 ];
 COMMANDS.forEach((cmd, i) => {
     Instance.OnScriptInput("Cmd_" + i, () => { Instance.ServerCommand(cmd); });

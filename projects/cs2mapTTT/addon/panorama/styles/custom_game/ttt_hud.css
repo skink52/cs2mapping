@@ -34,6 +34,10 @@
 .TrackText { width: 560px; height: 80px; margin-left: 24px; margin-top: 434px; font-size: 20px; color: #9fd0ff; text-shadow: 1px 1px 2px #000000; }
 
 .MsgA { width: 820px; height: 62px; horizontal-align: center; margin-top: 676px; text-align: center; font-size: 23px; color: #f2fff4; text-shadow: 0px 0px 6px #000000; }
+/* traitor-trap prompt: just under the crosshair, on a dark box so it reads against bright maps; hidden unless ttt.js adds .show */
+.TrapHint { horizontal-align: center; margin-top: 584px; padding: 6px 16px 7px 16px; background-color: #000000dd; border: 1px solid #ff5a5a; border-radius: 6px;
+            font-size: 21px; font-weight: bold; color: #ffe2e2; text-align: center; opacity: 0; }
+.TrapHint.show { opacity: 1; }
 .MsgB { width: 820px; height: 124px; horizontal-align: center; margin-top: 742px; text-align: center; font-size: 19px; color: #b8f5c8; text-shadow: 0px 0px 6px #000000; }
 
 .ShopBox { width: 420px; height: 336px; horizontal-align: right; margin-right: 24px; margin-top: 380px; background-color: #0b120d; background-image: url("file://{images}/custom_game/ttt/shop.png"); background-size: 100% 100%; border: 2px solid #3ddc84; border-radius: 12px; opacity: 0; }

@@ -328,16 +328,53 @@ def io_fixups(m, c):
 
 def round_setup(m, c):
     """House rule: a point_servercommand driven by a logic_auto sets mp_freezetime 0 / mp_roundtime 600 on map spawn.
-    Maps with only one spawn type (only CT or only T spawns) also get a game_player_equip handing out a knife, fired OnMapSpawn.
-    Runs after the 'cmd' pass so this point_servercommand is kept as a real entity."""
-    if any(m.name(e) == 'port_servercommand' for e in m.by_class('point_servercommand')): return
+    Maps with only one spawn type (only CT or only T spawns) also get a game_player_equip handing out a knife, fired OnMapSpawn, and
+    mp_limitteams 0, so everyone can join the one team that has spawns; minigame maps (mg_) get mp_solid_teammates 0, defusal maps (de_)
+    mp_limitteams 1, and every map sv_airaccelerate 2000 (skink52, 2 Nov 2026).
+    A rerun on a map that already has the servercommand only adds the commands it lacks. Runs after the 'cmd' pass so this
+    point_servercommand is kept as a real entity."""
     ct = m.by_class('info_player_counterterrorist'); t = m.by_class('info_player_terrorist')
+    cmds = ['mp_freezetime 0', 'mp_roundtime 600', 'sv_airaccelerate 2000']   # skink52, 2 Nov 2026: 2000 on every map
+    if bool(ct) != bool(t): cmds.append('mp_limitteams 0')
+    if c.addon.lower().startswith('mg_'): cmds.append('mp_solid_teammates 0')
+    if c.addon.lower().startswith('de_') and bool(ct) == bool(t): cmds.append('mp_limitteams 1')   # defusal maps keep the teams even
+    psc = {m.name(e) for e in m.by_class('point_servercommand') if m.name(e)}
+    autos = m.by_class('logic_auto')   # ours, or the map's own one that already sends a point_servercommand its commands (mg_metal_course_level_2, de_rats_1337)
+    la = next((e for e in autos if m.name(e) == 'port_logic_auto'), None) if 'port_servercommand' in psc else None
+    tgt = 'port_servercommand'
+    if la is None:
+        for e in autos:
+            k = next((k for k in m.conns(e) if str(m.conn_tuple(k)[1]) in psc and m.conn_tuple(k)[2] == 'Command'), None)
+            if k is not None: la, tgt = e, str(m.conn_tuple(k)[1]); break
+    if la is not None:
+        # every command any logic_auto sends any point_servercommand, by cvar. The map's own mp_roundtime wins (de_rats_1337 keeps 150,
+        # mg_fred_all 720); the other house commands are enforced, so a map's own sv_airaccelerate 150 becomes 2000 (skink52, 2 Nov 2026)
+        have = collections.defaultdict(list)
+        for e in autos:
+            ca = dmx.geta(m.E[e], b'connectionsData')
+            for ci in list(ca[2] if ca else []):
+                u = m.conn_tuple(m.E[ci])
+                if u[1] in psc and u[2] == 'Command' and u[3].split(): have[u[3].split()[0]].append((ca, ci, u))
+        new, fixed = [], []
+        for x in cmds:
+            k = x.split()[0]; hs = have.get(k)
+            if not hs: new.append(x)
+            elif k == 'mp_roundtime':
+                for ca, ci, u in hs:
+                    if u[1] == 'port_servercommand' and any(h[2][1] != 'port_servercommand' for h in hs): ca[2].remove(ci); fixed.append('dropped our %s (the map sets its own)' % u[3])
+            else:
+                for ca, ci, u in hs:
+                    if u[3].strip() != x: dmx.set_(m.E[ci], b'overrideParam', dmx.T_STR, x.encode()); fixed.append('%s -> %s' % (u[3].strip(), x))
+        for x in new: m.add_conn(la, 'OnMapSpawn', tgt, 'Command', x, 0.0, -1)
+        if new: c.log.append('round setup: added %s to %s -> %s' % (', '.join(new), m.name(la) or 'logic_auto', tgt))
+        if fixed: c.log.append('round setup: ' + '; '.join(fixed))
+        return
     sp = (ct + t + m.entities())[0]; o = m.origin(sp); o = [o[0], o[1], o[2] + 96]
     m.new_entity('point_servercommand', o, {'targetname': 'port_servercommand'})
     la = m.new_entity('logic_auto', [o[0] + 32, o[1], o[2]], {'targetname': 'port_logic_auto', 'spawnflags': '1'})
-    m.add_conn(la, 'OnMapSpawn', 'port_servercommand', 'Command', 'mp_freezetime 0', 0.0, -1)
-    m.add_conn(la, 'OnMapSpawn', 'port_servercommand', 'Command', 'mp_roundtime 600', 0.0, -1)
-    msg = 'added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> mp_freezetime 0, mp_roundtime 600'
+    for x in cmds: m.add_conn(la, 'OnMapSpawn', 'port_servercommand', 'Command', x, 0.0, -1)
+    msg = 'added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> ' + ', '.join(cmds)
+    if bool(ct) != bool(t): msg += ' (only %s spawns)' % ('CT' if ct else 'T')
     have = [e for e in m.by_class('game_player_equip') if not int(m.P(e, 'spawnflags', '0') or 0) & 1 and m.name(e) != 'port_knife_equip'
             and any(m.P(e, 'weapon%d' % i, '') == 'weapon_knife' or m.P(e, 'weapon_knife') is not None for i in range(22))]
     if bool(ct) != bool(t) and have:

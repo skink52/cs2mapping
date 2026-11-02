@@ -34,6 +34,11 @@ Unverified mechanics to watch: velocity on `prop_ragdoll` (moves the whole body?
 
 ## Results 29 Oct 2026 (skink52)
 
+- 2 Nov (ttt_minecraft playtest): VERIFIED: the furnace counts diamonds and gives the block at 9; the gold block opens the tester; the diamond
+  block on the lighthouse wins for the innocents and teleports everyone to the End. FAILED, fixed (not yet built or retested): the furnace count,
+  the lava and other trap states carried into the next round (round reset in ttt_convert); the tester lever showed no colour (its check stayed
+  off); the End visit was ~1 s (post_time 20); the trap prompt was hard to read and to aim at (dark box, wider cone). Test: each of those again.
+
 - FAILED: shooting a player dead during the round crashed the server (prop_ragdoll SetModel + Teleport). Fixed: no model swap or Teleport on bodies, bodies not carryable.
 - FAILED: with HIDE_NATIVE_HUD players couldn't switch away from the pistol. Fixed: HIDE_NATIVE_HUD off by default.
 - 29 Oct (late): HIDE_NATIVE_HUD back on with script weapon switching: tap F = next weapon, hold F = shop. Test: switching works for every slot, grenades thrown normally, the shop opens on hold only, dropping (G) still works.

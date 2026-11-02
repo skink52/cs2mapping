@@ -255,6 +255,16 @@ def checks(m):
         if z.get('hidden') or z.get('nudged'):
             m.note('minor', 'Z-fighting (%s): %d fully covered faces set to toolsnodraw, as vbsp would have dropped them; %d smaller faces moved %s units forward where two materials overlapped.' % (name, z.get('hidden', 0), z.get('nudged', 0), '0.25'))
         if z.get('nudged'): m.note('playtest', 'Z-fighting (%s): %d faces were moved 0.25 units to stop flicker; look at them in game (tools/zfight.py lists where).' % (name, z['nudged']))
+        if m.tool('lightwall', vm, out, '24'): m.note('error', 'lightwall.py failed on %s, see %s' % (name, m.log('lightwall')))
+        else:
+            m.apply()
+            lw = {k: int(v) for k, v in re.findall(r'(\w+)=(\d+)', (last_run(read(m.log('lightwall')).splitlines()) or [''])[-1])}
+            if lw.get('moved'): m.note('minor', 'Lights (%s): %d moved off walls they would have blown out.' % (name, lw['moved']))
+            if lw.get('skipped'): m.note('playtest', 'Lights (%s): %d sit close to a wall but couldn\'t move without crossing a face: look for bright spots.' % (name, lw['skipped']))
+        if not m.tool('uvflip', vm, out, 'torch'):
+            m.apply()
+            fl = re.findall(r'flipped=(\d+)', read(m.log('uvflip')))
+            if fl and int(fl[-1]): m.note('minor', 'Upside-down torch textures flipped (%s): %s faces.' % (name, fl[-1]))
         if z.get('visible'): m.note('missing', 'Z-fighting (%s): %d overlaps between different materials still flicker after the fix (rotated meshes, or faces already moved for another overlap; first: %s). Move or cut one face of each.' % (name, z['visible'], ' | '.join(part[:4])))
         elif z.get('partial'): m.note('minor', 'Z-fighting (%s): %d small or same-material overlaps left (first: %s).' % (name, z['partial'], ' | '.join(part[:3])))
 

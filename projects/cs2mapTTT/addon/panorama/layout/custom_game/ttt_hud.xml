@@ -31,6 +31,7 @@
 			<Label id="Track" class="TrackText" hittest="false" text="{s:track}" />
 			<Label id="MsgA" class="MsgA" hittest="false" text="{s:msga}" />
 			<Label id="MsgB" class="MsgB" hittest="false" text="{s:msgb}" />
+			<Label id="Trap" class="TrapHint" hittest="false" text="{s:trap}" />
 			<Panel id="ShopBox" class="ShopBox" hittest="false">
 				<Label id="ShopTitle" class="ShopTitle" hittest="false" text="{s:title}" />
 				<Button id="Shop0" class="ShopRow Row0"><Label id="ShopL0" class="RowText" hittest="false" text="{s:row}" /></Button>

@@ -26,7 +26,11 @@ These are the standing rules every port follows. The pipeline applies most of th
   and needs no rebuild. No AI-made note in the loading text: the Workshop pages say so (skink52, 29 Oct 2026). Find the author in the map's own credits, its GameBanana page or the BSP's embedded files.
   Chat credits that the map printed through `point_servercommand` keep working through the map's script, with "Ported to CS2 by skink52" added.
 - **Round setup.** A `point_servercommand` driven by a `logic_auto` sets `mp_freezetime 0` and `mp_roundtime 600` on map spawn.
-  If the map only has one team's spawns, a `game_player_equip` gives a knife on spawn (unless the map already does that).
+  If the map only has one team's spawns, it also sets `mp_limitteams 0` and a `game_player_equip` gives a knife on spawn (unless the map
+  already does that). Minigame maps (`mg_`) also set `mp_solid_teammates 0`, defusal maps (`de_`) `mp_limitteams 1`, and every map
+  `sv_airaccelerate 2000` (skink52, 2 Nov 2026). If the map already sends its own spawn commands to a `point_servercommand`, ours go on that
+  one rather than a second entity (two firing on the same spawn run in no set order). The map's own `mp_roundtime` wins (de_rats_1337 keeps 150);
+  every other house command is enforced, so a map's own `sv_airaccelerate 150` becomes 2000, in its map script too (`Cmd_<n>`).
   Two caveats: community servers block `point_servercommand` by default, and 600 is probably above the round-time limit (CS:GO capped it at 60 minutes).
 - **Weapons and players must not be black.** CS:GO lights import as Static (baked only), which leaves weapons and player models unlit.
   Switch enough lights to **Stationary** (`directlight 3`): at least one per sealed compartment, spaced so no spot is inside more than

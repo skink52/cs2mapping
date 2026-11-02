@@ -25,7 +25,8 @@ const CONFIG = {
     CHAT_LINES: 5, CHAT_KEEP: 14, // chat shown on the TTT HUD while CS2's is hidden
     GIVE_PRIMARY: "auto",
     MAP_WEAPONS_ENOUGH: 10,
-    BUTTON_CONE: 0.97,
+    BUTTON_CONE: 0.92,            // how close to a traitor button you must aim (cos of the angle, ~23°); within BUTTON_NEAR units 0.85 (~32°)
+    BUTTON_NEAR: 128,
     PRIMARIES: ["weapon_ak47", "weapon_m4a1", "weapon_famas", "weapon_galilar", "weapon_mp7", "weapon_ump45", "weapon_mac10",
                 "weapon_mp9", "weapon_p90", "weapon_nova", "weapon_xm1014", "weapon_ssg08"],
     BODY_RANGE: 110,
@@ -80,7 +81,7 @@ const RULES = "Rules: no random killing, only kill with a reason (you saw it, th
     + "Shooting your own side costs karma and damage.";
 
 // MAP_DATA_BEGIN (tools/build_data.py writes this from maps/*.json; edit those, not this block)
-const MAP_DATA = {"ttt_cg_skyscraper_2017":{"buttons":[],"checks":{},"roles":{},"texts":{},"owners":{},"credits":{},"wins":0,"settings":0,"ptouch":{},"alphas":[0,35,70,140,170,225],"duck":0},"ttt_minecraft":{"buttons":[{"id":"ttt_auto_2","pos":[-248.0,16.0,88.0],"desc":"Transforms the water in lava, Single use.","once":true,"wait":0.0,"range":1024.0,"off":false},{"id":"ttt_auto_3","pos":[-960.0,96.0,-5272.0],"desc":"Use this to destroy the little nether island. (with the glowstone)","once":true,"wait":0.0,"range":1024.0,"off":false},{"id":"Ttest_T1_Button","pos":[768.0,-512.0,512.0],"desc":"Destroys the glass floor.","once":true,"wait":0.0,"range":1024.0,"off":false},{"id":"Ttest_T2_Button","pos":[592.0,-560.0,456.0],"desc":"Break dungeon glass","once":false,"wait":0.0,"range":1024.0,"off":false},{"id":"ttt_auto_4","pos":[528.0,-448.0,640.0],"desc":"Sabotage the tester and make indicator red.","once":true,"wait":0.0,"range":1024.0,"off":false}],"checks":{"T1_Check":{"mins":[-970.0,-288.0,32.0],"maxs":[-954.0,-252.0,112.0],"on":true},"T_Cheat_Check":{"mins":[-928.0,-384.0,32.0],"maxs":[-768.0,-160.0,288.0],"on":true},"Portal_Check":{"mins":[0.0,672.0,416.0],"maxs":[64.0,688.0,512.0],"on":true},"Ttest_check":{"mins":[480.0,-480.0,576.0],"maxs":[520.0,-416.0,672.0],"on":false},"T2_Check":{"mins":[-1984.0,820.0,-228.0],"maxs":[-1920.0,840.0,-164.0],"on":true}},"roles":{"T1_logic":"any","Ttest_logic":"tra","T1_logic2":"tra","T_Cheat_Logic":"tra","Ttest_check_any":"any","Portal_Logic":"tra","Ttest_check_detect":"det","T2_Role":"tra"},"texts":{"Start_Text_1":{"msg":"","rcv":1},"Start_Text_2":{"msg":"","rcv":1},"Cave_Text":{"msg":"Crowbar the iron ore!","rcv":0},"Start_Text_T":{"msg":"The traitor room is now available!","rcv":1},"Ttest_Text":{"msg":"Traitor tester is now available!","rcv":1},"Cave2_Text":{"msg":"Crowbar the iron ore!","rcv":0},"T2_Text_Decoy":{"msg":"You've got a Decoy!","rcv":0},"T2_Text_Radio":{"msg":"You've got a Radio!","rcv":0},"T2_Text_Knife":{"msg":"You've got a Knife!","rcv":0},"T2_Text_Tele":{"msg":"You've got a Teleporter!","rcv":0},"T2_Text_Pistol":{"msg":"You've got a Silenced Pistol!","rcv":0},"T2_Text_Flare":{"msg":"You've got a Flaregun!","rcv":0}},"owners":{"T1_Creeper_Owner":{"damager":"Trap_Creeper_Explosion","name":"the TNT minecart"},"Trap_Lava_Owner":{"damager":"Trap_Lava_Hurt","name":"the lava pool"},"Trap_Nether_Owner":{"damager":"Trap_Nether_Hurt","name":"the island as a trap"},"Trap_Portal_Owner":{"damager":"Trap_Portal_Hurt","name":"False nether portal"},"Ttest_Owner":{"damager":"Ttest_Hurt","name":"the traitor tester"},"Ttest_T1_Owner":{"damager":"Ttest_T1_Hurt","name":"glass floor fall"},"Ttest_T3_Owner":{"damager":"Ttest_Hurt","name":"the sabotaged tester"},"Ttest_T2_Owner":{"damager":"Ttest_T2_Hurt","name":"dungeon trap"}},"credits":{"T2_Credits":1},"wins":1,"settings":1,"ptouch":{"ttt_pt_1":{"ent":"minecart","mins":[-1796.0,480.0,128.0],"maxs":[-1792.0,544.0,224.0],"half":[20.0,20.0,10.0],"off":[0.0,0.0,0.0]},"ttt_pt_2":{"ent":"minecart","mins":[-2016.0,544.0,960.0],"maxs":[-1952.0,640.0,992.0],"half":[20.0,20.0,10.0],"off":[0.0,0.0,0.0]},"Ttest_CraftTrigger":{"ent":"GoldBlock","mins":[576.0,-448.0,608.0],"maxs":[608.0,-416.0,612.0],"half":[8.0,8.0,8.0],"off":[0.0,0.0,8.0]},"ttt_pt_3":{"ent":"minecart","mins":[480.0,-640.0,608.0],"maxs":[544.0,-624.0,672.0],"half":[20.0,20.0,10.0],"off":[0.0,0.0,0.0]},"ttt_pt_4":{"ent":"minecart","mins":[608.0,-640.0,608.0],"maxs":[672.0,-624.0,672.0],"half":[20.0,20.0,10.0],"off":[0.0,0.0,0.0]},"ttt_pt_5":{"ent":"DiaBlock","mins":[-1824.0,576.0,736.0],"maxs":[-1792.0,608.0,740.0],"half":[8.0,8.0,8.0],"off":[0.0,0.0,0.0]},"Pigman_Furnace_Trigger":{"ent":"Clay","mins":[-1248.0,-640.0,-5344.0],"maxs":[-1216.0,-636.0,-5312.0],"half":[8.0,8.0,8.0],"off":[0.0,0.0,0.0]},"ttt_pt_6":{"ent":"minecart","mins":[16.0,632.0,496.0],"maxs":[48.0,664.0,576.0],"half":[20.0,20.0,10.0],"off":[0.0,0.0,0.0]}},"alphas":[],"duck":1}};
+const MAP_DATA = {"ttt_cg_skyscraper_2017":{"buttons":[],"checks":{},"roles":{},"texts":{},"owners":{},"credits":{},"wins":0,"settings":0,"ptouch":{},"alphas":[0,35,70,140,170,225],"duck":0},"ttt_minecraft":{"buttons":[{"id":"ttt_auto_2","pos":[-248.0,16.0,88.0],"desc":"Transforms the water in lava, Single use.","once":true,"wait":0.0,"range":1024.0,"off":false},{"id":"ttt_auto_3","pos":[-960.0,96.0,-5272.0],"desc":"Use this to destroy the little nether island. (with the glowstone)","once":true,"wait":0.0,"range":1024.0,"off":false},{"id":"Ttest_T1_Button","pos":[768.0,-512.0,512.0],"desc":"Destroys the glass floor.","once":true,"wait":0.0,"range":1024.0,"off":false},{"id":"Ttest_T2_Button","pos":[592.0,-560.0,456.0],"desc":"Break dungeon glass","once":false,"wait":0.0,"range":1024.0,"off":false},{"id":"ttt_auto_4","pos":[528.0,-448.0,640.0],"desc":"Sabotage the tester and make indicator red.","once":true,"wait":0.0,"range":1024.0,"off":false}],"checks":{"T1_Check":{"mins":[-970.0,-288.0,32.0],"maxs":[-954.0,-252.0,112.0],"on":true},"T_Cheat_Check":{"mins":[-928.0,-384.0,32.0],"maxs":[-768.0,-160.0,288.0],"on":true},"Portal_Check":{"mins":[0.0,672.0,416.0],"maxs":[64.0,688.0,512.0],"on":true},"Ttest_check":{"mins":[480.0,-480.0,576.0],"maxs":[520.0,-416.0,672.0],"on":true},"T2_Check":{"mins":[-1984.0,820.0,-228.0],"maxs":[-1920.0,840.0,-164.0],"on":true}},"roles":{"T1_logic":"any","Ttest_logic":"tra","T1_logic2":"tra","T_Cheat_Logic":"tra","Ttest_check_any":"any","Portal_Logic":"tra","Ttest_check_detect":"det","T2_Role":"tra"},"texts":{"Start_Text_1":{"msg":"","rcv":1},"Start_Text_2":{"msg":"","rcv":1},"Cave_Text":{"msg":"Crowbar the iron ore!","rcv":0},"Start_Text_T":{"msg":"The traitor room is now available!","rcv":1},"Ttest_Text":{"msg":"Traitor tester is now available!","rcv":1},"Cave2_Text":{"msg":"Crowbar the iron ore!","rcv":0},"T2_Text_Decoy":{"msg":"You've got a Decoy!","rcv":0},"T2_Text_Radio":{"msg":"You've got a Radio!","rcv":0},"T2_Text_Knife":{"msg":"You've got a Knife!","rcv":0},"T2_Text_Tele":{"msg":"You've got a Teleporter!","rcv":0},"T2_Text_Pistol":{"msg":"You've got a Silenced Pistol!","rcv":0},"T2_Text_Flare":{"msg":"You've got a Flaregun!","rcv":0}},"owners":{"T1_Creeper_Owner":{"damager":"Trap_Creeper_Explosion","name":"the TNT minecart"},"Trap_Lava_Owner":{"damager":"Trap_Lava_Hurt","name":"the lava pool"},"Trap_Nether_Owner":{"damager":"Trap_Nether_Hurt","name":"the island as a trap"},"Trap_Portal_Owner":{"damager":"Trap_Portal_Hurt","name":"False nether portal"},"Ttest_Owner":{"damager":"Ttest_Hurt","name":"the traitor tester"},"Ttest_T1_Owner":{"damager":"Ttest_T1_Hurt","name":"glass floor fall"},"Ttest_T3_Owner":{"damager":"Ttest_Hurt","name":"the sabotaged tester"},"Ttest_T2_Owner":{"damager":"Ttest_T2_Hurt","name":"dungeon trap"}},"credits":{"T2_Credits":1},"wins":1,"settings":1,"ptouch":{"ttt_pt_1":{"ent":"minecart","mins":[-1796.0,480.0,128.0],"maxs":[-1792.0,544.0,224.0],"half":[20.0,20.0,10.0],"off":[0.0,0.0,0.0]},"ttt_pt_2":{"ent":"minecart","mins":[-2016.0,544.0,960.0],"maxs":[-1952.0,640.0,992.0],"half":[20.0,20.0,10.0],"off":[0.0,0.0,0.0]},"Ttest_CraftTrigger":{"ent":"GoldBlock","mins":[576.0,-448.0,608.0],"maxs":[608.0,-416.0,612.0],"half":[8.0,8.0,8.0],"off":[0.0,0.0,8.0]},"ttt_pt_3":{"ent":"minecart","mins":[480.0,-640.0,608.0],"maxs":[544.0,-624.0,672.0],"half":[20.0,20.0,10.0],"off":[0.0,0.0,0.0]},"ttt_pt_4":{"ent":"minecart","mins":[608.0,-640.0,608.0],"maxs":[672.0,-624.0,672.0],"half":[20.0,20.0,10.0],"off":[0.0,0.0,0.0]},"ttt_pt_5":{"ent":"DiaBlock","mins":[-1824.0,576.0,736.0],"maxs":[-1792.0,608.0,740.0],"half":[8.0,8.0,8.0],"off":[0.0,0.0,0.0]},"Pigman_Furnace_Trigger":{"ent":"Clay","mins":[-1248.0,-640.0,-5344.0],"maxs":[-1216.0,-636.0,-5312.0],"half":[8.0,8.0,8.0],"off":[0.0,0.0,0.0]},"ttt_pt_6":{"ent":"minecart","mins":[16.0,632.0,496.0],"maxs":[48.0,664.0,576.0],"half":[20.0,20.0,10.0],"off":[0.0,0.0,0.0]}},"alphas":[],"duck":1,"post_time":20}};
 // MAP_DATA_END
 
 const R_NONE = 0, R_INN = 1, R_TRA = 2, R_DET = 3;
@@ -110,6 +111,8 @@ class PState {
         this.frozen = false;
         this.msg = "";
         this.msgUntil = 0;
+        this.trap = "";
+        this.trapUntil = 0;
         this.lastHit = null;
         this.pendingKill = false;
         this.name = "";
@@ -293,6 +296,8 @@ function drawHud(p, c) {
     hudVar(p, K + "Track", "track", track);
     hudVar(p, "MsgA", "msga", now < globalMsgUntil ? globalMsg : "");
     hudVar(p, "MsgB", "msgb", now < p.msgUntil ? p.msg : "");
+    hudVar(p, "Trap", "trap", now < p.trapUntil ? p.trap : "");
+    hudCls(p, "Trap", "show", now < p.trapUntil);
     hudCls(p, "Ttt", "stTop", CONFIG.COVER_TOPBAR);
     if (CONFIG.COVER_TOPBAR) hudVar(p, "TopT", "t", phase === P_WAIT ? "WAITING" : phase === P_PREP ? "PREP " + mmss(left) : phase === P_POST ? "ROUND OVER" : (p.role === R_TRA || !alive ? "" : "HASTE ") + mmss(left));
     if (CONFIG.SCOREBOARD && (now >= p.sbAt || (alive && pawn.IsInputPressed(CSInputs.SHOW_SCORES)))) { p.sbAt = now + 1; drawBoard(p, alive); }
@@ -399,7 +404,7 @@ function onRoundStart() {
         if (p.role) p.karma = Math.min(CONFIG.KARMA_MAX, p.karma + CONFIG.KARMA_ROUND_REGEN + (p.cleanRound ? CONFIG.KARMA_CLEAN_ROUND : 0));
         p.karmaBase = p.karma;
         p.scoreDelta = 0; p.confirmed = false; p.role = R_NONE; p.credits = 0; p.knife = false; p.radarUntil = 0; p.trackUntil = 0; p.trackSlot = -1; p.cleanRound = true;
-        p.lastHit = null; p.pendingKill = false; closeShop(p); p.msgUntil = 0; p.hold = null;
+        p.lastHit = null; p.pendingKill = false; closeShop(p); p.msgUntil = 0; p.trapUntil = 0; p.hold = null;
     }
     if (Instance.IsWarmupPeriod()) { phase = P_WAIT; applyCvars(true); return; }
     phase = P_PREP; phaseEnd = now + CONFIG.PREP_TIME;
@@ -460,7 +465,7 @@ function checkWin() {
 }
 
 function endRound(winner, why) {
-    roundEnded = true; phase = P_POST; phaseEnd = now + CONFIG.POST_TIME;
+    roundEnded = true; phase = P_POST; phaseEnd = now + postTime();
     mapFire("end");
     for (const p of players.values()) {
         closeShop(p);
@@ -468,9 +473,9 @@ function endRound(winner, why) {
         p.scoreDelta = 0;
         if (d) { const c = Instance.GetPlayerController(p.slot); if (c) c.AddScore(d); }
     }
-    announce((winner === R_TRA ? "TRAITORS WIN. " : "INNOCENTS WIN. ") + why + ". Traitors: " + traitorNames(-1), CONFIG.POST_TIME + 2);
+    announce((winner === R_TRA ? "TRAITORS WIN. " : "INNOCENTS WIN. ") + why + ". Traitors: " + traitorNames(-1), postTime() + 2);
     const reason = winner === R_TRA ? CSRoundEndReason.TERRORISTS_WIN : CSRoundEndReason.CTS_WIN;
-    Instance.ServerCommand("mp_ignore_round_win_conditions 0;mp_default_team_winner_no_objective " + (winner === R_TRA ? 2 : 3));
+    Instance.ServerCommand("mp_ignore_round_win_conditions 0;mp_default_team_winner_no_objective " + (winner === R_TRA ? 2 : 3) + ";mp_round_restart_delay " + postTime());
     const imp = Instance.FindEntitiesByClass("info_map_parameters")[0];
     if (imp) Instance.EntFireAtTarget({ target: imp, input: "FireWinCondition", value: reason, delay: 0.1 });
     endFallbackAt = now + (imp ? 3 : 0.2);
@@ -733,6 +738,8 @@ let mapWeapons = 0;
 const WEAPON_CLASSES = ["ak47", "m4a1", "m4a1_silencer", "famas", "galilar", "aug", "sg556", "awp", "ssg08", "scar20", "g3sg1", "mp7", "mp9",
     "mp5sd", "mac10", "ump45", "p90", "bizon", "nova", "xm1014", "mag7", "sawedoff", "m249", "negev", "glock", "hkp2000", "usp_silencer",
     "p250", "fiveseven", "tec9", "cz75a", "deagle", "revolver", "elite"];
+// a map's own post-round time (map data "post_time", seconds): ttt_minecraft's diamond win teleports everyone to the End 7 s after the win
+function postTime() { return (MD && MD.post_time) || CONFIG.POST_TIME; }   // only called from endRound, after MD exists
 function mapFire(ev) { if (MD && MD.settings) Instance.EntFireAtName({ name: "ttt_ms__" + ev, input: "Trigger", delay: 0.05 }); }
 function relay(id, ev, activator) { Instance.EntFireAtName({ name: id + "__" + ev, input: "Trigger", activator }); }
 function mapRoundStart() {
@@ -762,14 +769,15 @@ function trapOwner(inflictor) {
 function aimButton(pawn) {
     if (!MD || !MD.buttons || !MD.buttons.length) return null;
     const eye = pawn.GetEyePosition(), f = forward(pawn.GetEyeAngles());
-    let best = null, bestDot = CONFIG.BUTTON_CONE;
+    let best = null, bestDot = -1;
     for (const b of MD.buttons) {
         const s = mapState.btn.get(b.id);
         if (!s || s.off || (b.once && s.used) || now < s.next) continue;
         const dx = b.pos[0] - eye.x, dy = b.pos[1] - eye.y, dz = b.pos[2] - eye.z, d = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (d > b.range || d < 1) continue;
         const dot = (dx * f.x + dy * f.y + dz * f.z) / d;
-        if (dot > bestDot) { bestDot = dot; best = b; }
+        const cone = d < CONFIG.BUTTON_NEAR ? Math.min(CONFIG.BUTTON_CONE, 0.85) : CONFIG.BUTTON_CONE;   // up close a small button is a big angle
+        if (dot > cone && dot > bestDot) { bestDot = dot; best = b; }
     }
     return best;
 }
@@ -783,7 +791,7 @@ function pressButton(p, pawn) {
 }
 function buttonHint(p, pawn) {
     const b = aimButton(pawn);
-    if (b) { p.msg = "[E] traitor trap: " + (b.desc || "use"); p.msgUntil = now + 0.5; }
+    if (b) { p.trap = "[E] Traitor trap: " + (b.desc || "use"); p.trapUntil = now + 0.5; }   // its own dark box, see .TrapHint
 }
 const ptState = new Map();
 function ptouchFire(id, activator) {

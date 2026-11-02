@@ -3,6 +3,27 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-02: polish pass over every port
+
+- `autoport/polish.py` (new) brings ported maps up to today's rules in place: round setup, fires, respawning props, entity check, z-fighting,
+  model explosions, lights off walls (`lightwall.py`, new), upside-down torches (`uvflip.py`, new), bodygroup names. Run over all 29 mg_ ports
+  and ttt_minecraft (about 1,500 lights moved, 54 torch faces flipped in mg_minecraft_adventure), and round setup only on the rest.
+- Round setup: `sv_airaccelerate 2000` on every map, `mp_limitteams 1` on de_ maps (skink52). Ours now joins a map's own spawn
+  `point_servercommand` instead of adding a second one: de_rats_1337 had got a clashing pair (roundtime 150 vs 600) and was redone. The map's
+  roundtime wins (mg_fred_all 720, mg_smee_tower_cs2 450); its own airaccelerate becomes 2000 (mg_awp_submarine, mg_mario_party,
+  mg_swag_multigames, and in the scripts of mg_50arenas, mg_lego_course, mg_metal_course_level_2).
+- Bake queue: entity-only builds for the round-setup-only ports, lighting builds (skink52's `-world` arguments) for the 30 polished maps.
+
+## 2026-11-02: TTT round reset, tester fix, trap prompt; round setup commands
+
+- cs2mapTTT `ttt_convert.py`: **round reset**. Each round's preparation puts back every entity the map's logic switches, recolours or counts
+  (CS2 keeps what the last round did), Kill → Disable where that works, and Killed water / breakables / buttons respawn from templates.
+  It also turns on a traitor check marked StartDisabled that nothing enables.
+- ttt.js: per-map `post_time` (ttt_minecraft 20 s, for the trip to the End after the diamond win); the trap prompt gets its own dark box and a wider
+  aim cone. ttt_minecraft: furnace display, lava, lake, tester and the rest reset each round. Built only after CS2 is closed.
+- stage C `roundcfg`: `mp_limitteams 0` on maps with only one team's spawns, `mp_solid_teammates 0` on `mg_` maps (skink52); a rerun adds only the
+  commands a ported map lacks.
+
 ## 2026-11-02: Steam descriptions, model explosions, partial builds, no focus-stealing windows
 
 - `build_maps.ps1`: `entities <addon>` / `lighting <addon>` queue lines run skink52's entity-only / lighting-only Hammer builds from the current

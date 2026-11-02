@@ -75,7 +75,8 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
   (clamped to 3500). Names, filters and Enable/Disable are kept.
 - **point_servercommand** (`cmd`) → script `Cmd_n`, with "Ported to CS2 by skink52" added after CS:GO port credits.
 - **Round setup** (`roundcfg`): a point_servercommand `port_servercommand` + logic_auto set `mp_freezetime 0` / `mp_roundtime 600` OnMapSpawn. Maps with
-  only one team's spawns get `port_knife_equip` (skipped if a spawn equip already gives a knife).
+  only one team's spawns also get `mp_limitteams 0` and `port_knife_equip` (skipped if a spawn equip already gives a knife); `mg_` maps get
+  `mp_solid_teammates 0`, `de_` maps `mp_limitteams 1`, and every map `sv_airaccelerate 2000`. Rerun (`run_pass.py <addon> <root> roundcfg`) on a ported map, it adds only the commands that are missing.
 - **game_score** (`score`) → script `Score_n`.
 - **player_speedmod** (`speed`) → script `Speed_n` (ground speed driven from the player's keys).
 - **trigger_gravity** (`gravity`; does nothing to players in CS2) → trigger_multiple whose OnStartTouch fires script `Gravity_<scale>`; names, filters and

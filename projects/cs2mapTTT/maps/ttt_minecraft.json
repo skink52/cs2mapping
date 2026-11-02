@@ -117,7 +117,7 @@
     -416.0,
     672.0
    ],
-   "on": false
+   "on": true
   },
   "T2_Check": {
    "mins": [
@@ -419,5 +419,6 @@
   }
  },
  "alphas": [],
- "duck": 1
+ "duck": 1,
+ "post_time": 20
 }

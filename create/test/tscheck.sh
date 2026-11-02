@@ -1,9 +1,9 @@
 #!/bin/sh
 # Type-check cs_script files against Valve's point_script.d.ts:  sh tscheck.sh <script.js> [more.js ...]   (needs: npm i -g typescript)
-here=$(cd "$(dirname "$0")" && pwd)
+here=$(cd "$(dirname "$0")" && (pwd -W 2>/dev/null || pwd))   # pwd -W: Git Bash gives C:/..., which a Windows tsc can read
 tmp=$(mktemp -d)
 files=""
-for f in "$@"; do files="$files\"$(cd "$(dirname "$f")" && pwd)/$(basename "$f")\","; done
+for f in "$@"; do files="$files\"$(cd "$(dirname "$f")" && (pwd -W 2>/dev/null || pwd))/$(basename "$f")\","; done
 cat > "$tmp/tsconfig.json" <<JSON
 { "compilerOptions": { "allowJs": true, "checkJs": true, "noEmit": true, "target": "es2022", "module": "es2022", "moduleResolution": "bundler",
   "strict": false, "noImplicitAny": false, "skipLibCheck": true, "paths": { "cs_script/point_script": ["$here/point_script.d.ts"] } },

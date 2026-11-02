@@ -53,6 +53,29 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
   (meshes back in the door, hinge cubes, `_vis` brushes and SetParent outputs removed, Ttest_Frontdoors' pair shares its name again). Mesh counts match the
   .vmf. The doors are solid again (Non-solid to Player is ignored); skink52 is doing his own workaround. Backup `bak_doors`.
 
+- 2026-11-02 (skink52's playtest: the furnace works, and the gold block, diamond win and End teleport work too):
+  - **Furnace display:** the count (Furnace_Dia_Count_0–9) and furnace look (Furnace_Brush_On / Off) carried over between rounds. After a round
+    that got 7 diamonds in, the next round showed 7 while the counter needed 9 again. The display relays Killed their brushes and themselves, and CS2
+    didn't bring them back the next round. They now Disable instead (18 outputs), and `ttt_ms__prep` (every round's preparation) resets all of it:
+    Count_0 shown, Count_1–9 hidden, Relay0 on, Relay1–8 off, furnace unlit, counter 0 (22 outputs). Backup `maps/ttt_minecraft.vmap.bak_20261102_220534`.
+  - **Diamond win:** the round restarted 8 s after the win, while the teleport to the End happens 7 s after it, so players saw the End for about a second.
+    `post_time` 20 in cs2mapTTT `maps/ttt_minecraft.json` (new map data key) gives about 12 s there.
+  - Not built yet: needs an entities-only build (`build_maps.ps1 "entities ttt_minecraft"`) with CS2 and Hammer closed. Lighting is skink52's, by hand.
+- 2026-11-02 (playtest, later: lava stayed lava next round, the tester lever showed nothing, trap prompt hard to read and to aim at):
+  - **Round reset** (cs2mapTTT ttt_convert, new): 98 outputs on `ttt_ms__prep` put back every entity the map's logic switches. That covers the lava
+    (Trap_Lava, Trap_Lava_Hurt), the creeper relays, the barricades, the portal, the T1/T2 tests and the furnace, plus 13 counters to their start values.
+    18 Kills became Disable. The lake (Trap_Water, a func_water CS2 can't disable), Win_Breakable, Ttest_Chest and Pigman_Button come back from
+    `<name>_ttt_respawn` templates.
+  - **Tester:** `Ttest_check` was StartDisabled in the VMF, nothing enabled it, and the converter kept it off, so CheckForTraitor was ignored.
+    It's on now, and the lever's red / green / blue answer on Ttest_Light should show.
+  - **Trap prompt** (ttt.js / HUD): its own dark box under the crosshair, and easier to aim at (23° cone, 32° within 128 units; it was 14°).
+  - Backup `maps/ttt_minecraft.vmap.bak_20261102_221225`. Not built: entities-only build plus the script and HUD compile, with CS2 closed.
+  - **Fires:** the map's 43 env_fire (39 on the island, 4 in the End) draw nothing in CS2, and the pipeline's `fire` pass postdates this port.
+    Each now has a stock `particles/burning_fx/env_fire_tiny` particle, switched by the same outputs (stage D `fire`). Backup `bak_20261102_222412`.
+  - **Lava:** `trap_lava` self-illumination 0.25 → 1.0 (white mask), so the lava looks fully lit in the dark (skink52).
+  - Open: a ~32-unit fire-looking texture in the Nether shows "4 textures squished into one". Not found yet; the Nether's materials (netherrack,
+    glowstone, the Pigman furnace) have no multi-frame textures.
+
 ## Open / to check
 
 - Traitor tester: needs the gold block carried (E, cs2mapTTT's carry) into Ttest_CraftTrigger, which unlocks the door buttons; the check itself is `ttt_traitor_check` → `ttt_logic_role`, handled by ttt.js since cs2mapTTT `cfbd4fa`. What ttt.js still needs for this map: cs2mapTTT `MAP_REQUIREMENTS.md`.

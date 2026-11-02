@@ -243,6 +243,68 @@ for k2 in ('ptouch', 'alphas', 'duck'):
     if k2 == 'ptouch': data[k2] = extra[k2]
     else: data[k2] = sorted(extra[k2]) if isinstance(extra[k2], list) else extra[k2]
 
+# 5. round reset. In CS2 what a round did to map entities is still there next round (ttt_minecraft: the lava stayed lava, the furnace count
+#    stayed at 7; counters did reset). So every entity the map's logic switches or recolours is put back during each round's preparation
+#    (ttt_ms__prep, fired by ttt.js), and Kill on an entity that can be switched off becomes Disable so there is something to bring back.
+#    Which inputs a class has comes from CS2's own .fgd files (cs2mapping tools/mapcheck.py), so nothing is sent an input it would ignore.
+sys.path.append(os.path.join(A.cs2mapping, 'tools'))
+import mapcheck
+FGD, _ = mapcheck.parse_fgd(mapcheck.fgd_files())
+has_in = lambda cls, inp: inp.lower() in mapcheck.io(FGD, cls.lower())[0]
+SWITCH = ('enable', 'disable', 'toggle', 'kill')
+ents = vmapgen.entities(d)
+named = {}
+for c in ents:
+    if P(c).get('targetname'): named.setdefault(P(c).get('targetname'), []).append(c)
+prep = (named.get('ttt_ms__prep') or [None])[0]
+want = {}          # (target, input) -> param, in a stable order
+n_kill = 0
+# killed, and CS2 gives the class no Disable (ttt_minecraft's lake, Killed to show the lava): a point_template that keeps the original brings
+# it back each round. The prep Kills whatever is left, then spawns one fresh copy under the same name.
+RESPAWN_CLS = ('func_water', 'func_breakable', 'func_button')   # Disable isn't "gone" for these (a disabled breakable or button can stay solid)
+OFF_CLS = ('func_brush', 'func_wall_toggle', 'logic_relay', 'func_clip_vphysics')   # Kill -> Disable; trigger_* too
+respawn = set()
+# the state a map's own start-up logic leaves an entity in counts as its start state (logic_auto OnMapSpawn Enable on a StartDisabled one)
+start_state = {}
+for c in ents:
+    if cls_of(c) != 'logic_auto': continue
+    for k in c.get('connectionsData') or []:
+        if k.get('outputName') in ('OnMapSpawn', 'OnNewGame', 'OnMultiNewMap', 'OnMultiNewRound') and (k.get('inputName') or '') in ('Enable', 'Disable'):
+            start_state[k.get('targetName')] = k.get('inputName')
+for c in ents:
+    for k in c.get('connectionsData') or []:
+        t, inp = k.get('targetName') or '', (k.get('inputName') or '').lower()
+        if not t or t.startswith('!') or '*' in t or t.startswith('ttt_') or '__' in t or t not in named: continue
+        for e in named[t]:
+            cls, ep = cls_of(e), P(e)
+            if inp == 'kill' and cls in RESPAWN_CLS:
+                respawn.add(t)
+            elif inp in SWITCH and has_in(cls, 'Enable') and has_in(cls, 'Disable') and (inp != 'kill' or cls in OFF_CLS or cls.startswith('trigger_')):
+                if inp == 'kill': k.set('inputName', T_STRING, 'Disable'); n_kill += 1
+                want[(t, start_state.get(t) or ('Disable' if ep.get('StartDisabled', '0') == '1' else 'Enable'))] = ''
+            elif inp == 'color' and has_in(cls, 'Color'):
+                want[(t, 'Color')] = ep.get('rendercolor') or '255 255 255'
+            elif inp in ('add', 'subtract', 'setvalue') and cls == 'math_counter':
+                want[(t, 'SetValueNoFire')] = ep.get('startvalue') or '0'
+for t in sorted(respawn):
+    tpl = t + '_ttt_respawn'
+    if tpl not in named:
+        o = named[t][0].get('origin')
+        vmaplib.ent('point_template', o, group='ttt', targetname=tpl, Template01=t, spawnflags='3')
+        named[tpl] = []
+    want[(t, 'Kill')] = ''
+    want[(tpl, 'ForceSpawn')] = ''
+n_reset = 0
+if want:
+    if prep is None:
+        prep = vmaplib.ent('logic_relay', (0, 0, 0), group='ttt', targetname='ttt_ms__prep', spawnflags='0', StartDisabled='0')
+        data['settings'] = 1
+    a = prep.attr('connectionsData')
+    old = {(k.get('targetName'), k.get('inputName')) for k in a[2]}
+    for (t, inp), prm in want.items():
+        if (t, inp) in old: continue
+        a[2].append(conn('OnTrigger', t, inp, prm, 0.1 if inp == 'ForceSpawn' else 0.0)); n_reset += 1   # the spawn after the Kill
+
 # ---------------------------------------------------------------- the TTT entities themselves (only those missing)
 have = {(cls_of(c), P(c).get('targetname') or '') for c in vmapgen.entities(d)}
 classes = {k for k, _ in have}
@@ -288,6 +350,12 @@ if os.path.exists(jf) and not ttt:          # a re-run on a converted map: keep 
     for k in ('buttons', 'checks', 'roles', 'texts', 'owners', 'credits', 'wins', 'settings'): data[k] = old.get(k, data[k])
     for k in ('ptouch', 'alphas', 'duck'):           # rules whose source outputs the first run already rewrote
         if not data.get(k): data[k] = old.get(k, data[k])
+    for k in old: data.setdefault(k, old[k])        # keys set by hand, e.g. post_time
+    if n_reset: data['settings'] = 1                # the round reset needs ttt.js to fire ttt_ms__prep
+# a traitor check marked StartDisabled in CS:GO that nothing ever enables was always on: the TTT entity ignores the key (ttt_minecraft's tester)
+enables = {k.get('overrideParam') for c in ents for k in c.get('connectionsData') or []}
+for cid, ck in data['checks'].items():
+    if not ck.get('on') and 'ttt:chkon:' + cid not in enables: ck['on'] = True
 if any(data[k] for k in data):
     json.dump(data, open(jf, 'w'), indent=1)
 left = [cls_of(c) for c in vmapgen.entities(dmx.DMX.load(A.out)) if cls_of(c).startswith('ttt_') or cls_of(c).startswith('weapon_ttt')]
@@ -297,5 +365,6 @@ print('%s: %d ttt entities converted, %d inputs re-aimed at %s, %d orphan elemen
       data['wins'], data['settings']))
 print('  sandbox texts no longer shown by logic_auto: %d, physics-object triggers polled: %d, crouch prompts: %d, alpha outputs: %d'
       % (n_err, len(data['ptouch']), n_duck, n_alpha))
+print('  round reset: %d outputs added to ttt_ms__prep, %d Kill -> Disable' % (n_reset, n_kill))
 for x in dropped: print('  dropped:', x)
 assert not left, 'ttt classes left: %s' % left
