@@ -1,0 +1,140 @@
+.TttHost { width: 100%; height: 100%; }
+.Ttt { width: 100%; height: 100%; opacity: 0; font-family: Stratum2, "Stratum2 Bold", Arial; }
+.Ttt.stOn { opacity: 1; }
+.HUD_ENDOFMATCH_VISIBLE .Ttt, .HUD_ENDOFMATCH_VISIBLE .Sb { visibility: collapse; }
+
+.KfBox { width: 480px; height: 300px; horizontal-align: right; margin-top: 64px; background-color: #0b120d; background-image: url("file://{images}/custom_game/ttt/kf.png"); background-size: 100% 100%; border: 2px solid #3ddc84; border-radius: 12px; opacity: 0; }
+.Ttt.stKF .KfBox { opacity: 1; }
+.Ttt.stKF .RoleBox, .Ttt.stKF .InfoText, .Ttt.stKF .TrackText { opacity: 0; }
+.KfBar { width: 4px; height: 264px; margin-left: 8px; margin-top: 16px; border-radius: 2px; background-color: #3a5a44; }
+.Ttt.stInn .KfBar { background-color: #3ddc84; }
+.Ttt.stTra .KfBar { background-color: #c02020; }
+.Ttt.stDet .KfBar { background-color: #2a5ad0; }
+.Ttt.stPrep .KfBar { background-color: #a07a10; }
+.Ttt.stInn .KRoleText { color: #5fdf6f; }
+.Ttt.stTra .KRoleText { color: #ff4a4a; }
+.Ttt.stDet .KRoleText { color: #6f9fff; }
+.Ttt.stPrep .KRoleText { color: #f0c040; }
+.KRoleText { width: 300px; height: 38px; margin-left: 20px; margin-top: 10px; font-size: 28px; font-weight: bold; color: #e8ffe8; letter-spacing: 2px; text-shadow: 0px 0px 6px #000000; }
+.KSubText { width: 200px; height: 28px; horizontal-align: right; margin-right: 14px; margin-top: 16px; text-align: right; font-size: 20px; color: #d8f5df; text-shadow: 0px 0px 4px #000000; }
+.KInfoText { width: 448px; height: 80px; margin-left: 20px; margin-top: 54px; font-size: 18px; color: #e6efe8; text-shadow: 0px 0px 4px #000000; }
+.KTrackText { width: 448px; height: 120px; margin-left: 20px; margin-top: 140px; font-size: 18px; color: #9ff0b8; text-shadow: 0px 0px 4px #000000; }
+
+.RoleBox { width: 340px; height: 74px; margin-left: 24px; margin-top: 300px; background-color: #303030cc; border: 2px solid #3ddc84; border-radius: 12px; }
+.Ttt.stInn .RoleBox { background-color: #2f8f3fdd; }
+.Ttt.stTra .RoleBox { background-color: #b02020dd; }
+.Ttt.stDet .RoleBox { background-color: #2050c0dd; }
+.Ttt.stPrep .RoleBox { background-color: #8a6a10dd; }
+.Ttt.stWait .RoleBox { background-color: #404040cc; }
+.Ttt.stSpec .RoleBox { background-color: #303030aa; }
+.RoleText { width: 320px; height: 40px; margin-left: 12px; margin-top: 4px; font-size: 32px; font-weight: bold; color: #ffffff; letter-spacing: 1px; }
+.SubText { width: 320px; height: 26px; margin-left: 12px; margin-top: 44px; font-size: 20px; color: #f0f0f0; }
+
+.InfoText { width: 560px; height: 52px; margin-left: 24px; margin-top: 380px; font-size: 19px; color: #ffffff; text-shadow: 1px 1px 2px #000000; }
+.TrackText { width: 560px; height: 80px; margin-left: 24px; margin-top: 434px; font-size: 20px; color: #9fd0ff; text-shadow: 1px 1px 2px #000000; }
+
+.MsgA { width: 820px; height: 62px; horizontal-align: center; margin-top: 676px; text-align: center; font-size: 23px; color: #f2fff4; text-shadow: 0px 0px 6px #000000; }
+.MsgB { width: 820px; height: 124px; horizontal-align: center; margin-top: 742px; text-align: center; font-size: 19px; color: #b8f5c8; text-shadow: 0px 0px 6px #000000; }
+
+.ShopBox { width: 420px; height: 336px; horizontal-align: right; margin-right: 24px; margin-top: 380px; background-color: #0b120d; background-image: url("file://{images}/custom_game/ttt/shop.png"); background-size: 100% 100%; border: 2px solid #3ddc84; border-radius: 12px; opacity: 0; }
+.ShopBox.stOpen { opacity: 1; }
+.Ttt.stTra .ShopTitle { color: #ff6a6a; }
+.Ttt.stDet .ShopTitle { color: #7aa8ff; }
+.ShopTitle { width: 400px; height: 32px; margin-left: 10px; margin-top: 6px; font-size: 22px; font-weight: bold; color: #ffffff;  border-bottom: 1px solid #3ddc8470; }
+.ShopRow { width: 400px; height: 34px; margin-left: 10px; background-color: #00000000; border-radius: 6px; }
+.Row0 { margin-top: 44px; } .Row1 { margin-top: 80px; } .Row2 { margin-top: 116px; } .Row3 { margin-top: 152px; }
+.Row4 { margin-top: 188px; } .Row5 { margin-top: 224px; } .Row6 { margin-top: 260px; }
+.ShopRow.stSel { background-color: #3ddc8440; }
+.RowText { width: 390px; height: 30px; margin-left: 6px; margin-top: 3px; font-size: 20px; color: #ffffff; }
+.ShopRow.stOff .RowText { color: #808080; }
+.ShopHelp { width: 400px; height: 24px; margin-left: 10px; margin-top: 304px; font-size: 16px; color: #c0c0c0; }
+
+.Cross, .Vitals, .AmmoText, .ChatText { opacity: 0; }
+.Ttt.stNoNat .Cross, .Ttt.stNoNat .Vitals, .Ttt.stNoNat .AmmoText, .Ttt.stNoNat .ChatText { opacity: 1; }
+.Ttt.stNoNat .Cross.stScope { opacity: 0; }
+.Cross { width: 24px; height: 24px; horizontal-align: center; margin-top: 528px; }
+.CrossH { width: 24px; height: 2px; margin-top: 11px; background-color: #50ff50; }
+.CrossV { width: 2px; height: 24px; margin-left: 11px; background-color: #50ff50; }
+.Vitals { width: 300px; height: 56px; margin-left: 24px; margin-top: 1004px; background-color: #0b120de0; border: 2px solid #3ddc84; border-radius: 12px; }
+.HpTag { width: 40px; height: 30px; margin-left: 12px; margin-top: 16px; font-size: 20px; color: #c0c0c0; }
+.HpText { width: 90px; height: 44px; margin-left: 52px; margin-top: 4px; font-size: 38px; font-weight: bold; color: #ffffff; }
+.ArText { width: 120px; height: 30px; margin-left: 160px; margin-top: 14px; font-size: 24px; color: #9fc0ff; }
+.AmmoText { width: 300px; height: 48px; horizontal-align: right; margin-right: 24px; margin-top: 1008px; text-align: right; font-size: 36px; font-weight: bold; color: #ffffff; text-shadow: 2px 2px 3px #000000; }
+.ChatText { width: 620px; height: 140px; margin-left: 24px; margin-top: 850px; font-size: 18px; color: #f0f0f0; text-shadow: 1px 1px 2px #000000; }
+
+.TopCover { width: 640px; height: 100px; margin-top: 0px; horizontal-align: center; background-color: #0b120d; background-image: url("file://{images}/custom_game/ttt/top.png"); background-size: 100% 100%; border: 2px solid #3ddc84; border-radius: 0px 0px 14px 14px; opacity: 0; }
+.Ttt.stTop .TopCover { opacity: 1; }
+.TopText { width: 640px; height: 50px; margin-top: 26px; text-align: center; font-size: 38px; font-weight: bold; color: #eafff0; letter-spacing: 2px; text-shadow: 0px 0px 8px #000000; }
+
+.Sb { width: 1240px; height: 920px; horizontal-align: center; margin-top: 80px; background-color: #0b120d; background-image: url("file://{images}/custom_game/ttt/sb.png"); background-size: 100% 100%; border: 2px solid #3ddc84; border-radius: 14px; opacity: 0; }
+.HUD_SCOREBOARD_VISIBLE .Sb.stOn { opacity: 1; }
+.SbTop { width: 100%; height: 68px; background-color: #000000a8; border-bottom: 1px solid #3ddc8480; border-radius: 8px 8px 0px 0px; }
+.SbTitle { width: 700px; height: 44px; margin-left: 20px; margin-top: 12px; font-size: 32px; font-weight: bold; color: #7dff9a; letter-spacing: 1px; text-shadow: 0px 0px 8px #000000; }
+.SbSub { width: 480px; height: 30px; horizontal-align: right; margin-right: 20px; margin-top: 22px; text-align: right; font-size: 20px; color: #b8d8c0; }
+.SbRow { width: 1208px; height: 32px; background-color: #000000a0; border-radius: 4px; }
+.Sb.stTwo .SbRow { width: 596px; }
+.SbRow.SbAlt { background-color: #000000c0; }
+.SbName { width: 70%; height: 28px; margin-left: 12px; margin-top: 3px; font-size: 21px; color: #f0f0f0; }
+.SbScore { width: 90px; height: 28px; horizontal-align: right; margin-right: 110px; margin-top: 3px; text-align: right; font-size: 21px; color: #d0d0d0; }
+.SbKarma { width: 90px; height: 28px; horizontal-align: right; margin-right: 12px; margin-top: 3px; text-align: right; font-size: 21px; color: #d0d0d0; }
+.SbRow.stH0 { background-color: #2d8a40d8; }
+.SbRow.stH1 { background-color: #9a7a1ed8; }
+.SbRow.stH2 { background-color: #8a2a24d8; }
+.SbRow.stH3 { background-color: #4a4a4ad8; }
+.SbRow.stH0 .SbName, .SbRow.stH1 .SbName, .SbRow.stH2 .SbName, .SbRow.stH3 .SbName { font-weight: bold; color: #ffffff; }
+.SbRow.stH0 .SbKarma, .SbRow.stH1 .SbKarma, .SbRow.stH2 .SbKarma, .SbRow.stH0 .SbScore, .SbRow.stH1 .SbScore, .SbRow.stH2 .SbScore { height: 24px; font-size: 17px; margin-top: 6px; color: #ffffffcc; }
+.SbRow.stMe { border: 1px solid #7dff9a90; }
+.SbRow.stDet .SbName { color: #7aa8ff; }
+.SbRow.stTra .SbName { color: #ff5a5a; }
+.SbRow.stMia .SbName { color: #e8c060; }
+.SbRow.stDead .SbName, .SbRow.stDead .SbKarma, .SbRow.stDead .SbScore { color: #8a8a8a; }
+.SbRow.stSpec .SbName { color: #a8a8a8; }
+.SbP0 { margin-left: 16px; margin-top: 84px; }
+.SbP1 { margin-left: 16px; margin-top: 118px; }
+.SbP2 { margin-left: 16px; margin-top: 152px; }
+.SbP3 { margin-left: 16px; margin-top: 186px; }
+.SbP4 { margin-left: 16px; margin-top: 220px; }
+.SbP5 { margin-left: 16px; margin-top: 254px; }
+.SbP6 { margin-left: 16px; margin-top: 288px; }
+.SbP7 { margin-left: 16px; margin-top: 322px; }
+.SbP8 { margin-left: 16px; margin-top: 356px; }
+.SbP9 { margin-left: 16px; margin-top: 390px; }
+.SbP10 { margin-left: 16px; margin-top: 424px; }
+.SbP11 { margin-left: 16px; margin-top: 458px; }
+.SbP12 { margin-left: 16px; margin-top: 492px; }
+.SbP13 { margin-left: 16px; margin-top: 526px; }
+.SbP14 { margin-left: 16px; margin-top: 560px; }
+.SbP15 { margin-left: 16px; margin-top: 594px; }
+.SbP16 { margin-left: 16px; margin-top: 628px; }
+.SbP17 { margin-left: 16px; margin-top: 662px; }
+.SbP18 { margin-left: 16px; margin-top: 696px; }
+.SbP19 { margin-left: 16px; margin-top: 730px; }
+.SbP20 { margin-left: 16px; margin-top: 764px; }
+.SbP21 { margin-left: 16px; margin-top: 798px; }
+.SbP22 { margin-left: 16px; margin-top: 832px; }
+.SbP23 { margin-left: 16px; margin-top: 866px; }
+.SbP24 { margin-left: 628px; width: 596px; margin-top: 84px; opacity: 0; }
+.SbP25 { margin-left: 628px; width: 596px; margin-top: 118px; opacity: 0; }
+.SbP26 { margin-left: 628px; width: 596px; margin-top: 152px; opacity: 0; }
+.SbP27 { margin-left: 628px; width: 596px; margin-top: 186px; opacity: 0; }
+.SbP28 { margin-left: 628px; width: 596px; margin-top: 220px; opacity: 0; }
+.SbP29 { margin-left: 628px; width: 596px; margin-top: 254px; opacity: 0; }
+.SbP30 { margin-left: 628px; width: 596px; margin-top: 288px; opacity: 0; }
+.SbP31 { margin-left: 628px; width: 596px; margin-top: 322px; opacity: 0; }
+.SbP32 { margin-left: 628px; width: 596px; margin-top: 356px; opacity: 0; }
+.SbP33 { margin-left: 628px; width: 596px; margin-top: 390px; opacity: 0; }
+.SbP34 { margin-left: 628px; width: 596px; margin-top: 424px; opacity: 0; }
+.SbP35 { margin-left: 628px; width: 596px; margin-top: 458px; opacity: 0; }
+.SbP36 { margin-left: 628px; width: 596px; margin-top: 492px; opacity: 0; }
+.SbP37 { margin-left: 628px; width: 596px; margin-top: 526px; opacity: 0; }
+.SbP38 { margin-left: 628px; width: 596px; margin-top: 560px; opacity: 0; }
+.SbP39 { margin-left: 628px; width: 596px; margin-top: 594px; opacity: 0; }
+.SbP40 { margin-left: 628px; width: 596px; margin-top: 628px; opacity: 0; }
+.SbP41 { margin-left: 628px; width: 596px; margin-top: 662px; opacity: 0; }
+.SbP42 { margin-left: 628px; width: 596px; margin-top: 696px; opacity: 0; }
+.SbP43 { margin-left: 628px; width: 596px; margin-top: 730px; opacity: 0; }
+.SbP44 { margin-left: 628px; width: 596px; margin-top: 764px; opacity: 0; }
+.SbP45 { margin-left: 628px; width: 596px; margin-top: 798px; opacity: 0; }
+.SbP46 { margin-left: 628px; width: 596px; margin-top: 832px; opacity: 0; }
+.SbP47 { margin-left: 628px; width: 596px; margin-top: 866px; opacity: 0; }
+.Sb.stTwo .SbP24, .Sb.stTwo .SbP25, .Sb.stTwo .SbP26, .Sb.stTwo .SbP27, .Sb.stTwo .SbP28, .Sb.stTwo .SbP29, .Sb.stTwo .SbP30, .Sb.stTwo .SbP31, .Sb.stTwo .SbP32, .Sb.stTwo .SbP33, .Sb.stTwo .SbP34, .Sb.stTwo .SbP35, .Sb.stTwo .SbP36, .Sb.stTwo .SbP37, .Sb.stTwo .SbP38, .Sb.stTwo .SbP39, .Sb.stTwo .SbP40, .Sb.stTwo .SbP41, .Sb.stTwo .SbP42, .Sb.stTwo .SbP43, .Sb.stTwo .SbP44, .Sb.stTwo .SbP45, .Sb.stTwo .SbP46, .Sb.stTwo .SbP47 { opacity: 1; }

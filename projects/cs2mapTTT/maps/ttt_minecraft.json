@@ -1,0 +1,423 @@
+{
+ "buttons": [
+  {
+   "id": "ttt_auto_2",
+   "pos": [
+    -248.0,
+    16.0,
+    88.0
+   ],
+   "desc": "Transforms the water in lava, Single use.",
+   "once": true,
+   "wait": 0.0,
+   "range": 1024.0,
+   "off": false
+  },
+  {
+   "id": "ttt_auto_3",
+   "pos": [
+    -960.0,
+    96.0,
+    -5272.0
+   ],
+   "desc": "Use this to destroy the little nether island. (with the glowstone)",
+   "once": true,
+   "wait": 0.0,
+   "range": 1024.0,
+   "off": false
+  },
+  {
+   "id": "Ttest_T1_Button",
+   "pos": [
+    768.0,
+    -512.0,
+    512.0
+   ],
+   "desc": "Destroys the glass floor.",
+   "once": true,
+   "wait": 0.0,
+   "range": 1024.0,
+   "off": false
+  },
+  {
+   "id": "Ttest_T2_Button",
+   "pos": [
+    592.0,
+    -560.0,
+    456.0
+   ],
+   "desc": "Break dungeon glass",
+   "once": false,
+   "wait": 0.0,
+   "range": 1024.0,
+   "off": false
+  },
+  {
+   "id": "ttt_auto_4",
+   "pos": [
+    528.0,
+    -448.0,
+    640.0
+   ],
+   "desc": "Sabotage the tester and make indicator red.",
+   "once": true,
+   "wait": 0.0,
+   "range": 1024.0,
+   "off": false
+  }
+ ],
+ "checks": {
+  "T1_Check": {
+   "mins": [
+    -970.0,
+    -288.0,
+    32.0
+   ],
+   "maxs": [
+    -954.0,
+    -252.0,
+    112.0
+   ],
+   "on": true
+  },
+  "T_Cheat_Check": {
+   "mins": [
+    -928.0,
+    -384.0,
+    32.0
+   ],
+   "maxs": [
+    -768.0,
+    -160.0,
+    288.0
+   ],
+   "on": true
+  },
+  "Portal_Check": {
+   "mins": [
+    0.0,
+    672.0,
+    416.0
+   ],
+   "maxs": [
+    64.0,
+    688.0,
+    512.0
+   ],
+   "on": true
+  },
+  "Ttest_check": {
+   "mins": [
+    480.0,
+    -480.0,
+    576.0
+   ],
+   "maxs": [
+    520.0,
+    -416.0,
+    672.0
+   ],
+   "on": false
+  },
+  "T2_Check": {
+   "mins": [
+    -1984.0,
+    820.0,
+    -228.0
+   ],
+   "maxs": [
+    -1920.0,
+    840.0,
+    -164.0
+   ],
+   "on": true
+  }
+ },
+ "roles": {
+  "T1_logic": "any",
+  "Ttest_logic": "tra",
+  "T1_logic2": "tra",
+  "T_Cheat_Logic": "tra",
+  "Ttest_check_any": "any",
+  "Portal_Logic": "tra",
+  "Ttest_check_detect": "det",
+  "T2_Role": "tra"
+ },
+ "texts": {
+  "Start_Text_1": {
+   "msg": "",
+   "rcv": 1
+  },
+  "Start_Text_2": {
+   "msg": "",
+   "rcv": 1
+  },
+  "Cave_Text": {
+   "msg": "Crowbar the iron ore!",
+   "rcv": 0
+  },
+  "Start_Text_T": {
+   "msg": "The traitor room is now available!",
+   "rcv": 1
+  },
+  "Ttest_Text": {
+   "msg": "Traitor tester is now available!",
+   "rcv": 1
+  },
+  "Cave2_Text": {
+   "msg": "Crowbar the iron ore!",
+   "rcv": 0
+  },
+  "T2_Text_Decoy": {
+   "msg": "You've got a Decoy!",
+   "rcv": 0
+  },
+  "T2_Text_Radio": {
+   "msg": "You've got a Radio!",
+   "rcv": 0
+  },
+  "T2_Text_Knife": {
+   "msg": "You've got a Knife!",
+   "rcv": 0
+  },
+  "T2_Text_Tele": {
+   "msg": "You've got a Teleporter!",
+   "rcv": 0
+  },
+  "T2_Text_Pistol": {
+   "msg": "You've got a Silenced Pistol!",
+   "rcv": 0
+  },
+  "T2_Text_Flare": {
+   "msg": "You've got a Flaregun!",
+   "rcv": 0
+  }
+ },
+ "owners": {
+  "T1_Creeper_Owner": {
+   "damager": "Trap_Creeper_Explosion",
+   "name": "the TNT minecart"
+  },
+  "Trap_Lava_Owner": {
+   "damager": "Trap_Lava_Hurt",
+   "name": "the lava pool"
+  },
+  "Trap_Nether_Owner": {
+   "damager": "Trap_Nether_Hurt",
+   "name": "the island as a trap"
+  },
+  "Trap_Portal_Owner": {
+   "damager": "Trap_Portal_Hurt",
+   "name": "False nether portal"
+  },
+  "Ttest_Owner": {
+   "damager": "Ttest_Hurt",
+   "name": "the traitor tester"
+  },
+  "Ttest_T1_Owner": {
+   "damager": "Ttest_T1_Hurt",
+   "name": "glass floor fall"
+  },
+  "Ttest_T3_Owner": {
+   "damager": "Ttest_Hurt",
+   "name": "the sabotaged tester"
+  },
+  "Ttest_T2_Owner": {
+   "damager": "Ttest_T2_Hurt",
+   "name": "dungeon trap"
+  }
+ },
+ "credits": {
+  "T2_Credits": 1
+ },
+ "wins": 1,
+ "settings": 1,
+ "ptouch": {
+  "ttt_pt_1": {
+   "ent": "minecart",
+   "mins": [
+    -1796.0,
+    480.0,
+    128.0
+   ],
+   "maxs": [
+    -1792.0,
+    544.0,
+    224.0
+   ],
+   "half": [
+    20.0,
+    20.0,
+    10.0
+   ],
+   "off": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "ttt_pt_2": {
+   "ent": "minecart",
+   "mins": [
+    -2016.0,
+    544.0,
+    960.0
+   ],
+   "maxs": [
+    -1952.0,
+    640.0,
+    992.0
+   ],
+   "half": [
+    20.0,
+    20.0,
+    10.0
+   ],
+   "off": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "Ttest_CraftTrigger": {
+   "ent": "GoldBlock",
+   "mins": [
+    576.0,
+    -448.0,
+    608.0
+   ],
+   "maxs": [
+    608.0,
+    -416.0,
+    612.0
+   ],
+   "half": [
+    8.0,
+    8.0,
+    8.0
+   ],
+   "off": [
+    0.0,
+    0.0,
+    8.0
+   ]
+  },
+  "ttt_pt_3": {
+   "ent": "minecart",
+   "mins": [
+    480.0,
+    -640.0,
+    608.0
+   ],
+   "maxs": [
+    544.0,
+    -624.0,
+    672.0
+   ],
+   "half": [
+    20.0,
+    20.0,
+    10.0
+   ],
+   "off": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "ttt_pt_4": {
+   "ent": "minecart",
+   "mins": [
+    608.0,
+    -640.0,
+    608.0
+   ],
+   "maxs": [
+    672.0,
+    -624.0,
+    672.0
+   ],
+   "half": [
+    20.0,
+    20.0,
+    10.0
+   ],
+   "off": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "ttt_pt_5": {
+   "ent": "DiaBlock",
+   "mins": [
+    -1824.0,
+    576.0,
+    736.0
+   ],
+   "maxs": [
+    -1792.0,
+    608.0,
+    740.0
+   ],
+   "half": [
+    8.0,
+    8.0,
+    8.0
+   ],
+   "off": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "Pigman_Furnace_Trigger": {
+   "ent": "Clay",
+   "mins": [
+    -1248.0,
+    -640.0,
+    -5344.0
+   ],
+   "maxs": [
+    -1216.0,
+    -636.0,
+    -5312.0
+   ],
+   "half": [
+    8.0,
+    8.0,
+    8.0
+   ],
+   "off": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "ttt_pt_6": {
+   "ent": "minecart",
+   "mins": [
+    16.0,
+    632.0,
+    496.0
+   ],
+   "maxs": [
+    48.0,
+    664.0,
+    576.0
+   ],
+   "half": [
+    20.0,
+    20.0,
+    10.0
+   ],
+   "off": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ },
+ "alphas": [],
+ "duck": 1
+}

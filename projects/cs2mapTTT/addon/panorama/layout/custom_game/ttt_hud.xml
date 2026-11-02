@@ -1,0 +1,101 @@
+<root>
+	<styles>
+		<include src="file://{resources}/styles/custom_game/ttt_hud.css" />
+	</styles>
+	<Panel class="TttHost" hittest="false">
+		<Panel id="Ttt" class="Ttt" hittest="false">
+			<Panel class="TopCover" hittest="false"><Label id="TopT" class="TopText" hittest="false" text="{s:t}" /></Panel>
+			<Panel id="Cross" class="Cross" hittest="false">
+				<Panel class="CrossH" hittest="false" />
+				<Panel class="CrossV" hittest="false" />
+			</Panel>
+			<Panel class="Vitals" hittest="false">
+				<Label class="HpTag" hittest="false" text="HP" />
+				<Label id="Hp" class="HpText" hittest="false" text="{s:hp}" />
+				<Label id="Ar" class="ArText" hittest="false" text="{s:ar}" />
+			</Panel>
+			<Label id="Ammo" class="AmmoText" hittest="false" text="{s:ammo}" />
+			<Label id="Chat" class="ChatText" hittest="false" text="{s:chat}" />
+			<Panel class="KfBox" hittest="false">
+				<Panel class="KfBar" hittest="false" />
+				<Label id="KRole" class="KRoleText" hittest="false" text="{s:role}" />
+				<Label id="KSub" class="KSubText" hittest="false" text="{s:sub}" />
+				<Label id="KInfo" class="KInfoText" hittest="false" text="{s:info}" />
+				<Label id="KTrack" class="KTrackText" hittest="false" text="{s:track}" />
+			</Panel>
+			<Panel class="RoleBox" hittest="false">
+				<Label id="Role" class="RoleText" hittest="false" text="{s:role}" />
+				<Label id="Sub" class="SubText" hittest="false" text="{s:sub}" />
+			</Panel>
+			<Label id="Info" class="InfoText" hittest="false" text="{s:info}" />
+			<Label id="Track" class="TrackText" hittest="false" text="{s:track}" />
+			<Label id="MsgA" class="MsgA" hittest="false" text="{s:msga}" />
+			<Label id="MsgB" class="MsgB" hittest="false" text="{s:msgb}" />
+			<Panel id="ShopBox" class="ShopBox" hittest="false">
+				<Label id="ShopTitle" class="ShopTitle" hittest="false" text="{s:title}" />
+				<Button id="Shop0" class="ShopRow Row0"><Label id="ShopL0" class="RowText" hittest="false" text="{s:row}" /></Button>
+				<Button id="Shop1" class="ShopRow Row1"><Label id="ShopL1" class="RowText" hittest="false" text="{s:row}" /></Button>
+				<Button id="Shop2" class="ShopRow Row2"><Label id="ShopL2" class="RowText" hittest="false" text="{s:row}" /></Button>
+				<Button id="Shop3" class="ShopRow Row3"><Label id="ShopL3" class="RowText" hittest="false" text="{s:row}" /></Button>
+				<Button id="Shop4" class="ShopRow Row4"><Label id="ShopL4" class="RowText" hittest="false" text="{s:row}" /></Button>
+				<Button id="Shop5" class="ShopRow Row5"><Label id="ShopL5" class="RowText" hittest="false" text="{s:row}" /></Button>
+				<Button id="Shop6" class="ShopRow Row6"><Label id="ShopL6" class="RowText" hittest="false" text="{s:row}" /></Button>
+				<Label class="ShopHelp" hittest="false" text="W/S select   E buy   F close" />
+			</Panel>
+		</Panel>
+		<Panel id="Sb" class="Sb" hittest="false">
+			<Panel class="SbTop" hittest="false">
+				<Label class="SbTitle" hittest="false" text="Trouble in Terrorist Town" />
+				<Label id="SbSub" class="SbSub" hittest="false" text="{s:sub}" />
+			</Panel>
+			<Panel id="SbR0" class="SbRow SbP0" hittest="false"><Label id="SbN0" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS0" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK0" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR1" class="SbRow SbP1 SbAlt" hittest="false"><Label id="SbN1" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS1" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK1" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR2" class="SbRow SbP2" hittest="false"><Label id="SbN2" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS2" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK2" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR3" class="SbRow SbP3 SbAlt" hittest="false"><Label id="SbN3" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS3" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK3" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR4" class="SbRow SbP4" hittest="false"><Label id="SbN4" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS4" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK4" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR5" class="SbRow SbP5 SbAlt" hittest="false"><Label id="SbN5" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS5" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK5" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR6" class="SbRow SbP6" hittest="false"><Label id="SbN6" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS6" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK6" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR7" class="SbRow SbP7 SbAlt" hittest="false"><Label id="SbN7" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS7" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK7" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR8" class="SbRow SbP8" hittest="false"><Label id="SbN8" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS8" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK8" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR9" class="SbRow SbP9 SbAlt" hittest="false"><Label id="SbN9" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS9" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK9" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR10" class="SbRow SbP10" hittest="false"><Label id="SbN10" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS10" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK10" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR11" class="SbRow SbP11 SbAlt" hittest="false"><Label id="SbN11" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS11" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK11" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR12" class="SbRow SbP12" hittest="false"><Label id="SbN12" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS12" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK12" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR13" class="SbRow SbP13 SbAlt" hittest="false"><Label id="SbN13" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS13" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK13" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR14" class="SbRow SbP14" hittest="false"><Label id="SbN14" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS14" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK14" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR15" class="SbRow SbP15 SbAlt" hittest="false"><Label id="SbN15" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS15" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK15" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR16" class="SbRow SbP16" hittest="false"><Label id="SbN16" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS16" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK16" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR17" class="SbRow SbP17 SbAlt" hittest="false"><Label id="SbN17" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS17" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK17" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR18" class="SbRow SbP18" hittest="false"><Label id="SbN18" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS18" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK18" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR19" class="SbRow SbP19 SbAlt" hittest="false"><Label id="SbN19" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS19" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK19" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR20" class="SbRow SbP20" hittest="false"><Label id="SbN20" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS20" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK20" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR21" class="SbRow SbP21 SbAlt" hittest="false"><Label id="SbN21" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS21" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK21" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR22" class="SbRow SbP22" hittest="false"><Label id="SbN22" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS22" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK22" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR23" class="SbRow SbP23 SbAlt" hittest="false"><Label id="SbN23" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS23" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK23" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR24" class="SbRow SbP24" hittest="false"><Label id="SbN24" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS24" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK24" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR25" class="SbRow SbP25 SbAlt" hittest="false"><Label id="SbN25" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS25" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK25" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR26" class="SbRow SbP26" hittest="false"><Label id="SbN26" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS26" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK26" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR27" class="SbRow SbP27 SbAlt" hittest="false"><Label id="SbN27" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS27" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK27" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR28" class="SbRow SbP28" hittest="false"><Label id="SbN28" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS28" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK28" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR29" class="SbRow SbP29 SbAlt" hittest="false"><Label id="SbN29" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS29" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK29" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR30" class="SbRow SbP30" hittest="false"><Label id="SbN30" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS30" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK30" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR31" class="SbRow SbP31 SbAlt" hittest="false"><Label id="SbN31" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS31" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK31" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR32" class="SbRow SbP32" hittest="false"><Label id="SbN32" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS32" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK32" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR33" class="SbRow SbP33 SbAlt" hittest="false"><Label id="SbN33" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS33" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK33" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR34" class="SbRow SbP34" hittest="false"><Label id="SbN34" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS34" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK34" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR35" class="SbRow SbP35 SbAlt" hittest="false"><Label id="SbN35" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS35" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK35" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR36" class="SbRow SbP36" hittest="false"><Label id="SbN36" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS36" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK36" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR37" class="SbRow SbP37 SbAlt" hittest="false"><Label id="SbN37" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS37" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK37" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR38" class="SbRow SbP38" hittest="false"><Label id="SbN38" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS38" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK38" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR39" class="SbRow SbP39 SbAlt" hittest="false"><Label id="SbN39" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS39" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK39" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR40" class="SbRow SbP40" hittest="false"><Label id="SbN40" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS40" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK40" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR41" class="SbRow SbP41 SbAlt" hittest="false"><Label id="SbN41" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS41" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK41" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR42" class="SbRow SbP42" hittest="false"><Label id="SbN42" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS42" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK42" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR43" class="SbRow SbP43 SbAlt" hittest="false"><Label id="SbN43" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS43" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK43" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR44" class="SbRow SbP44" hittest="false"><Label id="SbN44" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS44" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK44" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR45" class="SbRow SbP45 SbAlt" hittest="false"><Label id="SbN45" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS45" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK45" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR46" class="SbRow SbP46" hittest="false"><Label id="SbN46" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS46" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK46" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+			<Panel id="SbR47" class="SbRow SbP47 SbAlt" hittest="false"><Label id="SbN47" class="SbName" hittest="false" text="{s:n}" /><Label id="SbS47" class="SbScore" hittest="false" text="{s:s}" /><Label id="SbK47" class="SbKarma" hittest="false" text="{s:k}" /></Panel>
+		</Panel>
+	</Panel>
+</root>
