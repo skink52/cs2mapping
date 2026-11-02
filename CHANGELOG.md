@@ -3,6 +3,19 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-02: autoport map types, review queue and dated log
+
+- Launch: maps typed or pasted on one line or several, found by name under `bspsrc-windows`, then shown with their type, existing ports
+  (`existing_ports.txt`, Steam Workshop, GameBanana) and PC checks before anything runs.
+- Map types ([profiles.py](autoport/profiles.py)): TTT gets the full cs2mapTTT install, run on a copy so the repo doesn't change. Courses get a finish-score check.
+  Jail maps get `iofix`, `visfit_detail` and an I/O audit. Unknown prefixes are held.
+- Everything missing, wrong or unknown goes to `logs\autoport\<date>.log`. This includes entity classes that vanished with no known conversion, tool messages
+  and build errors no rule knows, and crashes. A map with such items is held; the rest build. `autoport.py review ready|accept|redo|hold|skip|close` is
+  Claude's feedback line, and a held map builds by itself once marked ready ([REVIEW.md](autoport/REVIEW.md)).
+- TTT ports skip the duplicate check: other people's TTT ports need a dedicated server, while ours play from the map's script.
+- Found by the new build check: the cs2mapTTT HUD doesn't compile without its four git-ignored background images (`Tried to register an empty resource
+  weak-reference`), so a new TTT map had no HUD. autoport copies the images in, or strips them for flat colours. cs2mapTTT's README is corrected.
+
 ## 2026-11-02: autoport (unattended ports on the PC)
 
 - New [`autoport/`](autoport/README.md): BSP in, built addon and a cleanup list for agents out, running only on the PC with nobody watching. `tools/` and `scripts/` are reused unchanged.

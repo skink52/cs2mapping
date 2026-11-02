@@ -20,7 +20,7 @@ On the PC, Claude Code runs from `C:\source1` and reaches CS2, `C:\source2` and 
 | Trench warfare, WW1, mg_trenchwarfare, custom rifles | `projects/trenchwarfare-cs2/` | `projects/trenchwarfare-cs2/NOTES.md` |
 | CS 1.6, mg_cs16 | `projects/cs21.6/` | `projects/cs21.6/README.md` |
 | Porting, a CS:GO map name, mg_/jb_/ba_ ports | `ports/<map>/`, `tools/`, `scripts/` | `docs/porting/pipeline.md` |
-| Unattended ports, autoport, a port cleanup list | `autoport/` | `autoport/README.md` |
+| Unattended ports, autoport, a port cleanup list | `autoport/` | `autoport/README.md`; `autoport/REVIEW.md` when reviewing held maps |
 | A new original addon | new `projects/<name>/` | `docs/creation/guide.md` |
 
 Bomb Arena (BomberClone-style) has no folder yet; create `projects/<name>/` when its source is first committed.

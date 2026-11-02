@@ -7,11 +7,8 @@ import argparse, glob, json, os, re, shutil, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import watchdog
-
-PORT = os.environ.get('CS2PORT', r'C:\source1\cs2port')
-WORK = os.path.join(PORT, 'work')
-STEPS = ['prep', 'deliver', 'import', 'root', 'stage_c', 'fixups', 'passes', 'credit', 'build', 'report']
+import common, watchdog
+from common import PORT, STEPS, WORK
 
 def tail(path, n):
     try:
@@ -55,16 +52,18 @@ def draw(act, cols):
     pids = {p['ProcessId'] for p in dogs}; dogs = [p for p in dogs if p['ParentProcessId'] not in pids]
     out.append('AUTOPORT  %s   run %s   %s' % (time.strftime('%H:%M:%S'), os.path.basename(run), 'RUNNING' if active else 'NOT RUNNING (finished or stopped)'))
     out.append('')
-    labels = [os.path.basename(f)[:-5] for f in sorted(glob.glob(os.path.join(WORK, 'autoport_state', '*.json')), key=os.path.getmtime)]
-    names = sorted({re.sub(r'_(prep|import|stage_c|stage_d|disprestore|laserhurt|glowfix|skysplit|build|gibfix|fixrefs|visfit)\.log$', '', os.path.basename(f)) for f in glob.glob(os.path.join(run, '*.log'))})
-    for name in [n for n in labels if n in names or dogs and any(n in (d['CommandLine'] or '') for d in dogs)]:
-        st = json.load(open(os.path.join(WORK, 'autoport_state', name + '.json')))
-        marks = []
-        for s in STEPS:
-            if s in st['done']: marks.append(s + ' ok')
-            else:
-                marks.append('>' + s + '<' if active and not any(s2 not in st['done'] for s2 in STEPS[:STEPS.index(s)]) else s)
-        out.append('%-28s %s' % (name, '  '.join(marks)))
+    held = []
+    for name in common.all_addons():
+        try: st = common.load_state(name)
+        except (ValueError, OSError): continue   # being rewritten this instant
+        if st['status'] in ('closed', 'skipped'): continue
+        busy = st['status'] in ('preparing', 'building')
+        marks = [('[%s]' % s if busy and not any(x not in st['done'] for x in STEPS[:i]) else '') or (s + '+' if s in st['done'] else s) for i, s in enumerate(STEPS) if s in st['done'] or busy or st['status'] == 'queued']
+        marks = [m for m in marks if not m.endswith('+')]
+        n = len(common.open_issues(st, common.HOLD_KINDS))
+        out.append('%-30s %-9s %s' % (name, st['status'].upper(), ('%d of %d steps  next: %s' % (len(st['done']), len(STEPS), ' '.join(marks))) if busy or st['status'] == 'queued' else ('%d items hold it' % n if n else '')))
+        if st['status'] == 'held': held.append(name)
+    if held and active: out.append('  WAITING FOR CLAUDE: ' + ', '.join(held))
     out.append('')
     newest = None
     if not dogs:
@@ -98,8 +97,7 @@ def draw(act, cols):
             try: j = json.loads(k); out.append('  %s  %s  %s after %ss' % (j['time'], j['label'], j['reason'], j['elapsed_s']))
             except ValueError: pass
     else: out.append('Watchdog kills this run: none')
-    lst = os.path.join(run, 'cleanup_list.md')
-    if os.path.exists(lst): out.append('Cleanup list so far: ' + lst)
+    out += ['Daily log: ' + common.today_log(), 'Cleanup list: ' + common.CLEANUP]
     return out
 
 def main():

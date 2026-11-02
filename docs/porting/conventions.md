@@ -9,6 +9,7 @@ These are the standing rules every port follows. The pipeline applies most of th
   (mg_ski_mountain was ported and then deleted because a CS2 port already existed, and mg_50arenas was ported before an existing one turned up.)
   mg_simpsons_course, mg_metal_course_level_2 and de_nuketown were reported first and then ported on request: commenters say the existing
   simpsons port crashes and can't be completed, and the CS2 Nuketown maps are Call of Duty remakes rather than ports.
+  **TTT maps are the exception:** other people's CS2 ports need a dedicated server, while ours play from the map's own script (cs2mapTTT), so an existing port doesn't count as a duplicate (skink52, 2 Nov 2026).
 - **Workshop pages: never report an item as "removed" or "incompatible" from the page text** (hidden template text; see
   [pipeline.md](pipeline.md#before-porting-duplicate-check-and-names)).
 - **Addon name = map name with version and bloat stripped.** `_v2`, `_v1_2`, `_b3`, `_rc1`, `_final`, `_fix`, `_beta`, `_csgo`, `_hdr`, `_ws`...

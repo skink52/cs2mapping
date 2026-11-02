@@ -12,7 +12,7 @@ One cs_script (`ttt.js`) plus an optional HUD. No server plugins. Works on any m
    - `custom_hud_layout`: targetname `ttt_hud`, layout `panorama/layout/custom_game/ttt_hud.vxml` (optional but strongly recommended: roles, shop, messages)
    - `point_template` `ttt_body_tpl` → `prop_ragdoll` `ttt_body_src` (CT body, `agents/models/ctm_sas/ctm_sas.vmdl`) and `ttt_body_tpl_t` → `ttt_body_src_t` (T body, `agents/models/tm_phoenix/tm_phoenix.vmdl`) (optional: carryable server-side bodies; keys in `tools/ttt_patch.json`). Not `characters/models/…`: those are one-bone placeholders and show as a box.
    - or run `python3 patch_vmap.py <map.vmap> <out.vmap> "" tools/ttt_patch.json` from [cs2mapping/create](https://github.com/skink52/cs2mapping/tree/main/create) (re-runnable).
-   - HUD backgrounds (optional): `python3 tools/hud_theme.py <banner.png>` cuts kf/sb/top/shop.png from a server banner into `addon/panorama/images/custom_game/ttt/` (git-ignored; flat colours without them).
+   - HUD backgrounds (optional): `python3 tools/hud_theme.py <banner.png>` cuts kf/sb/top/shop.png from a server banner into `addon/panorama/images/custom_game/ttt/` (git-ignored). They aren't really optional as the stylesheet stands: if one is missing, `ttt_hud.css` fails to compile (`Tried to register an empty resource weak-reference`) and the map has no HUD at all. Either make them or remove the `background-image` lines for flat colours. autoport does this for you.
 3. Build the map. HUD: the cs2port `run_build.bat` compiles the xml and css; otherwise `resourcecompiler -f -i` them.
 
 A map's `info_map_parameters` is used to end rounds if present; otherwise the round clock is used.

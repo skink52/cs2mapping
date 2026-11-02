@@ -2,20 +2,20 @@
 
 | | |
 |---|---|
-| Status | Built, not tested in game or published |
+| Status | Built with the TTT game mode, not tested in game or published |
 | BSP | `ttt_island17_pezversion.bsp` |
 | Original | Author not recorded yet |
 | Imported | 2026-11-02 |
 | How | [autoport](../../autoport/README.md) |
 
-Map port only: the TTT game mode (cs2mapTTT) hasn't been applied.
-
-A CS2 Island17 is on the Workshop: [[TTT] Island17](https://steamcommunity.com/sharedfiles/filedetails/?id=3390290442), made for the EverGames server. Whether this `pezversion` differs from it hasn't been checked. skink52 chose to port it anyway.
+A CS2 Island17 is on the Workshop: [[TTT] Island17](https://steamcommunity.com/sharedfiles/filedetails/?id=3390290442), made for the EverGames server. It needs a dedicated server; this port plays from the map's own script, so it doesn't count as a duplicate.
 
 ## History
 
 - 2026-11-02: stage A–D through autoport: 126 dropped displacements restored, 3D skybox split, water pass, final `visfit`.
 - Vis: 87.9 billion cubic units of play space, 17 Low, 1 Lower, 1 Lowest. About 13 minutes, collapsing 218,171 regions to 53,423. The whole map build takes about 15 minutes.
+
+- 2026-11-02: TTT game mode through autoport's TTT profile, with the same HUD image fix as ttt_terrortrain. The HUD and script are built. No `ttt_*` entities, so no map data.
 
 ## Open / to check
 
