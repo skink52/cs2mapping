@@ -1,0 +1,3 @@
+{ "compilerOptions": { "allowJs": true, "checkJs": true, "noEmit": true, "target": "es2022", "module": "es2022", "moduleResolution": "bundler",
+  "strict": false, "noImplicitAny": false, "ignoreDeprecations": "6.0", "paths": { "cs_script/point_script": ["./types/point_script.d.ts"] } },
+  "files": ["../out/addon/maps/scripts/space_racer.js", "./types/point_script.d.ts"] }
