@@ -3,6 +3,19 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-03: course respawn window, course music, switched lights, Lego spawn door
+
+- `tools/respawnwindow.py` (new): on course maps, players who die before the spawn AFK killer switches on respawn; `port_respawn_window` turns
+  `mp_respawn_on_death_t/ct` off 5 s before it fires (skink52). On 15 courses (antique, balistic, circle, color_dev, draw, egypt, faohu, galaxy,
+  insomnia, jahoukarail, kohztec, lego, metal, minecraft_adventure, simpsons); autoport's course profile runs it on new ports.
+- `tools/coursemusic.py` (new): shuffled music for courses with none (balistic, circle, galaxy, insomnia, lego, fred_all, bob2): ba_jail_skylight's
+  four songs plus three or four from the other jb_ discos and mg_ maps, the next song when one ends. Songs are renamed after their source map.
+- `mapcheck.py`: CS:GO's TurnOn / TurnOff on CS2's lights (and fog) → Enable / Disable; lights the map switches or recolours → Dynamic with no
+  bounce light (230 lights on 9 maps, 147 of them ba_jail_lightsout's). autoport and polish pick both up.
+- mg_minecraft_adventure: C418's Minecraft music (Minecraft, Mice on Venus, Sweden, Cat, Aria Math; skink52's files), shuffled the same way, and a
+  Steam description crediting it. coursemusic writes `sounds/port_music/credits.txt` from the songs' tags; autoport's description adds a Music list from it.
+- mg_lego_course: the spawn door reversed when a player blocked it and stayed shut until its next Toggle; now Open / Close, Wait -1, Force Closed.
+
 ## 2026-11-02: polish pass over every port
 
 - `autoport/polish.py` (new) brings ported maps up to today's rules in place: round setup, fires, respawning props, entity check, z-fighting,

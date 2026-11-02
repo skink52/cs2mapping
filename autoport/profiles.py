@@ -14,7 +14,7 @@ class Profile:
 PROFILES = [
     # other people's TTT ports need a dedicated server; ours play from the map's own script, so they aren't duplicates
     (r'^ttt_', Profile('ttt', 'TTT', extras=('ttt_build',), needs='full TTT build: entities, map data, ttt.js and HUD', other_ports_matter=False)),
-    (r'^mg_.*course', Profile('course', 'minigame course', extras=('course_check',), needs='finish score check')),
+    (r'^mg_.*course', Profile('course', 'minigame course', extras=('course_check', 'respawn_window'), needs='finish score check, respawn window before the AFK killer')),
     (r'^(jb_|ba_jail|ba_)', Profile('jail', 'jailbreak', extras=('jail_audit',), passes=('iofix',), vis='visfit_detail', needs='I/O audit, iofix, detailed vis hints')),
     (r'^mg_', Profile('minigame', 'minigame')),
     (r'^(de|cs|ar|dm|gg|aim|awp|fy|surf|bhop|kz|ze|zm|hns|am)_', Profile('generic', 'standard')),
@@ -72,6 +72,16 @@ def course_check(m):
     script = read(os.path.join(m.content, 'maps', 'scripts', m.addon + '_io.js'))
     if not wired or 'Score_' not in script:
         m.note('io', 'Finish score lost: the VMF has %d game_score / %d ApplyScore, but the map has %d outputs to Score_n and the io script %s them.' % (scores, applied, wired, 'has' if 'Score_' in script else 'lacks'))
+
+def respawn_window(m):
+    """Respawning on until 5 s before the spawn AFK killer switches on (tools/respawnwindow.py; skink52, 3 Nov 2026)."""
+    import respawnwindow
+    mp = V.Map(m.vmap); msg = respawnwindow.run(mp)
+    if not msg: return
+    if not msg.startswith('respawn window: respawning'): m.note('review', msg[0].upper() + msg[1:] + '.'); return
+    mp.save(m.vmap); guns = respawnwindow.weapons(mp)
+    m.note('playtest', msg[0].upper() + msg[1:] + '. Die on an early obstacle and check you come back.' +
+           (' The map also hands out %s: if it is a shooting map rather than a course, remove port_respawn_window.' % ', '.join(guns) if guns else ''))
 
 JAIL_RISKS = [('AddOutput', r'AddOutput', 'often dead in CS2'), ('RunScript', r'RunScript', 'VScript has to be ported to cs_script'), ('sm_ commands', r'\bsm_\w+', 'need a server plugin or a script'),
               ('logic_case', r'"logic_case"', 'math_counter sends a float string, so case values may need 1.000000'), ('math_counter', r'"math_counter"', 'check what reads its value'),
@@ -135,4 +145,4 @@ def ttt_build(m):
     m.note('review', 'TTT: compare the map with projects/cs2mapTTT/docs/MAP_REQUIREMENTS.md. The ttt.js mock test (test/run_mock.sh) needs node and has not been run for this map.')
     m.note('playtest', 'TTT: play a full round (roles, shop, body search, win conditions) and record the result in projects/cs2mapTTT/TESTING.md.')
 
-EXTRAS = dict(course_check=course_check, jail_audit=jail_audit, ttt_build=ttt_build)
+EXTRAS = dict(course_check=course_check, respawn_window=respawn_window, jail_audit=jail_audit, ttt_build=ttt_build)

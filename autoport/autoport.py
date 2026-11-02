@@ -230,7 +230,7 @@ def passes(m):
     if vis_air(m) < MIN_VIS_AIR: m.note('missing', 'Vis hints are still mostly Lowest (%.1f billion cubic units of play space found), so culling will be poor: fit hints by hand.' % vis_air(m))
     checks(m)
 
-MAPCHECK_KIND = {'excluded': 'unknown', 'unknown': 'unknown', 'bad_input': 'io', 'bad_output': 'io', 'dangling': 'minor', 'converted': 'review'}
+MAPCHECK_KIND = {'excluded': 'unknown', 'unknown': 'unknown', 'bad_input': 'io', 'bad_output': 'io', 'dangling': 'minor', 'converted': 'review', 'baked_switch': 'playtest'}
 
 def checks(m):
     """Hammer's Check for Problems (mapcheck.py) and z-fighting (zfight.py) on every map of the addon, fixing what has one right answer."""
@@ -243,7 +243,7 @@ def checks(m):
             if kind in MAPCHECK_KIND: groups[kind].append(text)
         for kind, items in groups.items():
             what = {'excluded': 'entities of a class CS2 removes', 'unknown': 'entities of a class CS2 does not have', 'bad_input': 'outputs to an input the target lacks',
-                    'bad_output': 'outputs the entity lacks', 'dangling': 'outputs to names nothing has (removed: they did nothing in CS:GO either)', 'converted': 'entities converted to their CS2 equivalent'}[kind]
+                    'bad_output': 'outputs the entity lacks', 'dangling': 'outputs to names nothing has (removed: they did nothing in CS:GO either)', 'converted': 'entities, inputs or switched lights converted to their CS2 equivalent', 'baked_switch': 'switched lights still baked'}[kind]
             m.note(MAPCHECK_KIND[kind], 'Entity check (%s): %d %s: %s' % (name, len(items), what, '; '.join(sorted(set(items))[:8])[:900]))
         if m.tool('zfight', vm, out, m.content): raise StepFail('zfight.py failed on %s, see %s' % (name, m.log('zfight')))
         m.apply()
@@ -435,6 +435,8 @@ def description(m):
     if 'mp_roundtime' in read(os.path.join(m.content, 'maps', m.addon + '_cleanup_log.txt')) or 'mp_roundtime' in script:
         hosting.append('[*]The map sets [i]mp_freezetime 0[/i] and [i]mp_roundtime[/i] itself. Servers that block point_servercommand need them set by hand.')
     credits = ('Original map by %s. ' % (author or '[ORIGINAL AUTHOR]')) + 'Ported to CS2 by skink52' + ('; TTT script by skink52 with AI assistance.' if m.profile.name == 'ttt' else ' with AI-assisted tools.')
+    songs = [l.strip() for l in read(os.path.join(m.content, 'sounds', 'port_music', 'credits.txt')).splitlines() if l.strip()]   # coursemusic.py
+    if songs: credits += '\n\n[h2]Music[/h2]\n[list]\n' + ''.join('[*]%s\n' % s for s in songs) + '[/list]'
     tpl = read(os.path.join(HERE, 'templates', 'ttt_description.txt' if m.profile.name == 'ttt' else 'port_description.txt'))
     text = tpl.format(title=title, original_credit=who, original_credit_cap=who[:1].upper() + who[1:], map_section=map_section, known_limits=''.join(l + '\n' for l in limits),
                       hosting=''.join(h + '\n' for h in hosting), credits=credits)

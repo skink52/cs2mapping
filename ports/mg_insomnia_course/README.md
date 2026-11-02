@@ -13,6 +13,8 @@
 
 - 2026-10-25: 3 loading-screen images added (`panorama/images/map_icons/screenshots`), compile with `run_build.bat "assets mg_insomnia_course"`.
 - 2026-10-24: stages A–C. Indoor map (sky_dust env_sky but no sky brushes; the sky_dust panorama was copied from mg_egypt_course). 6 displacements the importer dropped rebuilt with `disprestore.py` (4 rockwall006a, 1 blend_dirt_concrete_07_aztec, 1 cs_italy/black). Second pass the same day: the 6 kill lasers got `trigger_hurt` boxes along them (`laserhurt.py`, damage 42069, always on) because skink52 wants damaging lasers recreated even when the original had no trigger_hurt; 7 stock CS:GO materials rebuilt from the extracted CS:GO content (`<CS2>\csgo`), dev_water3/4 → nuke_water. Backups: `prefabs+backups\mg_insomnia_course_imported_2026-10-24.vmap`.
+- 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `spawnKill` switches on (60 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 55 s in. Needs a build.
+- 2026-11-03: **music** (`coursemusic.py`): the map had none. Eight songs shuffled from round start, the next when one ends: ba_jail_skylight's four (skink52's favourites) and Nightcall (Kavinsky), Fate Don't Know You (Desi Valentine), jb_lightsout's disco3, jb_seaside's disco3. Each is named after the map it came from (`sounds/port_music/`), since several maps call different songs disco1-3.
 
 ## What the cleanup did
 

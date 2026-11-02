@@ -13,6 +13,8 @@
 
 - 2026-10-16: stages A–C in the second pipeline batch.
 - 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 45 Low, 3 Medium → 71 Low, 20 Lower, 1 Lowest; hint volume in billion cubic units Medium 0.4, Low 38.9, Lowest 1566.6 → Low 16.9, Lower 1.0, Lowest 539.9. Sky shells: 6 of 101 set to Exclude from Vis. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
+- 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `spawn_kill` switches on (90 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 85 s in. Needs a build.
+- 2026-11-03: **music**: C418's Minecraft, Mice on Venus, Sweden, Cat (Volume Alpha) and Aria Math (Volume Beta), from skink52's own files, shuffled from round start with the next when one ends (`coursemusic.py`). `mg_minecraft_adventure STEAM DESCRIPTION.txt` in the content addon credits them.
 
 ## What the cleanup did
 

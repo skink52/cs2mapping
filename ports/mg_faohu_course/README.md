@@ -12,6 +12,7 @@
 
 - 2026-10-16: stages A–C in the second pipeline batch. The extra knife equip was dropped because the map already gives one.
 - 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 10 Low → 34 Low, 26 Lower, 1 Lowest; hint volume in billion cubic units Low 20.3, Lowest 111.0 → Low 7.8, Lower 1.2, Lowest 142.5. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
+- 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `spawn_kill` switches on (50 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 45 s in. Needs a build.
 
 ## What the cleanup did
 

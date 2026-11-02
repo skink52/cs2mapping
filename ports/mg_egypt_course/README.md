@@ -12,6 +12,7 @@
 
 - 2026-10-16: stages A–C in the second pipeline batch.
 - 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 12 Low, 1 Medium → 23 Lower, 1 Lowest; hint volume in billion cubic units Medium 0.2, Low 42.3, Lowest 414.9 → Lower 23.4, Lowest 493.0. Sky shells: 0 of 1 set to Exclude from Vis. All play-space hints are Lower because the 18 Oct build stalled in vis (35,254 clusters after the list merge, 2,308 s to merge to 32,768; stopped after 51 min). The one sky shell stays: it closes the top-left room, whose other walls are detail meshes Excluded from Vis. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
+- 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `spawnkill` switches on (60 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 55 s in. Needs a build.
 
 ## What the cleanup did
 

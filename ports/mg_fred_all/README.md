@@ -14,6 +14,7 @@ Has a map-specific script gate: damage between enemies is off until the Fin room
 
 - 2026-10-16: 6 prefabs merged; 15 trigger_push (800/9999/10000) → script push zones capped at 3500; 11 waterfalls → a `waterrun.wav` soundevent; waterfall and lava surfaces → `nuke_water`; a sprite material on a brush → `sprites/blueglow1`. Re-imported after the func_illusionary fix (94 of them). 112 of 599 lights made stationary and 17 added.
 - 2026-10-16 16:35: damage between enemies is off until the Fin room's `fintrigger` fires `EnableDamage`, and every round starts with it off. Rebuilt at 18:13 (26.9 min).
+- 2026-11-03: **music** (`coursemusic.py`): the map had none. Eight songs shuffled from round start, the next when one ends: ba_jail_skylight's four (skink52's favourites) and jb_seaside's disco1, Majestic (Wax Fang), Midnight City (M83), Turn Down for What.
 
 ## What the cleanup did
 

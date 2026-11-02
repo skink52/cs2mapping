@@ -15,6 +15,7 @@ The first map to get the `daylight` pass. It was too dark indoors with only stat
 
 - 2026-10-16: stage C restored 2 logic_auto outputs, turned 4 trigger_push (3000/4000) into script push zones, kept the 3 chat messages through the script ("Map By PatatoR For Team-Furaxx.com", "Good Game !"), made 3 music soundevents, rebuilt the dust sky and added 6 moondomes. Re-imported after the func_illusionary fix. 20 env_laser → 10 beams; `{sewerladder` alpha-tested.
 - 2026-10-16 16:35, "really dark": the first `daylight` pass. A stationary light_environment at 70° pitch / yaw 90 (the best of 16 angles), 87 ceiling and roof meshes set to Disable Shadows, 5 light probe volumes, maxexposure 1.25 → 2. Rebuilt at 18:13 (56.6 min).
+- 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `spawnkill` switches on (35 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 30 s in. Needs a build.
 
 ## What the cleanup did
 

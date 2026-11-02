@@ -8,6 +8,7 @@ Reports, one per line as KIND<tab>text:
   dangling    an output aimed at a name nothing in the map has (ttt_island17's lwglass2 OnBreak -> lwbars2_i / lwbars2_f: in CS:GO too)
   bad_input   an input the target's class doesn't have
   bad_output  an output the entity's class doesn't have
+  baked_switch a light the map switches or recolours that isn't Dynamic (its baked light would stay when it's off)
 Fixes (with an out path): dangling outputs are removed, since they reached nothing in CS:GO either; classes in SAFE_REMOVE are deleted, because CS2
 does their job by itself or never had it; classes in CONVERT become the CS2 entity that does the same job. Everything else is only reported.
 """
@@ -24,6 +25,7 @@ CONVERT = {
     # a solid brush entity with no behaviour of its own
     'func_wall': ('func_brush', {'Solidity': '2', 'solidbsp': '0'}),
 }
+INPUT_RENAME = {'turnon': 'Enable', 'turnoff': 'Disable'}   # fixed only where the target class has the new input
 DYNAMIC_INPUTS = {'runscriptinput', 'runscriptcode', 'callscriptfunction', 'addoutput', 'fireuser1', 'fireuser2', 'fireuser3', 'fireuser4', 'kill', 'killhierarchy'}
 
 def fgd_files():
@@ -119,8 +121,35 @@ def check(m, fix=False):
             if inp.lower() in DYNAMIC_INPUTS: continue
             tclasses = {m.cls(x).lower() for x in hits}
             if all(tc in classes for tc in tclasses) and not any(inp.lower() in io(classes, tc)[0] for tc in tclasses):
+                new = INPUT_RENAME.get(inp.lower())   # CS:GO light inputs on CS2's lights2 classes (mg_galaxy_course's spawn lights never switched)
+                if fix and new and all(new.lower() in io(classes, tc)[0] for tc in tclasses):
+                    dmx.set_(m.E[ci], b'inputName', dmx.T_STR, new.encode()); converted += 1
+                    found.append(('converted', '%s %s: %s -> %s.%s became %s' % (c, m.name(e) or '(unnamed)', out, tgt, inp, new))); continue
                 found.append(('bad_input', '%s %s: %s -> %s.%s, but %s has no input %s' % (c, m.name(e) or '(unnamed)', out, tgt, inp, '/'.join(sorted(tclasses)), inp)))
+    n, msgs = switched_lights(m, by_name, fix); converted += n; found += msgs
     return found, removed + converted, dropped
+
+LIGHTS2 = ('light_omni2', 'light_spot', 'light_rect', 'light_capsule', 'light_ortho', 'light_barn')
+SWITCH_INPUTS = {'enable', 'disable', 'toggle', 'turnon', 'turnoff', 'setbrightnessscale', 'setcolor', 'setlightcolor'}
+
+def switched_lights(m, by_name, fix):
+    """A light the map switches or recolours has to be Dynamic (directlight 2): Static and Stationary bake its light into the world, which stays
+    when it's off (skink52, 3 Nov 2026). Its bounce light is turned off too, since bounce is always baked."""
+    hit = {}
+    for e, k in m.all_conns():
+        u = m.conn_tuple(k)
+        if u[2].lower() in SWITCH_INPUTS:
+            for x in by_name.get(u[1].lower(), []):
+                if m.cls(x).lower() in LIGHTS2: hit[x] = u[2]
+    for x in m.by_class('light_omni2') + m.by_class('light_spot') + m.by_class('light_rect') + m.by_class('light_capsule'):
+        if str(m.P(x, 'enabled', '1')) in ('0', 'False', 'false') and x not in hit and m.name(x): hit[x] = 'starts off'
+    n, out = 0, []
+    for x, why in hit.items():
+        if str(m.P(x, 'directlight', '3')) == '2' and str(m.P(x, 'bouncelight', '-1')) == '0': continue
+        if fix: m.setp(x, 'directlight', '2'); m.setp(x, 'bouncelight', '0'); n += 1
+        out.append(('converted' if fix else 'baked_switch', '%s %s (%s): switched by the map, so Dynamic with no bounce light%s' %
+                    (m.cls(x), m.name(x) or '(unnamed)', why, '' if fix else ' is needed (fix sets it)')))
+    return n, out
 
 if __name__ == '__main__':
     if len(sys.argv) not in (2, 3): sys.exit(__doc__)
@@ -130,4 +159,4 @@ if __name__ == '__main__':
     if fix:
         mp.save(sys.argv[2])
         print('fixed\t%d entities removed or converted, %d dangling outputs removed' % (removed, dropped))
-    print('summary\t' + ', '.join('%d %s' % (sum(1 for k, _ in found if k == kind), kind) for kind in ('excluded', 'unknown', 'dangling', 'bad_input', 'bad_output', 'converted')))
+    print('summary\t' + ', '.join('%d %s' % (sum(1 for k, _ in found if k == kind), kind) for kind in ('excluded', 'unknown', 'dangling', 'bad_input', 'bad_output', 'baked_switch', 'converted')))

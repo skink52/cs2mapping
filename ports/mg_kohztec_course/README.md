@@ -13,6 +13,7 @@
 - 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 48 Low → 87 Low, 103 Lower, 1 Lowest; hint volume in billion cubic units Low 71.8, Lowest 629.9 → Low 39.1, Lower 18.5, Lowest 764.5. Sky shells: 8 of 35 set to Exclude from Vis. The big sky-boxed room in the south-west has no spawn or teleport destination, but it has a button and triggers, so it is treated as playable. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 
 - 2026-10-24: all 61 displacements (terrain, rock walls, the south-west pit floor) were missing from the vmap: none survived the import. Rebuilt from the BSP's dispinfo/dispverts with `tools/disprestore.py` as closed meshes (displaced surface with the CS:GO texture projection, 4-unit toolsnodraw back and sides). Stand-ins for materials with no CS2 copy in the addon: `nature/blendgrassgravel001a` → `grass/hr_grass/grass_b` (10), `de_aztec/road01_cheap` → `de_aztec/hpe_aztec_stone01_dirt` (2). No vertex-paint blending. Backup: `maps\mg_kohztec_course_pre_disp_2026-10-24.vmap.bak`. Every other brush face in the BSP was checked against the vmap and is present; the only other gap is the two toolsblack func_illusionary areaportal-window fade brushes, which CS2 has no use for.
+- 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `mg_kohztec_course_afk_trigger` switches on (180 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 175 s in. Needs a build.
 
 ## What the cleanup did
 

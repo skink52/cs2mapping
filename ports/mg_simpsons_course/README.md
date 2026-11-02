@@ -17,6 +17,7 @@ kolkazadrot published a CS2 port in Nov 2023 (mg_simpsons_course_v2, Workshop 30
 - 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 14 Low → 23 Low, 18 Lower, 1 Lowest; hint volume in billion cubic units Low 24.5, Lowest 213.8 → Low 10.3, Lower 0.9, Lowest 261.3. Sky shells: 2 of 27 set to Exclude from Vis. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 
 - 2026-10-19: the 2 trigger_gravity (0.5, 1) → trigger_multiples firing script `Gravity_<scale>` on touch and `Gravity_1` on leaving (pipeline `gravity` pass, stage D). Backup: `prefabs+backups\mg_simpsons_course_pre_gravity_2026-10-19.vmap`.
+- 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `afkkiller` switches on (40 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 35 s in. Needs a build.
 
 ## What the cleanup did
 

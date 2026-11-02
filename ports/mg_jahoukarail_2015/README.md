@@ -17,6 +17,8 @@ Minigame course on a train.
 - 2026-10-29: Stage D visfit, lights, radar, overlaydepth (138 overlays), probecover (17 volumes).
 - 2026-10-29: loading credit `maps/mg_jahoukarail_2015.txt` ("Original map by …" / "Ported to CS2 by skink52"); build queue `mg_jahoukarail_2015`.
 - 2026-10-29: looked unlit: the importer's Static light_environment → Stationary, a stationary light added to the open-air play space (`lights` with the open-sky rule). de_train/barrel broke into nothing: generic CS:GO metal chunks added to its vmdl (`gibfix.py`); `maps/mg_jahoukarail_2015_fix_refs.txt` lists the missing gib models (wood_crate001a chunks, watermelon01 chunks for the stock watermelon, metal_gib1-5) and model materials (ventilationduct02, concretebags, fruit_objects01) for `run_fixrefs.bat`. Backups `prefabs+backups\\mg_jahoukarail_2015_2026-10-29_prelights.vmap`, `…_barrel_2026-10-29.vmdl`.
+- 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `TriggerSpawnKill` switches on (90 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 85 s in. Needs a build.
+- 2026-11-03: `Light1` / `Light2` got CS:GO's TurnOn / TurnOff (nothing happened in CS2): now Enable / Disable, and both lights Dynamic with no bounce light (`mapcheck.py`).
 
 ## Open / to check
 - Run `run_fixrefs.bat mg_jahoukarail_2015` before the next build; check the barrel / crate / watermelon breaks in game.

@@ -14,6 +14,9 @@
 - 2026-10-16: stages A–C in the second pipeline batch.
 - 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 22 Low → 33 Low, 14 Lower, 1 Lowest; hint volume in billion cubic units Low 26.0, Lowest 108.1 → Low 7.9, Lower 2.9, Lowest 118.8. In vis terms the map is open: it is enclosed only by toolsnodraw meshes, which vis ignores. Not changed; if vis culling turns out poor, the enclosure needs toolsskybox faces. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 - 2026-10-19: the 6 trigger_gravity (scales 0.2, 0.3, 0.5, 1) the clean had left as TO CHECK → trigger_multiples firing script `Gravity_<scale>` on touch and `Gravity_1` on leaving (new pipeline `gravity` pass, run as a stage D follow-up). Backup: `prefabs+backups\mg_galaxy_course_pre_gravity_2026-10-19.vmap`.
+- 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `spawn_hurt` switches on (45 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 40 s in. Needs a build.
+- 2026-11-03: **music** (`coursemusic.py`): the map had none. Eight songs shuffled from round start, the next when one ends: ba_jail_skylight's four (skink52's favourites) and Midnight City (M83), Let Go Of The Wheel (Mako), jb_seaside's disco1, jb_lightsout's disco3. Each is named after the map it came from (`sounds/port_music/`), since several maps call different songs disco1-3.
+- 2026-11-03: the spawn lights (`light_spawn`) never switched: `spawn_timer_lights` sent CS:GO's TurnOn / TurnOff, which CS2's lights don't have. Now Enable / Disable, and the 4 lights are Dynamic with no bounce light (`mapcheck.py`). Needs a lighting build.
 
 ## What the cleanup did
 

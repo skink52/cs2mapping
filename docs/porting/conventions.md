@@ -32,6 +32,12 @@ These are the standing rules every port follows. The pipeline applies most of th
   one rather than a second entity (two firing on the same spawn run in no set order). The map's own `mp_roundtime` wins (de_rats_1337 keeps 150);
   every other house command is enforced, so a map's own `sv_airaccelerate 150` becomes 2000, in its map script too (`Cmd_<n>`).
   Two caveats: community servers block `point_servercommand` by default, and 600 is probably above the round-time limit (CS:GO capped it at 60 minutes).
+- **Course maps: respawning before the AFK killer.** Players who die before the spawn AFK killer switches on come back: `respawnwindow.py` turns
+  `mp_respawn_on_death_t/ct` on with whatever starts the killer and off 5 s before it fires. Not on maps that hand out guns (shooting arenas, Goldeneye);
+  knife equips and a killbox's guns are fine (skink52, 3 Nov 2026).
+- **Course maps: music.** A course with no music gets at least 3–4 shuffled songs from round start, the next when one ends (`coursemusic.py`).
+  ba_jail_skylight's songs are skink52's favourites; any jb_ disco or mg_ map's songs are fair game. Name each after its source map.
+- **Switched lights are Dynamic.** A light the map turns on, off or recolours is Dynamic with no bounce light, or its baked light stays when it's off (`mapcheck.py`).
 - **Weapons and players must not be black.** CS:GO lights import as Static (baked only), which leaves weapons and player models unlit.
   Switch enough lights to **Stationary** (`directlight 3`): at least one per sealed compartment, spaced so no spot is inside more than
   four stationary lights, and no more than needed. Compartments open to a `light_environment` are fine as they are.

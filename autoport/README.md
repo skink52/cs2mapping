@@ -46,7 +46,7 @@ Set by the addon's prefix in [profiles.py](profiles.py). Every type also gets th
 | Type | Matches | Extra |
 |---|---|---|
 | TTT | `ttt_` | The full cs2mapTTT install: `ttt_convert`, map data baked into `ttt.js`, script and HUD copied in. It works on a copy in `cs2port\work\ttt_project`, so the repo doesn't change. Other people's ports don't count as duplicates, because they need dedicated servers and ours play from the map's script |
-| Minigame course | `mg_*course*` | Checks the finish score survived (`game_score` → script `Score_n`). A course with no finish score is held |
+| Minigame course | `mg_*course*` | Checks the finish score survived (`game_score` → script `Score_n`); a course with no finish score is held. Respawning on until 5 s before the spawn AFK killer (`respawnwindow.py`) |
 | Jailbreak | `jb_`, `ba_` | `iofix`, `visfit_detail`, and an I/O audit (`AddOutput`, `RunScript`, `sm_`, `logic_case`, `math_counter`, templates). Anything it finds holds the map |
 | Minigame | other `mg_` | None |
 | Standard | `de_`, `cs_`, `aim_`, `surf_` and similar | None |
@@ -59,14 +59,14 @@ Set by the addon's prefix in [profiles.py](profiles.py). Every type also gets th
 | After import | `vmdlfix.py`: bodygroup choices cs_mdl_import left unnamed | Names them, so the models compile |
 | Fixups | `propexplode.py`: props that used their model's explosion | Copies the CS:GO model's explosive_damage / radius onto them |
 | Fixups | `respawnable.py` when the map has prop_physics_respawnable | prop_physics + point_template + env_entity_maker, respawning with no script |
-| End of passes | `mapcheck.py`: Hammer's Check for Problems against CS2's `.fgd` files | Removes dangling outputs and classes CS2 doesn't need; converts trigger_waterydeath and func_wall |
+| End of passes | `mapcheck.py`: Hammer's Check for Problems against CS2's `.fgd` files | Removes dangling outputs and classes CS2 doesn't need; converts trigger_waterydeath and func_wall; TurnOn/TurnOff → Enable/Disable on CS2 lights; lights the map switches → Dynamic, no bounce |
 | End of passes | `zfight.py`: coplanar overlapping faces | Hides fully covered faces; moves the smaller of two partly overlapping materials 0.25 units forward |
 | End of passes | `lightwall.py`: lights a few units off a wall | Moves them 24 units out |
 | End of passes | `uvflip.py`: upside-down torch textures | Flips them |
 | Audit | Entity classes that vanished with no known conversion, tool messages no rule knows | - |
 | Before the build | Gibs for every addon model | Generic CS:GO chunks for Metal / Wooden / Glass props with none; imports missing gib models |
 | After the build | Compile errors, unknown log lines, `unrecognized parent`, missing physics hulls; TTT script and HUD compiled | - |
-| Last | Steam Workshop description | Writes `<addon> STEAM DESCRIPTION.txt` in the content addon folder (from `templates/`); never overwrites a hand-edited one |
+| Last | Steam Workshop description | Writes `<addon> STEAM DESCRIPTION.txt` in the content addon folder (from `templates/`), with a Music list from `sounds/port_music/credits.txt` when `coursemusic.py` added songs; never overwrites a hand-edited one |
 
 Water materials become `anubis/anubis_water_canal`.
 

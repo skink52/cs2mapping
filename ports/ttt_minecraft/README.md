@@ -75,6 +75,7 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
   - **Lava:** `trap_lava` self-illumination 0.25 → 1.0 (white mask), so the lava looks fully lit in the dark (skink52).
   - Open: a ~32-unit fire-looking texture in the Nether shows "4 textures squished into one". Not found yet; the Nether's materials (netherrack,
     glowstone, the Pigman furnace) have no multi-frame textures.
+- 2026-11-03: the fog relay (`ttt_pt_5__touch`) sent `fog.TurnOff`, which env_gradient_fog doesn't have: now Disable (`mapcheck.py`).
 
 ## Open / to check
 

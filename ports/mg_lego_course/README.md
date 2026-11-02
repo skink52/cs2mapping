@@ -13,6 +13,9 @@
 
 - 2026-10-14: 21 dropped sky ceilings → moondomes; equips → `weapon0` slots; game_score, env_sun and point_viewcontrol removed; a "Ported to CS2 by skink52" chat line; `dawall_middle` material fixed; radar from the geometry. At 22:19 its 11 env_lasers became func_brush beams `laser_beam_1..11` (crossed quads, 8 units wide, never solid, parents kept). The existing 2-unit, 700-damage trigger_hurts do the killing.
 - 2026-10-15: `Cmd_0..Cmd_14` (15 chat lines plus `sv_airaccelerate 150`) replace two point_servercommands, and `Score_500` replaces game_score on the five finish lasers (21 outputs). The winners' box: a door, a one-time trigger that plays saxobeat (`lego.saxobeat`) and shows the credits, then five lasers worth 500 points to the first player to touch each. CS2's `AddScore` adds to the score column, where CS:GO's game_score added frags.
+- 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `afk` switches on (45 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 40 s in. Needs a build.
+- 2026-11-03: **spawn door** shut again after opening (skink52): a player pushing on the slowly sinking door blocked it, and with wait 45 a blocked door reverses, so it closed until the 42 s Toggle reopened it. Now Open at 5 s and Close at 42 s, wait -1 (never reverses or closes by itself), Force Closed on.
+- 2026-11-03: **music** (`coursemusic.py`): the map had none. Eight songs shuffled from round start, the next when one ends: ba_jail_skylight's four (skink52's favourites) and In the Navy, jb_mangaroons' colours_song_3, jb_seaside's disco3, Turn Down for What. Each is named after the map it came from (`sounds/port_music/`), since several maps call different songs disco1-3.
 
 ## What the cleanup did
 
