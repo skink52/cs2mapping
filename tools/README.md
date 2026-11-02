@@ -7,8 +7,9 @@ order to run things in is in [docs/porting/pipeline.md](../docs/porting/pipeline
 Where each file goes on the PC: [docs/porting/setup.md](../docs/porting/setup.md). On the PC this file is
 `C:\source1\cs2port\tools\README.md`; the pipeline reference is `C:\source1\cs2port\cs2_port_pipeline.md`.
 
-Everything runs in Claude's cloud workspace with Python 3 + numpy, scipy and Pillow. `<root>` is the working root that mirrors the PC
-(layout in [setup.md](../docs/porting/setup.md#cloud-workspace)).
+Everything runs with Python 3 + numpy, scipy and Pillow, normally on the PC itself (`C:\source1\cs2port\tools`, root `C:\source1\cs2port\work`, driven by
+[autoport](../autoport/README.md)), or in Claude's cloud workspace. `<root>` is the working root that mirrors the PC
+(layout in [setup.md](../docs/porting/setup.md#cloud-workspace); on the PC `python autoport/pclocal.py root <addon>` builds it).
 
 ## Entry points (command line)
 
@@ -31,6 +32,10 @@ Everything runs in Claude's cloud workspace with Python 3 + numpy, scipy and Pil
 | `matnames.py` | Importer-sanitised material refs (spaces → underscores) back to the real file names; run before `alpha,assets` | `python3 matnames.py <addon> <root>` (needs `<root>/content_files_<addon>.json`) |
 | `bsp2vmf_lite.py` | Minimal VMF from a CS:GO BSP (every brush side with material + uaxis/vaxis from the texinfo, infodecals, info_overlays) and the BSP's embedded files, for `texfix` passes when the decompiled VMF isn't available | `python3 -I bsp2vmf_lite.py <map.bsp> <root>/source1/maps/<addon>.vmf [<root>/embedded/<addon>]` |
 | `vmap_preview.py` | Top-down + four corner renders of any vmap (binary or importer text) | `python3 vmap_preview.py <map.vmap> <out.png> [x0,y0,z0,x1,y1,z1]` |
+| `mapcheck.py` | Hammer-style entity check against CS2's `.fgd` files: excluded / unknown classes, dangling outputs, bad inputs / outputs; with an out path removes dangling outputs and `SAFE_REMOVE` classes, converts `CONVERT` classes | `python3 mapcheck.py <map.vmap> [<out.vmap>]` |
+| `zfight.py` | Coplanar overlapping visible faces; with an out path hides fully covered ones (toolsnodraw) and moves the smaller of two partly overlapping materials 0.25 u forward | `python3 zfight.py <map.vmap> [<out.vmap>] [<addon content>]` |
+| `respawnable.py` | prop_physics_respawnable → prop_physics + point_template + env_entity_maker (respawns after RespawnTime, no script) | `python3 respawnable.py <vmap in> <vmap out>` |
+| `vmdlfix.py` | Names the empty bodygroup choices cs_mdl_import writes (CS2 won't compile a model with any) | `python3 vmdlfix.py <addon content folder or .vmdl> [...]` |
 | `setup_bspsrc.sh` | Extracts BSPSource from its jlink image and patches the class files to Java 21; writes `<dest>/bspsrc.sh` | `sh setup_bspsrc.sh <staged bspsrc-windows/lib/modules> <dest dir>` (use `<dest>` = `tools/` so prep.py finds it, or set `BSPSRC=`) |
 
 ### Stage C step keys (run order, from `stage_c.run()`)
@@ -73,6 +78,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `visfit.py` | `vis` (C), `visfit`/`visfit_lower`/`visfit_lean`/`visfit_detail` (D) | Vis hints fitted to the play space (Low / Lower / one Lowest) and sky shells out of vis. `visfit_detail`: also works on maps open to the void (play air = under geometry or within 320 u of a floor), Medium over busy enclosed cells (mesh faces + props), open-sky cells with nothing standing in them left to Lowest, other open-sky cells Lower |
 | `skyvis.py` | `skyvis` | Older pass: sky shells that seal nothing get Exclude from Vis |
 | `beams.py` | `beams` | env_laser / env_beam → never-solid func_brush beams (damage: `laserhurt.py`) |
+| `ropes.py` | `ropes` (also a stage D pass) | move_rope / keyframe_rope → `cable_dynamic` along each NextKey segment, sag from Slack, radius Width/4; ropes use `rope_braid_1` with tinted `grapplinghook_rope_end_01` caps at free ends, cables use `cable.vmat` (skink52's ba_jail_keimusho method) |
 | `lighting.py` | `lights`, `relight`, `lightbright` (D) | `relight` (default in stage C `lights`): delete every light and rebuild it from the VMF (colour, HDR, cone, target, switching). Minimal set of Stationary lights per sealed compartment, max 4 overlapping; importer `brightness = nan` set to 0 (stage C) or rebuilt from the VMF `_light` values (`lightbright`) |
 | `lightcover.py` | `lightcover` (D) | Stationary lights for maps whose rooms all connect to the sky (`lights` then sees one compartment and switches only a few): roofed compartments (doors/brushes count as walls) each get lights switched until 90% of the walkable floor is lit with line of sight (range ≤ 640, ≤ 4 overlapping); uncovered pockets near spawns/buttons/triggers/weapons get new unshadowed stationary omnis; open-to-sky play areas get a stationary fill each. Never deletes lights (ba_jail_keimusho) |
 | `probecover.py` | `probes` (C, report) / `probecover` (D, fix) | Static func_breakable / func_brush meshes outside every light probe volume: listed in TO CHECK, or a volume added around each uncovered group |
@@ -105,6 +111,7 @@ steps aren't stage D passes: use `run_pass.py`.
 |---|---|
 | `box_template.vmap` | stage C sky pass: the moondome box mesh for dropped sky brushes (our own file) |
 | `laser_template.vmap` | `beams.py`, `laserhurt.py`: the beam / hurt-box mesh (our own file) |
+| `cable_template.vmap` | `ropes.py`: one `cable_dynamic` with one `path_node_cable`, copied from skink52's hand-made keimusho rope (`ropes.py --make-template`) |
 | `addon_template/` | **Not in the repo** (Valve's files). `prep.py` needs `tools/addon_template/content/` and `game/`: copy them from `<CS2>\content\csgo_addons\addon_template\` and `<CS2>\game\csgo_addons\addon_template\` (what the Workshop Tools launcher copies when it creates an addon) |
 | `bspsrc.sh` | **Not in the repo.** Written by `setup_bspsrc.sh`; `prep.py` looks for `tools/bspsrc.sh` unless `BSPSRC=` is set |
 

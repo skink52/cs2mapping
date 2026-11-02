@@ -5,6 +5,7 @@
 *.vmap
 !tools/box_template.vmap
 !tools/laser_template.vmap
+!tools/cable_template.vmap
 *.vpk
 *.vpk_c
 *_c

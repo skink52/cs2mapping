@@ -1,0 +1,133 @@
+"""Entity problems the way Hammer's Check for Problems sees them, read from CS2's own entity definitions (game/core and game/csgo .fgd files).
+
+  python mapcheck.py <map.vmap> [<out.vmap>]          report; with an out path also fix what has only one right answer
+
+Reports, one per line as KIND<tab>text:
+  excluded    a class CS2's csgo.fgd removes (@exclude), e.g. info_ladder_dismount
+  unknown     a class no CS2 .fgd defines, e.g. prop_physics_respawnable left by the importer
+  dangling    an output aimed at a name nothing in the map has (ttt_island17's lwglass2 OnBreak -> lwbars2_i / lwbars2_f: in CS:GO too)
+  bad_input   an input the target's class doesn't have
+  bad_output  an output the entity's class doesn't have
+Fixes (with an out path): dangling outputs are removed, since they reached nothing in CS:GO either; classes in SAFE_REMOVE are deleted, because CS2
+does their job by itself or never had it; classes in CONVERT become the CS2 entity that does the same job. Everything else is only reported.
+"""
+import glob, os, re, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import dmx, vmapedit as V
+
+CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
+SAFE_REMOVE = {'info_ladder_dismount': 'CS2 ladders dismount on their own', 'info_landmark': 'level transitions', 'func_detail_blocker': 'a compile hint'}
+# classes CS2 lacks that one of its own entities does the job of: (new class, keys to set). Converted with an out path.
+CONVERT = {
+    # CS:GO's leeches: hurts anyone in the water until they get out. A trigger_hurt in the same place does the same.
+    'trigger_waterydeath': ('trigger_hurt', {'damage': '15', 'damagecap': '15', 'damagetype': '0', 'damagemodel': '0', 'spawnflags': '1'}),
+    # a solid brush entity with no behaviour of its own
+    'func_wall': ('func_brush', {'Solidity': '2', 'solidbsp': '0'}),
+}
+DYNAMIC_INPUTS = {'runscriptinput', 'runscriptcode', 'callscriptfunction', 'addoutput', 'fireuser1', 'fireuser2', 'fireuser3', 'fireuser4', 'kill', 'killhierarchy'}
+
+def fgd_files():
+    return sorted(glob.glob(os.path.join(CS2, 'game', 'core', '*.fgd'))) + sorted(glob.glob(os.path.join(CS2, 'game', 'csgo', '*.fgd')))
+
+def parse_fgd(paths):
+    """{class: (bases, inputs, outputs)} and the excluded set. Later files (csgo) override core, as Hammer loads them."""
+    classes = {}; excluded = set()
+    for p in paths:
+        t = open(p, encoding='utf-8', errors='replace').read()
+        t = re.sub(r'(?m)^\s*//[^\n]*', '', t)   # whole-line comments only: descriptions hold URLs with //
+        excluded |= {x.lower() for x in re.findall(r'@exclude\s+(\w+)', t)}   # a file can exclude core's class and define its own (csgo.fgd's env_sky)
+        for m in re.finditer(r'@(\w+)Class\b', t):
+            # the header can hold ( ) and { key = value } metadata, so the class name is after the first = outside brackets and quotes
+            i = m.end(); depth = 0; q = False
+            while i < len(t):
+                ch = t[i]
+                if ch == '"' and t[i - 1] != '\\': q = not q
+                elif not q and ch in '({': depth += 1
+                elif not q and ch in ')}': depth -= 1
+                elif not q and depth == 0 and ch in '=[': break
+                i += 1
+            if i >= len(t) or t[i] != '=': continue
+            nm = re.match(r'=\s*(\w+)', t[i:])
+            if not nm: continue
+            header = t[m.end():i]; name = nm.group(1).lower()
+            j = t.find('[', i); k = t.find('@', i + 1)
+            if j < 0 or (0 <= k < j): continue
+            depth = 1; e = j + 1; q = False
+            while e < len(t) and depth:
+                ch = t[e]
+                if ch == '"' and t[e - 1] != '\\': q = not q
+                elif not q and ch == '[': depth += 1
+                elif not q and ch == ']': depth -= 1
+                e += 1
+            body = t[j + 1:e]
+            bases = [b.strip().lower() for b in re.findall(r'\bbase\(([^)]*)\)', header) for b in b.split(',') if b.strip()]
+            ins = {x.lower() for x in re.findall(r'^\s*input\s+(\w+)', body, re.M)}
+            outs = {x.lower() for x in re.findall(r'^\s*output\s+(\w+)', body, re.M)}
+            old = classes.get(name)
+            if old and m.group(1) == 'Override': classes[name] = (old[0] + bases, old[1] | ins, old[2] | outs)
+            else: classes[name] = (bases, ins, outs)
+            if m.group(1) != 'Base': excluded.discard(name)
+    return classes, excluded
+
+def io(classes, name, seen=None):
+    seen = seen or set()
+    if name in seen or name not in classes: return set(), set()
+    seen.add(name); bases, ins, outs = classes[name]; ins, outs = set(ins), set(outs)
+    for b in bases:
+        bi, bo = io(classes, b, seen); ins |= bi; outs |= bo
+    return ins, outs
+
+def check(m, fix=False):
+    classes, excluded = parse_fgd(fgd_files())
+    found = []; removed = 0; dropped = 0
+    ents = m.entities()
+    by_name = {}
+    for e in ents: by_name.setdefault(m.name(e).lower(), []).append(e)
+    clsnames = {m.cls(e).lower() for e in ents}
+    converted = 0
+    for e in list(ents):
+        c = m.cls(e).lower()
+        if fix and c in CONVERT and (c in excluded or c not in classes):
+            new, keys = CONVERT[c]; m.setp(e, 'classname', new)
+            for k, v in keys.items(): m.setp(e, k, v)
+            converted += 1; found.append(('converted', '%s %s -> %s' % (c, m.name(e) or '(unnamed)', new))); continue
+        if c in excluded:
+            if fix and c in SAFE_REMOVE:
+                m.remove_node(e); removed += 1; continue
+            found.append(('excluded', '%s %s at %s: CS2 removes this class%s' % (c, m.name(e) or '(unnamed)', ' '.join('%g' % x for x in m.origin(e)), '' if c not in SAFE_REMOVE else ' (fix removes it: %s)' % SAFE_REMOVE[c])))
+        elif c not in classes:
+            found.append(('unknown', '%s %s at %s: no CS2 .fgd defines this class, so it does nothing in game' % (c, m.name(e) or '(unnamed)', ' '.join('%g' % x for x in m.origin(e)))))
+    ents = m.entities()
+    by_name = {}
+    for e in ents: by_name.setdefault(m.name(e).lower(), []).append(e)
+    for e in ents:
+        c = m.cls(e).lower(); conns = dmx.geta(m.E[e], b'connectionsData')
+        if not conns: continue
+        _, outs = io(classes, c)
+        for ci in list(conns[2]):
+            out, tgt, inp = [str(x) for x in m.conn_tuple(m.E[ci])[:3]]
+            if c in classes and outs and out.lower() not in outs:
+                found.append(('bad_output', '%s %s: output %s does not exist on %s' % (c, m.name(e) or '(unnamed)', out, c)))
+            t = tgt.lower()
+            if not t or t.startswith('!'): continue
+            hits = [x for n, xs in by_name.items() for x in xs if n == t or (t.endswith('*') and n.startswith(t[:-1]))] or [x for x in ents if m.cls(x).lower() == t]
+            if not hits:
+                if fix:
+                    conns[2].remove(ci); dropped += 1
+                found.append(('dangling', '%s %s: %s -> %s.%s, but nothing is called %s%s' % (c, m.name(e) or '(unnamed)', out, tgt, inp, tgt, ' (removed)' if fix else '')))
+                continue
+            if inp.lower() in DYNAMIC_INPUTS: continue
+            tclasses = {m.cls(x).lower() for x in hits}
+            if all(tc in classes for tc in tclasses) and not any(inp.lower() in io(classes, tc)[0] for tc in tclasses):
+                found.append(('bad_input', '%s %s: %s -> %s.%s, but %s has no input %s' % (c, m.name(e) or '(unnamed)', out, tgt, inp, '/'.join(sorted(tclasses)), inp)))
+    return found, removed + converted, dropped
+
+if __name__ == '__main__':
+    if len(sys.argv) not in (2, 3): sys.exit(__doc__)
+    mp = V.Map(sys.argv[1]); fix = len(sys.argv) == 3
+    found, removed, dropped = check(mp, fix)
+    for k, t in found: print('%s\t%s' % (k, t))
+    if fix:
+        mp.save(sys.argv[2])
+        print('fixed\t%d entities removed or converted, %d dangling outputs removed' % (removed, dropped))
+    print('summary\t' + ', '.join('%d %s' % (sum(1 for k, _ in found if k == kind), kind) for kind in ('excluded', 'unknown', 'dangling', 'bad_input', 'bad_output', 'converted')))

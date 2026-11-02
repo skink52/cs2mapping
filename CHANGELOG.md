@@ -3,6 +3,31 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-02: map checks (entities, z-fighting, gibs), respawning props, model compile fix, Anubis water
+
+- New tools: `mapcheck.py` (Hammer's Check for Problems against CS2's own .fgd files, removing dangling outputs and converting or deleting classes
+  CS2 lacks), `zfight.py` (coplanar overlapping faces: covered ones hidden, the smaller of two materials moved 0.25 u forward; overlaps pressed
+  against a back face ignored), `respawnable.py` (prop_physics_respawnable → prop_physics + point_template + env_entity_maker, no script),
+  `vmdlfix.py` (names the empty bodygroup choices cs_mdl_import writes, which CS2 refuses to compile).
+- autoport runs all four, plus a gib check before every build (generic CS:GO chunks; missing gib models imported first), the fork's `ropes`, and
+  re-counts z-fighting after fixing. New rules in its TO CHECK sorting for ropes and sight-line corridors.
+- Water materials → `anubis/anubis_water_canal` (was `liquids/nuke_water`), skink52's choice.
+- ttt_island17: window bars and a door now compile, 58 respawning props, lwglass2 / ladder dismount / leech errors gone, z-fighting fixed. Both TTT
+  maps rebuilt. The new vis sight corridors pushed Island17's vis past autoport's 20-minute limit, and the lean-hint rebuild took 8 minutes.
+- README.md, docs/porting/pipeline.md and tools/README.md describe PC-local runs and autoport as the normal way to port.
+
+## 2026-11-02: skink52's keimusho fixes built into the tools (vis, overlapping pushes)
+
+- `visfit.py`: thin Medium stretches along long sight lines across gaps, so props at the far end don't pop out of view. Walkable cells holding props or
+  gameplay entities never fall to Lowest. No hint boxes for clip, nodraw or trigger-only areas. Stage C `vis` and stage D `visfit` / `visfit_detail` all use it;
+  `visfit_lower` / `visfit_lean` don't.
+- `push_tail.js`: an up push on the ground gives back only the friction it took and never more than last tick's speed. It used to add about 9% a tick wherever
+  real friction was lower (slides, water), which is what made keimusho's up+forward pushes speed players forward. Checked by running the script against a simulated floor; not tested in game.
+- Stage C `push`: an up push overlapping a forward push stays a real CS2 trigger_push at 40/700 of its CS:GO speed, as skink52 did on keimusho.
+- New stage C step / stage D pass `ropes` ([tools/ropes.py](tools/ropes.py)): CS:GO move_rope / keyframe_rope → `cable_dynamic`, skink52's keimusho method
+  (rope_braid_1, radius Width/4, tinted rope-end caps where ropes meet a surface; electrical cables use cable.vmat, no caps), with sag from Slack. Template:
+  `tools/cable_template.vmap`, made from his keimusho rope. Tested on 6 maps' VMFs (save and reload), not yet opened in Hammer or built.
+
 ## 2026-11-02: autoport map types, review queue and dated log
 
 - Launch: maps typed or pasted on one line or several, found by name under `bspsrc-windows`, then shown with their type, existing ports

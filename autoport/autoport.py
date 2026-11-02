@@ -9,7 +9,7 @@ Reuses cs2port/tools and the PC batch files unchanged. Every long step runs unde
 Steps: prep deliver import root stage_c fixups passes profile credit audit | build report. Maps go through every step up to audit first,
 then those with nothing held back build while the rest wait. Anything missing, wrong or unknown goes in logs/autoport/<date>.log.
 """
-import argparse, glob, json, os, re, shutil, subprocess, sys, time, traceback
+import argparse, collections, glob, json, os, re, shutil, subprocess, sys, time, traceback
 
 from common import *
 sys.path[:0] = [HERE, TOOLS]
@@ -134,6 +134,10 @@ def import_(m):
     if res and int(res.group(2)): m.note('unknown', 'Importer: %s files of unknown type. See logs\\%s_import.log' % (res.group(2), m.addon))
     for p in glob.glob(os.path.join(m.content, 'materials', '**', '* *'), recursive=True):
         m.note('missing', 'Material paths have spaces (first: %s): run tools/matnames.py, then the assets pass.' % p); break
+    if os.path.isdir(os.path.join(m.content, 'models')):   # cs_mdl_import leaves bodygroup choices unnamed, which CS2 won't compile
+        m.tool('vmdlfix', os.path.join(m.content, 'models'))
+        n = re.findall(r'vmdlfix: (\d+) bodygroup choices named', read(m.log('vmdlfix')))
+        if n and int(n[-1]): m.note('minor', 'vmdlfix.py named %s empty bodygroup choices, so those models compile now. See %s' % (n[-1], m.log('vmdlfix')))
 
 def root(m): pclocal.root(m.addon, WORK)
 
@@ -168,6 +172,9 @@ def fixups(m):
     if any('did damage in CS:GO' in t for t in out_todos(m)):
         if m.tool('laserhurt', m.out, os.path.join(S1, 'maps', m.addon + '.vmf'), m.out): m.note('io', 'laserhurt.py failed, so damaging lasers are only visual: see ' + m.log('laserhurt'))
         else: m.state['resolved'].append('did damage in CS:GO')
+    if vmf_has(m, 'prop_physics_respawnable'):
+        if m.tool('respawnable', m.out, m.out): m.note('error', 'respawnable.py failed, so prop_physics_respawnable props are still an unknown class: see ' + m.log('respawnable'))
+        else: m.note('playtest', 'prop_physics_respawnable props are prop_physics + point_template now: break one and check it comes back after its RespawnTime.')
     if vmf_has(m, 'env_particle_glow'):
         if m.tool('glowfix', m.out, m.out, os.path.join(WORK, 'out', m.addon)): m.note('minor', 'glowfix.py failed, see ' + m.log('glowfix'))
     if vmf_has(m, 'sky_camera'): skybox(m)
@@ -198,6 +205,7 @@ def passes(m):
     for pat, name in AUTO_PASSES:
         if re.search(pat, todo): chosen.append((pat, name))
     chosen += [('', p) for p in m.profile.passes]
+    if vmf_has(m, 'move_rope') or vmf_has(m, 'keyframe_rope'): chosen.append(('', 'ropes'))   # stage C does it too; this covers maps redone from here
     mp = V.Map(m.vmap)
     if any('water' in x.lower() for x in assets.mesh_materials(mp)) and not mp.by_class('func_water'): chosen.append(('', 'water'))
     chosen.append(('', m.profile.vis))   # always last: fixups changed the geometry stage C fitted its hints to
@@ -210,6 +218,40 @@ def passes(m):
         m.apply()
         if vis_air(m) >= MIN_VIS_AIR: m.note('playtest', 'Vis hints came from visfit_detail because plain visfit found no play space: look for pop-in.')
     if vis_air(m) < MIN_VIS_AIR: m.note('missing', 'Vis hints are still mostly Lowest (%.1f billion cubic units of play space found), so culling will be poor: fit hints by hand.' % vis_air(m))
+    checks(m)
+
+MAPCHECK_KIND = {'excluded': 'unknown', 'unknown': 'unknown', 'bad_input': 'io', 'bad_output': 'io', 'dangling': 'minor', 'converted': 'review'}
+
+def checks(m):
+    """Hammer's Check for Problems (mapcheck.py) and z-fighting (zfight.py) on every map of the addon, fixing what has one right answer."""
+    for name in m.state['maps']:
+        vm = os.path.join(m.content, 'maps', name + '.vmap'); out = os.path.join(WORK, 'out', m.addon, 'maps', name + '.vmap')
+        if m.tool('mapcheck', vm, out): raise StepFail('mapcheck.py failed on %s, see %s' % (name, m.log('mapcheck')))
+        m.apply()
+        groups = collections.defaultdict(list)
+        for kind, text in (l.split('\t', 1) for l in last_run(read(m.log('mapcheck')).splitlines()) if '\t' in l):
+            if kind in MAPCHECK_KIND: groups[kind].append(text)
+        for kind, items in groups.items():
+            what = {'excluded': 'entities of a class CS2 removes', 'unknown': 'entities of a class CS2 does not have', 'bad_input': 'outputs to an input the target lacks',
+                    'bad_output': 'outputs the entity lacks', 'dangling': 'outputs to names nothing has (removed: they did nothing in CS:GO either)', 'converted': 'entities converted to their CS2 equivalent'}[kind]
+            m.note(MAPCHECK_KIND[kind], 'Entity check (%s): %d %s: %s' % (name, len(items), what, '; '.join(sorted(set(items))[:8])[:900]))
+        if m.tool('zfight', vm, out, m.content): raise StepFail('zfight.py failed on %s, see %s' % (name, m.log('zfight')))
+        m.apply()
+        summary = lambda: {k: int(v) for k, v in re.findall(r'(\w+)=(\d+)', (last_run(read(m.log('zfight')).splitlines()) or [''])[-1])}
+        z = summary()
+        m.tool('zfight', vm, m.content)   # check again after the fix: one moved face can settle several pairs, so the fix run's own count is too high
+        after = summary(); z['partial'], z['visible'] = after.get('partial', 0), after.get('visible', 0)
+        part = [l.split('\t', 1)[1] for l in last_run(read(m.log('zfight')).splitlines()) if l.startswith('partial\t')]
+        if z.get('hidden') or z.get('nudged'):
+            m.note('minor', 'Z-fighting (%s): %d fully covered faces set to toolsnodraw, as vbsp would have dropped them; %d smaller faces moved %s units forward where two materials overlapped.' % (name, z.get('hidden', 0), z.get('nudged', 0), '0.25'))
+        if z.get('nudged'): m.note('playtest', 'Z-fighting (%s): %d faces were moved 0.25 units to stop flicker; look at them in game (tools/zfight.py lists where).' % (name, z['nudged']))
+        if z.get('visible'): m.note('missing', 'Z-fighting (%s): %d overlaps between different materials still flicker after the fix (rotated meshes, or faces already moved for another overlap; first: %s). Move or cut one face of each.' % (name, z['visible'], ' | '.join(part[:4])))
+        elif z.get('partial'): m.note('minor', 'Z-fighting (%s): %d small or same-material overlaps left (first: %s).' % (name, z['partial'], ' | '.join(part[:3])))
+
+def last_run(lines):
+    """A step log collects every run; the latest run is everything after the summary line before the last one."""
+    ends = [i for i, l in enumerate(lines) if l.startswith('summary\t')]
+    return lines[(ends[-2] + 1 if len(ends) > 1 else 0):(ends[-1] + 1 if ends else len(lines))]
 
 def profile(m):
     for extra in m.profile.extras: profiles.EXTRAS[extra](m)
@@ -271,8 +313,33 @@ def fixrefs_helped(m):
     count = lambda label: int((re.search(label + r': (\d+)', t) or [0, 0])[1])
     return count('Models attempted') > count('Failed imports') + count('Failed model compiles') or 'material entries' in t and not re.search(r'\b0 material entries', t)
 
+def gibs(m):
+    """Before the build: every model the addon imported either has gibs that exist, or (Metal / Wooden / Glass propdata with none) gets CS:GO's
+    generic chunks from gibfix.py, as CS:GO broke them. Missing gib models are imported with run_fixrefs.bat, so the build has them."""
+    import vpk
+    pak = vpk.VPK(os.path.join(CS2, 'game', 'csgo', 'pak01_dir.vpk'))
+    vmdls = glob.glob(os.path.join(m.content, 'models', '**', '*.vmdl'), recursive=True)
+    if not vmdls: return
+    refs = os.path.join(m.content, 'maps', m.addon + '_fix_refs.txt'); empty = os.path.join(m.run_dir, 'no_build_log.txt'); open(empty, 'w').close()
+    part = os.path.join(m.run_dir, m.addon + '_gib_refs.txt'); seen = len(read(m.log('gibfix')))
+    for i in range(0, len(vmdls), 40): m.tool('gibfix', empty, part, *vmdls[i:i + 40])   # gibfix rewrites its refs file each call, so read it from the log
+    glog = read(m.log('gibfix'))[seen:]
+    generic = glog.count('generic gibs added to')
+    have = lambda p: os.path.exists(os.path.join(m.content, p)) or os.path.exists(os.path.join(CS2, 'game', 'csgo_addons', m.addon, p + '_c')) or pak.has(p + '_c')
+    wanted = {l.strip() for l in glog.splitlines() if re.match(r'models/\S+\.mdl$', l.strip())}
+    wanted |= {p[:-5] + '.mdl' for v in vmdls if 'BreakPiece' in read(v) for p in re.findall(r'model = "(models/[^"]+\.vmdl)"', read(v))}
+    lost = sorted(w for w in wanted if not have(w[:-4] + '.vmdl'))
+    with open(refs, 'w', encoding='utf-8', newline='\r\n') as f:
+        f.write('importfilelist\n{\n' + ''.join('\t"file"\t"%s"\n' % w for w in lost) + '}\n')
+    if lost:
+        m.run('fixrefs', ['cmd', '/c', os.path.join(PORT, 'run_fixrefs.bat'), m.addon], stall=900, limit=2 * 3600)
+        still = [p for p in lost if not have(p[:-4] + '.vmdl')]
+        if still: m.note('missing', 'Gib models that break-pieces need but could not be imported (first 10): %s' % ', '.join(still[:10]))
+    if generic or lost: m.note('minor', 'Gib check: %d models given generic CS:GO chunks, %d missing gib models imported before the build.' % (generic, len(lost)))
+
 def build(m):
     wait_closed(m)
+    gibs(m)
     code, res = compile_(m, budget=True)
     if code in (124, 127):   # a stalled or slow build is nearly always the vis merge
         m.tool('stage_d', m.addon, WORK, 'visfit_lean'); m.apply()

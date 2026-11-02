@@ -25,7 +25,7 @@ Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/conte
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import tesla, probefill, repair, firefx, splitfaces, waterprobe, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol
+import tesla, probefill, repair, firefx, splitfaces, waterprobe, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol, ropes
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -42,6 +42,7 @@ def run(addon, root, passes):
     if 'facescale' in passes: texfix.face_scales(m, c, vmfp)
     if 'matflags' in passes: texfix.material_flags(m, c)
     if 'beams' in passes: beams.run(m, c)
+    if 'ropes' in passes and os.path.exists(vmfp): ropes.run(m, c, vmfp)
     if 'skyvis' in passes: skyvis.run(m, c)
     if 'visfit' in passes or 'visfit_lower' in passes or 'visfit_lean' in passes or 'visfit_detail' in passes:
         visfit.run(m, c, all_lower='visfit_lower' in passes, lean='visfit_lean' in passes, detail='visfit_detail' in passes)

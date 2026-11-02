@@ -17,9 +17,9 @@ Everything skink52 and Claude have worked out about **making Counter-Strike 2 ma
 | [docs/porting/conventions.md](docs/porting/conventions.md) | House rules: naming, credits, lights, lasers, radar, vis, multi-arena maps |
 | [docs/porting/setup.md](docs/porting/setup.md) | Which repo file goes where on the PC |
 | [docs/porting/manual-workflow.md](docs/porting/manual-workflow.md) | The by-hand method the pipeline replaced |
-| [`tools/`](tools/README.md) | The pipeline (Python, runs in Claude's workspace): decompile prep, Hammer-save fix, `.vmap` editing, post-import fixes, radar, sky, vis, lights, overlays, texture scales, map previews. [tools/README.md](tools/README.md) is the index of every tool with its usage line |
+| [`tools/`](tools/README.md) | The pipeline (Python, runs on the PC through autoport or Claude Code, or in Claude's cloud workspace): decompile prep, Hammer-save fix, `.vmap` editing, post-import fixes, radar, sky, vis, lights, overlays, texture scales, map previews. [tools/README.md](tools/README.md) is the index of every tool with its usage line |
 | [`scripts/`](scripts/README.md) | PC-side runners: import, command-line build, post-import cleanup, model import, unattended import→build |
-| [`autoport/`](autoport/README.md) | Unattended ports on the PC: BSP in, built addon and a cleanup list for agents out, with hang protection and a live progress window |
+| [`autoport/`](autoport/README.md) | **The normal way to port.** Paste map names; it runs every stage on the PC with each map type's extra steps (TTT, course, jailbreak), checks each map (entities, z-fighting, gibs, build logs), builds the good ones and holds the rest for Claude, who marks them ready to build. Hang watchdog, live monitor window, dated log |
 | [`ports/`](ports) | One folder per ported map: status, Workshop link, fixes, open issues, cleanup log, the map's cs_script files |
 | [`data/`](data/README.md) | `existing_ports.txt` (which maps have CS2 ports, by whom) and the queue files |
 | [`legacy/`](legacy/README.md) | Helpers from the early manual ports |

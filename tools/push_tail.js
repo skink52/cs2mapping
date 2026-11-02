@@ -4,7 +4,9 @@
 //    position by push*dt each tick (hull trace, slides along walls) and leaving the engine's velocity alone.
 //  - leaving every push hands the push over as momentum: velocity += (1 + dt/2) * push.
 //  - vertical push is an acceleration (v.z += push.z * dt), not a set speed; an upward push on the ground lifts the player
-//    1u every tick, so they slide with no friction. CS2 can't unground a player, so ground friction is undone instead.
+//    1u every tick, so they slide with no friction. CS2 can't unground a player, so ground friction is undone instead: only what
+//    this tick actually took off and never past last tick's speed. Assuming the full friction grew speed about 9% a tick wherever the real
+//    friction was lower (slides, water), which is what made an up push feel like a forward boost.
 const MAX_VELOCITY = 3500;
 const FRICTION = 5.2, STOP_SPEED = 80;   // sv_friction, sv_stopspeed
 const PUSH_HULLS = [{ mins: { x: -16, y: -16, z: 2 }, maxs: { x: 16, y: 16, z: 72 } },   // standing, then ducked
@@ -13,6 +15,8 @@ const PUSH_HULLS = [{ mins: { x: -16, y: -16, z: 2 }, maxs: { x: 16, y: 16, z: 7
 const pushBySlot = new Map();
 /** @type {Map<number, {x: number, y: number}>} player slot -> horizontal push applied last tick */
 const pushBase = new Map();
+/** @type {Map<number, number>} player slot -> horizontal speed last tick while an up push holds them on the ground */
+const pushGround = new Map();
 let pushTime = 0;
 
 /** @param {any} ent @returns {CSPlayerPawn | undefined} */
@@ -72,30 +76,28 @@ THINKERS.push(() => {
     if (!(dt > 0.001 && dt < 0.1)) dt = 1 / 64;
     for (const [slot, zones] of pushBySlot) {
         const pawn = Instance.GetPlayerController(slot)?.GetPlayerPawn();
-        if (!pawn || !pawn.IsValid() || !pawn.IsAlive()) { pushBySlot.delete(slot); pushBase.delete(slot); continue; }
+        if (!pawn || !pawn.IsValid() || !pawn.IsAlive()) { pushBySlot.delete(slot); pushBase.delete(slot); pushGround.delete(slot); continue; }
         const pos = pawn.GetAbsOrigin();
         for (const id of [...zones]) if (!inside(pos, PUSH[id])) zones.delete(id);   // safety net if EndTouch was missed (e.g. trigger disabled)
         const v = pawn.GetAbsVelocity();
         if (zones.size === 0) {   // out of every push: the push becomes the player's own momentum
             const b = pushBase.get(slot), f = 1 + dt * 0.5;
             if (b && (b.x || b.y)) pawn.Move({ velocity: { x: clampV(v.x + b.x * f), y: clampV(v.y + b.y * f), z: v.z } });
-            pushBySlot.delete(slot); pushBase.delete(slot); continue;
+            pushBySlot.delete(slot); pushBase.delete(slot); pushGround.delete(slot); continue;
         }
         let bx = 0, by = 0, bz = 0;
         for (const id of zones) { const zone = PUSH[id]; bx += zone.speed * zone.dir[0]; by += zone.speed * zone.dir[1]; bz += zone.speed * zone.dir[2]; }
         bx = clampV(bx); by = clampV(by); bz = clampV(bz);
         /** @type {{position?: {x: number, y: number, z: number}, velocity?: {x: number, y: number, z: number}}} */
         const mv = {};
-        if (bz !== 0) {
-            if (pawn.GetGroundEntity() === undefined) mv.velocity = { x: v.x, y: v.y, z: clampV(v.z + bz * dt) };
-            else if (bz > 0) {   // lifted off the ground in CS:GO: undo this tick's ground friction
-                const s = Math.hypot(v.x, v.y), k = FRICTION * dt;
-                if (s > 0.1) {
-                    const s0 = s >= STOP_SPEED * (1 - k) ? s / (1 - k) : s + STOP_SPEED * k;
-                    mv.velocity = { x: v.x * s0 / s, y: v.y * s0 / s, z: v.z };
-                }
-            }
-        }
+        const onGround = pawn.GetGroundEntity() !== undefined;
+        if (bz !== 0 && !onGround) mv.velocity = { x: v.x, y: v.y, z: clampV(v.z + bz * dt) };
+        if (bz > 0 && onGround) {   // lifted off the ground in CS:GO: undo this tick's ground friction
+            const s = Math.hypot(v.x, v.y), last = pushGround.get(slot) ?? s;
+            const loss = Math.max(last, STOP_SPEED) * FRICTION * dt, s0 = Math.min(last, s + loss);   // never faster than last tick
+            if (s > 0.1 && s0 > s) mv.velocity = { x: v.x * s0 / s, y: v.y * s0 / s, z: v.z };
+            pushGround.set(slot, Math.max(s, s0));
+        } else pushGround.delete(slot);
         if (bx || by) { const p = pushMove(pawn, pos, { x: bx * dt, y: by * dt, z: 0 }); if (p) mv.position = p; }
         pushBase.set(slot, { x: bx, y: by });
         if (mv.position || mv.velocity) pawn.Move(mv);

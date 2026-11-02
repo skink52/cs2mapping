@@ -52,6 +52,20 @@ Set by the addon's prefix in [profiles.py](profiles.py). Every type also gets th
 | Standard | `de_`, `cs_`, `aim_`, `surf_` and similar | None |
 | Unknown | anything else | None, and held so someone can say what it needs |
 
+## Checks on every map
+
+| When | Check | Fixes by itself |
+|---|---|---|
+| After import | `vmdlfix.py`: bodygroup choices cs_mdl_import left unnamed | Names them, so the models compile |
+| Fixups | `respawnable.py` when the map has prop_physics_respawnable | prop_physics + point_template + env_entity_maker, respawning with no script |
+| End of passes | `mapcheck.py`: Hammer's Check for Problems against CS2's `.fgd` files | Removes dangling outputs and classes CS2 doesn't need; converts trigger_waterydeath and func_wall |
+| End of passes | `zfight.py`: coplanar overlapping faces | Hides fully covered faces; moves the smaller of two partly overlapping materials 0.25 units forward |
+| Audit | Entity classes that vanished with no known conversion, tool messages no rule knows | - |
+| Before the build | Gibs for every addon model | Generic CS:GO chunks for Metal / Wooden / Glass props with none; imports missing gib models |
+| After the build | Compile errors, unknown log lines, `unrecognized parent`, missing physics hulls; TTT script and HUD compiled | - |
+
+Water materials become `anubis/anubis_water_canal`.
+
 ## What gets noted
 
 Everything found about a map goes to **`C:\source1\cs2port\logs\autoport\<date>.log`** and to **`logs\autoport\cleanup_list.md`**, the current list for every map not yet closed.

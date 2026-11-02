@@ -12,7 +12,7 @@ sky, skyvis, vis, beams, lights, alpha, probes, waterprobe, radar, assets, matfl
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import dmx, vmf as vmfmod, vmapedit as V, gen_script, repair, firefx, splitfaces, waterprobe, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch, droppedio, ovlquad
+import dmx, vmf as vmfmod, vmapedit as V, gen_script, repair, firefx, splitfaces, waterprobe, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch, droppedio, ovlquad, ropes
 
 CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 
@@ -239,16 +239,28 @@ def render_alpha(m, c):
             m.setp(e, 'renderamt', '255'); n += 1
     if n: c.log.append('%d entities had renderamt < 255 with rendermode Normal (ignored in CS:GO, see-through in CS2): renderamt 255' % n)
 
+NATIVE_UP_PUSH = 40 / 700.0
+
 def trigger_push(m, c):
     # physics-only pushes (flag 8 without 1) don't move players: the `launch` step handles the cannon pattern, the rest stay trigger_push
     ps = [e for e in m.by_class('trigger_push') if not (int(float(m.P(e, 'spawnflags', '0') or 0)) & 9 == 8)]
     if not ps: return
-    for e in ps:
-        b = m.bounds(e)
-        if b is None: c.todo.append('trigger_push %s has no mesh - skipped' % m.name(e)); continue
+    def direction(e):
         pd = [float(x) for x in (m.P(e, 'pushdir', '0 0 0') or '0 0 0').split()[:3]]
         ea = m.g(e, b'angles', [0, 0, 0])
-        d = V.angle_fwd([pd[0] + ea[0], pd[1] + ea[1], pd[2] + ea[2]])
+        return V.angle_fwd([pd[0] + ea[0], pd[1] + ea[1], pd[2] + ea[2]])
+    boxes = {e: m.bounds(e) for e in ps}
+    def overlap(a, b): return all(a[0][k] < b[1][k] and b[0][k] < a[1][k] for k in range(3))
+    flat = [boxes[e] for e in ps if boxes[e] is not None and abs(direction(e)[2]) < 0.1]
+    native = 0
+    for e in ps:
+        b = boxes[e]
+        if b is None: c.todo.append('trigger_push %s has no mesh - skipped' % m.name(e)); continue
+        d = direction(e)
+        if d[2] > 0.9 and any(overlap(b, f) for f in flat):
+            # an up push over a script forward push: stays a real trigger_push, as skink52 settled on for ba_jail_keimusho (CS:GO 700 -> CS2 40)
+            m.setp(e, 'speed', '%g' % max(1, round(float(m.P(e, 'speed', '0') or 0) * NATIVE_UP_PUSH))); m.setp(e, 'spawnflags', '4097'); native += 1
+            continue
         pid = str(len(c.push) + 1)
         c.push[pid] = dict(dir=[round(x, 4) + 0.0 for x in d], speed=float(m.P(e, 'speed', '0') or 0), mins=[float(x) for x in b[0]], maxs=[float(x) for x in b[1]])
         m.setp(e, 'classname', 'trigger_multiple')
@@ -257,7 +269,10 @@ def trigger_push(m, c):
         m.add_conn(e, 'OnStartTouch', c.script, 'RunScriptInput', 'PushIn_' + pid)
         m.add_conn(e, 'OnEndTouch', c.script, 'RunScriptInput', 'PushOut_' + pid)
     sp = sorted(set(v['speed'] for v in c.push.values()))
-    c.log.append('%d trigger_push (speeds %s; CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500); names/filters/Enable/Disable kept' % (len(ps), sp))
+    c.log.append('%d trigger_push (speeds %s; CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500); names/filters/Enable/Disable kept' % (len(ps) - native, sp))
+    if native:
+        c.log.append('%d up trigger_push over a forward push kept as real trigger_push at %g x the CS:GO speed' % (native, NATIVE_UP_PUSH))
+        c.todo.append('%d up pushes over forward pushes are real trigger_push, scaled from the one case tuned by hand (ba_jail_keimusho 700 -> 40): check the jumps work in game' % native)
 
 def servercommand(m, c):
     sc = m.by_class('point_servercommand')
@@ -865,7 +880,7 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'trigmat', 'toolpaths', 'trigsplit', 'renderamt', 'steam', 'fire', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'culled', 'displaybrush', 'splitfaces', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'probes', 'waterprobe', 'radar', 'assets', 'matflags', 'origindup', 'droppedio']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'trigmat', 'toolpaths', 'trigsplit', 'renderamt', 'steam', 'fire', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'culled', 'displaybrush', 'splitfaces', 'sky', 'skyvis', 'vis', 'beams', 'ropes', 'lights', 'alpha', 'probes', 'waterprobe', 'radar', 'assets', 'matflags', 'origindup', 'droppedio']
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
     if 'io' in steps or 'nullparams' in steps: repair.null_params(m, c)        # before restore_io: a "(null)" output would be re-added as a "" duplicate
@@ -907,6 +922,7 @@ def run(addon, root, passes=None):
     if 'vis' in steps: visfit.run(m, c)                  # hints fitted to the play space + sky shells out of vis
     elif 'skyvis' in steps: skyvis.run(m, c)
     if 'beams' in steps: beammod.run(m, c)
+    if 'ropes' in steps and os.path.exists(vmfp): ropes.run(m, c, vmfp)
     if ('relight' in steps or 'lights' in steps) and 'lightbright' not in steps and os.path.exists(vmfp): lighting.relight(m, c, vmfp)   # every light rebuilt from the VMF
     elif 'lightbright' in steps and os.path.exists(vmfp): lighting.fix_brightness(m, c, vmfp)   # keep the imported lights, fix values in place
     elif 'lights' in steps: lighting.fix_nan_brightness(m, c)

@@ -1,6 +1,6 @@
 """Missing material pass: every material the vmap uses must exist in the addon or in CS2's stock VPK.
 Missing ones are rebuilt from CS:GO (VMT preloaded in csgo/pak01_dir.vpk, VTF from the archive chunks),
-water-type materials are swapped for stock liquids/nuke_water, anything with no source gets the closest stock CS2 material."""
+water-type materials are swapped for stock anubis/anubis_water_canal, anything with no source gets the closest stock CS2 material."""
 import os, re, io, difflib, collections
 import dmx, vpk, vtf
 
@@ -97,7 +97,7 @@ def fix_materials(m, c, cs2_vpk, csgo_vpk, csgo_archives):
     used = mesh_materials(m)
     stubs = stub_materials(c)
     rebuilt, swapped, substituted, stuck = [], [], [], []
-    WATER = 'materials/liquids/nuke_water.vmat'
+    WATER = 'materials/anubis/anubis_water_canal.vmat'   # skink52's default since 2 Nov 2026 (was liquids/nuke_water)
     for mat in sorted(used):
         if not mat.endswith('.vmat') or mat.startswith('materials/tools/'): continue
         if (mat in stock and mat not in stubs) or c.exists(mat): continue

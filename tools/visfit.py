@@ -21,17 +21,28 @@ highest resolution wins). So hints should only be fine where players can actuall
    its inside/outside test, and clips, triggers and meshes already excluded from vis don't count either.
 5. Optional extra_visex_box (world box): every world mesh entirely inside it is excluded from vis too (an unreachable
    ex-3D-skybox, for example).
+6. Sight corridors: where two walkable places see each other across a long gap with nothing to stand on (ba_jail_keimusho: the water slide
+   entrance and the platform jump), props at the far end pop out of view because the air between them falls to coarse clusters. Every clear
+   sight line between walkable cells (up to SIGHT_RANGE) that crosses MIN_GAP_CELLS or more cells with no Low/Medium hint counts those gap cells;
+   within each connected stretch of gap the most used become Medium (at least CORRIDOR_SHARE of that stretch's busiest cell, MAX_CORRIDOR_CELLS
+   in total), a thin stretch through the middle of each crossing. With detail, walkable cells holding props or gameplay entities never fall to Lowest.
+   Not with all_lower / lean, which are for maps whose vis is too slow.
+Only faces players can see count as somewhere to stand or as geometry worth a hint: clip, nodraw and trigger meshes still block the flood fill
+(players can't walk through clips) but never earn a box of their own (ba_jail_keimusho had Low boxes over them). Props, weapons, buttons, spawns and
+teleport targets mark a place to stand too, so prop walkways over nodraw keep theirs. Triggers don't mark a sealed room as play space.
 Existing visibility_hint entities are replaced.
 """
 import collections
 import numpy as np
 from scipy import ndimage
+from scipy.spatial import cKDTree
 import dmx
 from lighting import mesh_polys
 
 PLAY = ('info_player_counterterrorist', 'info_player_terrorist', 'info_player_start', 'info_teleport_destination')
-ACTIVE = ('func_button', 'func_rot_button', 'func_door', 'func_door_rotating', 'func_movelinear', 'trigger_multiple', 'trigger_once',
-          'trigger_teleport', 'game_player_equip', 'point_teleport', 'func_tracktrain', 'func_rotating', 'func_physbox')
+ACTIVE = ('func_button', 'func_rot_button', 'func_door', 'func_door_rotating', 'func_movelinear', 'game_player_equip', 'point_teleport',
+          'func_tracktrain', 'func_rotating', 'func_physbox')
+NOT_SCENERY = ('trigger_', 'func_clip', 'func_ladder', 'func_buyzone', 'func_bomb_target', 'func_hostage_rescue', 'func_viscluster', 'func_areaportal', 'func_occluder', 'func_nav')
 PHYS_PASS = ('materials/tools/toolstrigger', 'materials/tools/toolshint', 'materials/tools/toolsskip', 'materials/tools/toolsfog',
              'materials/tools/toolslight', 'materials/tools/toolsblocklight', 'materials/tools/toolsblock_los', 'materials/tools/toolsbuyzone',
              'materials/tools/toolsbombsite', 'materials/tools/toolsareaportal', 'materials/tools/toolsoccluder', 'materials/tools/toolsvisblocker')
@@ -40,6 +51,10 @@ BAND = 160.0
 MED_FACES = 150
 PROP_WEIGHT = 10
 OPEN_FILL = 0.004
+SIGHT_RANGE = 4096.0        # longest sight line worth a corridor
+MIN_GAP_CELLS = 2           # cells of air in a row with nothing to stand on before it counts as a gap
+CORRIDOR_SHARE = 0.3        # a gap cell needs at least this share of the sight lines through the busiest cell of its own stretch
+MAX_CORRIDOR_CELLS = 200    # about 3.5 x keimusho's hand-placed box per map, so vis time stays bounded
 CODE = {'Medium': '2', 'Low': '3', 'Lower': '8', 'Lowest': '9'}
 
 def is_shell(mats):
@@ -64,8 +79,63 @@ def meshes(m):
         if m.type(n) != b'CMapMesh': continue
         pl = mesh_polys(m, n); mats = {x for x, _ in pl}
         a = dmx.geta(m.E[n], b'visexclude')
-        out.append(dict(n=n, ent=in_ent(n), polys=pl, mats=mats, shell=is_shell(mats), visex=bool(a and a[2])))
+        en = in_ent(n)
+        out.append(dict(n=n, ent=en, polys=pl, mats=mats, shell=is_shell(mats), visex=bool(a and a[2]), scenery=en is None or not m.cls(en).startswith(NOT_SCENERY)))
     return out
+
+def seen_faces(ms):
+    """faces a player can see: no tool materials, sky shells or trigger-like entities"""
+    return [l for x in ms if x['scenery'] and not x['shell'] for mt, l in x['polys'] if not mt.startswith('materials/tools/')]
+
+def sight_corridors(band, visg, lo, vs, shape, hinted):
+    """Cells crossed by clear sight lines between walkable places where the line runs through MIN_GAP_CELLS or more cells with no hint
+    (Lowest: air with nothing to stand on, or open walkable cells _detail_split left to Lowest, as between keimusho's slide and platform).
+    Returns (cells, stats)."""
+    idx = np.argwhere(band)
+    if not len(idx): return set(), dict(lines=0, cells=0, cut=0)
+    pos = lo + (idx + 0.5) * vs
+    keys, inv = np.unique(np.floor(pos / CELL).astype(int), axis=0, return_inverse=True)
+    inv = inv.ravel()
+    eye = np.stack([np.bincount(inv, pos[:, k]) / np.bincount(inv) for k in range(3)], 1)   # the middle of the walkable air in each cell
+    pairs = cKDTree(eye).query_pairs(SIGHT_RANGE, output_type='ndarray')
+    if not len(pairs): return set(), dict(lines=0, cells=0, cut=0)
+    pairs = pairs[np.linalg.norm(eye[pairs[:, 0]] - eye[pairs[:, 1]], axis=1) >= MIN_GAP_CELLS * CELL]
+    step = max(vs, 32.0); S = int(SIGHT_RANGE / step) + 1; t = np.linspace(0, 1, S)[None, :, None]
+    found = []
+    for st in range(0, len(pairs), 20000):
+        P = pairs[st:st + 20000]; a = eye[P[:, 0]][:, None, :]; d = eye[P[:, 1]][:, None, :] - a
+        q = a + d * t
+        v = np.floor((q - lo) / vs).astype(int)
+        inb = ((v >= 0) & (v < shape)).all(2)
+        hit = np.zeros(inb.shape, bool); w = np.where(inb); hit[w] = visg[v[w][:, 0], v[w][:, 1], v[w][:, 2]]
+        clear = ~hit.any(1)
+        for i in np.flatnonzero(clear):
+            cs = [tuple(x) for x in np.floor(q[i] / CELL).astype(int)]
+            run = []; best = []
+            for c in dict.fromkeys(cs):
+                if c in hinted:
+                    if len(run) > len(best): best = run
+                    run = []
+                else: run.append(c)
+            if len(run) > len(best): best = run
+            if len(best) >= MIN_GAP_CELLS: found.append(best)   # the longest stretch of gap this line crosses
+    if not found: return set(), dict(lines=0, cells=0, cut=0)
+    # group the lines by where their gap is (4-cell blocks around its middle); each group's corridor is the cells most of its lines pass
+    # through (its thin middle). Groups take turns at the budget, busiest first, so one big open area can't use it all.
+    groups = collections.defaultdict(list)
+    for run in found: groups[tuple(np.array(run[len(run) // 2]) // 4)].append(run)
+    spines = []
+    for runs in sorted(groups.values(), key=len, reverse=True):
+        use = collections.Counter(c for r in runs for c in r); top = max(use.values())
+        spines.append([c for c, n in use.most_common() if n >= max(2, top * CORRIDOR_SHARE)])
+    cells = set(); k = 0; cut = 0
+    while any(k < len(sp) for sp in spines):
+        for sp in spines:
+            if k < len(sp) and sp[k] not in cells:
+                if len(cells) >= MAX_CORRIDOR_CELLS: cut += 1
+                else: cells.add(sp[k])
+        k += 1
+    return cells, dict(lines=len(found), cells=len(cells), crossings=sum(1 for sp in spines if set(sp) & cells), cut=cut)
 
 def raster(polys, lo, shape, vs, grid):
     for L in polys:
@@ -144,6 +214,12 @@ def plan(m, all_lower=False, extra_visex_box=None, vs=None, margin=256.0, lean=F
     raster([l for x in world for mt, l in x['polys'] if not mt.startswith(PHYS_PASS)], lo, shape, vs, phys)
     raster([l for x in world if not x['visex'] and not x['shell'] for mt, l in x['polys'] if vis_relevant(mt)], lo, shape, vs, visg)
     raster([l for x in ms if x['ent'] is not None for mt, l in x['polys'] if not mt.startswith(PHYS_PASS)], lo, shape, vs, ent)
+    stand = np.zeros(shape, bool); raster(seen_faces(ms), lo, shape, vs, stand)
+    # props, buttons, weapons, spawns and teleport targets mark somewhere players are too, even on a nodraw or clip floor (prop walkways, obby platforms)
+    for e in m.entities():
+        if m.cls(e).startswith(('prop_', 'weapon_')) or m.cls(e) in PLAY or m.cls(e) in ACTIVE:
+            i = np.floor((np.array(m.origin(e), float) - lo) / vs).astype(int)
+            if ((i >= 0) & (i < shape)).all(): stand[tuple(i)] = True
     shells = [x for x in world if x['shell']]
     for si, x in enumerate(shells, 1):
         g = np.zeros(shape, bool); raster([l for _, l in x['polys']], lo, shape, vs, g); sh[g] = si
@@ -166,29 +242,30 @@ def plan(m, all_lower=False, extra_visex_box=None, vs=None, margin=256.0, lean=F
     P = np.isin(lab, list(comps))
     del lab
     if detail and leak:
-        g = phys & (sh == 0)
-        above = np.flip(np.cumsum(np.flip(g, 2), 2), 2) > 0
+        above = np.flip(np.cumsum(np.flip(phys & (sh == 0), 2), 2), 2) > 0
         nb = int(2 * BAND / vs); near = np.zeros(shape, bool)
-        for k in range(1, nb + 1): near[:, :, k:] |= g[:, :, :-k]
+        for k in range(1, nb + 1): near[:, :, k:] |= stand[:, :, :-k]
         P &= (above | near)
-        del above, near, g
-    solid = phys | (sh > 0) | ent
+        del above, near
     band = np.zeros(shape, bool)
     for k in range(1, int(BAND / vs) + 1):
-        band[:, :, k:] |= solid[:, :, :-k]
+        band[:, :, k:] |= stand[:, :, :-k]
     band &= P
-    del solid
     def cells_of(mask):
         idx = np.argwhere(mask)
         return set(map(tuple, np.floor((lo + (idx + 0.5) * vs) / CELL).astype(int)))
     pc, bc = cells_of(P), cells_of(band)
-    geo = cells_of((phys & (sh == 0)) | visg | ent)
-    low = set(bc); lower = (pc - low) & geo; medium = set(); dstats = {}
+    geo = cells_of(stand | visg)
+    del stand
+    low = set(bc); lower = (pc - low) & geo; medium = set(); dstats = {}; cstats = {}
     if all_lower: lower |= low; low = set()
     if lean: lower = set(low) | (lower & bc); low = set()      # only the walkable band gets a box (Lower); all other air falls to Lowest
     if detail and low:
-        props = [m.origin(e) for e in m.entities() if m.cls(e).startswith('prop_')]
+        props = [m.origin(e) for e in m.entities() if m.cls(e).startswith(('prop_', 'weapon_')) or m.cls(e) in PLAY or m.cls(e) in ACTIVE]
         medium, low, lower, dstats = _detail_split(ms, props, low, lower, band, visg, phys, sh, lo, vs, shape)
+    if not (all_lower or lean):
+        cor, cstats = sight_corridors(band, visg, lo, vs, shape, medium | low)   # Lower and Lowest air both count as gap
+        medium = medium | cor; low = low - cor; lower = lower - cor
     sets = [('Medium', medium), ('Low', low), ('Lower', lower)]
     for fill in (0.75, 0.6, 0.5):
         hints = [(t, a, b) for t, own in sets if own for a, b in merge_boxes(boxes_from_cells(own), own, set().union(*[o for tt, o in sets if tt != t]), fill)]
@@ -210,7 +287,7 @@ def plan(m, all_lower=False, extra_visex_box=None, vs=None, margin=256.0, lean=F
             bb = m.bounds(x['n'])
             if bb and (np.array(bb[0]) >= a).all() and (np.array(bb[1]) <= b).all(): extra.append(x)
     stats = dict(vs=vs, play=P.sum() * vs ** 3 / 1e9, band=band.sum() * vs ** 3 / 1e9, shells=len(shells), kept=len(shells) - len(exclude),
-                 hints=dict(collections.Counter(h[0] for h in hints)), detail=dstats)
+                 hints=dict(collections.Counter(h[0] for h in hints)), detail=dstats, corridors=cstats)
     return dict(hints=hints, exclude=exclude, extra=extra, stats=stats)
 
 def _detail_split(meshes_all, props, low, lower, band, visg, phys, sh, lo, vs, shape):
@@ -255,7 +332,8 @@ def _detail_split(meshes_all, props, low, lower, band, visg, phys, sh, lo, vs, s
             for dy in (-1, 0, 1):
                 s2 = cell_slices((c[0] + dx, c[1] + dy, c[2]))
                 tot += np.prod([q.stop - q.start for q in s2]); vv += int(vert[s2].sum())
-        if tot and vv / tot < OPEN_FILL: lowest.add(c)
+        # a prop or gameplay entity standing there keeps a hint: in a Lowest cell it pops out of view from far away (ba_jail_keimusho)
+        if tot and vv / tot < OPEN_FILL and faces.get(c, 0) < PROP_WEIGHT: lowest.add(c)
         elif rf < 0.1: opn.add(c)
     low = low - med - opn - lowest
     lower = (lower | opn) - lowest
@@ -288,5 +366,8 @@ def run(m, c, all_lower=False, extra_visex_box=None, lean=False, detail=False):
         c.log.append('visfit: %d of %d sky shell meshes set to Exclude from Vis, %d kept because they close playable air'
                      % (len(pl['exclude']), s['shells'], s['kept']))
     if pl['extra']: c.log.append('visfit: %d meshes inside %s set to Exclude from Vis' % (len(pl['extra']), extra_visex_box))
+    cs = s.get('corridors') or {}
+    if cs.get('cells'): c.log.append('visfit: %d Medium cells along %d long sight lines across gaps, so nothing pops out of view at the far end' % (cs['cells'], cs['lines']))
+    if cs.get('cut'): c.todo.append('vis: %d long sight lines got no Medium corridor (over the %d cell limit): look for props popping out across long gaps' % (cs['cut'], MAX_CORRIDOR_CELLS))
     c.todo.append('vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)')
     return pl

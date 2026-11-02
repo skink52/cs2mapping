@@ -2,26 +2,41 @@
 
 > **AI-generated code.** These tools were written by Claude (an AI agent) for skink52's CS:GO to CS2 map ports, not hand-written.
 
-On the PC they live in `C:\source1\cs2port\tools` (this repo's `tools/` folder). Claude runs them in its cloud workspace and reads and writes
-the PC through the linked-computer file tools. Hammer must stay closed while Claude edits a map. Paths below are the PC paths; see
-[setup.md](setup.md) for how the repo maps onto them. Every tool with its usage line is in the tool index, [tools/README.md](../../tools/README.md).
-On the PC this file is `C:\source1\cs2port\cs2_port_pipeline.md`.
+On the PC they live in `C:\source1\cs2port\tools` (this repo's `tools/` folder). **Since 2 Nov 2026 everything runs on the PC itself:** Claude Code
+runs from `C:\source1` and runs the tools, Valve's importer and the compiler directly, and the stage C working root is `C:\source1\cs2port\work`
+(built by `autoport/pclocal.py root`). The cloud-workspace route (tools in Claude's workspace, files sent through the linked-computer tools, batch
+files double-clicked by the mapper) still works and is kept below where it differs. Hammer must stay closed while Claude edits a map. Paths below
+are the PC paths; see [setup.md](setup.md) for how the repo maps onto them. Every tool with its usage line is in the tool index,
+[tools/README.md](../../tools/README.md). On the PC this file is `C:\source1\cs2port\cs2_port_pipeline.md`.
 
-## Quick start for an agent
+## The normal way: autoport
+
+[autoport](../../autoport/README.md) runs every stage below for a list of maps with nobody watching: `C:\source1\cs2port\autoport\run_autoport.bat`,
+paste the map names, confirm. Each map gets its type's extra steps (TTT, course, jailbreak), the checks in [Checks before the build](#checks-before-the-build),
+and a build. Maps with anything missing, wrong or unknown are held for Claude ([autoport/REVIEW.md](../../autoport/REVIEW.md)) while the rest build; Claude
+marks a held map ready with `autoport.py review ready <addon> --note "..."` and it builds by itself. The steps below are what autoport does, and how to
+do any of them by hand.
+
+## Quick start for an agent (by hand)
 
 1. Duplicate check: `python3 tools/ports.py check <existing_ports.txt> <name>...` plus a web search (Steam Workshop, GameBanana). Report hits before going on.
-2. Stage A: `OUT=<dir> BSPSRC=<bspsrc.sh> python3 tools/prep.py <bsp>... [bspname=addon] [--ports=existing_ports.txt]`. Needs `tools/addon_template/`
-   and BSPSource (see [setup.md](setup.md#cloud-workspace)). Output: `OUT/<addon>/pc/...`, `OUT/<addon>/manifest.json`, `OUT/<addon>/zips/`.
-3. Send the files with `device_commit_files` using the manifest pairs, add the map to `existing_ports.txt` (`ports.py add`) and append `addon [vmfname]` to `queue.txt`.
-4. The mapper runs `run_import.bat` (stage B).
-5. Stage the working root (`<root>`, layout in [setup.md](setup.md#cloud-workspace)): the addon's content folder, the VMF, the VPKs.
+   TTT maps are the exception: other people's TTT ports need a dedicated server, ours play from the map's script ([conventions.md](conventions.md)).
+2. Stage A: `OUT=<dir> BSPSRC=<bspsrc> python3 tools/prep.py <bsp>... [bspname=addon] [--ports=existing_ports.txt]`. Needs `tools/addon_template/`
+   and BSPSource: on the PC `BSPSRC=C:\source1\cs2port\autoport\bspsrc.bat` (BSPSource's own image, no Java setup); in the cloud `tools/bspsrc.sh` (see
+   [setup.md](setup.md#cloud-workspace)). Output: `OUT/<addon>/pc/...`, `OUT/<addon>/manifest.json`, `OUT/<addon>/zips/`.
+3. Put the files in place: on the PC `python autoport/pclocal.py deliver OUT/<addon>/manifest.json`; in the cloud `device_commit_files` with the manifest
+   pairs. Add the map to `existing_ports.txt` (`ports.py add`) and put `addon [vmfname]` in `queue.txt`.
+4. Stage B: `run_import.bat` (on the PC Claude runs it, under `autoport/watchdog.py`; in the cloud the mapper double-clicks it).
+5. The working root (`<root>`): on the PC `python autoport/pclocal.py root <addon>` builds `C:\source1\cs2port\work` (the addon's content as a junction,
+   the VMF, both VPKs, the embedded files); in the cloud stage it by hand ([setup.md](setup.md#cloud-workspace)).
 6. If material paths had spaces → `matnames.py`.
 7. Stage C: `python3 tools/stage_c.py <addon> <root>`; then, on its output: `disprestore.py` if the import log has "missing a needed subkey" (it needs a world mesh
    as a template, which the importer's vmap may not have until the prefab merge), `skysplit.py` if the map had a `sky_camera`, `stage_d.py … gameui` if it
    has game_ui, `laserhurt.py` if the log flags damaging lasers, `glowfix.py` if the map has parented glows. A NEED line lists CS:GO files stage C couldn't
    find: copy them from the extracted CS:GO content (`<CS2>\csgo`) into `<root>/embedded/<addon>/` and rerun (no archive chunks needed).
-8. Back up the PC's `.vmap`, then copy back `<root>/out/<addon>/` (content) and `<root>/out/<addon>_game/` (game) — only changed files.
-9. Write `build_queue.txt` and ask the mapper to run `run_build.bat` (stage D build); read `logs\` afterwards.
+8. Back up the PC's `.vmap`, then copy back `<root>/out/<addon>/` (content) and `<root>/out/<addon>_game/` (game) — only changed files
+   (`python autoport/pclocal.py apply <addon>` does both and backs up each changed vmap).
+9. Run [the checks](#checks-before-the-build), then build: `build_maps.ps1 <addon>` (or `build_queue.txt` + `run_build.bat`); read `logs\` afterwards.
 10. Record the port: `ports/<addon>/` README + cleanup log + scripts, a `CHANGELOG.md` line, `CAPABILITIES.md` if something new became possible.
 
 ## Who does what
@@ -29,9 +44,9 @@ On the PC this file is `C:\source1\cs2port\cs2_port_pipeline.md`.
 | Stage | What happens | Who |
 |---|---|---|
 | A. Prep | BSPSource decompile with embedded files unpacked (`bspsrc` extracted from your jlink image, run on Java 21). VMF renamed to the addon name. **Hammer re-save fix** (`hammer_resave.py`) adds versioninfo/viewsettings/cordons, editor blocks and side `rotation`, and rewrites planes and axes at %g precision with upper-case materials. The result matches a real Hammer save structurally. func_illusionary (on Valve's import exclusion list, so it would vanish) becomes a never-solid func_brush. Materials and models are packed into `C:\source1\cs2port\assets\<addon>.zip` (plus `.2`/`.3`/`.4.zip` for big maps, each under ~14 MB: see the transfer limit in [ai-workflow.md](../reference/ai-workflow.md#transfer-limits-and-traps)), and `run_import.bat` unpacks them into `csgo\` (files that already exist are never overwritten). Claude doesn't need access to the `csgo` folder. The decompiled embedded files go to `C:\source1\maps\<addon>_embedded.zip` as a backup (one file instead of hundreds to transfer; stage C re-extracts them from the BSP into `<root>/embedded/<addon>`). Pakfile entries stored with an absolute path (`c:/…/csgo/maps/x.nav`) are cut back to the part after `csgo/`. Sounds go to `<addon>\sounds\` with cleaned names (`maps\<addon>_sound_renames.json`). Other embedded files go to the addon. The addon is created from `tools/addon_template/` (a copy of Valve's `addon_template`, see [setup.md](setup.md)), the same way the Workshop Tools launcher does it. | Claude |
-| B. Import | Double-click `C:\source1\cs2port\run_import.bat`. For each line in `queue.txt` (`addon [vmfname]`) it re-renames `vpk.signatures` if Steam restored it, unpacks `assets\<addon>*.zip` into `csgo\` with `tar -k` (log `logs\<addon>_assets_unpack.log`), runs `import_map_auto.py` (Valve's importer without the Enter prompt), then `post_import_cleanup.py`, which first runs `vmap_refs.py` so the model/material list comes from the `.vmap` and its prefabs rather than the importer's `_refs.txt` (and lists stock CS2 stub materials in `<addon>_stub_materials.txt`). Each `cs_mdl_import` runs under a watchdog: models with a loose `.mdl` but no `.vvd`/`.vtx` are skipped, a run with no output for 120 s (or over 15 min) is killed and listed as stalled, other failures retry up to 3 times (output in `maps\<addon>_mdl_import.log`). The cleanup report ends with **WHY MISSING**: for each failed model or missing texture, the vmap/prefab that used it and same-named files in the CS:GO content or CS2's VPK. Logs go to `logs\`. | **You** (Claude can't run programs on the PC) |
+| B. Import | Double-click `C:\source1\cs2port\run_import.bat`. For each line in `queue.txt` (`addon [vmfname]`) it re-renames `vpk.signatures` if Steam restored it, unpacks `assets\<addon>*.zip` into `csgo\` with `tar -k` (log `logs\<addon>_assets_unpack.log`), runs `import_map_auto.py` (Valve's importer without the Enter prompt), then `post_import_cleanup.py`, which first runs `vmap_refs.py` so the model/material list comes from the `.vmap` and its prefabs rather than the importer's `_refs.txt` (and lists stock CS2 stub materials in `<addon>_stub_materials.txt`). Each `cs_mdl_import` runs under a watchdog: models with a loose `.mdl` but no `.vvd`/`.vtx` are skipped, a run with no output for 120 s (or over 15 min) is killed and listed as stalled, other failures retry up to 3 times (output in `maps\<addon>_mdl_import.log`). The cleanup report ends with **WHY MISSING**: for each failed model or missing texture, the vmap/prefab that used it and same-named files in the CS:GO content or CS2's VPK. Logs go to `logs\`. | Claude on the PC (autoport, under the watchdog); the mapper in the cloud route |
 | C. Clean | `stage_c.py <addon> <root>` edits the .vmap directly. It collapses every prefab (lighting/nav/audio/cubemaps/environment/gameplay) into the map with world offsets kept; a 3D skybox prefab stays as a prefab. It then runs the fixes below and writes `maps\<addon>_cleanup_log.txt`. | Claude |
-| D. Build | Close CS2/Hammer and double-click `C:\source1\cs2port\run_build.bat`. It compiles every map in `build_queue.txt` from the command line, one at a time, and moves each built .vpk into the game addon before starting the next (see below). Then test in game and report anything odd. | **You** |
+| D. Build | Close CS2/Hammer and double-click `C:\source1\cs2port\run_build.bat`. It compiles every map in `build_queue.txt` from the command line, one at a time, and moves each built .vpk into the game addon before starting the next (see below). Then test in game and report anything odd. | Claude on the PC (autoport); the mapper in the cloud route. Testing in game is always **you** |
 
 ## Before porting: duplicate check and names
 - Claude checks every requested map against `C:\source1\cs2port\existing_ports.txt` (`ports.py check <existing_ports.txt> <name>...`, which ignores prefixes, `_cs2` and version suffixes) **and** searches the web (Steam Workshop, GameBanana) for a CS2 port that already exists. Any likely duplicate is reported before stage A starts, and that map is not ported unless you say so.
@@ -56,7 +71,7 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
 - **func_wall_toggle** (`wall`) → func_brush (Solidity Toggle; StartDisabled from "Starts Invisible"). TurnOn/TurnOff → Enable/Disable.
 - **game_player_equip** (`equip`) → weapon0..weapon21 slots, and `Use` inputs on them → `TriggerForActivatedPlayer`. Equips without "Use Only" (CS:GO ran them
   on every spawn) are run by the io script one tick after `OnPlayerReset`: strip first if flagged, then give only the items the player doesn't already have.
-- **trigger_push** (`push`) → trigger_multiple plus `maps/scripts/<addon>_io.js` push zones (`PushIn_n`/`PushOut_n`) that copy CS:GO's base-velocity push (players keep their own speed on top; see the trigger_push gotcha)
+- **trigger_push** (`push`) → trigger_multiple plus `maps/scripts/<addon>_io.js` push zones (`PushIn_n`/`PushOut_n`) that copy CS:GO's base-velocity push (players keep their own speed on top; see the trigger_push gotcha). An up push that overlaps a forward push stays a real CS2 trigger_push at 40/700 of its CS:GO speed (skink52's ba_jail_keimusho fix; scripting both made the jump impossible), listed in TO CHECK
   (clamped to 3500). Names, filters and Enable/Disable are kept.
 - **point_servercommand** (`cmd`) → script `Cmd_n`, with "Ported to CS2 by skink52" added after CS:GO port credits.
 - **Round setup** (`roundcfg`): a point_servercommand `port_servercommand` + logic_auto set `mp_freezetime 0` / `mp_roundtime 600` OnMapSpawn. Maps with
@@ -150,13 +165,21 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
   space (16-unit voxels; 24 or 32 on very big maps) connected to a spawn or teleport destination, plus sealed rooms holding buttons, doors, triggers, trains
   or weapons. The **walkable band** is playable air up to 160 units above something to stand on. Hints sit on a 256-unit grid: **Low** over the walkable band,
   **Lower** (`hintType` 8, fewer initial clusters) over the rest of the playable air next to geometry (high ceilings, shafts), and one **Lowest** over the
-  whole map, so the void, sealed-off rooms and open sky fall to Lowest. No Medium on ports (these Source 1 maps have no dense vis geometry; Medium is only
-  for original multi-arena maps, see [conventions.md](conventions.md#multi-arena-maps-original-minigame-addons)). Low and Lower boxes never overlap, and
+  whole map, so the void, sealed-off rooms and open sky fall to Lowest. Medium only as thin **sight corridors**: long clear sight lines between walkable
+  cells that cross two or more unhinted cells get short Medium stretches where most of those lines pass (at most 200 cells, `MAX_CORRIDOR_CELLS`), so
+  far views don't pop. Only visible faces, props, weapons, buttons, spawns and teleports count as somewhere to stand or as geometry worth a hint (clips
+  still block the flood fill, triggers no longer seed play space), and walkable cells holding props or gameplay entities never fall to Lowest. Planning
+  takes about twice as long as before (keimusho 88 → about 200 s). Corridors are off for `all_lower` and `lean`. Low and Lower boxes never overlap, and
   they are merged down to about 100 boxes or fewer. `all_lower` (stage D `visfit_lower`) makes the Low boxes Lower too, for maps whose vis merge stalls.
   Moondome / tools/skybox shells get **Exclude from Vis** (they still render) unless they border playable air that is open once every sky shell is gone. That
   test uses only vis-relevant geometry: Valve's docs say `toolsnodraw` is ignored by vis and its inside/outside test, and clips, triggers and meshes already
   excluded from vis don't count. Big shells are expensive because vis voxelises every vis face at 8 units (mg_mario_party: 19.2M nodes and 103 s, then 3.6M
   nodes and 23 s with its 64 shells excluded).
+- **Ropes** (`ropes`, after `beams`; also a stage D pass; needs the .vmf). CS2 has no move_rope / keyframe_rope. Each NextKey segment becomes a
+  cable_dynamic (CMapCable with path_node_cable children at world positions), radius = Width / 4, sagging along a parabola with CS:GO's Slack length, scaled
+  by how level the rope is. Ropes use rope_braid_1 with grapplinghook_rope_end_01 caps tinted 240 179 94 at free ends; cables (`cable/cable`) use
+  `materials/cable/cable.vmat` and no caps. Template: `tools/cable_template.vmap`, from skink52's hand-made keimusho cable. Re-runnable (replaces
+  `port_rope_*`). TO CHECK: the sag and end caps.
 - **env_laser / env_beam** (`beams`). CS2 can't spawn them. Each becomes a never-solid func_brush between its end points: LaserTarget for lasers,
   LightningStart/End for beams, matched case-insensitively. It is drawn as crossed double-sided quads with a self-illuminated laser material in the beam's
   colour. A mutual laser pair is drawn once. A CS:GO beam with no name starts on. TurnOn/TurnOff/Toggle become Enable/Disable/Toggle; StrikeOnce becomes
@@ -195,7 +218,7 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
     `"default"` (image `<map>_radar_psd`) and `"lower"` (image `<map>_lower_radar_psd`), each with AltitudeMin/Max; all sections share pos_x/pos_y/scale.
     Done by hand for mg_smee_tower_cs2 (split at z 2560, 17 Oct 2026); `radar.py` itself still makes one image.
 - **Missing materials and models** (`assets`). Missing materials are rebuilt from CS:GO's VPK (VMT from `pak01_dir`, VTF decoded from the archive chunk).
-  Water materials → `liquids/nuke_water`. **Stock stubs:** stock CS2 materials Valve shipped unported (compiled against the error shader) count as
+  Water materials → `anubis/anubis_water_canal` (skink52's default since 2 Nov 2026; it was `liquids/nuke_water`). **Stock stubs:** stock CS2 materials Valve shipped unported (compiled against the error shader) count as
   missing and are rebuilt from CS:GO over the stock path; the list comes from `maps/<addon>_stub_materials.txt`, which `vmap_refs.py` writes on the PC
   in stage B (it reads each used stock `vmat_c`; best effort). Materials missing everywhere are swapped for the closest stock CS2 material and flagged for checking. Custom decals
   with no CS:GO source are left as they are and flagged instead, as is anything whose closest stock match is not a decal; stickers are never used as
@@ -312,13 +335,41 @@ All of these keep your Hammer edits and append to the cleanup log. Exact usage l
 - `vmap_preview.py <vmap> <out.png> [box]`: top-down + four corner renders of any vmap (importer text or binary), to check a port or a generated map without Hammer.
 - `node create/test/mock_point_script.mjs <addon>_io.js` and `sh create/test/tscheck.sh <addon>_io.js`: run / type-check a map script before the build
   (see [create/README.md](../../create/README.md)).
-- **Unattended runs:** `run_import_then_build.bat` = stage B, then wait for `build_go.txt`, then stage D. Claude does stage C in between and writes the flag
-  file; a scheduled check reads the logs afterwards.
+- **Unattended runs:** [autoport](../../autoport/README.md). (The older `run_import_then_build.bat` = stage B, then wait for `build_go.txt`, then stage D,
+  with Claude doing stage C in between, is only needed in the cloud route.)
+- `respawnable.py <vmap in> <vmap out>`: prop_physics_respawnable (kept by the importer, but CS2 has no such class) → prop_physics + point_template +
+  env_entity_maker, no script: the copy respawns at the spot RespawnTime seconds after the prop breaks, once there's room (ttt_island17, 58 props).
+- `vmdlfix.py <addon content folder>`: names the empty bodygroup choices cs_mdl_import writes; CS2 won't compile a model with any (ttt_island17's window
+  bars and door). autoport runs it after every import.
+
+## Checks before the build
+
+autoport runs these on every map after the passes; by hand, run them on the vmap before building.
+
+- **Entity check** (`mapcheck.py <vmap> [<out vmap>]`): what Hammer's Check for Problems reports, read from CS2's own `.fgd` files: classes CS2 removes
+  (`@exclude`, e.g. info_ladder_dismount) or doesn't have (prop_physics_respawnable), outputs aimed at names nothing has, inputs the target lacks, outputs
+  the entity lacks. With an out path it removes dangling outputs (they did nothing in CS:GO either), deletes classes CS2 doesn't need (`SAFE_REMOVE`)
+  and converts ones it has a stand-in for (`CONVERT`: trigger_waterydeath → trigger_hurt, func_wall → func_brush). The rest is for a person.
+- **Z-fighting** (`zfight.py <vmap> [<out vmap>] [<addon content>]`): visible faces in the same plane facing the same way that overlap. vbsp kept one of
+  them; CS2 draws both. Tool materials, fully transparent materials, overlays and decals don't count, nor do overlaps pressed against a face pointing
+  the other way (props standing on a floor). With an out path a fully covered face becomes toolsnodraw, and where two materials partly overlap the
+  smaller face moves 0.25 units forward. Rotated meshes and same-material overlaps are only listed.
+- **Gibs** (autoport, before the build): every addon model either has gib models that exist, or with a Metal / Wooden / Glass propdata base and none
+  gets CS:GO's generic chunks (`gibfix.py`); missing gib models are imported with `run_fixrefs.bat` before compiling. After the build, `gibfix.py` on the
+  build log catches anything still missing.
+- **After the build** (autoport's report step): compile errors and log lines no rule knows, `unrecognized parent`, missing physics hulls, and for TTT
+  maps that `ttt.vjs_c`, `ttt_hud.vxml_c` and `ttt_hud.vcss_c` exist.
 - Map-specific script gates (e.g. mg_fred_all's `EnableDamage`) go in `maps/scripts/<addon>_io.js`: `Instance.OnModifyPlayerDamage` returns
   `{ abort: true }` to cancel a hit (mg_fred_all still uses the deprecated `OnBeforePlayerDamage`), `Instance.OnRoundStart` resets per-round state, and a
   trigger fires `RunScriptInput <name>` on `<addon>_io_script`.
 
-## Standard prompt (paste into a new Claude session in the "cs2 mapping" project)
+## Standard prompt
+
+On the PC, start autoport and, if it holds maps, paste the prompt it puts on the clipboard into Claude Code in `C:\source1`:
+
+> We're on autoport review. Read cs2mapping/autoport/REVIEW.md, then run: python C:\source1\cs2port\autoport\autoport.py review list, and work through the held maps.
+
+For the cloud route (a Claude session in the "cs2 mapping" project with the linked-computer tools):
 
 > Port these CS:GO maps to CS2 with my cs2port pipeline: **<map names, or "the N smallest BSPs in C:\source1\bspsrc-windows\mg maps that don't have an addon yet">**.
 > First check each map against `C:\source1\cs2port\existing_ports.txt` and the internet (Steam Workshop, GameBanana) for an existing CS2 port, and tell me about any you find before porting them. Strip version/bloat (`_v2`, `_final`…) from addon names, and add each map you start to existing_ports.txt as `<addon> [in progress] [skink]`.

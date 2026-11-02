@@ -105,6 +105,18 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
   read as 0 in CS2. Output removed: 2 random fires (one from fire1-10, one from fire11-20) every 8 s; each fire's button (`fireNbrush`, at the
   fire, +use) puts it out.
 
+## 2026-11-02 (skink52's own fixes in Hammer)
+
+- **Slide box jumps:** with both pushes scripted, the up push sped players forward too, so the jumps couldn't be made in time. The two up pushes are now
+  real CS2 `trigger_push` (speed 40, pushdir 270 0 0, spawnflags 4097, smaller boxes over the jumps); the script keeps `PushIn_1` and `PushIn_3` (forward, 150).
+  Cause found afterwards: the script's ground-friction undo over-compensated on the low-friction slide. Fixed in `tools/push_tail.js` and stage C for future ports;
+  this map's own `keimusho_push.js` still has the old code but no longer has up pushes.
+- **Vis:** a Medium hint over the slide entrance / upstairs platform jump (x -2488..-500, y 776..2516, z 504..776) replaces a Lower box at z 896.
+  Props there popped out of view across the long open stretch. `visfit.py` now does the same in thin stretches.
+- **Rope:** the CS:GO `move_rope` pair rope3/rope4 (cable/rope2, -384 -1813 301 → 450) is now two `grapplinghook_rope_end_01` props tinted 240 179 94 at z 279 and 447
+  (the top one flipped), next to the imported invisible ladder.
+- Lighting: 2 light_omni2 and 7 env_combined_light_probe_volumes around -660 464 adjusted or added; 2 func_conveyors removed.
+
 ## Open
 
 - Not tested in game: all of the above. Build, then check the doors, gun room equips, skipping rope cases, samurai mask (speed/invisibility/mask

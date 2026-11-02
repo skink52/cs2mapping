@@ -36,12 +36,13 @@ KNOWN_GONE = set('''worldspawn light light_spot light_environment light_dynamic 
 water_lod_control env_cubemap info_overlay infodecal trigger_push env_sprite move_rope keyframe_rope func_dustmotes env_fog_controller sky_camera env_sun
 env_laser env_beam point_spotlight game_score trigger_gravity player_speedmod shadow_control env_detail_controller env_tonemap_controller func_breakable_surf
 func_wall_toggle func_precipitation env_steam env_spark env_fire point_viewcontrol func_physbox_multiplayer game_ui func_water_analog point_tesla func_illusionary
-env_spritetrail env_screenoverlay point_clientcommand point_servercommand game_weapon_manager'''.split())
+env_spritetrail env_screenoverlay point_clientcommand point_servercommand game_weapon_manager
+prop_physics_respawnable info_ladder_dismount trigger_waterydeath func_wall'''.split())   # last line: tools/respawnable.py and mapcheck.py
 
 TODO_RULES = [
     # lines only someone in the game can answer
     ('playtest', r'pops? in|flicker|compare a few rooms|feel wrong|seams after the bake|counter fed by|in game|in Hammer|heuristic|chat messages use|check the substituted|'
-                 r'check the new probe|starts on|Don.t Drop|still works in CS2'),
+                 r'check the new probe|starts on|Don.t Drop|still works in CS2|ropes rebuilt|no Medium corridor'),
     # stops the map working or looking right: a person decides before the build
     ('missing', r'materials still missing|models referenced but not|outputs from the \.vmf are missing|could not be matched 1:1|prefab .* not found|not staged|'
                 r'could not rebuild|sky brushes dropped by the importer were not rebuilt|moondome cube map|soundscript events built with some waves missing'),

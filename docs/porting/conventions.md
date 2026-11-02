@@ -45,8 +45,10 @@ These are the standing rules every port follows. The pipeline applies most of th
 - **Sky.** Sky brushes the importer dropped come back as moondome boxes using the map's `env_sky` (rebuilt from the six CS:GO faces
   if CS2 doesn't have that sky).
 - **Vis hints.** One `visibility_hint` set to Lowest covering the whole map, including the void. Low where players stand (the walkable
-  band, up to 160 units above a floor), Lower over the rest of the playable air near geometry (high ceilings, shafts). No Medium on ports
-  (`visfit.py` never writes it). `visfit.py` builds this from the map.
+  band, up to 160 units above a floor), Lower over the rest of the playable air near geometry (high ceilings, shafts). Medium only as thin
+  stretches along long sight lines across gaps between places players stand, so props at the far end don't pop out of view (skink52's
+  ba_jail_keimusho fix, 2 Nov 2026), kept to the few cells most sight lines pass through. No boxes over clip, nodraw or trigger-only areas,
+  and no walkable cell holding props or gameplay entities left to Lowest. `visfit.py` builds this from the map.
 - **Sky shells out of vis.** Moondome and tools/skybox shells around a room that is already sealed by its own walls get
   "Exclude from Vis". They're huge surfaces and otherwise dominate the vis compile.
 
