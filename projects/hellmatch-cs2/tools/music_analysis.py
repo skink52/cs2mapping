@@ -1,8 +1,11 @@
-"""Describe a music file by numbers: tempo, key, loudness, spectral balance, rhythmic density and structure.
+"""music_analysis.py: describe a music file by numbers: tempo, key, loudness, spectral balance, rhythmic density and structure.
 
 usage: music_analysis.py <audio file> [--json]
-Only numpy, scipy and ffmpeg/ffprobe are needed. Used to analyse the reference track for the generated Hellmatch
-music (music/analysis.md) and to check the generated tracks against it.
+Only numpy, scipy and ffmpeg/ffprobe are needed. Use it to describe a reference track you want generated music to
+resemble, then check the generated tracks against it (tempo, key, LUFS / true peak / LRA via ffmpeg loudnorm, low /
+mid / high balance, spectral centroid, onset density, section boundaries).
+
+From hellmatch-cs2/tools/music_analysis.py (MIT), made project-neutral.
 """
 import json, os, subprocess, sys, tempfile
 import numpy as np

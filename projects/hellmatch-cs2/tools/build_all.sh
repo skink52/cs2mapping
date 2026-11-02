@@ -34,7 +34,7 @@ mkdir -p build && python3 -I tools/vmf.py out/addon
 TEMPLATE=${FDM_TEMPLATE:-ref/mg_freedm_template.vmap}
 CURRENT=${FDM_CURRENT_VMAP:-}
 MAP=$(python3 -I -c "import sys; sys.path.insert(0, 'tools'); import names; print(names.MAP)")   # mg_hellmatch
-python3 -I tools/merge_snd.py ref/soundevents_addon_template.vsndevts out/addon/soundevents/soundevents_addon.vsndevts
+python3 -I tools/merge_snd.py ref/soundevents_addon_template.vsndevts out/addon/soundevents/soundevents_addon.vsndevts --tag FreeDM
 if [ -n "$CURRENT" ] && [ -f "$CURRENT" ]; then
   python3 -I tools/vmap_env.py "$CURRENT" out/addon/maps/$MAP.vmap out/addon
 else

@@ -1,8 +1,24 @@
-"""Pixel-art sky panoramas, one per track theme (equirectangular 2048 x 1024, drawn at 512 x 256 and upscaled 4x).
-Every picture is generated here from the palette: gradient bands, dithered nebulae, pixel stars, a big planet (or a
-striped retro sun), and a skyline / mountain silhouette along the horizon."""
-import math
+"""skies.py: pixel-art sky panoramas (equirectangular 2048 x 1024, drawn at 512 x 256 in the retro palette and
+upscaled 4x). Layers: gradient bands, a dithered nebula, pixel stars, a big planet (or a striped retro sun) and a
+silhouette along the horizon (city towers or mountain peaks). Use the PNG as an env_sky / moondome texture.
+
+A theme is a dict (colours are (r, g, b), usually names from retro.py):
+    sky     = (top, mid, horizon)   the gradient from straight up to the horizon (below the horizon fades to black)
+    glow    = colour                nebula tint, horizon edge and lit city windows
+    planet  = (colour, kind)        kind: 'sun' (striped, low on the horizon), 'ringed', 'banded', 'moon' / 'cratered',
+                                    anything else = a plain shaded planet
+    scenery = 'city' | 'rings' | 'mountains' ...   horizon silhouette ('city'/'rings' = towers, otherwise peaks)
+After make_sky(), skies.LAST_PLANET is (x, y, radius) of the big body at 512 x 256 scale (for framing pictures).
+
+usage:
+    skies.py <out.png> [theme] [seed] [style]  theme = one of EXAMPLE_THEMES (default dusk); style = pixel | neon | depth
+    import skies; img = skies.make_sky(dict(sky=(BLACK, NAVY, TEAL), glow=MINT, planet=(SKYBLUE, 'ringed')), 'city', 3)
+
+From space-racer-cs2/tools/skies.py (MIT), made project-neutral.
+"""
+import math, os, sys
 import numpy as np
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))     # finds retro.py (also under python3 -I)
 from retro import *
 import retro
 
@@ -115,7 +131,12 @@ def horizon(img, rng, kind, col):
             img[hy - h:hy + 1, x] = INK
             img[hy - h, x] = col
 
-def make_sky(theme, th, scenery, seed):
+def make_sky(th, scenery=None, seed=1, style='pixel'):
+    """one equirect sky (2048 x 1024 RGB uint8) from a theme dict (see the top of this file); scenery overrides th['scenery'].
+    style: 'pixel' (retro palette), 'neon' (black sky, glowing horizon grid and skyline), 'depth' (underwater: surface, light shafts)"""
+    if style == 'neon': return make_sky_neon(th, scenery or th.get('scenery', 'city'), seed)
+    if style == 'depth': return make_sky_depth(th, scenery or th.get('scenery', 'mountains'), seed)
+    scenery = scenery or th.get('scenery', 'mountains')
     rng = np.random.RandomState(seed)
     top, mid, hor = th['sky']
     img = gradient(top, mid, hor)
@@ -126,8 +147,35 @@ def make_sky(theme, th, scenery, seed):
     q = quantize(img, 30)
     return up(q, 4)
 
-# ---------------------------------------------------------------- Neon Racer: smooth 2048 x 1024 neon skies
-def make_sky_neon(theme, th, scenery, seed):
+
+def _neon_palette():
+    hues = [(0, 235, 255), (255, 40, 200), (255, 140, 20), (110, 255, 60), (150, 80, 255), (255, 40, 70), (255, 210, 60),
+            (60, 120, 255)]
+    pal = [(0, 0, 0), (6, 8, 16), (14, 16, 30), (26, 28, 48), (255, 255, 255), (200, 240, 255), (255, 230, 245)]
+    for h in hues:
+        for k in (1.0, 0.6, 0.3, 0.14):
+            pal.append(tuple(int(c * k) for c in h))
+    return pal
+def _depth_palette():
+    """the deep sea: blue-black water, teal and green glow, coral and amber life, a pale surface light"""
+    hues = [(0, 210, 190), (60, 220, 255), (70, 255, 150), (255, 110, 90), (255, 190, 60), (150, 90, 255), (255, 90, 200),
+            (40, 120, 200)]
+    pal = [(0, 0, 0), (2, 8, 20), (6, 18, 34), (12, 32, 52), (24, 54, 74), (235, 250, 255), (170, 230, 240), (60, 70, 90), (30, 36, 50)]
+    for h in hues:
+        for k in (1.0, 0.6, 0.3, 0.14):
+            pal.append(tuple(int(c * k) for c in h))
+    return pal
+NEON_PAL, DEPTH_PAL = _neon_palette(), _depth_palette()
+
+def pixelate(img, k=4, spread=14.0, palette=None):
+    """full-size float image -> shrink k x (box average), dither to the palette, nearest-neighbour back up"""
+    a = np.asarray(img, np.float32)
+    h, w = a.shape[0] // k * k, a.shape[1] // k * k
+    small = a[:h, :w].reshape(h // k, k, w // k, k, 3).mean((1, 3))
+    return up(quantize(small, spread, palette), k)
+
+# ---------------------------------------------------------------- neon style (from Neon Racer)
+def make_sky_neon(th, scenery=None, seed=1):
     """black sky over a glowing horizon, a perspective grid floor below it, a striped sun (or a ringed planet drawn in
     lines), a skyline whose edges glow, and a few stars. Smooth, not pixel art."""
     Wn, Hn = 2048, 1024
@@ -197,11 +245,10 @@ def make_sky_neon(theme, th, scenery, seed):
     img[edge] = glow
     lit = sil & (rng.rand(Hn, Wn) < 0.012)
     img[lit] = acc
-    from neonlook import pixelate                  # Space Racer's chunky pixels, in neon colours
-    return pixelate(np.clip(img, 0, 255), 4, 10.0)
+    return pixelate(np.clip(img, 0, 255), 4, 10.0, NEON_PAL)
 
-# ---------------------------------------------------------------- Depth Racer: underwater panoramas
-def make_sky_depth(theme, th, scenery, seed):
+# ---------------------------------------------------------------- depth style: underwater (from Depth Racer)
+def make_sky_depth(th, scenery=None, seed=1):
     """looking round under the sea: the rippling bright surface overhead with light shafts slanting down, the water
     darkening to the abyss below, a far ridge of rock and kelp along the 'horizon', drifting marine snow, and the
     silhouette of something very big in the distance. Pixelated like the neon skies."""
@@ -254,11 +301,26 @@ def make_sky_depth(theme, th, scenery, seed):
     for _ in range(1600):
         x, y = rng.randint(0, Wn), rng.randint(0, Hn)
         img[y, x] += 60 + 80 * rng.rand()
-    from neonlook import pixelate
-    return pixelate(np.clip(img, 0, 255), 4, 10.0)
+    return pixelate(np.clip(img, 0, 255), 4, 10.0, DEPTH_PAL)
 
-_make_sky_pixel = make_sky
-def make_sky(theme, th, scenery, seed):
-    from theme import NEON, DEPTH
-    if DEPTH: return make_sky_depth(theme, th, scenery, seed)
-    return make_sky_neon(theme, th, scenery, seed) if NEON else _make_sky_pixel(theme, th, scenery, seed)
+
+
+EXAMPLE_THEMES = {
+    'dusk': dict(sky=(BLACK, PURPLE, HOT), glow=GOLD, planet=(HOT, 'sun'), scenery='city'),
+    'ocean': dict(sky=(BLACK, NAVY, DEEPTEAL), glow=TEAL, planet=(SKYBLUE, 'ringed'), scenery='mountains'),
+    'neon': dict(sky=(BLACK, PURPLE, MAGENTA), glow=MAGENTA, planet=(SKYBLUE, 'banded'), scenery='city'),
+    'mars': dict(sky=(BLACK, INK, WINE), glow=RED, planet=(RED, 'cratered'), scenery='mountains'),
+    'jungle': dict(sky=(BLACK, DARKGREEN, TEAL), glow=LIME, planet=(LIME, 'banded'), scenery='mountains'),
+    'desert': dict(sky=(BLACK, SOIL, ORANGE), glow=GOLD, planet=(SAND, 'ringed'), scenery='rings'),
+}
+
+if __name__ == '__main__':
+    import sys
+    from PIL import Image
+    if len(sys.argv) < 2: sys.exit(__doc__)
+    name = sys.argv[2] if len(sys.argv) > 2 else 'dusk'
+    seed = int(sys.argv[3]) if len(sys.argv) > 3 else 1
+    style = sys.argv[4] if len(sys.argv) > 4 else 'pixel'
+    img = make_sky(EXAMPLE_THEMES[name], seed=seed, style=style)
+    Image.fromarray(img).save(sys.argv[1])
+    print('sky', name, img.shape[1], 'x', img.shape[0], '->', sys.argv[1], 'planet at', LAST_PLANET)

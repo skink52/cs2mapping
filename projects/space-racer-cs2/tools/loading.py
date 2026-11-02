@@ -89,7 +89,7 @@ def background(theme_id, seed):
     """the track's own sky (the one the race uses), turned so its planet sits beside the panels, over a neon floor"""
     k = [t['id'] for t in RDEFS].index(theme_id)        # (a track id; in Space Racer each track's theme has its id)
     th = RTHEMES[RDEFS[k]['theme']]
-    sky = skies.make_sky(RDEFS[k]['theme'], th, RDEFS[k]['scenery'], k + 5)[::4, ::4]
+    sky = skies.make_sky(th, RDEFS[k]['scenery'], k + 5, 'depth' if DEPTH else 'neon' if NEON else 'pixel')[::4, ::4]
     px, py, pr = skies.LAST_PLANET
     want = 372                                          # the planet's x at 1x: right of the panels (x 1488)
     sky = np.roll(sky, want - px, axis=1)[:, :LW]

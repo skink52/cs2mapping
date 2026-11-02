@@ -37,7 +37,7 @@ vmaplib.init(d, OUT)
 
 # ---------------------------------------------------------------- skies: a pixel-art panorama per track theme (tools/skies.py)
 import skies
-from theme import NEON, defs
+from theme import NEON, DEPTH, defs
 THEMES, DEFS = defs().THEMES, defs().TRACKS
 import retro
 DEF = {t['id']: t for t in DEFS}
@@ -62,7 +62,7 @@ def sky():
     Image.new('RGB', (16, 16), (255, 255, 255)).save(os.path.join(dd, 'moondome_color.png'))
     mats = {}
     for k, t in enumerate(DEFS):
-        img = skies.make_sky(t['theme'], THEMES[t['theme']], t['scenery'], k + 5)
+        img = skies.make_sky(THEMES[t['theme']], t['scenery'], k + 5, 'depth' if DEPTH else 'neon' if NEON else 'pixel')
         mats[t['id']] = sky_files(t['id'], img)
         if k == 0:
             Image.fromarray(img).save(os.path.join(dd, 'sky_color.png'))

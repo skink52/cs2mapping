@@ -1,13 +1,26 @@
-"""Small offline synthesiser for the generated Hellmatch music (numpy + scipy, 44.1 kHz, no samples).
+"""synth.py: a small offline synthesiser for original game music (numpy + scipy, 44.1 kHz, no samples).
 
 Instruments: distorted rhythm guitar (detuned saw stack -> tube-ish waveshaper at 2x oversampling -> cabinet EQ, with
 palm mutes), bass (saw + sub sine, low-pass, drive), lead (detuned saws, vibrato, drive, ping-pong delay), pad / choir /
 organ, a drum kit built from sine sweeps, noise and inharmonic square stacks, and a noise riser. Mixing: per-track gain
 and pan, sidechain pump from the kick, a synthesised-impulse convolution reverb, a block-based bus compressor and a
-soft-clip limiter. tools/compose.py arranges the songs; this file only makes sound.
+soft-clip limiter. An arranger (song structure, riffs) goes on top; this file only makes sound.
 
 Events are (start_seconds, duration_seconds, pitch, velocity, flags): pitch is a MIDI note or a list of MIDI notes,
-velocity 0..1, flags a dict ('mute' for palm mutes, 'slide' for a pitch slide-in, 'drum' hit names for the kit).
+velocity 0..1, flags a dict ('mute' for palm mutes, 'slide' for a pitch slide-in). Drums take (start, name, velocity).
+
+usage:
+    import synth as S
+    n = S.sec(8)
+    gtr = S.Guitar(seed=1).render([(0, 0.5, [40, 47], 1.0, {'mute': True}), ...], n)
+    kit = S.Drums().render([(0, 'kick', 1.0), (0.5, 'snare', 0.9)], n)          # {group: buffer}
+    m = S.Mixer(n); m.pump = S.pump_curve([0, 1, 2], n)
+    m.add(gtr, -3, -0.3); m.add(kit['kick'], 0); S.write_wav('out.wav', m.master())
+    synth.py <out.wav>          renders an 8-second demo of every instrument
+
+Then normalise for CS2 music (two-pass ffmpeg loudnorm I=-16:TP=-1.5:LRA=11, MP3 128k or a 16-bit WAV).
+
+From hellmatch-cs2/tools/synth.py (MIT), made project-neutral.
 """
 import math
 import numpy as np
@@ -561,3 +574,39 @@ class Mixer:
 
 def write_wav(path, x):
     wavfile.write(path, SR, np.clip(x, -1, 1).astype(np.float32))
+
+
+
+def demo(path, bpm=140):
+    """8 seconds: power-chord riff, bass, lead line, pad, drums, mixed and written to path"""
+    beat = 60.0 / bpm
+    n = sec(8.5)
+    riff = [(k * beat / 2, beat / 2 * 0.9, [40, 47] if k % 4 else [40, 47, 52], 0.9, {'mute': k % 4 != 0}) for k in range(30)]
+    bass = [(k * beat, beat * 0.9, 28, 0.9, {}) for k in range(15)]
+    lead = [(4 * beat + k * beat, beat * 0.9, p, 0.8, {}) for k, p in enumerate([64, 67, 69, 71, 72, 71, 69, 67])]
+    pad = [(0, 8 * beat, [52, 55, 59], 0.6, {}), (8 * beat, 7 * beat, [50, 53, 57], 0.6, {})]
+    drums, kicks = [], []
+    for k in range(16):
+        t = k * beat
+        drums.append((t, 'kick' if k % 2 == 0 else 'snare', 1.0)); drums.append((t + beat / 2, 'hat', 0.6))
+        if k % 2 == 0: kicks.append(t)
+    drums.append((0, 'crash', 0.8))
+    kit = Drums().render(drums, n)
+    m = Mixer(n)
+    m.pump = pump_curve(kicks, n, 0.25, 0.14)
+    m.add(Guitar(seed=1).render(riff, n), -4, -0.35, -18, 0.3)
+    m.add(Guitar(seed=2).render(riff, n), -4, 0.35, -18, 0.3)
+    m.add(Bass().render(bass, n), -3, 0.0, -100, 0.4)
+    m.add(Lead().render(lead, n), -6, 0.1, -12)
+    m.add(Pad().render(pad, n), -12, 0.0, -8, 0.3)
+    for g, x in kit.items(): m.add(x, {'kick': -1, 'snare': -3}.get(g, -8), 0.0, -16 if g != 'kick' else -100)
+    out = m.master()
+    write_wav(path, out)
+    return out
+
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) < 2: sys.exit(__doc__)
+    x = demo(sys.argv[1])
+    print('synth demo: %.1f s stereo -> %s' % (len(x) / SR, sys.argv[1]))

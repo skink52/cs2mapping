@@ -1,7 +1,17 @@
-"""The retro look, shared by every generator: one original 32-colour palette, ordered (Bayer) dithering down to it,
-and chunky nearest-neighbour upscaling so every texture is made of visible square pixels.
+"""retro.py: the retro pixel-art look shared by the generators: one original 32-colour palette (named colours
+BLACK, INK, ... SAND), ordered (Bayer) dithering down to it, chunky nearest-neighbour upscaling, shading, scanlines,
+value noise and pixel-art planets. Numpy only.
 
-Draw at low resolution, `quantize` to the palette, `up` by 4: that is the whole recipe."""
+Draw at low resolution, `quantize` to the palette, `up` by 4: that is the whole recipe.
+
+usage (import it):
+    from retro import *          # palette names (GOLD, TEAL, ...) and quantize / up / shade / nearest ...
+    q = quantize(img_rgb, 28)    # (h, w, 3) -> palette colours, dithered
+    big = up(q, 4)               # 4x nearest-neighbour
+    planet = pixel_sphere(64, SKYBLUE, bands=6)
+
+From space-racer-cs2/tools/retro.py (MIT), made project-neutral.
+"""
 import numpy as np
 
 # 32 colours, grouped by hue. Index 0 is black, 6 is white.

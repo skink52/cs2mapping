@@ -1,6 +1,17 @@
-"""An original 8x8 arcade pixel font (uppercase, digits, punctuation) and the things built from it:
-text rasterised to RGBA (with outline / drop shadow / dither), and voxel-letter meshes for signs in the world.
-Every glyph is 7 px wide in an 8 px cell (1 px gap)."""
+"""pixfont.py: an original 8x8 arcade pixel font (uppercase, digits, punctuation, a few arrows) and the things
+built from it: text rasterised to RGBA (outline / drop shadow), a gradient arcade logo, and voxel-letter masks for
+signs in the world. Every glyph is 7 px wide in an 8 px cell (1 px gap). Numpy only.
+
+usage (import it):
+    import pixfont
+    img = pixfont.render('HELLO', scale=4, color=(255, 255, 255), outline=(0, 0, 0))   # RGBA uint8
+    pixfont.draw(canvas, x, y, 'SCORE 10', 3, (255, 190, 40), align='center')           # onto a numpy canvas
+    logo = pixfont.logo('MY GAME', 8)                                                   # chunky gradient logo
+    mask = pixfont.text_voxels('SIGN')                                                  # bool rows for voxel letters
+
+From space-racer-cs2/tools/pixfont.py (MIT), made project-neutral. The glyphs are drawn in code; credit
+"Space Racer for CS2 by skink52" if you ship them.
+"""
 import numpy as np
 
 GLYPHS = {
