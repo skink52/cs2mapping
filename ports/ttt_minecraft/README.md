@@ -76,6 +76,7 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
   - Open: a ~32-unit fire-looking texture in the Nether shows "4 textures squished into one". Not found yet; the Nether's materials (netherrack,
     glowstone, the Pigman furnace) have no multi-frame textures.
 - 2026-11-03: the fog relay (`ttt_pt_5__touch`) sent `fog.TurnOff`, which env_gradient_fog doesn't have: now Disable (`mapcheck.py`).
+- 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 45 and moved 0 faces (the lake (func_water) under the lava trap brush, which vanished when the lava was off) that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
 
 ## Open / to check
 

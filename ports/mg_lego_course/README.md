@@ -16,6 +16,7 @@
 - 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `afk` switches on (45 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 40 s in. Needs a build.
 - 2026-11-03: **spawn door** shut again after opening (skink52): a player pushing on the slowly sinking door blocked it, and with wait 45 a blocked door reverses, so it closed until the 42 s Toggle reopened it. Now Open at 5 s and Close at 42 s, wait -1 (never reverses or closes by itself), Force Closed on.
 - 2026-11-03: **music** (`coursemusic.py`): the map had none. Eight songs shuffled from round start, the next when one ends: ba_jail_skylight's four (skink52's favourites) and In the Navy, jb_mangaroons' colours_song_3, jb_seaside's disco3, Turn Down for What. Each is named after the map it came from (`sounds/port_music/`), since several maps call different songs disco1-3.
+- 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 6 and moved 0 faces (switched func_brushes) that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
 
 ## What the cleanup did
 

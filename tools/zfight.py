@@ -11,7 +11,13 @@ Reports every overlapping pair grouped by material. With an out path:
 - where two different materials partly overlap, the smaller face (usually the trim, step or strip meant to show) moves NUDGE units out along its
   normal, so it draws on top. Only meshes with no rotation or scale are moved; the rest stay on the list.
 Same-material partial overlaps are listed but left alone: the same texture flickering against itself barely shows.
-The last line is: summary <TAB> pairs=N hidden=N nudged=N partial=N visible=N   (visible = different materials, still overlapping, >= 64 sq units)
+Never touched (skink52, 3 Nov 2026): faces of entities that aren't drawn (triggers, clips, volumes); pairs across two entities when either is
+switched, moving, breakable or parented (antique's fait / pas fait signs are two func_brushes the map swaps, ttt_minecraft's lake sits under the
+lava trap brush: only one shows at a time, and a wall behind a door is seen once it opens); and a face whose cover is see-through (alpha-tested
+or translucent), which would leave a hole behind the glass or fence. Static overlays (CMapStaticOverlay) aren't meshes and are never read: an
+overlay that z-fights has a material that isn't csgo_static_overlay, which stage C `overlays` fixes.
+The last line is: summary <TAB> pairs=N hidden=N nudged=N partial=N visible=N skipped=N   (visible = different materials, still overlapping,
+>= 64 sq units; skipped = pairs left alone for the reasons above)
 """
 import collections, math, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -42,6 +48,46 @@ def transparent(mat, content):
             if im.mode in ('RGBA', 'LA') and im.getchannel('A').getextrema()[1] == 0: return True
         except Exception: pass
     return False
+
+SWITCH_INPUTS = {'enable', 'disable', 'toggle', 'kill', 'killhierarchy', 'alpha', 'color', 'disabledraw', 'enabledraw', 'setrendermode', 'break',
+                 'open', 'close', 'setparent', 'start', 'stop', 'setposition', 'startforward', 'startbackward', 'turnon', 'turnoff'}
+MOVERS = ('func_door', 'func_door_rotating', 'func_movelinear', 'func_rotating', 'func_tracktrain', 'func_train', 'func_physbox', 'func_breakable',
+          'func_breakable_surf', 'func_wall_toggle', 'func_button', 'func_rot_button', 'momentary_rot_button', 'func_water', 'func_conveyor')
+NOT_DRAWN = ('trigger_', 'func_clip', 'func_buyzone', 'func_bomb_target', 'func_hostage_rescue', 'post_processing_volume', 'env_', 'func_nav',
+             'func_ladder', 'func_precipitation', 'fog_volume', 'visibility_hint', 'func_lod', 'func_occluder', 'func_areaportal')
+SEE_THROUGH_WORDS = ('glass', 'window', 'fence', 'grate', 'chainlink', 'laser', 'water', '{')
+
+def see_through(mat, content):
+    """An alpha-tested or translucent material: whatever is behind it shows through."""
+    m = mat.lower()
+    if any(w in m for w in SEE_THROUGH_WORDS): return True
+    if not content: return False
+    try: txt = open(os.path.join(content, m.replace('/', os.sep)), encoding='utf-8', errors='replace').read()
+    except OSError: return False
+    return bool(re.search(r'F_(TRANSLUCENT|ALPHA_TEST|BLEND_MODE)\s+"?[12]', txt) or re.search(r'g_flOpacityScale\s+"?0?\.\d', txt))
+
+def entity_info(m):
+    """mesh node -> owning entity node (None for world), the entities that aren't drawn, and those that switch, move, break or ride a parent"""
+    par = m.parent_of(); own = {}
+    def owner(n):
+        if n not in own:
+            x = par.get(n)
+            own[n] = x if x is not None and m.type(x) == b'CMapEntity' else (None if x is None or x == m.world else owner(x))
+        return own[n]
+    names = collections.defaultdict(list)
+    for e in m.entities(): names[(m.name(e) or '').lower()].append(e)
+    dyn = set()
+    for e, k in m.all_conns():
+        u = m.conn_tuple(k)
+        if u[2].lower() in SWITCH_INPUTS: dyn.update(names.get(u[1].lower(), []))
+    hidden_cls = set()
+    for e in m.entities():
+        c = m.cls(e).lower()
+        if c in MOVERS or str(m.P(e, 'StartDisabled', '0')).lower() in ('1', 'true') or m.P(e, 'parentname'): dyn.add(e)
+        if c.startswith(NOT_DRAWN): hidden_cls.add(e)
+    return owner, hidden_cls, dyn
+
+SKIPPED = [0]
 
 def sub(a, b): return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
 def cross(a, b): return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
@@ -126,7 +172,8 @@ def find(m, content=None):
         nrm, d = pl
         key = (round(nrm[0], 2), round(nrm[1], 2), round(nrm[2], 2), round(d / PLANE_EPS))
         buckets[key].append((n, f, mat, poly, nrm, d))
-    pairs = []; flats = {}
+    pairs = []; flats = {}; SKIPPED[0] = 0
+    owner, undrawn, dyn = entity_info(m)
     def flat_of(key):
         if key not in flats: flats[key] = [(a, to2d(a[3], a[4])) for a in buckets.get(key, [])]
         return flats[key]
@@ -154,6 +201,9 @@ def find(m, content=None):
                 shared = clip(q1, q2) if len(q2) >= 3 else []
                 ov = abs(area2(shared)) if len(shared) >= 3 else 0
                 if ov < MIN_AREA or ov - hidden_by_backs(shared, key) < MIN_AREA: continue
+                o1, o2 = owner(n1), owner(n2)
+                if o1 in undrawn or o2 in undrawn: continue
+                if o1 != o2 and (o1 in dyn or o2 in dyn): SKIPPED[0] += 1; continue
                 a2 = abs(area2(q2))
                 pairs.append(dict(a=(n1, f1, m1, a1), b=(n2, f2, m2, a2), overlap=ov, normal=nr1, at=tuple(round(sum(c) / len(p1)) for c in zip(*p1))))
     return pairs
@@ -198,6 +248,7 @@ def run(m, content=None, fix=False):
         (n1, f1, m1, a1), (n2, f2, m2, a2) = p['a'], p['b']
         small, big = (p['a'], p['b']) if a1 <= a2 else (p['b'], p['a'])
         if p['overlap'] >= 0.98 * small[3]:
+            if see_through(big[2], content): SKIPPED[0] += 1; continue   # the covered face shows through the cover
             if fix and (small[0], small[1]) not in hidden and (big[0], big[1]) not in hidden:
                 hide(m, small[0], small[1]); hidden.add((small[0], small[1]))
             continue
@@ -219,4 +270,4 @@ if __name__ == '__main__':
     for p in sorted(partial, key=lambda p: (not visible(p), -p['overlap']))[:30]:
         print('partial\t%s | %s at %s, %.0f sq units overlap%s' % (p['a'][2], p['b'][2], ' '.join(map(str, p['at'])), p['overlap'], '' if visible(p) else ' (minor)'))
     if out: mp.save(out)
-    print('summary\tpairs=%d hidden=%d nudged=%d partial=%d visible=%d' % (len(pairs), len(hidden), len(moved), len(partial), sum(map(visible, partial))))
+    print('summary\tpairs=%d hidden=%d nudged=%d partial=%d visible=%d skipped=%d' % (len(pairs), len(hidden), len(moved), len(partial), sum(map(visible, partial)), SKIPPED[0]))

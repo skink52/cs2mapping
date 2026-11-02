@@ -12,6 +12,7 @@
 
 - 2026-10-24: stages A–C (147 MB BSP, 4 asset zips). Custom sky `sky_cerulean` rebuilt from the six faces embedded in the BSP and 10 sky brushes restored as moondomes. 24 dropped displacements (lb_text/toile1) rebuilt with `disprestore.py`. 22 parented env_particle_glows (on func_rotating / func_tanktrain movers) converted with `glowfix.py`; no weapon parents, so no script follow. Second pass: `trigger_hurt` boxes along the 3 distinct kill lasers l5/l7/l9 (l6/l8 are their mirror pairs), damage 1000, start off, with the beams' Enable/Disable I/O copied; `matnames.py` pointed 19 `schooufi_texture/…` refs back at the addon's `schooufi texture/…` files (the first assets run had swapped them for random stock materials); boathouse_water and ringel_waterfall → nuke_water. Backups: `prefabs+backups\mg_antique_course_imported_2026-10-24.vmap`.
 - 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `sk` switches on (45 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 40 s in. Needs a build.
+- 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 17 and moved 6 faces (the fait / pas fait / actif / nonactif status signs (func_brush pairs the map swaps)) that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
 
 ## What the cleanup did
 

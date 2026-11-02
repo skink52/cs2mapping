@@ -14,6 +14,7 @@
 - 2026-10-13 (05:51 to the evening): sky `sky56` + moondome; 13 music soundevents; the 33 SetModel VScripts → script `Model_<name>` using CS2 agents, and the Green Power Ranger rebuilt on the CS2 skeleton (only the first player to touch the round-start trigger gets it, as in the original); 55 "EFFECT" screen overlays → colour-tint post-processing (the T2/T3 warp has no CS2 equivalent); 100 func_wall_toggle → func_brush; `sm_cvar X` → `X`. The moondome was rebuilt as 53 boxes, one per bubble, with vis hints per arena.
 - 2026-10-13: a stale copy of the map's asset reference list inside the vmap still named the old VScripts, ambient_generics and screen overlays, so Hammer kept reporting them. It was rebuilt from the real entities.
 - 2026-10-13: Lowest-only hints made walls vanish a few steps back (16:28), and Low gave about 1.6 million regions, because the 53 boxes add up to about 60 times a normal map's volume. The arena hints went to Lower (`hintType` 8). VIS3 still ran 30+ min.
+- 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 36 and moved 0 faces (tool-volume faces (post_processing_volume)) that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
 
 ## Import report
 

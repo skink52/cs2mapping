@@ -22,6 +22,7 @@ Mario-themed multigame lobby with 20+ minigames (Mario Says, Hexagon Heat, Platf
 - 2026-10-17: vis compile took 103 s to voxelise (19.2M nodes) plus 62 s outside detection. The 64 sky shells (moondome + tools/skybox per room) were set to Exclude from Vis, since every room is sealed by its own nodraw hull, and the 32 Low vis hints (all copies of the map-wide box) were made one per room.
 - 2026-10-17, rebuilt from the command line (29.3 min, OK): voxelize 23 s / 3,641,409 nodes (was 103 s / 19,173,961), outside detection 27 s (was 62 s). The vis stage as a whole still took 27 min: 117 s of clustering, 416 s merging cluster lists, 444 s of line-of-sight rays and 560 s merging 12,963 clusters down to 4,096.
 - 2026-10-28: `stage_d.py lightbright` (the goldeneye lighting fix): 349 of 376 lights rebuilt from the CS:GO `_light` values. 195 were at brightness 0 (importer nan, zeroed by a Hammer save) and the rest about half as bright as they should be. No VMF on the PC, so the light entities were taken straight from the entity lump of `mg_mario_party_v3_1.bsp` into a light-only VMF. Backup: `maps\mg_mario_party.vmap.bak_before_lightbright_2026-10-28`. Needs a rebuild.
+- 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 107 and moved 0 faces (switched and moving minigame brushes) that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
 
 ## Import report
 

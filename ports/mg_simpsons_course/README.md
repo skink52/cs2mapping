@@ -18,6 +18,7 @@ kolkazadrot published a CS2 port in Nov 2023 (mg_simpsons_course_v2, Workshop 30
 
 - 2026-10-19: the 2 trigger_gravity (0.5, 1) → trigger_multiples firing script `Gravity_<scale>` on touch and `Gravity_1` on leaving (pipeline `gravity` pass, stage D). Backup: `prefabs+backups\mg_simpsons_course_pre_gravity_2026-10-19.vmap`.
 - 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `afkkiller` switches on (40 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 35 s in. Needs a build.
+- 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 2 and moved 0 faces that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
 
 ## What the cleanup did
 

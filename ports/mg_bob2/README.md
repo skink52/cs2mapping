@@ -12,6 +12,7 @@
 - 2026-10-16: stages A–C in the second pipeline batch. Its custom decal had been swapped for a sticker, which is why custom decals with no CS:GO source are now left alone and flagged. The extra knife equip was dropped because the map already gives one.
 - 2026-10-18: built from the command line (30.2 min, OK; vis 1,624 s: 556,739 regions, 13,596 clusters after the list merge, 209 s final merge).
 - 2026-11-03: **music** (`coursemusic.py`): the map had none. Eight songs shuffled from round start, the next when one ends: ba_jail_skylight's four (skink52's favourites) and jb_lightsout's disco1, jb_seaside's disco2, Fate Don't Know You (Desi Valentine), Nightcall (Kavinsky).
+- 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 2 and moved 0 faces that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
 
 ## What the cleanup did
 
