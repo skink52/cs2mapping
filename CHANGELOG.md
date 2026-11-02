@@ -3,6 +3,10 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-02: cs2-slop-porting 3.5 review
+
+- Reviewed Ninja-Chris's repo since 29 Oct (3.5 / 2026-11-02a). New CS2 findings added to gotchas (unverified here). Not yet in our pipeline: large-face split (512², faces mode), water probe-volume merge, display brushes → world meshes, func_breakable render settings, turned-texture realign, origin-duplicate delete, culled-under-water face rebuild, self-IO restore, `(null)` params, trigger/tool material fixes, heal trigger_hurt → script zones, env_spark and env_spritetrail particles, env_fire burn-time/damage, Source 1 sound falloff + `Volume` + radius 0, vpcf66 particle format, `keep_` lights / relight "once", missing-entity and entity-seam reports, parallel model compile with retry, push_mass.js REF 85 / 350 mass cap / team pushing / contact grace / self-push damage only.
+
 ## 2026-11-02: ba_jail_keimusho cell doors
 
 - `radar.py`: water (func_water tops and water-material floors) drawn see-through, and only where the top floor under it (terrain, pool bed, props) is below the water line: func_water boxes are usually much bigger than the visible water. Nodraw water tops skipped. Log line gives the share of each water face drawn. ba_jail_keimusho radar re-rendered.
