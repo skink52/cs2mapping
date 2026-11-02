@@ -22,6 +22,8 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Fix the decompiled map so Valve's importer accepts it, without opening CS:GO's Hammer.
 - Run the import and the leftover model/material conversion unattended from one double-click, and even chain it straight into the build while you're away. Models that freeze the importer are stopped and skipped instead of hanging the run, and the report says where each missing file was used and where a file with the same name exists.
 
+- Port whole maps with nobody watching: give it BSPs on your PC and come back to built addons plus one list of what's left for an agent or a playtest, with a live progress window and stuck steps stopped automatically ([autoport](autoport/README.md)).
+
 **Automatic fixes after import** ([details](docs/porting/pipeline.md))
 - Put back map logic (outputs) the importer silently drops.
 - Merge the importer's separate prefab pieces back into one map.

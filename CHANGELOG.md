@@ -3,6 +3,14 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-02: autoport (unattended ports on the PC)
+
+- New [`autoport/`](autoport/README.md): BSP in, built addon and a cleanup list for agents out, running only on the PC with nobody watching. `tools/` and `scripts/` are reused unchanged.
+- `watchdog.py` kills hung steps, runaway steps and slow vis compiles; `monitor.py` is the live progress window.
+- Vis: hints are refitted after the skybox split and displacement restore, with `visfit_detail` when `visfit` finds almost no play space (ttt_terrortrain: 0.0 → 1.1 billion cubic units).
+- `Failed loading resource "scripts/detail_prop_types.vdata_c"` is in every build log on the PC, working maps included, so autoport ignores it.
+- First ports through it: [ttt_terrortrain](ports/ttt_terrortrain/) and [ttt_island17_pezversion](ports/ttt_island17_pezversion/), built but not tested in game.
+
 ## 2026-11-02: monorepo (all skink52 CS2 repos merged)
 
 - hellmatch-cs2, space-racer-cs2, cs2-fighter, trenchwarfare-cs2, cs21.6 and cs2mapTTT imported into `projects/<name>/` with full history (`git subtree`);

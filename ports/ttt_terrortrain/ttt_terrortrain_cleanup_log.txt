@@ -1,0 +1,54 @@
+CS2 post-import clean - ttt_terrortrain (2026-11-02)
+
+- collapsed 6 prefabs into the map, world offsets kept: ttt_terrortrain_gameplay.vmap (227 nodes, 227 entities), ttt_terrortrain_environment_prefab.vmap (4579 nodes, 389 entities), ttt_terrortrain_lighting_prefab.vmap (3 nodes, 3 entities), ttt_terrortrain_cubemaps_prefab.vmap (0 nodes, 0 entities), ttt_terrortrain_audio_prefab.vmap (33 nodes, 33 entities), ttt_terrortrain_nav_prefab.vmap (0 nodes, 0 entities)
+- outputs restored that the importer dropped: 0
+- 1 trigger_push (speeds [1100.0]; CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500); names/filters/Enable/Disable kept
+- added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> mp_freezetime 0, mp_roundtime 600
+- 9 func_breakable_surf (gone in CS2) -> func_breakable, material Glass
+- trigmat: 5 trigger meshes storing other materials set to toolstrigger
+- trigsplit: 1 trigger_teleport/hurt/multiple spread over several meshes or pieces split into 2 extra single-mesh entities (same name, keyvalues and outputs)
+- 7 Source 1 soundscript names used by entities defined as same-named soundevents: de_sugarcane.generator, Doors.FullOpen3, Doors.Move1, Doors.Move17, Doors.Move4, Doors.Move8, Doors.Move9
+- door sounds: 48 point_soundevents (Doors.FullOpen3, Doors.Move1, Doors.Move17, Doors.Move4, Doors.Move8, Doors.Move9), started by the doors' OnOpen/OnClose (noise1) and OnFullyOpen/OnFullyClosed (noise2); 48 unnamed doors named port_door_N
+- face texture scales: 25742 brush faces, 25576 matched to one VMF mapping; 1 matched: moved copy of a VMF brush (texture lock); 7 matched: rounded corner (<= 2.5u off the plane); 25564 matched: same plane; 4 matched: same plane (outside the brush); 12 no VMF side on the same plane + material; 154 overlapping VMF brushes with different mappings (left as imported)
+- face texture mapping repaired: 14872 faces re-scaled / re-shifted from the VMF, 14871 faces with texture coordinates rewritten: brickfloor001a (1120), assault_door1 (4), lightb (84), interiortile03 (25), wall01b (1029), wall02b (685), wall03b (211), wall04pnl (355), nuke_metalfloor_01 (14), nuke_metalgrate_01 (2), marblefloor10 (3), woodfloor02 (26), blendgrassdirt001a (81), train_officetile_01 (24), dev_lowermetaldoor02a (16), metaldoor017a (2), glasswindowbreak070a (245), unbreakable (4), glassblue2 (18), fluorescentcool001b (4), metalfence001a (6), metalfloor001a (214), metalfloor002a (160), metalfloor003a (21), metalfloor010a (12), metalhull003a (570), metalhull010b (28), metalhull010c (12), metalrail002a (7), metalrail013a (10), metalstair004b (10), metalwall005b (45), metalwall021b_plain (225), offgaragedr (477), proddoora (205), proddoorb (10), gravelfloor002b (28), water_canals_water2 (1), mailboxwood01a (10), metalcomputerpanel001a (3), metalpanel010a (2), metalstainless01 (2839), scroll_grass (11), scro
+- face texture scales: no known texture size (coordinates not checked): water_canals_water2
+- restored 7 sky brushes (dropped by the importer) as toolsskybox (3D skybox map) meshes using materials/tools/toolsskybox.vmat
+- visfit (16-unit voxels): 0.0 billion cubic units of playable air, 0.0 of it walkable band; hints 0 Medium, 2 Low, 0 Lower, 1 Lowest
+- visfit: 7 of 7 sky shell meshes set to Exclude from Vis, 0 kept because they close playable air
+- relight: deleted 68 imported lights; rebuilt from the VMF 57 light -> light_omni2, 9 light_spot -> light_barn (colour, HDR intensity, range, cone); 1 Dynamic (start dark / switched / style); 2 zero-intensity lights skipped
+- light_environment: Static -> Stationary (directlight 3), so the sun lights players and weapons
+- stationary lights: 6 of 66 lights switched Static -> Stationary (directlight 3) across 5 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 of the compartments are open to sky (one stationary light each, on top of light_environment)
+- radar water (share of each water face drawn): water_canals_water2 z98 0%
+- radar: rendered from geometry (638 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/ttt_terrortrain_radar_psd.png + game resource/overviews/ttt_terrortrain.txt (pos -4098 4171, scale 7.38)
+- CS:GO water materials (no CS2 equivalent shader) -> stock: materials/nature/water_canals_water2.vmat -> materials/liquids/nuke_water.vmat
+- added point_script ttt_terrortrain_io_script (maps/scripts/ttt_terrortrain_io.js)
+- dropped I/O report (maps/ttt_terrortrain_dropped_io.txt): 0 .vmf owners with 0 outputs, 0 matched; 0 outputs missing with the target still there (probable losses), 0 with the target gone, 0 to !special targets; 0 handled by our own steps (script / converted); 0 owners not found (0 outputs not compared)
+- pruned 328 orphaned elements
+- TO CHECK: the map had a CS:GO 3D skybox (sky_camera at 1184 468 -373, scale 16): its geometry is now ordinary geometry in the map and CS2 ignores sky_camera - move it to a separate skybox map + skybox_reference, or delete it
+- TO CHECK: trigsplit: split triggers keep their outputs on every piece; a counter fed by OnStartTouch/OnTrigger can now count once per piece touched
+- TO CHECK: overlay materials not converted: materials/de_train/train_security_decal_01.vmat (vmat not in addon); materials/decals/milswitch001.vmat (vmat not in addon); materials/decals/milswitch002.vmat (vmat not in addon); materials/decals/milswitch003.vmat (vmat not in addon)
+- TO CHECK: 17 static overlays have a projection depth >= 32 (can show as a box with the overlay invisible) - stage_d overlaydepth sets them to 8
+- TO CHECK: 2 static overlays touching brush entities left as overlays (will not show on the entity): train_security_decal_01 at -249.4 2894 19.7 on func_door port_door_14: stock CS2 material (its textures exist only compiled in the VPK); train_security_decal_01 at -249.6 -1393 142.4 on func_door port_door_35: stock CS2 material (its textures exist only compiled in the VPK)
+- TO CHECK: face scales fixed but texture coordinates not rewritten (no CS:GO texture size): materials/nature/water_canals_water2.vmat
+- TO CHECK: 7 non-box sky brushes in the VMF were not rebuilt as moondomes
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+- TO CHECK: relight: 1 lights got a CS:GO light style pattern in light_style - check they flicker in game
+- TO CHECK: relight: brightness scale (1000 lumens per 265 _light) is not checked against a real CS2 bake - compare a few rooms with CS:GO
+- TO CHECK: 75 static func_breakable / func_brush meshes are not fully inside an env_combined_light_probe_volume, so their lighting will be wrong (stage_d.py ... probecover adds volumes): func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), fu
+- TO CHECK: the map has 151 physics props: if player pushes on them feel wrong in game (too easy or too hard for the prop's size), run the physpush step (run_pass.py ... physpush)
+
+Follow-up pass (2026-11-02): overlaydepth, probecover, water, visfit
+- static overlays: projection depth set to 8 on 17 overlays
+- visfit (16-unit voxels): 0.0 billion cubic units of playable air, 0.0 of it walkable band; hints 0 Medium, 0 Low, 0 Lower, 1 Lowest (replacing 2 Low, 1 Lowest)
+- visfit: 0 of 1 sky shell meshes set to Exclude from Vis, 1 kept because they close playable air
+- water: 1 water meshes -> 1 func_water; 0 underwater post_processing_volumes (lighting/postprocessing/postprocess_filmic_underwater.vpost, top 80 u below the surface); master post_processing_volume already there
+- probecover: added 17 light probe volumes around 75 static func_breakable / func_brush meshes that no volume fully covered: func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_breakable (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), fu
+- pruned 12 orphaned elements
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+- TO CHECK: probecover: check the new probe volumes look right next to the existing ones
+
+Follow-up pass (2026-11-02): visfit_detail
+- visfit (16-unit voxels): 1.1 billion cubic units of playable air, 0.6 of it walkable band; hints 7 Medium, 11 Low, 1 Lower, 1 Lowest (detail split: {'medium': 17, 'open_lower': 4, 'open_lowest': 104, 'face_threshold': 436, 'faces_pct': [207, 535, 695, 725]}) (replacing 1 Lowest)
+- visfit: 0 of 1 sky shell meshes set to Exclude from Vis, 1 kept because they close playable air
+- pruned 4 orphaned elements
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)

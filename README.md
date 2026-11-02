@@ -19,6 +19,7 @@ Everything skink52 and Claude have worked out about **making Counter-Strike 2 ma
 | [docs/porting/manual-workflow.md](docs/porting/manual-workflow.md) | The by-hand method the pipeline replaced |
 | [`tools/`](tools/README.md) | The pipeline (Python, runs in Claude's workspace): decompile prep, Hammer-save fix, `.vmap` editing, post-import fixes, radar, sky, vis, lights, overlays, texture scales, map previews. [tools/README.md](tools/README.md) is the index of every tool with its usage line |
 | [`scripts/`](scripts/README.md) | PC-side runners: import, command-line build, post-import cleanup, model import, unattended import→build |
+| [`autoport/`](autoport/README.md) | Unattended ports on the PC: BSP in, built addon and a cleanup list for agents out, with hang protection and a live progress window |
 | [`ports/`](ports) | One folder per ported map: status, Workshop link, fixes, open issues, cleanup log, the map's cs_script files |
 | [`data/`](data/README.md) | `existing_ports.txt` (which maps have CS2 ports, by whom) and the queue files |
 | [`legacy/`](legacy/README.md) | Helpers from the early manual ports |

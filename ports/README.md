@@ -44,6 +44,8 @@ which also covers other porters' maps, external ports and skink52's originals: m
 | [mg_pirates](mg_pirates/) | Stage C done, waiting for build | | | cs2port pipeline |
 | [ttt_cg_skyscraper_2017](ttt_cg_skyscraper_2017/) | Stage C done, waiting for build | | | cs2port pipeline (TTT scripting: cs2mapTTT) |
 | [ttt_minecraft](ttt_minecraft/) | Stage C done, waiting for build | | | cs2port pipeline (TTT scripting: cs2mapTTT) |
+| [ttt_terrortrain](ttt_terrortrain/) | Built, not tested in game | | 2026-11-02 | autoport (no TTT scripting yet) |
+| [ttt_island17_pezversion](ttt_island17_pezversion/) | Built, not tested in game | | 2026-11-02 | autoport (no TTT scripting yet) |
 
 ## Jailbreak maps (earlier ports)
 
