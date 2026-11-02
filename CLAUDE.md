@@ -8,6 +8,8 @@ in the same session.
 
 The user names a project ("work out of cs2mapping, we're on TTT maps"). Find it below, read the project's own instructions file, then work in that folder.
 One clone of this repo covers everything; there are no other repos to clone or push.
+On the PC, Claude Code runs from `C:\source1` and reaches CS2, `C:\source2` and the addon folders through `C:\source1\links\` junctions
+([docs/porting/setup.md](docs/porting/setup.md#claude-code-on-the-pc-one-folder)). Never search recursively over `links\cs2_root` or `links\csgo`.
 
 | User says | Folder | Read first |
 |---|---|---|

@@ -66,6 +66,28 @@ C:\source2\                   original addons (creation)
     game\bin\win64\                resourcecompiler.exe, cs_mdl_import.exe (and vpk.signatures, see below)
 ```
 
+## Claude Code on the PC (one folder)
+
+Claude Code runs from `C:\source1`. Everything it needs outside that folder is reached through NTFS junctions in `C:\source1\links\`,
+made by [`scripts/make_links.bat`](../../scripts/make_links.bat) (safe to re-run; it skips links that exist). Editing through a link edits the real folder.
+Removing a link (`rmdir` on the link only) is safe; deleting files inside a link deletes the real files.
+
+| Link | Real path |
+|---|---|
+| `links\VTF` | `C:\VTF` |
+| `links\source2` | `C:\source2` (original addons: `apps\`, `projects\`, `workshop\`, `notes\`, `archive\`) |
+| `links\cs2_root` | `<CS2>` |
+| `links\content_addons` | `<CS2>\content\csgo_addons` |
+| `links\game_addons` | `<CS2>\game\csgo_addons` |
+| `links\csgo` | `<CS2>\csgo` (same target as `C:\cscontent`) |
+| `links\bin_win64` | `<CS2>\game\bin\win64` (resourcecompiler, vpk.signatures) |
+| `links\import_scripts` | `<CS2>\game\csgo\import_scripts` |
+
+- Porting work stays in `C:\source1` (`cs2port\`, `maps\`, `bspsrc-windows\`, `tools\`, `archive\`).
+- Never search recursively over `links\cs2_root` or `links\csgo` (huge); target a subfolder.
+- `links\` is excluded from git locally (`.git\info\exclude`) and never committed.
+- Docs may use link paths or real paths; scripts keep the real paths (or `C:\cscontent`) so they still work outside Claude Code.
+
 ## One-time PC setup
 
 1. **Workshop Tools** installed for CS2 (Hammer, `resourcecompiler`, the import scripts).
