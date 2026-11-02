@@ -1,0 +1,13 @@
+# Same bytes on Windows and Linux: text stays LF everywhere (shell scripts break with CRLF, libsync compares bytes),
+# Windows batch/PowerShell files are CRLF, game/binary files are never converted.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.vmap binary
+*.vpk binary
+*.png binary
+*.jpg binary
+*.mp3 binary
+*.wav binary
+*.radgen binary
