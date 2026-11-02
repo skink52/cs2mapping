@@ -26,6 +26,7 @@ Everything used alongside this repo that isn't ours, what it was used for, and t
 | CounterStrikeSharp | Server plugins on the minigame server | Plugins that break script-run games are listed in [cs2-gotchas.md](cs2-gotchas.md#scripts-players-rounds-and-plugins). `VelocityModifier` is the plugin route for player speed. |
 | [nvmxre/cs2-hud-panel](https://github.com/nvmxre/cs2-hud-panel) | Reference while debugging Panorama layouts | Its GOTCHAS doc covers root sizing and re-layout. |
 | Blender | FBX export to ModelDoc | Per-material `FBX_vmatPath` property ([../creation/models.md](../creation/models.md)). |
+| [Tripo CLI](https://github.com/vast-enterprise/Tripo-API-CLI) (`npm i -g tripo-cli`, 0.10.0) | Text or image → 3D model from the terminal (Tripo V3 API) | Installed on the PC 3 Nov 2026, signed in on the international site (`--region ov`); the key is in `~/.tripo/config.json`. **Use it only when skink52 asks for Tripo by name**: every generation spends account credits. On the PC's PowerShell (scripts disabled) run it as `tripo.cmd`, and install or update with `npm.cmd`; installs from a sandboxed Claude shell don't reach the real npm folder. `tripo doctor` checks the key and API. Earlier Tripo3D models came from the website: decimate them with `create/glbmesh.py`; prompts used for Trench Warfare are in [../../projects/trenchwarfare-cs2/docs/tripo_prompts.md](../../projects/trenchwarfare-cs2/docs/tripo_prompts.md). |
 
 ## Assets and media
 

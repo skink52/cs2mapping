@@ -17,6 +17,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 - `zfight.py` no longer hides or moves faces across entities when either is switched, moving, breakable or parented, faces of undrawn entities,
   or faces behind see-through covers (skink52 spotted it on antique's status signs). The 2 Nov polish had done that on 15 maps (763 hidden and 15 moved faces;
   yolo 340, mario_party 107, faohu 115, ttt_minecraft's lake 45): restored from the pre-polish backups, and those maps rebuilt with lighting.
+- Tripo CLI installed on the PC and signed in; noted in `docs/reference/external-tools.md` (used only when skink52 asks for it; run as `tripo.cmd`).
 - mg_lego_course: the spawn door reversed when a player blocked it and stayed shut until its next Toggle; now Open / Close, Wait -1, Force Closed.
 
 ## 2026-11-02: polish pass over every port
