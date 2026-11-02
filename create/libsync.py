@@ -1,7 +1,8 @@
 """libsync.py: keeps the shared tool files identical across skink52's CS2 repos, and flags project tools that changed after
 their project-neutral copy in create/ was made.
 
-The repos are expected side by side (../hellmatch-cs2, ../space-racer-cs2, ... next to cs2mapping); a missing one is skipped.
+The game projects live in this repo under projects/<name>/ (merged Nov 2026); a repo name in libsync.json means that folder.
+Older side-by-side checkouts still work with --root DIR. A missing project is skipped.
 The list lives in libsync.json next to this file:
   copies: canonical file in cs2mapping -> {repo: path}. Must be byte-identical everywhere. cs2mapping holds the master.
   forks:  neutral file in create/ -> {origin: "repo:path", seen: git blob of the origin when it was last reviewed}.
@@ -13,7 +14,7 @@ usage:
   libsync.py pull <canonical> <repo>    a repo's copy has the newer fix: take it as the master (then push)
   libsync.py ack <neutral|all>          a fork's origin changes were reviewed / ported: record the origin as seen
   libsync.py add <canonical> <repo> <path>   track another copy
-  --root DIR   folder holding the repo checkouts (default: the folder above cs2mapping)
+  --root DIR   folder holding separate repo checkouts (default: projects/ in this repo)
 """
 import json, os, subprocess, sys, shutil
 
@@ -21,9 +22,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 CFG = os.path.join(HERE, 'libsync.json')
 args = sys.argv[1:]
-ROOT = os.path.dirname(REPO)
+ROOT = os.path.join(REPO, 'projects')
+MONO = True
 if '--root' in args:
-    i = args.index('--root'); ROOT = args[i + 1]; del args[i:i + 2]
+    i = args.index('--root'); ROOT = args[i + 1]; MONO = False; del args[i:i + 2]
 
 
 def load(): return json.load(open(CFG))
@@ -35,7 +37,7 @@ def save(c): open(CFG, 'w', newline='\n').write(json.dumps(c, indent=1, sort_key
 def rpath(repo, path): return os.path.join(REPO if repo == 'cs2mapping' else os.path.join(ROOT, repo), path)
 
 
-def have(repo): return os.path.isdir(rpath(repo, '.git'))
+def have(repo): return os.path.isdir(rpath(repo, '' if MONO and repo != 'cs2mapping' else '.git'))
 
 
 def blob(p): return subprocess.run(['git', 'hash-object', p], capture_output=True, text=True).stdout.strip() if os.path.exists(p) else None
