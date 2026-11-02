@@ -10,8 +10,9 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   insomnia, jahoukarail, kohztec, lego, metal, minecraft_adventure, simpsons); autoport's course profile runs it on new ports.
 - `tools/coursemusic.py` (new): shuffled music for courses with none (balistic, circle, galaxy, insomnia, lego, fred_all, bob2): ba_jail_skylight's
   four songs plus three or four from the other jb_ discos and mg_ maps, the next song when one ends. Songs are renamed after their source map.
-- `mapcheck.py`: CS:GO's TurnOn / TurnOff on CS2's lights (and fog) → Enable / Disable; lights the map switches or recolours → Dynamic with no
-  bounce light (230 lights on 9 maps, 147 of them ba_jail_lightsout's). autoport and polish pick both up.
+- `mapcheck.py`: CS:GO's TurnOn / TurnOff on CS2's lights (and fog) → Enable / Disable; lights the map switches or recolours → Stationary with no
+  bounce light (Dynamic only when parented or already Dynamic; shadows off over the 4-light shadow-slot limit), on 9 maps. Disco floors
+  (4+ switched lights in 4+ colours close together) get shadows off and are reported: skylight, seaside, jb_sides_cs2. autoport and polish pick both up.
 - mg_minecraft_adventure: C418's Minecraft music (Minecraft, Mice on Venus, Sweden, Cat, Aria Math; skink52's files), shuffled the same way, and a
   Steam description crediting it. coursemusic writes `sounds/port_music/credits.txt` from the songs' tags; autoport's description adds a Music list from it.
 - `zfight.py` no longer hides or moves faces across entities when either is switched, moving, breakable or parented, faces of undrawn entities,

@@ -8,11 +8,12 @@ Reports, one per line as KIND<tab>text:
   dangling    an output aimed at a name nothing in the map has (ttt_island17's lwglass2 OnBreak -> lwbars2_i / lwbars2_f: in CS:GO too)
   bad_input   an input the target's class doesn't have
   bad_output  an output the entity's class doesn't have
-  baked_switch a light the map switches or recolours that isn't Dynamic (its baked light would stay when it's off)
+  baked_switch a light the map switches or recolours that is still Static (its baked light would stay when it's off)
+  disco       a cluster of switched / dynamic lights in several colours (a disco floor): shadows off; check it doesn't want baked bounce
 Fixes (with an out path): dangling outputs are removed, since they reached nothing in CS:GO either; classes in SAFE_REMOVE are deleted, because CS2
 does their job by itself or never had it; classes in CONVERT become the CS2 entity that does the same job. Everything else is only reported.
 """
-import glob, os, re, sys
+import collections, glob, math, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dmx, vmapedit as V
 
@@ -132,9 +133,54 @@ def check(m, fix=False):
 LIGHTS2 = ('light_omni2', 'light_spot', 'light_rect', 'light_capsule', 'light_ortho', 'light_barn')
 SWITCH_INPUTS = {'enable', 'disable', 'toggle', 'turnon', 'turnoff', 'setbrightnessscale', 'setcolor', 'setlightcolor'}
 
+MAX_STATIONARY = 4   # shadowed stationary lights one spot may be inside (lighting.py's MAX_OVERLAP)
+
+def _range(m, x):
+    try: return float(m.P(x, 'range', '0') or 0) or 512.0
+    except ValueError: return 512.0
+
+DISCO_RADIUS, DISCO_MIN, DISCO_COLOURS = 384.0, 4, 4   # skink52: 4 different colours
+
+def _colour(m, x):
+    """'white' for white and near-white (warm room lights), else a hue in 12 steps"""
+    import colorsys
+    c = (m.P(x, 'color', '') or m.P(x, '_light', '') or '255 255 255').split()[:3]
+    try: r, g, b = (float(v) / 255 for v in c)
+    except ValueError: return 'white'
+    h, l, sat = colorsys.rgb_to_hls(r, g, b)
+    return 'white' if min(r, g, b) >= 0.75 * max(r, g, b, 1e-6) else 'hue%d' % (round(h * 12) % 12)
+
+def discos(m, hit):
+    """Clusters of >= DISCO_MIN switched or Dynamic lights within DISCO_RADIUS of each other in at least DISCO_COLOURS colours (white counts as one),
+    that the map switches both on and off (Toggle, or Enable and Disable): a disco floor (ba_jail_skylight, seaside, jb_sides_cs2). Lights that only
+    ever go off (ba_jail_lightsout's power cut) aren't one. Their shadows go off: changing colours look better unshadowed (skink52, 3 Nov 2026).
+    Reported, since a few discos want baked bounce."""
+    pool = [x for x in hit] + [x for c in LIGHTS2 for x in m.by_class(c) if x not in hit and str(m.P(x, 'directlight', '3')) == '2']
+    names = collections.defaultdict(set)
+    for x in pool: names[(m.name(x) or '').lower()].add(x)
+    inputs = collections.defaultdict(set)
+    for e, k in m.all_conns():
+        u = m.conn_tuple(k)
+        for y in names.get(u[1].lower(), ()): inputs[y].add(u[2].lower())
+    onoff = lambda y: 'toggle' in inputs[y] or (inputs[y] & {'enable', 'turnon'} and inputs[y] & {'disable', 'turnoff'})
+    pos = {x: m.origin(x) for x in pool}; seen = set(); out = []
+    for x in pool:
+        if x in seen: continue
+        grp, todo = set(), [x]
+        while todo:
+            y = todo.pop()
+            if y in grp: continue
+            grp.add(y); todo += [z for z in pool if z not in grp and math.dist(pos[y], pos[z]) <= DISCO_RADIUS]
+        seen |= grp
+        if len(grp) >= DISCO_MIN and len({_colour(m, y) for y in grp}) >= DISCO_COLOURS and any(onoff(y) for y in grp): out.append(sorted(grp))
+    return out
+
 def switched_lights(m, by_name, fix):
-    """A light the map switches or recolours has to be Dynamic (directlight 2): Static and Stationary bake its light into the world, which stays
-    when it's off (skink52, 3 Nov 2026). Its bounce light is turned off too, since bounce is always baked."""
+    """A light the map switches or recolours can't be Static: its light is baked into the world and stays when it's off (skink52, 3 Nov 2026).
+    Stationary (directlight 3: direct light at runtime, shadows baked) switches and recolours fine and costs less than Dynamic, so that's the
+    default; a light riding a parent stays Dynamic (2), since its baked shadows would be wrong once it moves. Where a shadowed Stationary light
+    would put a spot inside more than MAX_STATIONARY of them (CS2's shadow slots), it is Stationary with shadows off instead.
+    Bounce light is always baked, so it's off on all of them."""
     hit = {}
     for e, k in m.all_conns():
         u = m.conn_tuple(k)
@@ -143,12 +189,36 @@ def switched_lights(m, by_name, fix):
                 if m.cls(x).lower() in LIGHTS2: hit[x] = u[2]
     for x in m.by_class('light_omni2') + m.by_class('light_spot') + m.by_class('light_rect') + m.by_class('light_capsule'):
         if str(m.P(x, 'enabled', '1')) in ('0', 'False', 'false') and x not in hit and m.name(x): hit[x] = 'starts off'
+    shadowed = lambda x: str(m.P(x, 'castshadows', '1')) not in ('0', 'False', 'false')
+    S = [(m.origin(x), _range(m, x)) for c in LIGHTS2 for x in m.by_class(c)
+         if x not in hit and str(m.P(x, 'directlight', '3')) == '3' and shadowed(x)]
+    def fits(p, r):
+        near = [(o, rr) for o, rr in S if math.dist(o, p) < r + rr]
+        pts = [p] + [tuple((a + b) / 2 for a, b in zip(o, p)) for o, _ in near] + [o for o, _ in near if math.dist(o, p) < r]
+        return all(sum(math.dist(q, o) < rr for o, rr in near) + 1 <= MAX_STATIONARY for q in pts if math.dist(q, p) < r)
     n, out = 0, []
-    for x, why in hit.items():
-        if str(m.P(x, 'directlight', '3')) == '2' and str(m.P(x, 'bouncelight', '-1')) == '0': continue
-        if fix: m.setp(x, 'directlight', '2'); m.setp(x, 'bouncelight', '0'); n += 1
-        out.append(('converted' if fix else 'baked_switch', '%s %s (%s): switched by the map, so Dynamic with no bounce light%s' %
-                    (m.cls(x), m.name(x) or '(unnamed)', why, '' if fix else ' is needed (fix sets it)')))
+    disco = discos(m, hit)
+    for i, grp in enumerate(disco, 1):
+        o = [sum(c) / len(grp) for c in zip(*(m.origin(x) for x in grp))]
+        out.append(('disco', "disco floor %d at %s: %d switched / dynamic lights in %d colours close together, so shadows off (%s). Check it doesn't need its "
+                    "baked bounce light, which switched lights don't get" % (i, ' '.join('%.0f' % v for v in o), len(grp), len({_colour(m, x) for x in grp}),
+                    ', '.join(sorted({m.name(x) or '(unnamed)' for x in grp}))[:200])))
+    disco = {x for g in disco for x in g}
+    for x in sorted(hit, key=lambda x: (m.name(x) or '', x)):
+        why = hit[x]
+        if x in disco and not m.P(x, 'parentname'):
+            want = '2' if str(m.P(x, 'directlight', '3')) == '2' else '3'; cs, how = '0', '%s without shadows (disco floor)' % ('Dynamic' if want == '2' else 'Stationary')
+        elif m.P(x, 'parentname'): want, cs, how = '2', None, 'Dynamic (it moves with its parent)'
+        elif str(m.P(x, 'directlight', '3')) == '2': want, cs, how = '2', None, 'Dynamic (already set so; kept)'   # someone chose it (de_rats_1337)
+        elif fits(m.origin(x), _range(m, x)): want, cs, how = '3', None, 'Stationary'
+        else: want, cs, how = '3', '0', 'Stationary without shadows (over %d shadowed stationary lights here)' % MAX_STATIONARY
+        if want == '3' and cs is None and shadowed(x) and x not in disco: S.append((m.origin(x), _range(m, x)))
+        if str(m.P(x, 'directlight', '3')) == want and str(m.P(x, 'bouncelight', '-1')) == '0' and (cs is None or not shadowed(x)): continue
+        if fix:
+            m.setp(x, 'directlight', want); m.setp(x, 'bouncelight', '0'); n += 1
+            if cs is not None: m.setp(x, 'castshadows', cs)
+        out.append(('converted' if fix else 'baked_switch', '%s %s (%s): switched by the map, so %s with no bounce light%s' %
+                    (m.cls(x), m.name(x) or '(unnamed)', why, how, '' if fix else ' is needed (fix sets it)')))
     return n, out
 
 if __name__ == '__main__':
@@ -159,4 +229,4 @@ if __name__ == '__main__':
     if fix:
         mp.save(sys.argv[2])
         print('fixed\t%d entities removed or converted, %d dangling outputs removed' % (removed, dropped))
-    print('summary\t' + ', '.join('%d %s' % (sum(1 for k, _ in found if k == kind), kind) for kind in ('excluded', 'unknown', 'dangling', 'bad_input', 'bad_output', 'baked_switch', 'converted')))
+    print('summary\t' + ', '.join('%d %s' % (sum(1 for k, _ in found if k == kind), kind) for kind in ('excluded', 'unknown', 'dangling', 'bad_input', 'bad_output', 'baked_switch', 'disco', 'converted')))

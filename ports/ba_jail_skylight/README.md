@@ -14,8 +14,9 @@
 - 2026-10-25: radar re-rendered with textured floors (`radar.py` + `radartex.py`).
 - 2026-10-24: Radar, 1 loading-screen image, credits (JJJohan, custom models IVORK). Assets compile with `run_build.bat "assets ba_jail_skylight"`.
 - 2026-09-28 (file date): the keypad was rebuilt as a cs_script code door. Map entities are re-created every round, so the script re-hooks the buttons on every round start.
-- 2026-11-03: **switched lights** (`mapcheck.py`): 30 lights the map switches are now Dynamic with no bounce light, so their baked light no longer stays on when they are off. Needs a lighting build.
+- 2026-11-03: **switched lights** (`mapcheck.py`): 30 lights the map switches are no longer baked: Stationary (Dynamic only if it rides a parent or was already Dynamic; shadows off where more than 4 shadowed stationary lights would overlap), bounce light off, so their light no longer stays on the walls when they are off. Needs a lighting build.
 - 2026-11-03: one TurnOn / TurnOff output to a CS2 light renamed Enable / Disable (`mapcheck.py`).
+- 2026-11-03: **disco floor** (`mapcheck.py`, skink52): its 24 coloured switched lights have shadows off, so the changing colours look right; switched lights get no baked bounce. Needs a lighting build.
 
 ## Import report
 

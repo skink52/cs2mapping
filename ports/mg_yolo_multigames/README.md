@@ -62,7 +62,7 @@ Multigames map with a game-picker lobby. Has a separate 3D skybox map (`mg_yolo_
     foot_Tgoal/foot_CTgoal) were reverted on request: balls are `prop_physics_override` again, run-into push back on, volleyballs (kept from 29 Oct, extended)
     wait asleep at the serve spot at the start and after each point until knifed/shot; no run-into push on them. Pre-revert vmap kept as `_backup/mg_yolo_multigames_pre_soccer_revert.vmap`. Other 29 Oct fixes kept.
   - `compile_yolo_fixes.bat` in the addon compiles the particles, vmats, panorama and script that the command-line build skips, then runs `run_build.bat`.
-- 2026-11-03: **switched lights** (`mapcheck.py`): 1 lights the map switches are now Dynamic with no bounce light, so their baked light no longer stays on when they are off. Needs a lighting build.
+- 2026-11-03: **switched lights** (`mapcheck.py`): 1 lights the map switches are no longer baked: Stationary (Dynamic only if it rides a parent or was already Dynamic; shadows off where more than 4 shadowed stationary lights would overlap), bounce light off, so their light no longer stays on the walls when they are off. Needs a lighting build.
 - 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 340 and moved 2 faces (its breakable minigame walls) that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
 
 ## Import report

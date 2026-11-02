@@ -16,7 +16,7 @@ Part of the first three-map batch with de_rats_1337, mg_lego_course and mg_super
 - 2026-10-14: 9 fan-vortex pushes (300) and a 16000 vent launcher → script push zones; 8 decals with grey backgrounds keyed into static overlays; 94 prop_hallucination lamps and ladders (invisible in CS2) → 32 prop_dynamic (the named ones) + 62 prop_static; the 32 switchable lights → Dynamic (Static lights can't switch off); sky and 5 materials rebuilt; boathouse water → stock CS2 water; radar from the original CS:GO radar image; vis hints (Lowest over the map, Low over the play areas, one Medium); loading text.
 - 2026-10-14 23:22: three sounds pulled from CS:GO's VPK wavs as `rats.boulder_scrape_rough`, `rats.inferno_loop` and `rats.steam01`.
 - 2026-10-15: a lighter model's `no_material.vmat` repointed at its black material.
-- 2026-11-03: **switched lights** (`mapcheck.py`): 7 lights the map switches are now Dynamic with no bounce light, so their baked light no longer stays on when they are off. Needs a lighting build.
+- 2026-11-03: **switched lights** (`mapcheck.py`): 7 lights the map switches are no longer baked: Stationary (Dynamic only if it rides a parent or was already Dynamic; shadows off where more than 4 shadowed stationary lights would overlap), bounce light off, so their light no longer stays on the walls when they are off. Needs a lighting build.
 
 ## What the cleanup did
 

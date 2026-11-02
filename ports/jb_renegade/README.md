@@ -14,4 +14,4 @@
 
 ## History
 
-- 2026-11-03: **switched lights** (`mapcheck.py`): 8 lights the map switches are now Dynamic with no bounce light, so their baked light no longer stays on when they are off. Needs a lighting build.
+- 2026-11-03: **switched lights** (`mapcheck.py`): 8 lights the map switches are no longer baked: Stationary (Dynamic only if it rides a parent or was already Dynamic; shadows off where more than 4 shadowed stationary lights would overlap), bounce light off, so their light no longer stays on the walls when they are off. Needs a lighting build.

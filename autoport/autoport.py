@@ -230,7 +230,7 @@ def passes(m):
     if vis_air(m) < MIN_VIS_AIR: m.note('missing', 'Vis hints are still mostly Lowest (%.1f billion cubic units of play space found), so culling will be poor: fit hints by hand.' % vis_air(m))
     checks(m)
 
-MAPCHECK_KIND = {'excluded': 'unknown', 'unknown': 'unknown', 'bad_input': 'io', 'bad_output': 'io', 'dangling': 'minor', 'converted': 'review', 'baked_switch': 'playtest'}
+MAPCHECK_KIND = {'excluded': 'unknown', 'unknown': 'unknown', 'bad_input': 'io', 'bad_output': 'io', 'dangling': 'minor', 'converted': 'review', 'baked_switch': 'playtest', 'disco': 'review'}
 
 def checks(m):
     """Hammer's Check for Problems (mapcheck.py) and z-fighting (zfight.py) on every map of the addon, fixing what has one right answer."""
@@ -243,7 +243,7 @@ def checks(m):
             if kind in MAPCHECK_KIND: groups[kind].append(text)
         for kind, items in groups.items():
             what = {'excluded': 'entities of a class CS2 removes', 'unknown': 'entities of a class CS2 does not have', 'bad_input': 'outputs to an input the target lacks',
-                    'bad_output': 'outputs the entity lacks', 'dangling': 'outputs to names nothing has (removed: they did nothing in CS:GO either)', 'converted': 'entities, inputs or switched lights converted to their CS2 equivalent', 'baked_switch': 'switched lights still baked'}[kind]
+                    'bad_output': 'outputs the entity lacks', 'dangling': 'outputs to names nothing has (removed: they did nothing in CS:GO either)', 'converted': 'entities, inputs or switched lights converted to their CS2 equivalent', 'baked_switch': 'switched lights still baked', 'disco': 'disco floors given unshadowed lights (check none needs baked bounce)'}[kind]
             m.note(MAPCHECK_KIND[kind], 'Entity check (%s): %d %s: %s' % (name, len(items), what, '; '.join(sorted(set(items))[:8])[:900]))
         if m.tool('zfight', vm, out, m.content): raise StepFail('zfight.py failed on %s, see %s' % (name, m.log('zfight')))
         m.apply()

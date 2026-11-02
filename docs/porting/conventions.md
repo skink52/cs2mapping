@@ -37,7 +37,10 @@ These are the standing rules every port follows. The pipeline applies most of th
   knife equips and a killbox's guns are fine (skink52, 3 Nov 2026).
 - **Course maps: music.** A course with no music gets at least 3–4 shuffled songs from round start, the next when one ends (`coursemusic.py`).
   ba_jail_skylight's songs are skink52's favourites; any jb_ disco or mg_ map's songs are fair game. Name each after its source map.
-- **Switched lights are Dynamic.** A light the map turns on, off or recolours is Dynamic with no bounce light, or its baked light stays when it's off (`mapcheck.py`).
+- **Switched lights aren't baked.** A light the map turns on, off or recolours is Stationary with no bounce light, or its baked light stays when it's off.
+  Dynamic only if it moves (parented) or was already set Dynamic; shadows off where a spot would be inside more than 4 shadowed stationary lights,
+  so it still lights weapons (`mapcheck.py`, skink52, 3 Nov 2026). A disco floor (4+ switched lights close together in 4+ colours, switched on and off)
+  has shadows off; mapcheck reports each one, because a few discos want baked bounce.
 - **Weapons and players must not be black.** CS:GO lights import as Static (baked only), which leaves weapons and player models unlit.
   Switch enough lights to **Stationary** (`directlight 3`): at least one per sealed compartment, spaced so no spot is inside more than
   four stationary lights, and no more than needed. Compartments open to a `light_environment` are fine as they are.
