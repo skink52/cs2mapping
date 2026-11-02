@@ -14,6 +14,7 @@ import vmapgen as G
 from vmaplib import ent
 import names as N
 import layout as LY
+import dress
 
 SRC, OUTPATH, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
 LAYOUT_JSON = sys.argv[sys.argv.index('--layout') + 1] if '--layout' in sys.argv else os.path.join(OUT, '_gen', 'layout.json')
@@ -52,7 +53,10 @@ GOLEM = 'models/generic/stone_statue_01/stone_statue_01.vmdl'
 SERVER = 'models/props/de_train/hr_t/server_a/server_a.vmdl'      # 35 x 54 x 96, centred in z
 EXHIBIT_LIGHT = 'models/anubis/lights/anubis_exhibit_light01.vmdl'
 # models the script SetModel()s pooled props to (enemies, gates, effects): one cache prop each
-POOL_MODELS = [STATUE_HEAD, GOLEM, BLOCK_PROP, PILLAR_128, SERVER, NULL_MODEL]
+HOLO_PANEL = 'models/anubis/signs/anubis_exhibition_panel_01.vmdl'
+TOWER_RUIN = 'models/anubis/structures/tower01_destroyed.vmdl'
+FXM = ['models/nt/fx/nt_%s/nt_%s.vmdl' % (k, k) for k in ('shard', 'bolt', 'dome', 'beacon', 'spark')]   # tools/fx.py
+POOL_MODELS = [STATUE_HEAD, STATUE, HOLO_PANEL, TOWER_RUIN, GOLEM, BLOCK_PROP, PILLAR_128, SERVER, NULL_MODEL] + FXM   # must match ENEMIES in src/core/20_classes.js
 
 W = LY.world()
 d = G.open_map(SRC, OUT)
@@ -79,10 +83,27 @@ def prop(model, origin, yaw=0.0, solid='6', bake='0', shadows='0', **kw):
     return ent('prop_static', origin, (0, yaw, 0), group=GROUP, **keys)
 
 
-def lamp(origin, lumens, rng, color='255 200 150', shadows=False):
+def lamp(origin, lumens, rng, color='255 200 150', shadows=False, baked_only=False):
+    # baked_only: Static (directlight 1), no runtime cost: accents and small fill lights; the rest Stationary (3)
     return ent('light_omni2', origin, (90, 0, 0), group=GROUP, brightness_units='1', brightness_lumens=str(int(lumens)), brightness='1',
-               color=color, range='%.0f' % rng, directlight='3', castshadows='1' if shadows else '0', colormode='0', enabled='1',
+               color=color, range='%.0f' % rng, directlight='1' if baked_only else '3', castshadows='1' if shadows else '0', colormode='0', enabled='1',
                bouncescale='1.0', shape='0')
+
+
+def quad(verts, mat, uvs):
+    """one static-overlay face (a decal, a puddle) with explicit 0..1 UVs per corner; not in vis, casts nothing"""
+    vmesh.TEX_SIZE.setdefault(mat, (512, 512))
+    m = vmesh.polymesh_open(verts, [[0, 1, 2, 3]], [mat], scale=1.0)
+    ev = m.get('edgeVertexIndices'); ef = m.get('edgeFaceIndices')
+    for st in m.get('faceVertexData').get('streams'):
+        if st.get('semanticName') == 'texcoord':
+            data = st.attr('data')[2]
+            for i in range(len(data)):
+                if ef[i] >= 0: data[i] = (float(uvs[ev[i]][0]), float(uvs[ev[i]][1]))
+    return vmesh.mesh_node(m, GROUP, bake=True, shadows=False, visexclude=True)
+
+
+DRESS = dress.Ctx(prop, lamp, quad, OUT)
 
 
 def pad_plate(center, mat, half=LY.PAD):
@@ -143,7 +164,7 @@ def room_lighting(b, warm=2200, accent='60 220 255', shadow_centre=True, z_off=3
             lamp((cx + sx * (hx - 160), cy + sy * (hy - 160), z1 - z_off), warm, max(hx, hy) * 1.1)
     lamp((cx, cy, z1 - z_off), warm * 1.3, max(hx, hy) * 1.4, shadows=shadow_centre)
     for (lx, ly) in ((x0 + 24, cy), (x1 - 24, cy), (cx, y0 + 24), (cx, y1 - 24)):
-        lamp((lx, ly, 56), 320, 150, color=accent)
+        lamp((lx, ly, 56), 320, 150, color=accent, baked_only=True)
 
 
 def room_support(b, voxel=48):
@@ -178,9 +199,11 @@ for i in range(32):
     ent('info_player_terrorist', (x, y, 8), (0, 90, 0), group=GROUP, enabled='1', priority='0')
     ent('info_player_counterterrorist', (x, L['cy'] + 600 - (i // 8) * 96, 8), (0, 270, 0), group=GROUP, enabled='1', priority='0')
 tele(L['name'], (L['cx'], L['cy'], 0))
+dress.lobby(DRESS, L, [(L['cx'] - 560 + (i % 8) * 160, L['cy'] + s * (600 - (i // 8) * 96)) for i in range(32) for s in (-1, 1)])
 G.nav_seed((L['cx'] - 512, L['cy'] - 256, 1, L['cx'] + 512, L['cy'] + 256, 40), group=GROUP)
 G.map_params((L['cx'] - 64, L['cy'], 64), name='%s_map_params' % N.PREFIX, group=GROUP)
 ent('point_script', (L['cx'], L['cy'], 64), group=GROUP, targetname='%s_script' % N.PREFIX, cs_script=N.SCRIPT_PATH)
+ent('custom_hud_layout', (L['cx'] + 32, L['cy'], 64), group=GROUP, targetname='%s_hud' % N.PREFIX, layout=N.HUD_PATH, observable='1')
 G.template_pool('%s_tpl_prop' % N.PREFIX, (L['cx'] + 64, L['cy'], 8), NULL_MODEL, group=GROUP)
 for cls, pos, yaw in (('counterterrorist_team_intro', (L['cx'] + 300, L['cy'] + 300, 64), 90), ('terrorist_team_intro', (L['cx'] - 300, L['cy'] + 300, 64), 90),
                       ('team_select', (L['cx'], L['cy'] - 300, 64), 90), ('end_of_match', (L['cx'], L['cy'], 64), 90)):
@@ -192,12 +215,28 @@ ent('env_gradient_fog', (L['cx'] + 96, L['cy'], 64), group=GROUP, targetname='%s
     fogmaxopacity='0.6', fogstart='512', fogend='3200', fogfalloffexponent='1.0', heightfog='0', fogstartheight='0', fogendheight='4000',
     fogverticalexponent='2.0', fadetime='0', farz='-1', StartDisabled='0')
 
+# ---------------------------------------------------------------- sounds: one point_soundevent per event (the script picks sources), ambience loops per area
+SOUNDS = json.load(open(os.path.join(OUT, '_gen', 'sounds.json')))
+HOT = ('enemy_hit', 'enemy_die', 'sentinel_shot', 'bolt_hit', 'drone_lunge')
+snd_names = ['nt.' + s for s in SOUNDS['sfx']] + ['nt.ui.' + s for s in SOUNDS['ui']]
+G.sound_events(d, snd_names, (L['cx'] - 700, L['cy'] + 200, 72), prefix='%s_snd_' % N.PREFIX, group=GROUP, cols=12, step=48)
+k = 0
+for s_ in HOT:
+    for suf in ('_b', '_c'):
+        ent('point_soundevent', (L['cx'] - 700 + (k % 12) * 48, L['cy'] + 400 + (k // 12) * 48, 72), group=GROUP, targetname='%s_snd_nt_%s%s' % (N.PREFIX, s_, suf),
+            soundName='nt.' + s_, startOnSpawn='0', toLocalPlayer='0', stopOnNew='0', saveAndRestore='0'); k += 1
+def ambience(name, origin, kind):
+    ent('point_soundevent', origin, group=GROUP, targetname=name, soundName=SOUNDS['amb'][kind], startOnSpawn='1', toLocalPlayer='0', stopOnNew='0', saveAndRestore='0')
+ambience('%s_amb_lobby' % N.PREFIX, (L['cx'], L['cy'], 160), 'lobby')
+
 # ---------------------------------------------------------------- vault pool
 for rm in W['rooms']:
     b = rm['box']
     room_shell(b)
     trims(b); conduit(b); wall_panels(b)
-    for (x, y) in rm['pillars']: pillar(x, y)
+    for i, (x, y) in enumerate(rm['pillars']):
+        if rm['kind'] == 'ruin' and i % 2: prop(PILLAR_BASE, (x, y, 0)); prop(dress.PILLAR_BROKEN, (x, y, 16), 37 * i)
+        else: pillar(x, y)
     for (x, y) in rm['blocks']: prop(BLOCK_PROP, (x, y, 32.5))
     if rm['dais']:
         D = rm['dais']
@@ -207,6 +246,8 @@ for rm in W['rooms']:
         prop(STATUE, (x, y, z), 180)
     pad_plate(rm['entry'], CYAN); pad_plate(rm['exit'], AMBER)
     tele(rm['name'] + '_in', rm['entry'], 0)
+    dress.vault(DRESS, rm, rm['pillars'])
+    ambience('%s_amb_%s' % (N.PREFIX, rm['name']), (rm['cx'], rm['cy'], 140), 'vault')
     room_lighting(b)
     room_support(b)
 
@@ -221,6 +262,8 @@ for st in W['stagings']:
     room_support(b, voxel=32)
     buyzone(b, 2); buyzone(b, 3)
     tele(st['name'], st['pad'], 90)
+    dress.staging(DRESS, st)
+    ambience('%s_amb_%s' % (N.PREFIX, st['name']), (st['cx'], st['cy'], 128), 'staging')
 
 # ---------------------------------------------------------------- arena
 A = W['arena']; ab = A['box']
@@ -241,6 +284,8 @@ for sx in (-1, 1):
     for sy in (-1, 1):
         lamp((A['cx'] + sx * 1200, A['cy'] + sy * 1200, az1 - 40), 6000, 1700)
 lamp((A['cx'], A['cy'], az1 - 40), 9000, 2400, shadows=True)
+dress.arena(DRESS, A)
+ambience('%s_amb_arena' % N.PREFIX, (A['cx'], A['cy'], 300), 'arena')
 G.probe_volume(ab, voxel=64, group=GROUP)
 G.lmres_box(ab, group=GROUP)
 G.hint((ax0 - 16, ay0 - 16, az0 - 16, ax1 + 16, ay1 + 16, az1 + 16), 'Low', group=GROUP)

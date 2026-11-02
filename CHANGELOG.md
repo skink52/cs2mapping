@@ -5,6 +5,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-11-03: course respawn window, course music, switched lights, Lego spawn door
 
+- **projects/cs2-roguelike (new): Nanite Temple**, a 64-player roguelike in one map: a generated vmap (`tools/vmap.py` on `create/vmapgen`) of a lobby, a pool of 12 vault rooms of 9 kinds, 8 staging buy rooms and a 3-tier arena, all sealed boxes at z = 0 joined by script teleports; a dressing pass (`tools/dress.py`: 2,149 stock props from the Anubis, Ancient, Aztec, Cache, Overpass and Nuke kits, 56 CS:GO decals from the lightsout import as static-overlay quads, puddles, ivy, candles, wiring); cs_script with squads, floors, staging, breach, showdown, three classes and pooled-prop guardians hurt by real bullets (eye-to-impact segment test). Mock-tested at 24 and 64 players; first CS2 compile pending. Design in `docs/DESIGN.md`.
 - `tools/respawnwindow.py` (new): on course maps, players who die before the spawn AFK killer switches on respawn; `port_respawn_window` turns
   `mp_respawn_on_death_t/ct` off 5 s before it fires (skink52). On 15 courses (antique, balistic, circle, color_dev, draw, egypt, faohu, galaxy,
   insomnia, jahoukarail, kohztec, lego, metal, minecraft_adventure, simpsons); autoport's course profile runs it on new ports.

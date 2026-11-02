@@ -71,4 +71,5 @@ Each original addon lives in [`projects/`](projects), with its full history (mer
 | Puppet Brawl: 2.5D fighting game with mocap-based animation | [projects/cs2-fighter](projects/cs2-fighter) |
 | TTT for CS2: drop-in Trouble in Terrorist Town cs_script for any map | [projects/cs2mapTTT](projects/cs2mapTTT) |
 | CS 1.6 in CS2 (mg_cs16): 1.6 maps and rules in one CS2 map | [projects/cs21.6](projects/cs21.6) |
+| Nanite Temple (mg_nanite_temple): 64-player roguelike, squads through randomised temple vaults into one showdown arena, CS2 gunplay and buy menu kept | [projects/cs2-roguelike](projects/cs2-roguelike) |
 | The ported maps | [ports/](ports/README.md) |

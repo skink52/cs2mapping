@@ -310,6 +310,7 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 ## Hammer and workflow
 
 - Hammer keeps the open map in memory. Close it before a script edits the `.vmap`, or the edit is lost on the next save.
+- **Never run resourcecompiler (or `build_maps.ps1`) with `C:\source1` as the working directory.** That folder holds a `gameinfo.txt` for the importer, so the compiler treats it as a game root and dies on every asset with `FATAL ERROR: C:\source1\pak01.vpk Failed to load file (unexpected)`; the asset pre-pass then reports every one of the addon's materials as not compiled (Nanite Temple, 3 Nov 2026). Run builds from `C:\source1\cs2port` (what `run_build.bat` does).
 - Don't delete the stock `materials\tools` folders, even to replace them with custom versions. Deleting them broke Hammer's clip tool.
 - Opening a map in Hammer compiles its materials. The command-line build doesn't, so it compiles assets explicitly first.
 - The `.vmap` keeps its own list of the assets it references (`map_asset_references`, plus `map_subasset_reference_types/names/counts` per entity class).

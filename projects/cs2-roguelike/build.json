@@ -1,0 +1,11 @@
+{
+  "name": "nanite",
+  "coreDir": "src/core",
+  "adapterDir": "src/cs2",
+  "data": { "LAYOUT": "out/addon/_gen/layout.json", "SOUNDS": "out/addon/_gen/sounds.json" },
+  "imports": ["Instance", "CSPlayerPawn", "CSPlayerController", "CSInputs", "CSDamageFlags", "CSDamageTypes", "CSRoundEndReason",
+              "PointTemplate", "BaseModelEntity", "CSWeaponBase", "CustomHudLayout"],
+  "exports": ["CONFIG", "Rng", "Match", "CLASSES", "ENEMIES", "LAYOUT", "squadPlan", "weaponDamage"],
+  "testOut": "build/core_test.cjs",
+  "out": "out/addon"
+}

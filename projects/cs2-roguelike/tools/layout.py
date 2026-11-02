@@ -31,6 +31,10 @@ VAULTS = {
     'split':     dict(pillars=[(0, -352), (0, 352)], blocks=[(0, -160), (0, -64), (0, 64), (0, 160), (-320, 0), (320, 0)], dais=None, statues=[]),
     'ring':      dict(pillars=[(288 * math.cos(a), 288 * math.sin(a)) for a in [k * math.pi / 4 for k in range(8)]], blocks=[], dais=(96, 48), statues=[]),
     'shrine':    dict(pillars=[(-320, -320), (320, -320), (-320, 320), (320, 320)], blocks=[(-192, 0), (192, 0)], dais=(192, 96), statues=[(0, 0)]),
+    # the three kinds below are mostly dressing (tools/dress.py): an overgrown garden court, a data archive, a collapsed vault
+    'garden':    dict(pillars=[(-288, -288), (288, -288), (-288, 288), (288, 288)], blocks=[], dais=(128, 48), statues=[]),
+    'archive':   dict(pillars=[(x, y) for x in (-192, 192) for y in (-288, 0, 288)], blocks=[(0, -160), (0, 160)], dais=None, statues=[]),
+    'ruin':      dict(pillars=[(-256, -192), (256, 192), (0, 320)], blocks=[(-96, 96), (160, -224), (-288, 288)], dais=None, statues=[]),
 }
 KINDS = list(VAULTS)
 

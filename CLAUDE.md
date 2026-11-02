@@ -19,6 +19,7 @@ On the PC, Claude Code runs from `C:\source1` and reaches CS2, `C:\source2` and 
 | Puppet Brawl, fighter, fighting game | `projects/cs2-fighter/` | `projects/cs2-fighter/README.md` |
 | Trench warfare, WW1, mg_trenchwarfare, custom rifles | `projects/trenchwarfare-cs2/` | `projects/trenchwarfare-cs2/NOTES.md` |
 | CS 1.6, mg_cs16 | `projects/cs21.6/` | `projects/cs21.6/README.md` |
+| Roguelike, Nanite Temple, mg_nanite_temple, vaults/squads/showdown | `projects/cs2-roguelike/` | `projects/cs2-roguelike/docs/DESIGN.md`, `README.md` |
 | Porting, a CS:GO map name, mg_/jb_/ba_ ports | `ports/<map>/`, `tools/`, `scripts/` | `docs/porting/pipeline.md` |
 | Unattended ports, autoport, a port cleanup list | `autoport/` | `autoport/README.md`; `autoport/REVIEW.md` when reviewing held maps |
 | A new original addon | new `projects/<name>/` | `docs/creation/guide.md` |

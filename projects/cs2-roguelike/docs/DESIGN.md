@@ -1,9 +1,38 @@
 # CS2 roguelike (working title) â€” design and suggestions, 3 Nov 2026
 
-Status: proposal. Nothing built yet. This expands the brief (ancient basalt temple + cyber infusion, 8 PvE sectors
+Status: v0.1.0 generated, mock-tested, first CS2 compile pending (3 Nov 2026). Decisions taken after review are in section 0. This expands the brief (ancient basalt temple + cyber infusion, 8 PvE sectors
 feeding one 64-player PvP showdown, three classes, minimal HUD) and marks where CS2 forces a different method.
 "How the other addons did it" refers to [docs/creation/guide.md](../../../docs/creation/guide.md),
 [cs_script-notes.md](../../../docs/reference/cs_script-notes.md) and [cs2-gotchas.md](../../../docs/reference/cs2-gotchas.md).
+
+## 0. Decisions (3 Nov 2026, skink52)
+
+- **Go wild on everything except menus and gunplay.** CS2's buy menu, weapons and shooting stay exactly as they are; people like them. Everything else is a
+  new experience they're open to.
+- **Randomise with extra areas and teleports.** Instead of gating a fixed grid, the map holds a pool of vault rooms and a floor is a chain of rooms drawn
+  from the pool at random; squads move by teleport. Rooms sit in separate sealed boxes in the void with one Low vis hint each, so only the occupied
+  rooms are ever drawn: it is cheaper than one connected grid, not dearer.
+- **Simple, clean UI.** CS2-like. Chat for now; the Panorama HUD (next step) stays flat and minimal.
+- **Detail is design.** Every area gets a dressing pass: graffiti and stains (static overlays), vegetation, puddles, refuse, candles, cables, monitors.
+  Enemies use real CS2 models (or Tripo), never placeholders. Target: what a AAA team would ship after months. Re-read this at every design stage.
+- **Several scripts are fine** (skink52): if one think loop ever gets expensive, split by concern (one point_script per sector group, one for the HUD). Not needed at the mock's 0.02 ms/tick.
+- **Research first.** Read the repo's tools and docs before building; that time is not wasted.
+
+### What exists now (v0.1.0)
+- `tools/layout.py`: lobby 1536², 12 vaults 1024² x 272 (kinds colonnade, cross, grid, split, ring, shrine, garden, archive, ruin), 8 staging rooms
+  512 x 384 with T and CT buy zones, arena 3072² with a 48-unit tier, a 144-unit dais, 8 balconies and 20 cover blocks, a cache room. All floors at z = 0.
+- `tools/vmap.py`: shells, Anubis trims and wall panels, the recessed conduit (stone lips + self-lit strip), pillars (base + 2 x 128), entry/exit plates,
+  light_omni2 per room (5 stationary, accents baked-only), probe volume, lightmap-res shell and Low hint per room, Lowest over all, spawns, teleport
+  targets, point_script, prop pool template (null model), cache props, team intros, post-processing, fog.
+- `tools/dress.py`: per-kind dressing with seeded placement and circle footprints. 2,149 props, 56 decal materials, 723 meshes in the first build.
+- `src/core`: CONFIG, seeded RNG, classes and enemy tables, the Match (squad plan ~5 per squad, 2..8 squads; room chains; staging; breach; ring; winner).
+- `src/cs2`: engine helpers and FIFO prop pool (rebuilt each round), players and abilities, the damage gate (squad, dome, chrono save), enemies
+  (chase, melee, telegraphed shot, flown bolt; bullets by the eye-to-impact segment, knives by a short sweep), orders, exits, ring, round end.
+- Mock: 24 and 64 players, churn, 0 errors, ~0.015 ms/tick on the mock (pessimistic numbers come from CS2 itself).
+
+### Next
+HUD (ability tile, vitals, nanites/area line, class picker at the lobby kiosks), sounds (synth), loading screens and radar, a Tripo boss for floor 3,
+the Monk dome model (fx_models hex shell), gate/portcullis animation on exits, workshop docs. After the first in-game test: fix what CS2 disagrees with.
 
 ## 1. Reality check: what the brief assumes vs what CS2 gives us
 
