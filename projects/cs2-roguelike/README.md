@@ -35,7 +35,8 @@ map's own script (cs_script): no plugins.
 sh tools/build_all.sh          # out/addon + out/game, type check, mock run
 sh tools/deploy.sh             # into content\csgo_addons\mg_nanite_temple and game\csgo_addons\mg_nanite_temple (Hammer closed)
 ```
-Then compile the map (Hammer, or `C:\source1\cs2port\build_maps.ps1 mg_nanite_temple`). The script compiles with the map; after a
+Then compile the map (Hammer, or `C:\source1\cs2port\build_maps.ps1 mg_nanite_temple` run with `C:\source1\cs2port` as the working directory; the
+first full compile took 2.5 min, 326 assets, 6 MB vpk). The script compiles with the map; after a
 script-only change compile `maps/scripts/nanite.js` with `resourcecompiler -f -i`, `disconnect` and load the map again.
 
 Layout: [tools/layout.py](tools/layout.py) (rooms, staging, arena; also baked into the script as `LAYOUT`), map writer [tools/vmap.py](tools/vmap.py),
