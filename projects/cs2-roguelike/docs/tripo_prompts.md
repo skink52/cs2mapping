@@ -2,8 +2,10 @@
 
 The CLI account (`tripo whoami`) shows 0 API credits: Tripo keeps studio credits and API credits apart, so these are written for the studio.
 Settings for every prop: **PBR on, Smart Low Poly on**, face limit as given, **quad off** (GLB export; quad forces FBX), no rig.
-Drop the GLB into `ref/tripo/<name>.glb`; `python tools/import_glb.py ref/tripo/<name>.glb <name>` converts it (create/glb2cs2_multi.py)
-and `tools/fx.py`/`vmap.py` pick it up from `ENEMIES`. Keep edges sharp: ask Tripo for the low poly rather than decimating a 1M-triangle mesh,
+Drop the GLB into `ref/tripo/<name>.glb`; `python tools/import_glb.py ref/tripo/<name>.glb <name> --length <units> --yaw 90 --glow cyan|magenta`
+converts it (create/glb2cs2_multi.py) into `ref/models_src/` (binary, not in git; `tools/build_all.sh` copies it into the addon). `--yaw 90`
+turns Tripo's front to CS2's +X; `--glow` builds a self-illum mask from the baked-in glow colour, since Tripo exports no emissive channel.
+Then list the vmdl in `tools/vmap.py` TRIPO (the cache room compiles it) and point `ENEMIES` at it with the printed radius/height. Keep edges sharp: ask Tripo for the low poly rather than decimating a 1M-triangle mesh,
 and bake normals from the high poly if a second pass is needed (see docs/DESIGN.md, "Tripo without sloppy edges").
 
 ## Shrine guardian (floor-3 boss), 8,000 triangles
@@ -34,3 +36,13 @@ ringed by magenta glowing glyph channels. Weathered dark stone, chipped edges, t
 single object on a flat square base that is part of the model, no background. Clean hard-surface edges, PBR materials.
 ```
 Negative: `human face detail, cloth, weapon, gun barrel, background, blurry, soft edges, cartoon, extra limbs`
+
+## Generated 3 Nov 2026 (studio, H3.1, PBR, 4K, triangles)
+
+| model | prompt | polycount asked / got | import |
+|---|---|---|---|
+| nt_guardian (golem) | shrine guardian, as above (bipedal came out, kept) | 8,000 / 7,814 | `--length 110 --yaw 90 --glow cyan` -> 111 tall |
+| nt_drone | shard drone, as above | 1,500 / 1,373 | `--length 44 --yaw 90 --glow cyan` |
+| nt_sentinel | turret, second try: "framed by one smooth plain ring of magenta light and a few simple straight carved grooves. No runes, no glyphs, no letters, no symbols, no writing, no text anywhere on the model" (the first try ringed the lens with gibberish runes) | 4,000 / 3,778 | `--length 88 --yaw 90 --glow magenta` -> 77 tall |
+
+220 studio credits in all (4 x 55). Lesson: say "no runes, no glyphs, no text" whenever a prompt mentions glyph channels, or Tripo paints nonsense script.

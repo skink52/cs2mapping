@@ -74,7 +74,7 @@ bodies need no skeletal animation (the Tripo rigging problems in mg_trenchwarfar
 | Sentinel | turret | anubis `statue01_head` on a basalt base (stock) | hitscan tracer prop, telegraphed 0.6 s glow |
 | Lancer | ranged | cracked stone slab with a cyan core | script-flown bolt, dodgeable, stopped by the dome |
 | Golem | tank | `generic/stone_statue_01` (stock, breakable pieces exist) | slow, slam AoE, armor-ignoring |
-| Shrine warden (boss) | floor 3 | the one Tripo model (≈ 4k tris) | phases: lancers, slam, drone summon |
+| Shrine warden (boss) | floor 3 | Tripo `nt_guardian` (7.8k tris, 111 tall; 3 Nov 2026) | phases: lancers, slam, drone summon |
 
 Weak points: Sentinel head, Golem core — bonus damage from `OnBulletImpact` position vs a stored local point on the body.
 
@@ -89,7 +89,8 @@ Weak points: Sentinel head, Golem core — bonus damage from `OnBulletImpact` po
   There is no torii gate, brazier or hex dome in stock.
 - **Ours, procedural (`create/build_prop.py`: box/lathe geometry with baked PBR, LODs, hulls; edges are sharp by construction):** torii gate frame,
   portcullis (pooled, script-moved), carved conduit trim with emissive channel, holo pedestal + emitter, neon strip, hex dome shell (`fx_models`).
-- **Tripo (1905 credits, budget ≤ 200 for v1):** the Shrine warden, maybe two drone variants. Rules below.
+- **Tripo (1905 credits, budget ≤ 200 for v1):** the Shrine warden, maybe two drone variants. Rules below. Done 3 Nov 2026 for 220 studio credits:
+  guardian, shard drone and sentinel turret (`docs/tripo_prompts.md` has the prompts, sizes and import flags; `tools/import_glb.py` converts).
 - **Lighting:** baked; one probe volume per room; ≤ 2 shadowed lights per room; cyan omni lights unshadowed, range ≤ 160.
 - **Vis/audio:** one Lowest hint over everything, Low per room; a soundscape per sector; `env_gradient_fog` black fade inside the temple.
 

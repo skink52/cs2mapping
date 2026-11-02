@@ -16,14 +16,15 @@ const CLASS_BY_CHAT = {}; for (const k of CLASS_KEYS) for (const w of CLASSES[k]
 // enemy kinds: stone and hologram constructs (rigid props, no skeleton). model = the pooled prop's model (cached in the map).
 // hp scales with the floor; speed in units/s; attack: melee (lunge) or shot (a hitscan tracer after a telegraph) or bolt (script-flown)
 const ENEMIES = {
-  // the temple's guardians: stone and hologram constructs. Stock CS2 models (their vmdl is cached in the map's cache room, see tools/vmap.py POOL_MODELS)
-  drone:    { name: 'shard drone', model: 'models/anubis/structures/statue01_head.vmdl', hp: 60, speed: 300, radius: 20, height: 50, z: 56, scale: 0.8,
+  // the temple's guardians: stone and hologram constructs. Tripo models (tools/import_glb.py) and stock CS2 models; every vmdl is cached in the
+  // map's cache room (tools/vmap.py POOL_MODELS). tint: false keeps SetColor off a textured model (color is still the fx colour)
+  drone:    { name: 'shard drone', model: 'models/nt/enemies/nt_drone/nt_drone.vmdl', hp: 60, speed: 300, radius: 20, height: 44, z: 56, scale: 1, tint: false,
               attack: 'melee', dmg: 9, reach: 72, rate: 0.9, nanites: 100, color: { r: 60, g: 230, b: 255 } },
-  sentinel: { name: 'sentinel', model: 'models/anubis/structures/statue01.vmdl', hp: 180, speed: 0, radius: 26, height: 98, z: 0, scale: 0.75,
+  sentinel: { name: 'sentinel', model: 'models/nt/enemies/nt_sentinel/nt_sentinel.vmdl', hp: 180, speed: 0, radius: 30, height: 77, z: 0, scale: 1, tint: false,
               attack: 'shot', dmg: 14, reach: 1400, rate: 1.6, telegraph: 0.6, nanites: 200, color: { r: 210, g: 200, b: 190 } },
   lancer:   { name: 'lancer', model: 'models/anubis/signs/anubis_exhibition_panel_01.vmdl', hp: 120, speed: 120, radius: 22, height: 95, z: 10, scale: 0.9,
               attack: 'bolt', dmg: 22, reach: 1200, rate: 2.2, boltSpeed: 900, nanites: 180, color: { r: 255, g: 190, b: 60 } },
-  golem:    { name: 'golem', model: 'models/anubis/structures/tower01_destroyed.vmdl', hp: 420, speed: 150, radius: 30, height: 100, z: 0, scale: 0.45,
+  golem:    { name: 'golem', model: 'models/nt/enemies/nt_guardian/nt_guardian.vmdl', hp: 420, speed: 150, radius: 36, height: 111, z: 0, scale: 1, tint: false,
               attack: 'melee', dmg: 30, reach: 100, rate: 1.8, nanites: 350, armorIgnore: true, color: { r: 200, g: 200, b: 200 } },
 };
 // what a floor's wave is made of (weights); the boss floor adds a golem escort

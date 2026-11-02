@@ -28,7 +28,7 @@ function spawnOne(G, R, q) {
   const kind = ENEMIES[q.kind];
   const hp = Math.round(kind.hp * (1 + 0.25 * (q.floor - 1)));
   const pos = { x: q.x, y: q.y, z: kind.z };
-  const p = poolTake(kind.model, pos, G.rng.int(360), kind.scale, kind.color);
+  const p = poolTake(kind.model, pos, G.rng.int(360), kind.scale, kind.tint === false ? undefined : kind.color);
   if (!p) return false;
   const en = { id: p.id, prop: p, kind, key: q.kind, hp, maxHp: hp, pos, yaw: 0, room: R.id, nextAttack: E.now + 1.5 + G.rng.next() * 2,
                telegraphAt: 0, target: null, bob: G.rng.next() * 6.28, alive: true, hitFlash: 0, hitSndAt: 0 };
@@ -72,7 +72,7 @@ function enemyTick(G, R, members) {
         if (!en.telegraphAt) { en.telegraphAt = E.now; sfx('sentinel_charge', en.pos); try { en.prop.ent.SetColor({ r: 255, g: 60, b: 200, a: 255 }); } catch (e) { /* */ } }
         else if (E.now - en.telegraphAt >= (k.telegraph || 0.5)) {
           en.telegraphAt = 0; en.nextAttack = E.now + k.rate;
-          try { en.prop.ent.SetColor({ r: k.color.r, g: k.color.g, b: k.color.b, a: 255 }); } catch (e) { /* */ }
+          try { const c = k.tint === false ? { r: 255, g: 255, b: 255 } : k.color; en.prop.ent.SetColor({ r: c.r, g: c.g, b: c.b, a: 255 }); } catch (e) { /* */ }
           if (bd <= k.reach && best.alive) {
             const from = { x: en.pos.x, y: en.pos.y, z: en.pos.z + k.height * 0.7 }; const to = best.pawn.GetEyePosition();
             const tr = Instance.TraceLine({ start: from, end: to, ignoreEntity: en.prop.ent });

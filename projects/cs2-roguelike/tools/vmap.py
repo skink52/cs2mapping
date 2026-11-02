@@ -56,7 +56,8 @@ EXHIBIT_LIGHT = 'models/anubis/lights/anubis_exhibit_light01.vmdl'
 HOLO_PANEL = 'models/anubis/signs/anubis_exhibition_panel_01.vmdl'
 TOWER_RUIN = 'models/anubis/structures/tower01_destroyed.vmdl'
 FXM = ['models/nt/fx/nt_%s/nt_%s.vmdl' % (k, k) for k in ('shard', 'bolt', 'dome', 'beacon', 'spark')]   # tools/fx.py
-POOL_MODELS = [STATUE_HEAD, STATUE, HOLO_PANEL, TOWER_RUIN, GOLEM, BLOCK_PROP, PILLAR_128, SERVER, NULL_MODEL] + FXM   # must match ENEMIES in src/core/20_classes.js
+TRIPO = ['models/nt/enemies/nt_%s/nt_%s.vmdl' % (k, k) for k in ('guardian', 'drone', 'sentinel')]   # tools/import_glb.py -> ref/models_src
+POOL_MODELS = [STATUE_HEAD, STATUE, HOLO_PANEL, TOWER_RUIN, GOLEM, BLOCK_PROP, PILLAR_128, SERVER, NULL_MODEL] + FXM + TRIPO   # must match ENEMIES in src/core/20_classes.js
 
 W = LY.world()
 d = G.open_map(SRC, OUT)

@@ -15,6 +15,7 @@ python tools/fx.py out/addon
 python tools/sounds.py out/addon ${NT_SOUNDEVENTS:+--soundevents "$NT_SOUNDEVENTS"}
 python tools/hud.py out/addon "$NAME" "$MAP"
 python "$CREATE/hud_check.py" --addon out/addon --name "$NAME" --states build/hud_states.json --out build/hud
+[ -d ref/models_src ] && cp -r ref/models_src/. out/addon/   # Tripo guardians (tools/import_glb.py)
 python tools/vmap.py "$SRC" "out/addon/maps/$MAP.vmap" out/addon
 python "$CREATE/check_mesh.py" "out/addon/maps/$MAP.vmap"
 node "$CREATE/build/build.mjs" build.json --name "$NAME"
