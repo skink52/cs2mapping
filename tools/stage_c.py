@@ -6,12 +6,13 @@ python3 stage_c.py <addon> <local_root>
 Writes changed files to <local_root>/out/<addon>/... (content), <local_root>/out/<addon>_game/... (game-side files)
 and <local_root>/out/<addon>_result.json (log, TO CHECK lines, file list, CS:GO archives still needed).
 Step keys, in run order (run_pass.py takes any of them): merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity,
-dead, steam, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags, droppedio
-(+ overlaydepth, physpush when asked). daylight is a stage_d.py pass only.
+dead, trigmat, trigsplit, toolpaths, steam, fire, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, culled, displaybrush, splitfaces,
+sky, skyvis, vis, beams, lights, alpha, probes, waterprobe, radar, assets, matflags, origindup (report only), droppedio
+(+ overlaydepth, physpush, nullparams when asked; nullparams always runs with io). daylight is a stage_d.py pass only.
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import dmx, vmf as vmfmod, vmapedit as V, gen_script, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch, droppedio, ovlquad
+import dmx, vmf as vmfmod, vmapedit as V, gen_script, repair, firefx, splitfaces, waterprobe, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch, droppedio, ovlquad
 
 CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 
@@ -505,8 +506,10 @@ def sounds(m, c):
                 elif note: c.todo.append('%s is %s, which CS2 may not compile: re-encode it as 16-bit PCM wav' % (src, note))
         vsnd = os.path.splitext(src)[0] + '.vsnd'
         evname = '%s.%s' % (prefix, re.sub(r'[^a-z0-9_]', '_', os.path.splitext(os.path.basename(src))[0].lower()).strip('_'))
-        sf = int(m.P(e, 'spawnflags', '0') or 0); everywhere = bool(sf & 1)
-        radius = float(m.P(e, 'radius', '1250') or 1250)
+        sf = int(m.P(e, 'spawnflags', '0') or 0)
+        try: radius = float(m.P(e, 'radius', '1250') or 1250)
+        except ValueError: radius = 1250.0
+        everywhere = bool(sf & 1) or radius <= 0        # Source 1: radius 0 plays everywhere (was clamped to a 64 u event)
         if evname not in added:
             added[evname] = SOUND_EVENT % dict(comment='ambient_generic "%s"%s' % (m.name(e), ' (play everywhere)' if everywhere else ''),
                                                name=evname, base='amb.looping.stereo.base' if everywhere else 'amb.base', vol=min(1.0, float(m.P(e, 'health', '10') or 10) / 10),
@@ -862,9 +865,10 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'renderamt', 'steam', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'probes', 'radar', 'assets', 'matflags', 'droppedio']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'trigmat', 'toolpaths', 'trigsplit', 'renderamt', 'steam', 'fire', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'culled', 'displaybrush', 'splitfaces', 'sky', 'skyvis', 'vis', 'beams', 'lights', 'alpha', 'probes', 'waterprobe', 'radar', 'assets', 'matflags', 'origindup', 'droppedio']
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
+    if 'io' in steps or 'nullparams' in steps: repair.null_params(m, c)        # before restore_io: a "(null)" output would be re-added as a "" duplicate
     if 'io' in steps and os.path.exists(vmfp): restore_io(m, c, vmfp); dropped_report(m, c, vmfp)
     if 'io' in steps: io_fixups(m, c)
     if 'wall' in steps: wall_toggle(m, c)
@@ -877,13 +881,17 @@ def run(addon, root, passes=None):
     if 'speed' in steps: speedmod(m, c)
     if 'gravity' in steps: gravity.run(m, c)
     if 'dead' in steps: dead_entities(m, c)
+    if 'trigmat' in steps: repair.trigger_materials(m, c)
+    if 'trigsplit' in steps: repair.split_triggers(m, c)
     if 'renderamt' in steps: render_alpha(m, c)
     vd = os.path.join(root, 'vpk')
     if os.path.exists(os.path.join(vd, 'cs2_pak01_dir.vpk')):
         c.cs2v = vpk.VPK(os.path.join(vd, 'cs2_pak01_dir.vpk')); csgov = vpk.VPK(os.path.join(vd, 'csgo_pak01_dir.vpk'))
         arcs = {int(f[11:14]): os.path.join(vd, f) for f in os.listdir(vd) if re.match(r'csgo_pak01_\d{3}\.vpk$', f)}
         c.src = assets.Source(c, csgov, arcs)
+    if 'toolpaths' in steps: repair.tool_paths(m, c)
     if 'steam' in steps: steam.run(m, c, vmfp)
+    if 'fire' in steps: firefx.run(m, c)
     if 'physpush' in steps: physpush.run(m, c)
     if 'sounds' in steps: sounds(m, c)
     if 'soundscripts' in steps: soundscripts.run(m, c, vmfp)
@@ -892,6 +900,9 @@ def run(addon, root, passes=None):
     if 'overlayfix' in steps or 'overlaydepth' in steps: texfix.overlay_geometry(m, c, vmfp, depth=8.0 if 'overlaydepth' in steps else None)
     if 'ovlquads' in steps: ovlquad.run(m, c)   # overlays on brush entities -> parented quads
     if 'facescale' in steps: texfix.face_scales(m, c, vmfp)
+    if 'culled' in steps and os.path.exists(vmfp): repair.culled_faces(m, c, vmfp)
+    if 'displaybrush' in steps: repair.display_brushes(m, c)
+    if 'splitfaces' in steps: splitfaces.run(m, c)
     if 'sky' in steps: sky_pass(m, c, vmfp)
     if 'vis' in steps: visfit.run(m, c)                  # hints fitted to the play space + sky shells out of vis
     elif 'skyvis' in steps: skyvis.run(m, c)
@@ -902,6 +913,7 @@ def run(addon, root, passes=None):
     if 'lights' in steps: lighting.run(m, c)
     if 'alpha' in steps and c.src: assets.fix_alpha(m, c)
     if 'probes' in steps: probecover.run(m, c)
+    if 'waterprobe' in steps: waterprobe.run(m, c)
     if 'radar' in steps: radar.run(m, c, tex=radar.textures_for(c))
     if 'assets' in steps and c.src:
         assets.fix_materials(m, c, c.cs2v, c.src.vpk, c.src.arcs)
@@ -932,6 +944,7 @@ def run(addon, root, passes=None):
             o = m.origin(spawn)
             m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
             c.log.append('added point_script %s (maps/scripts/%s_io.js)' % (c.script, addon))
+    if 'origindup' in steps and os.path.exists(vmfp): repair.origin_duplicates(m, c, vmfp)   # report only; stage D origindup deletes
     if 'droppedio' in steps and os.path.exists(vmfp): droppedio.run(m, c, vmfp)   # last, so it sees what our steps converted
     c.log.append('pruned %d orphaned elements' % m.prune())
     c.write('maps/%s.vmap' % addon, m.dumps())

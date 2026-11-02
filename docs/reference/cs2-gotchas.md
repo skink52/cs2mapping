@@ -42,11 +42,12 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 | `$ssbump` bump maps imported as normal maps light wrongly (they average ~(122,123,116) instead of ~(128,128,255)). | They hold light from Source 1's three radiosity basis directions. Stage C `matflags` rebuilds n = R*b0 + G*b1 + B*b2 (normalised) into `*_ssbn.png` and points `TextureNormal` at it. |
 | Some stock CS2 sound files listed in the VPK index are stubs with no playable audio (e.g. `physics/metal/metal_grate_impact_*`). | Stage C `soundscripts` copies the CS:GO wave into the addon first and only falls back to the stock CS2 file. |
 | An addon shows up in the Workshop Tools launcher as an example map that can't be edited. | `game\csgo_addons\<addon>\` still has the template's `readonly_tools_asset_info.bin` / `addoninfo.txt`. Delete both (working addons have neither). `prep.py` no longer copies them (24 Oct 2026). |
-| The importer leaves copies of brush-entity geometry in the world near 0 0 0. | Delete them (match against the VMF brush entities). From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
-| Box brushes whose face lies on a water brush lose that face (culled under water). | Rebuild the box from the VMF. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
-| Outputs that target their own entity are dropped. | Restore them from the VMF. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
-| Trigger volumes can store a hidden non-trigger material; `tools*` materials referenced outside `materials/tools/`. | Set to `toolstrigger`; repoint into `materials/tools/`. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
-| `(null)` output parameters. | Clear them. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
+| The importer leaves copies of brush-entity geometry in the world at the entity's local coordinates (around 0 0 0). | Stage C `origindup` lists them (VMF brush entities moved to the origin, same materials, not on real world brushes); stage D `origindup` deletes them, only when they are in the way (skink52). From cs2-slop-porting 3.5 (MIT), 2 Nov 2026. |
+| The importer culls a face another brush covers and treats an all-water brush as solid, so the face under the water (sea floor) disappears. | Stage C `culled`: the box is rebuilt from the VMF, nodraw except that face. From cs2-slop-porting 3.5 (MIT), 2 Nov 2026. |
+| Outputs that target their own entity are dropped. | Stage C `io` (restore_io) already puts back every dropped output, these included. |
+| Trigger volumes can store a hidden non-trigger material (copied floor brush; Hammer draws toolstrigger anyway); `tools*` materials referenced outside `materials/tools/`. | Stage C `trigmat` / `toolpaths`. From cs2-slop-porting 3.5 (MIT), 2 Nov 2026. |
+| The importer writes `(null)` as the parameter of outputs that had none. | Stage C clears them before restoring dropped outputs (`nullparams`); before that, the diff with the VMF re-added a `""` copy and the output fired twice. From cs2-slop-porting 3.5 (MIT), 2 Nov 2026. |
+| trigger_teleport / trigger_hurt / trigger_multiple spread over several meshes (or one mesh of separate pieces) | Don't work in game the way Hammer shows them (skink52, as in the cs2kz mapping notes). Stage C `trigsplit`: one entity per piece, same name, keyvalues and outputs; group them in Hammer afterwards if wanted. |
 
 ## Models, ModelDoc and weapons
 
@@ -111,12 +112,12 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 | A Panorama HUD panel bigger than its parent (e.g. a 250% spinning layer) gets squished back to the parent size, so its edges show. | `overflow: noclip noclip;` on the parent (and the layout root), and size the layer in px (mg_yolo_multigames drugged overlay: 4000 px squares). |
 | CS:GO "Refract" screen overlays and `color_correction` have no CS2 equivalent. | Keep the colour as a `post_processing_volume` with a 32³ RGB `.raw` LUT (`CColorLookupColorCorrectionLayer`). |
 | A custom camera close to a wall clips through it (CS2's near clip plane; eye 15 u forward, collision radius 16). Scripts can't change the near plane. | A hidden render-only copy of each wall up to 16 u behind it, same material; tall step faces and low lintels too. See-through dropped from ~99% to <1% (Hellmatch). |
-| A face is one lightmap chart and a mesh gets one probe / cubemap: huge lit floors bake blotchy and reflect the wrong place. | Cut lit faces over 512x512 on a world grid, keeping one mesh (one mesh per tile shows seams). Never split water or tool materials. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
-| A water surface spread over several light probe volumes tiles visibly. | Give it one probe volume of its own, or merge its probe layer (fixed piratewars, tomgreens). From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
-| Non-solid, never-changing func_brush / func_illusionary flush in a world surface light as a separate patch. | Make them world meshes with Physics Type None. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
+| A face is one lightmap chart and a mesh gets one probe / cubemap: huge lit floors bake blotchy and reflect the wrong place. | Stage C `splitfaces`: lit faces over 512x512 cut on a 512 world grid in one mesh (one mesh per tile shows seams); water and tool materials never split. From cs2-slop-porting 3.5 (MIT), 2 Nov 2026. |
+| A water surface spread over several light probe volumes tiles visibly in its reflection and fog. | `waterprobe`: a thin volume of its own at a higher priority (fixed piratewars, tomgreens). From cs2-slop-porting 3.5 (MIT), 2 Nov 2026. |
+| Non-solid, never-changing func_brush / func_illusionary flush in a world surface light as a separate patch. | Stage C `displaybrush`: world meshes with Physics Type None; anything named, parented, with outputs or render settings stays an entity. From cs2-slop-porting 3.5 (MIT), 2 Nov 2026. |
 | func_breakable shading. | Cast Shadows realtime only, Render Mode texture, Disable Receiving Shadows, Disable Mesh Merging; brush-entity meshes take the entity's Cast Shadows. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
 | Small normal-mapped patches turned 180° against their surface show as lighting seams. | Realign the patch to its surroundings. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
-| Generated vpcf: older initializer/operator classes and formats are dropped when the file is opened in the CS2 particle editor. | Write `format:vpcf66` with the field layout the editor saves. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
+| Generated vpcf: the CS2 particle editor drops older layouts on save (vpcf1, C_INIT_CreateWithinSphere / RandomLifeTime / RandomRadius, m_hTexture on the renderer): a trail came back with no initializers and drew nothing. They still compile and run as written. | `tools/vpcf66.py` writes vpcf66 with the editor's field lists (CreateWithinSphereTransform, InitFloat, m_vecTexturesInput, m_nOutputBlendMode); steam, fire, spark, tesla and glowfix use it. From cs2-slop-porting 3.5 (MIT), 2 Nov 2026. |
 
 ## Sky and world
 
@@ -221,7 +222,7 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 | `func_conveyor` | Doesn't carry players. | Script moves the players on it (mg_swag_multigames). |
 | `env_sprite`, `env_spritetrail` | Gone. | `info_particle_system`, one particle per sprite texture (mg_yolo_multigames, mg_swag_multigames). Size: a CS:GO sprite with no `scale` key drew about texture width × 0.25 across, not × 1 (yolo's buyzone/creeper sprites came out 4× too big); the sprite renderer draws a square, so pad non-square textures. |
 | `ttt_*` entities (GMod / CS:GO TTT maps: traitor buttons, testers, `ttt_logic_role`, `ttt_game_text`, `ttt_map_settings`, `ttt_win`...) | Don't exist. | cs2mapTTT's `tools/ttt_convert.py`: logic_relays plus inputs re-aimed at its script; data per map baked into `ttt.js`. |
-| `env_fire` | Doesn't burn in CS2 (skink52: ttt_minecraft, ba_jail_keimusho). | `tools/firefx.py`: info_particle_system with a generated flame particle, StartFire → Start, Extinguish/Disable → Stop. Stock `particles/burning_fx/env_fire_tiny.vpcf` also works (Mario Party torches). |
+| `env_fire` | Draws nothing and does no damage (skink52: ttt_minecraft, ba_jail_keimusho; cs2-slop-porting tested). | Stage C `fire` (`tools/firefx.py`): `<name>_fx` with CS2's stock `particles/burning_fx/env_fire_<tiny|small|medium|large>[_smoke]` (floor(firesize/36), what CS:GO's client played) and `<name>_hurt`, a 2/s burn trigger_hurt (the lowest a CS2 trigger_hurt does: half the damage every 0.5 s in whole points) over ±firesize/2 x firesize; Kill at burn-out unless Infinite, Extinguish <s> delays the flames only. point_hurt did no damage in CS2 (cs2-slop-porting). Older ports (ba_jail_keimusho) used generated flames. |
 | `point_tesla` | Doesn't exist (ttt_minecraft's win effect). | `info_particle_system` with a generated crackle particle, TurnOn/TurnOff → Start/Stop (stage D `tesla`, `tools/tesla.py`). |
 | Static overlays with an opaque material (no alpha) | Imported as csgo_complex quads on the wall: z-fight (ttt_minecraft's coal/iron ore patches). | Stage C `overlays` gives them their own `<name>_overlay.vmat` (csgo_static_overlay, full mask) and repoints only the overlays, since the brushes share the material. |
 | `env_steam` | Doesn't exist. | An `info_particle_system` with a particle built from its speed/spread/size/colour keyvalues (heat-wave type as a refracting sprite), as cs2-slop-porting generates. Stage C `steam` does it (`tools/steam.py`). |
@@ -234,9 +235,8 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 | `item_ammo_*` / `ammo_50ae` | No ammo items in CS2. | Script `RefillPistolAmmo`. |
 | `sm_slay @all` etc. via `point_servercommand` | Needed SourceMod. | Script `SlayAll`. |
 | `logic_script` VScripts (`.nut`) | No VScript in CS2. | Port to cs_script (`changemodel.js`, `mvp_health_increase.js`). Player-model VScripts become `Model_<name>` inputs that set a CS2 agent model (mg_50arenas). |
-| `trigger_hurt` with negative damage (heal) | Ignored by CS2. | cs_script heal zone following CS:GO heal rules; triggers parented to a weapon heal/hurt the holder. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
-| `env_spark` | Gone. | info_particle_system generated from CS:GO's spark code, keep its sound, Start/Stop from its inputs. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
-| `env_fire` burn time / Extinguish(time) | Not handled by particle-only conversion. | Disable puts it out, Extinguish with a time stops it after that time, burn-time fires are removed once burnt out; damage by a zone. A parented info_target can't be found by the script, so zones use info_particle_system. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
+| `trigger_hurt` with negative damage (heal) | Works in CS2 (skink52, 2 Nov 2026; cs2-slop-porting reports it ignored). | Leave it. |
+| `env_spark` | No sparks drawn. | Stage C `fire`: kept for its sound, plus `<name>_fx` with a generated vpcf66 spark particle; StartSpark/StopSpark/SparkOnce/Kill mirrored. From cs2-slop-porting 3.5 (MIT), 2 Nov 2026. |
 
 ## Sound
 
@@ -248,7 +248,7 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 | `amb.looping.stereo.base` fades in from silence over 1 s, so one-shots based on it lose their start. | `use_time_volume_mapping_curve = false`. |
 | Rapid repeated sounds cut each other off. | Several `point_soundevent`s per source, round-robin. |
 | After fixing a sound it still doesn't play in Hammer. | Restart the tools: Hammer can keep a failed sound load cached. |
-| ambient_generic loudness and range. | Source 1 falloff model (not linear to silence at the radius); `Volume` multiplies the event volume; Radius 0 = plays everywhere; soundscript-named sounds use the soundscript's level. Sound keys still holding file paths → the made soundevent. From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
+| ambient_generic radius 0 | Source 1 plays it everywhere; stage C used to clamp it to a 64 u event. | Stage C `sounds`: radius 0 → the "play everywhere" event. (cs2-slop-porting also models Source 1 falloff; our linear curve sounds right on the ports so far, not changed.) |
 
 ## Scripts, players, rounds and plugins
 
@@ -288,7 +288,7 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 | Workshop upload carries the compiled game folder, not content. | Licence and credit files must be in the game folder and/or the description. |
 | Servers loading a Workshop map. | `host_workshop_map <id>` (Hellmatch's server requirements). |
 | Steam Workshop pages read through a page fetcher all say "removed" / "incompatible". | Hidden template text; never report an item as removed from it ([details](../porting/pipeline.md#before-porting-duplicate-check-and-names)). |
-| Radar overview `zoom` key. | CS2 ignores it (cs2-slop-porting 3.5 removed it). From cs2-slop-porting 3.5 (2 Nov 2026), unverified here. |
+| Radar overview `zoom` key. | CS2 ignores it (cs2-slop-porting 3.5 removed it), unverified here. |
 
 ## Hammer and workflow
 

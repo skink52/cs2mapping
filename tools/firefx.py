@@ -1,153 +1,178 @@
-"""env_fire (doesn't burn in CS2: seen on ttt_minecraft and ba_jail_keimusho) -> info_particle_system with a generated fire particle.
+"""Stage C step / stage D pass `fire`: env_fire and env_spark.
 
-particles/port_fire/fire_<size>.vpcf: additive flame sprites rising from a disc of radius ~0.3 x firesize, white-yellow fading to deep red,
-plus a few slower embers, all from one generated soft flame texture (materials/port_fire/flame.png). The entity keeps its name and is
-pitched -90 so the particle's local forward axis points up. Inputs: StartFire -> Start, Extinguish / ExtinguishTemporary / Disable ->
-Stop; Enable (allow starting) has no particle equivalent and is dropped. The fire's damage was never the entity's job on these maps
-(separate trigger_hurts); a fire with damagescale > 0 is listed in TO CHECK.
+CS2's env_fire draws nothing and does no damage (tested by skink52 on ttt_minecraft / ba_jail_keimusho and by cs2-slop-porting). The env_fire
+stays (so its inputs still resolve) and gets companions driven by the same outputs:
+- <name>_fx: info_particle_system playing the particle CS:GO's own client played, particles/burning_fx/env_fire_<tiny|small|medium|large>[_smoke]
+  (picked by floor(firesize / 36); _smoke unless Smokeless), which CS2 ships. If the staged CS2 VPK lacks it, a generated
+  particles/port_fire/fire_<size>.vpcf (vpcf66) is used instead.
+- <name>_hurt: burn trigger_hurt (2/s, the lowest a CS2 trigger_hurt does; CS:GO did 1/s) over CS:GO's damage box (+-firesize/2, at least 16,
+  from the origin up to firesize), unless damagescale is 0.
+I/O follows CS:GO's fire.cpp: StartFire -> Start / Enable; a fire with fuel (not Infinite) is removed when it burns out, so Kill at
+health s (+1 s for the flames); Extinguish <s> stops the flames after s s, the hurt at once; Disable puts it out at once; Kill -> Kill.
+Unnamed fires that don't Start On are skipped (nothing can light them).
+env_spark: kept for its sound, plus <name>_fx with a generated spark particle (particles/port_spark/, vpcf66 trails: about
+Magnitude^2 x 3 streaks per burst every 0.1-MaxDelay s, 100-300 u/s, gravity 800; Directional fires along the entity's forward axis).
+StartSpark / StopSpark -> Start / Stop, SparkOnce -> Start then Stop 0.15 s later, Kill -> Kill; ToggleSpark can't be mirrored (TO CHECK).
+Rerun-safe. Method from github.com/Ninja-Chris/cs2-slop-porting 3.5 (MIT), 2 Nov 2026.
     firefx.run(m, c)
-From ba_jail_keimusho (31 Oct 2026)."""
+"""
 import io, math
-import numpy as np
-from PIL import Image
-import dmx
+import dmx, vmapedit as V
+import vpcf66 as P
 
-HDR = '<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:vpcf1:version{d47d07e6-072c-49cb-9718-5bfd8d6c3d21} -->\n'
-VPCF = HDR + '''{
-	_class = "CParticleSystemDefinition"
-	m_nMaxParticles = %(maxp)d
-	m_ConstantColor = [ 255, 214, 120, 255 ]
-	m_flConstantRadius = %(r0).1f
-	m_Renderers =
-	[
-		{
-			_class = "C_OP_RenderSprites"
-			m_bAdditive = true
-			m_flSelfIllumAmount = 1.0
-			m_hTexture = resource:"materials/port_fire/flame.vtex"
-		},
-	]
-	m_Emitters =
-	[
-		{
-			_class = "C_OP_ContinuousEmitter"
-			m_flEmitRate = %(rate).1f
-		},
-	]
-	m_Initializers =
-	[
-		{
-			_class = "C_INIT_CreateWithinSphere"
-			m_fRadiusMin = 0.0
-			m_fRadiusMax = %(disc).1f
-			m_LocalCoordinateSystemSpeedMin = [ %(vmin).1f, -12.0, -12.0 ]
-			m_LocalCoordinateSystemSpeedMax = [ %(vmax).1f, 12.0, 12.0 ]
-		},
-		{
-			_class = "C_INIT_RandomLifeTime"
-			m_fLifetimeMin = 0.35
-			m_fLifetimeMax = 0.8
-		},
-		{
-			_class = "C_INIT_RandomRadius"
-			m_flRadiusMin = %(rmin).1f
-			m_flRadiusMax = %(rmax).1f
-		},
-		{
-			_class = "C_INIT_RandomRotation"
-		},
-		{
-			_class = "C_INIT_RandomRotationSpeed"
-			m_flDegreesMin = 0.0
-			m_flDegreesMax = 90.0
-			m_bRandomlyFlipDirection = true
-		},
-	]
-	m_Operators =
-	[
-		{
-			_class = "C_OP_BasicMovement"
-		},
-		{
-			_class = "C_OP_SpinUpdate"
-		},
-		{
-			_class = "C_OP_ColorInterpolate"
-			m_ColorFade = [ 190, 40, 8, 255 ]
-		},
-		{
-			_class = "C_OP_InterpolateRadius"
-			m_flStartScale = 1.0
-			m_flEndScale = 0.35
-		},
-		{
-			_class = "C_OP_FadeInSimple"
-			m_flFadeInTime = 0.15
-		},
-		{
-			_class = "C_OP_FadeOutSimple"
-			m_flFadeOutTime = 0.5
-		},
-		{
-			_class = "C_OP_Decay"
-		},
-	]
-}
-'''
+SIZES = ('tiny', 'small', 'medium', 'large')
+SIZE_STEP = 36.0
+HURT_DAMAGE = 2.0
 
-def _flame_png():
-    N = 64
-    y, x = np.mgrid[0:N, 0:N] / (N - 1.0)
-    cx = x - 0.5; cy = y - 0.62                         # teardrop: wide at the bottom, pointed at the top
-    w = 0.32 * np.clip(1 - (0.62 - y) * 1.1, 0.15, 1.0)
-    d = np.sqrt((cx / np.maximum(w, 1e-3)) ** 2 + (cy / 0.45) ** 2)
-    rng = np.random.RandomState(7)
-    n = Image.fromarray((rng.rand(16, 16) * 255).astype(np.uint8)).resize((N, N), Image.BICUBIC)
-    noise = np.asarray(n, np.float32) / 255.0
-    a = np.clip(1 - d, 0, 1) ** 1.4 * (0.75 + 0.5 * noise)
-    a = np.clip(a, 0, 1)
-    rgba = np.zeros((N, N, 4), np.uint8); rgba[..., :3] = 255; rgba[..., 3] = (a * 255).astype(np.uint8)
-    b = io.BytesIO(); Image.fromarray(rgba, 'RGBA').save(b, 'PNG'); return b.getvalue()
+
+def _num(m, e, k, d):
+    try: return float(m.P(e, k, '') or d)
+    except ValueError: return float(d)
+
+
+def _tex(c, rel, N, fn):
+    from PIL import Image
+    import radar
+    im = Image.new('RGBA', (N, N))
+    for y in range(N):
+        for x in range(N): im.putpixel((x, y), (255, 255, 255, int(max(0.0, min(1.0, fn((x + .5) / N, (y + .5) / N))) * 255 + .5)))
+    b = io.BytesIO(); im.save(b, 'PNG')
+    c.write(rel + '.png', b.getvalue())
+    c.write(rel + '.vtex', radar.VTEX.replace('panorama/images/overheadmaps/%(map)s_radar_psd.png', rel + '.png').replace('"int" "1024"', '"int" "%d"' % N).encode())
+    return rel + '.vtex'
+
+
+def fire_vpcf(size, tex):
+    inits = P.sphere((size * 0.6, -12, -12), (size * 1.3, 12, 12), rmax=size * 0.3) + P.init_float(0.35, 0.8, P.LIFE) + \
+        P.init_float(size * 0.15, size * 0.28, P.RADIUS) + P.init_float(0, 360, P.ROT, True) + P.init_float(0, 90, P.ROTSPEED, True)
+    ops = P.op('C_OP_BasicMovement') + P.op('C_OP_SpinUpdate') + P.op('C_OP_ColorInterpolate', m_ColorFade='[ 190, 40, 8, 255 ]') + \
+        P.op('C_OP_InterpolateRadius', m_flStartTime='0.0', m_flEndTime='1.0', m_flStartScale='1.0', m_flEndScale='0.35') + P.fade(0.15, 0.5) + P.op('C_OP_Decay')
+    return P.system(int(size * 0.9) + 16, (255, 214, 120, 255), size * 0.2, P.renderer(tex, additive=True, selfillum=1.0), size * 0.9, inits, ops)
+
+
+def spark_vpcf(mag, trail, delay, directional, tex):
+    per = mag * mag * 3.0; rate = per / (0.1 + delay / 2.0); life = 0.35 + 0.15 * mag
+    vmin, vmax = ((100, -120, -120), (300, 120, 120)) if directional else ((-120, -120, 50), (120, 120, 300))
+    inits = P.sphere(vmin, vmax) + P.init_float(life * 0.6, life, P.LIFE) + P.init_float(0.5, 2.0, P.RADIUS)
+    ops = P.op('C_OP_BasicMovement', m_Gravity='[ 0.0, 0.0, -800.0 ]') + P.op('C_OP_FadeOutSimple', m_flFadeOutTime='0.5') + P.op('C_OP_Decay')
+    rend = P.renderer(tex, 'C_OP_RenderTrails', additive=True, extra=['m_flLengthScale = %s' % P.f(0.03 * trail)])
+    return P.system(int(rate * life) + 16, (255, 255, 255, 255), 1.0, rend, rate, inits, ops)
+
+
+def _flame(x, y):
+    w = 0.32 * max(0.15, min(1.0, 1 - (0.62 - y) * 1.1))
+    d = math.sqrt(((x - .5) / max(w, 1e-3)) ** 2 + ((y - .62) / 0.45) ** 2)
+    return max(0.0, 1 - d) ** 1.4
+
+
+def _streak(x, y):
+    return max(0.0, 1 - abs(x - .5) * 6) * max(0.0, 1 - abs(y - .5) * 2.2)
+
+
+def _box(m, mn, mx):
+    import watervol
+    tm = V.Map(watervol.TEMPLATE)
+    return watervol.box(m, tm, tm.children(tm.world)[0], mn, mx, b'materials/tools/toolstrigger.vmat')
+
 
 def run(m, c):
-    fires = m.by_class('env_fire')
-    if not fires: return 0
-    import radar
-    c.write('materials/port_fire/flame.png', _flame_png())
-    c.write('materials/port_fire/flame.vtex', radar.VTEX.replace('panorama/images/overheadmaps/%(map)s_radar_psd.png', 'materials/port_fire/flame.png')
-            .replace('"int" "1024"', '"int" "64"').encode())
-    names = {}; sizes = set(); hot = []
+    fires, sparks = m.by_class('env_fire'), m.by_class('env_spark')
+    if not fires and not sparks: return 0
+    names = {m.name(e).lower() for e in m.entities() if m.name(e)}
+    made = {}                                   # fire name -> ([(companion, on, off)], burn time, infinite)
+    nfx = nhurt = nstock = 0; skipped = []; gen_sizes = set(); floating = []
     for e in fires:
-        size = max(16, int(round(float(m.P(e, 'firesize', '64') or 64) / 16.0) * 16))
-        sizes.add(size)
-        sf = int(float(m.P(e, 'spawnflags', '0') or 0))
-        on = bool(sf & 4) and (m.P(e, 'StartDisabled', '0') or '0') == '0'
-        try:
-            if float(m.P(e, 'damagescale', '0') or 0) > 0: hot.append(m.name(e) or 'unnamed')
-        except ValueError: pass
-        name = m.name(e)
-        o = m.origin(e)
-        m.new_entity('info_particle_system', o, {'targetname': name, 'effect_name': 'particles/port_fire/fire_%d.vpcf' % size,
-                                                 'start_active': '1' if on else '0'}, angles=(-90, 0, 0))
-        if name: names[name.lower()] = name
-        m.remove_node(e)
-    for s in sizes:
-        c.write('particles/port_fire/fire_%d.vpcf' % s, (VPCF % dict(maxp=int(s * 0.9) + 16, r0=s * 0.2, rate=s * 0.9, disc=s * 0.3,
-                                                                    vmin=s * 0.6, vmax=s * 1.3, rmin=s * 0.15, rmax=s * 0.28)).encode())
-    nin = ndrop = 0
-    MAP = {'startfire': b'Start', 'extinguish': b'Stop', 'extinguishtemporary': b'Stop', 'disable': b'Stop'}
-    for e in m.entities():
-        a = dmx.geta(m.E[e], b'connectionsData')
-        if not a: continue
-        keep = []
-        for ci in a[2]:
-            cc = m.E[ci]
-            t = dmx.get(cc, b'targetName').decode().lower(); i = dmx.get(cc, b'inputName').decode().lower()
-            if t in names and i == 'enable': ndrop += 1; continue
-            if t in names and i in MAP: dmx.set_(cc, b'inputName', dmx.T_STR, MAP[i]); nin += 1
-            keep.append(ci)
-        a[2] = keep
-    c.log.append('env_fire: %d -> info_particle_system with generated particles/port_fire/fire_<size>.vpcf (sizes %s); %d StartFire/Extinguish/Disable -> Start/Stop, %d Enable outputs dropped'
-                 % (len(fires), sorted(sizes), nin, ndrop))
-    if hot: c.todo.append('env_fire with damage (damagescale > 0) now only shows flames: %s' % ', '.join(hot))
-    return len(fires)
+        nm = m.name(e); sf = int(_num(m, e, 'spawnflags', 0)); size = _num(m, e, 'firesize', 64); dur = _num(m, e, 'health', 30)
+        if not nm and not sf & 4: skipped.append(' '.join(str(round(x)) for x in m.origin(e))); continue
+        o = m.origin(e); par = m.P(e, 'parentname', '')
+        comp = []
+        fx = (nm + '_fx') if nm else ''
+        if not nm or fx.lower() not in names:
+            eff = 'particles/burning_fx/env_fire_%s%s.vpcf' % (SIZES[min(3, int(size // SIZE_STEP))], '' if sf & 2 else '_smoke')
+            if c.cs2v and not c.cs2v.has(eff + '_c'):
+                gs = max(16, int(round(size / 16.0) * 16)); gen_sizes.add(gs); eff = 'particles/port_fire/fire_%d.vpcf' % gs
+            else: nstock += 1
+            props = {'targetname': fx, 'effect_name': eff, 'start_active': '1' if sf & 4 else '0'}
+            if par: props['parentname'] = par
+            m.new_entity('info_particle_system', o, props, angles=m.g(e, b'angles', [0, 0, 0]))
+            nfx += 1
+        if nm: comp.append((fx, 'Start', 'Stop'))
+        hurt = (nm + '_hurt') if nm else ''
+        if _num(m, e, 'damagescale', 1) > 0:
+            if not nm or hurt.lower() not in names:
+                half = max(16.0, size / 2.0)
+                mn, mx = [o[0] - half, o[1] - half, o[2]], [o[0] + half, o[1] + half, o[2] + size]
+                props = {'targetname': hurt, 'damage': '%g' % HURT_DAMAGE, 'damagecap': '%g' % HURT_DAMAGE, 'damagetype': '8', 'spawnflags': '1',
+                         'StartDisabled': '0' if sf & 4 else '1'}
+                if par: props['parentname'] = par
+                h = m.new_entity('trigger_hurt', [(mn[k] + mx[k]) / 2 for k in range(3)], props)
+                dmx.geta(m.E[h], b'children')[2].append(_box(m, mn, mx))
+                nhurt += 1
+            if nm: comp.append((hurt, 'Enable', 'Disable'))
+        if nm:
+            names.update(x[0].lower() for x in comp)
+            made[nm.lower()] = (comp, dur, bool(sf & 1))
+        if sf & 4 and not sf & 1: c.todo.append('env_fire %s starts on and burned %g s in CS:GO: its flames / hurt now stay on' % (nm or 'unnamed', dur))
+        if not sf & 16: floating.append(nm or 'unnamed')
+    have = {(src,) + tuple(x.lower() if isinstance(x, str) else x for x in m.conn_tuple(cc)) for src, cc in m.all_conns()}
+
+    def add(src, o_, ent, inp, d, n):
+        k = (src, o_.lower(), ent.lower(), inp.lower(), '', d, n)
+        if k in have: return 0
+        have.add(k); m.add_conn(src, o_, ent, inp, '', d, n); return 1
+    nio = 0; enable = set()
+    for src, cc in list(m.all_conns()):
+        o_, t, i, p, d, n = m.conn_tuple(cc)
+        f = made.get(t.lower())
+        if not f: continue
+        comp, dur, inf = f; il = i.lower()
+        try: secs = max(0.0, float(p or 0))
+        except ValueError: secs = 0.0
+        for ent, on, off in comp:
+            isfx = ent.lower().endswith('_fx')
+            if il == 'startfire':
+                nio += add(src, o_, ent, on, d, n)
+                if not inf: nio += add(src, o_, ent, 'Kill', d + dur + (1.0 if isfx else 0.0), n)
+            elif il in ('extinguish', 'extinguishtemporary'): nio += add(src, o_, ent, off, d + (secs if isfx else 0.0), n)
+            elif il == 'disable': nio += add(src, o_, ent, off, d, n)
+            elif il in ('kill', 'killhierarchy'): nio += add(src, o_, ent, 'Kill', d, n)
+        if il == 'enable': enable.add(t)
+    if gen_sizes:
+        tex = _tex(c, 'materials/port_fire/flame', 64, _flame)
+        for s in gen_sizes: c.write('particles/port_fire/fire_%d.vpcf' % s, fire_vpcf(s, tex).encode())
+    sp = {}; nsp = 0; spfiles = set(); lost = 0
+    for e in sparks:
+        nm = m.name(e); sf = int(_num(m, e, 'spawnflags', 0))
+        mag = max(1, int(_num(m, e, 'Magnitude', 1))); trail = max(1, int(_num(m, e, 'TrailLength', 1))); delay = max(0.0, _num(m, e, 'MaxDelay', 0))
+        dirn = bool(sf & 512)
+        rel = 'particles/port_spark/spark_m%d_t%d_d%s%s.vpcf' % (mag, trail, ('%g' % delay).replace('.', 'd'), '_dir' if dirn else '')
+        fx = (nm + '_fx') if nm else ''
+        if nm and fx.lower() in names: sp[nm.lower()] = fx; continue
+        if not nm and not sf & 64: continue
+        spfiles.add((rel, mag, trail, delay, dirn))
+        props = {'targetname': fx, 'effect_name': rel, 'start_active': '1' if sf & 64 else '0'}
+        if m.P(e, 'parentname', ''): props['parentname'] = m.P(e, 'parentname', '')
+        m.new_entity('info_particle_system', m.origin(e), props, angles=m.g(e, b'angles', [0, 0, 0]))
+        nsp += 1
+        if nm: names.add(fx.lower()); sp[nm.lower()] = fx
+    if spfiles:
+        tex = _tex(c, 'materials/port_spark/streak', 32, _streak)
+        for rel, mag, trail, delay, dirn in spfiles: c.write(rel, spark_vpcf(mag, trail, delay, dirn, tex).encode())
+    for src, cc in list(m.all_conns()):
+        o_, t, i, p, d, n = m.conn_tuple(cc)
+        fx = sp.get(t.lower())
+        if not fx: continue
+        il = i.lower()
+        if il in ('startspark', 'stopspark'): nio += add(src, o_, fx, 'Start' if il == 'startspark' else 'Stop', d, n)
+        elif il == 'sparkonce': nio += add(src, o_, fx, 'Start', d, n) + add(src, o_, fx, 'Stop', d + 0.15, n)
+        elif il in ('kill', 'killhierarchy'): nio += add(src, o_, fx, 'Kill', d, n)
+        elif il == 'togglespark': lost += 1
+    if fires:
+        c.log.append('fire: %d env_fire -> %d _fx particles (%d stock burning_fx, generated sizes %s), %d burn trigger_hurts (%g/s); %d skipped (unnamed, not Start On)'
+                     % (len(fires), nfx, nstock, sorted(gen_sizes) or '-', nhurt, HURT_DAMAGE, len(skipped)))
+        if floating: c.todo.append('env_fire without Don\'t Drop (CS:GO dropped it onto the floor below; CS2 flames/hurt stay where placed): %s' % ', '.join(floating[:20]))
+        if enable: c.todo.append('env_fire Enable inputs (CS:GO ignored StartFire while disabled; the particle/hurt start on every StartFire): %s' % ', '.join(sorted(enable)))
+    if sparks: c.log.append('fire: %d env_spark -> %d _fx spark particles (particles/port_spark/, vpcf66); env_sparks kept for their sound' % (len(sparks), nsp))
+    if nio: c.log.append('fire: %d outputs added so the companions follow StartFire / Extinguish / Disable / Kill / spark inputs' % nio)
+    if lost: c.todo.append('env_spark ToggleSpark x%d: particles have no toggle input' % lost)
+    return len(fires) + len(sparks)

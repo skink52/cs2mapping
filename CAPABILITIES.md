@@ -51,6 +51,9 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Named CS:GO sounds ("sound scripts", e.g. a grate clang used by a button) recreated under the same names so they play again.
 - Every light rebuilt from the original map: real colours, brightness, spotlight cones and aim, flickering and switchable lights, plus lights under water so it isn't pitch black.
 - Steam jets and heat-shimmer effects (gone in CS2) rebuilt as particle effects that switch on and off the same way.
+- Fires that burn and hurt again (CS2's own fire effect, switched and burnt out like the original) and sparks that spark again.
+- Huge floors cut into tiles so they light evenly; water given one lighting volume so its reflection doesn't show squares.
+- Importer leftovers cleaned up: sea floors under water put back, trigger volumes spread over several pieces split so they work, decorative brushes merged into the world for even lighting, stray copies of moving parts in the middle of the map found.
 - Physics props (crates, balls) pushed by players according to how heavy they are *(optional step)*.
 - Material names the importer mangled (spaces in folder names) pointed back at the real files.
 - Glows attached to moving objects (e.g. thrown grenades) made to follow them again.

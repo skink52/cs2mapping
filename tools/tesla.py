@@ -6,61 +6,11 @@ coloured from m_Color. Inputs aimed at the tesla: TurnOn / DoSpark -> Start, Tur
 import os
 import dmx
 
-HDR = '<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:vpcf1:version{d47d07e6-072c-49cb-9718-5bfd8d6c3d21} -->\n'
-VPCF = HDR + '''{
-	_class = "CParticleSystemDefinition"
-	m_nMaxParticles = 96
-	m_ConstantColor = [ %(r)d, %(g)d, %(b)d, 255 ]
-	m_Renderers =
-	[
-		{
-			_class = "C_OP_RenderSprites"
-			m_bAdditive = true
-			m_hTexture = resource:"materials/port_tesla/spark.vtex"
-		},
-	]
-	m_Emitters =
-	[
-		{
-			_class = "C_OP_ContinuousEmitter"
-			m_flEmitRate = 160.0
-		},
-	]
-	m_Initializers =
-	[
-		{
-			_class = "C_INIT_CreateWithinSphere"
-			m_fRadiusMin = 0.0
-			m_fRadiusMax = %(rad).1f
-			m_fSpeedMin = 0.0
-			m_fSpeedMax = %(spd).1f
-		},
-		{
-			_class = "C_INIT_RandomRadius"
-			m_flRadiusMin = %(smin).1f
-			m_flRadiusMax = %(smax).1f
-		},
-		{
-			_class = "C_INIT_RandomLifeTime"
-			m_fLifetimeMin = 0.05
-			m_fLifetimeMax = 0.18
-		},
-	]
-	m_Operators =
-	[
-		{
-			_class = "C_OP_Decay"
-		},
-		{
-			_class = "C_OP_BasicMovement"
-		},
-		{
-			_class = "C_OP_FadeOutSimple"
-			m_flFadeOutTime = 0.5
-		},
-	]
-}
-'''
+import vpcf66 as P
+def _vpcf(r, g, b, rad, spd, smin, smax):
+    return P.system(96, (r, g, b, 255), 4.0, P.renderer('materials/port_tesla/spark.vtex', additive=True), 160.0,
+                    P.sphere(rmax=rad, smax=spd) + P.init_float(smin, smax, P.RADIUS) + P.init_float(0.05, 0.18, P.LIFE),
+                    P.op('C_OP_Decay') + P.op('C_OP_BasicMovement') + P.op('C_OP_FadeOutSimple', m_flFadeOutTime='0.5'))
 
 
 def _texture(c):
@@ -90,7 +40,7 @@ def run(m, c):
         rad = float(m.P(e, 'm_flRadius') or 200)
         thick = float(m.P(e, 'thick_max') or 8)
         c.write('particles/port_tesla/tesla_%s.vpcf' % h,
-                (VPCF % dict(r=col[0], g=col[1], b=col[2], rad=rad * 0.6, spd=rad * 2, smin=thick * 0.5, smax=thick * 1.5)).encode())
+                _vpcf(col[0], col[1], col[2], rad * 0.6, rad * 2, thick * 0.5, thick * 1.5).encode())
         name = m.name(e)
         m.new_entity('info_particle_system', m.origin(e), {'targetname': name, 'effect_name': 'particles/port_tesla/tesla_%s.vpcf' % h,
                                                          'start_active': '0'})

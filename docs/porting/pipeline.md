@@ -42,15 +42,16 @@ On the PC this file is `C:\source1\cs2port\cs2_port_pipeline.md`.
 ## Stage C fixes (automatic; the importer's main .vmap is keyvalues2 text and is saved back as binary)
 
 Step keys in run order (from `stage_c.run()`; `run_pass.py` takes these names): `merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity, dead,
-steam, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags, droppedio` (plus `overlaydepth`
-and `physpush` when named).
+trigmat, trigsplit, toolpaths, steam, fire, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, culled, displaybrush, splitfaces, sky, skyvis, vis, beams, lights, alpha, probes,
+waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`, `physpush` and `nullparams` when named; `nullparams` always runs with `io`).
 `alpha` and `assets` need CS2's `pak01_dir.vpk` staged as `<root>/vpk/cs2_pak01_dir.vpk`. `skyvis` runs only when `vis` isn't in the list.
 
 - **Prefabs** (`merge`): every prefab (lighting/nav/audio/cubemaps/environment/gameplay) collapsed into the map with world offsets kept; a 3D skybox prefab stays a prefab.
 - **Dropped outputs** (`io`): puts back outputs the importer dropped (diffs every entity's outputs against the decompiled VMF), and reports the cosmetic
   entities the importer leaves out (point_spotlight, func_dustmotes, func_precipitation, env_lightglow, fog, colour correction). Then `io_fixups`:
   logic_auto "Global State to Read" `is_pc` is cleared (CS2 never sets it, so the logic_auto never fired), and output targets that match an entity
-  only case-insensitively get the exact name (stage D `iofix` for maps already past stage C). Vector/angle keys with fewer than 3 numbers
+  only case-insensitively get the exact name (stage D `iofix` for maps already past stage C). Before the diff, output parameters the importer wrote
+  as `(null)` are cleared (`nullparams`, `tools/repair.py`): otherwise the diff re-added the `""` original next to it and the output fired twice. Vector/angle keys with fewer than 3 numbers
   (`movedir "0 90"`) are padded with 0: CS2's compile drops the whole entity otherwise.
 - **func_wall_toggle** (`wall`) → func_brush (Solidity Toggle; StartDisabled from "Starts Invisible"). TurnOn/TurnOff → Enable/Disable.
 - **game_player_equip** (`equip`) → weapon0..weapon21 slots, and `Use` inputs on them → `TriggerForActivatedPlayer`. Equips without "Use Only" (CS:GO ran them
@@ -71,7 +72,7 @@ and `physpush` when named).
   logic_script, env_entity_igniter, func_precipitation, env_fog_controller, entities with a `vscripts` key, VScript inputs in I/O (RunScriptCode,
   RunScriptFile, CallScriptFunction), and a CS:GO 3D skybox (`sky_camera`), which needs a separate skybox map in CS2 (`skysplit.py`).
 - **Sounds** (`sounds`): ambient_generic custom sounds → soundevents in `soundevents_addon.vsndevts` ("Play everywhere" uses the stereo base; others a 3D
-  event with the original radius). Stock CS:GO sounds are pulled out of CS:GO's VPK into the addon. WAVs that aren't 16-bit PCM are re-encoded (ADPCM is
+  event with the original radius; radius 0 plays everywhere, as in Source 1). Stock CS:GO sounds are pulled out of CS:GO's VPK into the addon. WAVs that aren't 16-bit PCM are re-encoded (ADPCM is
   flagged). Looping wavs with no cue marker get one (at the `smpl` loop start if there is one), since CS2 only loops wavs with markers.
 - **Soundscript names** (`soundscripts`, `tools/soundscripts.py`): Source 1 soundscript names (`MetalGrate.ImpactHard`) in any entity keyvalue, or in a
   CS:GO door's noise1/noise2, are silent in CS2. Each becomes a soundevent with the same name (no entity changes), from the map's own
@@ -92,12 +93,35 @@ and `physpush` when named).
 - **env_steam** (`steam`, `tools/steam.py`): doesn't exist in CS2. Each becomes an `info_particle_system` playing `particles/port_steam/<values>.vpcf`, built
   from its keyvalues the way Source 1 drew it: lifetime JetLength/Speed, Speed along the entity's forward axis with ±SpreadSpeed sideways,
   StartSize→EndSize, ±rollspeed spin, fade in/out at renderamt alpha, rendercolor when Emissive (self-illuminated), light grey otherwise. Type 1 (heat
-  wave) is a refracting sprite with a generated soft normal map, refract amount -0.007 (CS:GO `sprites/heatwave.vmt`; 0.25 was far too strong). InitialState → `start_active`; TurnOn/TurnOff → Start/Stop (Toggle and the value inputs
+  wave) is a refracting sprite with a generated soft normal map, refract amount -0.007 (CS:GO `sprites/heatwave.vmt`; 0.25 was far too strong). Written as vpcf66 (`tools/vpcf66.py`; the particle editor drops older layouts). InitialState → `start_active`; TurnOn/TurnOff → Start/Stop (Toggle and the value inputs
   are flagged). env_steams the importer dropped are added back from the VMF. Untested in game: check direction and density on the first port that has one.
 - **Physics prop pushing** (`physpush`, opt-in, `tools/physpush.py`): every prop_physics(_multiplayer/_override) gets a name and a mass (CS:GO `.phy` mass
-  x massScale, 50 if no .phy) and the io script pushes them from player contact: speed into the face x 20/(20+mass), min 10 u/s, some spin off-centre;
-  props already moving > 400 u/s are left alone and damage from a listed prop moving < 150 u/s is cancelled. Stage C lists maps with physics props in TO
-  CHECK; run it when pushing feels wrong in game. Idea from cs2-slop-porting's `push_mass.js`.
+  x massScale, 50 if no .phy) and the io script pushes them from player contact: speed into the face x pm/(pm+mass) with pm = 85 (Source's player physics
+  mass) per player pushing the same way, min 10 u/s, spin off-centre; contact kept 0.12 s through flicker and while pressed flush; props over 350 (the
+  engine's push mass limit) or already moving > 400 u/s are left to the engine; damage from a prop moving < 150 u/s is cancelled only for a player who pushed
+  it in the last 0.3 s. Stage C lists maps with physics props in TO CHECK; run it when pushing feels wrong in game. From cs2-slop-porting `push_mass.js` v7 (MIT).
+- **env_fire / env_spark** (`fire`, `tools/firefx.py`): CS2's env_fire draws nothing and does no damage. It stays (inputs still resolve) and gets `<name>_fx`
+  playing CS2's stock `particles/burning_fx/env_fire_<tiny|small|medium|large>[_smoke]` (floor(firesize/36); generated vpcf66 flames if the staged VPK lacks it)
+  and `<name>_hurt`, a 2/s burn trigger_hurt over CS:GO's damage box (±firesize/2, min 16, origin up to firesize; none if damagescale 0). StartFire → Start/Enable,
+  plus Kill at health s (+1 s for flames) unless Infinite (CS:GO removes a burnt-out fire); Extinguish s → flames stop after s, hurt at once; Disable → off;
+  Kill → Kill. env_spark keeps its sound and gets `<name>_fx` with a generated vpcf66 spark particle (`particles/port_spark/`); StartSpark/StopSpark/SparkOnce/Kill
+  mirrored, ToggleSpark flagged. Rerun-safe. From cs2-slop-porting 3.5 (MIT).
+- **Trigger repairs** (`tools/repair.py`): `trigmat` sets trigger meshes that store another material (a copied floor brush) to toolstrigger; `toolpaths` repoints
+  `tools*.vmat` referenced outside `materials/tools/`; `trigsplit` splits trigger_teleport / trigger_hurt / trigger_multiple spread over several meshes (or one
+  mesh of separate pieces) into one entity per piece with the same name, keyvalues and outputs (they don't work in game as Hammer shows them; group them in
+  Hammer afterwards if wanted).
+- **Faces culled under water** (`culled`, VMF needed): the importer culls a face another brush covers and treats an all-water brush as one, so the sea floor
+  under it disappears. Each such face of an axis-aligned world box is rebuilt as a box (nodraw except that face, VMF material, axes, scale and shift).
+- **Display brushes** (`displaybrush`): never-solid func_brush / func_illusionary with no name, parent, outputs, start-disabled, render or fade settings that sit flush
+  in a world surface of the same material become world meshes with Physics Type None, so they bake with the surface around them. Anything that moves or toggles stays.
+- **Large faces** (`splitfaces`, `tools/splitfaces.py`): a face is one lightmap chart and a mesh gets one probe/cubemap, so huge lit floors bake blotchy. Lit faces
+  over 512x512 are cut on a 512 world grid, kept in one mesh (one mesh per tile showed seams); water, liquids, sky and tool materials never split; displacement,
+  rotated and non-convex meshes are listed instead. From cs2-slop-porting 3.5 (MIT).
+- **Water probe volume** (`waterprobe`, `tools/waterprobe.py`, after `probes`; stage D runs it after `water`, `probefill`, `probedetail`): a func_water surface
+  crossed by two or more probe volumes (none holding all of it) gets a thin volume of its own at a higher priority, since each volume's edge shows as a step in the
+  water's reflection and fog. From cs2-slop-porting 3.5 (MIT).
+- **Origin duplicates** (`origindup`, report only): world meshes that are the importer's copies of brush entities at their local coordinates (around 0 0 0) are listed
+  in TO CHECK; stage D `origindup` deletes them, only when they are in the way (skink52, 2 Nov 2026).
 - **Material flags** (`matflags`, `tools/texfix.py`): `$additive` → `csgo_unlitgeneric` `F_BLEND_MODE 4` (`LIT_ADDITIVE = True` keeps lightmapped ones lit with
   `F_TRANSLUCENT` + `F_ADDITIVE_BLEND`, but a black additive material then draws opaque black in Hammer), CS:GO water (`%compilewater` / `$abovewater`)
   → `F_TRANSLUCENT` at opacity 0.55 with back faces (csgo_complex can't refract; the importer left it a solid sheet), `$alpha` → `F_TRANSLUCENT` with
@@ -218,7 +242,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
 - `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, lightcover, visfit_detail, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
-  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
+  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water, fire, splitfaces, waterprobe, culled, displaybrush, trigmat, toolpaths, trigsplit, nullparams, origindup` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
   - **Daylight** (`daylight`, stage D only; for indoor maps that are still dark after stage C): adds a stationary light_environment using the map's env_sky

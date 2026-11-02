@@ -30,59 +30,10 @@ for e in m.by_class('env_particle_glow', 'info_particle_system'):
 print(len(cols), 'colours', sum(count.values()), 'glows', count)
 print(m.save(dst))
 
-HDR = '<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:vpcf1:version{d47d07e6-072c-49cb-9718-5bfd8d6c3d21} -->\n'
-VPCF = HDR + '''{
-	_class = "CParticleSystemDefinition"
-	m_nMaxParticles = 16
-	m_ConstantColor = [ %d, %d, %d, 90 ]
-	m_flConstantRadius = 18.0
-	m_Renderers =
-	[
-		{
-			_class = "C_OP_RenderSprites"
-			m_bAdditive = true
-			m_hTexture = resource:"materials/glowfix/glow.vtex"
-		},
-	]
-	m_Emitters =
-	[
-		{
-			_class = "C_OP_ContinuousEmitter"
-			m_flEmitRate = 40.0
-		},
-	]
-	m_Initializers =
-	[
-		{
-			_class = "C_INIT_CreateWithinSphere"
-			m_fRadiusMin = 0.0
-			m_fRadiusMax = 0.0
-		},
-		{
-			_class = "C_INIT_RandomLifeTime"
-			m_fLifetimeMin = 0.15
-			m_fLifetimeMax = 0.15
-		},
-	]
-	m_Operators =
-	[
-		{
-			_class = "C_OP_Decay"
-		},
-		{
-			_class = "C_OP_PositionLock"
-		},
-		{
-			_class = "C_OP_FadeInSimple"
-			m_flFadeInTime = 0.3
-		},
-		{
-			_class = "C_OP_FadeOutSimple"
-			m_flFadeOutTime = 0.3
-		},
-	]
-}
-'''
+import vpcf66 as P
+VPCF = P.system(16, (0, 0, 0, 90), 18.0, P.renderer('materials/glowfix/glow.vtex', additive=True), 40.0,
+                P.sphere() + P.init_float(0.15, 0.15, P.LIFE),
+                P.op('C_OP_Decay') + P.op('C_OP_PositionLock') + P.op('C_OP_FadeInSimple', m_flFadeInTime='0.3') + P.op('C_OP_FadeOutSimple', m_flFadeOutTime='0.3')).replace('[ 0, 0, 0, 90 ]', '[ %d, %d, %d, 90 ]')
 pd = out_root + '/particles/glowfix'; os.makedirs(pd, exist_ok=True)
 for h, (r, g, b) in cols.items():
     open('%s/glow_%s.vpcf' % (pd, h), 'w', newline='\r\n').write(VPCF % (r, g, b))

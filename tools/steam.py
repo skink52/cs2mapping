@@ -13,7 +13,6 @@ import os, re, io, math
 # 0.25 (the stock CS2 reference particle) was far too strong. Finding from cs2-slop-porting 2026-10-29h (MIT).
 HEAT_REFRACT = -0.007
 
-HDR = '<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:vpcf1:version{d47d07e6-072c-49cb-9718-5bfd8d6c3d21} -->\n'
 CLASSES = ('env_steam', 'env_steamjet')
 KEYS = ('Speed', 'SpreadSpeed', 'StartSize', 'EndSize', 'Rate', 'JetLength', 'rollspeed', 'renderamt', 'rendercolor', 'spawnflags', 'type', 'InitialState')
 DEFAULTS = {'speed': 120, 'spreadspeed': 15, 'startsize': 10, 'endsize': 25, 'rate': 26, 'jetlength': 80, 'rollspeed': 8, 'renderamt': 255,
@@ -36,6 +35,7 @@ def particle_name(kv):
         n(_f(kv, 'rollspeed')), int(_f(kv, 'renderamt')), r, g, b, int(_f(kv, 'spawnflags')) & 1, int(_f(kv, 'type')) == 1)
 
 def vpcf(kv, tex):
+    import vpcf66 as P
     speed = max(_f(kv, 'Speed'), 1.0); spread = _f(kv, 'SpreadSpeed'); rate = max(_f(kv, 'Rate'), 0.1)
     life = max(0.05, _f(kv, 'JetLength') / speed)
     r0 = max(_f(kv, 'StartSize'), 1.0) * 0.5; scale = max(_f(kv, 'EndSize'), 1.0) / max(_f(kv, 'StartSize'), 1.0)
@@ -43,82 +43,15 @@ def vpcf(kv, tex):
     emissive = int(_f(kv, 'spawnflags')) & 1; heat = int(_f(kv, 'type')) == 1
     r, g, b = (255, 255, 255) if heat else (_col(kv) if emissive else UNLIT)
     if heat:
-        rend = '\t\t\tm_bRefract = true\n\t\t\tm_flRefractAmount = %g\n' % HEAT_REFRACT + '\t\t\tm_nRefractBlurRadius = 1\n'
-        roll = 120.0
+        rend = P.renderer(tex, refract=HEAT_REFRACT); roll = 120.0
     else:
-        rend = '\t\t\tm_flSelfIllumAmount = 1.0\n' if emissive else ''
-    return HDR + '''{
-	_class = "CParticleSystemDefinition"
-	m_nMaxParticles = %(maxp)d
-	m_ConstantColor = [ %(r)d, %(g)d, %(b)d, %(a)d ]
-	m_flConstantRadius = %(r0).2f
-	m_Renderers =
-	[
-		{
-			_class = "C_OP_RenderSprites"
-			m_bAdditive = false
-%(rend)s			m_hTexture = resource:"%(tex)s"
-		},
-	]
-	m_Emitters =
-	[
-		{
-			_class = "C_OP_ContinuousEmitter"
-			m_flEmitRate = %(rate).2f
-		},
-	]
-	m_Initializers =
-	[
-		{
-			_class = "C_INIT_CreateWithinSphere"
-			m_fRadiusMin = 0.0
-			m_fRadiusMax = 0.0
-			m_LocalCoordinateSystemSpeedMin = [ %(speed).1f, %(nspread).1f, %(nspread).1f ]
-			m_LocalCoordinateSystemSpeedMax = [ %(speed).1f, %(spread).1f, %(spread).1f ]
-		},
-		{
-			_class = "C_INIT_RandomLifeTime"
-			m_fLifetimeMin = %(life).3f
-			m_fLifetimeMax = %(life).3f
-		},
-		{
-			_class = "C_INIT_RandomRotation"
-		},
-		{
-			_class = "C_INIT_RandomRotationSpeed"
-			m_flDegreesMin = 0.0
-			m_flDegreesMax = %(roll).1f
-			m_bRandomlyFlipDirection = true
-		},
-	]
-	m_Operators =
-	[
-		{
-			_class = "C_OP_BasicMovement"
-		},
-		{
-			_class = "C_OP_SpinUpdate"
-		},
-		{
-			_class = "C_OP_InterpolateRadius"
-			m_flStartScale = 1.0
-			m_flEndScale = %(scale).3f
-		},
-		{
-			_class = "C_OP_FadeInSimple"
-			m_flFadeInTime = 0.5
-		},
-		{
-			_class = "C_OP_FadeOutSimple"
-			m_flFadeOutTime = 0.5
-		},
-		{
-			_class = "C_OP_Decay"
-		},
-	]
-}
-''' % dict(maxp=int(rate * life) + 8, r=r, g=g, b=b, a=alpha, r0=r0, rend=rend, tex=tex, rate=rate, speed=speed, spread=spread, nspread=-spread,
-           life=life, roll=roll, scale=scale)
+        rend = P.renderer(tex, selfillum=1.0 if emissive else None)
+    inits = P.sphere((speed, -spread, -spread), (speed, spread, spread)) + P.init_float(life, life, P.LIFE) + \
+        P.init_float(0, 360, P.ROT, True) + P.init_float(-roll, roll, P.ROTSPEED, True)
+    ops = P.op('C_OP_BasicMovement') + P.op('C_OP_SpinUpdate') + \
+        P.op('C_OP_InterpolateRadius', m_flStartTime='0.0', m_flEndTime='1.0', m_flStartScale='1.0', m_flEndScale='%.4f' % scale) + \
+        P.fade(0.5, 0.5) + P.op('C_OP_Decay')
+    return P.system(int(rate * life) + 8, (r, g, b, alpha), r0, rend, rate, inits, ops)
 
 def _png(img):
     b = io.BytesIO(); img.save(b, 'PNG'); return b.getvalue()

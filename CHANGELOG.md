@@ -3,9 +3,12 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
-## 2026-11-02: cs2-slop-porting 3.5 review
+## 2026-11-02: cs2-slop-porting 3.5 features (pipeline)
 
-- Reviewed Ninja-Chris's repo since 29 Oct (3.5 / 2026-11-02a). New CS2 findings added to gotchas (unverified here). Not yet in our pipeline: large-face split (512², faces mode), water probe-volume merge, display brushes → world meshes, func_breakable render settings, turned-texture realign, origin-duplicate delete, culled-under-water face rebuild, self-IO restore, `(null)` params, trigger/tool material fixes, heal trigger_hurt → script zones, env_spark and env_spritetrail particles, env_fire burn-time/damage, Source 1 sound falloff + `Volume` + radius 0, vpcf66 particle format, `keep_` lights / relight "once", missing-entity and entity-seam reports, parallel model compile with retry, push_mass.js REF 85 / 350 mass cap / team pushing / contact grace / self-push damage only.
+- New stage C steps (also stage D passes): `fire` (env_fire → stock `burning_fx/env_fire_*` particle + 2/s burn trigger_hurt with CS:GO fire.cpp I/O; env_spark → spark particle), `splitfaces` (lit faces over 512² cut on a 512 grid), `waterprobe` (one probe volume per water surface crossed by several), `culled` (faces culled under water rebuilt from the VMF), `displaybrush`, `trigmat`, `toolpaths`, `trigsplit` (skink52: multi-mesh trigger_teleport/hurt/multiple → one entity per piece), `origindup` (C reports, D deletes), `nullparams` (runs with `io`; fixes doubled outputs after restore_io). New `tools/repair.py`, `splitfaces.py`, `waterprobe.py`, `vpcf66.py`; `firefx.py` rewritten.
+- `physpush`: push_mass.js v7 rules (85 per pusher, team pushing, 350 mass cap, 0.12 s contact grace, flush contact, damage cancelled only for the player pushing). tscheck + mock engine OK.
+- Generated particles (steam, fire, spark, tesla, glowfix) now vpcf66. `sounds`: radius 0 = play everywhere.
+- Tested on a synthetic addon (all steps, mesh_check clean, rerun-safe); untested in game. Gotchas corrected: heal trigger_hurts work in CS2 (skink52).
 
 ## 2026-11-02: ba_jail_keimusho cell doors
 

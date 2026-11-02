@@ -16,12 +16,16 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         probefill (light probe volumes over the whole play space, existing ones kept at higher priority),
         probedetail (finer nested volumes over walkable floors: 32 outdoors, 24 indoors),
         visfit_detail (visfit + Medium over busy enclosed cells, open-sky cells with nothing standing in them left to Lowest, maps open to the void),
-        lightcover (stationary lights by line-of-sight floor cover per roofed compartment + open-sky fills; for maps that are one open compartment), overlays (static overlay materials -> csgo_static_overlay, opaque ones as <name>_overlay)
+        lightcover (stationary lights by line-of-sight floor cover per roofed compartment + open-sky fills; for maps that are one open compartment), overlays (static overlay materials -> csgo_static_overlay, opaque ones as <name>_overlay),
+        fire (env_fire -> stock burning_fx particle + burn trigger_hurt; env_spark -> spark particle), splitfaces (lit faces over 512x512 cut on a 512 grid),
+        waterprobe (one probe volume per water surface crossed by several; also runs after water / probefill / probedetail), culled (faces culled under
+        water rebuilt from the VMF), displaybrush (display-only func_brush/func_illusionary -> world meshes), trigmat, toolpaths, trigsplit (multi-mesh
+        triggers -> one entity per piece), nullparams, origindup (delete the importer's copies of brush entities at the origin; stage C only reports them)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import tesla, probefill, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol
+import tesla, probefill, repair, firefx, splitfaces, waterprobe, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -75,6 +79,16 @@ def run(addon, root, passes):
     if 'iofix' in passes: stage_c.io_fixups(m, c)
     if 'water' in passes and watervol.run(m, c) and c.needs_underwater_vpost and not c.exists(watervol.VPOST):
         c.write(watervol.VPOST, open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'postprocess_filmic_underwater.vpost'), 'rb').read())
+    if 'nullparams' in passes: repair.null_params(m, c)
+    if 'trigmat' in passes: repair.trigger_materials(m, c)
+    if 'toolpaths' in passes: repair.tool_paths(m, c)
+    if 'trigsplit' in passes: repair.split_triggers(m, c)
+    if 'fire' in passes: firefx.run(m, c)
+    if 'culled' in passes and os.path.exists(vmfp): repair.culled_faces(m, c, vmfp)
+    if 'displaybrush' in passes: repair.display_brushes(m, c)
+    if 'splitfaces' in passes: splitfaces.run(m, c)
+    if 'origindup' in passes and os.path.exists(vmfp): repair.origin_duplicates(m, c, vmfp, delete=True)
+    if any(p in passes for p in ('waterprobe', 'water', 'probefill', 'probedetail')): waterprobe.run(m, c)
     if 'skyshell' in passes:
         import skysplit
         n = skysplit.moondome_to_skybox(m)
