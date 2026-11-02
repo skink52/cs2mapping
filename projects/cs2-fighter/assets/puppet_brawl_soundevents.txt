@@ -1,0 +1,144 @@
+	// ===================== PUPPET BRAWL =====================
+	// Paste everything between the two banner lines INSIDE the outer { } of your addon's
+	// soundevents/soundevents_addon.vsndevts (next to the other events). All sounds are
+	// stock CS2 files, so nothing else needs adding. Then give each point_soundevent
+	// (pb_snd_hit, pb_snd_heavy, ...) the matching Sound Event Name below (pb.hit, pb.heavy, ...).
+
+	"pb.base" =
+	{
+		type = "csgo_mega"
+		volume = 1.0
+		pitch = 1.0
+		volume_random_min = -0.1
+		pitch_random_min = -0.06
+		pitch_random_max = 0.06
+		distance_volume_mapping_curve =
+		[
+			[
+				0.0, 1.0, 0.0, 0.0,
+				2.0, 3.0,
+			],
+			[
+				2000.0, 1.0, 0.0, 0.0,
+				2.0, 3.0,
+			],
+			[
+				3500.0, 0.0, 0.0, 0.0,
+				2.0, 3.0,
+			],
+		]
+	}
+	"pb.hit" =
+	{
+		base = "pb.base"
+		volume = 0.9
+		vsnd_files_track_01 =
+		[
+			"sounds/physics/flesh/fist_hit_01.vsnd",
+			"sounds/physics/flesh/fist_hit_02.vsnd",
+			"sounds/physics/flesh/fist_hit_03.vsnd",
+			"sounds/physics/flesh/fist_hit_04.vsnd",
+			"sounds/physics/flesh/fist_hit_05.vsnd",
+		]
+	}
+	"pb.heavy" =
+	{
+		base = "pb.base"
+		volume = 1.0
+		vsnd_files_track_01 =
+		[
+			"sounds/physics/body/body_impact_fists_01.vsnd",
+			"sounds/physics/body/body_impact_fists_02.vsnd",
+			"sounds/physics/body/body_impact_fists_03.vsnd",
+			"sounds/physics/body/body_impact_fists_04.vsnd",
+			"sounds/physics/body/body_impact_fists_05.vsnd",
+		]
+	}
+	"pb.block" =
+	{
+		base = "pb.base"
+		volume = 0.65
+		vsnd_files_track_01 =
+		[
+			"sounds/physics/shield/bullet_hit_shield_01.vsnd",
+			"sounds/physics/shield/bullet_hit_shield_02.vsnd",
+			"sounds/physics/shield/bullet_hit_shield_03.vsnd",
+			"sounds/physics/shield/bullet_hit_shield_04.vsnd",
+			"sounds/physics/shield/bullet_hit_shield_05.vsnd",
+		]
+	}
+	"pb.whiff" =
+	{
+		base = "pb.base"
+		volume = 0.55
+		vsnd_files_track_01 =
+		[
+			"sounds/physics/flesh/fist_swing_01.vsnd",
+			"sounds/physics/flesh/fist_swing_02.vsnd",
+			"sounds/physics/flesh/fist_swing_03.vsnd",
+			"sounds/physics/flesh/fist_swing_04.vsnd",
+			"sounds/physics/flesh/fist_swing_05.vsnd",
+			"sounds/physics/flesh/fist_swing_06.vsnd",
+		]
+	}
+	"pb.kd" =
+	{
+		base = "pb.base"
+		volume = 0.9
+		vsnd_files_track_01 =
+		[
+			"sounds/physics/body/body_impact_ct_01.vsnd",
+			"sounds/physics/body/body_impact_ct_02.vsnd",
+			"sounds/physics/body/body_impact_ct_03.vsnd",
+			"sounds/physics/body/body_impact_ct_04.vsnd",
+		]
+	}
+	"pb.special" =
+	{
+		base = "pb.base"
+		volume = 0.5
+		vsnd_files_track_01 =
+		[
+			"sounds/ambient/common/energy/zap1.vsnd",
+			"sounds/ambient/common/energy/zap2.vsnd",
+			"sounds/ambient/common/energy/zap3.vsnd",
+		]
+	}
+	"pb.ko" =
+	{
+		base = "pb.base"
+		pitch_random_min = 0.0
+		pitch_random_max = 0.0
+		vsnd_files_track_01 = "sounds/training/bell_impact.vsnd"
+	}
+	"pb.bell" =
+	{
+		base = "pb.base"
+		pitch_random_min = 0.0
+		pitch_random_max = 0.0
+		vsnd_files_track_01 = "sounds/training/bell_normal.vsnd"
+	}
+	"pb.tick" =
+	{
+		base = "pb.base"
+		volume = 0.55
+		pitch_random_min = 0.0
+		pitch_random_max = 0.0
+		vsnd_files_track_01 = "sounds/ui/beep07.vsnd"
+	}
+	"pb.select" =
+	{
+		base = "pb.base"
+		volume = 0.7
+		pitch_random_min = 0.0
+		pitch_random_max = 0.0
+		vsnd_files_track_01 = "sounds/training/popup.vsnd"
+	}
+	"pb.win" =
+	{
+		base = "pb.base"
+		pitch_random_min = 0.0
+		pitch_random_max = 0.0
+		vsnd_files_track_01 = "sounds/training/highscore.vsnd"
+	}
+	// =================== END PUPPET BRAWL ===================

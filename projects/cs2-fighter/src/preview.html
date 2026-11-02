@@ -1,0 +1,157 @@
+<title>Puppet Brawl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Titan+One&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  /* Layout: a brass proscenium frames the stage canvas; the programme (controls, cast, frame data) sits below as a grid that stacks on phones. One deliberate dark look: the theatre with the house lights down. */
+  :root {
+    --house: #140e12;        /* auditorium dark */
+    --velvet: #5e1626;       /* curtain */
+    --velvet-deep: #3a0d18;
+    --brass: #d8a445;        /* fittings, accent */
+    --brass-dim: #8f6a2a;
+    --paper: #f1e7d8;        /* programme text */
+    --muted: #b3a493;
+    --panel: #1f161b;
+    --line: #3b2b31;
+    --p1: #e83e3a; --p2: #2884e8; --p3: #40b254; --p4: #f6c428;
+    --display: "Titan One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+    --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--house); }
+  body { margin: 0; background: var(--house); color: var(--paper); font: 16px/1.5 var(--body); }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 18px 40px; display: grid; gap: 18px; }
+
+  .marquee { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; }
+  h1 { font: 400 clamp(32px, 5vw, 52px)/1 var(--display); margin: 0; color: var(--brass); letter-spacing: .02em; text-wrap: balance; text-shadow: 0 2px 0 var(--velvet-deep); }
+  .marquee p { margin: 0; color: var(--muted); max-width: 62ch; }
+
+  .proscenium {
+    position: relative;
+    padding: clamp(6px, 1.2vw, 14px);
+    background: linear-gradient(180deg, var(--velvet) 0%, var(--velvet-deep) 100%);
+    border: 2px solid var(--brass-dim);
+    border-radius: 28px 28px 10px 10px;
+    box-shadow: inset 0 0 0 2px var(--house), 0 18px 40px -20px #000;
+  }
+  .proscenium canvas { display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 18px 18px 4px 4px; background: #000; outline: none; cursor: pointer; }
+  .proscenium canvas:focus-visible { box-shadow: 0 0 0 3px var(--brass); }
+
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .bar .status { margin-left: auto; color: var(--muted); font: 500 13px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
+  button, select {
+    font: 700 14px/1 var(--body); color: var(--paper);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+    padding: 9px 15px; cursor: pointer;
+  }
+  button:hover, select:hover { border-color: var(--brass-dim); }
+  button:focus-visible, select:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  button.primary { background: var(--brass); color: var(--house); border-color: var(--brass); }
+  button[aria-pressed="true"] { border-color: var(--brass); color: var(--brass); }
+
+  .programme { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 18px; align-items: start; }
+  @media (max-width: 860px) { .programme { grid-template-columns: minmax(0, 1fr); } }
+  h2 { font: 400 22px/1.1 var(--display); color: var(--brass); margin: 0 0 10px; letter-spacing: .02em; }
+  h3 { font: 700 13px/1.2 var(--body); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 0 0 8px; }
+  .sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; min-width: 0; }
+  .keys { display: grid; gap: 14px; }
+  .keyrow { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 4px 12px; align-items: baseline; }
+  .keyrow dt { color: var(--muted); font-size: 14px; }
+  .keyrow dd { margin: 0; }
+  kbd { font: 600 12.5px/1 var(--mono); color: var(--paper); background: var(--house); border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 6px; padding: 3px 6px; white-space: nowrap; }
+  .note { color: var(--muted); font-size: 14px; margin: 0; max-width: 65ch; }
+
+  .cast { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .cast { grid-template-columns: minmax(0, 1fr); } }
+  .fighter { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; background: var(--house); min-width: 0; }
+  .fighter header { display: flex; align-items: center; gap: 10px; }
+  .fighter .bead { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset -3px -3px 0 rgba(0, 0, 0, .25); flex: none; }
+  .fighter b { font: 400 19px/1 var(--display); letter-spacing: .03em; }
+  .fighter .stats { margin-left: auto; font: 500 12px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .fighter p { margin: 0; color: var(--muted); font-size: 14px; }
+  .fighter ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 14px; }
+  .fighter li { display: flex; flex-wrap: wrap; gap: 2px 8px; }
+  .fighter li .in { font: 600 12.5px/1.6 var(--mono); color: var(--brass); min-width: 6.2em; }
+  .fighter li .mo { font: 500 12px/1.6 var(--mono); color: var(--muted); }
+
+  .frames { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font: 700 12px/1.2 var(--body); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  td.num { font-family: var(--mono); text-align: right; padding-right: 16px; }
+  th.num { text-align: right; padding-right: 16px; }
+  td code { font: 600 12.5px var(--mono); color: var(--brass); }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<main class="wrap">
+  <header class="marquee">
+    <h1>Puppet Brawl</h1>
+    <p>The cs_script fighter from the CS2 map, running here on the same engine with a flat renderer. Click the stage to take player one; until then the house puppets put on a show.</p>
+  </header>
+
+  <section class="proscenium" aria-label="Stage">
+    <canvas id="cv" width="1280" height="720" tabindex="0" aria-label="Puppet Brawl stage. Click to play."></canvas>
+  </section>
+
+  <div class="bar" role="toolbar" aria-label="Stage controls">
+    <button id="bPlay" class="primary" type="button">Play as player 1</button>
+    <button id="bWatch" type="button">Watch CPUs</button>
+    <button id="bMode" type="button">Change mode</button>
+    <button id="bCpu" type="button">Add CPU</button>
+    <button id="bCpuOff" type="button">Remove CPU</button>
+    <button id="b2p" type="button" aria-pressed="false">Second local player</button>
+    <select id="lvl" aria-label="CPU difficulty"><option value="0">CPU easy</option><option value="1" selected>CPU normal</option><option value="2">CPU hard</option></select>
+    <button id="bGallery" type="button" aria-pressed="false">Pose gallery</button>
+    <span class="status" id="status" aria-live="polite"></span>
+  </div>
+
+  <div class="programme">
+    <section class="sheet keys" aria-labelledby="hControls">
+      <h2 id="hControls">Controls</h2>
+      <div>
+        <h3>Player 1 (same keys as CS2)</h3>
+        <dl class="keyrow">
+          <dt>Move</dt><dd><kbd>A</kbd> <kbd>D</kbd>, double-tap to dash</dd>
+          <dt>Jump / crouch</dt><dd><kbd>W</kbd> or <kbd>Space</kbd> / <kbd>S</kbd></dd>
+          <dt>Punch / kick</dt><dd><kbd>Mouse1</kbd> <kbd>Mouse2</kbd> or <kbd>J</kbd> <kbd>K</kbd></dd>
+          <dt>Block</dt><dd><kbd>Left Shift</kbd> or <kbd>L</kbd>, add <kbd>S</kbd> to block low</dd>
+          <dt>Special / throw</dt><dd><kbd>R</kbd> (with toward or down) / <kbd>F</kbd></dd>
+        </dl>
+      </div>
+      <div>
+        <h3>Lobby</h3>
+        <p class="note"><kbd>A</kbd>/<kbd>D</kbd> picks a fighter, punch readies up, kick un-readies. The host presses <kbd>R</kbd> to change mode and <kbd>F</kbd> to add or clear CPUs.</p>
+      </div>
+      <div>
+        <h3>Player 2 (when enabled)</h3>
+        <dl class="keyrow">
+          <dt>Move</dt><dd><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></dd>
+          <dt>Buttons</dt><dd><kbd>.</kbd> punch <kbd>/</kbd> kick <kbd>Right Shift</kbd> block <kbd>;</kbd> special <kbd>'</kbd> throw</dd>
+        </dl>
+      </div>
+      <p class="note">Playing needs a keyboard. On a phone, tap Watch CPUs.</p>
+    </section>
+
+    <section class="sheet" aria-labelledby="hCast">
+      <h2 id="hCast">The cast</h2>
+      <div class="cast" id="cast"></div>
+    </section>
+  </div>
+
+  <section class="sheet" aria-labelledby="hFrames">
+    <h2 id="hFrames">Frame data</h2>
+    <p class="note">Shared normals at 64 frames per second, before each fighter's speed and damage multipliers. Brass runs 12% slower and hits 18% harder; Pirouette runs 6% faster.</p>
+    <div class="frames"><table id="frameTable"></table></div>
+  </section>
+</main>
+
+<script>
+/*__CORE__*/
+</script>
+<script>
+/*__PREVIEW__*/
+</script>

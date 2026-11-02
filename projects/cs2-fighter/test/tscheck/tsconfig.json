@@ -1,0 +1,4 @@
+{
+  "compilerOptions": { "strict": false, "target": "es2022", "module": "es2022", "checkJs": true, "allowJs": true, "noEmit": true, "noImplicitAny": false, "lib": ["es2022"] },
+  "files": ["point_script.d.ts", "puppet_brawl.js"]
+}
