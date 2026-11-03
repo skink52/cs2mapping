@@ -1,6 +1,6 @@
 """Missing gibs and model materials, from a build log -> a refs file the PC imports with modelsfromrefs.py (run_fixrefs.bat).
 
-  python3 gibfix.py <build log (UTF-16 or UTF-8)> <out refs.txt> [<addon vmdl> ...]
+  python3 gibfix.py <build log (UTF-16 or UTF-8)> <out refs.txt> [--csgo <CS:GO content root>] [<addon vmdl> ...]
 
 1. Every `Failed loading resource "…"` in the build log:
    - models/…vmdl_c (break pieces of imported models, or of stock CS2 models whose gibs CS2 never shipped, e.g. watermelon01a's
@@ -11,6 +11,10 @@
 2. Each <addon vmdl> given (a CS:GO prop that broke into generic chunks: propdata base Metal.* / Wooden.* / Glass.* with no gib
    models of its own, e.g. de_train/barrel) gets a BreakPieceList with CS:GO's generic chunks (models/gibs/metal_gib1-5,
    wood_gib01a-e, glass_shard01-06) and a break_uniform_burst; the chunk models are added to the refs.
+3. With --csgo (on the PC C:\\source1\\links\\csgo), every ref is checked against that content and the addon; ones in neither are
+   reported instead of listed, and each <addon vmdl> loses the BreakPieceExternal entries whose model exists nowhere (CS:GO ships
+   props_interiors/refrigerator03 and stove02 but not their HL2 gibs refrigerator03_damaged_* / stove02_break*; de_nuketown, 3 Nov 2026).
+   A vmdl left with no pieces gets the generic chunks of step 2.
 """
 import re, sys, os
 
@@ -113,6 +117,30 @@ def add_generic(text):
     return text, [g + '.mdl' for g in gibs]
 
 
+def drop_missing_pieces(text, exists):
+    """remove the BreakPieceExternal entries whose model fails exists(path); an emptied BreakPieceList goes too (add_generic then refills it).
+    returns (text, dropped model paths)"""
+    dropped = []
+    def piece(m):
+        mdl = re.search(r'model = "([^"]+)"', m.group(0)).group(1)
+        if exists(mdl): return m.group(0)
+        dropped.append(mdl); return ''
+    text = re.sub(r'[ \t]*\{\n[ \t]*_class = "BreakPieceExternal"\n.*?\n[ \t]*\},\n', piece, text, flags=re.S)
+    if dropped and '_class = "BreakPieceExternal"' not in text:
+        text = re.sub(r'[ \t]*\{\n[ \t]*_class = "BreakPieceList"\n[ \t]*children = \n[ \t]*\[\s*\]\n[ \t]*\},\n', '', text)
+    return text, dropped
+
+
+def source_exists(csgo, addon):
+    """exists(path) for refs and vmdl piece paths: the CS:GO .mdl / .vmt, or the addon's own .vmdl / .vmat"""
+    def exists(p):
+        p = p.replace('\\', '/')
+        s1 = p[:-5] + '.mdl' if p.endswith('.vmdl') else p[:-5] + '.vmt' if p.endswith('.vmat') else p
+        s2 = p[:-4] + '.vmdl' if p.endswith('.mdl') else p[:-4] + '.vmat' if p.endswith('.vmt') else p
+        return os.path.exists(os.path.join(csgo, s1)) or bool(addon and os.path.exists(os.path.join(addon, s2)))
+    return exists
+
+
 def write_refs(path, entries):
     seen = []
     for e in entries:
@@ -126,14 +154,27 @@ def write_refs(path, entries):
 
 if __name__ == '__main__':
     a = sys.argv[1:]
+    csgo = None
+    if '--csgo' in a: i = a.index('--csgo'); csgo = a[i + 1]; del a[i:i + 2]
     refs, notes = from_log(read_log(a[0]))
     for vp in a[2:]:
         raw = open(vp, encoding='utf-8', newline='').read()
         crlf = '\r\n' in raw
-        t, gibs = add_generic(raw.replace('\r\n', '\n'))
-        if gibs:
+        t = raw.replace('\r\n', '\n'); dropped = []
+        if csgo:
+            addon = vp.replace('\\', '/').split('/models/')[0]
+            t, dropped = drop_missing_pieces(t, source_exists(csgo, addon))
+            if dropped: print('%s: %d break pieces dropped, their models exist nowhere: %s' % (vp, len(dropped), ', '.join(dropped)))
+        t, gibs = add_generic(t)
+        if gibs or dropped:
             open(vp, 'w', encoding='utf-8', newline='').write(t.replace('\n', '\r\n') if crlf else t); refs += gibs
-            print('generic gibs added to', vp, '(%d)' % len(gibs))
+            if gibs: print('generic gibs added to', vp, '(%d)' % len(gibs))
         else: print('no generic gibs for', vp, '(has gibs already, or no Metal/Wooden/Glass propdata base)')
+    if csgo:
+        ex = source_exists(csgo, None); keep = []
+        for r in refs:
+            if ex(r): keep.append(r)
+            else: notes.append('%s: not in the CS:GO content, not importable' % r)
+        refs = keep
     out = write_refs(a[1], refs)
     print('\n'.join(out)); print('\n'.join('NOTE: ' + n for n in notes))

@@ -178,7 +178,11 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
   nodes and 23 s with its 64 shells excluded).
 - **Ropes** (`ropes`, after `beams`; also a stage D pass; the move_rope part needs the .vmf). CS2 has no move_rope / keyframe_rope. Each NextKey segment becomes a
   cable_dynamic (CMapCable with path_node_cable children at world positions), radius = Width / 4, sagging along a parabola with CS:GO's Slack length, scaled
-  by how level the rope is. Ropes use rope_braid_1 with grapplinghook_rope_end_01 caps tinted 240 179 94 at free ends; cables (`cable/cable`) use
+  by how level the rope is. The sag is drawn the way skink52 sagged de_nuketown's cables by hand in Hammer (3 Nov 2026): the cable is a piecewise Bezier
+  (`interpolationType` 2; tangent type 3 on the handles in use, 0 on the unused end handles), Hammer's default handle is chord / 3 along the chord, and
+  lowering both handles' z by d sags the middle by 3d / 4 (a true parabola; mid sag = 3/8 of the two drops added). With no Slack the default rule is
+  `1.2 * sqrt(length) * cos²(angle from level)`, none above 80° unless the span is over 1,500 u: a level 1,370 u span sags 44 u, a level 475 u span 26,
+  a 60° one a quarter of that, an 80° one 3% (fitted to skink52's hand values: 32–43 u on the level 1,350 u spans, 14–30 u on the 450–600 u sloped ones). Ropes use rope_braid_1 with grapplinghook_rope_end_01 caps tinted 240 179 94 at free ends; cables (`cable/cable`) use
   `materials/cable/cable.vmat` and no caps. Template: `tools/cable_template.vmap`, from skink52's hand-made keimusho cable. Re-runnable (replaces
   `port_rope_*`). TO CHECK: the sag and end caps. The same step turns CS2 `path_particle_rope` paths (particle cables: no collision, flat lit) into one
   cable_dynamic each through the same nodes, material mapped the same way, the rope's own radius and each node's radius_scale kept, no caps, straight
@@ -317,6 +321,9 @@ All of these keep your Hammer edits and append to the cleanup log. Exact usage l
   (models/gibs/metal_gib1-5, wood_gib01a-e, glass_shard01-06). Put the refs at `maps\<addon>_fix_refs.txt`; the mapper runs
   `run_fixrefs.bat <addon>` (cs_mdl_import + source1import via `modelsfromrefs.py`) and then the build. CS2 has no `models/gibs` at all, and some stock
   CS2 models point at gibs it never shipped (watermelon01a → props_junk/watermelon01_chunk*): importing the CS:GO ones at the same path fixes those too.
+  Some CS:GO models point at gibs CS:GO never shipped either (HL2's refrigerator03_damaged_*, stove02_break*): `gibfix.py --csgo <CS:GO content root>
+  <vmdl>` drops those pieces and puts the generic chunks in, and keeps unimportable refs (a model's skin materials that were never packed, e.g.
+  de_nuketown's bus2-4.vmt) out of the refs file; point such skins at the material that exists.
   The build log is also the check that imported models' textures exist (the cleanup report only covers the map's own refs).
 - `physlaunch` (stage D; stage C step `launch`, before `push`): CS:GO cannons that fire a physics ball with a physics-only trigger_push (a relay
   ForceSpawns a point_template ball and Enables the push for a moment). CS2's trigger_push doesn't throw physics objects, and the `push` step used to
