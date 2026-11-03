@@ -9,6 +9,13 @@ CS2 can't spawn the CS:GO rope entities and the importer drops them. Each rope s
     inward. The cap goes at the rope's end point, where it meets the surface; a cable that runs a little into terrain is left as it is.
 Re-runnable: earlier port_rope_* cables and caps are replaced.
 
+CS2's own path_particle_rope (a CMapPath with path_node_generic children; a particle cable, no collision, flat lit) is rebuilt the same way
+(particle_ropes): one cable_dynamic through the same node positions, its RopeMaterial mapped as above (cable/cable -> cable.vmat), radius from
+its own radius key (already a CS2 cable radius; Width / 4 if only a width is given, else 0.5), each node's radius_scale kept, sag from slack per
+segment, the targetname kept, straight paths stay linear. The original is removed. No end caps (de_nuketown, 3 Nov 2026). Stage C / D `ropes`
+run it too, with or without a .vmf.
+
+  python3 ropes.py <vmap in> <vmap out>                 path_particle_rope -> cable_dynamic in an installed map (Hammer closed, vmap backed up)
   python3 ropes.py --make-template <vmap with one hand-made cable_dynamic> <out cable_template.vmap>   (how tools/cable_template.vmap was made)
 """
 import math, os, sys
@@ -25,6 +32,7 @@ END_TINT = '240 179 94 255'
 NODE_STEP = 48.0
 
 def ropes_in(vmfpath):
+    if not vmfpath or not os.path.exists(vmfpath): return []
     root = vmfmod.parse(open(vmfpath, encoding='utf-8', errors='replace').read())
     out = []
     for e in root.ch:
@@ -69,6 +77,7 @@ def cap_angles(inward):
     return (p, y, 0.0)
 
 def run(m, c, vmfpath):
+    particle_ropes(m, c)
     rs = ropes_in(vmfpath)
     if not rs: return
     for n in list(m.children(m.world)):   # a rerun replaces what an earlier run made
@@ -107,6 +116,50 @@ def run(m, c, vmfpath):
     if odd: c.todo.append('rope materials with no CS2 match, drawn as rope_braid_1: %s' % ', '.join(sorted(odd)))
     if broken: c.todo.append('ropes whose NextKey target is missing, not rebuilt: %s' % ', '.join(sorted(map(str, broken))))
 
+def particle_ropes(m, c=None):
+    """every path_particle_rope (CMapPath) -> one cable_dynamic (CMapCable) through the same nodes; returns how many"""
+    paths = [(n, p) for n, p in m.walk() if m.type(n) == b'CMapPath' and m.P(n, 'classname') == 'path_particle_rope']
+    if not paths: return 0
+    tm = V.Map(TEMPLATE); tcab = tm.children(tm.world)[0]; tnode = tm.children(tcab)[0]
+    nid = [m.next_node_id()]; odd = set(); sags = []; made = 0
+    for i, (n, parent) in enumerate(paths):
+        kids = [k for k in m.children(n) if m.type(k) == b'CMapPathNode']
+        if len(kids) < 2: continue
+        mat, _, unknown = material(m.P(n, 'RopeMaterial'))
+        if unknown: odd.add(m.P(n, 'RopeMaterial') or '(none)')
+        slack = float(m.P(n, 'slack', '0') or 0)
+        r = m.P(n, 'radius'); w = m.P(n, 'width')
+        radius = float(r) if r else (float(w) / 4 if w else 0.5)
+        pts = []; srcs = []; sag = 0.0           # srcs: the source node at each point, None for the sag points in between
+        for a, b in zip(kids, kids[1:]):
+            seg, sg = points(np.array(m.origin(a)), np.array(m.origin(b)), slack); sag = max(sag, sg)
+            if pts: seg = seg[1:]                 # the joint is already there
+            pts += seg; srcs += [None] * (len(seg) - 1) + [b]
+        srcs[0] = kids[0]; sags.append(sag)
+        j = m.import_subtree(tm, tcab, {}, nid)
+        nodes = [m.import_subtree(tm, tnode, {}, nid) for _ in pts]
+        scale = '1'
+        for nd, p, src in zip(nodes, pts, srcs):
+            dmx.set_(m.E[nd], b'origin', dmx.T_V3, [float(x) for x in p])
+            if src is not None: scale = m.P(src, 'radius_scale', '1')
+            m.setp(nd, 'radius_scale', scale)         # sag points carry the joint before them
+            if src is None: continue
+            if sag < 1:    # a straight path keeps its corners: the source's tangent types, not the template's smooth ones
+                for k in (b'inTangentType', b'outTangentType'): dmx.set_(m.E[nd], k, dmx.T_INT, int(m.g(src, k, 0)))
+        dmx.geta(m.E[j], b'children')[2] = nodes
+        dmx.set_(m.E[j], b'origin', dmx.T_V3, [float(x) for x in pts[0]])
+        if sag < 1: dmx.set_(m.E[j], b'interpolationType', dmx.T_INT, int(m.g(n, b'interpolationType', 0)))
+        dmx.set_(m.E[j], b'materialName', dmx.T_STR, mat.encode())
+        dmx.set_(m.E[j], b'radius', dmx.T_FLOAT, max(0.25, radius))
+        m.setp(j, 'targetname', m.P(n, 'targetname') or 'port_rope_p%d' % i)
+        ch = dmx.geta(m.E[parent], b'children')[2]
+        ch[ch.index(n)] = j; made += 1       # same parent and position in the tree as the path it replaces
+    if c is not None:
+        c.log.append('%d path_particle_rope (CS2 particle cables) -> %d cable_dynamic (%s, radius and node radius_scale kept, sag from slack up to %.0f u), '
+                     'originals removed' % (len(paths), made, 'cable.vmat' if not odd else 'material mapped', max(sags or [0])))
+        if odd: c.todo.append('path_particle_rope materials with no CS2 match, drawn as rope_braid_1: %s' % ', '.join(sorted(odd)))
+    return made
+
 def make_template(src, out):
     s = V.Map(src); cab = next(n for n, _ in s.walk() if s.type(n) == b'CMapCable')
     t = V.Map(os.path.join(HERE, 'laser_template.vmap'))
@@ -116,6 +169,15 @@ def make_template(src, out):
     w[2].append(j); t.prune(); t.save(out)
     print('wrote', out)
 
+class _Log:
+    def __init__(s): s.log = []; s.todo = []
+
 if __name__ == '__main__':
     if sys.argv[1:2] == ['--make-template']: make_template(sys.argv[2], sys.argv[3])
+    elif len(sys.argv) == 3:
+        m = V.Map(sys.argv[1]); c = _Log(); n = particle_ropes(m, c)
+        if n: print('pruned %d orphaned elements' % m.prune()); m.save(sys.argv[2]); print('wrote', sys.argv[2])
+        else: print('no path_particle_rope in', sys.argv[1])
+        for l in c.log: print(l)
+        for t in c.todo: print('TO CHECK:', t)
     else: print(__doc__)

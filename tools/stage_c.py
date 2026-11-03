@@ -959,7 +959,7 @@ def run(addon, root, passes=None):
     if 'vis' in steps: visfit.run(m, c)                  # hints fitted to the play space + sky shells out of vis
     elif 'skyvis' in steps: skyvis.run(m, c)
     if 'beams' in steps: beammod.run(m, c)
-    if 'ropes' in steps and os.path.exists(vmfp): ropes.run(m, c, vmfp)
+    if 'ropes' in steps: ropes.run(m, c, vmfp)   # path_particle_rope needs no vmf
     if ('relight' in steps or 'lights' in steps) and 'lightbright' not in steps and os.path.exists(vmfp): lighting.relight(m, c, vmfp)   # every light rebuilt from the VMF
     elif 'lightbright' in steps and os.path.exists(vmfp): lighting.fix_brightness(m, c, vmfp)   # keep the imported lights, fix values in place
     elif 'lights' in steps: lighting.fix_nan_brightness(m, c)

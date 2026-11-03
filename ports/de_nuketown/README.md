@@ -5,7 +5,7 @@
 | Status | Published (quality is a bit low) (27 Oct 2026) |
 | Workshop | [3825929040](https://steamcommunity.com/sharedfiles/filedetails/?id=3825929040) |
 | Imported | 2026-10-16 |
-| Map last changed | 2026-10-24 |
+| Map last changed | 2026-11-03 |
 | How | cs2port pipeline |
 
 The CS2 Nuketown maps on the Workshop (e.g. 3093088534) are remakes of the Call of Duty map, not ports of this one, so it went ahead after the duplicate check.
@@ -15,6 +15,7 @@ The CS2 Nuketown maps on the Workshop (e.g. 3093088534) are remakes of the Call 
 - 2026-10-16: stages A–C in the second pipeline batch. Its sky is now the CS:GO jungle sky, with 10 moondomes.
 - 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 12 Low, 2 Medium → 46 Low, 1 Lowest; hint volume in billion cubic units Medium 0.3, Low 21.3, Lowest 88.6 → Low 24.6, Lowest 93.8. Sky shells: 5 of 10 set to Exclude from Vis. The 5 sky shells around the old 3D skybox (sky_camera 9837 -132 89) and 3 of its meshes are now Excluded from Vis. It is still ordinary geometry that CS2 ignores as a skybox: move it to a skybox map or delete it. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 - 2026-10-24: 152 displacements were dropped at import ("Found a displacement missing a needed subkey."). The 122 in the playable map (grass, mud, gravel, roads, carpets, roofs) were rebuilt from the BSP with `tools/disprestore.py`; the 30 in the old CS:GO 3D skybox (x > 9500) were skipped, since `de_nuketown3dskty.vmap` is a rebuilt skybox. Eight custom materials they use were built from the BSP pakfile (custom/gravel03/04/07/08, realisticwallsandfloors asphault_01/mud_04/mud_06, textures/mygrass5; colour only). `de_train/blendgrassdirt002a` (stock CS:GO, no CS2 copy) → `textures/mygrass3`. Backup: `maps\de_nuketown_pre_disp_2026-10-24.vmap.bak`.
+- 2026-11-03: the 6 overhead `path_particle_rope` cables (cablea/c/e/h/l/o, 16 nodes, `materials/cable/cable.vmat`, slack 0, radius 0.5) replaced with `cable_dynamic` ropes the way skink52's hand-made keimusho rope is built (`tools/ropes.py <vmap in> <vmap out>`, new): one CMapCable per path with `path_node_cable` children at the same positions, cable.vmat, radius 0.5 with the nodes' radius_scale 2 kept, no end caps, linear interpolation kept (straight paths, so the bends at the pole tops stay sharp). The particle ropes were removed, nothing else in the map changed (5,222 other nodes identical on reload). Backup: `maps\de_nuketown.vmap.bak_ropes_2026-11-03`. Not yet opened in Hammer or built.
 
 ## What the cleanup did
 
@@ -38,6 +39,7 @@ The CS2 Nuketown maps on the Workshop (e.g. 3093088534) are remakes of the Call 
 
 ## Open / to check
 
+- Cables (3 Nov): open in Hammer and build; check the six cable_dynamic ropes near the poles at x 5300..6600 / y -400..-2300 look right (thickness is radius 0.5 x scale 2; halve the nodes' radius_scale if too fat) and that none clips a pole top.
 - Restored displacements: check seams, the mygrass3 stand-in for blendgrassdirt002a, and that the new terrain doesn't clash with anything added by hand since import.
 
 - Vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium).

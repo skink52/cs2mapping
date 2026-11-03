@@ -42,7 +42,7 @@ def run(addon, root, passes):
     if 'facescale' in passes: texfix.face_scales(m, c, vmfp)
     if 'matflags' in passes: texfix.material_flags(m, c)
     if 'beams' in passes: beams.run(m, c)
-    if 'ropes' in passes and os.path.exists(vmfp): ropes.run(m, c, vmfp)
+    if 'ropes' in passes: ropes.run(m, c, vmfp)   # path_particle_rope needs no vmf
     if 'skyvis' in passes: skyvis.run(m, c)
     if 'visfit' in passes or 'visfit_lower' in passes or 'visfit_lean' in passes or 'visfit_detail' in passes:
         visfit.run(m, c, all_lower='visfit_lower' in passes, lean='visfit_lean' in passes, detail='visfit_detail' in passes)
