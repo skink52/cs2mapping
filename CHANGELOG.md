@@ -3,6 +3,11 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-04: round time in minutes
+
+- **Round setup: `mp_roundtime 10`, not 600.** The cvar is minutes, not seconds. New ports get 10; `de_` maps get no `mp_roundtime` and keep
+  CS2's own. Existing ports keep their 600 (not run as a correction; a `roundcfg` rerun keeps a roundtime the map already has). `stage_c.round_setup`.
+
 ## 2026-11-03: course respawn window, course music, switched lights, Lego spawn door, mesh weld
 
 - **de_nuketown: particle cables → cable_dynamic.** Its 6 `path_particle_rope` overhead cables (16 nodes) are now `cable_dynamic` ropes built the

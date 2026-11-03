@@ -3,7 +3,7 @@
   python polish.py [--only roundcfg] <addon> [...]          (or --all-ports: every ports/<addon> that has a content vmap)
 
 Per map, in this order, on the content vmap (backed up first as <map>.vmap.bak_polish_<time>):
-  roundcfg     round setup commands: freezetime 0, roundtime 600, sv_airaccelerate 2000, mp_limitteams 0 on one-team maps, mp_solid_teammates 0
+  roundcfg     round setup commands: freezetime 0, roundtime 10 (not de_; an existing roundtime is kept), sv_airaccelerate 2000, mp_limitteams 0 on one-team maps, mp_solid_teammates 0
                on mg_ maps (stage_c.round_setup; only what's missing)
   fire         env_fire -> stock fire particles + burn triggers (firefx; skipped where they exist)
   respawnable  prop_physics_respawnable -> prop_physics + template respawn

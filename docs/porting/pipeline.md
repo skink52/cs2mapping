@@ -74,7 +74,7 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
 - **trigger_push** (`push`) → trigger_multiple plus `maps/scripts/<addon>_io.js` push zones (`PushIn_n`/`PushOut_n`) that copy CS:GO's base-velocity push (players keep their own speed on top; see the trigger_push gotcha). An up push that overlaps a forward push stays a real CS2 trigger_push at 40/700 of its CS:GO speed (skink52's ba_jail_keimusho fix; scripting both made the jump impossible), listed in TO CHECK
   (clamped to 3500). Names, filters and Enable/Disable are kept.
 - **point_servercommand** (`cmd`) → script `Cmd_n`, with "Ported to CS2 by skink52" added after CS:GO port credits.
-- **Round setup** (`roundcfg`): a point_servercommand `port_servercommand` + logic_auto set `mp_freezetime 0` / `mp_roundtime 600` OnMapSpawn. Maps with
+- **Round setup** (`roundcfg`): a point_servercommand `port_servercommand` + logic_auto set `mp_freezetime 0` / `mp_roundtime 10` (minutes; none on `de_` maps) OnMapSpawn. Maps with
   only one team's spawns also get `mp_limitteams 0` and `port_knife_equip` (skipped if a spawn equip already gives a knife); `mg_` maps get
   `mp_solid_teammates 0`, `de_` maps `mp_limitteams 1`, and every map `sv_airaccelerate 2000`. Rerun (`run_pass.py <addon> <root> roundcfg`) on a ported map, it adds only the commands that are missing.
 - **game_score** (`score`) → script `Score_n`.

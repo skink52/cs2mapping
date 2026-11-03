@@ -327,14 +327,16 @@ def io_fixups(m, c):
 
 
 def round_setup(m, c):
-    """House rule: a point_servercommand driven by a logic_auto sets mp_freezetime 0 / mp_roundtime 600 on map spawn.
+    """House rule: a point_servercommand driven by a logic_auto sets mp_freezetime 0 / mp_roundtime 10 (minutes; not on de_ maps) on map spawn.
     Maps with only one spawn type (only CT or only T spawns) also get a game_player_equip handing out a knife, fired OnMapSpawn, and
     mp_limitteams 0, so everyone can join the one team that has spawns; minigame maps (mg_) get mp_solid_teammates 0, defusal maps (de_)
     mp_limitteams 1, and every map sv_airaccelerate 2000 (skink52, 2 Nov 2026).
     A rerun on a map that already has the servercommand only adds the commands it lacks. Runs after the 'cmd' pass so this
     point_servercommand is kept as a real entity."""
     ct = m.by_class('info_player_counterterrorist'); t = m.by_class('info_player_terrorist')
-    cmds = ['mp_freezetime 0', 'mp_roundtime 600', 'sv_airaccelerate 2000']   # skink52, 2 Nov 2026: 2000 on every map
+    cmds = ['mp_freezetime 0', 'sv_airaccelerate 2000']   # skink52, 2 Nov 2026: 2000 on every map
+    # mp_roundtime is in minutes: 10, not 600 (skink52, 4 Nov 2026); defusal maps keep CS2's own round time
+    if not c.addon.lower().startswith('de_'): cmds.insert(1, 'mp_roundtime 10')
     if bool(ct) != bool(t): cmds.append('mp_limitteams 0')
     if c.addon.lower().startswith('mg_'): cmds.append('mp_solid_teammates 0')
     if c.addon.lower().startswith('de_') and bool(ct) == bool(t): cmds.append('mp_limitteams 1')   # defusal maps keep the teams even
