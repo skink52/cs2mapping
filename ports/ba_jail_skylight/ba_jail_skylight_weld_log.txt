@@ -1,7 +1,7 @@
-ba_jail_skylight.vmap: 1422 meshes, 28652 vertices; 21246 prefab vertices from 2 prefab(s)
-before: 3390 near-miss vertex pairs across meshes (closer than 0.75)
-moved 8706 vertices in 162 meshes (5397 grid point, 1942 prefab grid vertex, 721 welded to grid vertex, 634 welded off-grid pair, 12 nearest prefab vertex); 264 sliver faces dropped, 0 pinched faces dropped; 162 meshes rebuilt; 1877 vertices of rotated/scaled/displacement meshes left
-after: 326 near-miss vertex pairs across meshes
-  remaining, by mesh pair (node ids): 23596-23648: 44, 39915-39934: 32, 39877-39896: 32, 39839-39858: 32, 39953-39972: 32, 39991-40010: 32, 23523-23648: 32, 23571-23596: 12
-  most-changed meshes: 4382 faces (node 23648): 2865 verts, 793 faces (node 23523): 1672 verts, 4139 faces (node 23571): 1350 verts, 468 faces (node 23596): 1046 verts, 216 faces (node 23498): 382 verts, 256 faces (node 16798): 204 verts, 226 faces (node 38602): 112 verts, 128 faces (node 38659): 64 verts
-wrote C:/Users/ZACHAR~1.HOM/AppData/Local/Temp/claude/C--source1/0fbe07d7-aaad-4a55-9316-375d839c0b83/scratchpad/ba_jail_skylight_weld.vmap
+ba_jail_skylight.vmap: 1422 meshes, 30914 vertices; 21376 prefab vertices from 2 prefab(s)
+before: 3414 near-miss vertex pairs across meshes (closer than 0.75)
+moved 8604 vertices in 166 meshes (5332 grid point, 1849 prefab grid vertex, 747 welded off-grid pair, 664 welded to grid vertex, 12 nearest prefab vertex); 963 moves undone because a face would lose its area; 2700 vertices of rotated/scaled/displacement meshes left
+after: 229 near-miss vertex pairs across meshes
+  remaining, by mesh pair (node ids): 39915-39934: 32, 39877-39896: 32, 39839-39858: 32, 39953-39972: 32, 39991-40010: 32, 23523-23648: 11, 39877-39915: 6, 23596-23648: 4
+  most-changed meshes: 4382 faces (node 23648): 2825 verts, 793 faces (node 23523): 1633 verts, 4139 faces (node 23571): 1242 verts, 468 faces (node 23596): 1103 verts, 216 faces (node 23498): 374 verts, 256 faces (node 16798): 204 verts, 226 faces (node 38602): 112 verts, 128 faces (node 38659): 65 verts
+wrote C:/Users/ZACHAR~1.HOM/AppData/Local/Temp/claude/C--source1/0fbe07d7-aaad-4a55-9316-375d839c0b83/scratchpad/ba_jail_skylight_weld2.vmap (8054 vertex positions changed, nothing else)

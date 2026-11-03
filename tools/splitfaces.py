@@ -201,9 +201,8 @@ def cut_polys(polys, limit, cell, candidate, min_piece=None):
 
 
 # ----------------------------------------------------------------------------------------------------------- writing
-def mesh_write(m, node, polys, duplicate_edges=False):
-    """Rebuild the half-edge arrays and data streams of `node` from polygons.  Returns an error string or None (mesh untouched on error).
-    duplicate_edges: let two faces run the same directed edge as two separate edges (Hammer allows it; importer meshes have them) instead of refusing."""
+def mesh_write(m, node, polys):
+    """Rebuild the half-edge arrays and data streams of `node` from polygons.  Returns an error string or None (mesh untouched on error)."""
     import dmx
     md = m.g(node, b'meshData')
     verts, vidx = [], {}
@@ -237,10 +236,6 @@ def mesh_write(m, node, polys, duplicate_edges=False):
         for j in range(n):
             u, v = ids[j - 1], ids[j]               # the half-edge into corner j runs from the previous corner to this one
             h = half.get((u, v))
-            if h is not None and face_of[h] != -1:
-                if not duplicate_edges:
-                    return 'non-manifold edge (two faces use the same direction)'
-                h = None                            # a second edge between the same vertices
             if h is None:                           # new edge: face side 2k, boundary twin 2k+1
                 k = len(dest) // 2
                 h = 2 * k
@@ -252,6 +247,8 @@ def mesh_write(m, node, polys, duplicate_edges=False):
                 nxt += [-1, -1]
                 half[(u, v)] = h
                 half[(v, u)] = h + 1
+            elif face_of[h] != -1:
+                return 'non-manifold edge (two faces use the same direction)'
             face_of[h] = f
             corner_of[h] = (f, j)
             hs.append(h)
