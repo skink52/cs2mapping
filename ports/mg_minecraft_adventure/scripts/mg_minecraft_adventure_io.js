@@ -288,3 +288,180 @@ for (const pts of [2, 5, 10, 15, 100]) {
         if (ctrl && ctrl.IsValid()) ctrl.AddScore(pts);
     });
 }
+
+// ---------------------------------------------------------------- port_anim (animprops.py)
+// Flipbook textures on tiled faces (CS2's texture animation can't wrap inside a sheet cell): each is a prop_dynamic with one
+// material group per frame; the think below steps Skin. Props on moving entities are glued on at round start (the entity may
+// have moved to its first path_track at spawn, so the prop is placed at the owner's current origin first).
+/** @type {{name: string, frames: number, fps: number, owner: string, ownerClass: string}[]} */
+const PORT_ANIM = [
+    {
+        "name": "port_anim_fire_0",
+        "frames": 84,
+        "fps": 15.0,
+        "owner": "fire_tank",
+        "ownerClass": "func_tracktrain",
+        "spawn": [
+            5776.0,
+            -11952.0,
+            3972.0
+        ]
+    },
+    {
+        "name": "port_anim_fire_1",
+        "frames": 84,
+        "fps": 15.0,
+        "owner": "",
+        "ownerClass": ""
+    },
+    {
+        "name": "port_anim_lava_0",
+        "frames": 78,
+        "fps": 15.0,
+        "owner": "lava_tank_1",
+        "ownerClass": "func_tracktrain",
+        "spawn": [
+            8976.0,
+            -8304.0,
+            6884.0
+        ]
+    },
+    {
+        "name": "port_anim_lava_1",
+        "frames": 78,
+        "fps": 15.0,
+        "owner": "lava_tank_2",
+        "ownerClass": "func_tracktrain",
+        "spawn": [
+            8976.0,
+            -8304.0,
+            6300.0
+        ]
+    },
+    {
+        "name": "port_anim_lava_2",
+        "frames": 78,
+        "fps": 15.0,
+        "owner": "lava_tank_3",
+        "ownerClass": "func_tracktrain",
+        "spawn": [
+            9368.0,
+            -8304.0,
+            6592.0
+        ]
+    },
+    {
+        "name": "port_anim_lava_3",
+        "frames": 78,
+        "fps": 15.0,
+        "owner": "lava_tank_5",
+        "ownerClass": "func_tracktrain",
+        "spawn": [
+            8976.0,
+            -8112.0,
+            6592.0
+        ]
+    },
+    {
+        "name": "port_anim_lava_4",
+        "frames": 78,
+        "fps": 15.0,
+        "owner": "lava_tank_6",
+        "ownerClass": "func_tracktrain",
+        "spawn": [
+            9368.0,
+            -8112.0,
+            6300.0
+        ]
+    },
+    {
+        "name": "port_anim_lava_5",
+        "frames": 78,
+        "fps": 15.0,
+        "owner": "lava_tank_7",
+        "ownerClass": "func_tracktrain",
+        "spawn": [
+            9368.0,
+            -8112.0,
+            6884.0
+        ]
+    },
+    {
+        "name": "port_anim_lava_6",
+        "frames": 78,
+        "fps": 15.0,
+        "owner": "lava_tank_7",
+        "ownerClass": "func_tracktrain",
+        "spawn": [
+            8976.0,
+            -7920.0,
+            6884.0
+        ]
+    },
+    {
+        "name": "port_anim_lava_7",
+        "frames": 78,
+        "fps": 15.0,
+        "owner": "lava_tank_8",
+        "ownerClass": "func_tracktrain",
+        "spawn": [
+            8976.0,
+            -7920.0,
+            6300.0
+        ]
+    },
+    {
+        "name": "port_anim_lava_8",
+        "frames": 78,
+        "fps": 15.0,
+        "owner": "lava_tank_9",
+        "ownerClass": "func_tracktrain",
+        "spawn": [
+            9368.0,
+            -7920.0,
+            6592.0
+        ]
+    },
+    {
+        "name": "port_anim_lava_9",
+        "frames": 78,
+        "fps": 15.0,
+        "owner": "",
+        "ownerClass": ""
+    }
+];
+const portAnimSkin = PORT_ANIM.map(() => -1);
+function portAnimAttach() {
+    for (const a of PORT_ANIM) {
+        if (!a.owner) continue;
+        const prop = Instance.FindEntityByName(a.name); if (!prop) continue;
+        const owners = Instance.FindEntitiesByName(a.owner).filter(e => !a.ownerClass || e.GetClassName() === a.ownerClass);
+        let owner = owners[0];
+        if (owners.length > 1 && a.spawn) {            // duplicate names: the one spawned where this prop's owner was expected
+            let best = 1e18;
+            for (const e of owners) {
+                const o = e.GetAbsOrigin(); const d = (o.x - a.spawn[0]) ** 2 + (o.y - a.spawn[1]) ** 2 + (o.z - a.spawn[2]) ** 2;
+                if (d < best) { best = d; owner = e; }
+            }
+        }
+        if (!owner) continue;
+        try {
+            prop.SetParent(undefined);
+            prop.Teleport({ position: owner.GetAbsOrigin(), angles: owner.GetAbsAngles() });
+            prop.SetParent(owner);
+        } catch (e) { Instance.Msg("port_anim: could not attach " + a.name + ": " + e); }
+    }
+}
+Instance.OnRoundStart(() => { portAnimAttach(); for (let i = 0; i < portAnimSkin.length; i++) portAnimSkin[i] = -1; wakeThink(); });
+THINKERS.push(() => {
+    const t = Instance.GetGameTime();
+    for (let i = 0; i < PORT_ANIM.length; i++) {
+        const a = PORT_ANIM[i]; const f = Math.floor(t * a.fps) % a.frames;
+        if (f === portAnimSkin[i]) continue;
+        portAnimSkin[i] = f;
+        Instance.EntFireAtName({ name: a.name, input: "Skin", value: String(f) });
+    }
+    return true;
+});
+wakeThink();
+// ---------------------------------------------------------------- end port_anim

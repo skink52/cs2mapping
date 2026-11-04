@@ -10,6 +10,29 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   `sv_cheats`). `projects/cs2mapTTT/docs/SERVER_MAP_ENTITIES.md` is the plugin author's reference for the maps' traps and testers.
   The mock engine gained `noinputs=` and `fire=name@s`. Mock-tested; not yet in game.
 
+## 2026-11-04: mg_minecraft_adventure fire and lava animation
+
+- **[port mg_minecraft_adventure] fire error texture, lava tearing.** Two CS2 findings: a sheet with alpha must be power-of-two to compile, and `F_TEXTURE_ANIMATION`
+  never wraps inside a cell, so it cannot animate a tiled face. New stage D tool `tools/animprops.py`: tiled flipbook faces → skinned `prop_dynamic` models stepped
+  by the io script (Hellmatch's method), tank props glued to their tracktrains at round start. Gotcha and tool index updated.
+
+## 2026-11-04: mg_mario_party would not load since the 3 Nov CS2 update
+
+- **[port mg_mario_party] load crash fixed.** The seven bullet-cannon `trigger_push` entities carried `speed 9999999999` from the CS:GO map.
+  The 3 Nov 2026 CS2 update turned the "Bad key" warning for an int32 overflow into a server crash while the entity spawns (read from the
+  minidumps: `server.dll` bad-key handler, null vtable call, the console's last line was the bad key). Clamped to 1500 (`mario_io.js`
+  flies the bullets itself). `mapcheck.py` now reports `overflow` and clamps it with an out path. Backup `mg_mario_party.vmap.bak_pushspeed_20261104`.
+
+## 2026-11-04: racers get a move set per title, the cars retuned, cars sit on the road
+
+- **[space-racer] v0.7.0.** Each title has its own four E moves on the same cars (Neon: Light Trail / EMP / Overclock / Firewall and boost
+  trails; Depth: Ink Cloud / Depth Charge / Hydrojet / Undertow and pressure). The cars were retuned for all three games (since the +200 km/h
+  the Hornet won 8 races in 100 to the heavy cars' 0.5; now every car wins 2.3-4.3). The CS2 side sits each car on the road under its four
+  corners, so a car turned across a steep incline no longer digs in (`CONFIG.CAR_CLEAR`, `CAR_CLEAR_SLOPE`). Space Racer's trackside pylons
+  are braced again (its track models had not been rebuilt since before that fix). The build now runs on the Windows PC (scipy, fonts,
+  `fileURLToPath`). All three addons rebuilt onto their Hammer maps; the maps need a recompile (five new sound events).
+  Detail: projects/space-racer-cs2/CHANGELOG.md.
+
 ## 2026-11-04: round time in minutes
 
 - **Round setup: `mp_roundtime 10`, not 600.** The cvar is minutes, not seconds. New ports get 10; `de_` maps get no `mp_roundtime` and keep
