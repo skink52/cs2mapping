@@ -33,8 +33,8 @@ and each value has the shape in §3. Copy it out as a JSON file per map, or as o
 **Map → server:** the map sends `ttt_script` the input `RunScriptInput` with a parameter `ttt:<op>:<id>`, and the activator is the player
 (or prop) that caused it. **Server → map:** the server fires `Trigger` on a `logic_relay` named `<id>__<event>`, passing the activator
 through, and the relay's outputs do the map's work. **Per-map data** (button spots, tester boxes, roles, texts, damage owners, credits)
-is in `maps/<map>.json`. The plugin needs exactly three things: catch inputs to `ttt_script`, fire relays by name with an activator,
-and load the JSON for the current map.
+is in the `MAP_DATA` block of `ttt.js`, keyed by map name. Besides switching ttt.js off (§0), the plugin needs exactly three things:
+catch inputs to `ttt_script`, fire relays by name with an activator, and load the current map's data.
 
 ## 0. Switching ttt.js off (required)
 
