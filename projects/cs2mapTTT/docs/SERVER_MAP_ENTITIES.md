@@ -228,6 +228,25 @@ Reset to 255 on respawn and round start. CS2 still shows the target-ID name; tha
 | Carryable props | ttt.js carries `CARRY_CLASSES` on held Use. While carried, the prop's owner is the carrier (cleared on drop, 1.5 s after a throw). Map io scripts skip props owned by a player, so the plugin must set the owner too. |
 | `<map>_io.js` point_scripts | The map's own. They abort damage from slow pushable props; the plugin's damage handling must not undo that. |
 
+## 6b. What a plugin can do better than ttt.js
+
+ttt.js is a map script, so several of its features are workarounds for what map scripts can't do. A plugin has real server access.
+Don't port these workarounds one to one: replace them with the proper version. Items marked *unverified* are expected to work but
+weren't tested for this project.
+
+| Feature | What ttt.js does (map-script limit) | What the plugin should do instead |
+|---|---|---|
+| **Hidden kills** | Every lethal player hit is turned into a world kill: damage gets `PREVENT_DEATH`, then the script kills the player itself with no attacker (`HIDE_KILLER`, `runKills`). Nobody is credited, so CS2's own kill data can't leak the killer. | Suppress the death event to clients instead (CounterStrikeSharp: `EventPlayerDeath` in `HookMode.Pre`, `info.DontBroadcast = true`). The killfeed never reaches anyone, while the server keeps the real attacker for karma, DNA, logs and admin tools. Drop the world-kill trick. |
+| **Killfeed** | An opaque HUD panel is drawn over the killfeed area (`HUD_IN_KILLFEED`). It fails for players with `cl_draw_only_deathnotices 1`, who see victims' names. | Not needed once death events aren't broadcast. Check that no other message leaks deaths: CS2's damage report in the console on death, round-end summaries, and the alive count in the top bar (ttt.js covers it, `COVER_TOPBAR`). *Unverified.* |
+| **Scores** | Kill score changes are saved up and only added at round end (`scoreDelta`), so the scoreboard doesn't show who killed whom. | Same idea, or control the scoreboard columns directly. |
+| **Bodies** | The dying player is shrunk to 2% (`SetModelScale(0.02)`) to hide CS2's client ragdoll, and a server ragdoll is spawned from a template entity in the map (`ttt_body_tpl`). | Create the ragdoll from the plugin, with no template needed, and stop the client ragdoll if possible. Avoid `SetModel` then `Teleport` on a freshly spawned `prop_ragdoll`: that crashed the server (TESTING.md, 29 Oct). |
+| **Private messages** | Scripts can't send private chat, so role info, shop and search results go on the HUD only. | Send private chat or centre text to one player. |
+| **Dead chat and voice** | Relies on `sv_deadtalk 0` / `sv_alltalk 0`; dead chat still carries CS2's `*DEAD*` tag. | Filter chat and voice per player: the dead hear and read only the dead (CounterStrikeSharp `SetListenOverride` for voice). |
+| **Karma** | Kept by player name for the current map only: scripts can't keep data across maps or read Steam IDs. | Keep it by Steam ID, across maps and restarts. |
+| **Round end** | `FireWinCondition` on `info_map_parameters`, with a fallback that restarts the round if CS2 hasn't ended it within 3 s. | End the round directly (CounterStrikeSharp `TerminateRound`), still as a real CS2 round end (§5). |
+| **Commands and admin** | Chat commands only (`!ttt`, `!rules`); the typed line can't be hidden; no permissions. | Real commands with admin permissions (slay, force roles, karma reset), with the command text hidden from chat. |
+| **Esc scoreboard** | Can't be hidden: it shows who is dead. | Check whether the plugin can hide or fake the dead state on it. *Unverified.* |
+
 ## 7. Checklist for the plugin
 
 0. Send `ttt_script RunScriptInput ttt:server` at map spawn and every round start (§0).
