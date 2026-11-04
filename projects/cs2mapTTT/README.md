@@ -64,6 +64,10 @@ Keys you can add by hand to a map's json, which ttt_convert keeps on a rerun: `p
 
 Tunables: the `CONFIG` block at the top of `ttt.js` (times, ratios, shop items, `APPLY_CVARS` off to keep a server's own config).
 
+**Servers with their own TTT plugin:** the same map works there. TTT starts 3 s after the map loads (`SERVER_WAIT`). A server plugin that sends
+`ttt_script` the input `RunScriptInput ttt:server` in that time switches the script off until the next map; players can't, because `ent_fire` needs
+`sv_cheats`. What the plugin must do with the map's traps and testers is in [docs/SERVER_MAP_ENTITIES.md](docs/SERVER_MAP_ENTITIES.md).
+
 ## Limits (CS2)
 
 - A map can't stop CS2 sending kill notices; the TTT panel covers the feed instead (verified). On a CounterStrikeSharp server a tiny plugin removes them: a `HookMode.Pre` `EventPlayerDeath` handler setting

@@ -3,6 +3,13 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-04: TTT works on servers with their own TTT plugin
+
+- **[ttt] server off switch.** One workshop upload per TTT map now serves both kinds of server. `ttt.js` starts 3 s after the map loads
+  (`SERVER_WAIT`); a server TTT plugin that sends `ttt_script RunScriptInput ttt:server` keeps it off for the map (players can't: `ent_fire` needs
+  `sv_cheats`). `projects/cs2mapTTT/docs/SERVER_MAP_ENTITIES.md` is the plugin author's reference for the maps' traps and testers.
+  The mock engine gained `noinputs=` and `fire=name@s`. Mock-tested; not yet in game.
+
 ## 2026-11-04: round time in minutes
 
 - **Round setup: `mp_roundtime 10`, not 600.** The cvar is minutes, not seconds. New ports get 10; `de_` maps get no `mp_roundtime` and keep

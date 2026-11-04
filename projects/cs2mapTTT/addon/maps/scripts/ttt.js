@@ -3,6 +3,8 @@ import { Instance, CSPlayerPawn, CSPlayerController, CustomHudLayout, PointTempl
          CSDamageFlags, CSDamageTypes, CSRoundEndReason, CSMoveType } from "cs_script/point_script";
 
 const CONFIG = {
+    SERVER_WAIT: 3,               // seconds after the map loads before TTT starts, so a server-side TTT plugin can switch this script off first
+                                  // (it sends this point_script RunScriptInput "ttt:server"; players can't, ent_fire needs sv_cheats)
     APPLY_CVARS: true,
     PREP_TIME: 25,
     ROUND_TIME: 360,
@@ -160,6 +162,11 @@ let thinkStarted = false;
 let activeCap = 0;
 let waitAnnounced = "";
 let waitAnnouncedAt = -100;
+const M_WAIT = 0, M_ON = 1, M_OFF = 2;
+let mode = M_WAIT;            // M_OFF: a server plugin runs TTT on this server, and this script does nothing until the map changes
+let startAt = 0;
+let roundPending = false;     // a round started during SERVER_WAIT: replayed when the script starts
+const live = () => mode === M_ON;
 
 const st = (slot) => { let p = players.get(slot); if (!p) { p = new PState(slot); players.set(slot, p); } return p; };
 const clean = (s, n = 40) => String(s).replace(/[;"\\\n\r]/g, "").slice(0, n);
@@ -822,7 +829,7 @@ function ptouchPoll() {
         s.inside = !!hit;
     }
 }
-function mapInput(name, fn) { Instance.OnScriptInput(name, (inp) => { try { fn(inp); } catch (e) { log(name + ": " + e); } }); }
+function mapInput(name, fn) { Instance.OnScriptInput(name, (inp) => { if (!live()) return; try { fn(inp); } catch (e) { log(name + ": " + e); } }); }
 if (MD) {
     for (const b of MD.buttons || []) {
         mapInput("ttt:btnoff:" + b.id, () => { const s = mapState.btn.get(b.id); if (s) s.off = true; });
@@ -981,7 +988,7 @@ function weaponName(w) {
 
 // ------------------------------------------------------------------ damage
 Instance.OnModifyPlayerDamage((ev) => {
-    if (killing) return;
+    if (!live() || killing) return;
     const victim = ev.player, vs = slotOf(victim);
     const as = slotOf(ev.attacker);
     // prep: players can't hurt each other, but the world (trigger_hurt, falls, traps) still kills, and the dead respawn
@@ -1005,7 +1012,7 @@ Instance.OnModifyPlayerDamage((ev) => {
 });
 
 Instance.OnPlayerDamage((ev) => {
-    if (killing) return;
+    if (!live() || killing) return;
     const vs = slotOf(ev.player);
     if (vs < 0) return;
     const p = st(vs), as = slotOf(ev.attacker);
@@ -1044,10 +1051,14 @@ function runKills() {
     }
 }
 
-Instance.OnPlayerKill(({ player, attacker, weapon }) => onDeath(player, attacker, weapon));
+Instance.OnPlayerKill(({ player, attacker, weapon }) => { if (live()) onDeath(player, attacker, weapon); });
 
 // ------------------------------------------------------------------ lifecycle
-Instance.OnRoundStart(() => { now = Instance.GetGameTime(); onRoundStart(); ensureThink(); });
+Instance.OnRoundStart(() => {
+    if (mode === M_WAIT) { roundPending = true; return; }
+    if (!live()) return;
+    now = Instance.GetGameTime(); onRoundStart(); ensureThink();
+});
 function flushScores() {
     for (const p of players.values()) {
         if (!p.scoreDelta) continue;
@@ -1056,20 +1067,22 @@ function flushScores() {
         p.scoreDelta = 0;
     }
 }
-Instance.OnRoundEnd(() => { flushScores(); if (phase !== P_WAIT) { phase = P_POST; roundEnded = true; endFallbackAt = 0; } for (const p of players.values()) closeShop(p); });
+Instance.OnRoundEnd(() => { if (!live()) return; flushScores(); if (phase !== P_WAIT) { phase = P_POST; roundEnded = true; endFallbackAt = 0; } for (const p of players.values()) closeShop(p); });
 const savedKarma = new Map();
 function restoreKarma(p) {
     const k = p.name && savedKarma.get(p.name);
     if (k === undefined) return;
     savedKarma.delete(p.name); p.karma = k; p.karmaBase = k;
 }
-Instance.OnPlayerConnect(({ player }) => { const s = player.GetPlayerSlot(); players.delete(s); const p = st(s); p.name = clean(player.GetPlayerName()); restoreKarma(p); });
+Instance.OnPlayerConnect(({ player }) => { if (!live()) return; const s = player.GetPlayerSlot(); players.delete(s); const p = st(s); p.name = clean(player.GetPlayerName()); restoreKarma(p); });
 Instance.OnPlayerActivate(({ player }) => {
+    if (!live()) return;
     const s = player.GetPlayerSlot(), p = st(s); p.name = clean(player.GetPlayerName()); resetHud(s);
     if (CONFIG.TRY_HIDE_KILLFEED) Instance.ClientCommand(s, "cl_drawhud_force_deathnotices -1");
 });
-Instance.OnPlayerDisconnect(({ playerSlot }) => { const q = players.get(playerSlot); if (q && q.hold) drop(q, null); if (q && q.name && q.karma < CONFIG.KARMA_START) savedKarma.set(q.name, q.karma); players.delete(playerSlot); for (const b of bodies) if (b.killerSlot === playerSlot) b.killerSlot = -1; });
+Instance.OnPlayerDisconnect(({ playerSlot }) => { if (!live()) return; const q = players.get(playerSlot); if (q && q.hold) drop(q, null); if (q && q.name && q.karma < CONFIG.KARMA_START) savedKarma.set(q.name, q.karma); players.delete(playerSlot); for (const b of bodies) if (b.killerSlot === playerSlot) b.killerSlot = -1; });
 Instance.OnPlayerReset(({ player }) => {
+    if (!live()) return;
     const s = slotOf(player);
     if (s < 0) return;
     const p = st(s); p.frozen = false; p.shopOpen = false; p.pendingKill = false; p.hud.clear();
@@ -1085,15 +1098,15 @@ Instance.OnPlayerReset(({ player }) => {
     p.nativeHidden = null; p.nativeAt = now + 0.5; p.chatHudUntil = 0;
     resetHud(s);
 });
-Instance.OnPlayerTeamChanged(({ player }) => { const s = slotOf(player); if (s >= 0) resetHud(s); });
+Instance.OnPlayerTeamChanged(({ player }) => { if (!live()) return; const s = slotOf(player); if (s >= 0) resetHud(s); });
 Instance.OnCustomHudClicked(({ player, buttonId }) => {
-    if (!player || !/^Shop\d$/.test(buttonId)) return;
+    if (!live() || !player || !/^Shop\d$/.test(buttonId)) return;
     const p = st(player.GetPlayerSlot()), pawn = player.GetPlayerPawn();
     if (!p.shopOpen || !pawn || !pawn.IsAlive()) return;
     p.shopSel = Number(buttonId.slice(4)); buy(p, pawn, p.shopSel);
 });
 Instance.OnPlayerChat(({ player, text }) => {
-    if (!player) return;
+    if (!live() || !player) return;
     try {
         const s = player.GetPlayerSlot();
         chatLog.push({ t: now, name: clean(player.GetPlayerName()).slice(0, 16), text: String(text).replace(/[\r\n]/g, " ").slice(0, 90), alive: isAlive(s) });
@@ -1105,7 +1118,12 @@ Instance.OnPlayerChat(({ player, text }) => {
 });
 
 function think() {
+    if (mode === M_OFF) return;               // no next think: the script stays idle for the rest of the map
     Instance.SetNextThink(Instance.GetGameTime());
+    if (mode === M_WAIT) {
+        if (Instance.GetGameTime() < startAt) return;
+        start();
+    }
     try {
         now = Instance.GetGameTime(); tick++;
         hudBudget = CONFIG.HUD_BUDGET;
@@ -1164,13 +1182,48 @@ function ensureThink() {
     Instance.SetNextThink(Instance.GetGameTime());
 }
 
-Instance.OnActivate(() => {
+// One workshop upload serves both kinds of server. With no server plugin, the script starts SERVER_WAIT seconds after the map loads.
+// A server running its own TTT plugin sends "ttt:server" (at map load, and again each round start to be safe) and the script stays off.
+function start() {
+    mode = M_ON;
     now = Instance.GetGameTime();
     applyCvars(true);
+    log("started; HUD " + (findHud() ? "found" : "missing (add custom_hud_layout '" + CONFIG.HUD_NAME + "')"));
+    if (roundPending) { roundPending = false; onRoundStart(); }
+}
+function serverOff() {
+    if (mode === M_OFF) return;
+    const was = mode;
+    mode = M_OFF;
+    log("a server TTT plugin runs this server; ttt.js is off until the map changes");
+    if (was !== M_ON) return;
+    // switched off mid-game: hand the players back as CS2 left them
+    for (const p of players.values()) {
+        try {
+            if (p.hold) drop(p, null);
+            closeShop(p);
+            const pawn = pawnOf(p.slot);
+            if (pawn && pawn.IsValid()) {
+                if (p.scaled) { p.scaled = false; pawn.SetModelScale(1); }
+                if (p.nativeHidden === true) nativeHud(pawn, true);
+                if (p.alpha < 255) setAlpha(pawn, 255);   // also the held weapon
+                tint(pawn, false);                         // after setAlpha, which keeps the detective tint
+            }
+            resetHud(p.slot);
+        } catch (e) { }
+    }
+    for (const o of ownerClear.splice(0)) releaseOwner(o.e, false);
+}
+Instance.OnScriptInput("ttt:server", () => serverOff());
+
+Instance.OnActivate(() => {
+    now = Instance.GetGameTime();
+    if (mode === M_OFF) return;
+    startAt = now + CONFIG.SERVER_WAIT;
     ensureThink();
-    log("loaded; HUD " + (findHud() ? "found" : "missing (add custom_hud_layout '" + CONFIG.HUD_NAME + "')"));
+    log("loaded; TTT starts in " + CONFIG.SERVER_WAIT + "s unless a server TTT plugin switches this script off");
 });
 Instance.OnScriptReload({
     before: () => { for (const p of players.values()) closeShop(p); return null; },
-    after: () => { thinkStarted = false; ensureThink(); },
+    after: () => { thinkStarted = false; if (mode !== M_OFF) ensureThink(); },
 });

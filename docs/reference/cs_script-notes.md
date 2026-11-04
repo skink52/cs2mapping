@@ -167,6 +167,8 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   Offer a switch (Hellmatch `APPLY_CVARS`) so a server can keep its own config. Auto teams without the menu:
   `mp_force_assign_teams 1`, `sv_disable_teamselect_menu 1`. No starting pistols: `mp_t_default_secondary ""`, `mp_ct_default_secondary ""`.
 - Talking to a server plugin: `Instance.ServerCommand("<plugin_cmd> {slot} …")` is the only channel.
+- The other way, plugin to script: the plugin sends the `point_script` `RunScriptInput <name>` and the script's `OnScriptInput(name)` runs. Scripts can't
+  read cvars, and `RegisterCheatCommand` needs `sv_cheats`, so this is how a server switches a map script off (cs2mapTTT `ttt:server`; untested with a real plugin).
 
 ## Players: parking, cameras and input
 

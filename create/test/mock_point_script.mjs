@@ -19,7 +19,7 @@ let ENTFILE = null;
 for (const a of args.slice(1)) { const i = a.indexOf('='); if (i < 0 && a.endsWith('.json')) ENTFILE = a; else kv.set(i < 0 ? a : a.slice(0, i), i < 0 ? '1' : a.slice(i + 1)); }
 const opt = (k, d) => (kv.has(k) ? kv.get(k) : d);
 const on = (k) => kv.has(k) && kv.get(k) !== '0';
-const KNOWN = 'players seconds seed round warm trace calls held churn silent norespawn warmup unassigned resetfirst hudwipe maskall autoents models hud css inputs chat';
+const KNOWN = 'players seconds seed round warm trace calls held churn silent norespawn warmup unassigned resetfirst hudwipe maskall autoents models hud css inputs noinputs fire chat';
 for (const k of kv.keys()) if (!KNOWN.split(' ').includes(k)) console.log('warning: unknown option ' + k);
 
 const SCRIPT = path.resolve(args[0]);
@@ -562,6 +562,8 @@ fire('OnActivate');
 for (let i = 0; i < PLAYERS; i++) { const bot = i % 4 === 3; connect(i, bot, UNASSIGNED && !bot && i % 2 === 1 ? 0 : 2 + (i % 2), false); }
 fire('OnRoundStart');
 const inputNames = opt('inputs', '') ? opt('inputs').split(',') : null;
+const noInputs = new Set(opt('noinputs', '').split(',').filter(Boolean));
+const fireAt = opt('fire', '').split(',').filter(Boolean).map((x) => { const i = x.lastIndexOf('@'); return { n: i < 0 ? x : x.slice(0, i), at: i < 0 ? 0 : +x.slice(i + 1) }; });
 const chat = opt('chat', '').split(',').filter(Boolean);
 const HOLD = [[IN.FORWARD, 0.02, 0.01], [IN.BACK, 0.003, 0.1], [IN.LEFT, 0.01, 0.05], [IN.RIGHT, 0.01, 0.05], [IN.WALK, 0.002, 0.05], [IN.DUCK, 0.003, 0.05],
   [IN.JUMP, 0.006, 0.3], [IN.USE, 0.004, 0.3], [IN.ATTACK, 0.01, 0.04], [IN.ATTACK2, 0.003, 0.2], [IN.RELOAD, 0.002, 0.4],
@@ -596,7 +598,7 @@ function perSecond() {
   mapProps = world.filter((e) => e._ok && e._map && e instanceof ModelEnt);
   const live = players.filter((c) => c && c._ok && c.connected && c.pawn && c.pawn._ok && c.pawn._alive);
   const a = pick(live), b = pick(live);
-  const names = inputNames || Object.keys(inputs);
+  const names = (inputNames || Object.keys(inputs)).filter((n) => !noInputs.has(n));
   if (names.length && a) { const n = pick(names); if (inputs[n]) safe('input ' + n, () => inputs[n]({ caller: mapProps.length ? pick(mapProps) : undefined, activator: a.pawn })); }
   if (a && b && Math.random() < 0.5) hurt(b.pawn, { damage: 25, damageTypes: ENUMS.CSDamageTypes.BULLET, attacker: a.pawn, inflictor: a.pawn, weapon: a.pawn.active || undefined, hitGroup: ENUMS.CSHitGroup.CHEST });
   if (a && chat.length && Math.random() < 0.3) fire('OnPlayerChat', { player: a, text: pick(chat), team: a._team });
@@ -638,6 +640,10 @@ for (tick = 0; tick < TICKS; tick++) {
   if (timers.length) {
     const due = timers.filter((t) => t.at <= time + 1e-9).sort((x, y) => x.at - y.at || x.seq - y.seq);
     if (due.length) { const set = new Set(due); for (let i = timers.length - 1; i >= 0; i--) if (set.has(timers[i])) timers.splice(i, 1); for (const t of due) t.fn(); }
+  }
+  for (const f of fireAt) if (!f.done && time >= f.at - 1e-9) {   // fire=name@seconds: one RunScriptInput at a set time, no activator (a server plugin)
+    f.done = true;
+    if (inputs[f.n]) safe('input ' + f.n, () => inputs[f.n]({ caller: undefined, activator: undefined })); else stats.errors.push('fire: the script has no input ' + f.n);
   }
   if (think && time >= nextThink - 1e-9) { nextThink = Infinity; safe('think', think); }
   for (let n = 0; afterQ.length && n < 64; n++) for (const cb of afterQ.splice(0)) safe('QueueAfterThinks', cb);

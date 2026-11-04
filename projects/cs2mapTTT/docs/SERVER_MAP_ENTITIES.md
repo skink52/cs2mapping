@@ -9,12 +9,13 @@ Written 4 Nov 2026 from `ttt.js`, `tools/ttt_convert.py` and `maps/*.json`. Noth
 
 ## Handoff: what the plugin author gets
 
-The plugin author gets two files: this one and `ttt.js`. The `ttt.js` copy is the one shipped in ttt_minecraft, and it is byte-identical in all four maps.
+The plugin author gets two files: this one and `ttt.js`. Use the `ttt.js` version with the server off switch (4 Nov 2026 or later, with `SERVER_WAIT` in its
+`CONFIG`); the same file ships in all four maps.
 `ttt.js` is the working reference implementation: where this file and `ttt.js` differ, `ttt.js` is what was tested in game.
 Repo paths named here, such as `tools/ttt_convert.py`, are background only; the plugin doesn't need them.
 
-**The maps will be re-uploaded without `maps/scripts/ttt.vjs`.** Everything else in them stays identical: the entities, the
-`ttt_script` point_script (its script file now missing), the relays, the map's own `<map>_io` script and the HUD files.
+**The maps keep ttt.js, and the plugin switches it off.** There is one workshop upload per map, for every kind of server. Without the plugin,
+ttt.js starts TTT `SERVER_WAIT` seconds (3) after the map loads. With the plugin, the plugin sends it one message first and it never starts (§0).
 
 | Map | TTT messages it sends | Data in `MAP_DATA` | Own io script |
 |---|---|---|---|
@@ -35,6 +36,26 @@ through, and the relay's outputs do the map's work. **Per-map data** (button spo
 is in `maps/<map>.json`. The plugin needs exactly three things: catch inputs to `ttt_script`, fire relays by name with an activator,
 and load the JSON for the current map.
 
+## 0. Switching ttt.js off (required)
+
+Send the `ttt_script` entity the input `RunScriptInput` with the parameter **`ttt:server`**, no activator needed:
+
+```
+ttt_script  RunScriptInput  "ttt:server"
+```
+
+- **When:** as soon as the map's entities have spawned, and again at every round start. The repeat costs nothing and covers a late load.
+  It must arrive within `SERVER_WAIT` seconds of the map loading. Players need longer than that to connect, so sending it at map spawn is plenty.
+- **What ttt.js does:** before it has started, nothing at all. It sets no cvars, fires no relays, draws no HUD and changes no damage.
+  If it had already started, it hands players back (drops carried props, closes the shop, restores the CS2 HUD, model scale, colour and alpha)
+  and then stops. Either way it stays off until the next map load, and its log says
+  `[ttt] a server TTT plugin runs this server; ttt.js is off until the map changes`.
+- **Who can send it:** the map never does, and players can't: `ent_fire` needs `sv_cheats`. A server with cheats on can, which doesn't matter.
+- **Why not a cvar:** map scripts can't read cvars, and the only console commands they can add need `sv_cheats`.
+- The plugin's own input hook (§1) will see `ttt:server` go past. Ignore it there, and don't block it from reaching the script.
+
+Check in game: the server console shows the line above on every map load, and never `[ttt] started`.
+
 ## 1. Catching map → server messages
 
 Hook entity input dispatch (the engine's `AcceptInput` path) and filter on **target name `ttt_script`, input `RunScriptInput`**.
@@ -43,20 +64,17 @@ Ids are map targetnames and never contain `:`; split on the first two colons onl
 
 Keep the entity name `ttt_script`. Every converted map already targets it, so maps need no re-conversion.
 
-**Check first: does `ttt_script` still exist with its script file gone?** The re-uploaded maps keep the `point_script` entity, but
-`maps/scripts/ttt.vjs` is missing. An input hook only sees inputs whose target entity was found by name. If the engine doesn't spawn a
-point_script whose script is missing, every map message is silently dropped. Test on one map with `ent_find ttt_script` in the console.
-If it isn't there, either:
+The entity exists in every map, because the maps keep ttt.js. An input hook only sees inputs whose target was found by name.
+Hooking **output firing** instead (the engine's output fire path, as CounterStrikeSharp's entity output hooks do) also works: read each
+connection's target name, input and parameter there. That doesn't depend on the target entity at all.
 
-1. hook **output firing** instead of input dispatch (the engine's output fire path, as CounterStrikeSharp's entity output hooks do), and read
-   each connection's target name, input and parameter there. This works with no target entity at all. Or
-2. have the plugin create an entity named `ttt_script` at map spawn, such as an `info_target`.
+The script also receives every message after the plugin's hook, and ignores them once it is off. Don't block them.
 
 The map messages it sends to itself also come back through here. Minecraft's tester `__found` relays send `ttt:role:<id>` straight back to
 `ttt_script`, so handling must be re-entrant and keep the activator.
 
-**ttt.js must not also run.** This is settled by the re-upload: the maps no longer ship it. A server that still has an old copy of a map
-cached would run both, so the plugin should log a warning if it sees a `point_script` named `ttt_script` that is actually running a script.
+**ttt.js must not also run.** §0 handles it. A server with an old copy of a map from before the off switch would run both.  The server console shows it:
+`[ttt] started` appears a few seconds after map load. Tell the server owner to update the map.
 
 A map's own `<map>_io.js` point_scripts (pushable props and the like) are separate entities and keep running. The plugin leaves them alone.
 
@@ -210,7 +228,8 @@ Reset to 255 on respawn and round start. CS2 still shows the target-ID name; tha
 
 ## 7. Checklist for the plugin
 
-1. Confirm `ttt_script` exists on a map without ttt.vjs, then hook inputs to it (or hook output firing, §1); parse `ttt:<op>:<id>`.
+0. Send `ttt_script RunScriptInput ttt:server` at map spawn and every round start (§0).
+1. Hook inputs to `ttt_script` (or hook output firing, §1); parse `ttt:<op>:<id>`; ignore `ttt:server`.
 2. Fire `<id>__<event>` Trigger with an activator through the entity IO queue.
 3. Load the map data (from `ttt.js`'s `MAP_DATA`); ignore unknown keys; no entry means no map TTT entities.
 4. Reset per-round state, then fire `ttt_ms__prep` at each round start; `ttt_ms__start` and `ttt_ms__end` at their phases.

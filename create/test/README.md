@@ -30,6 +30,8 @@ Option order doesn't matter. A bare word is the same as `word=1`. An unknown opt
 | `round=N` | seconds/3, min 20 | Round length before time runs out (a script's `mp_roundtime` overrides it). |
 | `seed=N` | 1 | Fixes `Math.random`, and gives the script `Date.now` and `performance.now` on game time: the same seed and options give the same run. |
 | `inputs=a,b` | every registered name | `RunScriptInput` names to fire (one per second, random activator). |
+| `noinputs=a,b` | none | Names left out of the random firing above (an off switch, say). |
+| `fire=name@s,...` | none | Fire these `RunScriptInput` names once each at the given second, with no activator (as a server plugin would). Errors if the script has no such input. |
 | `chat=!x,!y` | none | Chat lines players type now and then. |
 | `models=<dir>[,<dir>]` | off | The addon content folder(s). `SetModel` to a path that isn't there (as `.vmdl` or `.vmdl_c`) throws. CS2 silently shows nothing for a model it hasn't loaded. |
 | `hud=<layout.xml>[,<css>]` / `css=<file>` | off | The custom HUD. The css defaults to the matching `panorama/styles/...css`. Turns on the HUD checks below; if the map has no `custom_hud_layout` in `entities.json`, one named `hud` is added. |
