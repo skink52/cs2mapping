@@ -7,6 +7,25 @@ map works the same under the plugin as it does under ttt.js today.
 
 Written 4 Nov 2026 from `ttt.js`, `tools/ttt_convert.py` and `maps/*.json`. Nothing here is tested against a plugin yet.
 
+## Handoff: what the plugin author gets
+
+The plugin author gets two files: this one and `ttt.js`. The `ttt.js` copy is the one shipped in ttt_minecraft, and it is byte-identical in all four maps.
+`ttt.js` is the working reference implementation: where this file and `ttt.js` differ, `ttt.js` is what was tested in game.
+Repo paths named here, such as `tools/ttt_convert.py`, are background only; the plugin doesn't need them.
+
+**The maps will be re-uploaded without `maps/scripts/ttt.vjs`.** Everything else in them stays identical: the entities, the
+`ttt_script` point_script (its script file now missing), the relays, the map's own `<map>_io` script and the HUD files.
+
+| Map | TTT messages it sends | Data in `MAP_DATA` | Own io script |
+|---|---|---|---|
+| ttt_minecraft | chk, role, txt, txtoff, own, unown, cred, btnoff, ptouch, duck, win; 5 traitor buttons | yes, full | `ttt_minecraft_io` (needs §6 carry owner) |
+| ttt_cg_skyscraper_2017 | alpha only | yes, alphas only | `ttt_cg_skyscraper_2017_io` |
+| ttt_island17_pezversion | none | none, a plain map | none |
+| ttt_terrortrain | none | none, a plain map | `ttt_terrortrain_io` |
+
+**Where the map data is:** in `ttt.js` between `// MAP_DATA_BEGIN` and `// MAP_DATA_END`. It is one JSON object keyed by map name,
+and each value has the shape in §3. Copy it out as a JSON file per map, or as one file. A map with no key gets no map logic, only the normal TTT game.
+
 ## The contract in one paragraph
 
 `tools/ttt_convert.py` already turns every GMod `ttt_*` entity into plain CS2 entities plus a string protocol.
@@ -23,16 +42,21 @@ Read the parameter string and the activator. Split the parameter on `:` into `tt
 Ids are map targetnames and never contain `:`; split on the first two colons only, to be safe.
 
 Keep the entity name `ttt_script`. Every converted map already targets it, so maps need no re-conversion.
-The entity must exist or the engine drops the input before any hook sees it.
 
-**ttt.js must not also run.** If a map still ships `maps/scripts/ttt.vjs`, both would handle every input and the round twice.
-Options, in order of preference (check each in game):
+**Check first: does `ttt_script` still exist with its script file gone?** The re-uploaded maps keep the `point_script` entity, but
+`maps/scripts/ttt.vjs` is missing. An input hook only sees inputs whose target entity was found by name. If the engine doesn't spawn a
+point_script whose script is missing, every map message is silently dropped. Test on one map with `ent_find ttt_script` in the console.
+If it isn't there, either:
 
-1. New and re-converted maps keep a `point_script` named `ttt_script` with **no `cs_script` key** (or swap it for an `info_target`
-   named `ttt_script`). This needs a small `ttt_convert.py` switch, `--server`, when the plugin exists.
-2. For maps already published with ttt.vjs, the plugin swallows `RunScriptInput` to `ttt_script` (returns handled, so the script never
-   sees it) and stops the script's think. Simplest version: the plugin clears the entity's script at spawn. Needs research into whether
-   Metamod can stop a `point_script` cleanly; the fallback is a server cvar ttt.js checks at load and goes idle on.
+1. hook **output firing** instead of input dispatch (the engine's output fire path, as CounterStrikeSharp's entity output hooks do), and read
+   each connection's target name, input and parameter there. This works with no target entity at all. Or
+2. have the plugin create an entity named `ttt_script` at map spawn, such as an `info_target`.
+
+The map messages it sends to itself also come back through here. Minecraft's tester `__found` relays send `ttt:role:<id>` straight back to
+`ttt_script`, so handling must be re-entrant and keep the activator.
+
+**ttt.js must not also run.** This is settled by the re-upload: the maps no longer ship it. A server that still has an old copy of a map
+cached would run both, so the plugin should log a warning if it sees a `point_script` named `ttt_script` that is actually running a script.
 
 A map's own `<map>_io.js` point_scripts (pushable props and the like) are separate entities and keep running. The plugin leaves them alone.
 
@@ -48,8 +72,9 @@ A missing relay is normal: the converter only makes a relay for events the origi
 
 ## 3. Per-map data
 
-ttt.js gets it baked in by `tools/build_data.py`. The plugin should load `maps/<mapname>.json` from its own config folder at map start
-instead, so ttt.js and the plugin share one source. A map with no JSON is a plain map with no TTT entities: everything below is skipped.
+ttt.js gets it baked into its `MAP_DATA` block (see the handoff section). The plugin should load it from its own config folder at map
+start, one JSON per map or one file keyed by map name, so new maps can be added without rebuilding the plugin. Match on the bare map name
+(ttt.js also strips any folder prefix). A map with no data is a plain map with no TTT entities: everything below is skipped.
 
 | Key | Type | Used by |
 |---|---|---|
@@ -107,7 +132,9 @@ The plugin should pass the count. Two ways, pick when writing it:
 2. The converter splits the event, and the server fires `<id>__found` with count `n` plus `<id>__found0` or `<id>__found1` by result.
    No value passing needed. Preferred unless option 1 is confirmed in game.
 
-Look at each map's `__found` relay outputs before choosing: ttt_minecraft's testers worked in testing, so its wiring may already ignore the count.
+**None of the current maps need the count.** All five of ttt_minecraft's `__found` relays either send `ttt:role:<id>` back with
+the same activator (a role test decides) or trigger two relays unconditionally. Firing `__found` every time, as ttt.js does, is correct for them.
+The count only matters for maps converted later.
 
 ### 4.3 Role tests (`ttt_logic_role`)
 
@@ -165,7 +192,10 @@ Reset to 255 on respawn and round start. CS2 still shows the target-ID name; tha
   0.05 s later. The converter put the **round reset** in `ttt_ms__prep`: it re-enables, recolours and re-spawns whatever the map's traps
   changed, because CS2 keeps some of that between rounds (ttt_minecraft's lava stayed lava). Skipping it breaks the second round.
 - When roles are dealt, fire `ttt_ms__start`. When the round ends, fire `ttt_ms__end`. Both only if the relay exists.
-- Round-end delay: JSON `post_time` overrides the plugin default (ttt_minecraft's diamond win teleports everyone 7 s after the win).
+- Round-end delay: JSON `post_time` overrides the plugin default. ttt_minecraft sets 20 s: its diamond win teleports everyone to the End
+  7 s after the win, and the sequence needs the time to play out.
+- ttt.js also sets server cvars (`applyCvars`), such as `mp_ignore_round_win_conditions 1`, so CS2 doesn't end rounds on its own team rules.
+  The plugin must set the equivalent; roles are not teams, and players stay on T and CT.
 
 ## 6. Other entities the plugin meets
 
@@ -180,14 +210,21 @@ Reset to 255 on respawn and round start. CS2 still shows the target-ID name; tha
 
 ## 7. Checklist for the plugin
 
-1. Hook inputs to `ttt_script` / `RunScriptInput`; parse `ttt:<op>:<id>`.
+1. Confirm `ttt_script` exists on a map without ttt.vjs, then hook inputs to it (or hook output firing, §1); parse `ttt:<op>:<id>`.
 2. Fire `<id>__<event>` Trigger with an activator through the entity IO queue.
-3. Load `maps/<map>.json`; ignore unknown keys; no file means no map TTT entities.
+3. Load the map data (from `ttt.js`'s `MAP_DATA`); ignore unknown keys; no entry means no map TTT entities.
 4. Reset per-round state, then fire `ttt_ms__prep` at each round start; `ttt_ms__start` and `ttt_ms__end` at their phases.
 5. End rounds through a real CS2 round end.
 6. Traitor buttons by aim cone; testers by box count; ptouch by poll plus input; trap owners in the damage hook.
 7. Stop ttt.js from running alongside on maps that still ship it.
-8. Port the mock scenarios in `test/run_mock.sh` that cover map IO, so both implementations are tested against the same maps.
+8. Set the owner of carried props to the carrier, or ttt_minecraft's io script will push props out of players' hands.
+9. In-game test on ttt_minecraft: a traitor button, the tester with a traitor and an innocent, a trap kill credited to the presser,
+   the gold block into the crafting trigger, the diamond win, and a second round to prove the reset. On skyscraper, test the invisibility button that works. The other one, btn1, starts locked in the original map and nothing unlocks it.
+
+## Things in ttt.js to read alongside this
+
+All are in `ttt.js`: `mapInput` and the block after it (every op), `aimButton` / `pressButton` / `buttonHint`, `ptouchFire` / `ptouchPoll`,
+`trapOwner` and the two damage hooks, `mapRoundStart`, `endRound`, `applyCvars`, `setAlpha`, and `drop` / `releaseOwner` for carry ownership.
 
 ## Op table
 
