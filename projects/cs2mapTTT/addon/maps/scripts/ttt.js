@@ -4,7 +4,7 @@ import { Instance, CSPlayerPawn, CSPlayerController, CustomHudLayout, PointTempl
 
 const CONFIG = {
     SERVER_WAIT: 3,               // seconds after the map loads before TTT starts, so a server-side TTT plugin can switch this script off first
-                                  // (it sends this point_script RunScriptInput "ttt:server"; players can't, ent_fire needs sv_cheats)
+                                  // (it sends this point_script RunScriptInput "ttt:server" or "ttt_server"; players can't, ent_fire needs sv_cheats)
     APPLY_CVARS: true,
     PREP_TIME: 25,
     ROUND_TIME: 360,
@@ -1215,6 +1215,7 @@ function serverOff() {
     for (const o of ownerClear.splice(0)) releaseOwner(o.e, false);
 }
 Instance.OnScriptInput("ttt:server", () => serverOff());
+Instance.OnScriptInput("ttt_server", () => serverOff());   // same, for typing at the console: unquoted, ent_fire splits "ttt:server" at the colon
 
 Instance.OnActivate(() => {
     now = Instance.GetGameTime();

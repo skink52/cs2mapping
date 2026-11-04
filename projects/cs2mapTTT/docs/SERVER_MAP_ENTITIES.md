@@ -50,6 +50,8 @@ ttt_script  RunScriptInput  "ttt:server"
   If it had already started, it hands players back (drops carried props, closes the shop, restores the CS2 HUD, model scale, colour and alpha)
   and then stops. Either way it stays off until the next map load, and its log says
   `[ttt] a server TTT plugin runs this server; ttt.js is off until the map changes`.
+- `ttt_server` (underscore) does the same. It is for testing at the console, where unquoted `ttt:server` is split at the colon:
+  `ent_fire ttt_script RunScriptInput ttt_server` with `sv_cheats 1`. A plugin calling the input directly can use either.
 - **Who can send it:** the map never does, and players can't: `ent_fire` needs `sv_cheats`. A server with cheats on can, which doesn't matter.
 - **Why not a cvar:** map scripts can't read cvars, and the only console commands they can add need `sv_cheats`.
 - The plugin's own input hook (§1) will see `ttt:server` go past. Ignore it there, and don't block it from reaching the script.
