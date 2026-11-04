@@ -1,6 +1,6 @@
 # Server-side TTT: how the server handles map entities
 
-Reference for the Metamod TTT plugin (planned, not written yet). The plugin takes over everything `addon/maps/scripts/ttt.js` does
+Reference for the server-side TTT plugin (planned, not written yet). The target server runs **CounterStrikeSharp** on Metamod; section 6c maps each step to it. The plugin takes over everything `addon/maps/scripts/ttt.js` does
 (cvars, roles, team allocation, HUD, karma, shop, bodies, round flow). The **map keeps its own IO**: traps, testers, texts and win
 sequences stay as entities and outputs in the map. This file is the contract between those entities and the server, so a converted
 map works the same under the plugin as it does under ttt.js today.
@@ -246,6 +246,23 @@ weren't tested for this project.
 | **Round end** | `FireWinCondition` on `info_map_parameters`, with a fallback that restarts the round if CS2 hasn't ended it within 3 s. | End the round directly (CounterStrikeSharp `TerminateRound`), still as a real CS2 round end (§5). |
 | **Commands and admin** | Chat commands only (`!ttt`, `!rules`); the typed line can't be hidden; no permissions. | Real commands with admin permissions (slay, force roles, karma reset), with the command text hidden from chat. |
 | **Esc scoreboard** | Can't be hidden: it shows who is dead. | Check whether the plugin can hide or fake the dead state on it. *Unverified.* |
+
+## 6c. CounterStrikeSharp mapping
+
+The target server runs CounterStrikeSharp (CSS). These are the CSS pieces for each step. Names are from the CSS API as known in
+late 2026; check them against the CSS version on the server before relying on them. None was tested for this project.
+
+| Step | CounterStrikeSharp |
+|---|---|
+| §0 switch ttt.js off | `RegisterListener<Listeners.OnEntitySpawned>`: when a `point_script` named `ttt_script` spawns, on the next frame (`Server.NextFrame`) call `ent.AcceptInput("RunScriptInput", null, null, "ttt:server")`. Send it again in `EventRoundStart`. `AcceptInput` goes straight to the entity, so the colon is safe here. |
+| §1 catch map messages | Hook input dispatch: `VirtualFunctions.AcceptInputFunc.Hook(handler, HookMode.Pre)`. In the handler, keep calls whose entity name is `ttt_script` and input is `RunScriptInput`, read the value string and the activator, and return `HookResult.Continue` so ttt.js still gets them (it ignores them once off). `HookEntityOutput` only sees named outputs per class, so it is the weaker fallback. |
+| §2 fire relays | Find the `logic_relay` by name (`Utilities.FindAllEntitiesByDesignerName<CLogicRelay>("logic_relay")`, match `Entity.Name`), then `relay.AcceptInput("Trigger", activatorPawn, null, "")`. |
+| §4.1 traitor buttons | Read Use per tick from the pawn's button state (`player.Buttons` has `PlayerButtons.Use`); eye position from the pawn's origin plus view offset, angles from `EyeAngles`. Run the aim cone test in `Listeners.OnTick`. |
+| §4.5 trap kill credit | Damage hook: `VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Hook(..., HookMode.Pre)`; the `CTakeDamageInfo` gives the inflictor entity, whose name is matched against the trap's `damager`. |
+| §5 round flow | `EventRoundStart` / `EventRoundEnd`; end rounds with the game rules' `TerminateRound(delay, RoundEndReason)` (game rules from the `cs_gamerules` proxy entity). |
+| §6b hidden kills | `RegisterEventHandler<EventPlayerDeath>(handler, HookMode.Pre)` with `info.DontBroadcast = true`. |
+| §6b dead voice | `player.SetListenOverride(other, ListenOverride.Mute)` per pair, or `player.VoiceFlags`. |
+| §6b karma | Key it by `player.SteamID`; save it to a file or database. |
 
 ## 7. Checklist for the plugin
 
