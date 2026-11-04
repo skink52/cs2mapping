@@ -17,6 +17,7 @@ import { Instance, Entity, CSPlayerPawn, CSPlayerController, CSInputs, CSDamageF
 //   (automatic)              spawn strip: replaces the map's spawn-time game_player_equip strip (no input needed)
 //   Equip_<equip>            replaces  <game_player_equip> TriggerForActivatedPlayer (gives only weapons the player doesn't have)
 //   BulletFire_<push trigger> replaces  bullet bill trigger_push Enable/Disable (flies the cannon's bullet straight out)
+//   Item_<equip> / ItemAll_<equip>  replaces item_* (armour) in game_player_equips: CS2 crashes on map load with an item in a weapon slot
 //
 // The data block below is generated from the map by the port tooling.
 
@@ -1011,5 +1012,29 @@ function moveBullets(now, dt) {
         }
         f.ent.Teleport({ position: next, velocity: { x: 0, y: 0, z: 0 } });
         return true;
+    });
+}
+
+// ---------------------------------------------------------------- game_player_equip items (item_assaultsuit, item_kevlar...)
+// An item_* in a game_player_equip weapon slot crashes the CS2 server on map load, so the items were taken out of the equips
+// and are given from here: every output that triggers the equip also fires Item_<equip> (activator) or ItemAll_<equip>.
+/** @type {Record<string, string[]>} */
+const EQUIP_ITEMS = {
+    "PlayerEquip": [
+        "item_assaultsuit"
+    ]
+};
+function itemPawn(ent) {
+    if (ent instanceof CSPlayerPawn) return ent;
+    if (ent instanceof CSPlayerController) return ent.GetPlayerPawn();
+    return undefined;
+}
+function giveItems(pawn, items) {
+    if (pawn && pawn.IsValid() && pawn.IsAlive()) for (const it of items) pawn.GiveNamedItem(it, false);
+}
+for (const [equip, items] of Object.entries(EQUIP_ITEMS)) {
+    Instance.OnScriptInput("Item_" + equip, ({ activator }) => giveItems(itemPawn(activator), items));
+    Instance.OnScriptInput("ItemAll_" + equip, () => {
+        for (let slot = 0; slot < 64; slot++) giveItems(Instance.GetPlayerController(slot)?.GetPlayerPawn(), items);
     });
 }

@@ -18,10 +18,12 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-11-04: mg_mario_party would not load since the 3 Nov CS2 update
 
-- **[port mg_mario_party] load crash fixed.** The seven bullet-cannon `trigger_push` entities carried `speed 9999999999` from the CS:GO map.
-  The 3 Nov 2026 CS2 update turned the "Bad key" warning for an int32 overflow into a server crash while the entity spawns (read from the
-  minidumps: `server.dll` bad-key handler, null vtable call, the console's last line was the bad key). Clamped to 1500 (`mario_io.js`
-  flies the bullets itself). `mapcheck.py` now reports `overflow` and clamps it with an out path. Backup `mg_mario_party.vmap.bak_pushspeed_20261104`.
+- **[port mg_mario_party] load crash fixed.** `item_assaultsuit` in the weapon slot of the armour-only `PlayerEquip` (the known
+  game_player_equip crash from goldeneye): the slot is empty and `mario_io.js` gives the armour (`Item_PlayerEquip`, fired by
+  `stripperTrigger` next to the equip). Found from the minidump's stack strings after a first wrong lead: the bullet-cannon
+  `trigger_push` `speed 9999999999` (last console line before the crash) is only a wrapped-int warning; it is clamped to 1500 anyway.
+  `mapcheck.py` now reports `overflow` (clamped with an out path) and `equip_item`. Backups `mg_mario_party.vmap.bak_pushspeed_20261104`
+  and `.bak_equipitem_20261104`. Verified: loads after an entity build.
 
 ## 2026-11-04: racers get a move set per title, the cars retuned, cars sit on the road
 

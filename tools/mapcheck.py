@@ -10,6 +10,10 @@ Reports, one per line as KIND<tab>text:
   bad_output  an output the entity's class doesn't have
   baked_switch a light the map switches or recolours that is still Static (its baked light would stay when it's off)
   disco       a cluster of switched / dynamic lights in several colours (a disco floor): shadows off; check it doesn't want baked bounce
+  overflow    a key whose number does not fit a 32-bit int (mg_mario_party's trigger_push speed 9999999999): CS2 logs "Bad key" and
+              wraps the value; fix clamps it to 2147483647
+  equip_item  an item_* (armour, defuser) in a game_player_equip weapon slot: the server crashes on map load (null vtable in the equip's
+              weapon handling; mg_n64_goldeneye, mg_mario_party). Stage C's equip_items moves it into the io script; reported only here
 Fixes (with an out path): dangling outputs are removed, since they reached nothing in CS:GO either; classes in SAFE_REMOVE are deleted, because CS2
 does their job by itself or never had it; classes in CONVERT become the CS2 entity that does the same job. Everything else is only reported.
 """
@@ -128,7 +132,36 @@ def check(m, fix=False):
                     found.append(('converted', '%s %s: %s -> %s.%s became %s' % (c, m.name(e) or '(unnamed)', out, tgt, inp, new))); continue
                 found.append(('bad_input', '%s %s: %s -> %s.%s, but %s has no input %s' % (c, m.name(e) or '(unnamed)', out, tgt, inp, '/'.join(sorted(tclasses)), inp)))
     n, msgs = switched_lights(m, by_name, fix); converted += n; found += msgs
+    n, msgs = overflow(m, ents, fix); converted += n; found += msgs
+    found += equip_items(m, ents)
     return found, removed + converted, dropped
+
+INT_MAX = 2147483647
+def overflow(m, ents, fix):
+    """keys holding a whole number outside the 32-bit int range: CS2 logs "Bad key ... Invalid parsed value" and wraps the number
+    (9999999999 -> 1410065407). Clamped with fix."""
+    found = []; n = 0
+    for e in ents:
+        for k, t, v in list(m.props(e)['attrs']):
+            if t != dmx.T_STR: continue
+            sv = v.decode('utf-8', 'replace').strip()
+            if not re.fullmatch('-?[0-9]+', sv) or abs(int(sv)) <= INT_MAX: continue
+            new = str(max(-INT_MAX - 1, min(INT_MAX, int(sv))))
+            if fix: m.setp(e, k, new); n += 1
+            found.append(('overflow', '%s %s: %s = %s does not fit a 32-bit int (CS2 wraps it to %d)%s' % (
+                m.cls(e), m.name(e) or '(unnamed)', k.decode(), sv, int(sv) & 0xffffffff, ' (clamped to %s)' % new if fix else '')))
+    return n, found
+
+def equip_items(m, ents):
+    """item_* in a game_player_equip weapon slot: the CS2 server crashes while the map loads (server.dll null vtable call, the dump's
+    stack holds the item name). stage_c.equip_items moves them into the io script; here they are only reported."""
+    found = []
+    for e in ents:
+        if m.cls(e).lower() != 'game_player_equip': continue
+        items = [m.P(e, 'weapon%d' % i, '') for i in range(22)]
+        items = [v for v in items if v.lower().startswith('item_')]
+        if items: found.append(('equip_item', 'game_player_equip %s: %s in a weapon slot crashes CS2 on map load; give it from the io script (stage_c equip_items)' % (m.name(e) or '(unnamed)', ', '.join(items))))
+    return found
 
 LIGHTS2 = ('light_omni2', 'light_spot', 'light_rect', 'light_capsule', 'light_ortho', 'light_barn')
 SWITCH_INPUTS = {'enable', 'disable', 'toggle', 'turnon', 'turnoff', 'setbrightnessscale', 'setcolor', 'setlightcolor'}
@@ -229,4 +262,4 @@ if __name__ == '__main__':
     if fix:
         mp.save(sys.argv[2])
         print('fixed\t%d entities removed or converted, %d dangling outputs removed' % (removed, dropped))
-    print('summary\t' + ', '.join('%d %s' % (sum(1 for k, _ in found if k == kind), kind) for kind in ('excluded', 'unknown', 'dangling', 'bad_input', 'bad_output', 'baked_switch', 'disco', 'converted')))
+    print('summary\t' + ', '.join('%d %s' % (sum(1 for k, _ in found if k == kind), kind) for kind in ('excluded', 'unknown', 'dangling', 'bad_input', 'bad_output', 'baked_switch', 'disco', 'overflow', 'equip_item', 'converted')))
