@@ -282,6 +282,7 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 | `say` sent from inside an `OnPlayerChat` callback is dropped. | Queue it and send from the think loop, ≥1 s apart. Strip `;` and `"` from the text (player names go into a console command). |
 | Team-select menu shows behind a custom HUD. | Auto-assign unteamed players ~1 s after connect (`JoinTeam`), plus `mp_force_assign_teams 1`, `sv_disable_teamselect_menu 1`. |
 | A script or Panorama change doesn't show after recompiling. | `disconnect`, then load the map again. |
+| `ent_fire <script> RunScriptInput a:b` typed at the console does nothing, with no error. | The console splits words at `:`, so the script gets only `a`. Quote it (`"a:b"`) or give the script a colon-free input name for console tests (cs2mapTTT `ttt_server`, verified in Hammer 4 Nov 2026). Map outputs and plugins calling the input directly aren't affected. |
 
 ## HUD, radar, loading screens and Workshop
 
