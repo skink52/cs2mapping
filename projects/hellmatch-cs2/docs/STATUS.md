@@ -15,6 +15,27 @@ Copy, wait ~20 s, write, then stage the file back and compare sha1 before tellin
 After a script/HUD change Zach must fully reload (`disconnect`, run the map again) so the script
 and Panorama files recompile. Zach doesn't code: plain-language explanations, light code comments.
 
+## Update 5 Nov 2026 - server stats for a plugin (mgstat), script v0.2.1
+Script only (src/cs2/00_config.js, 60_main.js): no Hammer/model changes, but the map has to be rebuilt in Hammer and re-uploaded to carry it.
+NOT YET RUN IN CS2.
+- CONFIG `SERVER_STATS` (default false) replaces `MONSTER_KILL_COMMAND`. When on, the script sends server console commands for the
+  stats plugin (slime-mg-gm SlimeMG `mgstat <slot> <stat> [n]`; the plugin adds n to that player's count for the current mode):
+  `mgstat <slot> pve_kills <n>` (every monster kill by a player: Boss Battle and monsters loose in deathmatch rounds),
+  `mgstat <slot> boss_kills <n>` (a boss; it is also a pve kill), `mgstat <slot> lms_wins` (the last man standing arena's winner, also on the
+  clock, where the most health wins; a draw gives none). PvP kills/deaths are real CS2 kills, so the plugin takes them from game events.
+- Cheap: monster kills are added up per player and sent once a second (`SERVER_STATS_EVERY`), and flushed when the player's slot is freed
+  (before a newcomer can take it) and when the Doom round ends. Bots and warmup are skipped. Stat names are cleaned to `[a-z0-9_]`, so no
+  `;` or `"` can reach the console.
+- Off by default because a server without the plugin prints "Unknown command" for each one. Two ways on: set `SERVER_STATS: true` in the
+  script before the Hammer build, or have the plugin send `fdm_script` the input `RunScriptInput mgstat_on` after the map loads
+  (`mgstat_off` switches it off; the console says `server stats on`). The input route is untested with a real plugin. With it on from
+  CONFIG the load line ends `server stats on (mgstat)`.
+- Mock: test/mock_cs2.mjs options `stats` (SERVER_STATS on), `statsinput` (fires mgstat_on at 5 s), `lmsonly`; it checks every mgstat
+  command against the contract (format, no bots, not before the switch) and that the totals equal the monster kills by humans and the
+  human LMS winners counted in the playsim (prints `mgstat: ... -> OK`). Its repo root now uses fileURLToPath, so it also runs on Windows.
+  Tested: stats on in bossonly, monsters, lmsonly, churn (slot reuse) and statsinput: all OK; with stats off the trace hash is the same as
+  the 19 Oct deployed script in 4 scenarios (deathmatch, bossonly, churn+monsters, lmsonly), so nothing else changed.
+
 ## Current version (16 Oct 09:50) — confirmed working in CS2 by Zach
 - Map builds; script loads (`[freedm] v0.1.0 ready: 32 levels, 190 sprite models, HUD on, prop template on`).
 - All 32 FreeDM levels render with correct textures, sky, animated water/slime/lava.
@@ -443,8 +464,8 @@ png: caBX ancillary chunk, ~5.8 KB each); audio/image data unchanged, decoders i
   their positions); fdm_mus_e1m8..e4m8 added by vmap_env (verified: only those 4 + fdm_cache_vile_0..2 added, nothing
   removed). The dm renders here differ in bytes from the PC's (encoder version), so only the new files were sent.
 - Score: monsterKill event -> monsterScore: AddScore(MONSTER_SCORE 2 / MONSTER_SCORE_BOSS 10) in Boss Battle
-  (MONSTER_SCORE_DEATHMATCH false), not in warmup; MONSTER_KILL_COMMAND (off) runs a server command per kill with
-  {slot} {boss} {monster} for a plugin that wants the Kills column / ranks (no .NET here to build one).
+  (MONSTER_SCORE_DEATHMATCH false), not in warmup; MONSTER_KILL_COMMAND (off) ran a server command per kill with
+  {slot} {boss} {monster} for a plugin (replaced by SERVER_STATS on 5 Nov 2026, see the update at the top).
 - Flame bringer: sprite_models.json now 505 (VILE_0..2, its attack frames past Z) - those frames drew nothing before.
 - Steam: docs/WORKSHOP_CHANGELOG.md has "Update - 18 Oct (evening)" covering everything since the 10:31 upload;
   docs/WORKSHOP_DESCRIPTION.txt updated (vote keys/commands, bosses, boss music credits, score, server load).

@@ -5,7 +5,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+import { fileURLToPath } from 'node:url';
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');   // fileURLToPath: also right on Windows
 const HUMANS = +(process.argv[2] || 10), BOTS = +(process.argv[3] || 6), SECONDS = +(process.argv[4] || 240);
 const OPTS = process.argv[5] || '';
 // 'seed=N': repeatable run (Math.random and the clock are fixed). 'trace': a hash of every call the script makes into
@@ -174,6 +175,23 @@ class Controller {
 const players = [];
 for (let i = 0; i < HUMANS + BOTS; i++) players.push(new Controller(i, (i < HUMANS ? 'human' : 'bot') + i, i % 2 ? 3 : 2, i >= HUMANS));
 
+// ---------------------------------------------------------------- mgstat (server stats for a plugin)
+// 'stats': SERVER_STATS on. 'statsinput': off in CONFIG, a plugin sends RunScriptInput mgstat_on at t=5 s.
+// Checks every command against the plugin's contract and that monster kills by humans all arrive.
+const mg = { sent: 0, byStat: {}, bad: [], bots: 0, early: 0, perSecond: new Map() };
+function mgstat(c) {
+  mg.sent++;
+  const m = /^mgstat (\d+) ([a-z_]+)(?: (\d+))?$/.exec(c);
+  if (!m || /[;"]/.test(c)) { mg.bad.push(c); return; }
+  const ctrl = players.find((p) => p.slot === +m[1] && p.connected);
+  if (!ctrl || ctrl.bot) mg.bots++;
+  if (OPTS.includes('statsinput') && time < 5) mg.early++;
+  mg.byStat[m[2]] = (mg.byStat[m[2]] || 0) + (m[3] ? +m[3] : 1);
+  const key = m[1] + ' ' + m[2] + ' ' + Math.floor(time);
+  mg.perSecond.set(key, (mg.perSecond.get(key) || 0) + 1);
+}
+const mgTruth = { pve: 0, boss: 0, lms: 0 };
+
 // ---------------------------------------------------------------- Instance
 const hooks = {};
 let thinkFn = null, nextThink = 0;
@@ -191,11 +209,12 @@ const Instance = {
   OnPlayerDisconnect: (f) => { hooks.OnPlayerDisconnect = f; }, OnPlayerActivate: (f) => { hooks.OnPlayerActivate = f; },
   OnPlayerTeamChanged: (f) => { hooks.OnPlayerTeamChanged = f; }, OnPlayerReset: (f) => { hooks.OnPlayerReset = f; }, OnPlayerKill: (f) => { hooks.OnPlayerKill = f; },
   OnModifyPlayerDamage: (f) => { hooks.OnModifyPlayerDamage = f; }, OnPlayerChat: (f) => { hooks.OnPlayerChat = f; },
+  OnScriptInput: (n, f) => { hooks['input:' + n] = f; },
   FindEntityByName: (n) => world.get(n),
   FindEntitiesByName: (n) => (world.get(n) ? [world.get(n)] : []),
   GetAllPlayerControllers: () => players.filter((p) => p.connected),
   GetPlayerController: (s) => players.find((p) => p.slot === s && p.connected),
-  ServerCommand: (c) => { const [k, v] = c.split(' '); if (k === 'say') stats.says.push(c.slice(4)); else stats.cvars[k] = v; },
+  ServerCommand: (c) => { const [k, v] = c.split(' '); if (k === 'say') stats.says.push(c.slice(4)); else if (k === 'mgstat') mgstat(c); else stats.cvars[k] = v; },
   ClientCommand: () => {},
   EntFireAtTarget: ({ target, input, value }) => { TRACE && th('E' + target.name + input + (value === undefined ? '' : value));
     if (input === 'Skin') stats.skins++;
@@ -220,17 +239,35 @@ let src = fs.readFileSync(process.env.FDM_SCRIPT || path.join(root, 'out/addon/m
 src = src.replace(/^import \{[^}]+\} from "cs_script\/point_script";/m, 'const { Instance, CSInputs, CSPlayerPawn, CSPlayerController, BaseModelEntity, PointTemplate, CustomHudLayout, CSDamageFlags, CSDamageTypes, CustomCameraMode, CSMoveType, CSRoundEndReason, Entity } = __api;');
 if (OPTS.includes('elimonly')) src = src.replace(/MODE_WEIGHTS: \{[^}]*\}/, 'MODE_WEIGHTS: { ffa: 0, tdm: 0, elim: 100, lms: 0, boss: 0 }');
 if (OPTS.includes('bossonly')) src = src.replace(/MODE_WEIGHTS: \{[^}]*\}/, 'MODE_WEIGHTS: { ffa: 0, tdm: 0, elim: 0, lms: 0, boss: 100 }');
+if (OPTS.includes('lmsonly')) src = src.replace(/MODE_WEIGHTS: \{[^}]*\}/, 'MODE_WEIGHTS: { ffa: 0, tdm: 0, elim: 0, lms: 100, boss: 0 }');
 if (OPTS.includes('noboss')) src = src.replace(/MODE_WEIGHTS: \{[^}]*\}/, 'MODE_WEIGHTS: { ffa: 35, tdm: 35, elim: 20, lms: 10, boss: 0 }');
-if (OPTS.includes('novote')) src = src.replace('VOTE: true', 'VOTE: false');   // the round flow as before the vote
+if (OPTS.includes('novote')) src = src.replace('VOTE: true', 'VOTE: false');
+if (/\bstats\b/.test(OPTS)) src = src.replace('SERVER_STATS: false', 'SERVER_STATS: true');   // the round flow as before the vote
 { const dm = /diff=([0-9.]+)/.exec(OPTS); if (dm) src = src.replace(/difficulty: [0-9.]+ \}/, 'difficulty: ' + dm[1] + ' }'); }
 if (OPTS.includes('monsters')) src = src.replace('MONSTER_CHANCE: 0.15', 'MONSTER_CHANCE: 1');
 if (OPTS.includes('hudcheck')) src = src.replace('const HUD_LINE_CHECK = false;', 'const HUD_LINE_CHECK = true;');
 if (OPTS.includes('nolinecache')) src = src.replace(/function hudSame\(slot, prefix, value\) \{/, 'function hudSame(slot, prefix, value) { return false;');
-src += '\nglobalThis.__dbg = () => ({ rm, views, parked, hudCheckMiss, hudCache, phase, vote: typeof vote === "undefined" ? null : vote });\n';
+src += '\nglobalThis.__Arena = Arena; globalThis.__RM = RoundManager; globalThis.__stats = () => ({ statPending: typeof statPending === "undefined" ? new Map() : statPending, statsOn: typeof statsOn !== "undefined" && statsOn }); globalThis.__dbg = () => ({ rm, views, parked, hudCheckMiss, hudCache, phase, vote: typeof vote === "undefined" ? null : vote });\n';
 const ctx = vm.createContext({ __api: api, console, Math, Date, JSON, Map, Set, Array, Object, String, Number, Error, Infinity, NaN });
 vm.runInContext(src, ctx, { filename: 'freedm.js' });
 
 // ---------------------------------------------------------------- run
+// what the plugin should end up with: monster kills by humans (outside warmup) and human LMS winners, counted in the playsim
+{
+  const human = (p) => p && !p.isBot && players.some((c) => c.slot === p.slot && c.connected && !c.bot);
+  const on = () => ctx.__stats().statsOn && !warmup;
+  const mk = ctx.__Arena.prototype.onMonsterKilled;
+  ctx.__Arena.prototype.onMonsterKilled = function (mo, source, inflictor) {
+    const k = source && source.player && source !== mo ? source.player : null;
+    if (on() && human(k)) { mgTruth.pve++; if (mo.boss) mgTruth.boss++; }
+    return mk.call(this, mo, source, inflictor);
+  };
+  const fa = ctx.__RM.prototype.finishArena;
+  ctx.__RM.prototype.finishArena = function (a, winner) {
+    if (!a.finished && a.modeKey === 'lms' && winner.player && on() && human(winner.player)) mgTruth.lms++;
+    return fa.call(this, a, winner);
+  };
+}
 const TICK = 1 / 64;
 hooks.OnActivate();
 let rounds = 0;
@@ -298,6 +335,7 @@ function joinCheck() {
   }
 }
 while (time < SECONDS) {
+  if (OPTS.includes('statsinput') && Math.abs(time - 5) < TICK / 2 && hooks['input:mgstat_on']) hooks['input:mgstat_on']({});
   time += TICK;
   for (const [at, text] of Object.entries(CHATS)) if (Math.abs(time - +at) < TICK / 2 && players[0] && hooks.OnPlayerChat) hooks.OnPlayerChat({ player: players[0], text, team: 0 });
   if (OPTS.includes('spec') && Math.floor(time) !== Math.floor(time - TICK)) specCheck();
@@ -437,6 +475,15 @@ if (OPTS.includes('spec')) {
   console.log('spectator lines seen (seconds):\n  ' + [...spec.seen.entries()].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n}x ${k}`).join('\n  '));
   console.log(`blank spectator lines: ${spec.empty.length}`, spec.empty.slice(0, 6).join(' | '));
   console.log(`!back from other spectators: ${spec.backs.in} joined, ${spec.backs.stay} kept spectating; problems ${spec.problems.length}`, spec.problems.slice(0, 6).join(' | '));
+}
+{
+  const pend = { pve: 0, boss: 0 };
+  for (const s of ctx.__stats().statPending.values()) { pend.pve += s.pve; pend.boss += s.boss; }
+  const got = { pve: (mg.byStat.pve_kills || 0) + pend.pve, boss: (mg.byStat.boss_kills || 0) + pend.boss, lms: mg.byStat.lms_wins || 0 };
+  const twice = [...mg.perSecond.values()].filter((n) => n > 1).length;
+  const ok = !mg.bad.length && !mg.bots && !mg.early && got.pve === mgTruth.pve && got.boss === mgTruth.boss && got.lms === mgTruth.lms;
+  console.log(`mgstat: ${mg.sent} commands ${JSON.stringify(mg.byStat)} (+ pending ${pend.pve}/${pend.boss}); expected pve ${mgTruth.pve} boss ${mgTruth.boss} lms ${mgTruth.lms}; ` +
+    `bad ${mg.bad.length}${mg.bad.length ? ' e.g. ' + mg.bad[0] : ''}, bot/empty slots ${mg.bots}, before the switch ${mg.early}, same player+stat twice in a second ${twice} -> ${ok ? 'OK' : 'PROBLEM'}`);
 }
 if (OPTS.includes('hudcheck')) console.log(`hud line cache check: ${ctx.__dbg().hudCheckMiss} skipped panels that differed`);
 if (OPTS.includes('perf') && perf.ms.length) {

@@ -8,7 +8,7 @@ A retro 90s-style deathmatch that runs inside one CS2 map. Up to 64 players, spl
 [*]Plugins that get in the way: AFK managers, no-respawn plugins, spawn protection, teamkill punishment and anything that blocks scripted damage (kills are applied through the map script so the killfeed and scoreboard work).
 [*]CS2 bots play using the game's own bot AI; bot_quota fills empty slots.
 [*]Server load: under 1 ms of script time per tick with 32 players, about 2 to 2.5 ms with 64; the console prints "script time" once a minute so you can check.
-[*]Monster kills in Boss Battle add points to the Score column (AddScore). The Kills column and rank plugins only see player kills; MONSTER_KILL_COMMAND in the script's settings can hand each monster kill to a server plugin.
+[*]Monster kills in Boss Battle add points to the Score column (AddScore). The Kills column and rank plugins only see player kills; SERVER_STATS in the script's settings sends monster kills, boss kills and last man standing wins to a server stats plugin (mgstat commands; off by default).
 [*]Early build. Please report problems in the discussions, with the console lines if you have them.
 [/list]
 

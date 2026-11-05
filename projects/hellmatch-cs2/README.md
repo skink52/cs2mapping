@@ -50,6 +50,12 @@ Output lands in `out/addon/`; copy it into `content/csgo_addons/mg_freedm/` and 
 Hammer (`out/game/` goes into `game/csgo_addons/mg_freedm/`). `FDM_CURRENT_VMAP=<path to the map as last saved by Hammer>` makes the build layer its
 entities onto that map instead of starting from the template.
 
+## Server stats
+
+The map needs no plugin, but it can report stats to one: `SERVER_STATS: true` in the script's `CONFIG` (off by default) sends
+`mgstat <slot> pve_kills|boss_kills <n>` and `mgstat <slot> lms_wins` as server commands, or a plugin switches it on at load with
+`RunScriptInput mgstat_on` on `fdm_script`. Details in `README_HELLMATCH.md` (Server stats) and `docs/STATUS.md` (5 Nov 2026).
+
 ## Credits and licences
 
 All game content — levels, textures, sprites, sounds, music, graphics and the text — is from the

@@ -52,7 +52,7 @@ function init() {
   ready = true;
   lastTime = Instance.GetGameTime();
   startAt = lastTime + 1;
-  log(`v${VERSION} ready: ${LEVELS.length} levels, ${Object.keys(SPRITE_MODELS).length} sprite models, HUD ${hud() ? "on" : "MISSING"}, prop template ${findPropTemplate() ? "on" : "MISSING"}`);
+  log(`v${VERSION} ready: ${LEVELS.length} levels, ${Object.keys(SPRITE_MODELS).length} sprite models, HUD ${hud() ? "on" : "MISSING"}, prop template ${findPropTemplate() ? "on" : "MISSING"}${statsOn ? ", server stats on (mgstat)" : ""}`);
 }
 
 function scanPeople(force) {
@@ -79,6 +79,7 @@ function clientSettings(slot) {
 }
 
 function dropPerson(slot) {
+  statFlush(slot);   // before a newcomer can take the slot
   voteDrop(slot);
   rm.removePerson(slot);
   parked.delete(slot);
@@ -143,6 +144,7 @@ function endDoomRound() {
   if (CONFIG.REAL_KILLS && !Instance.IsWarmupPeriod()) for (const k of elimKills) csKill(k.victim, k.killer);
   elimKills.length = 0;
   guard("podium", monsterPodium);
+  statFlushAll();
   const lines = rm.arenas.map((a) => `${a.mapTitle}: ${a.result ? a.result.text : "-"}`);
   sayAll("Round over - " + lines.join(" | "));
   cvars(["mp_ignore_round_win_conditions 0"]);
@@ -230,7 +232,7 @@ function csKill(victimSlot, killerSlot) {
 }
 
 // a monster kill on the CS2 scoreboard: score points with AddScore (a script can't touch the kills column or rank
-// plugins; MONSTER_KILL_COMMAND hands each kill to a server plugin that can)
+// plugins; SERVER_STATS hands monster kills to a server plugin that can)
 function monsterScore(arena, e) {
   if (!arena.coop && !CONFIG.MONSTER_SCORE_DEATHMATCH) return;
   const slot = e.killer.slot;
@@ -239,10 +241,51 @@ function monsterScore(arena, e) {
     const c = controllerOf(slot);
     if (c) guard("monsterscore", () => c.AddScore(pts));
   }
-  if (CONFIG.MONSTER_KILL_COMMAND) {
-    const cmd = CONFIG.MONSTER_KILL_COMMAND.replace("{slot}", String(slot)).replace("{boss}", e.boss ? "1" : "0").replace("{monster}", String(e.name).replace(/[^a-z ]/gi, "").replace(/ /g, "_"));
-    guard("monstercmd", () => Instance.ServerCommand(cmd));
-  }
+}
+
+// ---------------------------------------------------------------- stats for a server plugin (CONFIG.SERVER_STATS)
+// "mgstat <slot> <stat> [n]": the plugin adds n (default 1) to that player's count for the server's current mode.
+// pve_kills (every monster kill, Boss Battle or monsters loose in deathmatch), boss_kills (a boss, also a pve kill),
+// lms_wins (the last man standing). Monster kills are added up per player and sent once a second (SERVER_STATS_EVERY),
+// and before the player's slot is freed and at the end of the round. Bots and warmup don't count.
+// PvP kills and deaths are real CS2 kills, so the plugin gets those from game events.
+let statsOn = !!CONFIG.SERVER_STATS;
+const statPending = new Map();   // slot -> { pve, boss }
+let statNext = 0;
+function statSend(slot, stat, n) {
+  const cmd = "mgstat " + Math.floor(slot) + " " + String(stat).replace(/[^a-z0-9_]/gi, "") + (n > 1 ? " " + Math.floor(n) : "");
+  guard("mgstat", () => Instance.ServerCommand(cmd));
+}
+function statHuman(slot) {
+  if (!statsOn || slot === undefined || slot === null || slot < 0 || Instance.IsWarmupPeriod()) return false;
+  const c = controllerOf(slot);
+  return !!c && !c.IsBot();
+}
+function statMonster(slot, boss) {
+  if (!statHuman(slot)) return;
+  let s = statPending.get(slot);
+  if (!s) { s = { pve: 0, boss: 0 }; statPending.set(slot, s); }
+  s.pve++;
+  if (boss) s.boss++;
+}
+function statFlush(slot) {
+  const s = statPending.get(slot);
+  if (!s) return;
+  statPending.delete(slot);
+  if (s.pve) statSend(slot, "pve_kills", s.pve);
+  if (s.boss) statSend(slot, "boss_kills", s.boss);
+}
+function statFlushAll() { for (const slot of Array.from(statPending.keys())) statFlush(slot); }
+function statTick(now) {
+  if (!statPending.size || now < statNext) return;
+  statNext = now + (CONFIG.SERVER_STATS_EVERY || 1);
+  statFlushAll();
+}
+function statsSwitch(on) {
+  if (statsOn === on) return;
+  if (!on) statFlushAll();
+  statsOn = on;
+  log(`server stats ${on ? "on" : "off"} (mgstat commands for a stats plugin)`);
 }
 
 function onDoomKill(arena, e) {
@@ -313,7 +356,7 @@ function handleArenaEvents(a) {
       case "bossDown": centerMsgs.set(a, { text: e.noBoss ? "WAVE CLEARED" : "BOSS DOWN!", until: Instance.GetGameTime() + 3 }); break;
       case "monsterKill":
         if (e.boss && e.killer) { e.killer.message = `YOU KILLED THE ${String(e.name).toUpperCase()}`; e.killer.messageTime = a.leveltime; }
-        if (e.killer) monsterScore(a, e);
+        if (e.killer) { monsterScore(a, e); statMonster(e.killer.slot, e.boss); }
         break;
     }
   }
@@ -326,6 +369,7 @@ function handleRoundEvents() {
       case "arenaEnd":
         centerMsgs.set(e.arena, { text: hudResult(e.result), until: Instance.GetGameTime() + 4 });
         sayAll(`${e.arena.mapTitle}: ${e.result.text}`);
+        if (e.arena.modeKey === "lms" && e.result.player && statHuman(e.result.player.slot)) statSend(e.result.player.slot, "lms_wins");
         break;
       case "afkWarn":
         if (e.person.player) { e.person.player.message = "MOVE OR YOU WILL BE MARKED AFK"; e.person.player.messageTime = e.person.arena ? e.person.arena.leveltime : 0; }
@@ -597,6 +641,7 @@ function think() {
     if (!(dt > 0) || dt > 0.25) dt = 1 / 64;
     if (ready) guard("frame", () => frame(dt, now));
     if (ready) guard("music", () => musicTick(now));
+    if (ready) guard("stats", () => statTick(now));
   } finally { inThink = false; hudValidThink = false; }
   if (clockMs && phase === "running") {
     const d = clockMs() - t0;
@@ -629,6 +674,9 @@ Instance.OnRoundEnd((ev) => guard("roundend", () => {
 }));
 Instance.OnBeginRoundRestart(() => guard("restart", () => cleanupRound(true)));
 Instance.OnPlayerDisconnect(({ playerSlot }) => guard("disconnect", () => dropPerson(playerSlot)));
+// a stats plugin switches SERVER_STATS on (or off) for this map: RunScriptInput "mgstat_on" / "mgstat_off" on fdm_script
+Instance.OnScriptInput("mgstat_on", () => guard("stats", () => statsSwitch(true)));
+Instance.OnScriptInput("mgstat_off", () => guard("stats", () => statsSwitch(false)));
 // someone not in a game during a running round goes into one (or watches, if there's no place): their pawn is parked
 function placeLateJoiner(pe, needAlive) {
   if (phase !== "running" || pe.status !== "none" || pe.afk || (pe.csTeam !== 2 && pe.csTeam !== 3)) return;

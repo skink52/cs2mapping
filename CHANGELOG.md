@@ -3,6 +3,13 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-05: Hellmatch reports stats to a server plugin (mgstat)
+
+- **[hellmatch] server stats.** `CONFIG.SERVER_STATS` (off by default; replaces `MONSTER_KILL_COMMAND`) sends `mgstat <slot> pve_kills <n>`,
+  `boss_kills <n>` (batched per player, once a second) and `lms_wins` to a stats plugin; a plugin can also switch it on with `RunScriptInput mgstat_on`
+  on `fdm_script`. Bots and warmup skipped. Script v0.2.1; mock-tested (`stats`, `statsinput`, `lmsonly`), unchanged trace with it off. The map needs a
+  Hammer rebuild and re-upload to carry it. Not yet run in CS2.
+
 ## 2026-11-04: TTT works on servers with their own TTT plugin
 
 - **[ttt] server off switch.** One workshop upload per TTT map now serves both kinds of server. `ttt.js` starts 3 s after the map loads

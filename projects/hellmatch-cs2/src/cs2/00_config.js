@@ -37,7 +37,12 @@ const CONFIG = {
   MONSTER_SCORE_DEATHMATCH: false, // also for the monsters loose in deathmatch rounds (off: they aren't the game there)
   MONSTER_PODIUM: true,          // Boss Battle: at round end the arena's top 3 monster killers get real CS2 kills, the others dying credited to them
   MONSTER_PODIUM_SHARES: [50, 30, 20],   // how the others are shared out: 1st, 2nd, 3rd (like Space Racer's podium)
-  MONSTER_KILL_COMMAND: "",      // e.g. "hm_monster_kill {slot} {boss} {monster}": a server command per monster kill, for a plugin
+
+  // ---- stats for a server plugin: "mgstat <slot> <stat> [n]" server commands (pve_kills, boss_kills, lms_wins).
+  // Off by default: a server without the plugin would print "Unknown command" in its console for each one.
+  // A plugin can also switch it on for the current map: point_script fdm_script, input RunScriptInput "mgstat_on"
+  SERVER_STATS: false,
+  SERVER_STATS_EVERY: 1,         // seconds: monster kills are added up per player and sent at most this often
 
   // ---- kill credit
   REAL_KILLS: true,              // every Doom frag is also a real CS2 kill (killfeed, scoreboard, rank plugins)
@@ -106,4 +111,4 @@ const CONFIG = {
 };
 
 const ZSCALE = 1.2;
-const VERSION = "0.2.0";
+const VERSION = "0.2.1";

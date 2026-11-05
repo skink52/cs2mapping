@@ -73,7 +73,7 @@ Answered items stay here as a reference (the → lines), so a problem that comes
 Use `claude/freedm_cs2_server_issues.md` in the project. The biggest risks are AFK managers, no-respawn plugins, spawn protection and teamkill punishment.
 
 ## Known gaps (planned next)
-- Monster kills are not CS2 kills (nothing to kill in CS2): they add Score points in Boss Battle, but the Kills column and rank plugins don't count them without a server plugin (`MONSTER_KILL_COMMAND`); Boss Battle rounds still credit the CS2 round to a side.
+- Monster kills are not CS2 kills (nothing to kill in CS2): they add Score points in Boss Battle, but the Kills column and rank plugins don't count them without a server plugin (`SERVER_STATS` sends monster kills, boss kills and LMS wins to one as `mgstat` commands); Boss Battle rounds still credit the CS2 round to a side.
 - The Boss Battle difficulty (wave sizes, boss health) is tuned on bots only; expect to adjust `MONSTERS` and the budget in `36_monsters.js` after real games.
 - Monster corpses stay only while they are among the last 24 (each is a prop in CS2).
 - Flickering lights are steady.
