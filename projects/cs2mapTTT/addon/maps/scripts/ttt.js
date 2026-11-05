@@ -829,7 +829,22 @@ function ptouchPoll() {
         s.inside = !!hit;
     }
 }
-function mapInput(name, fn) { Instance.OnScriptInput(name, (inp) => { if (!live()) return; try { fn(inp); } catch (e) { log(name + ": " + e); } }); }
+// Switched off by a server plugin, the script passes the map's messages on to it as a server command (a plugin can't read map outputs
+// safely: CounterStrikeSharp crashes reading IO connections): "ttt_srv_msg <slot> <activator name> <op> <id>". slot is the player's
+// (-1 for a prop or none), the activator name is "-" for a player or none. Ids are targetnames, never with spaces in converted maps.
+function toServer(name, activator) {
+    const parts = String(name).split(":");
+    let an = "-";
+    try { if (activator && slotOf(activator) < 0 && activator.GetEntityName) an = clean(activator.GetEntityName(), 64).replace(/\s/g, "") || "-"; } catch (e) { }
+    Instance.ServerCommand("ttt_srv_msg " + slotOf(activator) + " " + an + " " + clean(parts[1] || "", 16) + " " + clean(parts.slice(2).join(":"), 64));
+}
+function mapInput(name, fn) {
+    Instance.OnScriptInput(name, (inp) => {
+        if (mode === M_OFF) { toServer(name, inp && inp.activator); return; }
+        if (!live()) return;
+        try { fn(inp); } catch (e) { log(name + ": " + e); }
+    });
+}
 if (MD) {
     for (const b of MD.buttons || []) {
         mapInput("ttt:btnoff:" + b.id, () => { const s = mapState.btn.get(b.id); if (s) s.off = true; });
@@ -1222,6 +1237,9 @@ Instance.OnActivate(() => {
     if (mode === M_OFF) return;
     startAt = now + CONFIG.SERVER_WAIT;
     ensureThink();
+    // Handshake: a server TTT plugin answers with ttt:server at once, so switching off doesn't depend on SERVER_WAIT.
+    // A server without one prints "Unknown command" once, and the script starts after SERVER_WAIT as before.
+    Instance.ServerCommand("ttt_srv_hello");
     log("loaded; TTT starts in " + CONFIG.SERVER_WAIT + "s unless a server TTT plugin switches this script off");
 });
 Instance.OnScriptReload({

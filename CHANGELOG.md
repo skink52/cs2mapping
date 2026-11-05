@@ -3,6 +3,13 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-05: TTT map messages reach a server plugin through ttt.js
+
+- **[ttt] plugin channel.** Switched off, `ttt.js` now forwards every map message to the server as `ttt_srv_msg <slot> <activator> <op> <id>`,
+  and says `ttt_srv_hello` at load so a plugin can switch it off at once instead of racing `SERVER_WAIT`. Reason: on CounterStrikeSharp
+  1.0.379, reading entity IO connections crashes the server, and its input hooks miss zero-delay map outputs. Verified in game that a map
+  script's `Instance.ServerCommand` reaches a dedicated server. Mock-tested (`test/run_mock.sh` allows only `ttt_srv_*` commands while off).
+  The TTT maps need rebuilding and re-uploading to carry it. SERVER_MAP_ENTITIES.md §1 documents it.
 ## 2026-11-05: Hellmatch v0.2.1 script delivered to the content addon
 
 - Hellmatch: freedm.js v0.2.1 (server stats via mgstat, 45e4f04) copied into the mg_freedm content addon; not yet built in Hammer or uploaded.

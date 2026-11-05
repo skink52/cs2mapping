@@ -60,6 +60,21 @@ Check in game: the server console shows the line above on every map load, and ne
 
 ## 1. Catching map → server messages
 
+**Use the forwarded commands (5 Nov 2026).** Once switched off (§0), ttt.js passes every map message it receives on to the server as a
+server command, so the plugin needs no entity IO hook:
+
+```
+ttt_srv_msg <slot> <activator name> <op> <id>      slot: the activator's player slot, or -1 (a prop or none)
+                                                   activator name: its targetname for a non-player, "-" for a player or none
+ttt_srv_hello                                       sent once at script load: answer with ttt:server (§0) at once
+```
+
+Register both as server-only console commands. The console splits arguments at `:`, so don't put colons in them; ids are joined back from
+the remaining arguments. A server without a plugin prints "Unknown command" once for `ttt_srv_hello` and nothing else changes.
+Why: on CounterStrikeSharp 1.0.379, reading entity IO connections crashes the server (CSS issue #975; `HookEntityOutput("*","*")` crashed
+a test server on round restarts), and the `CEntityInstance_AcceptInput` / `AddEntityIOEvent` hooks never see zero-delay map outputs.
+Maps from before this change don't forward; they need the new ttt.js. The input-hook text below is kept for other plugin frameworks.
+
 Hook entity input dispatch (the engine's `AcceptInput` path) and filter on **target name `ttt_script`, input `RunScriptInput`**.
 Read the parameter string and the activator. Split the parameter on `:` into `ttt`, `<op>`, `<id>`.
 Ids are map targetnames and never contain `:`; split on the first two colons only, to be safe.
