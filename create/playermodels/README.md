@@ -20,6 +20,7 @@ Python 3 with numpy and Pillow. No Blender, Crowbar or SourceIO needed: the Sour
 | `listmodels.py <catalog.json>` | Rebuilds `MODELS.md`: every converted model with a picture in CS2's pose (`img/<slug>.jpg`, cut from the posed preview), its CS2 path, source, status, warnings. |
 | `srcmdl.py <model.mdl>` | Source 1 studio model reader (MDL v44-49 + VVD + VTX v7): reference-pose bones, LOD0 skinned mesh, body parts, skin families, eyeballs. Prints a summary. |
 | `vtf.py <in.vtf> <out.png>` | VTF 7.0-7.5 mip 0 decoder (DXT1/3/5 via Pillow, the 8-bit, 565, 4444, 5551 formats here) and a VMT reader (`patch` resolved). |
+| `vpk.py <x_dir.vpk> [--list] [--prefix p] [--out DIR]` | Lists or extracts a Source 1 VPK (v1/v2). Used once for the base-game materials (HL2 + CS:S from the GMod dedicated server's `sourceengine/`) into `<work>/basegame/`. |
 | `gma.py <file.gma\|.bin> [out dir]` | Lists or extracts a GMod addon archive (also the LZMA legacy `.bin`). Paths are sanitised; nothing in the archive is run. |
 | `preview.py` | Textured software renderer for the previews (fork of `projects/cs21.6/preview/model_render.py`). |
 | `catalog.json` | Every item looked at: workshop id, title, author, `chosen` (and `skip_reason`, `looked_at` batch if not), `batch`, `slug`, `mdl`, optional `skin`, `bodygroups`, `depends` (other item ids whose files it needs), and the `paths` block. An item can appear more than once (two characters from one pack). |
@@ -42,7 +43,7 @@ sleeves, preview pose: one copy for all), `materials/models/player/gmod/<slug>/*
 ```
 cd create/playermodels
 python -I browse.py catalog.json                                 # new Workshop candidates (add picks: chosen false, looked_at N)
-python -I fetch.py catalog.json --scan --suggest --only <ids>    # download, list candidates, apply the rules
+python -I fetch.py catalog.json --scan --suggest --only <ids>    # download, list candidates, apply the rules (--scale 0.8,1.6: fun skins)
 # edit catalog.json: chosen, batch, slug, mdl for each pick
 python -I pipeline.py catalog.json --batch=3 --compile           # convert, preview, hands check, compile, report
 # review contact_sheet_batch3.png + <slug>_hands.png (warned models first)

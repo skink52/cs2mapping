@@ -588,11 +588,12 @@
    "id": 3453547126,
    "title": "Girls Frontline 2 - Leva [UMP45] 5 Pack Playermodels & NPCs",
    "author": "8sianDude",
-   "chosen": true,
-   "batch": 3,
+   "chosen": false,
    "slug": "gfl2_leva",
    "mdl": "models/player/gfl2_leva.mdl",
-   "name": "Leva (Girls Frontline 2)"
+   "name": "Leva (Girls Frontline 2)",
+   "skip_reason": "anime proportions at the 1.14 scale limit: CS2's hip and knee sit 5-6 u below hers, so her thighs bend mid-way and look stretched (skink52, 6 Nov)",
+   "dropped_after": 3
   },
   {
    "id": 3429451663,
@@ -1218,6 +1219,1340 @@
    "chosen": false,
    "looked_at": 4,
    "skip_reason": "size check: scale 1.15 (height 92 u)"
+  },
+  {
+   "id": 158326196,
+   "title": "Iron Man [Playermodel/NPC]",
+   "author": "Dusty",
+   "chosen": true,
+   "batch": 5,
+   "slug": "iron_man",
+   "mdl": "models/avengers/iron man/mark7_player.mdl",
+   "name": "Iron Man (Mark 7)"
+  },
+  {
+   "id": 216408135,
+   "title": "GTA 5 Playermodels",
+   "author": "Dusty",
+   "chosen": true,
+   "batch": 5,
+   "slug": "gta5_michael",
+   "mdl": "models/grandtheftauto5/michael.mdl",
+   "name": "Michael (GTA 5)"
+  },
+  {
+   "id": 175697854,
+   "title": "The Elder Scrolls V Skyrim: Daedric Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 5,
+   "slug": "skyrim_daedric",
+   "mdl": "models/player/daedric.mdl",
+   "name": "Daedric armour (Skyrim)"
+  },
+  {
+   "id": 241187700,
+   "title": "TRON Anon Playermodel",
+   "author": "Rokay",
+   "chosen": true,
+   "batch": 5,
+   "slug": "tron_anon",
+   "mdl": "models/player/anon/anon.mdl",
+   "name": "TRON Anon"
+  },
+  {
+   "id": 204411482,
+   "title": "DeathStroke PlayerModel",
+   "author": "r9",
+   "chosen": true,
+   "batch": 5,
+   "slug": "deathstroke",
+   "mdl": "models/norpo/arkhamorigins/assassins/deathstroke_valvebiped.mdl",
+   "name": "Deathstroke (Arkham Origins)"
+  },
+  {
+   "id": 139247091,
+   "title": "Halo 4 - Master Chief (NPC/Playermodel/Ragdoll)",
+   "author": "Dusty",
+   "chosen": true,
+   "batch": 5,
+   "slug": "halo4_chief",
+   "mdl": "models/halo4/spartans/masterchief_player.mdl",
+   "name": "Master Chief (Halo 4)"
+  },
+  {
+   "id": 200700693,
+   "title": "Deadpool Playermodel",
+   "author": "o u t l a w",
+   "chosen": true,
+   "batch": 5,
+   "slug": "deadpool",
+   "mdl": "models/pechenko_121/deadpool/chr_deadpool2.mdl",
+   "name": "Deadpool"
+  },
+  {
+   "id": 452065494,
+   "title": "STAR WARS Darth Vader Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 5,
+   "slug": "darth_vader",
+   "mdl": "models/player/darth_vader.mdl",
+   "name": "Darth Vader"
+  },
+  {
+   "id": 157674327,
+   "title": "The Terminator: Arnold Schwarzenegger Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 5,
+   "slug": "arnold",
+   "mdl": "models/player/arnold_schwarzenegger.mdl",
+   "name": "Arnold Schwarzenegger"
+  },
+  {
+   "id": 157854748,
+   "title": "GTA San Andreas: Carl \"CJ\" Johnson Playermodel",
+   "author": "Voikanaa",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 599977698,
+   "title": "Kylo Ren : The Force Awakens PlayerModel",
+   "author": "Acrow",
+   "chosen": true,
+   "batch": 5,
+   "slug": "kylo_ren",
+   "mdl": "models/grealms/characters/kyloren/kyloren.mdl",
+   "name": "Kylo Ren"
+  },
+  {
+   "id": 107411755,
+   "title": "FBI Playermodels",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 5,
+   "slug": "fbi_agent",
+   "mdl": "models/fbi_pack/fbi_08.mdl",
+   "name": "FBI agent"
+  },
+  {
+   "id": 546377707,
+   "title": "John Cena Playermodel",
+   "author": "FZone96",
+   "chosen": true,
+   "batch": 5,
+   "slug": "john_cena",
+   "mdl": "models/fzone96/johncena/johncena.mdl",
+   "name": "John Cena"
+  },
+  {
+   "id": 179134697,
+   "title": "Lich King Model and playermodel",
+   "author": "Maxxy",
+   "chosen": false,
+   "slug": "lich_king",
+   "mdl": "models/player/lich_king_wow_masked.mdl",
+   "name": "Lich King",
+   "skip_reason": "a stray spike (cape or blade piece on an unmapped bone) floats beside him",
+   "dropped_after": 5
+  },
+  {
+   "id": 232636218,
+   "title": "PMC playermodels",
+   "author": "maJor",
+   "chosen": true,
+   "batch": 5,
+   "slug": "pmc_operator",
+   "mdl": "models/player/pmc_1/pmc__07.mdl",
+   "name": "PMC operator"
+  },
+  {
+   "id": 572267883,
+   "title": "Santa Claus Playermodel and NPC",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 5,
+   "slug": "santa",
+   "mdl": "models/player/christmas/santa.mdl",
+   "name": "Santa Claus"
+  },
+  {
+   "id": 313268673,
+   "title": "Ghost Rider Playermodel",
+   "author": "Rokay",
+   "chosen": true,
+   "batch": 5,
+   "slug": "ghost_rider",
+   "mdl": "models/player/ghostrider/ghostrider.mdl",
+   "name": "Ghost Rider"
+  },
+  {
+   "id": 237872885,
+   "title": "Jesus Playermodel",
+   "author": "Rokay",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 722374307,
+   "title": "Donald Trump Playermodel",
+   "author": "Buu342",
+   "chosen": true,
+   "batch": 5,
+   "slug": "donald_trump",
+   "mdl": "models/player/donald_trump.mdl",
+   "name": "Donald Trump"
+  },
+  {
+   "id": 546524865,
+   "title": "Black Rock Shooter (Digitrevx) Basic Playermodel and NPC",
+   "author": "JazzMcNade",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 448581592,
+   "title": "STAR WARS Han Solo and Chewbacca Playermodels",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 5,
+   "slug": "han_solo",
+   "mdl": "models/player/han_solo.mdl",
+   "name": "Han Solo"
+  },
+  {
+   "id": 457212613,
+   "title": "STAR WARS Emperor Palpatine Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 5,
+   "slug": "palpatine",
+   "mdl": "models/player/emperor_palpatine.mdl",
+   "name": "Emperor Palpatine"
+  },
+  {
+   "id": 726644424,
+   "title": "OW- Mercy Playermodel",
+   "author": "Zynth",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 220687225,
+   "title": "Resident Evil - Vector Playermodel",
+   "author": "Vipes",
+   "chosen": true,
+   "batch": 5,
+   "slug": "re_vector",
+   "mdl": "models/player/lordvipes/rerc_vector/vector_cvp.mdl",
+   "name": "Vector (RE Raccoon City)"
+  },
+  {
+   "id": 148628139,
+   "title": "Daft Punk Player Models",
+   "author": "Wayne",
+   "chosen": true,
+   "batch": 5,
+   "slug": "daft_punk",
+   "mdl": "models/player/daftpunk/daft_gold.mdl",
+   "name": "Daft Punk (gold)"
+  },
+  {
+   "id": 453235434,
+   "title": "JoJo's BIZARRE ADVENTURE DIO Ragdoll",
+   "author": "PDXRobert404",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 159269477,
+   "title": "Corvo playermodel",
+   "author": "Alpharius",
+   "chosen": true,
+   "batch": 5,
+   "slug": "corvo",
+   "mdl": "models/player/corvo.mdl",
+   "name": "Corvo (Dishonored)"
+  },
+  {
+   "id": 706860888,
+   "title": "Overwatch - Genji Playermodel/Ragdoll",
+   "author": "SeroRonin",
+   "chosen": true,
+   "batch": 5,
+   "slug": "genji",
+   "mdl": "models/player/overwatch/genji.mdl",
+   "name": "Genji (Overwatch)"
+  },
+  {
+   "id": 238213159,
+   "title": "Assassins Creed IV: Edward Kenway Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 5,
+   "slug": "edward_kenway",
+   "mdl": "models/player/edward_kenway.mdl",
+   "name": "Edward Kenway (AC IV)"
+  },
+  {
+   "id": 2039547466,
+   "title": "DooM Eternal - Doom Slayer [PM]",
+   "author": "o u t l a w",
+   "chosen": true,
+   "batch": 5,
+   "slug": "doom_slayer",
+   "mdl": "models/outlaw/doometernal/doomslayereternal.mdl",
+   "name": "Doom Slayer (Eternal)"
+  },
+  {
+   "id": 450353431,
+   "title": "STAR WARS Luke Skywalker Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 5,
+   "slug": "luke_skywalker",
+   "mdl": "models/player/luke_skywalker.mdl",
+   "name": "Luke Skywalker"
+  },
+  {
+   "id": 726069482,
+   "title": "OW- Reaper Playermodel",
+   "author": "Zynth",
+   "chosen": true,
+   "batch": 5,
+   "slug": "ow_reaper",
+   "mdl": "models/player/tfa_ow_reaper.mdl",
+   "name": "Reaper (Overwatch)"
+  },
+  {
+   "id": 176238701,
+   "title": "CoD MW2 Playermodels",
+   "author": "7beat",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 154035258,
+   "title": "Vin Diesel Playermodel",
+   "author": "Reidmaster",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 1222388614,
+   "title": "Anonymous Customizable Playermodel",
+   "author": "( ･ิω･ิ)",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 141049673,
+   "title": "Batman Playermodel",
+   "author": "cowboy",
+   "chosen": true,
+   "batch": 5,
+   "slug": "batman_mk",
+   "mdl": "models/batman/slow/jamis/mkvsdcu/batman/slow_pub_v2.mdl",
+   "name": "Batman (MK vs DCU)"
+  },
+  {
+   "id": 481607813,
+   "title": "Counter Strike: Global Offensive T Playermodels and NPCs",
+   "author": "Professor Heavy",
+   "chosen": true,
+   "batch": 5,
+   "slug": "csgo_pirate",
+   "mdl": "models/csgopirate1pm.mdl",
+   "name": "CS:GO pirate"
+  },
+  {
+   "id": 283815805,
+   "title": "Halo 3 Spartan Playermodels (MPSC)",
+   "author": "Vipes",
+   "chosen": true,
+   "batch": 5,
+   "slug": "halo3_spartan",
+   "mdl": "models/player/lordvipes/h3_spartans_mps/h3spartan_mps_cvp.mdl",
+   "name": "Halo 3 Spartan"
+  },
+  {
+   "id": 1371823037,
+   "title": "Thanos - Avengers: Infinity War Playermodel",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 5,
+   "slug": "thanos",
+   "mdl": "models/kryptonite/inf_thanos/inf_thanos.mdl",
+   "name": "Thanos"
+  },
+  {
+   "id": 323108700,
+   "title": "Star Wars: Jango Fett and Boba Fett Player Models",
+   "author": "Quandale Dingle",
+   "chosen": false,
+   "slug": "boba_fett",
+   "mdl": "models/player/lillwasa/sw/boba_fett.mdl",
+   "name": "Boba Fett",
+   "skip_reason": "cape on its own bones sticks out sideways (like batch 4 Batman)",
+   "dropped_after": 5
+  },
+  {
+   "id": 1384226325,
+   "title": "PUTIN PLAYERMODEL",
+   "author": "( ･ิω･ิ)",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 124565516,
+   "title": "Crysis 2 - Nanosuit 2 NPC and Playermodel",
+   "author": "Nightmare Ω",
+   "chosen": true,
+   "batch": 5,
+   "slug": "nanosuit",
+   "mdl": "models/characters/nanosuit2/nanosuit_player.mdl",
+   "name": "Nanosuit 2 (Crysis 2)"
+  },
+  {
+   "id": 1418637320,
+   "title": "Spiderman - Ultimate Playermodel Bundle",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 5,
+   "slug": "spiderman",
+   "mdl": "models/kryptonite/spiderman/spiderman.mdl",
+   "name": "Spider-Man"
+  },
+  {
+   "id": 125456150,
+   "title": "Master Chief Playermodel",
+   "author": "Bonehead",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 475348714,
+   "title": "Arkham Knight Npc/Playermodel",
+   "author": "True",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 257102395,
+   "title": "Metal Gear Raiden Player Model Pack",
+   "author": "KraiKKonen11",
+   "chosen": true,
+   "batch": 5,
+   "slug": "raiden",
+   "mdl": "models/ninja/raidenmgrprologue.mdl",
+   "name": "Raiden (MGR prologue)"
+  },
+  {
+   "id": 400762901,
+   "title": "Arkham Origins Joker NPC/playermodel",
+   "author": "True",
+   "chosen": true,
+   "batch": 5,
+   "slug": "ao_joker",
+   "mdl": "models/player/bobert/aojoker.mdl",
+   "name": "Joker (Arkham Origins)"
+  },
+  {
+   "id": 951736106,
+   "title": "Friday the 13th - Savini Jason (PM+NPC)",
+   "author": "Konnie",
+   "chosen": true,
+   "batch": 5,
+   "slug": "jason_savini",
+   "mdl": "models/models/konnie/savini/savini.mdl",
+   "name": "Jason Voorhees (Savini)"
+  },
+  {
+   "id": 478664425,
+   "title": "Arkham Knight Red Hood NPC/Playermodel",
+   "author": "True",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 156922874,
+   "title": "The Elder Scrolls V Skyrim: Dovahkiin Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 5,
+   "slug": "dovahkiin",
+   "mdl": "models/player/dovahkiin.mdl",
+   "name": "Dovahkiin (Skyrim)"
+  },
+  {
+   "id": 176540879,
+   "title": "The Elder Scrolls V Skyrim: Hold Guard Playermodels and NPCs",
+   "author": "Voikanaa",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 537353521,
+   "title": "Cook/chef playermodels (Male and female)",
+   "author": "WeyZi",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 133401340,
+   "title": "Fallout 3 Player Models",
+   "author": "Knuckle",
+   "chosen": true,
+   "slug": "fo3_tesla_armor",
+   "mdl": "models/player/fallout_3/tesla_power_armor.mdl",
+   "name": "Tesla power armour (Fallout 3)",
+   "batch": 5,
+   "note": "its tesla-arc glow sheets ($additive) are left out by the converter since 6 Nov"
+  },
+  {
+   "id": 173932955,
+   "title": "Sci-Fi Citizens Playermodels",
+   "author": "Lt_C",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 481358078,
+   "title": "Counter Strike: Global Offensive CT Playermodels and NPCs",
+   "author": "Professor Heavy",
+   "chosen": true,
+   "batch": 5,
+   "slug": "csgo_st6",
+   "mdl": "models/csgost63pm.mdl",
+   "name": "CS:GO SEAL Team 6"
+  },
+  {
+   "id": 617141518,
+   "title": "Star Wars: Mandalorian Bounty Hunter (playermodel & NPC)",
+   "author": "Porky-da-Corgi",
+   "chosen": true,
+   "batch": 5,
+   "slug": "mandalorian",
+   "mdl": "models/porky-da-corgi/starwars/mandalorians/bountyhunter.mdl",
+   "name": "Mandalorian bounty hunter"
+  },
+  {
+   "id": 572447657,
+   "title": "R6S: Kapkan P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 5,
+   "slug": "kapkan",
+   "mdl": "models/player/r6s_kapkan.mdl",
+   "name": "Kapkan (Rainbow Six Siege)"
+  },
+  {
+   "id": 221823653,
+   "title": "Crysis C.E.L.L. Assault Operative NPCs and Playermodels",
+   "author": "Professor Heavy",
+   "chosen": true,
+   "batch": 5,
+   "slug": "crysis_cell",
+   "mdl": "models/player/cellassault1player.mdl",
+   "name": "C.E.L.L. operative (Crysis)"
+  },
+  {
+   "id": 518960557,
+   "title": "Sith & Jedi Playermodel Pack",
+   "author": "J0kingg",
+   "chosen": true,
+   "batch": 5,
+   "slug": "mace_windu",
+   "mdl": "models/ryan7259/mace_windu/mace_windu.mdl",
+   "name": "Mace Windu"
+  },
+  {
+   "id": 188562859,
+   "title": "Heavy Combine NPCs and Playermodels",
+   "author": "Professor Heavy",
+   "chosen": true,
+   "batch": 5,
+   "slug": "heavy_combine",
+   "mdl": "models/player/combine_soldier04.mdl",
+   "name": "Heavy Combine soldier"
+  },
+  {
+   "id": 2857328584,
+   "title": "[Backrooms] A-Sync Personnel (Hazmat) [Playermodel + Ragdoll]",
+   "author": "X Ray",
+   "chosen": true,
+   "batch": 5,
+   "slug": "async_personnel",
+   "mdl": "models/player/async_personnel.mdl",
+   "name": "A-Sync personnel (hazmat)"
+  },
+  {
+   "id": 471518115,
+   "title": "MGS2 Solid Snake Playermodel (Outdated)",
+   "author": "Aaron No. 893",
+   "chosen": true,
+   "batch": 5,
+   "slug": "mgs2_snake",
+   "mdl": "models/ats/mgs2snake/mgs2snake.mdl",
+   "name": "Solid Snake (MGS2)"
+  },
+  {
+   "id": 3105637302,
+   "title": "Fortnite: Raven Team Leader (Playermodel + Ragdoll)",
+   "author": "keepitwilde",
+   "chosen": true,
+   "batch": 5,
+   "slug": "raven_team_leader",
+   "mdl": "models/keepitwilde/raventl/raventl_pm.mdl",
+   "name": "Raven Team Leader (Fortnite)"
+  },
+  {
+   "id": 3422907219,
+   "title": "Jamiroquai_07 (Virtual Insanity) PM",
+   "author": "panman",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 3354435896,
+   "title": "Silent Hill 2 - James Sunderland [PM/NPC]",
+   "author": "WeaMan",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 736218548,
+   "title": "Counter-Strike 1.6 Playermodels",
+   "author": "Geisteskrankenchan",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 3122592785,
+   "title": "Apocalypse Citizens (Playermodels)",
+   "author": "Gunslinger ☢",
+   "chosen": true,
+   "batch": 5,
+   "slug": "apocalypse_citizen",
+   "mdl": "models/rusty/citizens/male_08.mdl",
+   "name": "Apocalypse citizen"
+  },
+  {
+   "id": 3401898295,
+   "title": "COD:BO6 x Squid Game 2 - Worker/Soldier/Manager [Playermodels/ PM]",
+   "author": "Artyom",
+   "chosen": true,
+   "batch": 5,
+   "slug": "squid_soldier",
+   "mdl": "models/bo6/squadsoldier/squadsoldier_pm.mdl",
+   "name": "Squid Game soldier (BO6)"
+  },
+  {
+   "id": 3051673992,
+   "title": "[Madness Combat] Hank - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": true,
+   "batch": 5,
+   "slug": "madness_hank",
+   "mdl": "models/alvaroports/hankpm.mdl",
+   "name": "Hank (Madness Combat)"
+  },
+  {
+   "id": 3041864795,
+   "title": "_Nemez_'s and WstStranger Metropolice Force [Remaster+Playermodel]",
+   "author": "WstStranger",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 3815982298,
+   "title": "[PM / NPC / ITEM] HEV Mk V",
+   "author": "󠀡󠀡",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 3660594257,
+   "title": "Grand Theft Auto IV Multiplayer Characters [PMs; NPCs; Ragdolls]",
+   "author": "BęŁkÁ 🐿",
+   "chosen": true,
+   "batch": 5,
+   "slug": "gtaiv_male",
+   "mdl": "models/gtaivmp/playerm/iv_male01.mdl",
+   "name": "GTA IV multiplayer male"
+  },
+  {
+   "id": 3311643370,
+   "title": "Customizable Merc Playermodel (Trepang2 B.A.M)",
+   "author": "TalonSolid",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 3677776589,
+   "title": "Assassin Walter White Playermodel and Ragdoll",
+   "author": "Igloo enjoyer",
+   "chosen": true,
+   "batch": 5,
+   "slug": "assassin_walter",
+   "mdl": "models/tctwalter.mdl",
+   "name": "Assassin Walter White"
+  },
+  {
+   "id": 3704141363,
+   "title": "Chuck \"Sheriff\" Norris - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 3674738702,
+   "title": "Tactical Ryan Gosling Playermodel and ragdoll",
+   "author": "Igloo enjoyer",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 3743556887,
+   "title": "SW: Clone Wars 2003 | Playermodel Pack",
+   "author": "Bananakin",
+   "chosen": true,
+   "batch": 5,
+   "slug": "clone_anakin",
+   "mdl": "models/konnie/bananakin/starwars/cartoon/general_anakin.mdl",
+   "name": "General Anakin (Clone Wars 2003)"
+  },
+  {
+   "id": 3823963482,
+   "title": "Paint the Town Red Playermodels & NPCs",
+   "author": "Stuckcup",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 3811516550,
+   "title": "Green Goblin Playermodels",
+   "author": "FRITAS",
+   "chosen": true,
+   "batch": 5,
+   "slug": "green_goblin",
+   "mdl": "models/player/greengoblin_v2_2014.mdl",
+   "name": "Green Goblin"
+  },
+  {
+   "id": 3829024645,
+   "title": "Art the Clown | Playermodel",
+   "author": "๋",
+   "chosen": true,
+   "batch": 6,
+   "slug": "art_clown",
+   "mdl": "models/player/fortnite_horror_v9/art.mdl",
+   "name": "Art the Clown",
+   "fun": true
+  },
+  {
+   "id": 3819758873,
+   "title": "Female Suit Playermodels - Black Long Coat & Tie",
+   "author": "챱츄",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 3830255424,
+   "title": "Archer (MW) Playermodel",
+   "author": "Perci",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 3825943322,
+   "title": "Modern Warfare 4 Argonaut Juggernaut Playermodel",
+   "author": "Intel",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 3826101691,
+   "title": "COD:MWII - Custom Velikan [Playermodels/NPCS]",
+   "author": "X",
+   "chosen": false,
+   "looked_at": 5
+  },
+  {
+   "id": 1380429026,
+   "title": "Death: A Grim Bundle [PMs]",
+   "author": "?",
+   "chosen": false,
+   "looked_at": 5,
+   "note": "grim reaper search for deathrun",
+   "skip_reason": "the skeleton under the robe uses HL2's skeleton textures (not in the item, not on the PC): grey bones"
+  },
+  {
+   "id": 288629547,
+   "title": "(Working) Grim Reaper Playermodel",
+   "author": "?",
+   "chosen": true,
+   "note": "grim reaper search for deathrun",
+   "batch": 5,
+   "slug": "grim_reaper",
+   "mdl": "models/grim.mdl",
+   "name": "Grim Reaper"
+  },
+  {
+   "id": 2822953104,
+   "title": "CGI Death Playermodel v 1.1",
+   "author": "?",
+   "chosen": true,
+   "note": "grim reaper search for deathrun",
+   "slug": "cgi_death",
+   "mdl": "models/player/artel/death/death666.mdl",
+   "name": "Death (Clone Wars CGI trooper)",
+   "batch": 5
+  },
+  {
+   "id": 1167016682,
+   "title": "La muerte (Rework)(GRIM)",
+   "author": "?",
+   "chosen": false,
+   "looked_at": 5,
+   "note": "grim reaper search for deathrun",
+   "skip_reason": "the same grim.mdl as 288629547"
+  },
+  {
+   "id": 391383735,
+   "title": "Left Shark playermodel",
+   "author": "The One Free-Man",
+   "chosen": false,
+   "slug": "left_shark",
+   "mdl": "models/freeman/player/left_shark.mdl",
+   "name": "Left Shark",
+   "fun": true,
+   "skip_reason": "not a ValveBiped skeleton (no head bone)",
+   "dropped_after": 6
+  },
+  {
+   "id": 232539187,
+   "title": "DewRitos Playermodels",
+   "author": "ellie",
+   "chosen": false,
+   "slug": "big_dew",
+   "mdl": "models/player/big_dew.mdl",
+   "name": "Big Dew (DewRitos)",
+   "fun": true,
+   "skip_reason": "the chips around the bottle are separate pieces on unmapped bones: they scatter",
+   "dropped_after": 6
+  },
+  {
+   "id": 656834283,
+   "title": "Doge Playermodel",
+   "author": "2XMM2",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 485879458,
+   "title": "Kermit The Frog Player Model & NPC",
+   "author": "Lord Shoopington",
+   "chosen": true,
+   "batch": 6,
+   "slug": "kermit",
+   "mdl": "models/player/kermit.mdl",
+   "name": "Kermit the Frog",
+   "fun": true
+  },
+  {
+   "id": 356485444,
+   "title": "Teletubbies Playermodel + NPC",
+   "author": "manatails",
+   "chosen": true,
+   "batch": 6,
+   "slug": "tinky_winky",
+   "mdl": "models/player/manatails/tinkywinky/player.mdl",
+   "name": "Tinky Winky (Teletubbies)",
+   "fun": true
+  },
+  {
+   "id": 2793580726,
+   "title": "Funny Rat Playermodel",
+   "author": "Electric Blood Mage",
+   "chosen": true,
+   "batch": 6,
+   "slug": "funny_rat",
+   "mdl": "models/ebmage/funnyrat.mdl",
+   "name": "Funny Rat",
+   "fun": true
+  },
+  {
+   "id": 550768935,
+   "title": "Mr. Meeseeks playermodel & NPC",
+   "author": "Hummy_Seed",
+   "chosen": true,
+   "batch": 6,
+   "slug": "meeseeks",
+   "mdl": "models/player/meeseeks/meeseeks.mdl",
+   "name": "Mr. Meeseeks",
+   "fun": true
+  },
+  {
+   "id": 156924206,
+   "title": "Toy Story: Woody Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 6,
+   "slug": "woody",
+   "mdl": "models/player/woody.mdl",
+   "name": "Woody (Toy Story)",
+   "fun": true
+  },
+  {
+   "id": 612053603,
+   "title": "T. Rex Playermodel",
+   "author": "2XMM2",
+   "chosen": true,
+   "batch": 6,
+   "slug": "trex",
+   "mdl": "models/trex_player/trex_player.mdl",
+   "name": "T. Rex",
+   "fun": true
+  },
+  {
+   "id": 2789509655,
+   "title": "Monke (Playermodel┃Ragdoll)",
+   "author": "Reino76",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 380745554,
+   "title": "Homer Player model",
+   "author": "johan",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 2530771116,
+   "title": "Minecraft Steve [Custom PM]",
+   "author": "Kermit the Frog",
+   "chosen": false,
+   "slug": "mc_steve",
+   "mdl": "models/minecraft/steve/steve.mdl",
+   "name": "Steve (Minecraft)",
+   "fun": true,
+   "skip_reason": "not a ValveBiped skeleton (no upper arms)",
+   "dropped_after": 6
+  },
+  {
+   "id": 557711922,
+   "title": "Rick playermodel",
+   "author": "Hummy_Seed",
+   "chosen": true,
+   "batch": 6,
+   "slug": "rick_sanchez",
+   "mdl": "models/player/rick/rick.mdl",
+   "name": "Rick Sanchez",
+   "fun": true
+  },
+  {
+   "id": 2227901495,
+   "title": "SUIT GUY [PLAYERMODEL] // AMONG US",
+   "author": "K",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 352668843,
+   "title": "TF2 Player Model Pack",
+   "author": "Eligia",
+   "chosen": true,
+   "batch": 6,
+   "slug": "tf2_engie",
+   "mdl": "models/player/engieplayer/engie.mdl",
+   "name": "Engineer (TF2)",
+   "fun": true
+  },
+  {
+   "id": 158351769,
+   "title": "Teenage Mutant Ninja Turtle Playermodels",
+   "author": "Voikanaa",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 671023795,
+   "title": "Sans the skeleton (Playermodel+Ragdoll)",
+   "author": "Estefanoida™",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 2801750344,
+   "title": "Chilean Skeleton Playermodel (Esqueleto Loquendo)",
+   "author": "гадя хренова",
+   "chosen": true,
+   "batch": 6,
+   "slug": "spanish_skeleton",
+   "mdl": "models/player/spanish_skeleton.mdl",
+   "name": "Esqueleto Loquendo",
+   "fun": true
+  },
+  {
+   "id": 161999160,
+   "title": "Shrek",
+   "author": "Gir",
+   "chosen": false,
+   "slug": "shrek",
+   "mdl": "models/gormlesstosser/shrek.mdl",
+   "name": "Shrek",
+   "fun": true,
+   "skip_reason": "cartoon proportions (joints 17 u off): hands over his face, body hunched in CS2's weapon pose",
+   "dropped_after": 6
+  },
+  {
+   "id": 2649762189,
+   "title": "Spy Melon (playermodel)",
+   "author": "UraFoxa (.bsky.social)",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 3377934709,
+   "title": "ROBLOX 2007 Player Model",
+   "author": "Oddgun",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 2171675725,
+   "title": "Peter Griffin (Family Guy BTTM) Playermodel & NPC",
+   "author": "Hell Inspector",
+   "chosen": false,
+   "slug": "peter_griffin",
+   "mdl": "models/hellinspector/familyguy_bttm/peter_pm.mdl",
+   "name": "Peter Griffin",
+   "fun": true,
+   "skip_reason": "cartoon proportions (joints 29 u off CS2's): his hands sink into his face in CS2's weapon pose",
+   "dropped_after": 6
+  },
+  {
+   "id": 659329169,
+   "title": "Lord Voldemort",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 6,
+   "slug": "voldemort",
+   "mdl": "models/player/lord_voldemort.mdl",
+   "name": "Lord Voldemort",
+   "fun": true
+  },
+  {
+   "id": 2251043099,
+   "title": "Rage Faces / Troll Face Playermodels and NPCs",
+   "author": "Petaly",
+   "chosen": true,
+   "batch": 6,
+   "slug": "troll_face",
+   "mdl": "models/petaly/rage/body.mdl",
+   "name": "Troll Face",
+   "fun": true
+  },
+  {
+   "id": 3480241607,
+   "title": "Grug Playermodel",
+   "author": "A_Thing",
+   "chosen": false,
+   "slug": "grug",
+   "mdl": "models/a_thing/thecroods/grug.mdl",
+   "name": "Grug (The Croods)",
+   "fun": true,
+   "skip_reason": "cartoon proportions (joints 21 u off): arms clump at his head in CS2's weapon pose",
+   "dropped_after": 6
+  },
+  {
+   "id": 2242241647,
+   "title": "ENA[Joel G] Playermodel",
+   "author": "엽떡 시켰는데 안 엽기적이라고 환불한 엔냥이",
+   "chosen": true,
+   "batch": 6,
+   "slug": "ena",
+   "mdl": "models/player/ena/ena.mdl",
+   "name": "ENA",
+   "fun": true
+  },
+  {
+   "id": 2688722405,
+   "title": "Cat Wearing Pants Playermodel",
+   "author": "giwake",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 2599659126,
+   "title": "Homer Simpson [High Quality Model] (The Simpsons) Playermodel & NPC",
+   "author": "Hell Inspector",
+   "chosen": true,
+   "batch": 6,
+   "slug": "homer",
+   "mdl": "models/hellinspector/homerharm/homerfm_pm.mdl",
+   "name": "Homer Simpson",
+   "fun": true
+  },
+  {
+   "id": 3011662501,
+   "title": "Selbyen Seal Playermodel *AND RAGDOLL* ! [Silvia - TF2]",
+   "author": "CommieTommy",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 3375440207,
+   "title": "The Wizard (Playermodel/NPCs)",
+   "author": "Electric Kool-Aid",
+   "chosen": true,
+   "batch": 6,
+   "slug": "old_wizard",
+   "mdl": "models/electric/old_wizard/old_wizard.mdl",
+   "name": "The Wizard",
+   "fun": true
+  },
+  {
+   "id": 3313894749,
+   "title": "Piss Baby PM (Colourable)",
+   "author": "PanMarchewa",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 3338190313,
+   "title": "Smoking Caterpillar Playermodel",
+   "author": "Chel™",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 3144011868,
+   "title": "Authentic Skull Trumpet (Playermodel)",
+   "author": "xinus22",
+   "chosen": true,
+   "batch": 6,
+   "slug": "skull_trumpet",
+   "mdl": "models/xinus22/doot_skelly.mdl",
+   "name": "Skull Trumpet (doot)",
+   "fun": true
+  },
+  {
+   "id": 3503944873,
+   "title": "Glorp PM",
+   "author": "Electric Kool-Aid",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 3488469457,
+   "title": "Funny Frogs Playermodel",
+   "author": "Electric Blood Mage",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 3129140947,
+   "title": "Peashooter Dancer Playermodel",
+   "author": "Electric Blood Mage",
+   "chosen": true,
+   "batch": 6,
+   "slug": "peashooter",
+   "mdl": "models/akuld/funnypeashooter/peashooter_dancer.mdl",
+   "name": "Peashooter Dancer",
+   "fun": true
+  },
+  {
+   "id": 3627109709,
+   "title": "domo playermodel",
+   "author": "spimming shrimpter",
+   "chosen": false,
+   "slug": "domo",
+   "mdl": "models/modelanascreation/domokun/domokun_pm.mdl",
+   "name": "Domo-kun",
+   "fun": true,
+   "skip_reason": "not a ValveBiped skeleton",
+   "dropped_after": 6
+  },
+  {
+   "id": 3743617033,
+   "title": "Jonkler playermodel",
+   "author": "Pirata Manhattan",
+   "chosen": true,
+   "batch": 6,
+   "slug": "jonkler",
+   "mdl": "models/player/jonkler.mdl",
+   "name": "Jonkler",
+   "fun": true
+  },
+  {
+   "id": 3759475080,
+   "title": "Gmod-Chan Playermodel (PM)",
+   "author": "TopWay",
+   "chosen": true,
+   "batch": 6,
+   "slug": "gmod_chan",
+   "mdl": "models/torradinha214/gmod_chan/gmod_chan_pm.mdl",
+   "name": "Gmod-chan",
+   "fun": true
+  },
+  {
+   "id": 3350265405,
+   "title": "TF2 - Gabe Newell",
+   "author": "Who",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 3566617779,
+   "title": "MSN Stick Figure [Playermodel+Sounds]",
+   "author": "Davy",
+   "chosen": true,
+   "batch": 6,
+   "slug": "msn_stickman",
+   "mdl": "models/player/ndord/msn/figure_01.mdl",
+   "name": "MSN stick figure",
+   "fun": true
+  },
+  {
+   "id": 3677358615,
+   "title": "Low Tier God (HL2 Style) Playermodel",
+   "author": "panman",
+   "chosen": true,
+   "batch": 6,
+   "slug": "low_tier_god",
+   "mdl": "models/humans/ltg_hl_style.mdl",
+   "name": "Low Tier God",
+   "fun": true
+  },
+  {
+   "id": 3831312324,
+   "title": "Weegee [PM]",
+   "author": "Ellis",
+   "chosen": false,
+   "slug": "weegee",
+   "mdl": "models/gods/weegee.mdl",
+   "name": "Weegee",
+   "fun": true,
+   "skip_reason": "big head and chest (joints 11 u off): hands buried in his face in CS2's weapon pose",
+   "dropped_after": 6
+  },
+  {
+   "id": 3827997124,
+   "title": "Scary Man Playermodel + NPCS",
+   "author": "Brendan Makes",
+   "chosen": true,
+   "batch": 6,
+   "slug": "scary_man",
+   "mdl": "models/brendan/scarymanpm.mdl",
+   "name": "Scary Man",
+   "fun": true
+  },
+  {
+   "id": 3825268476,
+   "title": "HL2 Styled Randy Marsh Playermodel",
+   "author": "alliedotmp4",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 3822321444,
+   "title": "[TF2] Saxton Hale Playermodel (VSH)",
+   "author": "danishevsky",
+   "chosen": true,
+   "batch": 6,
+   "slug": "saxton_hale",
+   "mdl": "models/player/saxton_hale/standard/saxton_hale.mdl",
+   "name": "Saxton Hale",
+   "fun": true
+  },
+  {
+   "id": 3824585333,
+   "title": "Banana Combine Playermodel",
+   "author": "bucketofdrums",
+   "chosen": true,
+   "batch": 6,
+   "slug": "banana_combine",
+   "mdl": "models/bucket/combine_banana.mdl",
+   "name": "Banana Combine",
+   "fun": true
+  },
+  {
+   "id": 3062759591,
+   "title": "Bird Citizen Playermodels + NPCs",
+   "author": "Serika",
+   "chosen": true,
+   "batch": 6,
+   "slug": "chicken_dude",
+   "mdl": "models/zekkriel/chickendude.mdl",
+   "name": "Chicken citizen",
+   "fun": true
+  },
+  {
+   "id": 3513739317,
+   "title": "Minecraft Playermodels With Sharp Limbs",
+   "author": "galunga",
+   "chosen": false,
+   "looked_at": 6
+  },
+  {
+   "id": 352668843,
+   "title": "TF2 Player Model Pack",
+   "author": "Eligia",
+   "chosen": true,
+   "batch": 6,
+   "slug": "tf2_heavy",
+   "mdl": "models/player/heavyplayer/heavy.mdl",
+   "name": "Heavy (TF2)",
+   "fun": true
+  },
+  {
+   "id": 352668843,
+   "title": "TF2 Player Model Pack",
+   "author": "Eligia",
+   "chosen": true,
+   "batch": 6,
+   "slug": "tf2_sniper",
+   "mdl": "models/player/sniperplayer/sniper.mdl",
+   "name": "Sniper (TF2)",
+   "fun": true
+  },
+  {
+   "id": 3062759591,
+   "title": "Bird Citizen Playermodels + NPCs",
+   "author": "Serika",
+   "chosen": true,
+   "batch": 6,
+   "slug": "pigeon_dude",
+   "mdl": "models/zekkriel/pigeondude.mdl",
+   "name": "Pigeon citizen",
+   "fun": true
+  },
+  {
+   "id": 3062759591,
+   "title": "Bird Citizen Playermodels + NPCs",
+   "author": "Serika",
+   "chosen": true,
+   "batch": 6,
+   "slug": "crow_dude",
+   "mdl": "models/zekkriel/crowdude.mdl",
+   "name": "Crow citizen",
+   "fun": true
+  },
+  {
+   "id": 356485444,
+   "title": "Teletubbies Playermodel + NPC",
+   "author": "manatails",
+   "chosen": true,
+   "batch": 6,
+   "slug": "po",
+   "mdl": "models/player/manatails/po/player.mdl",
+   "name": "Po (Teletubbies)",
+   "fun": true
   }
  ]
 }

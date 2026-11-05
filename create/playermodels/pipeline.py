@@ -70,7 +70,7 @@ def main():
         try:
             if '--no-download' not in sys.argv: fetch.download(p, it['id'])
             root = fetch.extract(p, it['id'])
-            roots = [root] + [os.path.join(p['work'], 'extract', str(x)) for x in it.get('depends', [])]
+            roots = [root] + [os.path.join(p['work'], 'extract', str(x)) for x in it.get('depends', [])] + fetch.base_roots(fetch.paths(cat))
             print('   converting %s' % it['mdl'], flush=True)
             r = gmod2cs2.convert(os.path.join(root, *it['mdl'].split('/')), slug, roots, tpl, p['out'], it.get('skin', 0),
                                  it.get('bodygroups'), it.get('maxtex', 2048), prev, log=lambda s: print(s, flush=True))

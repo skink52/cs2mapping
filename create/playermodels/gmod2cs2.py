@@ -64,7 +64,7 @@ WRIST_BLEND = (3.0, 0.6)  # (u before the wrist where the blend starts, share of
 TORSO_RECENTRE = True     # move the upper torso back so the chest is centred on CS2's spine like a stock agent's
 CHEST_WARN = 4.0          # warn when the chest front is this much (u) further forward than a stock agent's
 HAND_WARN = 3.0           # warn when, in CS2's preview pose, the chest surface is this far (u) in front of a wrist (fine models: 0-1.6)
-LIMB_WARN = 6.0           # warn when an arm/leg joint ends up this far (u) from CS2's (batch 1: <= 5, Leon's odd rig)
+LIMB_WARN = 5.0           # warn when an arm/leg joint ends up this far (u) from CS2's: CS2 bends there, not at the model's joint (6 Nov: Leva at 5.4-6.0 u read as stretched thighs; was 6.0)
 HEAD_HITBOX_MAX = 5.0     # the head (and half of the neck) hit box moves at most this far (u) onto the model's head
 FINGER_WARN = 1.8         # warn when finger segments' skin centres sit this far (median, u) off their CS2 bones (fine 0.4-1.7, old pivot bug ~2)
 JOINT_SOFTEN = (2.5, 0.5)  # hard-skinned elbows/knees: within 2.5 u of the joint, up to half the weight goes to the other side
@@ -627,6 +627,8 @@ def write_material(tex, cd, roots, out, slug, maxtex, log):
     info = {'source': tex, 'vmt': bool(rel)}
     shader, prm = ('missing', {}) if rel is None else vtf.load_vmt(rel, roots)
     info['shader'] = shader
+    if prm.get('$additive', '0').strip('"') == '1':          # glows, sparks, tesla arcs: light added on top in Source; CS2's
+        info['additive'] = True                              # character shader would draw them as solid sheets: left out
     def tex_of(key):
         v = prm.get(key)
         if not v: return None
@@ -942,11 +944,15 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
         if tex not in by_mat:
             mat, rgb, info = write_material(tex, m.cdtextures, roots, out, slug, maxtex, log)
             by_mat[tex] = (mat, []); texs[tex] = rgb; infos.append(info)
+        if infos[[i['source'] for i in infos].index(tex)].get('additive'):
+            continue                                         # additive effect material (glow, arcs): not drawn, see write_material
         tri = remap[me['tris']]
         by_mat[tex][1].append(tri)
         if me['eyeball'] >= 0 and infos[[i['source'] for i in infos].index(tex)].get('eye'):
             vs = np.unique(tri.ravel())
             UV[vs] = eye_uvs(conv, m.eyeballs[me['eyeball']], V[vs])
+    for k in [k for k in by_mat if not by_mat[k][1]]:
+        log('   . %s: additive effect material, left out' % k); del by_mat[k]
     names = list(by_mat)
     mats = [by_mat[k][0] for k in names]; sets = [np.vstack(by_mat[k][1]) for k in names]
     sets_src = sets                      # the source mesh's own triangles (for the GMod-pose preview)

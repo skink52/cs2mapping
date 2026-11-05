@@ -3,6 +3,13 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-06: GMod player models batches 5-6 (164 in all, 30 fun skins), base-game textures, additive materials
+
+- **[create] playermodels**: batch 5 (55, incl. a Grim Reaper for deathrun) and batch 6 (30 fun skins: Kermit, Homer, Rick, TF2
+  mercs, Teletubbies, troll face...). Base-game HL2/CS:S materials from the GMod dedicated server (SteamCMD app 4020) via new
+  `vpk.py`, searched last; additive effect materials left out; limb warning 5 u (GFL2 Leva dropped: thighs bent mid-way);
+  `fetch.py --suggest --scale`. Cartoon-proportioned models (Peter Griffin, Shrek, Grug, Weegee) dropped pending a skeleton-length test.
+
 ## 2026-11-06: GMod player models batch 4 (80 in all), Workshop candidate finder, server test
 
 - **[create] playermodels**: batch 4: 30 more models (32 converted, Batman and the Saints Row Ronin dropped after review) -> 80, all

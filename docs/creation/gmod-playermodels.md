@@ -20,8 +20,10 @@ workshop_download_item 4000 -> .gma/.bin -> extract -> scan: every .mdl ->  slug
 3. **Choose** (edit `catalog.json`: `chosen`, `slug`, `mdl`; `skin`, `bodygroups`, `depends` if needed). Rules that worked for batch 1:
    - scan scale (CS2 head joint / the model's) 1.0-1.15. HL2-sized GMod humans (head joint 64.6 u) read 1.096; under 0.9 or over 1.3 is not
      CS2-sized (a 43 u cartoon read 2.2). The converter's fitted uniform scale comes out lower (about 1.04): it fits all the joints, not the head.
-   - nothing in `missing_vmt` / `missing_vtf`. Models built on HL2/GMod citizen textures need those games' VPKs, which the PC doesn't have; they
-     come out flat grey (the Christmas sweater citizen's face, eyes and mouth did, so it was swapped out).
+   - nothing in `missing_vmt` / `missing_vtf`. **Base-game materials:** many GMod models use Half-Life 2's or CS:S's own textures (citizen
+     faces, the skeleton, CS:S terrorists). SteamCMD's anonymous Garry's Mod dedicated server (app 4020, 6.5 GB) ships them in
+     `sourceengine/` (hl2_textures, hl2_misc, content_hl2, content_cstrike); `vpk.py` extracted their `materials/` (3.1 GB) to
+     `<work>/basegame/`, which the scan and the converter search last (`fetch.paths` key `basegame`, env `PM_BASEGAME`).
    - vertex count: CS2 agents are ~20-40k. Under ~100k is fine; the 270k-300k RE Requiem soldiers were left for a decimation pass.
    - skip `c_arms` / `_vm` / `_hands` models (first-person arms come from the CS2 template), `_npc` / `_ragdoll` duplicates.
    - batch 4's rejects, worth spotting before converting: **capes and coats on their own bones** (Batman Arkham City: CS2 has no such
@@ -126,8 +128,9 @@ The catalog records each item's id, title and author; keep that with any model y
 ## Status
 
 All converted models, with a picture of each in CS2's pose: [create/playermodels/MODELS.md](../../create/playermodels/MODELS.md). Per batch: [BATCH1.md](../../create/playermodels/BATCH1.md),
-[BATCH2.md](../../create/playermodels/BATCH2.md), [BATCH3.md](../../create/playermodels/BATCH3.md), [BATCH4.md](../../create/playermodels/BATCH4.md)
-(tables from `batchnotes.py`, review notes by hand). 80 models, all compiled.
+[BATCH2.md](../../create/playermodels/BATCH2.md), [BATCH3.md](../../create/playermodels/BATCH3.md), [BATCH4.md](../../create/playermodels/BATCH4.md),
+[BATCH5.md](../../create/playermodels/BATCH5.md), [BATCH6.md](../../create/playermodels/BATCH6.md) (fun skins) (tables from `batchnotes.py`, review notes by hand).
+164 models, all compiled.
 **On a server (6 Nov 2026):** all 80 worn by bots that fought on ar_shoots (slime-mg-gm `--gmod-models`): every model goes on, the
 animgraph runs (they move and shoot), hits register by hitgroup and nothing logs an error. The hit spread over all models matches stock
 agents in the same fights (head 7.6 % against 9.0, chest 21.5/24.1, stomach 35.7/34.7, arms 8.5/9.8, legs 26.5/22.0), so the hit boxes
@@ -147,4 +150,16 @@ template's gloves), the ragdoll, and the rifle hand on bulky-torso models.
 - Workshop titles can hold any script and newlines: the tools read the catalog as UTF-8 and print UTF-8; titles are stored on one line.
 - Inverted-hull outlines (a mesh named `Outline`, a black copy pushed out along the normals with its faces turned inward, as on the
   Postal Dude) look solid black in the software preview but are fine in CS2: its back faces are culled, as in Source.
+- **Additive materials** (`$additive 1`: glows, sparks, tesla arcs) are left out: Source adds them as light, CS2's character shader
+  would draw them as solid sheets (the Fallout 3 Tesla armour's arcs came out as purple slabs).
+- **Limb warning at 5 u** (was 6): CS2 bends a limb at its own joint, so a model whose hip or knee sits 5+ u from CS2's bends mid-thigh
+  and reads as stretched (GFL2 Leva at 5.4-6.0 u, dropped). No per-bone stretching happens; the mismatch is in where it bends.
+- **Fun skins** (batch 6): `fetch.py --suggest --scale 0.8,1.6` lets stylised models through the size rule. What worked: human-shaped
+  cartoon and meme characters with ordinary limb proportions (Kermit, Rick, Meeseeks, TF2 mercs, Homer, troll-face stick figure).
+  What didn't: big heads/bellies with short arms (Peter Griffin 29 u, Grug 21, Shrek 17, Weegee 11 u off): CS2's weapon pose puts
+  their hands in their faces. Those wait for a skeleton-length test (can a model keep its own bone lengths in CS2's animations?
+  a test model `skeltest` with 8 u longer thighs is built; it needs a CS2 client started with `-netconport 2121` to screenshot).
+  Non-ValveBiped rigs (Minecraft Steve, Domo, Left Shark) fail the converter outright.
+- Capes, coats and props on their own bones (Batman, Boba Fett, the Lich King, Big Dew's chips) stretch or scatter: CS2 has no such
+  bones. Drop them in review (or later: jiggle bones / cloth in ModelDoc).
 - A model's hands look fine in the bind pose even when they will break: the failures only show once CS2 poses them. Look at `_hands.png`.

@@ -1,7 +1,7 @@
 """Download GMod workshop items with SteamCMD (anonymous) and extract their models/materials/lua, then list the player
 models each item registers (player_manager.AddValidModel lines, read as text, never run) with a quick size check.
 
-usage: python3 -I fetch.py <catalog.json> [--only id,id] [--no-download] [--scan] [--suggest]
+usage: python3 -I fetch.py <catalog.json> [--only id,id] [--no-download] [--scan] [--suggest [--scale lo,hi]]
 
 Paths come from the catalog's "paths" block (env overrides: STEAMCMD, PM_WORK). Downloads land in
 <steamcmd>/steamapps/workshop/content/4000/<id>/ (a .gma, or a legacy LZMA .bin); extraction goes to <work>/extract/<id>/.
@@ -22,7 +22,13 @@ def paths(cat):
     p = dict(cat.get('paths', {}))
     p['steamcmd'] = os.environ.get('STEAMCMD', p.get('steamcmd', r'C:\steamcmd\steamcmd.exe'))
     p['work'] = os.environ.get('PM_WORK', p.get('work', r'C:\source1\playermodels'))
+    # base-game materials (HL2 + CS:S, extracted from the GMod dedicated server's sourceengine VPKs with vpk.py): searched last
+    p['basegame'] = os.environ.get('PM_BASEGAME', p.get('basegame', os.path.join(p['work'], 'basegame')))
     return p
+
+
+def base_roots(p):
+    return [p['basegame']] if os.path.isdir(os.path.join(p['basegame'], 'materials')) else []
 
 
 def item_dir(p, wid):
@@ -63,7 +69,7 @@ def registered(root):
     return out
 
 
-def scan(root):
+def scan(root, extra=()):
     from srcmdl import SrcModel
     reg = registered(root)
     res = []
@@ -85,13 +91,13 @@ def scan(root):
             import vtf
             miss, missv = [], []
             for t in m.textures:
-                vmt = next((p for p in (vtf.find_file('materials/%s%s.vmt' % (c, t), [root]) for c in m.cdtextures + ['']) if p), None)
+                vmt = next((p for p in (vtf.find_file('materials/%s%s.vmt' % (c, t), [root, *extra]) for c in m.cdtextures + ['']) if p), None)
                 if not vmt: miss.append(t); continue
                 try: shader, prm = vtf.load_vmt(vmt, [root])
                 except Exception: missv.append(t + ' (bad vmt)'); continue
                 for key in ('$basetexture', '$iris'):     # the colour textures the converter needs
                     v = prm.get(key)
-                    if v and not vtf.find_file('materials/%s.vtf' % v.replace('.vtf', ''), [root]): missv.append(v)
+                    if v and not vtf.find_file('materials/%s.vtf' % v.replace('.vtf', ''), [root, *extra]): missv.append(v)
             e['missing_vmt'] = miss; e['missing_vtf'] = missv
         except Exception as ex:
             e['error'] = str(ex)[:200]
@@ -148,7 +154,7 @@ if __name__ == '__main__':
             if '--no-download' not in sys.argv: download(p, wid)
             root = extract(p, wid)
             if '--scan' in sys.argv:
-                report[wid] = {'title': it.get('title'), 'models': scan(root)}
+                report[wid] = {'title': it.get('title'), 'models': scan(root, base_roots(p))}
                 for e in report[wid]['models']:
                     print('    %-60s %s' % (e['mdl'], {k2: e.get(k2) for k2 in ('registered_as', 'valvebiped', 'height', 'head_joint', 'scale', 'vertices', 'missing_vmt', 'error') if e.get(k2) not in (None, [])}), flush=True)
         except Exception as ex:
@@ -166,5 +172,7 @@ if __name__ == '__main__':
         sc = json.load(open(sp, encoding='utf-8')) if os.path.exists(sp) else {}
         print('\nsuggested (passes the rules; first = most detailed):')
         for it in items:
-            good = suggest(sc.get(str(it['id']), {}).get('models', []))
+            k = sys.argv.index('--scale') if '--scale' in sys.argv else -1      # --scale lo,hi: stylised / fun skins (default 1.0,1.15)
+            rng = tuple(float(x) for x in sys.argv[k + 1].split(',')) if k > 0 else (1.0, 1.15)
+            good = suggest(sc.get(str(it['id']), {}).get('models', []), rng)
             print('  %s %-45s %s' % (it['id'], it.get('title', '')[:45], ', '.join('%s (%dk v, x%.2f)' % (e['mdl'], e['vertices'] // 1000, e['scale']) for e in good[:4]) or 'none'))
