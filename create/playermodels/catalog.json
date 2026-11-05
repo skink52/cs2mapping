@@ -15,7 +15,8 @@
    "chosen": true,
    "slug": "gus_fring",
    "mdl": "models/gustavo_fring/gustavo_suit.mdl",
-   "name": "Gus Fring (suit)"
+   "name": "Gus Fring (suit)",
+   "batch": 1
   },
   {
    "id": 3320656757,
@@ -24,7 +25,8 @@
    "chosen": true,
    "slug": "gordon_restored",
    "mdl": "models/gfreakman/gordonf_highpoly.mdl",
-   "name": "Gordon Freeman Restored"
+   "name": "Gordon Freeman Restored",
+   "batch": 1
   },
   {
    "id": 3673818635,
@@ -33,7 +35,8 @@
    "chosen": true,
    "slug": "caste_graffiti",
    "mdl": "models/playermodels/caste_pm.mdl",
-   "name": "Caste Graffiti Guy"
+   "name": "Caste Graffiti Guy",
+   "batch": 1
   },
   {
    "id": 3626678503,
@@ -42,14 +45,16 @@
    "chosen": true,
    "slug": "vart_agent",
    "mdl": "models/fozer/v.a.r.t/valveaccountrecoverytaskforce_pm.mdl",
-   "name": "V.A.R.T"
+   "name": "V.A.R.T",
+   "batch": 1
   },
   {
    "id": 3621630161,
    "title": "Christmas Sweater Citizens (Playermodel & Ragdoll)",
    "author": "Wontairr",
    "chosen": false,
-   "skip_reason": "face, eye and mouth textures are HL2 citizen textures not in the item (came out flat grey in batch 1 run 1)"
+   "skip_reason": "face, eye and mouth textures are HL2 citizen textures not in the item (came out flat grey in batch 1 run 1)",
+   "looked_at": 1
   },
   {
    "id": 3361691203,
@@ -58,14 +63,16 @@
    "chosen": true,
    "slug": "gordon_promo",
    "mdl": "models/vuthakral/hl1/characters/gordon_promo.mdl",
-   "name": "Gordon Freeman (promo art)"
+   "name": "Gordon Freeman (promo art)",
+   "batch": 1
   },
   {
    "id": 3374404008,
    "title": "BAGGY JEANS SKELETON | Playermodel",
    "author": "Gruchk",
    "chosen": false,
-   "skip_reason": "materials come from base-game (HL2/GMod) content that is not in the item"
+   "skip_reason": "materials come from base-game (HL2/GMod) content that is not in the item",
+   "looked_at": 1
   },
   {
    "id": 3456405055,
@@ -74,7 +81,8 @@
    "chosen": true,
    "slug": "thing_macready",
    "mdl": "models/thething2002/pm_macready.mdl",
-   "name": "The Thing: MacReady"
+   "name": "The Thing: MacReady",
+   "batch": 1
   },
   {
    "id": 3419019710,
@@ -83,14 +91,16 @@
    "chosen": true,
    "slug": "dr_house",
    "mdl": "models/bunny/doctor_house/doctor_house.mdl",
-   "name": "Dr Gregory House"
+   "name": "Dr Gregory House",
+   "batch": 1
   },
   {
    "id": 3682482439,
    "title": "Resident Evil: Requiem - Former Umbrella Security Service (The Connections) [PMS]",
    "author": "Stranger",
    "chosen": false,
-   "skip_reason": "272k-308k vertices per model (680 MB item): too heavy without decimation"
+   "skip_reason": "272k-308k vertices per model (680 MB item): too heavy without decimation",
+   "looked_at": 1
   },
   {
    "id": 3387382988,
@@ -99,7 +109,8 @@
    "chosen": true,
    "slug": "css_swat",
    "mdl": "models/css_seb_swat/css_swat.mdl",
-   "name": "CS:S Enhanced SWAT"
+   "name": "CS:S Enhanced SWAT",
+   "batch": 1
   },
   {
    "id": 3735230220,
@@ -108,35 +119,44 @@
    "chosen": true,
    "slug": "leon_re4",
    "mdl": "models/re4/leon/leon_pm.mdl",
-   "name": "Leon S. Kennedy (RE4 2005)"
+   "name": "Leon S. Kennedy (RE4 2005)",
+   "batch": 1
   },
   {
    "id": 3716275712,
    "title": "Roscoe the Friendly Playermodel (and Ragdoll)",
    "author": "Windows 7 Task Scheduler",
    "chosen": false,
-   "skip_reason": "43 u tall (head joint 32 u): would need 2.2x scale, not CS2-sized"
+   "skip_reason": "43 u tall (head joint 32 u): would need 2.2x scale, not CS2-sized",
+   "looked_at": 1
   },
   {
    "id": 3698609418,
    "title": "[Breaking Bad] Saul Goodman",
    "author": "Azkabath",
-   "chosen": false,
-   "skip_reason": "spare: self-contained and CS2-sized, not needed for the first 10"
+   "chosen": true,
+   "batch": 2,
+   "slug": "saul_goodman",
+   "mdl": "models/breaking_bad/saul_goodman/saul_goodman.mdl",
+   "name": "Saul Goodman"
   },
   {
    "id": 3452810040,
    "title": "Left 4 Dead styled soldier (Playermodel/Ragdoll)",
    "author": "devious critter",
-   "chosen": false,
-   "skip_reason": "spare: self-contained and CS2-sized, not needed for the first 10"
+   "chosen": true,
+   "batch": 2,
+   "slug": "l4d_soldier",
+   "mdl": "models/soldier/soldier_left4dead_pm.mdl",
+   "name": "Left 4 Dead styled soldier"
   },
   {
    "id": 3367031890,
    "title": "[PM] H.E.V. MK-3 NEW",
    "author": "Jofoyo",
    "chosen": false,
-   "skip_reason": "spare: self-contained and CS2-sized, not needed for the first 10"
+   "skip_reason": "every model needs base-game textures (base_male face, vgui/black) beyond eyes/mouth",
+   "looked_at": 2
   },
   {
    "id": 3415757440,
@@ -145,7 +165,536 @@
    "chosen": true,
    "slug": "rotd_guard",
    "mdl": "models/dejtriyev/rotd/ec_national_guard.mdl",
-   "name": "Road of The Dead: National Guard"
+   "name": "Road of The Dead: National Guard",
+   "batch": 1
+  },
+  {
+   "id": 3639826393,
+   "title": "[Breaking Bad] Mike Ehrmantraut",
+   "author": "Azkabath",
+   "chosen": true,
+   "batch": 2,
+   "slug": "mike_ehrmantraut",
+   "mdl": "models/brba/mike/mike_ehrmantraut.mdl",
+   "name": "Mike Ehrmantraut"
+  },
+  {
+   "id": 3792550791,
+   "title": "[PM|RAGDOLL] The Runner",
+   "author": "Ashbird",
+   "chosen": false,
+   "skip_reason": "needs HL2 citizen/Odessa body sheets (base-game textures)",
+   "looked_at": 2
+  },
+  {
+   "id": 3520329540,
+   "title": "[PM|RAGDOLL] The Worker",
+   "author": "Ashbird",
+   "chosen": false,
+   "skip_reason": "did not pass the rules after the eye/mouth stand-ins (base-game content)",
+   "looked_at": 2
+  },
+  {
+   "id": 3505084592,
+   "title": "[PM|RAGDOLL] The Infiltrator",
+   "author": "Ashbird",
+   "chosen": true,
+   "batch": 2,
+   "slug": "infiltrator",
+   "mdl": "models/gman_spy/spy_04.mdl",
+   "name": "The Infiltrator"
+  },
+  {
+   "id": 3737922257,
+   "title": "[CSS] Extended [PM|Ragdolls]",
+   "author": "Chaos Star",
+   "chosen": true,
+   "batch": 2,
+   "slug": "css_t_extended",
+   "mdl": "models/player/chaos_star/css_t_extended_pm.mdl",
+   "name": "CS:S terrorist (extended)"
+  },
+  {
+   "id": 3671637728,
+   "title": "Red Dead Redemption 2 Pack [PM/Ragdoll]",
+   "author": "kenshi",
+   "chosen": false,
+   "skip_reason": "not ValveBiped / models not registered as player models",
+   "looked_at": 2
+  },
+  {
+   "id": 3637286336,
+   "title": "Pulp Fiction - Jules Winnfield & Vincent Vega [PM/NPC]",
+   "author": "finished my contracts award",
+   "chosen": true,
+   "batch": 2,
+   "slug": "jules_winnfield",
+   "mdl": "models/furuki/pf/jules_winnfield_model.mdl",
+   "name": "Jules Winnfield"
+  },
+  {
+   "id": 3639562227,
+   "title": "Freddie Gibbs (RE4)",
+   "author": "pvnished dej",
+   "chosen": true,
+   "batch": 2,
+   "slug": "freddie_gibbs",
+   "mdl": "models/dejtriyev/freddiegibbs.mdl",
+   "name": "Freddie Gibbs (RE4 style)"
+  },
+  {
+   "id": 3806163613,
+   "title": "EP4 Adrian Shephard [PM/NPC/RAGDOLL]",
+   "author": "PSYCH0S0C14L",
+   "chosen": true,
+   "batch": 2,
+   "slug": "adrian_shephard",
+   "mdl": "models/ep4adrian/ep4adrian.mdl",
+   "name": "Adrian Shephard (EP4)"
+  },
+  {
+   "id": 3690639069,
+   "title": "L4D The Sacrifice Comic Soldier REMASTERED",
+   "author": "Vitaliy Puzin",
+   "chosen": true,
+   "batch": 2,
+   "slug": "l4d_sacrifice_soldier",
+   "mdl": "models/survivors/sacrifice_sold.mdl",
+   "name": "L4D The Sacrifice comic soldier"
+  },
+  {
+   "id": 3743395000,
+   "title": "Async Hazmat Researcher [Playermodel/Ragdoll]",
+   "author": "WatersYourMelon",
+   "chosen": true,
+   "batch": 2,
+   "slug": "async_researcher",
+   "mdl": "models/judah/async_researcher/async_researcher_pm.mdl",
+   "name": "Async hazmat researcher"
+  },
+  {
+   "id": 3715032179,
+   "title": "CoD: BO1 - Ultimis Playermodels",
+   "author": "Hidden",
+   "chosen": true,
+   "batch": 2,
+   "slug": "bo1_dempsey",
+   "mdl": "models/player/black_ops_1/ultimis/p_dempsey.mdl",
+   "name": "Dempsey (Black Ops 1 Ultimis)"
+  },
+  {
+   "id": 3478625938,
+   "title": "Half-Life: Extended Workforce Playermodels",
+   "author": "Bikos77",
+   "chosen": true,
+   "batch": 2,
+   "slug": "hlew_security",
+   "mdl": "models/player/hlew/security/otis_security_extended.mdl",
+   "name": "Black Mesa security (Otis)"
+  },
+  {
+   "id": 3567271959,
+   "title": "GTA 5 Improved Models",
+   "author": "Mango",
+   "chosen": true,
+   "batch": 2,
+   "slug": "gta5_franklin",
+   "mdl": "models/mango/player/gta5/franklin.mdl",
+   "name": "Franklin (GTA 5)"
+  },
+  {
+   "id": 3442012037,
+   "title": "Joji And The Filthy Frank Crew Playermodels",
+   "author": "Gordon Freakman",
+   "chosen": true,
+   "batch": 2,
+   "slug": "filthy_frank",
+   "mdl": "models/gfreakman/filthyfrank.mdl",
+   "name": "Filthy Frank"
+  },
+  {
+   "id": 3728671104,
+   "title": "FLK Customizable Guys [PMs]",
+   "author": "FalkenJr",
+   "chosen": false,
+   "skip_reason": "needs a base-game body sheet (Male_cheaple_sheet)",
+   "looked_at": 2
+  },
+  {
+   "id": 3591454343,
+   "title": "Oldschool SCP Pack (Playermodels)",
+   "author": "Gunslinger",
+   "chosen": true,
+   "batch": 2,
+   "slug": "scp_ntf",
+   "mdl": "models/player/oldschool_scp/foundation_ntf.mdl",
+   "name": "SCP Foundation MTF"
+  },
+  {
+   "id": 3750015271,
+   "title": "Still Life Playermodels",
+   "author": "schlimbodimblo",
+   "chosen": true,
+   "batch": 2,
+   "slug": "stilllife_mary",
+   "mdl": "models/player/stilllifepm/sl_mary_pm.mdl",
+   "name": "Mary (Still Life)"
+  },
+  {
+   "id": 3005534393,
+   "title": "Gasmask Girl (Playermodel/Ragdoll)",
+   "author": "xinus22",
+   "chosen": false,
+   "skip_reason": "scale 1.26: smaller than CS2-sized",
+   "looked_at": 2
+  },
+  {
+   "id": 3382190351,
+   "title": "Borat_09 PM",
+   "author": "panman",
+   "chosen": true,
+   "batch": 2,
+   "slug": "borat",
+   "mdl": "models/panman/borat_cosplayer_09.mdl",
+   "name": "Borat cosplayer"
+  },
+  {
+   "id": 3728868335,
+   "title": "Terry A. Davis (HL2 Styled)",
+   "author": "panman",
+   "chosen": true,
+   "batch": 2,
+   "slug": "terry_davis",
+   "mdl": "models/humans/panman/terry_hl2.mdl",
+   "name": "Terry A. Davis (HL2 style)"
+  },
+  {
+   "id": 3524933296,
+   "title": "5 Finger Playermodels",
+   "author": "THG",
+   "chosen": false,
+   "skip_reason": "not registered as player models; base-game Combine/Barney textures",
+   "looked_at": 2
+  },
+  {
+   "id": 3637286336,
+   "title": "Pulp Fiction - Jules Winnfield & Vincent Vega [PM/NPC]",
+   "author": "finished my contracts award",
+   "chosen": true,
+   "batch": 2,
+   "slug": "vincent_vega",
+   "mdl": "models/furuki/pf/vincent_vega_model.mdl",
+   "name": "Vincent Vega"
+  },
+  {
+   "id": 3567271959,
+   "title": "GTA 5 Improved Models",
+   "author": "Mango",
+   "chosen": true,
+   "batch": 2,
+   "slug": "gta5_trevor",
+   "mdl": "models/mango/player/gta5/trevor.mdl",
+   "name": "Trevor (GTA 5)"
+  },
+  {
+   "id": 3564388370,
+   "title": "Michael Scott Playermodel & npcs",
+   "author": "eggnood11es",
+   "chosen": true,
+   "batch": 3,
+   "slug": "michael_scott",
+   "mdl": "models/michael scott/michael scott.mdl",
+   "name": "Michael Scott"
+  },
+  {
+   "id": 3552973123,
+   "title": "[PM] [Part 1] Battlefield 4 United States Assault & Support Playermodels Revamp",
+   "author": "MUNCH",
+   "chosen": true,
+   "batch": 3,
+   "slug": "bf4_us_support",
+   "mdl": "models/munch/bf4/us/m_bf4_us_support.mdl",
+   "name": "BF4 US Support"
+  },
+  {
+   "id": 3649330814,
+   "title": "Steamhappy citizen (Playermodel & Ragdoll)",
+   "author": "aggusn4",
+   "chosen": true,
+   "batch": 3,
+   "slug": "steamhappy",
+   "mdl": "models/steamhappy/steamhappy_pm.mdl",
+   "name": "Steamhappy citizen"
+  },
+  {
+   "id": 3707350691,
+   "title": "Chef Metrocops Playermodel",
+   "author": "Floppa gaming",
+   "chosen": false,
+   "looked_at": 3,
+   "skip_reason": "no model passed the rules (see fetch.py --suggest: base-game textures, not registered, or scale)"
+  },
+  {
+   "id": 3110399912,
+   "title": "Mr. Bean (San Andreas Mod) Playermodel & NPCs",
+   "author": "Nightbane",
+   "chosen": false,
+   "looked_at": 3,
+   "skip_reason": "ultra low poly (under 750 vertices, PS1/HL1 style)"
+  },
+  {
+   "id": 3366103214,
+   "title": "Classic Space Explorer [Playermodel + Viewmodels]",
+   "author": "Davy",
+   "chosen": false,
+   "looked_at": 3,
+   "skip_reason": "no model passed the rules (see fetch.py --suggest: base-game textures, not registered, or scale)"
+  },
+  {
+   "id": 3698296972,
+   "title": "The Master Builder [Playermodel + Ragdoll]",
+   "author": "Davy",
+   "chosen": false,
+   "looked_at": 3,
+   "skip_reason": "no model passed the rules (see fetch.py --suggest: base-game textures, not registered, or scale)"
+  },
+  {
+   "id": 3545408076,
+   "title": "James Doakes Playermodel",
+   "author": "Garfield",
+   "chosen": false,
+   "looked_at": 3,
+   "skip_reason": "ultra low poly (under 750 vertices, PS1/HL1 style)"
+  },
+  {
+   "id": 2691974423,
+   "title": "Jerma985 Playermodel",
+   "author": "giwake",
+   "chosen": false,
+   "looked_at": 3,
+   "skip_reason": "ultra low poly (under 750 vertices, PS1/HL1 style)"
+  },
+  {
+   "id": 3763999745,
+   "title": "Zoe Playermodel / Infinity Pools",
+   "author": "Redstone.Co",
+   "chosen": false,
+   "looked_at": 3,
+   "skip_reason": "no model passed the rules (see fetch.py --suggest: base-game textures, not registered, or scale)"
+  },
+  {
+   "id": 3151172526,
+   "title": "Markiplier Citizen Playermodel",
+   "author": "Gordon Freakman",
+   "chosen": false,
+   "looked_at": 3,
+   "skip_reason": "no model passed the rules (see fetch.py --suggest: base-game textures, not registered, or scale)"
+  },
+  {
+   "id": 3554769255,
+   "title": "{Olejus} Captain Jack Sparrow Playermodel/Ragdoll",
+   "author": "Olejus",
+   "chosen": true,
+   "batch": 3,
+   "slug": "jack_sparrow",
+   "mdl": "models/sujelo/jack_sparrow_kh3.mdl",
+   "name": "Captain Jack Sparrow (KH3)"
+  },
+  {
+   "id": 3401507374,
+   "title": "MGS5 Diamond Dog Soldier Playermodel + NPC",
+   "author": "CLANKERt_",
+   "chosen": true,
+   "batch": 3,
+   "slug": "mgs5_dd_male",
+   "mdl": "models/clankert/mgs/pm/dds_bb_male.mdl",
+   "name": "MGS5 Diamond Dog soldier (male)"
+  },
+  {
+   "id": 3120023020,
+   "title": "Lethal Company - Employee (Scavenger) [Playermodels/NPCS]",
+   "author": "Stranger",
+   "chosen": true,
+   "batch": 3,
+   "slug": "lethal_employee",
+   "mdl": "models/arty/bini/lethal company/employee/employee_pm.mdl",
+   "name": "Lethal Company employee"
+  },
+  {
+   "id": 3772745299,
+   "title": "Urban Assault Playermodels (WIP)",
+   "author": "TalonSolid",
+   "chosen": true,
+   "batch": 3,
+   "slug": "ua_eclipse_merc",
+   "mdl": "models/urbanassault/ua_eclipsedivisionmerc.mdl",
+   "name": "Urban Assault: Eclipse Division merc"
+  },
+  {
+   "id": 3383431402,
+   "title": "ERRORMAN [Playermodel + Ragdoll]",
+   "author": "Davy",
+   "chosen": true,
+   "batch": 3,
+   "slug": "errorman",
+   "mdl": "models/tfrepanman/errorman.mdl",
+   "name": "ERRORMAN"
+  },
+  {
+   "id": 3606722829,
+   "title": "HL2 \"styled\" Walt Jr [Playermodel + Ragdoll]",
+   "author": "Davy",
+   "chosen": false,
+   "looked_at": 3,
+   "skip_reason": "no model passed the rules (see fetch.py --suggest: base-game textures, not registered, or scale)"
+  },
+  {
+   "id": 3694175536,
+   "title": "Resident Evil 2 - HUNK Playermodel",
+   "author": "Willi Wakker",
+   "chosen": false,
+   "looked_at": 3,
+   "skip_reason": "ultra low poly (under 750 vertices, PS1/HL1 style)"
+  },
+  {
+   "id": 3405129414,
+   "title": "Dave's Aperture Security [Playermodel + Ragdoll]",
+   "author": "Davy",
+   "chosen": false,
+   "looked_at": 3,
+   "skip_reason": "no model passed the rules (see fetch.py --suggest: base-game textures, not registered, or scale)"
+  },
+  {
+   "id": 3339300694,
+   "title": "Resident Evil 4 - Leon Playermodel",
+   "author": "Willi Wakker",
+   "chosen": true,
+   "batch": 3,
+   "slug": "re4_leon_jacket",
+   "mdl": "models/re4_leon_playermodel/leon_jacket.mdl",
+   "name": "Leon (RE4, jacket; Willi Wakker)"
+  },
+  {
+   "id": 3640396751,
+   "title": "SCP:CB STAFF PLAYERMODELS & NPCS",
+   "author": "cool_dude1823",
+   "chosen": true,
+   "batch": 3,
+   "slug": "scp_class_d",
+   "mdl": "models/player/classdpm.mdl",
+   "name": "SCP:CB Class-D"
+  },
+  {
+   "id": 3453547126,
+   "title": "Girls Frontline 2 - Leva [UMP45] 5 Pack Playermodels & NPCs",
+   "author": "8sianDude",
+   "chosen": true,
+   "batch": 3,
+   "slug": "gfl2_leva",
+   "mdl": "models/player/gfl2_leva.mdl",
+   "name": "Leva (Girls Frontline 2)"
+  },
+  {
+   "id": 3429451663,
+   "title": "Weighted Test Assistants (Playermodel/Ragdoll)",
+   "author": "xinus22",
+   "chosen": false,
+   "looked_at": 3,
+   "skip_reason": "no model passed the rules (see fetch.py --suggest: base-game textures, not registered, or scale)"
+  },
+  {
+   "id": 674702181,
+   "title": "Picolas Cage playermodel",
+   "author": "aap15",
+   "chosen": true,
+   "batch": 3,
+   "slug": "picolas_cage",
+   "mdl": "models/aap15/foldername/picolas_cage_pm/picolas_cage_reference.mdl",
+   "name": "Picolas Cage"
+  },
+  {
+   "id": 3552973123,
+   "title": "[PM] [Part 1] Battlefield 4 United States Assault & Support Playermodels Revamp",
+   "author": "MUNCH",
+   "chosen": true,
+   "batch": 3,
+   "slug": "bf4_us_assault",
+   "mdl": "models/munch/bf4/us/m_bf4_us_assualt.mdl",
+   "name": "BF4 US Assault"
+  },
+  {
+   "id": 3772745299,
+   "title": "Urban Assault Playermodels (WIP)",
+   "author": "TalonSolid",
+   "chosen": true,
+   "batch": 3,
+   "slug": "ua_eclipse_pilot",
+   "mdl": "models/urbanassault/ua_eclipsedivisionpilot.mdl",
+   "name": "Urban Assault: Eclipse Division pilot"
+  },
+  {
+   "id": 3772745299,
+   "title": "Urban Assault Playermodels (WIP)",
+   "author": "TalonSolid",
+   "chosen": true,
+   "batch": 3,
+   "slug": "ua_hmc_security",
+   "mdl": "models/urbanassault/ua_hmcsec.mdl",
+   "name": "Urban Assault: HMC security"
+  },
+  {
+   "id": 3772745299,
+   "title": "Urban Assault Playermodels (WIP)",
+   "author": "TalonSolid",
+   "chosen": true,
+   "batch": 3,
+   "slug": "ua_falcon_commander",
+   "mdl": "models/urbanassault/ua_falconsoldiercommander.mdl",
+   "name": "Urban Assault: Falcon commander",
+   "bodygroups": {
+    "Riot Shield": 1
+   },
+   "note": "riot shield (on by default in the model) switched off"
+  },
+  {
+   "id": 3772745299,
+   "title": "Urban Assault Playermodels (WIP)",
+   "author": "TalonSolid",
+   "chosen": true,
+   "batch": 3,
+   "slug": "ua_marcus",
+   "mdl": "models/urbanassault/ua_marcus.mdl",
+   "name": "Urban Assault: Marcus"
+  },
+  {
+   "id": 3640396751,
+   "title": "SCP:CB STAFF PLAYERMODELS & NPCS",
+   "author": "cool_dude1823",
+   "chosen": true,
+   "batch": 3,
+   "slug": "scp_guard",
+   "mdl": "models/player/newguardpm.mdl",
+   "name": "SCP:CB guard"
+  },
+  {
+   "id": 3640396751,
+   "title": "SCP:CB STAFF PLAYERMODELS & NPCS",
+   "author": "cool_dude1823",
+   "chosen": true,
+   "batch": 3,
+   "slug": "scp_serpents_hand",
+   "mdl": "models/player/serpenthandpm.mdl",
+   "name": "SCP:CB Serpent's Hand"
+  },
+  {
+   "id": 3401507374,
+   "title": "MGS5 Diamond Dog Soldier Playermodel + NPC",
+   "author": "CLANKERt_",
+   "chosen": true,
+   "batch": 3,
+   "slug": "mgs5_dd_female",
+   "mdl": "models/clankert/mgs/pm/dds_bb_female.mdl",
+   "name": "MGS5 Diamond Dog soldier (female)"
   }
  ]
 }

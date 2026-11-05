@@ -175,13 +175,13 @@ class SrcModel:
         return -1
 
     def default_meshes(self, choices=None):
-        """meshes of each body part's chosen model (default: the first model with any vertices)"""
+        """meshes of each body part's chosen model (default: model 0, as in the game: a blank model 0 means the part is off -
+        hats, party props and shields in later slots stay off unless chosen)"""
         out = []
         for k, part in enumerate(self.parts):
             ms = part['models']
-            j = (choices or {}).get(part['name'])
-            if j is None: j = next((i for i, m in enumerate(ms) if m['nverts'] > 0), None)
-            if j is None: continue
+            j = (choices or {}).get(part['name'], 0)
+            if not 0 <= j < len(ms) or ms[j]['nverts'] == 0: continue
             out += ms[j]['meshes']
         return out
 

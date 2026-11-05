@@ -27,6 +27,8 @@ def check(mdl_path, template, out_png, label='', mode='rigid', choices=None):
     used, remap, V, N, W = cv.convert_mesh(meshes)
     UV = m.UV[used]
     faces = np.vstack([remap[me['tris']] for me in meshes if len(me['tris'])])
+    if g.TWIST_STEP > 0:                       # the same limb split the converter writes
+        V, N, UV, W, sets, _ = g.subdivide_twist(V, N, UV, W, [faces], g.TWIST_STEP); faces = sets[0]
     tex = np.full((4, 4, 3), 200, np.uint8)
     base = os.path.splitext(out_png)[0]
     pics = []

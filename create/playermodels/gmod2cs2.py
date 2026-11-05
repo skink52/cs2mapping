@@ -65,6 +65,10 @@ TORSO_RECENTRE = True     # move the upper torso back so the chest is centred on
 CHEST_WARN = 4.0          # warn when the chest front is this much (u) further forward than a stock agent's
 HAND_WARN = 3.0           # warn when, in CS2's preview pose, the chest surface is this far (u) in front of a wrist (fine models: 0-1.6)
 LIMB_WARN = 6.0           # warn when an arm/leg joint ends up this far (u) from CS2's (batch 1: <= 5, Leon's odd rig)
+HEAD_HITBOX_MAX = 5.0     # the head (and half of the neck) hit box moves at most this far (u) onto the model's head
+FINGER_WARN = 1.8         # warn when finger segments' skin centres sit this far (median, u) off their CS2 bones (fine 0.4-1.7, old pivot bug ~2)
+JOINT_SOFTEN = (2.5, 0.5)  # hard-skinned elbows/knees: within 2.5 u of the joint, up to half the weight goes to the other side
+TWIST_STEP = 0.34         # split limb triangles whose twist changes more than this (0..1 of the chain) along an edge; 0 = off
 SPINE_BEND = 0.5        # share of the spine/neck bones' turn onto CS2's spine that is applied
 
 
@@ -243,6 +247,7 @@ class Converter:
         J = self.t.J
         R = {'pelvis': np.eye(3)}
         tw = {}
+        self.unaligned_hands = []
         def d(a, b): return unit(self.S(b) - self.S(a))
         chain = [n for n in ('spine', 'spine1', 'spine2', 'spine3', 'spine4', 'neck1', 'head1') if self.has(n)]
         for n in chain: R[n] = np.eye(3)
@@ -256,10 +261,12 @@ class Converter:
                                  (f'{l}_thigh', f'{l}_calf', f'leg_upper_{s}', f'leg_lower_{s}'),
                                  (f'{l}_calf', f'{l}_foot', f'leg_lower_{s}', f'ankle_{s}')):
                 if self.has(a) and self.has(b): R[a] = arc(d(a, b), unit(J(cb) - J(ca)))
-            have_f = all(self.has(f'{l}_finger{k}') for k in (1, 4))
-            latcs = J(f'finger_index_0_{s}') - J(f'finger_pinky_0_{s}')
+            outer = next((k for k in (4, 3, 2) if self.has(f'{l}_finger{k}')), None)   # 3-finger rigs have no ring/pinky
+            have_f = self.has(f'{l}_finger1') and outer is not None
+            latcs = J(f'finger_index_0_{s}') - J('finger_%s_0_%s' % (FINGERS.get(outer, 'pinky'), s))
+            if not have_f: self.unaligned_hands.append(s)
             if have_f:
-                lat16 = self.S(f'{l}_finger1') - self.S(f'{l}_finger4')
+                lat16 = self.S(f'{l}_finger1') - self.S(f'{l}_finger{outer}')
                 mid = f'{l}_finger2' if self.has(f'{l}_finger2') else f'{l}_finger1'
                 mcs = 'finger_middle_0_' + s if mid.endswith('2') else 'finger_index_0_' + s
                 if self.has(f'{l}_hand'):
@@ -413,9 +420,10 @@ class Converter:
             seg(f'{l}_thigh', f'{l}_calf', f'leg_upper_{s}', f'leg_lower_{s}')
             seg(f'{l}_calf', f'{l}_foot', f'leg_lower_{s}', f'ankle_{s}')
             # hand: the palm turned so index and pinky knuckles sit where CS2's do
-            have_f = all(self.has(f'{l}_finger{k}') for k in (1, 4))
-            lat16 = self.S(f'{l}_finger1') - self.S(f'{l}_finger4') if have_f else None
-            latcs = J(f'finger_index_0_{s}') - J(f'finger_pinky_0_{s}')
+            outer = next((k for k in (4, 3, 2) if self.has(f'{l}_finger{k}')), None)
+            have_f = self.has(f'{l}_finger1') and outer is not None
+            lat16 = self.S(f'{l}_finger1') - self.S(f'{l}_finger{outer}') if have_f else None
+            latcs = J(f'finger_index_0_{s}') - J('finger_%s_0_%s' % (FINGERS.get(outer, 'pinky'), s))
             mid = f'{l}_finger2' if self.has(f'{l}_finger2') else (f'{l}_finger1' if self.has(f'{l}_finger1') else None)
             if mid and have_f and self.has(f'{l}_hand'):
                 seg(f'{l}_hand', mid, f'hand_{s}', 'finger_middle_0_' + s if mid.endswith('2') else 'finger_index_0_' + s,
@@ -517,8 +525,37 @@ class Converter:
                 cs = self.cs_by_bone[B[i, k]]
                 for j, w in self.spread(cs, V[i]): acc[j] = acc.get(j, 0) + W[i, k] * w
             self.wrist_blend(acc, V[i])
+            self.soften_joint(acc, V[i])
             weights.append(sorted(acc.items(), key=lambda x: -x[1])[:3])
         return used, remap, V, N, weights
+
+    def soften_joint(self, acc, x):
+        """Hard-skinned rigs (every vertex 100% one bone, HL1/low-poly style) fold into a thin wedge when CS2 bends an elbow or knee.
+        A vertex that is >= 95% one side's chain and within JOINT_SOFTEN[0] u of the joint (along the limb) gives up to JOINT_SOFTEN[1]
+        of its weight to the other side, fading to nothing at that distance. Blended (properly skinned) vertices are left alone."""
+        R, mx = JOINT_SOFTEN
+        if mx <= 0: return
+        tot = sum(acc.values()) or 1.0
+        J = self.t.J
+        for s in 'LR':
+            for up, lo, top in ((f'arm_upper_{s}', f'arm_lower_{s}', f'hand_{s}'), (f'leg_upper_{s}', f'leg_lower_{s}', f'ankle_{s}')):
+                upc = [j for j in acc if j.startswith(up)]
+                loc = [j for j in acc if j.startswith(lo)]
+                wu = sum(acc[j] for j in upc) / tot; wl = sum(acc[j] for j in loc) / tot
+                if max(wu, wl) < 0.95: continue
+                a = J(up); k = J(lo)
+                u1 = unit(k - a); u2 = unit(J(top) - k)
+                d = float((x - k) @ u1) if wu >= 0.95 else float((x - k) @ u2)      # signed distance past (upper) / below (lower) the joint
+                dist = abs(min(d, 0.0)) if wu >= 0.95 else abs(max(d, 0.0))
+                if wu >= 0.95 and d > 0: dist = 0.0                                   # upper-arm vertices already past the joint
+                if wl >= 0.95 and d < 0: dist = 0.0
+                f = mx * max(0.0, 1.0 - dist / R)
+                if f <= 0: continue
+                src, dst = (upc, lo) if wu >= 0.95 else (loc, up + ('_TWIST1' if up + '_TWIST1' in self.t.W else ''))
+                moved = 0.0
+                for j in src: moved += acc[j] * f; acc[j] *= 1 - f
+                acc[dst] = acc.get(dst, 0) + moved
+                return
 
     def wrist_blend(self, acc, x):
         """The last WRIST_BLEND[0] u of the forearm (sleeve cuff included) follow the hand by up to WRIST_BLEND[1], so a hand bent
@@ -551,6 +588,25 @@ class Converter:
 
 
 # ---------------------------------------------------------------- materials
+def is_shared_eye(name): return name.startswith('eyeball') or name in ('eye_l', 'eye_r', 'eyes', 'eye')
+def is_shared_mouth(name): return name in ('mouth', 'teeth', 'tongue') or name.startswith(('mouth_', 'teeth_'))
+
+
+def eye_standin(n=256, iris=(84, 66, 48)):
+    """an eye texture laid out like Source's iris projection (the image spans the iris diameter, the clamped edge is sclera):
+    off-white sclera, a brown iris with a darker rim, black pupil, a small highlight"""
+    y, x = (np.mgrid[0:n, 0:n] + 0.5) / n - 0.5
+    r = np.hypot(x, y) * 2                                   # 1 = edge of the image
+    img = np.zeros((n, n, 4), np.float32); img[..., 3] = 255
+    img[..., :3] = (232, 226, 218)
+    ir = r < 0.9
+    shade = 1.0 - 0.35 * np.clip((r - 0.6) / 0.3, 0, 1)
+    for k in range(3): img[..., k] = np.where(ir, iris[k] * shade * (0.9 + 0.2 * np.cos(np.arctan2(y, x) * 18) * 0.5), img[..., k])
+    img[r < 0.36, :3] = (12, 10, 10)
+    img[np.hypot(x + 0.12, y + 0.12) * 2 < 0.12, :3] = (250, 250, 250)
+    return img.clip(0, 255).astype(np.uint8)
+
+
 def save_png(arr, path, maxtex):
     im = Image.fromarray(arr)
     if max(im.size) > maxtex:
@@ -585,6 +641,13 @@ def write_material(tex, cd, roots, out, slug, maxtex, log):
     if col is None and (prm.get('$envmap') or 'glass' in tex.lower()):
         col = np.full((8, 8, 4), (40, 45, 52, 70), np.uint8); glass = True       # envmap-only lens: dark see-through glass
         info['glass'] = True
+    base_name = os.path.basename(tex).lower()
+    if col is None and is_shared_eye(base_name):          # HL2's shared eyeball_l/r: models rely on the game's copy
+        col = eye_standin(); eye = True; info['standin'] = 'eye'
+        log('   . %s: HL2 shared eye texture not in the item, generated stand-in' % tex)
+    elif col is None and is_shared_mouth(base_name):      # HL2's shared mouth/teeth/tongue
+        col = np.full((8, 8, 4), (88, 38, 40, 255), np.uint8); info['standin'] = 'mouth'
+        log('   . %s: HL2 shared mouth texture not in the item, dark stand-in' % tex)
     if col is None:
         col = np.full((8, 8, 4), (150, 150, 150, 255), np.uint8); info['flat'] = True
         log('   ! %s: no base texture found (%s), flat grey' % (tex, 'no vmt' if rel is None else shader))
@@ -710,6 +773,138 @@ def eye_uvs(conv, eyeball, V):
     return np.stack([0.5 + (d @ right) * s, 0.5 - (d @ up) * s], 1).clip(0.002, 0.998)
 
 
+LIMB_PARAM = {}
+for _s in 'LR':
+    for _j, _v in ((f'arm_upper_{_s}', 0.0), (f'arm_upper_{_s}_TWIST', 0.5), (f'arm_upper_{_s}_TWIST1', 1.0), (f'arm_lower_{_s}', 1.0),
+                   (f'arm_lower_{_s}_TWIST', 1.5), (f'arm_lower_{_s}_TWIST1', 2.0), (f'hand_{_s}', 2.0)):
+        LIMB_PARAM[_j] = ('arm_' + _s, _v)
+    for _j, _v in ((f'leg_upper_{_s}', 0.0), (f'leg_upper_{_s}_TWIST', 0.5), (f'leg_upper_{_s}_TWIST1', 1.0), (f'leg_lower_{_s}', 1.0)):
+        LIMB_PARAM[_j] = ('leg_' + _s, _v)
+
+
+def twist_param(w):
+    """per limb: how far down its twist chain the vertex is (arm: upper arm 0..1, forearm 1..2), for vertices mostly on that limb"""
+    tot = sum(x for _, x in w) or 1.0
+    acc = {}
+    for j, x in w:
+        if j in LIMB_PARAM:
+            limb, v = LIMB_PARAM[j]; a = acc.setdefault(limb, [0.0, 0.0]); a[0] += x; a[1] += x * v
+    return {limb: a[1] / a[0] for limb, a in acc.items() if a[0] / tot > 0.5}
+
+
+def subdivide_twist(V, N, UV, W, sets, max_step=TWIST_STEP if 'TWIST_STEP' in globals() else 0.34, passes=3):
+    """Low-poly limbs with a vertex ring only at each end (e.g. a forearm: elbow ring on arm_lower, wrist ring on its TWIST1) fold into a
+    flat twisted ribbon when CS2 rolls the limb. Triangles where the twist changes by more than max_step along an edge are split in four
+    (shared midpoints, so no cracks; midpoint weights = the average of the ends, so the roll is spread over the new rings).
+    Returns V, N, UV, W, sets and the number of triangles added."""
+    V = [v for v in V]; N = [n for n in N]; UV = [u for u in UV]; W = [list(w) for w in W]
+    added = 0
+    for _ in range(passes):
+        tp = [twist_param(w) for w in W]
+        def steep(a, b):
+            for k, ta in tp[a].items():
+                tb = tp[b].get(k)
+                if tb is not None and abs(ta - tb) > max_step: return True
+            return False
+        mid = {}
+        def midpoint(a, b):
+            key = (min(a, b), max(a, b))
+            if key not in mid:
+                V.append((V[a] + V[b]) / 2); n = N[a] + N[b]; N.append(n / (np.linalg.norm(n) or 1)); UV.append((np.asarray(UV[a]) + np.asarray(UV[b])) / 2)
+                acc = {}
+                for j, x in W[a] + W[b]: acc[j] = acc.get(j, 0.0) + x / 2
+                W.append(sorted(acc.items(), key=lambda x: -x[1])[:3]); mid[key] = len(V) - 1
+            return mid[key]
+        new_sets, split_any = [], False
+        for faces in sets:
+            out = []
+            for f in np.asarray(faces).tolist():
+                # split only the steep edges (a neighbour sharing the edge splits it the same way: no T-junctions, no cracks)
+                e = [steep(f[k], f[(k + 1) % 3]) for k in range(3)]
+                n = sum(e)
+                if n == 0: out.append(f); continue
+                split_any = True
+                if n == 3:
+                    a_, b_, c_ = f; ab, bc, ca = midpoint(a_, b_), midpoint(b_, c_), midpoint(c_, a_)
+                    out += [[a_, ab, ca], [ab, b_, bc], [ca, bc, c_], [ab, bc, ca]]; added += 3; continue
+                k = e.index(True) if n == 1 else e.index(False)      # rotate so the special edge comes first
+                a_, b_, c_ = f[k], f[(k + 1) % 3], f[(k + 2) % 3]
+                if n == 1:                                            # a-b steep: two triangles
+                    m = midpoint(a_, b_); out += [[a_, m, c_], [m, b_, c_]]; added += 1
+                else:                                                 # b-c and c-a steep (a-b not): three triangles
+                    m1, m2 = midpoint(b_, c_), midpoint(c_, a_); out += [[a_, b_, m1], [a_, m1, m2], [m2, m1, c_]]; added += 2
+            new_sets.append(np.array(out, int))
+        sets = new_sets
+        if not split_any: break
+    return np.array(V), np.array(N), np.array(UV), W, sets, added
+
+
+def finger_fit(t, V, W):
+    """per hand: median over finger segments of the distance (u) between the segment's skin centre and its CS2 finger bone (bone to
+    next joint). Skin centred off the bone it bends about gets thrown when CS2 curls the fingers (the "wrung fingers" bug)."""
+    groups = {}
+    for i, w in enumerate(W):
+        if not w: continue
+        j = max(w, key=lambda x: x[1])[0]
+        if j.startswith('finger') and '_meta_' not in j: groups.setdefault(j, []).append(i)
+    out = {}
+    for s_ in 'LR':
+        d = []
+        for j, idx in groups.items():
+            if not j.endswith('_' + s_) or len(idx) < 4: continue
+            k = int(j.split('_')[2]); nxt = j.replace('_%d_' % k, '_%d_' % (k + 1))
+            a = t.J(j); b = t.J(nxt) if nxt in t.W else a
+            c = V[idx].mean(0); ab = b - a; u = np.clip(((c - a) @ ab) / max(ab @ ab, 1e-9), 0, 1)
+            d.append(np.linalg.norm(c - (a + u * ab)))
+        out[s_] = round(float(np.median(d)), 2) if d else None
+    return out
+
+
+def eye_centre(conv):
+    """mid point of the model's eyeballs on the CS2 skeleton (None if it has none)"""
+    m = conv.m
+    if not m.eyeballs: return None
+    pts = []
+    for e in m.eyeballs:
+        Bw = m.bones[e['bone']]['world']
+        o16 = conv.G @ (Bw[:, :3] @ e['org'] + Bw[:, 3]); o16[2] -= conv.floor
+        pts.append(Converter.move(o16[None], conv.tr_by_bone[e['bone']], conv.girth)[0])
+    return np.mean(pts, 0)
+
+
+def head_hitbox_shift(conv, t, V, weights):
+    """How far the head hit box must move to sit on this model's head (world, bind pose). The model keeps its own neck length, so its
+    head isn't where a stock agent's is. From the eyes (vs CS2's eyeball joints) when the model has eyeballs, else from the centre of
+    the head-weighted mesh below its top fifth (hats and hair left out) vs the stock body's."""
+    e = eye_centre(conv)
+    if e is not None:
+        d = e - (t.J('eyeball_l') + t.J('eyeball_r')) / 2; how = 'eyes'
+    else:
+        def centre(P, W):
+            hs = np.array([bool(w) and max(w, key=lambda x: x[1])[0].startswith('head') for w in W])
+            H = P[hs]; top = H[:, 2].max() - 0.2 * (H[:, 2].max() - H[:, 2].min())
+            H = H[H[:, 2] < top]
+            return (H.min(0) + H.max(0)) / 2
+        d = centre(V, weights) - centre(*t.mesh()); how = 'head mesh'
+    d[1] = 0.0                                              # stay on the centre line
+    n = np.linalg.norm(d)
+    if n > HEAD_HITBOX_MAX: d *= HEAD_HITBOX_MAX / n
+    return d, how
+
+
+def shift_capsules(txt, t, bone, d):
+    """move the HitboxCapsule entries on bone by world vector d (converted to the bone's bind-pose space)"""
+    dl = t.W[bone][0].T @ d
+    def fix(mo):
+        blk = mo.group(0)
+        if not re.search(r'parent_bone\s*=\s*"%s"' % re.escape(bone), blk, re.I): return blk
+        def pt(m2):
+            v = np.array([float(x) for x in m2.group(2).split(',')]) + dl
+            return '%s[ %s ]' % (m2.group(1), ', '.join('%.3f' % x for x in v))
+        return re.sub(r'(point[01]\s*=\s*)\[\s*([^\]]+)\]', pt, blk)
+    return re.sub(r'_class = "HitboxCapsule".*?\}', fix, txt, flags=re.S)
+
+
 def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2048, preview=None, log=print, mode='rigid'):
     m = SrcModel(mdl_path)
     t = Template(template) if isinstance(template, str) else template
@@ -730,6 +925,12 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
     far = {j: d for j, d in (getattr(conv, 'joint_offsets', None) or {}).items() if j.startswith(('arm_', 'leg_', 'hand_', 'ankle_')) and d > LIMB_WARN}
     if far: warnings.append('skeleton does not match CS2 (limb joints more than %.0f u off: %s): CS2 will bend the limbs away from the joints of the model'
                             % (LIMB_WARN, ', '.join('%s %.1f' % kv for kv in sorted(far.items()))))
+    fingers = finger_fit(t, V, weights)
+    for side, v in fingers.items():
+        if v is not None and v > FINGER_WARN:
+            warnings.append('hand_%s fingers sit %.1f u from their CS2 finger bones: CS2 finger curls will distort them' % (side, v))
+    for side in getattr(conv, 'unaligned_hands', []):
+        warnings.append('hand_%s not aligned to CS2 (the rig has no index finger plus an outer finger): fingers will bend about the wrong points' % side)
     for w_ in warnings: log('   WARNING: ' + w_)
     UV = m.UV[used].copy()
     fam = m.skins[skin] if skin < len(m.skins) else m.skins[0]
@@ -748,6 +949,11 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
             UV[vs] = eye_uvs(conv, m.eyeballs[me['eyeball']], V[vs])
     names = list(by_mat)
     mats = [by_mat[k][0] for k in names]; sets = [np.vstack(by_mat[k][1]) for k in names]
+    sets_src = sets                      # the source mesh's own triangles (for the GMod-pose preview)
+    if TWIST_STEP > 0:
+        V, N, UV, weights, sets, n_sub = subdivide_twist(V, N, UV, weights, sets, TWIST_STEP)
+        if n_sub: log('   . %d triangles added along low-poly limbs (twist spread)' % n_sub)
+    else: n_sub = 0
     d = os.path.join(out, MODEL_DIR, slug); os.makedirs(d, exist_ok=True)
     sets, flipped = write_dmx(t.body, os.path.join(d, slug + '_body.dmx'), 'gmod_%s_body' % slug, V, N, UV, mats, sets, weights)
     # shared first-person arms, sleeves and preview pose: the template's
@@ -755,6 +961,11 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
     for sfx, dst in (('_firstperson_arms.dmx', 'firstperson_arms.dmx'), ('_firstperson_sleeves.dmx', 'firstperson_sleeves.dmx'), ('_tools_preview.dmx', 'tools_preview.dmx')):
         if not os.path.exists(os.path.join(sh, dst)): shutil.copy(t.file(sfx), os.path.join(sh, dst))
     txt = open(t.vmdl, encoding='utf-8').read()
+    hd, hhow = head_hitbox_shift(conv, t, V, weights)
+    txt = shift_capsules(txt, t, 'head_0', hd)
+    txt = shift_capsules(txt, t, 'neck_0', hd * 0.5)
+    import hitboxes
+    hit = hitboxes.fit(t, V, weights, hitboxes.capsules(txt))
     def swap(name, path):
         nonlocal txt
         t2 = re.sub(r'(name = "%s"\s*\n\s*filename = ")[^"]+(")' % re.escape(name), r'\g<1>%s\g<2>' % path, txt)
@@ -774,7 +985,7 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
     rep = {'slug': slug, 'source_mdl': m.name, 'mdl_version': m.version, 'vertices': int(len(V)),
            'triangles': int(sum(len(s) for s in sets)), 'materials': infos, 'source_height': round(conv.height, 1),
            'source_eye_height': round(conv.height_head, 1), 'scale': round(conv.girth, 3), 'yaw_turned_deg': round(-conv.yaw_deg, 1),
-           'mode': mode, 'warnings': warnings, 'chest_front_vs_stock': round(extra, 2), 'chest_shift': round(getattr(conv, 'chest_shift', 0.0), 2), 'hands_in_torso': hands, 'joint_offsets': getattr(conv, 'joint_offsets', None), 'hand_scale': getattr(conv, 'hand_scale', None), 'bones_following_parent': conv.unknown, 'winding_flipped': bool(flipped),
+           'mode': mode, 'warnings': warnings, 'twist_subdivided_tris': n_sub, 'finger_fit': fingers, 'head_hitbox_shift': [round(float(x), 2) for x in hd], 'head_hitbox_from': hhow, 'hitbox_fit': hit, 'chest_front_vs_stock': round(extra, 2), 'chest_shift': round(getattr(conv, 'chest_shift', 0.0), 2), 'hands_in_torso': hands, 'joint_offsets': getattr(conv, 'joint_offsets', None), 'hand_scale': getattr(conv, 'hand_scale', None), 'bones_following_parent': conv.unknown, 'winding_flipped': bool(flipped),
            'vmdl': '%s/%s/%s.vmdl' % (MODEL_DIR, slug, slug)}
     if preview:
         from preview import render
@@ -795,7 +1006,7 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
                label='%s  skinned to the template preview pose' % slug)
         # the source model as it was (turned to face +X), for comparison
         V0 = m.V[used] @ conv.G.T; V0[:, 2] -= conv.floor
-        render(V0, m.UV[used], groups, os.path.join(preview, slug + '_source.png'), views=('front', 'side'), H=700,
+        render(V0, m.UV[used], [(np.asarray(f), texs[k]) for f, k in zip(sets_src, names)], os.path.join(preview, slug + '_source.png'), views=('front', 'side'), H=700,
                label='%s  GMod reference pose (%.1f u tall)' % (slug, conv.height))
     return rep
 

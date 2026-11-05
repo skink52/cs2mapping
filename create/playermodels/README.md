@@ -8,15 +8,21 @@ Python 3 with numpy and Pillow. No Blender, Crowbar or SourceIO needed: the Sour
 
 | File | What it does |
 |---|---|
-| `pipeline.py <catalog.json> [--only slug,..] [--no-download] [--no-preview] [--compile]` | The batch: every `chosen` catalog item downloaded, extracted, converted, previewed (incl. the hands check), compiled with `resourcecompiler`, reported (`<work>/reports/<slug>.json`, `summary.md`, `preview/contact_sheet.png`). One model failing doesn't stop the rest. |
-| `fetch.py <catalog.json> [--only id,..] [--no-download] [--scan]` | SteamCMD (anonymous) `workshop_download_item 4000 <id>`, then extracts `models/`, `materials/`, `lua/`. `--scan` lists every `.mdl` per item with its registered name (`player_manager.AddValidModel`, read as text), ValveBiped yes/no, height, head-joint height, a size-check scale (CS2 head joint / the model's) and the VMTs and colour VTFs missing from the item, into `<work>/logs/scan.json`. Use it to choose. |
+| `pipeline.py <catalog.json> [--only slug,..] [--batch=N[,M]] [--no-download] [--no-preview] [--compile]` | The batch: every `chosen` catalog item downloaded, extracted, converted, previewed (incl. the hands check), compiled with `resourcecompiler`, reported (`<work>/reports/<slug>.json`, `summary.md`, `preview/contact_sheet.png`). One model failing doesn't stop the rest. |
+| `fetch.py <catalog.json> [--only id,..] [--no-download] [--scan] [--suggest]` | SteamCMD (anonymous) `workshop_download_item 4000 <id>`, then extracts `models/`, `materials/`, `lua/`. `--scan` lists every `.mdl` per item with its registered name (`player_manager.AddValidModel`, read as text), ValveBiped yes/no, height, head-joint height, a size-check scale (CS2 head joint / the model's) and the VMTs and colour VTFs missing from the item, into `<work>/logs/scan.json`. `--suggest` lists, per item, the models that pass the selection rules. |
 | `gmod2cs2.py <model.mdl> <slug> --roots <dir,..> --template <dir> --out <content addon> [--skin N] [--bodygroup part=i] [--maxtex 2048] [--preview dir] [--report json] [--fit]` | One model: uniform scale only (no stretching), limbs turned into CS2's bind pose at their own lengths and skinned to the CS2 agent skeleton (`--fit`: the old stretch-onto-CS2-bones method), weights remapped (twist bones included), materials converted, body DMX written into a copy of the template's, vmdl from the template's with the paths swapped. Previews: `_source` (GMod pose), `_bind` (on the CS2 skeleton, joints dotted), `_posed` (skinned to the template's preview pose). |
 | `handcheck.py <model.mdl> <template> <out.png>` | Close-up of both hands in CS2's preview pose and both wrists bent back 60° (rifle grip): where conversions break first. The pipeline writes `preview/<slug>_hands.png` per model; look at it before shipping. |
+| `fit_hitboxes.py <catalog.json> [--only s,..] [--batch N] [--compile]` (or `--model m.mdl --vmdl v.vmdl --template dir`) | Moves converted models' head hit box onto their actual head (and the neck half as far), in place, from the template's own capsules (re-runnable). The converter does this too; this is for models converted before. |
+| `hitboxes.py <template> <model.mdl>...` | Hit box fit: share of each body group's mesh outside every capsule, and the head-centre offset; the stock body as baseline. |
+| `cleanup.py <catalog.json> [--prune] [--dry-run]` | Frees disk: SteamCMD copies of catalog items, extracts of unused items, and with `--prune` every file in used items the chosen models don't need. Only catalog ids are touched. |
+| `batchnotes.py <catalog.json> <batch>` | Rebuilds `BATCH<n>.md`'s table from the reports, keeping the hand-written review below its marker. |
+| `listmodels.py <catalog.json>` | Rebuilds `MODELS.md`: every converted model, its CS2 path, source, status, warnings. |
 | `srcmdl.py <model.mdl>` | Source 1 studio model reader (MDL v44-49 + VVD + VTX v7): reference-pose bones, LOD0 skinned mesh, body parts, skin families, eyeballs. Prints a summary. |
 | `vtf.py <in.vtf> <out.png>` | VTF 7.0-7.5 mip 0 decoder (DXT1/3/5 via Pillow, the 8-bit, 565, 4444, 5551 formats here) and a VMT reader (`patch` resolved). |
 | `gma.py <file.gma\|.bin> [out dir]` | Lists or extracts a GMod addon archive (also the LZMA legacy `.bin`). Paths are sanitised; nothing in the archive is run. |
 | `preview.py` | Textured software renderer for the previews (fork of `projects/cs21.6/preview/model_render.py`). |
-| `catalog.json` | The batch: workshop id, title, author, chosen yes/no (and why not), `slug`, `mdl`, optional `skin`, `bodygroups`, `depends` (other item ids whose files it needs), and the `paths` block. |
+| `catalog.json` | Every item looked at: workshop id, title, author, `chosen` (and `skip_reason`, `looked_at` batch if not), `batch`, `slug`, `mdl`, optional `skin`, `bodygroups`, `depends` (other item ids whose files it needs), and the `paths` block. An item can appear more than once (two characters from one pack). |
+| `MODELS.md`, `BATCH<n>.md` | The list of every converted model, and per-batch tables + review notes. |
 
 ## Paths (catalog `paths`, environment overrides)
 
@@ -34,8 +40,11 @@ sleeves, preview pose: one copy for all), `materials/models/player/gmod/<slug>/*
 
 ```
 cd create/playermodels
-python -I fetch.py catalog.json --scan                 # download + list candidates
-# edit catalog.json: chosen, slug, mdl for each pick
-python -I pipeline.py catalog.json --compile           # convert, preview, compile, report
+python -I fetch.py catalog.json --scan --suggest --only=<ids>   # download, list candidates, apply the rules
+# edit catalog.json: chosen, batch, slug, mdl for each pick
+python -I pipeline.py catalog.json --batch=3 --compile           # convert, preview, hands check, compile, report
+# review contact_sheet_batch3.png + <slug>_hands.png (warned models first)
+python -I batchnotes.py catalog.json 3 && python -I listmodels.py catalog.json
+python -I cleanup.py catalog.json --prune                         # free disk once the batch is done
 ```
 Runs longer than two minutes go under `autoport/watchdog.py` on the PC (download ~10 s per item; conversion 5-60 s per model, previews 1-3 min).

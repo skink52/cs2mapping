@@ -22,7 +22,9 @@ def _cstr(f):
 def open_gma(path):
     data = open(path, 'rb').read()
     if data[:4] != b'GMAD':
-        data = lzma.decompress(data, format=lzma.FORMAT_ALONE)     # legacy .bin: LZMA "alone" stream
+        # legacy .bin: LZMA "alone" stream. Some have no end-of-stream marker, which lzma.decompress() rejects
+        # ("Compressed data ended before the end-of-stream marker"); a streaming decompressor returns what's there.
+        data = lzma.LZMADecompressor(format=lzma.FORMAT_ALONE).decompress(data)
         if data[:4] != b'GMAD': raise ValueError('%s: not a GMA archive' % path)
     return data
 

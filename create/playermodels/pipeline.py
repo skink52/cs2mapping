@@ -8,7 +8,7 @@ Writes (paths from the catalog's "paths" block):
   <work>/reports/<slug>.json and summary.md  (sizes, scale, materials, missing textures, compile result)
 Prints one progress line per step; each model is independent (a failure is reported and the batch carries on).
 """
-import json, os, subprocess, sys, time, traceback
+import json, os, re, subprocess, sys, time, traceback
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -21,12 +21,12 @@ def compile_vmdl(rc, path, log_path):
     t = time.time()
     r = subprocess.run([rc, '-i', path, '-nop4'], capture_output=True, text=True, errors='replace')
     open(log_path, 'w', encoding='utf-8').write(r.stdout + r.stderr)
-    bad = [l.strip() for l in (r.stdout + r.stderr).splitlines() if any(k in l.lower() for k in ('error', 'warning', 'failed')) and ' 0 failed' not in l]
+    bad = [l.strip() for l in (r.stdout + r.stderr).splitlines() if re.search(r'(?i)^\s*(error|warning)|error:|failed to|cannot ', l) and ' 0 failed' not in l]
     ok = ' 1 compiled, 0 failed' in r.stdout
     return {'ok': ok, 'seconds': round(time.time() - t, 1), 'problems': bad[:20], 'log': log_path}
 
 
-def contact_sheet(work, slugs):
+def contact_sheet(work, slugs, name='contact_sheet'):
     from PIL import Image, ImageDraw
     tiles = []
     for s in slugs:
@@ -41,7 +41,7 @@ def contact_sheet(work, slugs):
     for k, (s, im) in enumerate(tiles):
         x, y = (k % cols) * tw, (k // cols) * (th + 16)
         sheet.paste(im, (x, y + 16)); d.text((x + 4, y + 2), s, fill=(230, 230, 230))
-    out = os.path.join(work, 'preview', 'contact_sheet.png'); sheet.save(out)
+    out = os.path.join(work, 'preview', name + '.png'); sheet.save(out)
     return out
 
 
@@ -49,12 +49,13 @@ def main():
     cat = json.load(open(sys.argv[1]))
     p = fetch.paths(cat)
     p['out'] = os.environ.get('PM_OUT', p.get('out')); p['template'] = os.environ.get('PM_TEMPLATE', p.get('template'))
-    only = None; rc = RC_DEFAULT
+    only = None; batch = None; batches = None; rc = RC_DEFAULT
     args = sys.argv[2:]
     for i, a in enumerate(args):
         if a.startswith('--only='): only = set(a[7:].split(','))
+        if a.startswith('--batch='): batch = int(a[8:]) if ',' not in a else None; batches = [int(x) for x in a[8:].split(',')]
         if a == '--rc': rc = args[i + 1]
-    items = [it for it in cat['items'] if it.get('chosen') and (not only or it['slug'] in only)]
+    items = [it for it in cat['items'] if it.get('chosen') and (not only or it['slug'] in only) and (batches is None or it.get('batch') in batches)]
     rep_dir = os.path.join(p['work'], 'reports'); os.makedirs(rep_dir, exist_ok=True)
     prev = None if '--no-preview' in sys.argv else os.path.join(p['work'], 'preview')
     tpl = gmod2cs2.Template(p['template'])
@@ -101,8 +102,8 @@ def main():
         lines.append('| %s | [%s](%s) by %s | %s | %s | %s | %s | %s (%d) | %s | %s |' % (
             r['slug'], r['title'], r['workshop'], r['author'], r.get('vertices', ''), r.get('triangles', ''), r.get('scale', ''), jtxt,
             len(r.get('materials', [])), flat, 'OK' if r.get('compile', {}).get('ok') else ('-' if 'compile' not in r else 'FAILED'), r['status']))
-    open(os.path.join(rep_dir, 'summary.md'), 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
-    if prev: print('contact sheet:', contact_sheet(p['work'], [r['slug'] for r in results if r['status'].startswith(('ok', 'WARN'))]))
+    open(os.path.join(rep_dir, 'summary%s.md' % ('_batch%d' % batch if batch else '')), 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
+    if prev: print('contact sheet:', contact_sheet(p['work'], [r['slug'] for r in results if r['status'].startswith(('ok', 'WARN'))], 'contact_sheet' + ('_batch%d' % batch if batch else '')))
     print('\n'.join(lines))
 
 

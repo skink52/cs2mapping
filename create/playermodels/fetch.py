@@ -1,7 +1,7 @@
 """Download GMod workshop items with SteamCMD (anonymous) and extract their models/materials/lua, then list the player
 models each item registers (player_manager.AddValidModel lines, read as text, never run) with a quick size check.
 
-usage: python3 -I fetch.py <catalog.json> [--only id,id] [--no-download] [--scan]
+usage: python3 -I fetch.py <catalog.json> [--only id,id] [--no-download] [--scan] [--suggest]
 
 Paths come from the catalog's "paths" block (env overrides: STEAMCMD, PM_WORK). Downloads land in
 <steamcmd>/steamapps/workshop/content/4000/<id>/ (a .gma, or a legacy LZMA .bin); extraction goes to <work>/extract/<id>/.
@@ -40,11 +40,12 @@ def download(p, wid, log=print):
 
 
 def extract(p, wid, log=print):
+    out = os.path.join(p['work'], 'extract', str(wid))
+    if os.path.isdir(out): return out          # extracted before (cleanup.py may have deleted the download since)
     src = item_dir(p, wid)
     arch = [f for f in glob.glob(os.path.join(src, '*')) if f.endswith(('.gma', '.bin'))]
     if not arch: raise FileNotFoundError('%s: nothing downloaded' % wid)
-    out = os.path.join(p['work'], 'extract', str(wid))
-    if not os.path.isdir(out):
+    if True:
         for a in arch:
             info, files = gma.extract(a, out)
             log('  %s: extracted %d files from %s' % (wid, len(files), os.path.basename(a)))
@@ -97,13 +98,46 @@ def scan(root):
     return res
 
 
+SKIP_NAMES = ('_arms', '_hands', '_vm.', '_npc', 'npc_', '_ragdoll', '_corpse', 'zombie', '_enemy', 'hostile')
+SKIP_START = ('c_', 'v_', 'arms', 'hands')
+
+
+def shared_eye_mouth(path):
+    """HL2's shared eye/mouth textures: the converter makes stand-ins for these"""
+    n = os.path.basename(path.replace(chr(92), '/')).lower()
+    return n.startswith(('eyeball', 'mouth', 'teeth')) or n in ('eye_l', 'eye_r', 'eyes', 'eye', 'tongue')
+
+
+def suggest(models, scale=(1.0, 1.15), max_verts=100000):
+    """the scan entries that pass the selection rules (docs/creation/gmod-playermodels.md, step 3), best first:
+    registered player model, ValveBiped, CS2-sized, all VMTs and colour textures in the item, not an arms/NPC/ragdoll copy"""
+    ok = []
+    for e in models:
+        base = os.path.basename(e['mdl'])
+        why = []
+        if not e.get('valvebiped'): why.append('not ValveBiped')
+        if not e.get('registered_as'): why.append('not registered as a player model')
+        if any(k in base for k in SKIP_NAMES) or base.startswith(SKIP_START): why.append('arms/NPC/ragdoll copy')
+        s = e.get('scale') or 0
+        if not scale[0] <= s <= scale[1]: why.append('scale %.2f' % s)
+        miss = [m for m in (e.get('missing_vmt') or []) + (e.get('missing_vtf') or []) if not any(k in m.lower() for k in ('glass', 'lens')) and not shared_eye_mouth(m)]
+        if miss: why.append('missing textures (%s)' % ', '.join(miss[:3]))      # missing lenses become see-through glass
+        if e.get('vertices', 0) > max_verts: why.append('%d vertices' % e['vertices'])
+        if e.get('error'): why.append('read error')
+        e['rejected'] = why
+        if not why: ok.append(e)
+    return sorted(ok, key=lambda e: -e.get('vertices', 0))
+
+
 if __name__ == '__main__':
     cat = json.load(open(sys.argv[1]))
     p = paths(cat)
     only = None
     for a in sys.argv[2:]:
         if a.startswith('--only='): only = set(a[7:].split(','))
-    items = [it for it in cat['items'] if not only or str(it['id']) in only]
+    items, seen = [], set()
+    for it in cat['items']:                 # one entry per item id (an item can supply several catalog models)
+        if (not only or str(it['id']) in only) and it['id'] not in seen: items.append(it); seen.add(it['id'])
     report = {}
     for k, it in enumerate(items):
         wid = str(it['id'])
@@ -125,3 +159,10 @@ if __name__ == '__main__':
         old.update(report)
         json.dump(old, open(sp, 'w'), indent=1)
         print('scan ->', sp)
+    if '--suggest' in sys.argv:          # from scan.json: the models that pass the rules, per item
+        sp = os.path.join(p['work'], 'logs', 'scan.json')
+        sc = json.load(open(sp)) if os.path.exists(sp) else {}
+        print('\nsuggested (passes the rules; first = most detailed):')
+        for it in items:
+            good = suggest(sc.get(str(it['id']), {}).get('models', []))
+            print('  %s %-45s %s' % (it['id'], it.get('title', '')[:45], ', '.join('%s (%dk v, x%.2f)' % (e['mdl'], e['vertices'] // 1000, e['scale']) for e in good[:4]) or 'none'))

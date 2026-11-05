@@ -3,6 +3,16 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-06: GMod player models batches 2-3 (50 models in all), converter fixes
+
+- **[create] playermodels**: batches 2 and 3 (20 each) -> 50 converted, all compiled; list in
+  [create/playermodels/MODELS.md](create/playermodels/MODELS.md), per batch in `BATCH1-3.md`. Converter: per-model head (and neck) hit box
+  moved onto the model's head (`fit_hitboxes.py` for converted models; hit box fit report); generated stand-ins for HL2's shared eye/mouth
+  textures; bodygroup default = option 0 like the game (party hats/riot shields/gear had appeared on 11 models); 3-finger rigs aligned;
+  low-poly limbs split where the twist changes sharply (forearms no longer flatten into ribbons) and hard-skinned elbows/knees softened;
+  duplicate VMT keys resolved like Source (first wins); legacy LZMA `.bin` without end marker extracted; finger-fit and rig warnings.
+  New: `fetch.py --suggest` (selection rules), `batchnotes.py`, `listmodels.py`, `cleanup.py` (freed 8.6 GB). Guide updated.
+
 ## 2026-11-06: GMod player models -> CS2 (create/playermodels), batch 1 of 10
 
 - **[create] playermodels/**: SteamCMD workshop download + GMA extract (`fetch.py`, `gma.py`), a Source 1 MDL/VVD/VTX reader with bones and

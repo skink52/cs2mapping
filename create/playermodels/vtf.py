@@ -120,7 +120,7 @@ def load_vmt(path, roots, depth=0):
     params = {}
     if isinstance(body, list):
         for k, v in body:
-            if isinstance(v, str): params[k.lower()] = v
+            if isinstance(v, str): params.setdefault(k.lower(), v)      # Source keeps the first of duplicate keys
             elif k.lower() == 'replace' or k.lower() == 'insert':
                 for k2, v2 in v:
                     if isinstance(v2, str): params[k2.lower()] = v2
