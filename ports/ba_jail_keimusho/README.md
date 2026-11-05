@@ -126,7 +126,8 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
   tsc, the mock engine and a targeted round/death/timeout simulation; not yet seen in game.
 - **Vis: every hint Medium** (skink52 still saw props popping in and out). The 381 visibility_hints (14 Medium, 192 Low, 174 Lower, the Lowest over the
   whole map) all set to Medium, so the whole map is Medium; compile time traded for robustness. Backup: `maps/ba_jail_keimusho_vmap_backup_20261105.zip`.
-- Built with `build_maps.ps1 final ba_jail_keimusho` (new mode: full build, 2048 lightmaps, VRAD quality 2).
+- Built with `build_maps.ps1 final ba_jail_keimusho` (new mode: full build, 2048 lightmaps, VRAD quality 2): OK in 70.6 min, vpk 152 MB.
+  Vis: 586,031 regions, 31,697 clusters merged to 16,384 (the cap); boundary ray pass 25 min, large-cluster pass 14 min.
 
 ## Open
 
