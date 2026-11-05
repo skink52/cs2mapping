@@ -8,7 +8,8 @@
 #   a line "assets mg_x" compiles mg_x's materials/radar/HUD xml+css/sounds/scripts only, without rebuilding the map
 #   a line "entities mg_x [map]" recompiles only the entities (Hammer's entity-only build: no world, vis or nav) - for entity edits
 #   a line "lighting mg_x [map]" recompiles the world and lighting but not vis or nav - for texture / material changes with no brush moved
-#   Both need an earlier full build: they start from the map's current .vpk in game\, and fall back to a full build when there is none.
+#   a line "final mg_x [map]" is a full build (world, vis, nav, audio) with release lighting: 2048 lightmaps, VRAD quality 2
+#   entities / lighting need an earlier full build: they start from the map's current .vpk in game\, and fall back to a full build when there is none.
 # Logs: C:\source1\cs2port\logs\<addon>_build.log and logs\stage_d_done.txt
 # Successful builds are marked [in progress, built] in existing_ports.txt.
 
@@ -48,7 +49,14 @@ if (-not (Test-Path $RC)) { Write-Host "resourcecompiler.exe not found at $RC" -
 
 # queue: "addon", "addon mapname", or "assets addon" (compile the addon's assets only, no map build)
 $queue = @()
-$lines = $(if ($Maps -and $Maps.Count) { $Maps } else {
+# on the command line a mode word joins the addon after it: "final ba_jail_keimusho" is one entry, as on a queue line
+$argLines = @(); $pend = ''
+foreach ($m in @($Maps)) {
+    if (-not $m) { continue }
+    if ($m.ToLower() -in @('assets', 'entities', 'lighting', 'final')) { $pend = $m; continue }
+    $argLines += $(if ($pend) { "$pend $m" } else { $m }); $pend = ''
+}
+$lines = $(if ($argLines.Count) { $argLines } else {
     $qf = Join-Path $Port 'build_queue.txt'
     if (-not (Test-Path $qf)) { Write-Host "No maps given and no $qf" -ForegroundColor Red; exit 1 }
     Get-Content $qf })
@@ -57,12 +65,13 @@ foreach ($ln in $lines) {
     if (-not $p.Count) { continue }
     $assetsOnly = $false; $mode = 'full'
     if ($p[0] -ieq 'assets' -and $p.Count -gt 1) { $assetsOnly = $true; $p = @($p[1..($p.Count - 1)]) }
-    elseif ($p[0] -in @('entities', 'lighting') -and $p.Count -gt 1) { $mode = $p[0].ToLower(); $p = @($p[1..($p.Count - 1)]) }
+    elseif ($p[0] -in @('entities', 'lighting', 'final') -and $p.Count -gt 1) { $mode = $p[0].ToLower(); $p = @($p[1..($p.Count - 1)]) }
     $queue += ,@($p[0], $(if ($p.Count -gt 1) { $p[1] } else { $p[0] }), $assetsOnly, $mode)
 }
 
 # CS2 / Hammer holding a map open stops the vpk being replaced
-while (Get-Process -Name cs2 -ErrorAction SilentlyContinue) {
+# (only this install's cs2.exe: a dedicated server from another folder doesn't hold these files)
+while (Get-Process -Name cs2 -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith($CS2, [StringComparison]::OrdinalIgnoreCase) }) {
     Write-Host 'CS2 / Hammer is running. Close it, then press Enter (the build cannot replace a map that is loaded).' -ForegroundColor Yellow
     Read-Host | Out-Null
 }
@@ -79,10 +88,10 @@ foreach ($q in $queue) {
     $dest  = Join-Path $CS2 "game\csgo_addons\$addon\maps\$map.vpk"
     $log   = Join-Path $Logs "${addon}_build.log"
     Write-Host ''
-    if ($mode -ne 'full' -and -not (Test-Path $dest)) {
+    if ($mode -in @('entities', 'lighting') -and -not (Test-Path $dest)) {
         Write-Host "     no earlier build of $map.vpk in game\, so this is a full build instead of '$mode'" -ForegroundColor Yellow; $mode = 'full'
     }
-    Write-Host "==== $addon : $(if ($assetsOnly) { 'assets only' } elseif ($mode -ne 'full') { "compiling $map.vmap ($mode only)" } else { "compiling $map.vmap" }) ====" -ForegroundColor Cyan
+    Write-Host "==== $addon : $(if ($assetsOnly) { 'assets only' } elseif ($mode -eq 'final') { "compiling $map.vmap (final: 2048 lightmaps, quality 2)" } elseif ($mode -ne 'full') { "compiling $map.vmap ($mode only)" } else { "compiling $map.vmap" }) ====" -ForegroundColor Cyan
     if (-not $assetsOnly -and -not (Test-Path $vmap)) {
         Write-Host "     FAILED - $vmap not found" -ForegroundColor Red
         $summary += "$addon FAILED (no vmap)"; continue
@@ -131,10 +140,11 @@ foreach ($q in $queue) {
     }
 
     $in = ($vmap -replace '\\', '/').ToLower()
-    if ($mode -eq 'full') {
+    if ($mode -in @('full', 'final')) {
+        $lmRes = $(if ($mode -eq 'final') { '2048' } else { '1024' }); $lmQ = $(if ($mode -eq 'final') { '2' } else { '1' })
         $rcArgs = @('-threads', '5', '-fshallow', '-maxtextureres', '256', '-quiet', '-unbufferedio', '-i', $in,
-            '-noassert', '-world', '-rebake_surfacegraph', '-bakelighting', '-lightmapMaxResolution', '1024',
-            '-lightmapVRadQuality', '1', '-phys', '-vis', '-nav', '-sareverb', '-sareverb_threads', '6', '-sapaths',
+            '-noassert', '-world', '-rebake_surfacegraph', '-bakelighting', '-lightmapMaxResolution', $lmRes,
+            '-lightmapVRadQuality', $lmQ, '-phys', '-vis', '-nav', '-sareverb', '-sareverb_threads', '6', '-sapaths',
             '-sareverb_threads', '6', '-sacustomdata', '-sacustomdata_threads', '6', '-breakpad', '-nop4',
             '-outroot', $OutRoot)
     } else {

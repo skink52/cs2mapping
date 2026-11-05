@@ -6,7 +6,7 @@
 | Source BSP | `ba_jail_os_keimusho_v3` (imported); `ba_jail_os_keimusho_v3.bsp` and `_v2.bsp` are in `C:\source1\bspsrc-windows\bsp's` |
 | Original map | Crycelia |
 | Imported | 2026-10-07 |
-| Map last changed | 2026-10-31 |
+| Map last changed | 2026-11-05 |
 | How | Valve importer, Hammer by hand, then a one-off fix script ([`fix_20261031.py`](fix_20261031.py)) |
 
 Loading text: `Map by Crycelia` / `CS2 Port by skink52 for Slime Servers`.
@@ -116,6 +116,17 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
 - **Rope:** the CS:GO `move_rope` pair rope3/rope4 (cable/rope2, -384 -1813 301 → 450) is now two `grapplinghook_rope_end_01` props tinted 240 179 94 at z 279 and 447
   (the top one flipped), next to the imported invisible ladder.
 - Lighting: 2 light_omni2 and 7 env_combined_light_probe_volumes around -660 464 adjusted or added; 2 func_conveyors removed.
+
+## 2026-11-05
+
+- **Bump mine HUD stuck on screen round to round.** Cause: the script only sends HUD changes, and the round-start reset cleared its "last sent" cache,
+  so the hide that followed looked like no change and was never sent; whoever held the decoy at round end kept the card. Now: the card shows once per
+  player per round for at most 5 s (ends sooner if they stop holding the decoy, leave the arena or die), and every slot is hidden explicitly on round
+  start (again 0.5 s and 2 s later, once the new round's HUD entity exists), round end, bump_off, death, spawn, connect and disconnect. Checked with
+  tsc, the mock engine and a targeted round/death/timeout simulation; not yet seen in game.
+- **Vis: every hint Medium** (skink52 still saw props popping in and out). The 381 visibility_hints (14 Medium, 192 Low, 174 Lower, the Lowest over the
+  whole map) all set to Medium, so the whole map is Medium; compile time traded for robustness. Backup: `maps/ba_jail_keimusho_vmap_backup_20261105.zip`.
+- Built with `build_maps.ps1 final ba_jail_keimusho` (new mode: full build, 2048 lightmaps, VRAD quality 2).
 
 ## Open
 

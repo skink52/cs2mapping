@@ -8,7 +8,10 @@ import { Instance, CSPlayerPawn, CSPlayerController, CSGrenadeType, CSGearSlot, 
 // (thrower included, as in CS:GO) is launched away from it and the mine is used up.
 // Only while the game is on (start button -> bump_on, end button -> bump_off) and only inside the arena box (ARENA), so
 // spleef's decoys stay decoys. In the hand it stays a decoy; in flight the decoy is hidden and a bump mine prop follows it.
-// HUD (custom_hud_layout bumphud): "BUMP MINE READY - MOUSE1 THROW" + charges while the player holds the decoy in the arena.
+// HUD (custom_hud_layout bumphud): "BUMP MINE READY - MOUSE1 THROW" + charges while the player holds the decoy in the arena,
+// once per player per round and for at most HUD_SECONDS; hidden on death, spawn, round start/end, bump_off and when the player
+// stops holding the decoy or leaves the arena. It used to stick round to round: the round-start reset cleared the "last sent"
+// cache, so the hide that followed looked like no change and was never sent.
 
 const CHARGES = 3;
 const ARM_DELAY = 0.3;
@@ -22,6 +25,8 @@ const POOL_SIZE = 8;
 const REGIVE_DELAY = 0.6;
 const ARENA = { min: { x: -2530, y: -4600, z: -420 }, max: { x: -1490, y: -3900, z: 40 } };
 const HUD_NAME = "bumphud";
+const HUD_SECONDS = 5;                // the card shows at most this long, once per player per round
+const MAX_SLOTS = 64;
 const LAND_FALLBACK = 3.0;            // no bounce event this long after the throw: place the mine where the decoy is
 let debug = false;
 function dbg(t) { if (debug) Instance.Msg("[bumpmine] " + t); }
@@ -36,19 +41,40 @@ let pool = [];
 let regive = [];
 let thinking = false;
 let gameOn = false;
-/** @type {Map<number, string>} slot -> last HUD state sent ("" = hidden, otherwise the charges text) */
+/** @type {Map<number, string>} slot -> last HUD state sent ("" = hidden, otherwise the charges text); no entry = unknown, always send */
 const hudSent = new Map();
+/** @type {Map<number, number>} slot -> game time the card must be gone by (shown this round); no entry = not shown yet this round */
+const hudShownUntil = new Map();
+/** @type {number[]} game times at which every slot's card is hidden again (after a round start the new round's HUD entity may not exist yet) */
+let hudWipes = [];
 
 function inArena(p) {
     return p.x >= ARENA.min.x && p.x <= ARENA.max.x && p.y >= ARENA.min.y && p.y <= ARENA.max.y && p.z >= ARENA.min.z && p.z <= ARENA.max.z;
 }
 function hud() { const e = Instance.FindEntityByName(HUD_NAME); return e instanceof CustomHudLayout ? e : undefined; }
 function setHud(slot, text) {
-    if ((hudSent.get(slot) ?? "") === text) return;
+    if (hudSent.get(slot) === text) return;
     const h = hud(); if (!h) return;
     if (text) h.SetDialogVariableStringForPlayer(slot, "bumpcharges", text);
     h.SetHasClassForPlayer(slot, "BumpReady", "stOn", !!text);
     hudSent.set(slot, text);
+}
+
+// hide the card for one slot / every slot, whatever the cache says
+function hideHud(slot) { hudSent.delete(slot); setHud(slot, ""); }
+function wipeHud() {
+    const h = hud();
+    if (h) { h.Reset(); for (let s = 0; s < MAX_SLOTS; s++) h.SetHasClassForPlayer(s, "BumpReady", "stOn", false); }
+    hudSent.clear();
+    for (let s = 0; s < MAX_SLOTS; s++) hudSent.set(s, "");
+}
+function hudWanted(slot, pw, now) {
+    if (!gameOn || !pw || !pw.IsValid() || !pw.IsAlive() || !charges.get(slot) || !inArena(pw.GetAbsOrigin())) return "";
+    const w = pw.GetActiveWeapon();
+    if (!w || !w.IsValid() || w.GetClassName() !== "weapon_decoy") return "";
+    const until = hudShownUntil.get(slot);
+    if (until === undefined) { hudShownUntil.set(slot, now + HUD_SECONDS); return "x" + charges.get(slot); }
+    return now < until ? "x" + charges.get(slot) : "";
 }
 
 function toPawn(ent) {
@@ -141,6 +167,7 @@ Instance.OnGrenadeBounce(({ projectile }) => {
 Instance.SetThink(() => {
     const now = Instance.GetGameTime();
     regive = regive.filter((r) => { if (now < r.at) return true; giveDecoy(r.slot); return false; });
+    hudWipes = hudWipes.filter((t) => { if (now < t) return true; wipeHud(); return false; });
     for (const [p, mine] of flying) {
         if (!p.IsValid()) { flying.delete(p); retire(mine); continue; }
         const v = p.GetAbsVelocity();
@@ -153,12 +180,7 @@ Instance.SetThink(() => {
         const pw = c.GetPlayerPawn();
         if (pw && pw.IsValid() && pw.IsAlive()) pawns.push(pw);
         const slot = c.GetPlayerSlot();
-        let text = "";
-        if (gameOn && pw && pw.IsValid() && pw.IsAlive() && charges.get(slot) && inArena(pw.GetAbsOrigin())) {
-            const w = pw.GetActiveWeapon();
-            if (w && w.IsValid() && w.GetClassName() === "weapon_decoy") text = "x" + charges.get(slot);
-        }
-        setHud(slot, text);
+        setHud(slot, hudWanted(slot, pw, now));
     }
     for (const mine of pool) {
         if (!mine.live) continue;
@@ -178,7 +200,8 @@ Instance.SetThink(() => {
             break;
         }
     }
-    if (gameOn || regive.length || flying.size || pool.some((p) => p.live)) Instance.SetNextThink(now);
+    const hudOn = [...hudSent.values()].some((t) => t !== "");
+    if (gameOn || regive.length || hudWipes.length || hudOn || flying.size || pool.some((p) => p.live)) Instance.SetNextThink(now);
     else thinking = false;
 });
 
@@ -187,18 +210,34 @@ Instance.OnScriptInput("bump_on", () => { gameOn = true; dbg("game on"); wake();
 Instance.OnScriptInput("bump_debug", () => { debug = !debug; Instance.Msg("[bumpmine] debug " + (debug ? "on" : "off")); });
 Instance.RegisterCheatCommand("bump_debug", () => { debug = !debug; Instance.Msg("[bumpmine] debug " + (debug ? "on" : "off")); });
 Instance.RegisterCheatCommand("bump_on", () => { gameOn = true; Instance.Msg("[bumpmine] game on"); wake(); });
-Instance.OnScriptInput("bump_off", () => { gameOn = false; charges.clear(); for (const s of [...hudSent.keys()]) setHud(s, ""); });
+Instance.OnScriptInput("bump_off", () => { gameOn = false; charges.clear(); wipeHud(); });
 
 function reset() {
     gameOn = false;
     charges.clear(); flying.clear(); regive = [];
-    const h = hud(); if (h) h.Reset();
-    hudSent.clear();
+    hudShownUntil.clear();
+    wipeHud();
+    // again once the new round's entities exist (the HUD entity is re-created each round too)
+    const now = Instance.GetGameTime();
+    hudWipes = [now + 0.5, now + 2];
     pool = [];                      // re-found on first use: at round start the new round's props may not exist yet
+    wake();
 }
 Instance.OnActivate(reset);
 Instance.OnRoundStart(reset);
+Instance.OnRoundEnd(() => { wipeHud(); });
 Instance.OnPlayerReset(({ player }) => {
     const slot = player.GetPlayerController()?.GetPlayerSlot();
-    if (slot !== undefined) charges.delete(slot);
+    if (slot !== undefined) { charges.delete(slot); hideHud(slot); }
 });
+Instance.OnPlayerKill(({ player }) => {
+    const slot = player?.GetPlayerController()?.GetPlayerSlot();
+    if (slot !== undefined) { charges.delete(slot); hideHud(slot); }
+});
+Instance.OnPlayerActivate(({ player }) => {
+    const slot = player?.GetPlayerSlot();
+    if (slot === undefined) return;
+    const h = hud(); if (h) h.ResetForPlayer(slot);
+    hideHud(slot);
+});
+Instance.OnPlayerDisconnect(({ playerSlot }) => { charges.delete(playerSlot); hudShownUntil.delete(playerSlot); hideHud(playerSlot); });

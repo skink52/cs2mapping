@@ -3,6 +3,27 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-05: ba_jail_keimusho bump mine HUD, all-Medium vis, final build mode
+
+- ba_jail_keimusho: the bump mine "MOUSE1 THROW" card stuck on screen across rounds (round-start reset cleared the HUD's sent-state cache, so the hide was
+  skipped). Now shown once per player per round for at most 5 s and wiped on death, spawn, round start/end and bump_off. Every vis hint set to Medium
+  (props still popped). Details: [ports/ba_jail_keimusho](ports/ba_jail_keimusho/README.md).
+- `build_maps.ps1`: `final <addon> [map]` queue line / argument for a release build (2048 lightmaps, VRAD quality 2). The "CS2 is running" wait now only
+  counts cs2.exe from the Steam install, so a dedicated server in another folder no longer blocks (or, run unattended, spins) the build.
+
+## 2026-11-05: CS2 scripting update (Entities export) checked
+
+- **[create] point_script.d.ts** refreshed from CS2 build 2000942 (5 Nov) in `create/test/` and the five project copies (the old copy predated
+  the 22 Oct update too). Old `Instance.*` entity/console/round methods are deprecated but still present; no script changes needed. All 54 port and
+  project scripts type-check with no new errors. Old-to-new table in [docs/reference/cs_script-notes.md](docs/reference/cs_script-notes.md#entities-and-io-from-script).
+
+## 2026-11-05: Hellmatch reports stats to a server plugin (mgstat)
+
+- **[hellmatch] server stats.** `CONFIG.SERVER_STATS` (off by default; replaces `MONSTER_KILL_COMMAND`) sends `mgstat <slot> pve_kills <n>`,
+  `boss_kills <n>` (batched per player, once a second) and `lms_wins` to a stats plugin; a plugin can also switch it on with `RunScriptInput mgstat_on`
+  on `fdm_script`. Bots and warmup skipped. Script v0.2.1; mock-tested (`stats`, `statsinput`, `lmsonly`), unchanged trace with it off. The map needs a
+  Hammer rebuild and re-upload to carry it. Not yet run in CS2.
+
 ## 2026-11-05: TTT map messages reach a server plugin through ttt.js
 
 - **[ttt] plugin channel.** Switched off, `ttt.js` now forwards every map message to the server as `ttt_srv_msg <slot> <activator> <op> <id>`,
