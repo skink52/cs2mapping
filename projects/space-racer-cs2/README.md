@@ -84,6 +84,12 @@ The maps need no plugin, but they can report stats to one: `SERVER_STATS: true` 
 plugin switches it on at load with `RunScriptInput mgstat_on` on the map's `spr_script` (SlimeMG does). The mock test checks the
 commands: `node test/mock_cs2.mjs 20 44 400 churn,statsinput`. Details in `CHANGELOG.md` (v0.7.0).
 
+## Next compile (earmarked 5 Nov 2026, from the slime-mg-gm server tests)
+- `CONFIG.CVARS_ALWAYS` is sent once at activation; a server that re-runs its mode cfg after the map loads (slime-mg-gm does, 0.25 s in) overrides it. Send it again at every round start too. (The server repeats the values in its own per-map cfg meanwhile.)
+- `mp_force_assign_teams`: the server can't find a cvar by that name (SlimeMG's cvar lookup says missing; no error printed). Check it does anything; if not, drop it (the script's own auto-assign moves players anyway).
+- Delete the stub `game/csgo_addons/<addon>/cfg/maps/<map>.cfg` before uploading (docs/reference/cs2-gotchas.md): it shadows a server's per-map cfg.
+- Best race and lap times already reach the server (`mgstat <slot> time <track>[_lap] <ms>`, stored as each player's fastest). Showing them in game (a `!times` board) is a server-plugin job, not a map change.
+
 ## Licence
 
 Free for non-commercial use: copy, change, share and run it, including on game servers (donation/VIP servers are fine). Not to be sold, paywalled or built into a paid product or service. Code: [PolyForm Noncommercial 1.0.0](LICENSE). Art, models, sounds and maps: [CC BY-NC 4.0](LICENSE-CC-BY-NC-4.0.txt). Not affiliated with Valve or any racing game.

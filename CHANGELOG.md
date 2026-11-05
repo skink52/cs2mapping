@@ -31,6 +31,10 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   1.0.379, reading entity IO connections crashes the server, and its input hooks miss zero-delay map outputs. Verified in game that a map
   script's `Instance.ServerCommand` reaches a dedicated server. Mock-tested (`test/run_mock.sh` allows only `ttt_srv_*` commands while off).
   The TTT maps need rebuilding and re-uploading to carry it. SERVER_MAP_ENTITIES.md §1 documents it.
+## 2026-11-05: Workshop map cfg stub shadows a server's per-map cfg
+
+- CS2 gotcha: the tools' stub `cfg/maps/<map>.cfg` ships in Workshop uploads and wins over the server's per-map cfg while the map is mounted (found on the racers by the slime-mg-gm map tests). Next-compile notes for the racers (README) and Hellmatch (STATUS): re-send CVARS_ALWAYS each round, check `mp_force_assign_teams`, delete the stub.
+
 ## 2026-11-05: Hellmatch v0.2.1 script delivered to the content addon
 
 - Hellmatch: freedm.js v0.2.1 (server stats via mgstat, 45e4f04) copied into the mg_freedm content addon; not yet built in Hammer or uploaded.

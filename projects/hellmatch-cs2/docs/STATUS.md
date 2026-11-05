@@ -15,6 +15,11 @@ Copy, wait ~20 s, write, then stage the file back and compare sha1 before tellin
 After a script/HUD change Zach must fully reload (`disconnect`, run the map again) so the script
 and Panorama files recompile. Zach doesn't code: plain-language explanations, light code comments.
 
+## Next compile (earmarked 5 Nov 2026, from the slime-mg-gm server tests)
+- v0.2.1 on the Workshop works on the server: `server stats on` after SlimeMG's `mgstat_on`, guard locked, no errors.
+- `CONFIG.CVARS_ALWAYS` (radar off, no money, no buy time, respawn immunity 0) is sent once at activation and the server's mode cfg re-run 0.25 s later overrode it (radar was on, start money 800). The server now repeats them in its per-map cfg; in the script, send them again at every round start too.
+- The game addon has the CS2 stub `cfg/maps/mg_freedm.cfg` (old name, so harmless now); delete it before the next upload (docs/reference/cs2-gotchas.md).
+
 ## Update 5 Nov 2026 - server stats for a plugin (mgstat), script v0.2.1
 Script only (src/cs2/00_config.js, 60_main.js): no Hammer/model changes, but the map has to be rebuilt in Hammer and re-uploaded to carry it.
 NOT YET RUN IN CS2.
