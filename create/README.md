@@ -63,6 +63,13 @@ The porting side's `tools/vmapedit.py` (also reads the importer's keyvalues2 map
 
 Example: `CS2_ADDON_OUT=out/addon python3 -c "import build_prop, p_sandbag; build_prop.build('sandbags', p_sandbag.spec(0))"`.
 
+## Player models from Garry's Mod (playermodels/)
+
+GMod workshop player models (ValveBiped) -> CS2 player models on the stock agent skeleton: SteamCMD download, GMA extract, scan, convert,
+preview, compile, report, from one catalog. Index: [playermodels/README.md](playermodels/README.md); guide: [docs/creation/gmod-playermodels.md](../docs/creation/gmod-playermodels.md).
+`playermodels/srcmdl.py` is the skinned superset of the porting side's static `tools/mdlmesh.py` (bones, weights, body parts, skins, eyeballs);
+`playermodels/vtf.py` also reads VMTs.
+
 ## HUD and loading screens
 
 | File | What it does |

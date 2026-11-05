@@ -1,0 +1,151 @@
+{
+ "about": "GMod workshop player models picked for conversion to CS2 (create/playermodels). chosen=true: in the batch. mdl: the registered model converted (path inside the item). Workshop authors keep their rights; many GMod player models are themselves ports from other games, so converted models are for private/local testing unless the author agrees to more (see docs/creation/gmod-playermodels.md).",
+ "paths": {
+  "steamcmd": "C:\\steamcmd\\steamcmd.exe",
+  "work": "C:\\source1\\playermodels",
+  "template": "C:\\source1\\playermodels\\template",
+  "out": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\content\\csgo_addons\\gmod_playermodels"
+ },
+ "source_page": "https://steamcommunity.com/workshop/browse/?appid=4000&browsesort=toprated&section=readytouseitems&days=7&requiredtags[]=Model (top rated, 6 Nov 2026)",
+ "items": [
+  {
+   "id": 3412497213,
+   "title": "[Breaking Bad] Gustavo Fring",
+   "author": "Azkabath",
+   "chosen": true,
+   "slug": "gus_fring",
+   "mdl": "models/gustavo_fring/gustavo_suit.mdl",
+   "name": "Gus Fring (suit)"
+  },
+  {
+   "id": 3320656757,
+   "title": "Gordon Freeman Restored (PM/NPC)",
+   "author": "Gordon Freakman",
+   "chosen": true,
+   "slug": "gordon_restored",
+   "mdl": "models/gfreakman/gordonf_highpoly.mdl",
+   "name": "Gordon Freeman Restored"
+  },
+  {
+   "id": 3673818635,
+   "title": "CASTE Graffiti Playermodel + NPC",
+   "author": "VHBC",
+   "chosen": true,
+   "slug": "caste_graffiti",
+   "mdl": "models/playermodels/caste_pm.mdl",
+   "name": "Caste Graffiti Guy"
+  },
+  {
+   "id": 3626678503,
+   "title": "Valve Account Recovery Taskforce [PM]",
+   "author": "Fozer_T89",
+   "chosen": true,
+   "slug": "vart_agent",
+   "mdl": "models/fozer/v.a.r.t/valveaccountrecoverytaskforce_pm.mdl",
+   "name": "V.A.R.T"
+  },
+  {
+   "id": 3621630161,
+   "title": "Christmas Sweater Citizens (Playermodel & Ragdoll)",
+   "author": "Wontairr",
+   "chosen": false,
+   "skip_reason": "face, eye and mouth textures are HL2 citizen textures not in the item (came out flat grey in batch 1 run 1)"
+  },
+  {
+   "id": 3361691203,
+   "title": "[PM+NPC] Promo Art Gordon Freeman",
+   "author": "Vuthakral",
+   "chosen": true,
+   "slug": "gordon_promo",
+   "mdl": "models/vuthakral/hl1/characters/gordon_promo.mdl",
+   "name": "Gordon Freeman (promo art)"
+  },
+  {
+   "id": 3374404008,
+   "title": "BAGGY JEANS SKELETON | Playermodel",
+   "author": "Gruchk",
+   "chosen": false,
+   "skip_reason": "materials come from base-game (HL2/GMod) content that is not in the item"
+  },
+  {
+   "id": 3456405055,
+   "title": "The Thing (2002) Humans (Playermodels & Ragdolls)",
+   "author": "Kapitano Krunchyman",
+   "chosen": true,
+   "slug": "thing_macready",
+   "mdl": "models/thething2002/pm_macready.mdl",
+   "name": "The Thing: MacReady"
+  },
+  {
+   "id": 3419019710,
+   "title": "House M.D: Dr Gregory House",
+   "author": "Bunny",
+   "chosen": true,
+   "slug": "dr_house",
+   "mdl": "models/bunny/doctor_house/doctor_house.mdl",
+   "name": "Dr Gregory House"
+  },
+  {
+   "id": 3682482439,
+   "title": "Resident Evil: Requiem - Former Umbrella Security Service (The Connections) [PMS]",
+   "author": "Stranger",
+   "chosen": false,
+   "skip_reason": "272k-308k vertices per model (680 MB item): too heavy without decimation"
+  },
+  {
+   "id": 3387382988,
+   "title": "CSS ENHANCED SPECIAL FORCES /// SEB & SWAT /// PLAYERMODEL",
+   "author": "Gruchk",
+   "chosen": true,
+   "slug": "css_swat",
+   "mdl": "models/css_seb_swat/css_swat.mdl",
+   "name": "CS:S Enhanced SWAT"
+  },
+  {
+   "id": 3735230220,
+   "title": "Resident Evil 4 (2005) Leon S. Kennedy Playermodel",
+   "author": "acres",
+   "chosen": true,
+   "slug": "leon_re4",
+   "mdl": "models/re4/leon/leon_pm.mdl",
+   "name": "Leon S. Kennedy (RE4 2005)"
+  },
+  {
+   "id": 3716275712,
+   "title": "Roscoe the Friendly Playermodel (and Ragdoll)",
+   "author": "Windows 7 Task Scheduler",
+   "chosen": false,
+   "skip_reason": "43 u tall (head joint 32 u): would need 2.2x scale, not CS2-sized"
+  },
+  {
+   "id": 3698609418,
+   "title": "[Breaking Bad] Saul Goodman",
+   "author": "Azkabath",
+   "chosen": false,
+   "skip_reason": "spare: self-contained and CS2-sized, not needed for the first 10"
+  },
+  {
+   "id": 3452810040,
+   "title": "Left 4 Dead styled soldier (Playermodel/Ragdoll)",
+   "author": "devious critter",
+   "chosen": false,
+   "skip_reason": "spare: self-contained and CS2-sized, not needed for the first 10"
+  },
+  {
+   "id": 3367031890,
+   "title": "[PM] H.E.V. MK-3 NEW",
+   "author": "Jofoyo",
+   "chosen": false,
+   "skip_reason": "spare: self-contained and CS2-sized, not needed for the first 10"
+  },
+  {
+   "id": 3415757440,
+   "title": "Road of The Dead: Military",
+   "author": "pvnished dej",
+   "chosen": true,
+   "slug": "rotd_guard",
+   "mdl": "models/dejtriyev/rotd/ec_national_guard.mdl",
+   "name": "Road of The Dead: National Guard"
+  }
+ ]
+}

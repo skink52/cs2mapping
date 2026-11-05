@@ -100,6 +100,7 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Generate original props from scratch with realistic baked textures (wood, rust, cloth, mud, paint), detail levels and collision, or with CS2's own textures.
 - Low-poly creatures, voxel characters and objects built from 2D sprites, animated textures (voxel builder in the toolkit; creatures *(project repos)*).
 - Turn old CS:GO custom player models (e.g. Octodad) into working CS2 player models with proper animations, hitboxes, ragdolls and first-person arms.
+- Download Garry's Mod workshop player models and convert them in a batch into CS2 player models (CS2 animations, hitboxes, ragdoll), with preview pictures and a report per model.
 - Animated characters driven by script, with hand-keyed and motion-capture animation retargeted onto the CS2 skeleton (toolkit: mocap retarget, joint checks, rig model writer; game-specific animation *(project repos)*).
 - Read and preview CS2's built-in textures and models to reuse them.
 

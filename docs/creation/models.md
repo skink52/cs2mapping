@@ -116,6 +116,11 @@ Seam cracks on a converted body: if the source mesh is split at every seam and t
 transferred per vertex from a donor), re-posing pulls them apart and the model shows see-through specks. Weld the source first; to
 repair a finished DMX, `create/weld_cracks.py` merges the cracked boundary vertices.
 
+### Garry's Mod player models (batch converter)
+
+ValveBiped GMod player models are converted unattended by [`create/playermodels/`](../../create/playermodels/README.md) onto the template below:
+workflow, bone map, re-pose method and the first batch of 10 in [gmod-playermodels.md](gmod-playermodels.md).
+
 ### Rebuilding a CS:GO player model as a CS2 agent
 
 CS:GO custom player models (Octodad in mg_mario_party, the green Power Ranger in mg_50arenas) import as plain props: no CS2 animgraph, so weapons are

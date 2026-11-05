@@ -1,0 +1,814 @@
+"""Garry's Mod / Source 1 player model (ValveBiped skeleton) -> CS2 player model on the stock agent skeleton, so CS2's own
+animation graph, hit boxes, ragdoll and weapon attachments work with it.
+
+usage: python3 -I gmod2cs2.py <model.mdl> <slug> --roots <folder>[,<folder>...] --template <dir> --out <content addon>
+                              [--skin N] [--bodygroup part=index ...] [--maxtex 2048] [--preview <dir>] [--report <json>]
+
+  roots     folders holding models/ and materials/ (the extracted workshop item, plus any it depends on)
+  template  a CS2 agent decompiled to ModelDoc with Source 2 Viewer and given ragdoll joints (docs/creation/models.md):
+            <name>.vmdl, <name>_thirdperson_body.dmx, _firstperson_arms.dmx, _firstperson_sleeves.dmx, _tools_preview.dmx
+  out       content addon root; writes models/player/gmod/<slug>/<slug>.vmdl + <slug>_body.dmx,
+            models/player/gmod/shared/ (the template's first-person arms, sleeves, preview pose) and
+            materials/models/player/gmod/<slug>/ (vmat + png)
+
+How the mesh is moved: every ValveBiped bone is matched to a CS2 bone. The model keeps its own proportions (one uniform
+scale, nothing stretched): each bone's piece of the mesh is only turned so the bone points the way the CS2 bone points
+(GMod's reference pose -> CS2's A-pose) and stays joined to its parent at its own length. The uniform scale and offset are
+fitted so the joints land as near CS2's as they can, feet on the floor; the report gives each joint's remaining offset.
+A vertex weighted to several bones blends their turns. The forearm rolls gradually from elbow to wrist so the palm ends up
+where CS2's palm is. Feet keep their soles flat. --fit is the older method (projects/cs21.6/tools/models.py's): pieces
+stretched onto CS2's bone lengths and placed on CS2's joints.
+Weights go to the matching CS2 bones (helper and jiggle bones follow their nearest mapped parent) and are spread over the
+CS2 twist bones along the upper arms, forearms and thighs. Face flexes, jiggle bones, LODs and the GMod c_arms are dropped:
+the first-person arms are the template's.
+"""
+import argparse, copy, json, os, re, shutil, sys
+import numpy as np
+from PIL import Image
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE); sys.path.insert(0, os.path.dirname(HERE))
+import dmx9
+from dmx9 import Element
+from srcmdl import SrcModel
+import vtf
+
+MODEL_DIR = 'models/player/gmod'
+MAT_DIR = 'materials/models/player/gmod'
+
+
+def quat_mat(q):
+    x, y, z, w = q
+    return np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                     [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                     [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
+
+
+def rot_axis(u, a):
+    u = u / np.linalg.norm(u); K = np.array([[0, -u[2], u[1]], [u[2], 0, -u[0]], [-u[1], u[0], 0]])
+    return np.eye(3) + np.sin(a) * K + (1 - np.cos(a)) * K @ K
+
+
+def arc(a, b):
+    """rotation taking unit vector a onto unit vector b by the shortest arc"""
+    v = np.cross(a, b); c = float(np.dot(a, b))
+    if c < -0.9999:
+        ax = np.cross(a, [1, 0, 0]) if abs(a[0]) < 0.9 else np.cross(a, [0, 1, 0])
+        ax /= np.linalg.norm(ax)
+        return 2 * np.outer(ax, ax) - np.eye(3)
+    K = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    return np.eye(3) + K + K @ K / (1 + c)
+
+
+WRIST_BLEND = (3.0, 0.6)  # (u before the wrist where the blend starts, share of the forearm weight given to the hand at the wrist)
+TORSO_RECENTRE = True     # move the upper torso back so the chest is centred on CS2's spine like a stock agent's
+CHEST_WARN = 4.0          # warn when the chest front is this much (u) further forward than a stock agent's
+HAND_WARN = 3.0           # warn when, in CS2's preview pose, the chest surface is this far (u) in front of a wrist (fine models: 0-1.6)
+LIMB_WARN = 6.0           # warn when an arm/leg joint ends up this far (u) from CS2's (batch 1: <= 5, Leon's odd rig)
+SPINE_BEND = 0.5        # share of the spine/neck bones' turn onto CS2's spine that is applied
+
+
+def partial(R, f):
+    """the rotation R scaled to the fraction f of its angle"""
+    ang = np.arccos(np.clip((np.trace(R) - 1) / 2, -1, 1))
+    if ang < 1e-6: return np.eye(3)
+    ax = np.array([R[2, 1] - R[1, 2], R[0, 2] - R[2, 0], R[1, 0] - R[0, 1]]) / (2 * np.sin(ang))
+    return rot_axis(ax, ang * f)
+
+
+def frame(p, s):
+    x = p / np.linalg.norm(p); z = np.cross(x, s); z /= np.linalg.norm(z); y = np.cross(z, x)
+    return np.stack([x, y, z], 1)
+
+
+def unit(v): return v / (np.linalg.norm(v) or 1.0)
+
+
+# ---------------------------------------------------------------- the template (CS2 skeleton in its bind pose)
+class Template:
+    def __init__(self, d):
+        files = os.listdir(d)
+        self.dir = d
+        self.file = lambda sfx: os.path.join(d, next(f for f in files if f.endswith(sfx)))
+        self.vmdl, self.body = self.file('.vmdl'), self.file('_thirdperson_body.dmx')
+        dm = dmx9.DMX.load(self.body)
+        self.joints = [j.name for j in dm.root['skeleton']['jointList'] if j.type == 'DmeJoint']
+        self.W = self.joint_world(dm)
+
+    @staticmethod
+    def joint_world(dm, pose=None):
+        W = {}
+        def walk(j, R, t):
+            tr = j['transform']; p = (pose or {}).get(j.name, {})
+            R2 = R @ quat_mat(p.get('orientation', tr['orientation'])); t2 = R @ np.array(p.get('position', tr['position'])) + t
+            W[j.name] = (R2, t2)
+            for c in j['children'] or []:
+                if c.type == 'DmeJoint': walk(c, R2, t2)
+        for c in dm.root['skeleton']['children']:
+            if c.type == 'DmeJoint': walk(c, np.eye(3), np.zeros(3))
+        return W
+
+    def J(self, n): return self.W[n][1]
+
+    def mesh(self):
+        """the template's own body mesh (a stock-agent-shaped body): positions and per-vertex [(joint, weight)]"""
+        if not hasattr(self, '_mesh'):
+            dm = dmx9.DMX.load(self.body)
+            vd = [e for e in dm.elements if e.type == 'DmeMesh'][0]['currentState']
+            names = [j.name for j in dm.root['skeleton']['jointList']]
+            P = np.array(vd['position$0']); jc = vd['jointCount']
+            w = np.array(vd['blendweights$0']).reshape(-1, jc); ix = np.array(vd['blendindices$0']).reshape(-1, jc)
+            pi = np.array(vd['position$0Indices'])        # weights are per position in this DMX
+            Wt = [[(names[ix[i, k]], float(w[i, k])) for k in range(jc) if w[i, k] > 0] for i in range(len(P))]
+            self._mesh = (P, Wt)
+        return self._mesh
+
+    def chest(self, V=None):
+        """(front, back, centre) x of the chest relative to spine_2, measured between spine_2 and spine_3 + 2 u, |y| < 5"""
+        if V is None: V = self.mesh()[0]
+        z0, z1 = self.J('spine_2')[2], self.J('spine_3')[2] + 2
+        sel = (V[:, 2] > z0) & (V[:, 2] < z1) & (np.abs(V[:, 1]) < 5)
+        x = V[sel, 0] - self.J('spine_2')[0]
+        return float(x.max()), float(x.min()), float((x.max() + x.min()) / 2) + float(self.J('spine_2')[0])
+
+    def hands_in_torso(self, V, W):
+        """in the template's preview pose: how far the torso's front surface lies ahead of each hand joint at the hand's height
+        (u; the stock agent body gives the baseline). Larger = the hand sits deeper in the chest."""
+        Wp = self.preview_pose()
+        Q = np.zeros_like(V); torso = np.zeros(len(V), bool)
+        for i, w in enumerate(W):
+            tot = sum(x for _, x in w) or 1
+            for j, x in w:
+                Rb, tb = self.W[j]; Rp, tp = Wp[j]
+                Q[i] += x / tot * (Rp @ (Rb.T @ (V[i] - tb)) + tp)
+            torso[i] = sum(x for j, x in w if j.startswith(('spine', 'pelvis', 'neck'))) / tot > 0.7
+        out = {}
+        for s in 'LR':
+            h = Wp['hand_' + s][1]
+            near = torso & (np.abs(Q[:, 2] - h[2]) < 2) & (np.abs(Q[:, 1] - h[1]) < 2)
+            out[s] = round(float((Q[near, 0] - h[0]).max()), 2) if near.any() else None
+        return out
+
+    def preview_pose(self):
+        """world transforms in the template's tools_preview pose (first frame)"""
+        tp = dmx9.DMX.load(self.file('_tools_preview.dmx'))
+        pose = {}
+        for ch in (e for e in tp.elements if e.type == 'DmeChannel'):
+            el, at, log = ch['toElement'], ch['toAttribute'], ch['log']
+            if el is None or log is None or at not in ('position', 'orientation'): continue
+            lay = log['layers'][0]
+            if lay['values']: pose.setdefault(el.name, {})[at] = lay['values'][0]
+        return self.joint_world(dmx9.DMX.load(self.body), pose)
+
+
+# ---------------------------------------------------------------- ValveBiped -> CS2
+FINGERS = {0: 'thumb', 1: 'index', 2: 'middle', 3: 'ring', 4: 'pinky'}
+
+
+def bone_map():
+    """ValveBiped short name (after 'bip01_', lower case) -> CS2 bone"""
+    m = {'pelvis': 'pelvis', 'spine': 'spine_0', 'spine1': 'spine_1', 'spine2': 'spine_2', 'spine3': 'spine_2', 'spine4': 'spine_3',
+         'neck1': 'neck_0', 'neck': 'neck_0', 'head1': 'head_0', 'head': 'head_0'}
+    for s in 'LR':
+        l = s.lower()
+        m.update({f'{l}_clavicle': f'clavicle_{s}', f'{l}_upperarm': f'arm_upper_{s}', f'{l}_forearm': f'arm_lower_{s}',
+                  f'{l}_hand': f'hand_{s}', f'{l}_thigh': f'leg_upper_{s}', f'{l}_calf': f'leg_lower_{s}',
+                  f'{l}_foot': f'ankle_{s}', f'{l}_toe0': f'ball_{s}'})
+        for f, fn in FINGERS.items():
+            for k, suf in enumerate(('', '1', '2')):
+                m[f'{l}_finger{f}{suf}'] = f'finger_{fn}_{k}_{s}'
+    return m
+
+
+VB2CS = bone_map()
+# helper bones some GMod models carry: which main bone's piece they move with
+HELPERS = [(r'_(l|r)_(bicep|shoulder|deltoid)', '{s}_upperarm'), (r'_(l|r)_(elbow|ulna|wrist|forearm_twist)', '{s}_forearm'),
+           (r'_(l|r)_trapezius', '{s}_clavicle'), (r'_(l|r)_(knee|quad)', '{s}_thigh')]
+TWIST = {f'{b}_{s}': [f'{b}_{s}', f'{b}_{s}_TWIST', f'{b}_{s}_TWIST1'] for s in 'LR' for b in ('arm_upper', 'arm_lower', 'leg_upper')}
+TWIST_END = {f'arm_upper_{s}': f'arm_lower_{s}' for s in 'LR'}
+TWIST_END.update({f'arm_lower_{s}': f'hand_{s}' for s in 'LR'}); TWIST_END.update({f'leg_upper_{s}': f'leg_lower_{s}' for s in 'LR'})
+
+
+def short(name):
+    n = name.lower()
+    i = n.find('bip01_')
+    return n[i + 6:] if i >= 0 else None
+
+
+class Converter:
+    def __init__(self, mdl, tpl, log=print):
+        self.m, self.t, self.log = mdl, tpl, log
+        self.names = [b['name'] for b in mdl.bones]
+        self.idx = {}
+        for i, n in enumerate(self.names):
+            s = short(n)
+            if s and s not in self.idx: self.idx[s] = i
+        missing = [k for k in ('pelvis', 'l_thigh', 'r_thigh', 'l_upperarm', 'r_upperarm', 'head1') if k not in self.idx and not (k == 'head1' and 'head' in self.idx)]
+        if missing: raise ValueError('not a ValveBiped player model (missing %s)' % ', '.join(missing))
+        if 'head1' not in self.idx: self.idx['head1'] = self.idx['head']
+        if 'neck1' not in self.idx and 'neck' in self.idx: self.idx['neck1'] = self.idx['neck']
+        self.orient()
+
+    # -------------------------------------------------- source skeleton, turned to face +X with the floor at z = 0
+    def orient(self):
+        m = self.m
+        T = np.array([b['world'][:, 3] for b in m.bones])
+        f = np.zeros(3)
+        for s in 'lr':
+            if f'{s}_toe0' in self.idx and f'{s}_foot' in self.idx: f += T[self.idx[f'{s}_toe0']] - T[self.idx[f'{s}_foot']]
+        if np.hypot(f[0], f[1]) < 1e-3:      # no toes: thighs left-right, forward is up x left
+            lr = T[self.idx['l_thigh']] - T[self.idx['r_thigh']]; f = np.cross(lr, [0, 0, 1.])
+        a = np.arctan2(f[1], f[0])
+        self.G = rot_axis(np.array([0, 0, 1.]), -a)
+        self.yaw_deg = float(np.degrees(a))
+        self.T = T @ self.G.T
+        self.Rb = [self.G @ b['world'][:, :3] for b in m.bones]
+        self.floor = float((m.V @ self.G.T)[:, 2].min())
+        self.T[:, 2] -= self.floor
+        self.height_head = float(self.T[self.idx['head1'], 2])
+        self.height = float((m.V @ self.G.T)[:, 2].max() - self.floor)
+
+    def S(self, n): return self.T[self.idx[n]]
+    def has(self, n): return n in self.idx
+
+    # -------------------------------------------------- per source bone: how its piece moves
+    def transforms(self, mode='rigid'):
+        """rigid (default): pieces keep their own lengths and shape; fit: pieces stretched onto CS2's bone lengths (old method)"""
+        self.mode = mode
+        return self.transforms_rigid() if mode == 'rigid' else self.transforms_fit()
+
+    def rotations(self, spine=False):
+        """per mapped source bone: the rotation that turns its piece from GMod's reference pose into CS2's bind pose.
+        spine=False keeps pelvis, spine, neck and head upright as modelled."""
+        J = self.t.J
+        R = {'pelvis': np.eye(3)}
+        tw = {}
+        def d(a, b): return unit(self.S(b) - self.S(a))
+        chain = [n for n in ('spine', 'spine1', 'spine2', 'spine3', 'spine4', 'neck1', 'head1') if self.has(n)]
+        for n in chain: R[n] = np.eye(3)
+        if spine:
+            for a, b in zip(chain, chain[1:]): R[a] = partial(arc(d(a, b), unit(J(VB2CS[b]) - J(VB2CS[a]))), SPINE_BEND)
+        for s in 'LR':
+            l = s.lower()
+            for a, b, ca, cb in ((f'{l}_clavicle', f'{l}_upperarm', f'clavicle_{s}', f'arm_upper_{s}'),
+                                 (f'{l}_upperarm', f'{l}_forearm', f'arm_upper_{s}', f'arm_lower_{s}'),
+                                 (f'{l}_forearm', f'{l}_hand', f'arm_lower_{s}', f'hand_{s}'),
+                                 (f'{l}_thigh', f'{l}_calf', f'leg_upper_{s}', f'leg_lower_{s}'),
+                                 (f'{l}_calf', f'{l}_foot', f'leg_lower_{s}', f'ankle_{s}')):
+                if self.has(a) and self.has(b): R[a] = arc(d(a, b), unit(J(cb) - J(ca)))
+            have_f = all(self.has(f'{l}_finger{k}') for k in (1, 4))
+            latcs = J(f'finger_index_0_{s}') - J(f'finger_pinky_0_{s}')
+            if have_f:
+                lat16 = self.S(f'{l}_finger1') - self.S(f'{l}_finger4')
+                mid = f'{l}_finger2' if self.has(f'{l}_finger2') else f'{l}_finger1'
+                mcs = 'finger_middle_0_' + s if mid.endswith('2') else 'finger_index_0_' + s
+                if self.has(f'{l}_hand'):
+                    R[f'{l}_hand'] = frame(J(mcs) - J('hand_' + s), latcs) @ frame(self.S(mid) - self.S(f'{l}_hand'), lat16).T
+                if f'{l}_forearm' in R:      # forearm roll spread from elbow (none) to wrist (the hand's)
+                    ucs = unit(J(f'hand_{s}') - J(f'arm_lower_{s}'))
+                    a1 = R[f'{l}_forearm'] @ lat16; a1 -= ucs * (a1 @ ucs); a2 = latcs - ucs * (latcs @ ucs)
+                    if np.linalg.norm(a1) > 1e-6 and np.linalg.norm(a2) > 1e-6:
+                        a1, a2 = unit(a1), unit(a2)
+                        tw[f'{l}_forearm'] = (ucs, float(np.arctan2(np.cross(a1, a2) @ ucs, a1 @ a2)), d(f'{l}_forearm', f'{l}_hand'),
+                                              float(np.linalg.norm(self.S(f'{l}_hand') - self.S(f'{l}_forearm'))))
+                palm16 = np.cross(self.S(mid) - self.S(f'{l}_hand'), lat16)
+                palmcs = np.cross(J('finger_middle_0_' + s) - J('hand_' + s), latcs)
+                for f, fn in FINGERS.items():
+                    sec16, seccs = (palm16, palmcs) if f == 0 else (lat16, latcs)
+                    bones = [f'{l}_finger{f}', f'{l}_finger{f}1', f'{l}_finger{f}2']
+                    cs = [f'finger_{fn}_{k}_{s}' for k in range(3)]
+                    for k in range(2):
+                        if self.has(bones[k]) and self.has(bones[k + 1]):
+                            R[bones[k]] = frame(J(cs[k + 1]) - J(cs[k]), seccs) @ frame(self.S(bones[k + 1]) - self.S(bones[k]), sec16).T
+                    for k in (1, 2):
+                        if self.has(bones[k]) and bones[k] not in R and bones[k - 1] in R: R[bones[k]] = R[bones[k - 1]]
+            elif self.has(f'{l}_hand') and f'{l}_forearm' in R:
+                R[f'{l}_hand'] = R[f'{l}_forearm']
+            if self.has(f'{l}_foot'):        # feet only turn about Z, so soles stay flat
+                toe = self.S(f'{l}_toe0') if self.has(f'{l}_toe0') else self.S(f'{l}_foot') + np.array([4., 0, 0])
+                h16 = toe - self.S(f'{l}_foot'); hcs = J(f'ball_{s}') - J(f'ankle_{s}'); h16[2] = hcs[2] = 0
+                R[f'{l}_foot'] = arc(unit(h16), unit(hcs))
+                if self.has(f'{l}_toe0'): R[f'{l}_toe0'] = R[f'{l}_foot']
+        return R, tw
+
+    def transforms_rigid(self):
+        """Each piece only turns; it stays joined to its parent at its own length (forward kinematics down the model's own
+        skeleton). One uniform scale (least squares over the main joints) and a horizontal offset are fitted so the joints land as
+        near CS2's as they can; the feet stay on the floor. self.joint_offsets: distance from each CS2 joint after the fit."""
+        J = self.t.J
+        R, tw = self.rotations()
+        order = [i for i, n in enumerate(self.names) if short(n) in R]
+        def fk(sc):
+            tr = {}
+            for i in order:
+                n = short(self.names[i])
+                if n in tr: continue
+                p = self.m.bones[i]['parent']
+                while p >= 0 and short(self.names[p]) not in tr: p = self.m.bones[p]['parent']
+                if p < 0: pcs = self.S(n) * sc
+                else:
+                    pt = tr[short(self.names[p])]
+                    pcs = ((self.S(n) - pt['p16']) * sc) @ pt['R'].T + pt['pcs']
+                tr[n] = dict(p16=self.S(n), pcs=pcs, R=R[n], axis=None, along=sc)
+                if n in tw:
+                    ax, ang, u16, L = tw[n]; tr[n].update(twist=(ax, ang), tw_u16=u16, len16=L)
+            return tr
+        fit = [n for n in R if n in VB2CS and 'finger' not in n and 'toe' not in n and n in self.idx]
+        Q = np.array([fk(1.0)[n]['pcs'] for n in fit]); P = np.array([J(VB2CS[n]) for n in fit])
+        Qc, Pc = Q - Q.mean(0), P - P.mean(0)
+        sc = float((Qc * Pc).sum() / (Qc * Qc).sum())           # least-squares uniform scale
+        tr = fk(sc)
+        Qs = np.array([tr[n]['pcs'] for n in fit]); off = (P - Qs).mean(0)
+        off[2] = 0.0                                             # feet stay on the floor
+        for t in tr.values(): t['pcs'] = t['pcs'] + off
+        # Arms and hands must sit on CS2's own pivots: finger bones are ~1.5 u long, so a hand 2-3 u off its CS2 bones is
+        # wrung apart as soon as CS2 curls the fingers. Each arm moves as one rigid piece so the shoulder sits on CS2's;
+        # then the hand (with its fingers) goes onto CS2's wrist, uniformly sized to CS2's palm. The forearm takes the
+        # small difference (its wrist end follows the hand by the skin weights).
+        parent = {}
+        for i in order:
+            n = short(self.names[i]); p = self.m.bones[i]['parent']
+            while p >= 0 and short(self.names[p]) not in tr: p = self.m.bones[p]['parent']
+            parent[n] = short(self.names[p]) if p >= 0 else None
+        def subtree(root):
+            out = []
+            for n in tr:
+                q = n
+                while q is not None and q != root: q = parent.get(q)
+                if q == root: out.append(n)
+            return out
+        # Torso depth: GMod chests sit 2-3.5 u further forward on the spine than a stock agent's, which puts CS2's hand poses
+        # inside them. The upper torso moves back as one piece until its chest is centred on CS2's spine like the agent's
+        # (spine1 half way, so the waist shears gradually); legs stay put, arms are re-seated on the shoulders below.
+        self.chest_shift = 0.0
+        top = next((n for n in ('spine2', 'spine3', 'spine4') if n in tr), None)
+        if top and TORSO_RECENTRE:
+            lo, hi = sorted((self.S(top)[2], self.S('spine4' if 'spine4' in tr else top)[2] + 2 / sc))
+            V0 = self.m.V @ self.G.T; V0[:, 2] -= self.floor
+            sel = (V0[:, 2] > lo) & (V0[:, 2] < hi) & (np.abs(V0[:, 1] - self.S(top)[1]) < 5 / sc)
+            if sel.sum() > 10:
+                x = self.move(V0[sel], tr[top], sc)[:, 0]
+                self.chest_shift = float(self.t.chest()[2] - (x.max() + x.min()) / 2)
+                dx = np.array([self.chest_shift, 0, 0])
+                for n in subtree(top): tr[n]['pcs'] = tr[n]['pcs'] + dx
+                if 'spine1' in tr and top != 'spine1': tr['spine1']['pcs'] = tr['spine1']['pcs'] + dx / 2
+        self.hand_scale = {}
+        for s in 'LR':
+            l = s.lower()
+            root = f'{l}_clavicle' if f'{l}_clavicle' in tr else f'{l}_upperarm'
+            if f'{l}_upperarm' not in tr: continue
+            d = J(f'arm_upper_{s}') - tr[f'{l}_upperarm']['pcs']
+            for n in subtree(root): tr[n]['pcs'] = tr[n]['pcs'] + d
+            h = f'{l}_hand'
+            if h not in tr: continue
+            k = 1.0
+            mid = next((f for f in (f'{l}_finger2', f'{l}_finger1') if f in tr), None)
+            if mid:
+                mcs = 'finger_middle_0_' + s if mid.endswith('2') else 'finger_index_0_' + s
+                k = float(np.clip(np.linalg.norm(J(mcs) - J('hand_' + s)) / max(1e-6, np.linalg.norm(tr[mid]['pcs'] - tr[h]['pcs'])), 0.8, 1.25))
+            hp = tr[h]['pcs'].copy()
+            for n in subtree(h):
+                tr[n]['pcs'] = J('hand_' + s) + (tr[n]['pcs'] - hp) * k
+                tr[n]['along'] = sc * k
+            self.hand_scale[s] = round(k, 3)
+        self.girth = sc
+        self.joint_offsets = {VB2CS[n]: round(float(np.linalg.norm(tr[n]['pcs'] - J(VB2CS[n]))), 2) for n in fit}
+        return self._assign(tr)
+
+    def transforms_fit(self):
+        J = self.t.J
+        g = J('head_0')[2] / self.height_head            # across-the-bone scale (height ratio)
+        self.girth = g
+        tr = {}
+        hip16 = (self.S('l_thigh') + self.S('r_thigh')) / 2; hipcs = (J('leg_upper_L') + J('leg_upper_R')) / 2
+        tr['pelvis'] = dict(p16=hip16, pcs=hipcs, R=np.eye(3), axis=None, along=g)
+
+        def seg(a, b, ca, cb, R=None):
+            if not (self.has(a) and self.has(b)): return False
+            d16 = self.S(b) - self.S(a); dcs = J(cb) - J(ca)
+            L16, Lcs = np.linalg.norm(d16), np.linalg.norm(dcs)
+            if L16 < 1e-4: return False
+            u16, ucs = d16 / L16, dcs / Lcs
+            tr[a] = dict(p16=self.S(a), pcs=J(ca), R=arc(u16, ucs) if R is None else R(u16, ucs), axis=u16,
+                         along=float(np.clip(Lcs / L16, 0.6, 1.8)), len16=L16)
+            return True
+
+        def inherit(n, parent, cs):
+            if self.has(n) and parent in tr:
+                p = tr[parent]; tr[n] = dict(p16=self.S(n), pcs=J(cs), R=p['R'], axis=None, along=g)
+
+        # spine and neck: chain through whichever spine bones the model has
+        chain = [n for n in ('spine', 'spine1', 'spine2', 'spine3', 'spine4', 'neck1', 'head1') if self.has(n)]
+        if 'spine3' in chain and 'spine4' in chain: chain.remove('spine3')
+        # (only part of each spine/neck bend is applied: the full turn hunches the back and tips the face up; the pieces
+        #  still hang from the CS2 joints, so the weights line up)
+        for a, b in zip(chain, chain[1:]):
+            seg(a, b, VB2CS[a], VB2CS[b], R=lambda u16, ucs: partial(arc(u16, ucs), SPINE_BEND))
+        # the head stays level, facing forward, on CS2's head joint
+        if self.has('head1'): tr['head1'] = dict(p16=self.S('head1'), pcs=J('head_0'), R=np.eye(3), axis=None, along=g)
+        for s in 'LR':
+            l = s.lower()
+            seg(f'{l}_clavicle', f'{l}_upperarm', f'clavicle_{s}', f'arm_upper_{s}')
+            seg(f'{l}_upperarm', f'{l}_forearm', f'arm_upper_{s}', f'arm_lower_{s}')
+            seg(f'{l}_thigh', f'{l}_calf', f'leg_upper_{s}', f'leg_lower_{s}')
+            seg(f'{l}_calf', f'{l}_foot', f'leg_lower_{s}', f'ankle_{s}')
+            # hand: the palm turned so index and pinky knuckles sit where CS2's do
+            have_f = all(self.has(f'{l}_finger{k}') for k in (1, 4))
+            lat16 = self.S(f'{l}_finger1') - self.S(f'{l}_finger4') if have_f else None
+            latcs = J(f'finger_index_0_{s}') - J(f'finger_pinky_0_{s}')
+            mid = f'{l}_finger2' if self.has(f'{l}_finger2') else (f'{l}_finger1' if self.has(f'{l}_finger1') else None)
+            if mid and have_f and self.has(f'{l}_hand'):
+                seg(f'{l}_hand', mid, f'hand_{s}', 'finger_middle_0_' + s if mid.endswith('2') else 'finger_index_0_' + s,
+                    R=lambda u16, ucs: frame(ucs, latcs) @ frame(u16, lat16).T)
+            elif self.has(f'{l}_hand') and f'{l}_forearm' in tr:
+                inherit(f'{l}_hand', f'{l}_forearm', f'hand_{s}')
+            # forearm: straight onto CS2's forearm, then twisted from elbow (0) to wrist (full) to meet the hand's roll
+            if seg(f'{l}_forearm', f'{l}_hand', f'arm_lower_{s}', f'hand_{s}') and have_f:
+                t = tr[f'{l}_forearm']; ucs = unit(J(f'hand_{s}') - J(f'arm_lower_{s}'))
+                a1 = t['R'] @ lat16; a1 -= ucs * (a1 @ ucs); a2 = latcs - ucs * (latcs @ ucs)
+                if np.linalg.norm(a1) > 1e-6 and np.linalg.norm(a2) > 1e-6:
+                    a1, a2 = unit(a1), unit(a2)
+                    t['twist'] = (ucs, float(np.arctan2(np.cross(a1, a2) @ ucs, a1 @ a2)))
+            # fingers: each piece along its CS2 bone, rolled with the palm (the thumb with the palm's normal)
+            if have_f:
+                palm16 = np.cross(self.S(mid) - self.S(f'{l}_hand'), lat16) if mid else lat16
+                palmcs = np.cross(J('finger_middle_0_' + s) - J('hand_' + s), latcs)
+                for f, fn in FINGERS.items():
+                    sec16, seccs = (palm16, palmcs) if f == 0 else (lat16, latcs)
+                    bones = [f'{l}_finger{f}', f'{l}_finger{f}1', f'{l}_finger{f}2']
+                    cs = [f'finger_{fn}_{k}_{s}' for k in range(3)]
+                    for k in range(2):
+                        seg(bones[k], bones[k + 1], cs[k], cs[k + 1], R=lambda u16, ucs: frame(ucs, seccs) @ frame(u16, sec16).T)
+                    if bones[1] in tr: inherit(bones[2], bones[1], cs[2])
+                    elif bones[0] in tr: inherit(bones[1], bones[0], cs[1])
+            # feet: the sole stays flat on the floor; the foot only turns to point where CS2's foot points
+            if self.has(f'{l}_foot'):
+                toe = self.S(f'{l}_toe0') if self.has(f'{l}_toe0') else self.S(f'{l}_foot') + np.array([4., 0, 0])
+                h16 = toe - self.S(f'{l}_foot'); hcs = J(f'ball_{s}') - J(f'ankle_{s}')
+                h16[2] = hcs[2] = 0
+                pcs = J(f'ankle_{s}').copy(); pcs[2] = self.S(f'{l}_foot')[2] * g
+                tr[f'{l}_foot'] = dict(p16=self.S(f'{l}_foot'), pcs=pcs, R=arc(unit(h16), unit(hcs)), axis=None, along=g)
+                if self.has(f'{l}_toe0'): tr[f'{l}_toe0'] = tr[f'{l}_foot']
+        return self._assign(tr)
+
+    def _assign(self, tr):
+        """every source bone: its own piece, a helper's main bone, or the nearest parent that has one"""
+        self.tr_by_bone, self.cs_by_bone, self.unknown = [], [], []
+        for i, n in enumerate(self.names):
+            s = short(n)
+            key = s if s in tr else None
+            cs = VB2CS.get(s)
+            if key is None and s is not None:
+                for pat, main in HELPERS:
+                    mm = re.search(pat, '_' + s)
+                    if mm and main.format(s=mm.group(1)) in tr:
+                        key = main.format(s=mm.group(1)); cs = VB2CS[key]; break
+            if key is None or cs is None:
+                p = i
+                while p >= 0 and (short(self.names[p]) not in tr): p = self.m.bones[p]['parent']
+                pk = short(self.names[p]) if p >= 0 else 'pelvis'
+                key = key or pk; cs = cs or VB2CS.get(pk, 'pelvis')
+                if s not in VB2CS: self.unknown.append(n)
+            self.tr_by_bone.append(tr[key]); self.cs_by_bone.append(cs)
+        self.tr = tr
+        return tr
+
+    @staticmethod
+    def move(x, t, g):
+        """points x (k,3) by one piece transform"""
+        d = x - t['p16']
+        if t['axis'] is not None:
+            a_ = d @ t['axis']
+            y = (a_[:, None] * t['axis'] * t['along'] + (d - a_[:, None] * t['axis']) * g) @ t['R'].T
+        else:
+            y = (d * t['along']) @ t['R'].T
+        if 'twist' in t:
+            ax, ang = t['twist']
+            f = np.clip((d @ t.get('tw_u16', t['axis'])) / t['len16'], 0, 1)
+            c, s_ = np.cos(ang * f)[:, None], np.sin(ang * f)[:, None]
+            y = y * c + np.cross(ax, y) * s_ + ax * (y @ ax)[:, None] * (1 - c)
+        return y + t['pcs']
+
+    # -------------------------------------------------- the mesh
+    def convert_mesh(self, meshes):
+        m = self.m
+        used = np.unique(np.concatenate([x['tris'].ravel() for x in meshes]))
+        remap = -np.ones(len(m.V), int); remap[used] = np.arange(len(used))
+        V0 = m.V[used] @ self.G.T; V0[:, 2] -= self.floor
+        N0 = m.N[used] @ self.G.T
+        W, B = m.W[used], m.B[used]
+        g = self.girth
+        V = np.zeros_like(V0); N = np.zeros_like(N0)
+        for k in range(3):
+            for bi in np.unique(B[:, k]):
+                sel = (B[:, k] == bi) & (W[:, k] > 0)
+                if not sel.any(): continue
+                t = self.tr_by_bone[bi]
+                V[sel] += W[sel, k:k + 1] * self.move(V0[sel], t, g)
+                N[sel] += W[sel, k:k + 1] * (N0[sel] @ t['R'].T)
+        N /= np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-9)
+        # CS2 weights: by bone, then spread along the twist chains
+        J = self.t.J
+        weights = []
+        for i in range(len(V)):
+            acc = {}
+            for k in range(3):
+                if W[i, k] <= 0: continue
+                cs = self.cs_by_bone[B[i, k]]
+                for j, w in self.spread(cs, V[i]): acc[j] = acc.get(j, 0) + W[i, k] * w
+            self.wrist_blend(acc, V[i])
+            weights.append(sorted(acc.items(), key=lambda x: -x[1])[:3])
+        return used, remap, V, N, weights
+
+    def wrist_blend(self, acc, x):
+        """The last WRIST_BLEND[0] u of the forearm (sleeve cuff included) follow the hand by up to WRIST_BLEND[1], so a hand bent
+        back (holding a barrel) lifts the cuff instead of pushing through it. GMod cuffs are weighted to the forearm only."""
+        R, mx = WRIST_BLEND
+        if mx <= 0: return
+        J = self.t.J
+        for s in 'LR':
+            chain = [f'arm_lower_{s}', f'arm_lower_{s}_TWIST', f'arm_lower_{s}_TWIST1']
+            fw = sum(acc.get(j, 0) for j in chain)
+            if fw <= 0: continue
+            h = J(f'hand_{s}'); u = unit(h - J(f'arm_lower_{s}'))
+            f = float(np.clip(((x - h) @ u + R) / R, 0, 1)) * mx
+            if f <= 0: continue
+            for j in chain:
+                if j in acc: acc[j] *= 1 - f
+            acc[f'hand_{s}'] = acc.get(f'hand_{s}', 0) + fw * f
+
+    def spread(self, cs, x):
+        if cs not in TWIST: return [(cs, 1.0)]
+        J = self.t.J
+        a = J(cs); u = J(TWIST_END[cs]) - a; L = np.linalg.norm(u); u /= L
+        pts = sorted(((float((J(j) - a) @ u / L), j) for j in TWIST[cs] if j in self.t.W), key=lambda p: p[0])
+        t = float((x - a) @ u / L)
+        if t <= pts[0][0]: return [(pts[0][1], 1.0)]
+        for (t0, j0), (t1, j1) in zip(pts, pts[1:]):
+            if t <= t1:
+                w = (t - t0) / max(1e-6, t1 - t0); return [(j0, 1 - w), (j1, w)]
+        return [(pts[-1][1], 1.0)]
+
+
+# ---------------------------------------------------------------- materials
+def save_png(arr, path, maxtex):
+    im = Image.fromarray(arr)
+    if max(im.size) > maxtex:
+        s = maxtex / max(im.size); im = im.resize((max(1, int(im.width * s)), max(1, int(im.height * s))), Image.LANCZOS)
+    im.save(path)
+    return im
+
+
+def write_material(tex, cd, roots, out, slug, maxtex, log):
+    """one Source material -> vmat + png; returns (vmat path, preview texture rgb, info)"""
+    rel = None
+    for c in cd + ['']:
+        p = vtf.find_file('materials/%s%s.vmt' % (c, tex), roots)
+        if p: rel = p; break
+    base = re.sub(r'[^a-z0-9_]', '_', os.path.basename(tex).lower())
+    d = os.path.join(out, MAT_DIR, slug); os.makedirs(d, exist_ok=True)
+    mat_rel = '%s/%s/%s' % (MAT_DIR, slug, base)
+    info = {'source': tex, 'vmt': bool(rel)}
+    shader, prm = ('missing', {}) if rel is None else vtf.load_vmt(rel, roots)
+    info['shader'] = shader
+    def tex_of(key):
+        v = prm.get(key)
+        if not v: return None
+        p = vtf.find_file('materials/%s.vtf' % v.replace('.vtf', ''), roots)
+        if not p: info.setdefault('missing', []).append(v); return None
+        try: return vtf.load_vtf(p)
+        except Exception as e: info.setdefault('missing', []).append('%s (%s)' % (v, e)); return None
+    eye = shader in ('eyerefract', 'eyes', 'teeth') and shader != 'teeth'
+    col = tex_of('$iris') if shader == 'eyerefract' else None
+    if col is None: col = tex_of('$basetexture')
+    glass = False
+    if col is None and (prm.get('$envmap') or 'glass' in tex.lower()):
+        col = np.full((8, 8, 4), (40, 45, 52, 70), np.uint8); glass = True       # envmap-only lens: dark see-through glass
+        info['glass'] = True
+    if col is None:
+        col = np.full((8, 8, 4), (150, 150, 150, 255), np.uint8); info['flat'] = True
+        log('   ! %s: no base texture found (%s), flat grey' % (tex, 'no vmt' if rel is None else shader))
+    alphatest = prm.get('$alphatest', '0').strip('"') == '1'
+    translucent = glass or prm.get('$translucent', '0').strip('"') == '1'
+    nocull = prm.get('$nocull', '0').strip('"') == '1'
+    lines = ['// GMod material %s (%s)' % (tex, shader), 'Layer0', '{']
+    cutout = alphatest or translucent
+    lines.append('\tshader "%s"' % ('csgo_complex.vfx' if cutout else 'csgo_character.vfx'))
+    save_png(col[..., :3], os.path.join(d, base + '_color.png'), maxtex)
+    lines.append('\tTextureColor "%s_color.png"' % mat_rel)
+    if cutout:
+        save_png(np.repeat(col[..., 3:], 3, 2), os.path.join(d, base + '_trans.png'), maxtex)
+        if alphatest:
+            lines += ['\tF_ALPHA_TEST 1', '\tg_flAlphaTestReference "%s"' % prm.get('$alphatestreference', '0.5').strip('"')]
+        else:
+            lines.append('\tF_TRANSLUCENT 1')
+        lines.append('\tTextureTranslucency "%s_trans.png"' % mat_rel)
+    if nocull: lines.append('\tF_RENDER_BACKFACES 1')
+    nrm = tex_of('$bumpmap')
+    if nrm is None and prm.get('$normalmap'): nrm = tex_of('$normalmap')
+    if nrm is not None and not eye:
+        n = nrm[..., :3].copy(); n[..., 1] = 255 - n[..., 1]          # Source 1 normal maps are Y- ; Source 2 wants Y+
+        save_png(n, os.path.join(d, base + '_normal.png'), maxtex)
+        lines.append('\tTextureNormal "%s_normal.png"' % mat_rel)
+        if prm.get('$phong', '0').strip('"') == '1' and nrm[..., 3].min() < 250:
+            r = (225 - nrm[..., 3].astype(np.float32) * 0.55).clip(60, 235).astype(np.uint8)      # phong mask -> roughness
+            save_png(np.repeat(r[..., None], 3, 2), os.path.join(d, base + '_rough.png'), maxtex)
+            lines.append('\tTextureRoughness "%s_rough.png"' % mat_rel)
+        else:
+            lines.append('\tTextureRoughness "[0.780000 0.780000 0.780000 0.000000]"')
+    else:
+        lines.append('\tTextureNormal "materials/default/default_normal.tga"')
+        lines.append('\tTextureRoughness "[%s]"' % ('0.300000 0.300000 0.300000 0.000000' if eye else '0.780000 0.780000 0.780000 0.000000'))
+    lines += ['\tTextureMetalness "materials/default/default_metal.tga"', '}']
+    open(os.path.join(d, base + '.vmat'), 'w', newline='\n').write('\n'.join(lines) + '\n')
+    info.update(alphatest=alphatest, translucent=translucent, eye=eye)
+    return mat_rel + '.vmat', col[..., :3], info
+
+
+# ---------------------------------------------------------------- writing the mesh into a copy of the template DMX
+def write_dmx(tpl, path, name, V, N, cuv, mats, sets, weights):
+    """the template's first mesh gets this geometry (one DMX vertex per input vertex), its other meshes go.
+    weights: per vertex [(joint, w), ...]. Faces are re-wound counter-clockwise from the normals' side if needed."""
+    agree = 0
+    for faces in sets:
+        f = np.asarray(faces)
+        if not len(f): continue
+        p = V[f]; n = N[f].sum(1)
+        agree += int(np.sign((np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0]) * n).sum(1)).sum())
+    flipped = agree < 0
+    if flipped: sets = [np.asarray(f)[:, [0, 2, 1]] for f in sets]
+    UV = np.asarray(cuv, float)
+    tan = np.zeros((len(V), 3))
+    for faces in sets:
+        f = np.asarray(faces)
+        if not len(f): continue
+        p0, p1, p2 = V[f[:, 0]], V[f[:, 1]], V[f[:, 2]]; t0, t1, t2 = UV[f[:, 0]], UV[f[:, 1]], UV[f[:, 2]]
+        e1, e2, d1, d2 = p1 - p0, p2 - p0, t1 - t0, t2 - t0
+        r = d1[:, 0] * d2[:, 1] - d2[:, 0] * d1[:, 1]; ok = np.abs(r) > 1e-12
+        tv = np.zeros_like(e1); tv[ok] = (e1[ok] * d2[ok, 1:2] - e2[ok] * d1[ok, 1:2]) / r[ok, None]
+        for k in range(3): np.add.at(tan, f[:, k], tv)
+    tan -= N * (tan * N).sum(1, keepdims=True)
+    ln = np.linalg.norm(tan, axis=1); bad = ln < 1e-9
+    tan[bad] = np.cross(N[bad], [0, 0, 1]) + 1e-6; tan /= np.linalg.norm(tan, axis=1, keepdims=True)
+    dm = dmx9.DMX.load(tpl)
+    meshes = [e for e in dm.elements if e.type == 'DmeMesh']
+    mesh = meshes[0]
+    vd = mesh['currentState'] or next(e for e in dm.elements if e.type == 'DmeVertexData')
+    model = dm.root['model']
+    gone = [c for c in model['children'] if c is not None and c.type == 'DmeDag' and any(c.get('shape') is x for x in meshes[1:])]
+    if gone:
+        model['children'] = [c for c in model['children'] if not any(c is g for g in gone)]
+        model['jointList'] = [j for j in model['jointList'] if not any(j is g for g in gone)]
+        model['baseStates'] = model['baseStates'][:len(model['baseStates']) - len(gone)]
+    jidx = {j.name: i for i, j in enumerate(dm.root['skeleton']['jointList']) if j.type == 'DmeJoint'}
+    fs0 = mesh['faceSets'][0]
+    n = len(V); jc = vd['jointCount']
+    vd['position$0'] = [tuple(map(float, x)) for x in V]
+    vd['normal$0'] = [tuple(map(float, x)) for x in N]
+    vd['texcoord$0'] = [(float(u), float(1 - v) if vd.get('flipVCoordinates') else float(v)) for u, v in UV]
+    vd['tangent$0'] = [tuple(map(float, x)) + (1.0,) for x in tan]
+    wts, ids = [], []
+    for w in weights:
+        w = w[:jc]; tot = sum(x for _, x in w) or 1.0
+        wts += [x / tot for _, x in w] + [0.0] * (jc - len(w)); ids += [jidx[j] for j, _ in w] + [0] * (jc - len(w))
+    vd['blendweights$0'] = wts; vd['blendindices$0'] = ids
+    seq = list(range(n))
+    for k in ('position$0Indices', 'normal$0Indices', 'texcoord$0Indices', 'tangent$0Indices'): vd[k] = seq
+    new_sets = []
+    for mat, faces in zip(mats, sets):
+        fs = Element('DmeFaceSet', 'faceSet')
+        for k, (t, v) in fs0.attrs.items(): fs.attrs[k] = [t, copy.copy(v)]
+        me = Element('DmeMaterial', 'material')
+        for k, (t, v) in fs0['material'].attrs.items(): me.attrs[k] = [t, v]
+        me['mtlName'] = mat.replace('/', '\\')
+        fs['material'] = me
+        fl = []
+        for f in np.asarray(faces).tolist(): fl += f + [-1]
+        fs['faces'] = fl
+        new_sets.append(fs)
+    mesh['faceSets'] = new_sets
+    mesh.name = name
+    for e in dm.elements:
+        if e.type == 'DmeDag' and e.get('shape') is mesh: e.name = name
+    dm.save(path)
+    return sets, flipped
+
+
+# ---------------------------------------------------------------- one model
+def eye_uvs(conv, eyeball, V):
+    """Source projects the iris onto the eyeball: u, v = (point - eye centre) . (right, up) * iris_scale + 0.5"""
+    m = conv.m
+    Bw = m.bones[eyeball['bone']]['world']
+    org = conv.tr_by_bone[eyeball['bone']]
+    o16 = conv.G @ (Bw[:, :3] @ eyeball['org'] + Bw[:, 3]); o16[2] -= conv.floor
+    o = Converter.move(o16[None], org, conv.girth)[0]
+    R = org['R'] @ conv.G @ Bw[:, :3]
+    fwd = unit(R @ eyeball['forward']); up = unit(R @ eyeball['up'])
+    right = unit(np.cross(fwd, up)); up = unit(np.cross(right, fwd))
+    s = eyeball['iris_scale'] / max(conv.girth, 1e-6)
+    d = V - o
+    return np.stack([0.5 + (d @ right) * s, 0.5 - (d @ up) * s], 1).clip(0.002, 0.998)
+
+
+def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2048, preview=None, log=print, mode='rigid'):
+    m = SrcModel(mdl_path)
+    t = Template(template) if isinstance(template, str) else template
+    conv = Converter(m, t, log)
+    conv.transforms(mode)
+    meshes = m.default_meshes(choices)
+    used, remap, V, N, weights = conv.convert_mesh(meshes)
+    # fit checks against a stock agent body: chest depth and hands in CS2's preview pose
+    chest_t, chest_m = t.chest(), t.chest(V)
+    hands = t.hands_in_torso(V, weights)
+    warnings = []
+    extra = chest_m[0] - chest_t[0]
+    if extra > CHEST_WARN:
+        warnings.append('bulky torso: chest %.1f u further forward than a stock agent; CS2 hand poses (two-handed weapons) will clip into it' % extra)
+    for side in 'LR':
+        if hands[side] is not None and hands[side] > HAND_WARN:
+            warnings.append('hand_%s inside the torso in the CS2 preview pose (chest surface %.1f u in front of the wrist)' % (side, hands[side]))
+    far = {j: d for j, d in (getattr(conv, 'joint_offsets', None) or {}).items() if j.startswith(('arm_', 'leg_', 'hand_', 'ankle_')) and d > LIMB_WARN}
+    if far: warnings.append('skeleton does not match CS2 (limb joints more than %.0f u off: %s): CS2 will bend the limbs away from the joints of the model'
+                            % (LIMB_WARN, ', '.join('%s %.1f' % kv for kv in sorted(far.items()))))
+    for w_ in warnings: log('   WARNING: ' + w_)
+    UV = m.UV[used].copy()
+    fam = m.skins[skin] if skin < len(m.skins) else m.skins[0]
+    by_mat, texs, infos = {}, {}, []
+    for me in meshes:
+        if not len(me['tris']): continue
+        ti = fam[me['material']] if me['material'] < len(fam) else me['material']
+        tex = m.textures[ti]
+        if tex not in by_mat:
+            mat, rgb, info = write_material(tex, m.cdtextures, roots, out, slug, maxtex, log)
+            by_mat[tex] = (mat, []); texs[tex] = rgb; infos.append(info)
+        tri = remap[me['tris']]
+        by_mat[tex][1].append(tri)
+        if me['eyeball'] >= 0 and infos[[i['source'] for i in infos].index(tex)].get('eye'):
+            vs = np.unique(tri.ravel())
+            UV[vs] = eye_uvs(conv, m.eyeballs[me['eyeball']], V[vs])
+    names = list(by_mat)
+    mats = [by_mat[k][0] for k in names]; sets = [np.vstack(by_mat[k][1]) for k in names]
+    d = os.path.join(out, MODEL_DIR, slug); os.makedirs(d, exist_ok=True)
+    sets, flipped = write_dmx(t.body, os.path.join(d, slug + '_body.dmx'), 'gmod_%s_body' % slug, V, N, UV, mats, sets, weights)
+    # shared first-person arms, sleeves and preview pose: the template's
+    sh = os.path.join(out, MODEL_DIR, 'shared'); os.makedirs(sh, exist_ok=True)
+    for sfx, dst in (('_firstperson_arms.dmx', 'firstperson_arms.dmx'), ('_firstperson_sleeves.dmx', 'firstperson_sleeves.dmx'), ('_tools_preview.dmx', 'tools_preview.dmx')):
+        if not os.path.exists(os.path.join(sh, dst)): shutil.copy(t.file(sfx), os.path.join(sh, dst))
+    txt = open(t.vmdl, encoding='utf-8').read()
+    def swap(name, path):
+        nonlocal txt
+        t2 = re.sub(r'(name = "%s"\s*\n\s*filename = ")[^"]+(")' % re.escape(name), r'\g<1>%s\g<2>' % path, txt)
+        assert t2 != txt, 'template vmdl has no render mesh named ' + name
+        txt = t2
+    swap('thirdperson_body', '%s/%s/%s_body.dmx' % (MODEL_DIR, slug, slug))
+    swap('firstperson_default_gloves_arms', MODEL_DIR + '/shared/firstperson_arms.dmx')
+    swap('firstperson_sleeves', MODEL_DIR + '/shared/firstperson_sleeves.dmx')
+    txt = re.sub(r'(source_filename = ")[^"]*_tools_preview\.dmx(")', r'\g<1>%s/shared/tools_preview.dmx\g<2>' % MODEL_DIR, txt)
+    stray = sorted(set(re.findall(r'"([^"]*\.(?:dmx|vmat|fbx|smd))"', txt)) - {
+        '%s/%s/%s_body.dmx' % (MODEL_DIR, slug, slug), MODEL_DIR + '/shared/firstperson_arms.dmx',
+        MODEL_DIR + '/shared/firstperson_sleeves.dmx', MODEL_DIR + '/shared/tools_preview.dmx'})
+    assert not stray, 'template vmdl still points at %s' % stray
+    head = '// %s: converted from the GMod model %s by create/playermodels/gmod2cs2.py\n' % (slug, m.name)
+    vm = txt.split('\n', 1)
+    open(os.path.join(d, slug + '.vmdl'), 'w', encoding='utf-8', newline='\n').write(vm[0] + '\n' + head + vm[1])
+    rep = {'slug': slug, 'source_mdl': m.name, 'mdl_version': m.version, 'vertices': int(len(V)),
+           'triangles': int(sum(len(s) for s in sets)), 'materials': infos, 'source_height': round(conv.height, 1),
+           'source_eye_height': round(conv.height_head, 1), 'scale': round(conv.girth, 3), 'yaw_turned_deg': round(-conv.yaw_deg, 1),
+           'mode': mode, 'warnings': warnings, 'chest_front_vs_stock': round(extra, 2), 'chest_shift': round(getattr(conv, 'chest_shift', 0.0), 2), 'hands_in_torso': hands, 'joint_offsets': getattr(conv, 'joint_offsets', None), 'hand_scale': getattr(conv, 'hand_scale', None), 'bones_following_parent': conv.unknown, 'winding_flipped': bool(flipped),
+           'vmdl': '%s/%s/%s.vmdl' % (MODEL_DIR, slug, slug)}
+    if preview:
+        from preview import render
+        os.makedirs(preview, exist_ok=True)
+        groups = [(np.asarray(f), texs[k]) for f, k in zip(sets, names)]
+        marks = np.array([t.J(n) for n in t.joints if not any(x in n for x in ('TWIST', 'finger', 'eye', 'wpn', 'root', 'jiggle', 'scap'))])
+        lo = np.minimum(V.min(0), [-20, -40, 0]); hi = np.maximum(V.max(0), [20, 40, 76])
+        render(V, UV, groups, os.path.join(preview, slug + '_bind.png'), views=('front', 'side', 'back'), H=700, marks=marks,
+               label='%s  bind pose on the CS2 skeleton (dots = CS2 joints)' % slug, box=(lo, hi))
+        Wp = t.preview_pose()
+        Q = np.zeros_like(V)
+        for i, w in enumerate(weights):
+            tot = sum(x for _, x in w) or 1
+            for j, x in w:
+                Rb, tb = t.W[j]; Rp, tp_ = Wp[j]
+                Q[i] += x / tot * (Rp @ (Rb.T @ (V[i] - tb)) + tp_)
+        render(Q, UV, groups, os.path.join(preview, slug + '_posed.png'), views=('front', 'three', 'side'), H=700,
+               label='%s  skinned to the template preview pose' % slug)
+        # the source model as it was (turned to face +X), for comparison
+        V0 = m.V[used] @ conv.G.T; V0[:, 2] -= conv.floor
+        render(V0, m.UV[used], groups, os.path.join(preview, slug + '_source.png'), views=('front', 'side'), H=700,
+               label='%s  GMod reference pose (%.1f u tall)' % (slug, conv.height))
+    return rep
+
+
+if __name__ == '__main__':
+    ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    ap.add_argument('mdl'); ap.add_argument('slug')
+    ap.add_argument('--roots', required=True); ap.add_argument('--template', required=True); ap.add_argument('--out', required=True)
+    ap.add_argument('--skin', type=int, default=0); ap.add_argument('--bodygroup', action='append', default=[])
+    ap.add_argument('--fit', action='store_true', help='old method: stretch pieces onto CS2 bone lengths'); ap.add_argument('--maxtex', type=int, default=2048); ap.add_argument('--preview'); ap.add_argument('--report')
+    a = ap.parse_args()
+    ch = {k: int(v) for k, v in (b.split('=') for b in a.bodygroup)}
+    rep = convert(a.mdl, a.slug, a.roots.split(','), a.template, a.out, a.skin, ch, a.maxtex, a.preview, mode='fit' if a.fit else 'rigid')
+    js = json.dumps(rep, indent=1)
+    if a.report: open(a.report, 'w').write(js)
+    print(js)

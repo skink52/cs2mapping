@@ -1,0 +1,41 @@
+# create/playermodels: GMod player models -> CS2 player models
+
+> **AI-generated code.** Written by Claude for skink52. MIT, like the rest of the repo. The workflow, the choices behind it and the
+> first batch are in [docs/creation/gmod-playermodels.md](../../docs/creation/gmod-playermodels.md).
+
+Python 3 with numpy and Pillow. No Blender, Crowbar or SourceIO needed: the Source 1 formats are read here. Run with `python3 -I`
+(the inputs are downloaded files); each tool puts its own folder on the path.
+
+| File | What it does |
+|---|---|
+| `pipeline.py <catalog.json> [--only slug,..] [--no-download] [--no-preview] [--compile]` | The batch: every `chosen` catalog item downloaded, extracted, converted, previewed (incl. the hands check), compiled with `resourcecompiler`, reported (`<work>/reports/<slug>.json`, `summary.md`, `preview/contact_sheet.png`). One model failing doesn't stop the rest. |
+| `fetch.py <catalog.json> [--only id,..] [--no-download] [--scan]` | SteamCMD (anonymous) `workshop_download_item 4000 <id>`, then extracts `models/`, `materials/`, `lua/`. `--scan` lists every `.mdl` per item with its registered name (`player_manager.AddValidModel`, read as text), ValveBiped yes/no, height, head-joint height, a size-check scale (CS2 head joint / the model's) and the VMTs and colour VTFs missing from the item, into `<work>/logs/scan.json`. Use it to choose. |
+| `gmod2cs2.py <model.mdl> <slug> --roots <dir,..> --template <dir> --out <content addon> [--skin N] [--bodygroup part=i] [--maxtex 2048] [--preview dir] [--report json] [--fit]` | One model: uniform scale only (no stretching), limbs turned into CS2's bind pose at their own lengths and skinned to the CS2 agent skeleton (`--fit`: the old stretch-onto-CS2-bones method), weights remapped (twist bones included), materials converted, body DMX written into a copy of the template's, vmdl from the template's with the paths swapped. Previews: `_source` (GMod pose), `_bind` (on the CS2 skeleton, joints dotted), `_posed` (skinned to the template's preview pose). |
+| `handcheck.py <model.mdl> <template> <out.png>` | Close-up of both hands in CS2's preview pose and both wrists bent back 60° (rifle grip): where conversions break first. The pipeline writes `preview/<slug>_hands.png` per model; look at it before shipping. |
+| `srcmdl.py <model.mdl>` | Source 1 studio model reader (MDL v44-49 + VVD + VTX v7): reference-pose bones, LOD0 skinned mesh, body parts, skin families, eyeballs. Prints a summary. |
+| `vtf.py <in.vtf> <out.png>` | VTF 7.0-7.5 mip 0 decoder (DXT1/3/5 via Pillow, the 8-bit, 565, 4444, 5551 formats here) and a VMT reader (`patch` resolved). |
+| `gma.py <file.gma\|.bin> [out dir]` | Lists or extracts a GMod addon archive (also the LZMA legacy `.bin`). Paths are sanitised; nothing in the archive is run. |
+| `preview.py` | Textured software renderer for the previews (fork of `projects/cs21.6/preview/model_render.py`). |
+| `catalog.json` | The batch: workshop id, title, author, chosen yes/no (and why not), `slug`, `mdl`, optional `skin`, `bodygroups`, `depends` (other item ids whose files it needs), and the `paths` block. |
+
+## Paths (catalog `paths`, environment overrides)
+
+| Key | Env | Default on the PC |
+|---|---|---|
+| `steamcmd` | `STEAMCMD` | `C:\steamcmd\steamcmd.exe` (downloads land in `C:\steamcmd\steamapps\workshop\content\4000\<id>\`) |
+| `work` | `PM_WORK` | `C:\source1\playermodels\` = `extract\<id>\`, `preview\`, `reports\`, `logs\`, `template\` |
+| `template` | `PM_TEMPLATE` | `C:\source1\playermodels\template\` (decompiled agent with ragdoll joints, see the guide) |
+| `out` | `PM_OUT` | content addon `gmod_playermodels` (`csgo_addons\gmod_playermodels\`) |
+
+Output inside the addon: `models/player/gmod/<slug>/<slug>.vmdl` + `<slug>_body.dmx`, `models/player/gmod/shared/` (template first-person arms,
+sleeves, preview pose: one copy for all), `materials/models/player/gmod/<slug>/*.vmat|png`.
+
+## Quick start
+
+```
+cd create/playermodels
+python -I fetch.py catalog.json --scan                 # download + list candidates
+# edit catalog.json: chosen, slug, mdl for each pick
+python -I pipeline.py catalog.json --compile           # convert, preview, compile, report
+```
+Runs longer than two minutes go under `autoport/watchdog.py` on the PC (download ~10 s per item; conversion 5-60 s per model, previews 1-3 min).

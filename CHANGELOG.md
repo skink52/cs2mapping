@@ -3,6 +3,17 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-06: GMod player models -> CS2 (create/playermodels), batch 1 of 10
+
+- **[create] playermodels/**: SteamCMD workshop download + GMA extract (`fetch.py`, `gma.py`), a Source 1 MDL/VVD/VTX reader with bones and
+  weights (`srcmdl.py`), VTF/VMT reader (`vtf.py`), the converter (`gmod2cs2.py`), a hands/wrists check (`handcheck.py`) and the batch
+  runner (`pipeline.py`: convert, preview, compile, report, contact sheet). Method: uniform scale only, each limb turned into CS2's bind pose at
+  its own length; arms and hands seated on CS2's pivots (fingers were wrung apart when 2-3 u off); sleeve cuffs follow the hand near the wrist;
+  upper torso recentred on CS2's spine; warnings for bulky chests, hands inside the torso and mismatched rigs. Guide:
+  [docs/creation/gmod-playermodels.md](docs/creation/gmod-playermodels.md).
+- Batch 1 ([create/playermodels/BATCH1.md](create/playermodels/BATCH1.md)): 10 models in the new `gmod_playermodels` addon, all compiled;
+  SWAT and V.A.R.T. warn for armour bulk. Not yet tried in game. Work folder on the PC: `C:\source1\playermodels\`.
+
 ## 2026-11-05: ba_jail_keimusho bump mine HUD, all-Medium vis, final build mode
 
 - ba_jail_keimusho: the bump mine "MOUSE1 THROW" card stuck on screen across rounds (round-start reset cleared the HUD's sent-state cache, so the hide was

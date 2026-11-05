@@ -149,6 +149,14 @@
    "origin": "trenchwarfare-cs2:tools/patch_vmap.py",
    "seen": "2da590a97e70d1e707f87f5bf3117382c4cf00f6"
   },
+  "create/playermodels/gmod2cs2.py": {
+   "origin": "cs21.6:tools/models.py",
+   "seen": "95db85a3aa11fd119d2b019ebe01600844b81e17"
+  },
+  "create/playermodels/preview.py": {
+   "origin": "cs21.6:preview/model_render.py",
+   "seen": "117558d5ec1e0808fea9240a5c8d9ecfc56c0dca"
+  },
   "create/smd_view.py": {
    "origin": "space-racer-cs2:preview/chase_view.py",
    "seen": "b9fb826e70d0e061221634128b12043357997bbf"
