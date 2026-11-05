@@ -125,7 +125,7 @@ The catalog records each item's id, title and author; keep that with any model y
 
 ## Status
 
-All converted models: [create/playermodels/MODELS.md](../../create/playermodels/MODELS.md). Per batch: [BATCH1.md](../../create/playermodels/BATCH1.md),
+All converted models, with a picture of each in CS2's pose: [create/playermodels/MODELS.md](../../create/playermodels/MODELS.md). Per batch: [BATCH1.md](../../create/playermodels/BATCH1.md),
 [BATCH2.md](../../create/playermodels/BATCH2.md), [BATCH3.md](../../create/playermodels/BATCH3.md), [BATCH4.md](../../create/playermodels/BATCH4.md)
 (tables from `batchnotes.py`, review notes by hand). 80 models, all compiled.
 **On a server (6 Nov 2026):** all 80 worn by bots that fought on ar_shoots (slime-mg-gm `--gmod-models`): every model goes on, the

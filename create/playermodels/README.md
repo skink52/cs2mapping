@@ -17,7 +17,7 @@ Python 3 with numpy and Pillow. No Blender, Crowbar or SourceIO needed: the Sour
 | `hitboxes.py <template> <model.mdl>...` | Hit box fit: share of each body group's mesh outside every capsule, and the head-centre offset; the stock body as baseline. |
 | `cleanup.py <catalog.json> [--prune] [--dry-run]` | Frees disk: SteamCMD copies of catalog items, extracts of unused items, and with `--prune` every file in used items the chosen models don't need. Only catalog ids are touched. |
 | `batchnotes.py <catalog.json> <batch>` | Rebuilds `BATCH<n>.md`'s table from the reports, keeping the hand-written review below its marker. |
-| `listmodels.py <catalog.json>` | Rebuilds `MODELS.md`: every converted model, its CS2 path, source, status, warnings. |
+| `listmodels.py <catalog.json>` | Rebuilds `MODELS.md`: every converted model with a picture in CS2's pose (`img/<slug>.jpg`, cut from the posed preview), its CS2 path, source, status, warnings. |
 | `srcmdl.py <model.mdl>` | Source 1 studio model reader (MDL v44-49 + VVD + VTX v7): reference-pose bones, LOD0 skinned mesh, body parts, skin families, eyeballs. Prints a summary. |
 | `vtf.py <in.vtf> <out.png>` | VTF 7.0-7.5 mip 0 decoder (DXT1/3/5 via Pillow, the 8-bit, 565, 4444, 5551 formats here) and a VMT reader (`patch` resolved). |
 | `gma.py <file.gma\|.bin> [out dir]` | Lists or extracts a GMod addon archive (also the LZMA legacy `.bin`). Paths are sanitised; nothing in the archive is run. |
