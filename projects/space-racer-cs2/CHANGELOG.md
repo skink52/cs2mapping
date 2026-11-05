@@ -46,6 +46,7 @@
   is turned, and it is lifted so no corner is in the road. Before, the pitch followed the road's own direction, so a
   car turned across a steep incline (a drift, a spin, a shove) dug one side in. `CONFIG.CAR_CLEAR` and
   `CONFIG.CAR_CLEAR_SLOPE` (12 units per unit of slope) raise cars further on roads that still catch the hull.
+  (5 Nov: the first build of this leaned cars out of banked bends instead of into them - the roll's sign was flipped; fixed.)
 - **Space Racer's trackside pylons**: Space Racer's track models had not been rebuilt since 18 Oct, before the
   pylons got their arms and braces (28 Oct), so its pylons still floated beside the track. This build delivers the
   braced ones (the generator is shared; nothing changed in it).

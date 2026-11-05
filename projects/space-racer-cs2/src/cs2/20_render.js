@@ -173,7 +173,7 @@ class ArenaView {
         const zc = (f, l) => T.surfaceAt(car.s + f * cr - l * sr, car.d + f * sr + l * cr);
         const zMid = zc(0, 0), zf = zc(half, 0), zr = zc(-half, 0), zl = zc(0, halfW), zrt = zc(0, -halfW);
         pitch = -deg(Math.atan2(zf - zr, 2 * half));
-        bankRoll = -deg(Math.atan2(zl - zrt, 2 * halfW));
+        bankRoll = deg(Math.atan2(zl - zrt, 2 * halfW));            // left corner lower = lean left = negative roll (5 Nov: the sign was flipped and cars leaned out of banked bends)
         lift = Math.max(0, (zf + zr) / 2 - zMid, (zl + zrt) / 2 - zMid) + CONFIG.CAR_CLEAR + CONFIG.CAR_CLEAR_SLOPE * Math.abs(zf - zr) / (2 * half);
       }
       // roll (+ = right side down): the road's lean under the car (bankRoll: left side low = negative) plus leaning
