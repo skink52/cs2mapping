@@ -31,7 +31,9 @@ RTHEMES, RDEFS = defs().THEMES, defs().TRACKS
 OUT, MAP = sys.argv[1], sys.argv[2]
 PREVIEW = sys.argv[3] if len(sys.argv) > 3 else None
 FONT_B = '/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.ttf'
+if not os.path.exists(FONT_B): FONT_B = 'C:/Windows/Fonts/arialbd.ttf'   # (the build on a Windows PC)
 FONT_R = '/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed.ttf'
+if not os.path.exists(FONT_R): FONT_R = 'C:/Windows/Fonts/arial.ttf'   # (the build on a Windows PC)
 def font(sz, bold=True): return ImageFont.truetype(FONT_B if bold else FONT_R, sz)
 tracks = json.load(open(os.path.join(OUT, '_gen/tracks.json')))
 THEME = {k: tuple(v['rail']) for k, v in RTHEMES.items()}
@@ -73,10 +75,14 @@ SLIDES = [('cars', 'oval'), ('tracks', 'crosswire'), ('win', 'spire'), ('track',
 if NEON: SLIDES = [('cars', 'grid'), ('tracks', 'voidhop'), ('win', 'pulse'), ('track', 'dive')]
 if DEPTH: SLIDES = [('cars', 'kelp'), ('tracks', 'abyss'), ('win', 'coral'), ('track', 'wreck')]
 
-CARS = [('hornet', 'HORNET', 'DRIFT CHARGE', ['LIGHT AND SHARP', 'E: SEEKER BOLT']),
-        ('meteor', 'METEOR', 'RAM', ['BUMPS HURT THEM', 'E: SHOCKWAVE']),
-        ('comet', 'COMET', 'AFTERBURN', ['BIGGEST BOOST', 'E: NOVA BURN']),
-        ('bastion', 'BASTION', 'SLIPSTREAM', ['TOUGHEST SHIELD', 'E: AEGIS'])]
+# the cars are the same in every game; the E ability changes with the title (src/core/00_defs.js ABILITY_SETS)
+E_MOVES = {'space': ('SEEKER BOLT', 'SHOCKWAVE', 'NOVA BURN', 'AEGIS'),
+           'neon': ('LIGHT TRAIL', 'EMP', 'OVERCLOCK', 'FIREWALL'),
+           'depth': ('INK CLOUD', 'DEPTH CHARGE', 'HYDROJET', 'UNDERTOW')}['depth' if DEPTH else 'neon' if NEON else 'space']
+CARS = [('hornet', 'HORNET', 'DRIFT CHARGE', ['LIGHT AND SHARP', 'E: ' + E_MOVES[0]]),
+        ('meteor', 'METEOR', 'RAM', ['BUMPS HURT THEM', 'E: ' + E_MOVES[1]]),
+        ('comet', 'COMET', 'AFTERBURN', ['BIGGEST BOOST', 'E: ' + E_MOVES[2]]),
+        ('bastion', 'BASTION', 'SLIPSTREAM', ['TOUGHEST SHIELD', 'E: ' + E_MOVES[3]])]
 TRACK_TAGS = {'oval': 'FLAT OUT', 'hairpin': 'THREE HAIRPINS', 'crosswire': 'SPIRAL LOOP', 'nullgap': 'NO RAILS',
               'spire': 'CLIMB AND DIVE', 'ringworld': 'OVER AND UNDER', 'skyway': 'BIG JUMPS', 'helix': 'CORKSCREW'}
 TRACK_TAGS.update({'grid': 'FLAT OUT', 'pulse': 'TWO HAIRPINS', 'voidhop': 'FLY THE GAP', 'stream': 'ROLLERCOASTER',

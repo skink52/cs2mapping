@@ -52,7 +52,9 @@ Everything here is original work: the name, cars, tracks, art, sounds and rules.
 
 ## Building
 
-Needs Python 3 with numpy and Pillow, and Node 18+.
+Needs Python 3 with numpy, Pillow and scipy (the Neon and Depth music), and Node 18+. On a Windows PC the build
+scripts call `python3`; if only `python` is on the path, put a `python3` wrapper ahead of it. The loading screen and the HUD
+preview fall back to Arial when the DejaVu fonts are not installed.
 
 ```
 sh tools/build_all.sh
@@ -70,9 +72,17 @@ node test/sim.cjs 64 10            # ten rounds of 64 bots: durations, wrecks, c
 node test/sim.cjs 64 100 even,seed=71    # car balance: the same number of each car, 200 races
 node test/turbo_test.cjs           # the (secret) turbo start's timing
 node test/spin_test.cjs            # how far a spin attack shoves each car
+node test/ability_test.cjs         # the title's E abilities on two cars (SPR_CORE=<module> for another title's build)
 node test/mock_cs2.mjs 20 44 500 churn   # the real script on the mock engine with people joining and leaving
 cd test && tsc -p tsconfig.json    # type check against point_script.d.ts
 ```
+
+## Server stats
+
+The maps need no plugin, but they can report stats to one: `SERVER_STATS: true` in the script's `CONFIG` (off by default) sends
+`mgstat <slot> races_finished|race_podiums|race_wins|track_kills` and `mgstat <slot> time <track>[_lap] <ms>` as server commands, or a
+plugin switches it on at load with `RunScriptInput mgstat_on` on the map's `spr_script` (SlimeMG does). The mock test checks the
+commands: `node test/mock_cs2.mjs 20 44 400 churn,statsinput`. Details in `CHANGELOG.md` (v0.7.0).
 
 ## Licence
 

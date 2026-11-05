@@ -16,6 +16,7 @@ OUT = IMGDIR = ROOT = RULES = HT = None     # set by init() (importable: preview
 BYID = {}
 H = 1080
 FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.ttf'
+if not os.path.exists(FONT): FONT = 'C:/Windows/Fonts/arialbd.ttf'   # (the build on a Windows PC)
 
 # ---------------------------------------------------------------- css
 def parse_css(text):

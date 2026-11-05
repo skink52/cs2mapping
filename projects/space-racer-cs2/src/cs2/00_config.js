@@ -84,11 +84,18 @@ const CONFIG = {
   CAR_LEAN: 6,                   // car lean per unit of turning (degrees per radian/second) ...
   CAR_LEAN_MAX: 16,              // ... up to this many degrees
   CAM_BANK: 0.6,                 // how much of a banked bend's lean the camera copies
+  // the car sits on the road under its four corners (nose, tail, left, right), so on a steep climb, a crest or a
+  // banked bend no corner is in the road. CAR_CLEAR lifts every car this much more; CAR_CLEAR_SLOPE adds this many
+  // units per unit of slope under the car (a 30% grade adds 0.3 x this), for roads that still catch the hull.
+  CAR_CLEAR: 0,
+  CAR_CLEAR_SLOPE: 12,
   CAM_TUBE_UP: 150, CAM_TUBE_BACK: 300,   // camera height / distance limits inside tubes
   HIDE_OWN_BODY: true,
 
   // ---- rendering
   MAX_EFFECT_PROPS: 40,          // per arena
+  MAX_WALL_PROPS: 48,            // per arena: walls of light drawn at once (Light Trails, Firewalls, boost trails); the newest first
+  MAX_HAZARD_PROPS: 24,          // per arena: Depth Charges and ink clouds drawn at once
   TELEPORT_DIST: 400,            // a car prop jumping further than this in one tick is teleported, otherwise moved (CS2 stops
                                  // drawing a prop that is teleported every tick - the 17 Oct test's invisible grid)
   MAX_SOUNDS_PER_TICK: 24,
@@ -111,8 +118,15 @@ const CONFIG = {
   SOUND_PREFIX: 'spr_snd_',
   MAP_PARAMS: 'spr_map_params',
 
+  // ---- stats for a server plugin: "mgstat <slot> <stat> [n]" / "mgstat <slot> time <track> <ms>" server commands at the
+  // finish (races_finished, race_podiums, race_wins, the race time and the final lap), every lap (the lap time) and a wreck
+  // dealt during the race (track_kills; the end-of-race cascade is not counted). Off by default: a server without the
+  // plugin would print "Unknown command" for each one. A plugin switches it on for the map without a map edit:
+  // point_script spr_script, input RunScriptInput "mgstat_on" (SlimeMG's MapScriptInputs).
+  SERVER_STATS: false,
+
   PERF_LOG: true,                // once a minute while a race runs: "[spr] script time: avg X ms, max Y ms per server tick"
   DEBUG: false,
 };
 
-const VERSION = '0.6.1';
+const VERSION = '0.7.0';

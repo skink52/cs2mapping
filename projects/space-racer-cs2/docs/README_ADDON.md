@@ -135,3 +135,9 @@ Same risks as FreeDM. On this map, turn off or exempt:
 - **Chat commands** `!car !pick !cam !tilt !crt !shade !vote !music !spec !afk !back !help !race` may clash with plugin
   commands (map votes especially: `!vote` / `!rtv` plugins).
 - **Team balancers**: balance at round start only; a mid-race team change takes the player out of the race.
+
+## Server stats (v0.7.0)
+
+The map needs no plugin. With one that understands `mgstat` (SlimeMG), the script reports each human's finishes, podiums, wins,
+wrecks dealt during the race and best race and lap times per track. It is off in the build (`CONFIG.SERVER_STATS`); the plugin
+switches it on at load (`RunScriptInput mgstat_on` on `spr_script`). Without a plugin the switch stays off and nothing is sent.

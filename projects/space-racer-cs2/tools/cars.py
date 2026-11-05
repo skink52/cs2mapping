@@ -523,6 +523,70 @@ def write_effects():
         tris = [('spr_fx', (hq[0], hq[1], hq[2]), (0, 0, 1)), ('spr_fx', (hq[0], hq[2], hq[3]), (0, 0, 1)),
                 ('spr_fx', (vq[0], vq[1], vq[2]), (0, 1, 0)), ('spr_fx', (vq[0], vq[2], vq[3]), (0, 1, 0))]
         out['bolt%d' % f] = s2.write_model(OUT, MDIR, 'bolt%d' % f, tris, {'spr_fx': mat})
+    # NEON RACER: walls of light, vertical slabs along +x, both faces drawn, a bright top rail and a dithered glow.
+    # 'wall': a Light Trail segment (180 long, 60 tall); 'wallw': a Firewall slab (500 long, 80 tall); 'trail_s': the
+    # boost trail every boosting car leaves (400 long, 26 tall; one per boosting car). The script scales each to its length.
+    def slab(name, L, H, c0, c1, comment):
+        G = 16
+        yy, xx = np.mgrid[0:G, 0:G]
+        img = np.zeros((G, G, 3), np.uint8); img[:] = c0
+        img[yy < 2] = WHITE; img[(yy >= 2) & (yy < 5)] = c1
+        img[(yy > 9) & ((xx + yy) % 4 == 0)] = c1
+        a = np.full((G, G), 255, np.uint8); a[(yy > 11) & ((xx + yy) % 3 != 0)] = 0
+        mat = s2.write_material(OUT, '%s/%s' % (PAL_DIR, name), up(img, 4), up(a, 4), blend=2, backfaces=True, comment=comment)
+        q = [(-L / 2, 0, 0, 0, 1), (L / 2, 0, 0, L / 64.0, 1), (L / 2, 0, H, L / 64.0, 0), (-L / 2, 0, H, 0, 0)]
+        tris = [('spr_fx', (q[0], q[1], q[2]), (0, 1, 0)), ('spr_fx', (q[0], q[2], q[3]), (0, 1, 0))]
+        out[name] = s2.write_model(OUT, MDIR, name, tris, {'spr_fx': mat})
+    slab('wall', 180, 60, SKYBLUE, ICE, 'light trail')
+    slab('wallw', 500, 80, MAGENTA, PINK, 'firewall')
+    slab('trail_s', 400, 26, TEAL, MINT, 'boost trail')
+    # EMP: three rings like the Shockwave's, in white and blue
+    for f in range(3):
+        G = 32
+        yy, xx = np.mgrid[0:G, 0:G]
+        r = np.hypot(xx + 0.5 - G / 2, yy + 0.5 - G / 2) / (G / 2)
+        ring = (r > 0.84 - f * 0.08) & (r < 0.98)
+        img = np.zeros((G, G, 3), np.uint8); img[:] = (SKYBLUE, ICE, WHITE)[f]
+        img[(r > 0.9) & ring] = (ICE, WHITE, WHITE)[f]
+        sparks = (((xx * 7 + yy * 3) % 11 == 0) & (r > 0.25) & (r < 0.85)) if f < 2 else np.zeros((G, G), bool)
+        img[sparks] = WHITE
+        mat = s2.write_material(OUT, '%s/emp%d' % (PAL_DIR, f), up(img, 4), up(((ring | sparks) * 255).astype(np.uint8), 4), blend=2, backfaces=True, comment='emp ring %d' % f)
+        R = (160, 260, 360)[f]
+        q = [(-R, -R, 6, 0, 1), (R, -R, 6, 1, 1), (R, R, 6, 1, 0), (-R, R, 6, 0, 0)]
+        out['emp%d' % f] = s2.write_model(OUT, MDIR, 'emp%d' % f, [('spr_fx', (q[0], q[1], q[2]), (0, 0, 1)), ('spr_fx', (q[0], q[2], q[3]), (0, 0, 1))], {'spr_fx': mat})
+    # DEPTH RACER: a Depth Charge (a dark ball with a light; armed, it blinks: frame 1), ink clouds (two dark blobs the
+    # script alternates) and the Undertow's wake (a strip of chevrons on the road behind the Bastion)
+    for f in range(2):
+        G = 16
+        yy, xx = np.mgrid[0:G, 0:G]
+        r = np.hypot(xx + 0.5 - G / 2, yy + 0.5 - G / 2) / (G / 2)
+        img = np.zeros((G, G, 3), np.uint8); img[:] = INK
+        img[r < 0.9] = PLUM; img[(r < 0.9) & ((xx + yy) % 4 == 0)] = MAUVE
+        img[r < 0.3] = (RED, WHITE)[f]
+        if f: img[(r > 0.5) & (r < 0.7)] = GOLD
+        mat = s2.write_material(OUT, '%s/mine%d' % (PAL_DIR, f), up(img, 4), up(((r < 0.95) * 255).astype(np.uint8), 4), blend=2, backfaces=True, comment='depth charge %d' % f)
+        out['mine%d' % f] = s2.write_model(OUT, MDIR, 'mine%d' % f, star_tris('spr_fx', 56, 56, 4), {'spr_fx': mat})
+    for f in range(2):
+        G = 32
+        rng = np.random.RandomState(90 + f)
+        yy, xx = np.mgrid[0:G, 0:G]
+        blob = np.zeros((G, G), bool)
+        for _ in range(7):
+            px, py, pr = rng.uniform(6, 26), rng.uniform(8, 26), rng.uniform(6, 11)
+            blob |= np.hypot(xx - px, yy - py) < pr
+        img = np.zeros((G, G, 3), np.uint8); img[:] = BLACK
+        img[((xx + yy) % 5 == f)] = INK; img[((xx * 3 + yy) % 7 == 0)] = PLUM
+        mat = s2.write_material(OUT, '%s/ink%d' % (PAL_DIR, f), up(img, 4), up((blob * 255).astype(np.uint8), 4), blend=2, backfaces=True, comment='ink cloud %d' % f)
+        out['ink%d' % f] = s2.write_model(OUT, MDIR, 'ink%d' % f, star_tris('spr_fx', 300, 120, 0), {'spr_fx': mat})
+    G = 16
+    yy, xx = np.mgrid[0:G, 0:G]
+    chev = np.abs(yy - (G - 1) / 2) * 0.8 + 2
+    m = ((xx - chev) % 8 < 3)                         # chevrons pointing along +x = towards the car
+    img = np.zeros((G, G, 3), np.uint8); img[:] = TEAL; img[(xx - chev) % 8 < 1.5] = MINT
+    mat = s2.write_material(OUT, PAL_DIR + '/wake', up(img, 4), up(m.astype(np.uint8) * 255, 4), blend=2, backfaces=True, comment='undertow wake')
+    L, W_ = 520, 240
+    q = [(-L / 2, -W_ / 2, 2, 0, 0), (L / 2, -W_ / 2, 2, L / 64.0, 0), (L / 2, W_ / 2, 2, L / 64.0, W_ / 64.0), (-L / 2, W_ / 2, 2, 0, W_ / 64.0)]
+    out['wake'] = s2.write_model(OUT, MDIR, 'wake', [('spr_fx', (q[0], q[1], q[2]), (0, 0, 1)), ('spr_fx', (q[0], q[2], q[3]), (0, 0, 1))], {'spr_fx': mat})
     # null model (nothing visible) for idle props and sound anchors
     tiny = [('spr_fx', ((0, 0, 0, 0, 0), (0.01, 0, 0, 0, 0), (0, 0.01, 0, 0, 0)), (0, 0, 1))]
     out['null'] = s2.write_model(OUT, 'models/spr', 'null', tiny, {'spr_fx': fence})

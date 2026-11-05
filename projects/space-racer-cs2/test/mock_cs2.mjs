@@ -2,7 +2,9 @@
 // Simulates players (humans with random input + CS2 bots), the round timer, freeze time, scripted kills and
 // respawns, people joining and leaving, and checks the script keeps working.
 // usage: node test/mock_cs2.mjs [humans=10] [bots=22] [seconds=400] [opts: v,churn,afk,prof,silent,norespawn,warmup,hudstats,4x16,alt,track=<id>,
-//        held,seed=<n>,trace=<file>,calls]
+//        held,seed=<n>,trace=<file>,calls,stats,statsinput]
+//   stats / statsinput: check the mgstat server commands (CONFIG.SERVER_STATS on / switched on by a plugin's RunScriptInput at
+//   t=5 s) against the stats plugin's contract; use with held, or no human finishes a race (bots are skipped by design)
 //   held: humans hold keys like people do (throttle on, boost in bursts, spectators click now and then) - use for timing
 //   seed=<n>: repeatable run (mock randomness and the script's seed); trace=<file>: write what each tick changed on
 //   screen (HUD classes / texts, props, cameras, sounds, kills) so two builds can be compared line by line;
@@ -13,8 +15,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { fileURLToPath } from 'node:url';
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');   // (fileURLToPath: a Windows path has no leading slash)
 const HUMANS = +(process.argv[2] || 10), BOTS = +(process.argv[3] || 22), SECONDS = +(process.argv[4] || 400);
 const OPTS = process.argv[5] || '';
 const NAME = process.env.SPR_NAME || ({ neon: 'neon_racer', depth: 'depth_racer' }[process.env.SPR_THEME] || 'space_racer');
@@ -74,6 +77,8 @@ class Entity {
   Move(o) { stats.moves++; if (o.position) this.pos = { ...o.position }; if (o.angles) this.ang = { ...o.angles }; check(o.position, o.angles); obsEnt(this); }
   SetModel(m) { stats.setModel++; if (!models.has(m)) throw new Error('missing model ' + m); this.model = m; obsEnt(this); }
   SetColor(c) { this.color = c; obsEnt(this); }
+  SetModelScale(k) { this.scale = k; obsEnt(this); }   // (the walls of light are one slab model scaled to each segment)
+  GetModelScale() { return this.scale === undefined ? 1 : this.scale; }
   Glow(c) { this.glow = c ? c.r + ',' + c.g + ',' + c.b : 'on'; stats.glows = (stats.glows || 0) + 1; obsEnt(this); }
   Unglow() { this.glow = ''; obsEnt(this); }
   IsGlowing() { return !!this.glow; }
@@ -177,6 +182,22 @@ for (let i = 0; i < HUMANS + BOTS; i++) {
 }
 
 // ---------------------------------------------------------------- Instance
+// ---------------------------------------------------------------- mgstat (server stats for a plugin)
+// 'stats': the script is run with SERVER_STATS on. 'statsinput': off in CONFIG, a plugin sends RunScriptInput mgstat_on at
+// t=5 s. Every command is checked against the plugin's contract ("mgstat <slot> <stat> [n]" / "mgstat <slot> time <track> <ms>",
+// no ; or ", a connected human's slot), and the totals are checked against each other at the end.
+const mg = { sent: 0, byStat: {}, times: {}, bad: [], bots: 0, early: 0 };
+function mgstat(c) {
+  mg.sent++;
+  const m = /^mgstat (\d+) (?:([a-z_]+)(?: (\d+))?|time ([a-z0-9_]+) (\d+))$/.exec(c);
+  if (!m || /[;"]/.test(c)) { mg.bad.push(c); return; }
+  const ctrl = players.find((p) => p.slot === +m[1] && p.connected);
+  if (!ctrl || ctrl.bot) mg.bots++;
+  if (OPTS.includes('statsinput') && time < 5) mg.early++;
+  if (m[4]) { mg.times[m[4]] = (mg.times[m[4]] || 0) + 1; if (!(+m[5] > 0)) mg.bad.push(c); }
+  else mg.byStat[m[2]] = (mg.byStat[m[2]] || 0) + (m[3] ? +m[3] : 1);
+}
+
 const hooks = {};
 let thinkFn = null, nextThink = 0;
 const timers = [];
@@ -194,11 +215,12 @@ const Instance = {
   OnPlayerDisconnect: (f) => { hooks.OnPlayerDisconnect = f; }, OnPlayerActivate: (f) => { hooks.OnPlayerActivate = f; },
   OnPlayerTeamChanged: (f) => { hooks.OnPlayerTeamChanged = f; }, OnPlayerReset: (f) => { hooks.OnPlayerReset = f; }, OnPlayerKill: (f) => { hooks.OnPlayerKill = f; },
   OnModifyPlayerDamage: (f) => { hooks.OnModifyPlayerDamage = f; }, OnPlayerChat: (f) => { hooks.OnPlayerChat = f; },
+  OnScriptInput: (n, f) => { hooks['input:' + n] = f; },
   FindEntityByName: (n) => world.get(n),
   FindEntitiesByName: (n) => (world.get(n) ? [world.get(n)] : []),
   GetAllPlayerControllers: () => players.filter((p) => p.connected),
   GetPlayerController: (s) => players.find((p) => p.slot === s && p.connected),
-  ServerCommand: (c) => { if (TRACE) obs.events.push('cmd ' + c); const [k, v] = c.split(' '); if (k === 'say') stats.says.push(c.slice(4)); else stats.cvars[k] = v; },
+  ServerCommand: (c) => { if (TRACE) obs.events.push('cmd ' + c); const [k, v] = c.split(' '); if (k === 'say') stats.says.push(c.slice(4)); else if (k === 'mgstat') mgstat(c); else stats.cvars[k] = v; },
   ClientCommand: () => {},
   EntFireAtTarget: ({ target, input, value }) => {
     if (input === 'Skin') { stats.skins++; target.skin = value; obsEnt(target); }
@@ -276,6 +298,7 @@ const phases = {};
 const asked = new Map(), picker = { overResults: 0, askedOverResults: 0, ticks: new Map() };
 while (time < SECONDS) {
   time += TICK;
+  if (OPTS.includes('statsinput') && Math.abs(time - 5) < TICK / 2 && hooks['input:mgstat_on']) hooks['input:mgstat_on']({});
   for (const [at, text] of Object.entries(CHATS)) if (Math.abs(time - +at) < TICK / 2 && players[0] && hooks.OnPlayerChat) {
     if (/^[!/](car|pick)$/.test(text)) asked.set(0, time);
     hooks.OnPlayerChat({ player: players[0], text, team: 0 });
@@ -401,6 +424,17 @@ console.log(`car picker: up ${((picker.ticks.get(0) || 0) / 64).toFixed(1)} s fo
 if (picker.overResults) stats.errors.push('the car picker covered the results board without !car: ' + (picker.overResults / 64).toFixed(1) + ' s');
 console.log(`auto team joins: ${stats.autoTeams || 0}`);
 console.log(`votes: ${(stats.says.join(' | ').match(/VOTED/g) || []).length} voted arenas announced; glow calls ${stats.glows || 0}`);
+if (OPTS.includes('stats') || OPTS.includes('statsinput')) {
+  const b = mg.byStat, laps = Object.entries(mg.times).filter(([k]) => k.endsWith('_lap')).reduce((n, [, v]) => n + v, 0), races = Object.entries(mg.times).filter(([k]) => !k.endsWith('_lap')).reduce((n, [, v]) => n + v, 0);
+  console.log(`mgstat: ${mg.sent} commands ${JSON.stringify(b)}, best times ${JSON.stringify(mg.times)}; bad ${mg.bad.length}, to bots or empty slots ${mg.bots}, before the plugin's switch ${mg.early}`);
+  if (mg.bad.length) stats.errors.push('mgstat commands off the contract: ' + mg.bad.slice(0, 3).join(' | '));
+  if (mg.bots) stats.errors.push('mgstat sent for bots or empty slots: ' + mg.bots);
+  if (mg.early) stats.errors.push('mgstat sent before the plugin switched it on: ' + mg.early);
+  if (!mg.sent) stats.errors.push('mgstat: nothing sent');
+  if ((b.race_wins || 0) > (b.race_podiums || 0) || (b.race_podiums || 0) > (b.races_finished || 0)) stats.errors.push('mgstat: wins > podiums or podiums > finishes');
+  if (races !== (b.races_finished || 0)) stats.errors.push(`mgstat: ${races} race times for ${b.races_finished || 0} finishes`);
+  if (laps < (b.races_finished || 0)) stats.errors.push(`mgstat: ${laps} lap times for ${b.races_finished || 0} finishes`);
+}
 console.log('props teleported 3+ ticks in a row:', stats.tpRuns || 0, '; calls on entities that had gone away:', stats.invalidCalls || 0);
 if (stats.tpRuns) stats.errors.push('props teleported every tick (CS2 hides them): ' + stats.tpRuns);
 if (stats.errors.length) { console.log('ERRORS/WARNINGS:'); for (const e of [...new Set(stats.errors)].slice(0, 20)) console.log('  ' + e); }

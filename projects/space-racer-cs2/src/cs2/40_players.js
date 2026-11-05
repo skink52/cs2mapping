@@ -74,7 +74,8 @@ function sampleInput(slot, car, pk) {
   if (pawn.WasInputJustPressed(CSInputs.ATTACK2)) c.spin = true;
   if (pawn.WasInputJustPressed(CSInputs.USE)) c.ability = true;          // the car's E ability
   // the clean start: say why a spin (or a Meteor's Shockwave) does nothing yet
-  if (car.lock > 0 && car.racing && (c.spin || (c.ability && car.spec.ability === 'quake'))) bottom(slot, 'ATTACKS UNLOCK IN ' + Math.ceil(car.lock), 1);
+  if (car.lock > 0 && car.racing && (c.spin || (c.ability && ATTACK_ABILITIES[car.spec.ability]))) bottom(slot, 'ATTACKS UNLOCK IN ' + Math.ceil(car.lock), 1);
+  else if (car.emp > 0 && car.racing && (c.spin || c.ability || c.boost)) bottom(slot, 'FRIED BY AN EMP', 1);
   if (fwd || back || left || right || c.boost || c.drift || c.spin || c.ability) return true;
   return looked(pk, true);
 }

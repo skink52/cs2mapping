@@ -31,6 +31,25 @@ function buildCfg() {
 
 function cvars(list) { if (CONFIG.APPLY_CVARS) for (const c of list) Instance.ServerCommand(c); }
 
+// ---------------------------------------------------------------- stats for a server plugin (CONFIG.SERVER_STATS)
+// "mgstat <slot> <stat> [n]" adds n (default 1) to that player's stat for the server's current mode; "mgstat <slot> time
+// <track> <ms>" keeps the best time per map and track. Sent at the finish (races_finished; race_podiums for the top 3;
+// race_wins for first; the race time; the final lap, which has no lap event of its own), at every lap (the lap time) and
+// at a wreck dealt to the other side during the race (track_kills: the end-of-race kill cascade is left out). Bots and
+// warmup don't count. A few commands a race per human, so nothing is batched.
+let statsOn = !!CONFIG.SERVER_STATS;
+function mgstat(pe, rest) {
+  if (!statsOn || !pe || pe.bot || Instance.IsWarmupPeriod()) return;
+  guard('mgstat', () => Instance.ServerCommand('mgstat ' + Math.floor(pe.slot) + ' ' + rest));
+}
+const trackKey = (T) => String(T.id).replace(/[^a-z0-9_]/gi, '');
+const msOf = (s) => Math.max(0, Math.round(s * 1000));
+function statsSwitch(on) {
+  if (statsOn === on) return;
+  statsOn = on;
+  log(`server stats ${on ? 'on' : 'off'} (mgstat commands for a stats plugin)`);
+}
+
 function init() {
   seedRandom((Date.now() & 0x7fffffff) || 1);
   rm = new RoundManager(TRACKS, buildCfg());
@@ -42,7 +61,7 @@ function init() {
   ready = true;
   lastTime = gameTime();
   startAt = lastTime + 1;
-  log(`v${VERSION} ready: ${rm.tracks.length} tracks, HUD ${hud() ? 'on' : 'MISSING'}, prop template ${findPropTemplate() ? 'on' : 'MISSING'}`);
+  log(`v${VERSION} ready: ${rm.tracks.length} tracks, HUD ${hud() ? 'on' : 'MISSING'}, prop template ${findPropTemplate() ? 'on' : 'MISSING'}${statsOn ? ', server stats on (mgstat)' : ''}`);
 }
 
 function scanPeople(force) {
@@ -247,10 +266,33 @@ function handleArenaEvents(a, now) {
       case 'launch': { const pe = e.car.person; if (pe && !pe.bot) { bottom(pe.slot, 'TURBO START!', 2); hudFlash(pe.slot, 'pulse', 0.3); shake(pe.slot, 0.3, 8); } if (view) sfxCar(view, 'boost', e.car, 0.8); break; }
       case 'stall': { const pe = e.car.person; if (pe && !pe.bot) bottom(pe.slot, 'TOO EARLY - ENGINE STALLED', 2); break; }
       case 'ability': {
-        // the E abilities: a sound for everyone near, an effect, a shake for the cars caught in a Shockwave
+        // the E abilities: a sound for everyone near, an effect, a shake for the cars caught in a Shockwave or an EMP
         const c = e.car, pe = c.person, human = pe && !pe.bot;
-        if (view) sfxCar(view, e.kind === 'quake' ? 'quake' : e.kind === 'nova' ? 'nova' : e.kind === 'aegis' ? 'aegis' : 'dash', c);
-        if (e.kind === 'quake') {
+        if (view) sfxCar(view, ABILITY_SFX[e.kind] || 'dash', c);
+        if (e.kind === 'emp') {
+          if (view) view.effect(c.x, c.y, c.z, c.yaw, [CAR_MODELS.fx.emp0, CAR_MODELS.fx.emp1, CAR_MODELS.fx.emp2], 0.4, now);
+          for (const o of a.order) {
+            const op = o.person;
+            if (!op || op.bot || Math.hypot(o.x - c.x, o.y - c.y) > RULES.empRadius * 1.3) continue;
+            shake(op.slot, 0.4, o === c ? 6 : 14);
+            if (o !== c && o.emp > 0) { hudFlash(op.slot, 'emp', 0.5); bottom(op.slot, 'FRIED BY ' + c.name.slice(0, 16).toUpperCase() + "'S EMP", 2); }
+          }
+          if (human) bottom(pe.slot, e.hits ? 'EMP FRIED ' + e.hits + (e.hits === 1 ? ' CAR' : ' CARS') : 'EMP - NOBODY IN RANGE', 2);
+        } else if (e.kind === 'trail') {
+          if (human) bottom(pe.slot, 'LIGHT TRAIL - THEY BOUNCE OFF IT', 2);
+        } else if (e.kind === 'overclock') {
+          if (human) { bottom(pe.slot, 'OVERCLOCK - FREE BOOST ' + RULES.overclockTime + ' S', 2); hudFlash(pe.slot, 'pulse', 0.3); }
+        } else if (e.kind === 'firewall') {
+          if (human) bottom(pe.slot, 'FIREWALL UP - YOUR SIDE PASSES', 2);
+        } else if (e.kind === 'ink') {
+          if (human) bottom(pe.slot, 'INK CLOUD - THEY CAN\'T SEE OR STEER', 2);
+        } else if (e.kind === 'mine') {
+          if (human) bottom(pe.slot, 'DEPTH CHARGE DROPPED', 2);
+        } else if (e.kind === 'jet') {
+          if (human) { bottom(pe.slot, 'HYDROJET - OVER EVERY HAZARD', 2); hudFlash(pe.slot, 'pulse', 0.3); shake(pe.slot, 0.3, 8); }
+        } else if (e.kind === 'undertow') {
+          if (human) bottom(pe.slot, 'UNDERTOW - YOUR SIDE RIDES YOUR WAKE', 2);
+        } else if (e.kind === 'quake') {
           if (view) view.effect(c.x, c.y, c.z, c.yaw, [CAR_MODELS.fx.quake0, CAR_MODELS.fx.quake1, CAR_MODELS.fx.quake2], 0.45, now);
           for (const o of a.order) {
             const op = o.person;
@@ -266,6 +308,34 @@ function handleArenaEvents(a, now) {
         }
         break;
       }
+      case 'hazard': {
+        // a car cut across a wall of light / drove through a Firewall or an ink cloud: a sound and a line for both sides
+        const vp = e.car.person, ap = e.owner && e.owner.person;
+        if (view) sfxCar(view, e.kind === 'ink' ? 'ink' : e.kind === 'boost' ? 'scrape' : 'rail', e.car, 0.3);
+        if (vp && !vp.bot) {
+          if (e.kind === 'ink') { shake(vp.slot, 0.2, 5); bottom(vp.slot, 'IN ' + (e.owner ? e.owner.name.slice(0, 14).toUpperCase() + "'S " : '') + 'INK', 1.5); }
+          else if (e.kind === 'boost') { hudFlash(vp.slot, 'hit', 0.25); bottom(vp.slot, 'CUT ACROSS A BOOST TRAIL', 1.5); }
+          else { shake(vp.slot, 0.45, 16); hudFlash(vp.slot, 'hit', 0.4); bottom(vp.slot, 'HIT ' + (e.owner ? e.owner.name.slice(0, 14).toUpperCase() + "'S " : '') + (e.kind === 'firewall' ? 'FIREWALL' : 'LIGHT TRAIL'), 2); }
+        }
+        if (ap && !ap.bot && e.kind !== 'boost') bottom(ap.slot, e.car.name.slice(0, 16).toUpperCase() + (e.kind === 'ink' ? ' IS IN YOUR INK' : e.kind === 'firewall' ? ' HIT YOUR FIREWALL' : ' HIT YOUR TRAIL'), 2);
+        break;
+      }
+      case 'mineDrop': { if (view) sfxCar(view, 'mine', e.mine.owner, 0.2); break; }
+      case 'mineBoom': {
+        // a Depth Charge went off: a blast, a shake for everyone near, a line for the Meteor
+        const m = e.mine, ap = m.owner.person;
+        if (view) { view.effect(m.x, m.y, m.z + 10, m.yaw, [CAR_MODELS.fx.boom0, CAR_MODELS.fx.boom1, CAR_MODELS.fx.boom2], 0.45, now); playSound(view, 'boom', null, m.x, m.y, m.z + 30); }
+        for (const o of a.order) {
+          const op = o.person;
+          if (!op || op.bot || Math.hypot(o.x - m.x, o.y - m.y) > RULES.mineRadius * 1.5) continue;
+          shake(op.slot, 0.6, o.team === m.team ? 8 : 20);
+          if (o !== m.owner && !(o.team >= 0 && o.team === m.team)) { hudFlash(op.slot, 'hit', 0.4); bottom(op.slot, 'HIT BY ' + m.owner.name.slice(0, 14).toUpperCase() + "'S DEPTH CHARGE", 2); }
+        }
+        if (ap && !ap.bot) bottom(ap.slot, e.hits ? 'DEPTH CHARGE HIT ' + e.hits + (e.hits === 1 ? ' CAR' : ' CARS') : 'DEPTH CHARGE WENT OFF', 2);
+        break;
+      }
+      case 'mineEnd': break;
+      case 'ink': break;
       case 'creaturePass': {
         // a sea creature starts a pass: its call, from where it sets off
         const s = e.cr.segs[0];
@@ -316,6 +386,7 @@ function handleArenaEvents(a, now) {
         if (e.attacker) {
           const ap = e.attacker.person;
           if (ap && !ap.bot) bottom(ap.slot, 'YOU WRECKED ' + e.car.name.slice(0, 20).toUpperCase(), 3);
+          if (!(e.attacker.team >= 0 && e.attacker.team === e.car.team)) mgstat(ap, 'track_kills');   // a wreck dealt to the other side
           e.car.koBy = e.attacker;      // credited at the end of the race unless it goes out now
           if (CONFIG.KO_CREDIT_TO_ATTACKER && !koDeferred && pe && ap && !Instance.IsWarmupPeriod()) {
             e.car.koApplied = true; queueKill(pe.slot, ap.slot, 0.4);
@@ -328,6 +399,12 @@ function handleArenaEvents(a, now) {
         if (view) sfxCar(view, 'finish', e.car);
         const pe = e.car.person;
         if (pe && !pe.bot) center(pe.slot, 'FINISHED ' + ordinal(e.pos), 4, e.pos <= 3 ? 'gold' : 'green');
+        // the server's stats: the finish, the race time and the final lap (the lap that finishes a race has no 'lap' event)
+        mgstat(pe, 'races_finished');
+        if (e.pos <= 3) mgstat(pe, 'race_podiums');
+        if (e.pos === 1) mgstat(pe, 'race_wins');
+        mgstat(pe, 'time ' + trackKey(T) + ' ' + msOf(e.car.finishTime));
+        if (e.car.lastLap > 3) mgstat(pe, 'time ' + trackKey(T) + '_lap ' + msOf(e.car.lastLap));
         break;
       }
       case 'gone': if (view) { view.warpEffect(e.car, now); sfxCar(view, 'warp', e.car); } break;
@@ -347,6 +424,7 @@ function handleArenaEvents(a, now) {
           if (e.lap === a.laps - 1) center(pe.slot, 'FINAL LAP', 2, 'gold');
           bottom(pe.slot, (best ? 'BEST LAP ' : 'LAP ') + fmtTime(e.last), 2.5);
         }
+        if (e.last > 3) mgstat(pe, 'time ' + trackKey(T) + '_lap ' + msOf(e.last));   // (the same sanity limit as the track record)
         break;
       }
       case 'pulse': if (e.start && view) { const p = T.point(a.pulse.total); playSound(view, 'pulse', null, p.x, p.y, p.z + 40); } break;
@@ -377,8 +455,18 @@ function handleArenaEvents(a, now) {
     if (car.boosting && !car.wasBoost) sfxCar(view, 'boost', car, 0.8);
     if (car.onCharge && !car.wasCharge) sfxCar(view, 'charge', car, 1.0);
     car.wasBoost = car.boosting; car.wasCharge = car.onCharge;
+    // ink over the screen while the car is in a cloud; a line when an Undertow takes hold
+    const inked = car.inked > 0, emp = car.emp > 0, towed = car.towed;
+    if (human) {
+      if (inked && !car.wasInked) hudFlash(pe.slot, 'ink', 0.6); else if (inked) hudFlash(pe.slot, 'ink', 0.35);
+      if (towed !== car.wasTowed && towed !== 0) bottom(pe.slot, towed > 0 ? 'IN AN UNDERTOW: PULLED ALONG' : 'IN AN UNDERTOW: DRAGGED BACK', 1.5);
+    }
+    car.wasInked = inked; car.wasEmp = emp; car.wasTowed = towed;
   }
 }
+
+// the sound each E ability makes when it fires
+const ABILITY_SFX = { bolt: 'dash', quake: 'quake', nova: 'nova', aegis: 'aegis', trail: 'trail', emp: 'emp', overclock: 'boost', firewall: 'aegis', ink: 'ink', mine: 'mine', jet: 'nova', undertow: 'pulse' };
 
 // Nova fire flickers between its two frames (the effect steps through the list over its lifetime)
 const CREATURE_NAMES = { serpent: 'SERPENT', manta: 'MANTA', whale: 'WHALE' };
@@ -760,6 +848,9 @@ Instance.OnRoundEnd((ev) => guard('roundend', () => {
 }));
 Instance.OnBeginRoundRestart(() => guard('restart', () => cleanupRound(true)));
 Instance.OnPlayerDisconnect(({ playerSlot }) => guard('disconnect', () => dropPerson(playerSlot)));
+// a stats plugin switches SERVER_STATS on (or off) for this map: RunScriptInput "mgstat_on" / "mgstat_off" on spr_script
+Instance.OnScriptInput('mgstat_on', () => guard('stats', () => statsSwitch(true)));
+Instance.OnScriptInput('mgstat_off', () => guard('stats', () => statsSwitch(false)));
 Instance.OnPlayerActivate(() => guard('activate', () => scanPeople(true)));
 Instance.OnPlayerTeamChanged(({ player }) => guard('team', () => {
   const slot = slotOfEntity(player);

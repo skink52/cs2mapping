@@ -18,6 +18,10 @@ class Track {
     this.hasFly = this.fly.some((v) => v);
     this.creatureDefs = data.creatures || [];            // giant sea creatures crossing the track (Depth Racer)
     this.zmin = data.zmin || 0; this.zmax = data.zmax || 0;
+    // the road's height range (Depth Racer's pressure): the middle height and the span, from the samples
+    let zlo = Infinity, zhi = -Infinity;
+    for (let i = 0; i < this.n; i++) { if (this.z[i] < zlo) zlo = this.z[i]; if (this.z[i] > zhi) zhi = this.z[i]; }
+    this.zMid = (zlo + zhi) / 2; this.zRange = zhi - zlo;
     this.ramps = this.feats.filter((f) => f.kind === 'ramp');
     this.rampOf = new Array(this.n).fill(null);
     for (const f of this.ramps) for (let i = f.a, g = 0; g < this.n; g++, i++) { this.rampOf[i % this.n] = f; if (i % this.n === f.b % this.n) break; }
@@ -132,6 +136,15 @@ class Track {
   rampAt(i) { return this.rampOf[((i % this.n) + this.n) % this.n]; }
 
   zAt(i, t) { const j = (i + 1) % this.n; return this.z[i] + (this.z[j] - this.z[i]) * t; }
+
+  // the road surface's height at progress s, d units left of the centreline: the centreline height, the bank's lean
+  // and a ramp's lift (what a car's wheels would rest on; the renderer sits each car on four of these)
+  surfaceAt(s, d) {
+    s = ((s % this.len) + this.len) % this.len;
+    const f = s / this.step;
+    const i = Math.floor(f) % this.n, t = f - Math.floor(f);
+    return this.zAt(i, t) - d * this.bankAt(i, t) + this.rampLift(i, t);
+  }
   bankAt(i, t) { const j = (i + 1) % this.n; return this.bk[i] + (this.bk[j] - this.bk[i]) * t; }
 
   // the centreline height at progress s (the same as point(s).z, without making an object)

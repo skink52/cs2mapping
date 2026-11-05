@@ -37,6 +37,19 @@ The entity names are Space Racer's, with the script name `depth_racer`. The `poi
   - Coming up to a crossing while a creature is on it, the bottom line warns you (`SERPENT AHEAD` etc.).
   - Bots hold back and let it pass, except on the run-up to a jump.
 - **Glides**: Neon Racer's flight sections. S pulls up, W noses down, A / D steer. Gold rings boost and blue rings charge.
+- **Depth's own E moves** (the cars are Space Racer's; their E ability is different in each game, v0.7.0):
+  - HORNET **Ink Cloud** (20 charge, 8 s): for 0.8 s clouds of ink behind the car (2.5 s each). An enemy inside can
+    barely see, steer or grip, and loses 2 shield every half second. Your side drives through clean.
+  - METEOR **Depth Charge** (35, 12 s): a mine dropped behind you; it arms after 0.3 s and goes off when an
+    enemy comes near: everyone not on your side within 260 units is shoved away, thrown up and loses up to 10 shield.
+    Two out at once at most.
+  - COMET **Hydrojet** (35, 12 s): a kick and a 1.8 s surge (1.38x top speed) that rides over every hazard on the road
+    (ink, mines, walls, fire, slick zones) and can't be shoved.
+  - BASTION **Undertow** (30, 12 s): for 3 s a current behind you: teammates in it are pulled along (+8% speed, charge),
+    enemies in it are dragged back (-10% speed, less grip).
+  - **Pressure**: the deeper the road, the heavier the water: up to -5% top speed, +30% grip and +40% faster charge
+    platforms at the bottom of the track; the opposite up high. Boost on the climbs, refill in the trenches.
+  - Ink Cloud and Depth Charge unlock 6 seconds after GO, like spin attacks.
 - **Cars**: the voxel cars with dark hulls and glowing team trim.
 - **Music**: atmospheric jungle / liquid drum & bass: 'Pressure' (172 bpm) and 'Leviathan' (174 bpm) race loops,
   'Still Water' (half-time 172) in the lobby, and a results sting. Chopped breaks, reese bass, choir pads, Rhodes.
@@ -55,3 +68,9 @@ shoved in the air, can still put you out. Bots line up straight for jumps. Sim: 
 with 32 bots.
 
 Source: github.com/skink52/cs2mapping/tree/main/projects/space-racer-cs2. `SPR_THEME=depth sh tools/build_all.sh` builds this addon.
+
+## Server stats (v0.7.0)
+
+The map needs no plugin. With one that understands `mgstat` (SlimeMG), the script reports each human's finishes, podiums, wins,
+wrecks dealt during the race and best race and lap times per track. It is off in the build (`CONFIG.SERVER_STATS`); the plugin
+switches it on at load (`RunScriptInput mgstat_on` on `spr_script`). Without a plugin the switch stays off and nothing is sent.

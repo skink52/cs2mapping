@@ -16,6 +16,13 @@ class Car {
     this.stagger = 0; this.knockCd = 0; this.lock = 0;   // lock: seconds left before spin / E work (the start)   // skidding after a spin hit; no second shove from the same spin
     // the E ability: cooldown; what fired this step (the arena does the part that touches other cars); timers
     this.abilCd = 0; this.fired = null; this.novaTimer = 0; this.novaLeft = 0; this.fireT = 0; this.aegis = 0; this.scorch = 0; this.burnCd = 0;
+    // Neon Racer's abilities: laying a Light Trail (seconds left, timer to the next segment, the last point laid), fried
+    // by an EMP, Overclock seconds; the boost trail every boosting car leaves (last point, timer, laying)
+    this.trailT = 0; this.trailGap = 0; this.trailX = 0; this.trailY = 0; this.emp = 0; this.overclock = 0; this.btX = 0; this.btY = 0; this.btGap = 0; this.btOn = false;
+    // Depth Racer's abilities: laying ink (seconds left, timer), in ink (seconds), Hydrojet seconds, Undertow seconds,
+    // in an undertow (+1 pulled along, -1 dragged back, 0 no), pressure (-1 high .. +1 deep)
+    this.inkT = 0; this.inkGap = 0; this.inked = 0; this.jet = 0; this.undertow = 0; this.towed = 0; this.pressure = 0;
+    this.hazardCd = 0;             // no second hit from a wall or a trail for a moment
     this.driftDir = 0; this.driftStreak = 0;   // drift charge needs a held slide one way
     this.seg = 0; this.t = 0; this.d = 0; this.s = 0; this.prevS = 0; this.rawLap = 0; this.lapsDone = 0; this.nextCp = 1; this.total = 0;
     this.lapStart = 0; this.bestLap = 0; this.lastLap = 0;
@@ -36,6 +43,7 @@ class Car {
     // used by the CS2 side (sound edges, the HUD's turn arrow). Every field a car will ever have is made here: a field
     // added later gives some cars a different shape and makes the physics noticeably slower.
     this.wasBoost = false; this.wasCharge = false; this.turnTick = -1; this.turnCls = null;
+    this.wasInked = false; this.wasEmp = false; this.wasTowed = 0;   // (edges of the ink, EMP and Undertow states: a flash, a line)
     this.shade = 0;                // the driver's colour shade (index into their side's shades)
     this.glow = 0;                 // 1..3: placed that high in the driver's race last round (the car glows)
   }
@@ -63,6 +71,12 @@ class Car {
     if (this.aegis > 0) this.aegis -= dt;
     if (this.scorch > 0) this.scorch -= dt;
     if (this.creatureCd > 0) this.creatureCd -= dt;
+    if (this.emp > 0) this.emp -= dt;
+    if (this.overclock > 0) this.overclock -= dt;
+    if (this.inked > 0) this.inked -= dt;
+    if (this.jet > 0) this.jet -= dt;
+    if (this.undertow > 0) this.undertow -= dt;
+    if (this.hazardCd > 0) this.hazardCd -= dt;
     this.stateTime += dt;
     if (this.state !== 'racing' && this.state !== 'finished') this.yawRate *= 0.9;
     if (this.state === 'falling') { this.fallStep(track, dt, tic); return; }
@@ -73,12 +87,13 @@ class Car {
     const throttle = finished ? 0.4 : this.stall > 0 ? 0 : clamp(c.throttle, -1, 1);
     const steer = finished ? this.autoSteer(track) : (this.spinTimer > 0 ? 0 : clamp(c.steer, -1, 1));
     const flying = this.fly, air = this.air && !flying;    // flying: driven like the road (thrust, grip), height by W / S
-    const wantBoost = !finished && !air && c.boost && this.charge > 0;
+    const wantBoost = !finished && !air && c.boost && (this.charge > 0 || this.overclock > 0) && this.emp <= 0;
     this.drifting = !finished && !this.air && c.drift && this.speed > 250;
     // spin attack
     // the start: no spins, no Shockwave and no Seeker Bolt (the E abilities that hit others); Nova Burn and Aegis off
     // the line are fine
-    if (this.lock > 0) { this.lock -= dt; c.spin = false; if (sp.ability === 'quake' || sp.ability === 'bolt') c.ability = false; }
+    if (this.lock > 0) { this.lock -= dt; c.spin = false; if (ATTACK_ABILITIES[sp.ability]) c.ability = false; }
+    if (this.emp > 0) { c.spin = false; c.ability = false; }   // fried: no spin, no E
     if (!finished && c.spin && this.spinCd <= 0 && this.charge >= sp.spinCost && this.spinTimer <= 0) {
       this.charge -= sp.spinCost; this.spinTimer = RULES.spinTime; this.spinCd = RULES.spinCooldown; this.fx |= 32;
     }
@@ -104,6 +119,8 @@ class Car {
     if (this.spinTimer > 0) turnRate *= 0.3;
     if (this.stagger > 0) turnRate *= RULES.staggerSteer;
     if (this.scorch > 0) turnRate *= 0.8;
+    if (this.emp > 0) turnRate *= RULES.empSteer;                      // fried by an EMP
+    if (this.inked > 0) turnRate *= RULES.inkSteer;                    // in an ink cloud
     if (!air) turnRate *= 1 + Math.abs(this.bank) * RULES.bankTurn;   // banked bends turn tighter
     if (air) turnRate *= RULES.airControl;
     const yawRate = turnRate * steer * (this.vf < 0 ? -1 : 1);       // radians per second, + = turning left
@@ -114,14 +131,18 @@ class Car {
     let vf = this.vx * fx + this.vy * fy, vl = this.vx * lx + this.vy * ly;
     // engine
     this.boosting = wantBoost;
-    if (this.boosting) this.charge = Math.max(0, this.charge - RULES.boostDrain * dt);
+    if (this.boosting && this.overclock <= 0) this.charge = Math.max(0, this.charge - RULES.boostDrain * dt);   // (Overclock: boost is free)
     let mult = 1;
-    if (this.boosting) mult = sp.boost;
+    if (this.boosting) mult = sp.boost + (this.overclock > 0 ? RULES.overclockBoost : 0);
     if (this.padTimer > 0) { this.padTimer -= dt; mult = Math.max(mult, RULES.padSpeed) + (this.boosting ? 0.1 : 0); }
     if (this.novaTimer > 0) { this.novaTimer -= dt; mult = Math.max(mult, RULES.novaSpeed); }
+    if (this.jet > 0) mult = Math.max(mult, RULES.jetSpeed);                                   // Hydrojet surge
+    if (this.trailT > 0) mult *= RULES.trailSpeed;                                             // laying a Light Trail
     if (this.draft) mult *= RULES.draftSpeed;
+    if (this.towed > 0) mult *= RULES.undertowPull; else if (this.towed < 0) mult *= RULES.undertowDrag;   // in a Bastion's Undertow
+    if (this.pressure !== 0) mult *= 1 - RULES.pressureSpeed * this.pressure;                  // Depth: heavy water down deep
     const target = sp.maxSpeed * mult;
-    let acc = sp.accel * (this.boosting ? 1.6 : 1) * (this.padTimer > 0 ? 1.5 : 1) * (this.novaTimer > 0 ? 2 : 1) * (this.draft ? 1.15 : 1);
+    let acc = sp.accel * (this.boosting ? 1.6 : 1) * (this.padTimer > 0 ? 1.5 : 1) * (this.novaTimer > 0 || this.jet > 0 ? 2 : 1) * (this.draft ? 1.15 : 1);
     if (air) {
       vf -= vf * 0.05 * dt;            // no thrust or brakes in the air
     } else if (flying) {
@@ -140,6 +161,10 @@ class Car {
     if (this.spinTimer > 0) grip *= 0.5;
     if (this.stagger > 0) grip *= RULES.staggerGrip;
     if (this.scorch > 0) grip *= 0.6;                                   // driving through Nova fire
+    if (this.inked > 0) grip *= RULES.inkGrip;                          // ink on the road
+    if (this.towed < 0) grip *= RULES.undertowGrip;                     // dragged back by an Undertow
+    if (this.pressure > 0) grip *= 1 + RULES.pressureGrip * this.pressure;   // Depth: the deep water holds the car
+    else if (this.pressure < 0) grip *= 1 + RULES.pressureGrip * 0.5 * this.pressure;
     if (!air) grip *= 1 + Math.abs(this.bank) * RULES.bankGrip;        // ... and hold the car better
     const g = Math.exp(-(air ? RULES.airGrip : grip) * dt);   // in the air the heading still pulls the car round a little
     this.sliding = Math.abs(vl) > 90 && absv > 300;
@@ -159,6 +184,8 @@ class Car {
     const p = track.locate(this.x, this.y, this.tz, this.seg);
     this.seg = p.i; this.t = p.t; this.d = p.d; this.tz = p.z; this.bank = p.bank;
     this.prevS = this.s; this.s = p.s;
+    // Depth Racer: pressure from how deep the road is here (-1 at the track's top .. +1 at its bottom; flat tracks 0)
+    this.pressure = RULES.pressure && track.zRange >= RULES.pressureMinRange ? RULES.pressure * clamp((track.zMid - p.z) / (track.zRange * 0.5), -1, 1) : 0;
     // height: ramps lift the car, the lip of a ramp throws it, an open gap drops it
     const lift = track.rampLift(p.i, p.t);
     const ground = p.z + lift;
@@ -236,13 +263,15 @@ class Car {
     if (feats && !finished) {
       for (const f of feats) {
         if (f.kind === 'boost' || f.kind === 'ring') {
-          if (this.padTimer <= 0) { this.vx += fx * RULES.padKick; this.vy += fy * RULES.padKick; this.fx |= 8; }
+          const kick = RULES.padKick * (this.overclock > 0 ? RULES.overclockPad : 1);     // (Overclock: pads kick harder)
+          if (this.padTimer <= 0) { this.vx += fx * kick; this.vy += fy * kick; this.fx |= 8; }
           this.padTimer = Math.max(this.padTimer, RULES.padTime * sp.padMult);
         } else if (f.kind === 'charge' || f.kind === 'cring') {
           this.onCharge = true;
-          this.charge = Math.min(sp.charge, this.charge + RULES.chargeRate * sp.chargeMult * dt);
+          const pk = this.pressure > 0 ? 1 + RULES.pressureCharge * this.pressure : 1;     // (Depth: fills faster down deep)
+          this.charge = Math.min(sp.charge, this.charge + RULES.chargeRate * sp.chargeMult * pk * dt);
           this.shield = Math.min(sp.shield, this.shield + RULES.chargeShield * dt);
-        } else if (f.kind === 'slick') this.slick = true;
+        } else if (f.kind === 'slick' && this.jet <= 0) this.slick = true;                // (a Hydrojet rides over slicks)
       }
     }
     // slow repair when nothing has hit us for a while
@@ -399,8 +428,33 @@ class Car {
     } else if (sp.ability === 'aegis') {
       this.charge -= sp.abilityCost;
       this.aegis = RULES.aegisTime; this.stagger = 0;
+    } else if (sp.ability === 'trail') {
+      this.charge -= sp.abilityCost;                // the arena lays the wall segments behind the car
+      this.trailT = RULES.trailFor; this.trailGap = 0; this.trailX = this.x - fx * CAR_LEN * 0.5; this.trailY = this.y - fy * CAR_LEN * 0.5;
+    } else if (sp.ability === 'emp') {
+      this.charge -= sp.abilityCost;                // the arena fries the cars near
+    } else if (sp.ability === 'overclock') {
+      this.charge -= sp.abilityCost;
+      this.overclock = RULES.overclockTime;
+    } else if (sp.ability === 'firewall') {
+      this.charge -= sp.abilityCost;                // the arena builds the wall
+    } else if (sp.ability === 'ink') {
+      this.charge -= sp.abilityCost;                // the arena drops the clouds
+      this.inkT = RULES.inkFor; this.inkGap = 0;
+    } else if (sp.ability === 'mine') {
+      this.charge -= sp.abilityCost;                // the arena drops the mine
+    } else if (sp.ability === 'jet') {
+      this.charge -= sp.abilityCost;
+      this.jet = RULES.jetTime; this.stagger = 0; this.inked = 0; this.scorch = 0;
+      this.vx += fx * RULES.jetKick; this.vy += fy * RULES.jetKick;
+    } else if (sp.ability === 'undertow') {
+      this.charge -= sp.abilityCost;
+      this.undertow = RULES.undertowTime;
     }
   }
+
+  // riding over the road's hazards (ink, mines, walls, fire, slicks): a Hydrojet surge, or in the air
+  get overHazards() { return this.jet > 0 || this.air; }
 
   damage(amount, attacker, tic) {
     if (amount <= 0 || this.state !== 'racing' || this.aegis > 0) return;
@@ -433,7 +487,7 @@ function spinHit(att, vic, nx, ny) {
 }
 // a sideways shove away from `att` (the Shockwave uses it too); an Aegis shell can't be shoved
 function shove(att, vic, nx, ny, knock, stagger) {
-  if (vic.knockCd > 0 || vic.aegis > 0) return false;
+  if (vic.knockCd > 0 || vic.aegis > 0 || vic.jet > 0) return false;
   const lx = -Math.sin(vic.yaw), ly = Math.cos(vic.yaw);            // the victim's left
   const side = nx * lx + ny * ly >= 0 ? 1 : -1;                      // the attacker is on the other side
   const k = knock * att.spec.mass / vic.spec.mass;

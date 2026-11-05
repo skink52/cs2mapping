@@ -1,5 +1,70 @@
 # Space Racer changelog
 
+## v0.7.0: a move set per title, the cars retuned, cars sit on the road (4 Nov 2026)
+
+- **Each title has its own four E moves** (`ABILITY_SETS` in `src/core/00_defs.js`, picked by `GAME_THEME`, which
+  `tools/build.mjs` now writes into the core for both the CS2 script and the Node test module). The cars themselves
+  are the same in all three games; the E move and one title rule change. Space Racer keeps Seeker Bolt / Shockwave /
+  Nova Burn / Aegis. Numbers in docs/DESIGN.md (E abilities).
+  - **Neon Racer**: HORNET **Light Trail** (a hard wall of light behind the car for 2 s, +6% speed while laying it;
+    crossing it bounces like a rail hit), METEOR **EMP** (every enemy within 360 units loses 35 charge, its boost
+    stops and it is fried for 0.8 s), COMET **Overclock** (3 s of free, stronger boost; pads kick 1.5x), BASTION
+    **Firewall** (a wall across a lane and a bit behind the car for 2 s: enemies through it lose a quarter of their
+    speed and 7 shield and skid, three at most; teammates pass). Title rule: **boost trails** - every car boosting
+    on Mouse 1 leaves a short light trail; cut across it at an angle and you skid and lose 1 shield.
+  - **Depth Racer**: HORNET **Ink Cloud** (clouds behind the car for 0.8 s: an enemy inside can barely see, steer
+    or grip, 2 shield a half second), METEOR **Depth Charge** (a mine: arms in 0.3 s, goes off on an enemy within 130
+    units, shoves and throws up everyone not on the Meteor's side within 260 units, up to 10 shield; two at once),
+    COMET **Hydrojet** (a 1.8 s surge at 1.38x that rides over every road hazard and can't be shoved), BASTION
+    **Undertow** (3 s of current: teammates behind are pulled along, +8% speed and charge; enemies behind are dragged
+    back, -10% and less grip). Title rule: **pressure** - the deeper the road, up to -5% top speed, +30% grip and
+    +40% faster charge platforms; the opposite up high; flat tracks feel nothing.
+  - New road hazards in the race code: walls of light (`Arena.walls`, `wallHits`), mines (`mines`, `mineStep`) and
+    ink clouds (`clouds`, `cloudHits`); `Car.overHazards` (a Hydrojet or the air) rides over all of them and over
+    Nova fire and slick zones. Bots use every move and swerve round an enemy's wall, armed mine or ink cloud.
+  - CS2 side: walls, mines, ink clouds and the Undertow's wake are drawn with pooled props (the walls scaled to their
+    length with `SetModelScale`; the boost trail is one prop per boosting car); new effect models (`wall`, `wallw`,
+    `trail_s`, `emp0-2`, `mine0-1`, `ink0-1`, `wake`) and sounds (`emp`, `trail`, `mine`, `boom`, `ink`); an ink
+    flash (the screen nearly black) and an EMP flash on the HUD; "EMP - FRIED" on the ability bar; a line for every
+    hit on both sides. The loading screen's car cards name each title's moves. `CONFIG.MAX_WALL_PROPS` (48) and
+    `MAX_HAZARD_PROPS` (24) per arena.
+  - The new maps have five more `point_soundevent`s, so each map's `.vmap` was rebuilt onto the Hammer-saved one
+    (`SPR_CURRENT_VMAP`; the previous map is kept beside it as `.vmap.bak-20261104`) and must be recompiled.
+- **The cars retuned** (all three games). Since the +200 km/h (v0.6.0) the sim had the Hornet winning 8 races in 100
+  and the Meteor and Bastion 0.5: at the new speeds acceleration and turning decided everything. Now: HORNET 1616
+  u/s, accel 850, turn 2.58 (was 1620 / 928 / 2.7); METEOR 1662 / 845 / 2.42 (1646 / 776 / 2.35); COMET 1605 / 785 /
+  2.4 (1596 / 761 / 2.4); BASTION 1618 / 856 / 2.36 (1599 / 798 / 2.3). Sim, 1,200 races of 32 per title, wins per
+  100 starts (even share 3.1): Space H 3.1 M 2.7 C 4.2 B 2.6; Neon 2.4 / 3.7 / 2.9 / 3.6; Depth 2.3 / 2.8 / 4.3 / 3.2.
+  Podiums 7-13 per 100 for every car in every title. Wrecks a race: Space 2.6, Neon 3.7, Depth 2.8 (0.8 with no E
+  moves at all). The full table is in docs/DESIGN.md.
+  - Tuning history (the sim's first runs): Neon's Firewall began as a solid wall across half the road - cars stopped
+    dead at it and the pack piled in (60 hits and 4 extra wrecks a race) - and the Light Trail bounced and hurt at
+    any angle (40 hits a race from the pack crossing it at shallow angles). Depth's ink and mines did 3 and 14 shield
+    and caught 90 and 27 cars a race. Light cars were wrecked half the time in Neon.
+- **Cars sit on the road** (CS2 side): each car rests on the road surface under its four corners in its own frame
+  (`Track.surfaceAt`: slope, bank and ramps), so the pitch is nose to tail and the roll side to side however the car
+  is turned, and it is lifted so no corner is in the road. Before, the pitch followed the road's own direction, so a
+  car turned across a steep incline (a drift, a spin, a shove) dug one side in. `CONFIG.CAR_CLEAR` and
+  `CONFIG.CAR_CLEAR_SLOPE` (12 units per unit of slope) raise cars further on roads that still catch the hull.
+- **Space Racer's trackside pylons**: Space Racer's track models had not been rebuilt since 18 Oct, before the
+  pylons got their arms and braces (28 Oct), so its pylons still floated beside the track. This build delivers the
+  braced ones (the generator is shared; nothing changed in it).
+- **The build on a Windows PC**: `tools/build.mjs` and `test/mock_cs2.mjs` take their folder with `fileURLToPath` (a
+  Windows path has no leading slash); the loading screen and the HUD preview fall back to Arial when the DejaVu fonts
+  are missing; the README lists scipy (Neon and Depth music) and the `python3` wrapper.
+- **Stats for a server plugin** (`CONFIG.SERVER_STATS`, off by default; all three games): `mgstat <slot> <stat>` and
+  `mgstat <slot> time <track> <ms>` server commands at the finish (`races_finished`, `race_podiums` for the top 3,
+  `race_wins` for first, the race time `<track>` and the final lap `<track>_lap`), at every lap (`<track>_lap`) and at a
+  wreck dealt to the other side during the race (`track_kills`; the end-of-race kill cascade is not counted). Bots and
+  warmup don't count. A plugin switches it on without a map edit: `RunScriptInput mgstat_on` (or `mgstat_off`) on the
+  map's `spr_script` point_script; SlimeMG does that by itself (`MapScriptInputs`). The mock checks the commands against the
+  plugin's contract (`node test/mock_cs2.mjs 20 44 400 churn,held,statsinput`; its key-holding humans wreck rivals but
+  don't finish races, so the finish and lap commands are checked by reading, the switch, the format and track_kills by the run).
+- Tests: `test/ability_test.cjs` (each title's moves on two cars, in numbers); `test/sim.cjs` takes `SPR_CORE=<module>`
+  to run another title's core module and counts hazard hits (walls, Firewalls, boost trails, ink, mines) per kind;
+  the mock engine has `SetModelScale` (without it every wall prop threw and was re-placed every tick, which the mock
+  flagged as props CS2 would hide). All three scripts pass the mock (`20 44 500 churn`) with no warnings.
+
 ## v0.6.1: track edges and jungle music (29 Oct 2026)
 
 - **Out of bounds** (all three games): the rails only hold a car on the road or just above it (`RULES.railHeight` 30).

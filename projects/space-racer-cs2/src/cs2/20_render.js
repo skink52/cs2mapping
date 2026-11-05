@@ -44,7 +44,7 @@ function newProp() {
   const ent = ents[0];
   const name = 'spr_p' + (++propSerial);
   try { ent.SetEntityName(name); } catch (err) { /* ignore */ }
-  return { ent, name, model: '', skin: -1, hidden: true, lastPos: null, lastAng: null, alpha: -1, resetTic: -1, glow: '' };
+  return { ent, name, model: '', skin: -1, hidden: true, lastPos: null, lastAng: null, alpha: -1, resetTic: -1, glow: '', scale: 1, boostAt: 0 };
 }
 
 function takeProp() {
@@ -95,6 +95,10 @@ class ArenaView {
     this.shells = new Map();     // car slot -> prop: the Aegis shell round a Bastion
     this.boltProps = new Map();  // bolt id -> prop: Seeker Bolts in flight
     this.crProps = new Map();    // creature id -> [prop per body segment] (Depth Racer)
+    this.wallProps = new Map();  // wall id -> prop: walls of light (Neon Racer)
+    this.hzProps = new Map();    // 'm' + mine id / 'c' + cloud id -> prop: Depth Charges and ink clouds (Depth Racer)
+    this.wakes = new Map();      // car slot -> prop: the Undertow's wake behind a Bastion
+    this.btProps = new Map();    // car slot -> prop: the boost trail behind a boosting car (Neon Racer; one prop, moved)
     this.anchors = null;
     this.fxDone = false;         // the per-car sound / shake bits of the last race step have been handled (results)
   }
@@ -104,7 +108,7 @@ class ArenaView {
   // the flames: gold and longer on a boost pad (or a turbo start), the car's own colour when it boosts (Mouse 1, Nova)
   carModel(car) {
     const m = CAR_MODELS.cars[car.cls] || CAR_MODELS.cars.hornet;
-    return car.padTimer > 0 ? m.pad : car.boosting || car.novaTimer > 0 ? m.boost : m.base;
+    return car.padTimer > 0 ? m.pad : car.boosting || car.novaTimer > 0 || car.jet > 0 ? m.boost : m.base;
   }
 
   // (CS2 calls are the expensive part here: a prop's entity is checked every 16th tick, not every tick - an engine
@@ -123,6 +127,10 @@ class ArenaView {
     for (const [slot, sh] of this.shells) if (!a.cars.get(slot) || !a.cars.get(slot).visible) { releaseProp(sh); this.shells.delete(slot); }
     this.drawPulse();
     this.drawBolts();
+    if (a.walls.length || this.wallProps.size) this.drawWalls();
+    if (RULES.boostTrail > 0) this.drawBoostTrails();
+    if (a.mines.length || a.clouds.length || this.hzProps.size) this.drawHazards(now);
+    this.drawWakes(now);
     if (this.arena.creatures.length) this.drawCreatures(now);
     // effects
     for (let k = this.fx.length - 1; k >= 0; k--) {
@@ -147,24 +155,29 @@ class ArenaView {
       // last round's top places glow (not while wrecked or warping out)
       propGlow(p, CONFIG.WINNER_GLOW && car.glow > 0 && car.glow <= CONFIG.GLOW_PLACES && car.state !== 'wrecked' && car.state !== 'gone' ? glowColor(car) : null);
       propAlpha(p, car.state === 'wrecked' ? 90 : car.ghost > 0 && car.state === 'racing' ? 140 : car.state === 'finished' ? 160 : 255);
-      // angles: yaw from the heading (+ spin), pitch from the slope, roll from the bank and the slide
-      const i = car.seg;
-      const rf = car.lift > 0 ? T.rampAt(i) : null;
-      const rampTilt = rf ? -deg(Math.atan2(rf.h, (((rf.b - rf.a + T.n) % T.n) + 1) * T.step)) : 0;
-      // on the road the car rests on its nose and tail: the slope between the road under each end, and where the road
-      // curves up (the foot of a climb) it sits on its ends instead of on the road under its middle, so it doesn't sink
-      let pitch, lift = 0;
+      // angles: yaw from the heading (+ spin), pitch and roll from the road under the car, plus the lean into a turn.
+      // On the road the car rests on the surface under its four corners in its own frame (nose, tail, left, right:
+      // Track.surfaceAt, which includes the bank and ramps): the pitch is the slope nose to tail, the roll the slope
+      // side to side, and the car is lifted so that no corner is in the road - a crest, the foot of a climb, a banked
+      // bend or a car sideways across a steep incline (a drift, a spin, a shove) all keep the hull on the surface.
+      // Before 4 Nov the pitch followed the road's own direction whatever way the car faced, so a car turned across a
+      // steep incline dug one side into it.
+      let pitch, lift = 0, bankRoll = 0;
       if (car.state === 'falling') pitch = Math.min(60, car.stateTime * 50);
       else if (car.air) pitch = clamp(-deg(Math.atan2(car.vz, Math.max(200, car.speed))) * 0.7, -25, 25);
       else {
-        const half = CAR_LEN * 0.45, zMid = T.zAtS(car.s);
-        const zf = T.zAtS(car.s + half), zr = T.zAtS(car.s - half);
-        pitch = -deg(Math.atan2(zf - zr, 2 * half)) + rampTilt;
-        if (!rf) lift = Math.max(0, (zf + zr) / 2 - zMid);
+        const i = car.seg, half = CAR_LEN * 0.45, halfW = CAR_R;
+        const rel = normRad(car.yaw + car.spinYaw - Math.atan2(T.ty[i], T.tx[i]));     // the car's heading against the road's
+        const cr = Math.cos(rel), sr = Math.sin(rel);
+        // a point f ahead and l to the left of the car, in road coordinates (progress, lateral offset)
+        const zc = (f, l) => T.surfaceAt(car.s + f * cr - l * sr, car.d + f * sr + l * cr);
+        const zMid = zc(0, 0), zf = zc(half, 0), zr = zc(-half, 0), zl = zc(0, halfW), zrt = zc(0, -halfW);
+        pitch = -deg(Math.atan2(zf - zr, 2 * half));
+        bankRoll = -deg(Math.atan2(zl - zrt, 2 * halfW));
+        lift = Math.max(0, (zf + zr) / 2 - zMid, (zl + zrt) / 2 - zMid) + CONFIG.CAR_CLEAR + CONFIG.CAR_CLEAR_SLOPE * Math.abs(zf - zr) / (2 * half);
       }
-      // roll (+ = right side down): the lean of a banked road (bank > 0 = left side low) plus leaning into the turn
-      // (turning right = yaw falling = lean right)
-      const bankRoll = car.air ? 0 : -deg(Math.atan(car.bank));
+      // roll (+ = right side down): the road's lean under the car (bankRoll: left side low = negative) plus leaning
+      // into the turn (turning right = yaw falling = lean right)
       const turnRoll = clamp(-(car.yawRate || 0) * CONFIG.CAR_LEAN, -CONFIG.CAR_LEAN_MAX, CONFIG.CAR_LEAN_MAX);
       const roll = car.state === 'falling' ? 0 : CONFIG.PROP_ROLL_SIGN * (bankRoll + turnRoll);
       const yaw = deg(car.yaw + car.spinYaw);
@@ -213,6 +226,104 @@ class ArenaView {
         pp.lastPos = pos;
       }
     } else if (this.pulseProp) { releaseProp(this.pulseProp); this.pulseProp = null; }
+  }
+
+  // walls of light (Neon Racer): a prop per segment, placed once (they don't move); the slab model is scaled to the
+  // segment's length. Light Trails and Firewalls are bright and tall, boost trails low and dim.
+  drawWalls() {
+    const a = this.arena, seen = new Set(), fx = CAR_MODELS.fx;
+    for (let k = a.walls.length - 1; k >= 0; k--) {
+      const w = a.walls[k];
+      if (w.kind === 'boost') continue;                  // (drawn as one prop per boosting car: drawBoostTrails)
+      seen.add(w.id);
+      let p = this.wallProps.get(w.id);
+      if (!p) {
+        if (this.wallProps.size >= CONFIG.MAX_WALL_PROPS) continue;
+        p = takeProp(); if (!p) continue;
+        p.hidden = false; p.lastPos = null; p.model = ''; p.alpha = -1;
+        this.wallProps.set(w.id, p);
+        try {
+          const model = w.kind === 'firewall' ? fx.wallw : fx.wall;
+          const base = w.kind === 'firewall' ? 500 : 180;
+          propModel(p, model); propAlpha(p, 255);
+          const len = Math.hypot(w.x1 - w.x0, w.y1 - w.y0);
+          p.ent.SetModelScale(clamp(len / base, 0.4, 2.0));
+          p.ent.Teleport({ position: this.world((w.x0 + w.x1) / 2, (w.y0 + w.y1) / 2, w.z), angles: { pitch: 0, yaw: deg(Math.atan2(w.y1 - w.y0, w.x1 - w.x0)), roll: 0 } });
+          p.lastPos = { x: 0, y: 0, z: 0 };
+        } catch (err) { this.wallProps.delete(w.id); releaseProp(p); }
+      } else if ((tickNo & 15) === 0 && !live(p.ent)) { this.wallProps.delete(w.id); continue; }
+      // the last half second: the wall fades (alpha), then goes
+      const left = w.until - a.time;
+      if (left < 0.5) { try { propAlpha(p, Math.max(40, Math.round(255 * left / 0.5))); } catch (err) { /* ignore */ } }
+    }
+    for (const [id, p] of this.wallProps) if (!seen.has(id)) { try { p.ent.SetModelScale(1); } catch (err) { /* ignore */ } releaseProp(p); this.wallProps.delete(id); }
+  }
+
+  // the boost trail behind every boosting car (Neon Racer): one low slab per car, as long as the last boostTrail
+  // seconds of its path, moved with the car while it boosts and left where it is for the trail's life after (the
+  // segments the race keeps for hits are not drawn one by one). A bot's boost flickers on and off from tick to tick,
+  // and a prop taken, placed and hidden every tick is one CS2 stops drawing, so the prop stays through the gaps.
+  drawBoostTrails() {
+    const a = this.arena, fx = CAR_MODELS.fx;
+    if (!fx.trail_s) return;
+    for (const car of a.order) {
+      let p = this.btProps.get(car.slot);
+      const on = car.btOn && car.boosting && car.state === 'racing' && !car.air;
+      if (on || (p && car.state === 'racing' && a.time - p.boostAt < RULES.boostTrail)) {
+        if (!p) { p = takeProp(); if (!p) continue; this.btProps.set(car.slot, p); p.hidden = false; p.lastPos = null; p.model = ''; p.alpha = -1; p.scale = 0; propModel(p, fx.trail_s); propAlpha(p, 170); }
+        else if (((tickNo + car.slot) & 15) === 0 && !live(p.ent)) { this.btProps.delete(car.slot); continue; }
+        if (on) p.boostAt = a.time; else continue;          // not boosting: the trail stays where it was laid
+        try {
+          const len = clamp(car.speed * RULES.boostTrail, 200, 600), sc = Math.round(len / 40) * 40 / 400;   // (the model is 400 long)
+          if (p.scale !== sc) { p.ent.SetModelScale(sc); p.scale = sc; }
+          const back = len / 2 + CAR_LEN * 0.5;
+          const pos = this.world(car.x - Math.cos(car.yaw) * back, car.y - Math.sin(car.yaw) * back, car.z + 2), ang = { pitch: 0, yaw: deg(car.yaw), roll: 0 };
+          if (!p.lastPos) p.ent.Teleport({ position: pos, angles: ang }); else p.ent.Move({ position: pos, angles: ang });
+          p.lastPos = pos;
+        } catch (err) { if (!live(p.ent)) this.btProps.delete(car.slot); }
+      } else if (p) { try { p.ent.SetModelScale(1); } catch (err) { /* ignore */ } releaseProp(p); this.btProps.delete(car.slot); }
+    }
+  }
+
+  // Depth Charges (blinking once armed) and ink clouds (two frames, fading)
+  drawHazards(now) {
+    const a = this.arena, seen = new Set(), fx = CAR_MODELS.fx;
+    const place = (key, x, y, z, yaw, model, alpha) => {
+      seen.add(key);
+      let p = this.hzProps.get(key);
+      if (!p) {
+        if (this.hzProps.size >= CONFIG.MAX_HAZARD_PROPS) return;
+        p = takeProp(); if (!p) return;
+        p.hidden = false; p.lastPos = null; p.model = ''; p.alpha = -1;
+        this.hzProps.set(key, p);
+        try { p.ent.Teleport({ position: this.world(x, y, z), angles: { pitch: 0, yaw: deg(yaw), roll: 0 } }); p.lastPos = { x: 0, y: 0, z: 0 }; } catch (err) { this.hzProps.delete(key); releaseProp(p); return; }
+      } else if ((tickNo & 15) === 0 && !live(p.ent)) { this.hzProps.delete(key); return; }
+      try { propModel(p, model); propAlpha(p, alpha); } catch (err) { this.hzProps.delete(key); }
+    };
+    for (const m of a.mines) place('m' + m.id, m.x, m.y, m.z, m.yaw, m.armed && (tickNo >> 3) & 1 ? fx.mine1 : fx.mine0, 255);
+    for (const cl of a.clouds) {
+      const left = cl.until - a.time;
+      place('c' + cl.id, cl.x, cl.y, cl.z, 0, (tickNo >> 3) & 1 ? fx.ink1 : fx.ink0, left < 1 ? Math.max(60, Math.round(230 * left)) : 230);
+    }
+    for (const [key, p] of this.hzProps) if (!seen.has(key)) { releaseProp(p); this.hzProps.delete(key); }
+  }
+
+  // the Undertow's wake: a strip of water chevrons behind the Bastion while the current runs
+  drawWakes(now) {
+    const a = this.arena, fx = CAR_MODELS.fx;
+    if (!fx.wake) return;
+    for (const car of a.order) {
+      let p = this.wakes.get(car.slot);
+      if (car.undertow > 0 && car.state === 'racing') {
+        if (!p) { p = takeProp(); if (!p) continue; this.wakes.set(car.slot, p); p.hidden = false; p.lastPos = null; p.model = ''; p.alpha = -1; propModel(p, fx.wake); propAlpha(p, 200); }
+        else if (((tickNo + car.slot) & 15) === 0 && !live(p.ent)) { this.wakes.delete(car.slot); continue; }
+        try {
+          const pos = this.world(car.x - Math.cos(car.yaw) * 300, car.y - Math.sin(car.yaw) * 300, car.z + 3), ang = { pitch: 0, yaw: deg(car.yaw), roll: 0 };
+          if (!p.lastPos) p.ent.Teleport({ position: pos, angles: ang }); else p.ent.Move({ position: pos, angles: ang });
+          p.lastPos = pos;
+        } catch (err) { if (!live(p.ent)) this.wakes.delete(car.slot); }
+      } else if (p) { releaseProp(p); this.wakes.delete(car.slot); }
+    }
   }
 
   // Seeker Bolts: a prop per bolt, moved every tick, two frames flickering
@@ -301,6 +412,14 @@ class ArenaView {
     this.boltProps.clear();
     for (const ps of this.crProps.values()) for (const p of ps) releaseProp(p);
     this.crProps.clear();
+    for (const p of this.wallProps.values()) { try { p.ent.SetModelScale(1); } catch (err) { /* ignore */ } releaseProp(p); }
+    this.wallProps.clear();
+    for (const p of this.hzProps.values()) releaseProp(p);
+    this.hzProps.clear();
+    for (const p of this.wakes.values()) releaseProp(p);
+    this.wakes.clear();
+    for (const p of this.btProps.values()) { try { p.ent.SetModelScale(1); } catch (err) { /* ignore */ } releaseProp(p); }
+    this.btProps.clear();
     for (const e of this.fx) releaseProp(e.prop);
     this.fx = [];
     if (this.pulseProp) { releaseProp(this.pulseProp); this.pulseProp = null; }

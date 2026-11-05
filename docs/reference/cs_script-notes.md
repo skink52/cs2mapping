@@ -75,6 +75,26 @@ tick late, but it can't miss a release. A missed release would leave a thruster 
 
 ## Entities and I/O from script
 
+**API moves (CS2 updates 22 Oct and 5 Nov 2026).** The `Instance.*` names below still work but are marked deprecated; Valve keeps the old
+names in place. New code uses the new homes; the old scripts don't need changing until Valve removes them.
+
+| Old (deprecated) | New |
+|---|---|
+| `Instance.FindEntitiesByName(n)` / `FindEntitiesByClass(c)` | `Entities.FindByName(n)` / `Entities.FindByClass(c)` (both return arrays) |
+| `Instance.FindEntityByName(n)` / `FindEntityByClass(c)` | no single-entity replacement: `Entities.FindByName(n)[0]` |
+| `Instance.EntFireAtName({ name, input, ... })` | `Entities.FireInput({ name, input, ... })` |
+| `Instance.EntFireAtTarget({ target, input, ... })` | `target.FireInput({ input, ... })` |
+| `Instance.ConnectOutput(ent, "OnX", cb)` / `DisconnectOutput(id)` | `Entities.ConnectOutput({ target: ent, output: "OnX", callback: cb })` / `Entities.DisconnectOutput(id)` |
+| `Instance.Msg`, `ServerCommand`, `ClientCommand`, `RegisterCheatCommand` | `Console.Log`, `Console.ServerCommand`, ... (plus `Console.GetConvar*`, `SetConvar`) |
+| `Instance.IsWarmupPeriod`, `IsFreezePeriod`, `GetRoundsPlayed`, `Get/SetRoundRemainingTime`, `AddTeamMoney` | same names on `GameRules` (plus `TerminateRound`, `Start/EndWarmup`, `Get/AddTeamScore`) |
+
+Import the new tops alongside `Instance`: `import { Instance, Entities, Console, GameRules } from "cs_script/point_script"`.
+Also new on 5 Nov: `Entities.Spawn([{ classname, origin, angles, ...keyvalues }])` (experimental: spawn entities without a point_template),
+`Instance.Precache({ entities: [...] })`, `Instance.OnBotControl`, `CSPlayerController.IsControllingBot` / `GetControlledBotPawn`, `CSPlayerPawn.Reset`.
+Behaviour changes on 5 Nov: calling a method on a removed entity now logs `Method X.Y invoked on an invalid entity.` (check `IsValid()` first on
+anything held across a round restart), and `ConnectOutput` logs `Couldn't find output named ...` for a misspelt output. `Instance.GetTraceHit`
+(long deprecated) is gone from the typings. A type-check of all 54 port and project scripts against the 5 Nov `point_script.d.ts` found no new errors.
+
 - `Instance.FindEntityByName`, `FindEntitiesByName`, `FindEntitiesByClass`.
 - `Instance.EntFireAtName({ name, input, value, activator, delay })` / `EntFireAtTarget({ target, input, ... })`. For example `KillHierarchy` on a
   projectile also kills the trigger_hurt parented to it.
@@ -306,3 +326,7 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   (mg_yolo_multigames creeper: removing the knife took the whole creeper with it, 29 Oct 2026; inferred from the in-game result).
 - **Replacing the Tab scoreboard** (cs2mapTTT): a `custom_hud_layout` is drawn over CS2's scoreboard, so an opaque panel shown by `.HUD_SCOREBOARD_VISIBLE .Board.stOn { opacity: 1; }` covers it with no script lag; the script fills its rows (dialog variables, row classes) about once a second and on `IsInputPressed(CSInputs.SHOW_SCORES)`. The same trick covers the top bar's alive avatars. Unverified in game: full coverage at every aspect ratio.
 - **Karma (cs2mapTTT)**: a script's state lasts one map (no file/KV storage), and controllers expose no SteamID, so per-player data that should survive a reconnect is kept by player name. Apply round changes at the next round start so mid-round values don't leak information.
+
+- **`SetModelScale` to size a pooled prop to a thing of variable length** (Space Racer v0.7.0): a wall of light is one slab model (180 units
+  long) scaled to its segment's length with `ent.SetModelScale(len / 180)` and placed once; a 0.4-2.0 range keeps the slab's height sane.
+  Set it back to 1 before returning the prop to the pool, or the next user of that prop is scaled too.

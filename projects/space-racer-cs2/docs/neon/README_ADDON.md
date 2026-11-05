@@ -34,6 +34,18 @@ The entity names are Space Racer's, with the script name `neon_racer`. The `poin
   - The corridor's edge bounces you like a rail. The corridor narrows at the end so you come down onto the road.
   - Gold rings are boost pads. Blue rings charge you.
   - The Hornet's Seeker Bolt climbs and dives after its target.
+- **Neon's own E moves** (the cars are Space Racer's; their E ability is different in each game, v0.7.0):
+  - HORNET **Light Trail** (20 charge, 10 s): for 2 s you run 6% faster and lay a hard wall of light behind you. A car
+    that cuts across it bounces off like a rail (a graze just deflects; square on costs speed and up to 20 shield).
+    Your side passes through.
+  - METEOR **EMP** (40, 14 s): every enemy within 360 units loses 35 charge, its boost stops and for 0.8 s it can't
+    boost, steer well or use E.
+  - COMET **Overclock** (30, 14 s): 3 s of free, stronger boost (1.6x); pads and rings kick 1.5x.
+  - BASTION **Firewall** (30, 15 s): a wall across a lane and a bit of the road behind you for 2 s. An enemy driving
+    through loses a quarter of its speed and 7 shield and skids; it burns out after three. Your side drives through.
+  - **Boost trails**: every car boosting on Mouse 1 leaves a short light trail. Cut across one at an angle and you
+    skid and lose 1 shield; follow it straight (drafting) and nothing happens.
+  - The attacks (Light Trail, EMP, Firewall) unlock 6 seconds after GO, like spin attacks.
 - **Cars**:
   - The four cars are Space Racer's voxel cars with near-black hulls.
   - Their glowing trim and edge lines show your side's colour: T orange to red shades, CT blue to cyan shades, gold
@@ -41,3 +53,9 @@ The entity names are Space Racer's, with the script name `neon_racer`. The `poin
 - **Music**: four original electro pieces: two race loops at 124 and 128 bpm, a 96 bpm lobby loop and a results sting.
 
 Source: github.com/skink52/cs2mapping/tree/main/projects/space-racer-cs2. `SPR_THEME=neon sh tools/build_all.sh` builds this addon.
+
+## Server stats (v0.7.0)
+
+The map needs no plugin. With one that understands `mgstat` (SlimeMG), the script reports each human's finishes, podiums, wins,
+wrecks dealt during the race and best race and lap times per track. It is off in the build (`CONFIG.SERVER_STATS`); the plugin
+switches it on at load (`RunScriptInput mgstat_on` on `spr_script`). Without a plugin the switch stays off and nothing is sent.

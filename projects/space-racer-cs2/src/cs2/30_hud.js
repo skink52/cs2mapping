@@ -434,10 +434,14 @@ function hudRace(slot, car, arena, info) {
   // the E ability: name, and a bar that refills over the cooldown; gold when ready, red when short of charge
   const sp = car.spec, ready = car.abilCd <= 0;
   const short = ready && car.charge < sp.abilityCost;
-  if (car.lock > 0 && (sp.ability === 'quake' || sp.ability === 'bolt')) {   // the first seconds of a race: no Shockwave yet, count down to it
+  if (car.lock > 0 && ATTACK_ABILITIES[sp.ability]) {   // the first seconds of a race: no attacks yet, count down to them
     hudText(slot, 'spr_abtxt', 'ATTACKS IN ' + Math.ceil(car.lock), 'cW', null);
     hudSwapK(hs, slot, 'spr_abfill', K.abfill, pct(RULES.attackLock - car.lock, RULES.attackLock));
     hudSwapK(hs, slot, 'spr_abil', K.abSt, null);
+  } else if (car.emp > 0) {                               // fried by an EMP: nothing works for a moment
+    hudText(slot, 'spr_abtxt', 'EMP - FRIED', 'cR', null);
+    hudSwapK(hs, slot, 'spr_abfill', K.abfill, pct(RULES.empTime - car.emp, RULES.empTime));
+    hudSwapK(hs, slot, 'spr_abil', K.abSt, 'low');
   } else {
     hudText(slot, 'spr_abtxt', ABIL_TEXT[sp.key] || 'E ' + sp.abilityName, ready && !short ? 'cY' : short ? 'cR' : 'cW', ready && !short && !info.spectating ? 'pulse' : null);
     hudSwapK(hs, slot, 'spr_abfill', K.abfill, pct(ready ? sp.abilityCd : sp.abilityCd - car.abilCd, sp.abilityCd));

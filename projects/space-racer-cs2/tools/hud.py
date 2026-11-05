@@ -282,6 +282,8 @@ rule('.Flash', background_color='#00000000', transition_property='background-col
 rule('.Flash.hit', background_color='#ff303040')
 rule('.Flash.pulse', background_color='#40e0ff38')
 rule('.Flash.wreck', background_color='#ff600080')
+rule('.Flash.ink', background_color='#060a14c0')      # inside an ink cloud (Depth Racer): the screen goes nearly black
+rule('.Flash.emp', background_color='#c0e8ff70')      # fried by an EMP (Neon Racer): a white-blue burst
 
 FRAME = {'cyan': TEAL, 'gold': GOLD, 'pink': MAGENTA, 'white': LILAC, 'orange': ORANGE, 'blue': SKYBLUE}
 def hexc(c, a=None): return '#%02x%02x%02x' % tuple(c) + ('%02x' % a if a is not None else '')

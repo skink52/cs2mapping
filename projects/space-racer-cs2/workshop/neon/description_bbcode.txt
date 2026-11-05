@@ -25,11 +25,12 @@ On some tracks the road runs out and you fly through a corridor of glowing gates
 [h2]Four cars[/h2]
 [table]
 [tr][th]Car[/th][th]Style[/th][th]Ability (E)[/th][/tr]
-[tr][td][b]Hornet[/b][/td][td]Light and sharp. Drifting fills charge fast.[/td][td][b]Seeker Bolt:[/b] a homing shot that hits the first car ahead.[/td][/tr]
-[tr][td][b]Meteor[/b][/td][td]Heavy ram. Bumps hurt them, not you.[/td][td][b]Shockwave:[/b] shove everyone nearby across the road.[/td][/tr]
-[tr][td][b]Comet[/b][/td][td]Biggest tank, strongest boost.[/td][td][b]Nova Burn:[/b] all your charge in one overdrive, with a trail of fire.[/td][/tr]
-[tr][td][b]Bastion[/b][/td][td]Toughest shield. Drafting repairs it.[/td][td][b]Aegis:[/b] a shell nothing can hurt, and a shield boost for teammates.[/td][/tr]
+[tr][td][b]Hornet[/b][/td][td]Light and sharp. Drifting fills charge fast.[/td][td][b]Light Trail:[/b] a wall of light behind you for 2 s; rivals that cut across it bounce off.[/td][/tr]
+[tr][td][b]Meteor[/b][/td][td]Heavy ram. Bumps hurt them, not you.[/td][td][b]EMP:[/b] every enemy near you loses charge and its boost, and is fried for a moment.[/td][/tr]
+[tr][td][b]Comet[/b][/td][td]Biggest tank, strongest boost.[/td][td][b]Overclock:[/b] 3 s of free, stronger boost; pads kick harder.[/td][/tr]
+[tr][td][b]Bastion[/b][/td][td]Toughest shield. Drafting repairs it.[/td][td][b]Firewall:[/b] a wall across the lane behind you that only your side can pass.[/td][/tr]
 [/table]
+The cars are the same in Space Racer and Depth Racer; each game has its own E moves. In Neon Racer every boosting car also leaves a short light trail: cut across one at an angle and you skid.
 Every car's glowing trim shows its team: orange for T, blue for CT, gold for last round's winners.
 
 [h2]Six tracks[/h2]

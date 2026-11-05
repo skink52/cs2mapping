@@ -32,11 +32,12 @@ On some tracks the road runs out and you glide through the water, through a corr
 [h2]Four cars[/h2]
 [table]
 [tr][th]Car[/th][th]Style[/th][th]Ability (E)[/th][/tr]
-[tr][td][b]Hornet[/b][/td][td]Light and sharp. Drifting fills charge fast.[/td][td][b]Seeker Bolt:[/b] a homing shot that hits the first car ahead.[/td][/tr]
-[tr][td][b]Meteor[/b][/td][td]Heavy ram. Bumps hurt them, not you.[/td][td][b]Shockwave:[/b] shove everyone nearby across the road.[/td][/tr]
-[tr][td][b]Comet[/b][/td][td]Biggest tank, strongest boost.[/td][td][b]Nova Burn:[/b] all your charge in one overdrive, with a trail of fire.[/td][/tr]
-[tr][td][b]Bastion[/b][/td][td]Toughest shield. Drafting repairs it.[/td][td][b]Aegis:[/b] a shell nothing can hurt, and a shield boost for teammates.[/td][/tr]
+[tr][td][b]Hornet[/b][/td][td]Light and sharp. Drifting fills charge fast.[/td][td][b]Ink Cloud:[/b] clouds of ink behind you; an enemy inside can barely see, steer or grip.[/td][/tr]
+[tr][td][b]Meteor[/b][/td][td]Heavy ram. Bumps hurt them, not you.[/td][td][b]Depth Charge:[/b] a mine behind you that throws the enemies that trip it.[/td][/tr]
+[tr][td][b]Comet[/b][/td][td]Biggest tank, strongest boost.[/td][td][b]Hydrojet:[/b] a surge that rides over every hazard on the road.[/td][/tr]
+[tr][td][b]Bastion[/b][/td][td]Toughest shield. Drafting repairs it.[/td][td][b]Undertow:[/b] a current that pulls teammates along and drags enemies back.[/td][/tr]
 [/table]
+The cars are the same in Space Racer and Neon Racer; each game has its own E moves. In Depth Racer the water has pressure: deep down you are slower but grip and refill faster; up high the opposite.
 Every car's glowing trim shows its team: orange for T, blue for CT, gold for last round's winners.
 
 [h2]Six tracks[/h2]

@@ -90,6 +90,11 @@ function botThink(arena, car) {
     const turn = normRad(Math.atan2(T.ty[k2], T.tx[k2]) - Math.atan2(T.ty[seg], T.tx[seg]));
     lane = clamp(lane - turn * 0, -0.85, 0.85);
     if (!T.rail[seg] || !T.rail[(seg + 6) % T.n]) lane *= 0.4;
+    // a wall of light, a mine or an ink cloud ahead in our path: swerve round it (the better bots)
+    if (b.skill > 0.35 && (arena.walls.length || arena.mines.length || arena.clouds.length)) {
+      const hz = hazardAhead(arena, car, 460);
+      if (hz) { lane = clamp(lane + (hz.side > 0 ? 0.45 : -0.45), -0.85, 0.85); b.hazard = hz; } else b.hazard = null;
+    } else b.hazard = null;
   }
   // steer towards a point ahead on the chosen lane
   const look = clamp(140 + car.speed * 0.32, 200, 520);
@@ -140,7 +145,7 @@ function botThink(arena, car) {
   }
   // the E ability
   b.abilThink = (b.abilThink || 0) - dt;
-  if (car.lock > 0 && (car.spec.ability === 'quake' || car.spec.ability === 'bolt')) b.abilThink = car.lock + (1 - b.aggression) * 3;   // the calmer Meteors wait a little longer
+  if (car.lock > 0 && ATTACK_ABILITIES[car.spec.ability]) b.abilThink = car.lock + (1 - b.aggression) * 3;   // the calmer Meteors wait a little longer
   if (!ramp && b.abilThink <= 0 && car.abilCd <= 0 && car.charge >= car.spec.abilityCost) { b.abilThink = 0.25; botAbility(arena, car, b, c, straight); }
 }
 
@@ -182,23 +187,73 @@ function botFly(arena, car, b, c) {
   c.boost = car.charge > 40 + (1 - b.aggression) * 30 && Math.abs(diff) < 0.3;
 }
 
+// an enemy's hazard (a Light Trail or Firewall, an armed mine, an ink cloud) in the car's path within `within` units ahead:
+// { side } (+ = on our left)
+function hazardAhead(arena, car, within) {
+  const fx = Math.cos(car.yaw), fy = Math.sin(car.yaw);
+  const mine = (x, y) => { const rx = x - car.x, ry = y - car.y; const along = rx * fx + ry * fy; return along > 40 && along < within && Math.abs(-rx * fy + ry * fx) < 120 ? -rx * fy + ry * fx : null; };
+  const foe = (team) => !(team >= 0 && team === car.team);
+  for (const w of arena.walls) {
+    if (w.kind === 'boost' || w.owner === car || !foe(w.team) || Math.abs(w.z - car.z) > 80) continue;
+    const s0 = mine(w.x0, w.y0), s1 = mine(w.x1, w.y1), sm = mine((w.x0 + w.x1) / 2, (w.y0 + w.y1) / 2);
+    const s = sm !== null ? sm : s0 !== null ? s0 : s1;
+    if (s !== null) return { side: s };
+  }
+  for (const m of arena.mines) { if (m.armed && foe(m.team) && Math.abs(m.z - car.z) <= 80) { const s = mine(m.x, m.y); if (s !== null) return { side: s }; } }
+  for (const cl of arena.clouds) { if (foe(cl.team) && Math.abs(cl.z - car.z) <= 80) { const s = mine(cl.x, cl.y); if (s !== null) return { side: s }; } }
+  return null;
+}
+
 // when a bot uses its car's E ability: a Seeker Bolt at a foe ahead in line, a Shockwave into a crowd,
-// Nova Burn down a straight, Aegis when hurt in traffic or boxed in
+// Nova Burn down a straight, Aegis when hurt in traffic or boxed in; the Neon and Depth moves below
 function botAbility(arena, car, b, c, straight) {
   const kind = car.spec.ability;
   const fx = Math.cos(car.yaw), fy = Math.sin(car.yaw);
-  let near = 0, alongside = null, ahead = null;
+  let near = 0, alongside = null, ahead = null, behindFoe = null, behindMate = null, nearBoosting = 0;
   for (const o of arena.order) {
     if (o === car || !o.solid) continue;
     const rx = o.x - car.x, ry = o.y - car.y;
     if (Math.abs(rx) > 600 || Math.abs(ry) > 600) continue;
     const along = rx * fx + ry * fy, side = -rx * fy + ry * fx;     // side > 0: on our left
     const foe = !(o.team >= 0 && o.team === car.team);
-    if (foe && Math.hypot(rx, ry) < RULES.quakeRadius * 0.8) near++;
+    if (foe && Math.hypot(rx, ry) < RULES.quakeRadius * 0.8) { near++; if (o.boosting || o.padTimer > 0) nearBoosting++; }
     if (foe && Math.abs(along) < 70 && Math.abs(side) < 120 && (!alongside || Math.abs(side) < Math.abs(alongside.side))) alongside = { o, side };
     if (along > 40 && along < 220 && Math.abs(side) < 70 && (!ahead || along < ahead.along)) ahead = { o, along };
+    if (along < -40 && along > -450 && Math.abs(side) < 150) {
+      if (foe) { if (!behindFoe || along > behindFoe.along) behindFoe = { o, along }; }
+      else if (!behindMate || along > behindMate.along) behindMate = { o, along };
+    }
   }
   const roll = rnd();
+  // ---- Neon Racer
+  if (kind === 'trail') {
+    // a foe close behind (it has to cross the wall), or one alongside to cut across
+    if ((behindFoe && behindFoe.along > -320 && roll < 0.06 + 0.06 * b.aggression) || (alongside && roll < 0.05 * b.aggression)) c.ability = true;
+    return;
+  } else if (kind === 'emp') {
+    if ((near >= 2 && roll < 0.1) || (nearBoosting >= 1 && roll < 0.08)) c.ability = true;
+    return;
+  } else if (kind === 'overclock') {
+    if (straight && car.charge >= 45 && roll < 0.1) c.ability = true;
+    return;
+  } else if (kind === 'firewall') {
+    if (behindFoe && behindFoe.along > -400 && roll < 0.06 + 0.06 * b.aggression) c.ability = true;
+    return;
+  }
+  // ---- Depth Racer
+  if (kind === 'ink') {
+    if (behindFoe && behindFoe.along > -350 && roll < 0.06 + 0.06 * b.aggression) c.ability = true;
+    return;
+  } else if (kind === 'mine') {
+    if ((behindFoe && roll < 0.05 + 0.06 * b.aggression) || (near >= 2 && roll < 0.05)) c.ability = true;
+    return;
+  } else if (kind === 'jet') {
+    if ((straight && roll < 0.08) || (b.hazard && roll < 0.5)) c.ability = true;
+    return;
+  } else if (kind === 'undertow') {
+    if ((behindMate && roll < 0.1) || (behindFoe && behindFoe.along > -350 && roll < 0.05)) c.ability = true;
+    return;
+  }
   if (kind === 'bolt') {
     // a foe ahead on the road, roughly in line (the bolt curves the rest of the way)
     const L = arena.track.len;

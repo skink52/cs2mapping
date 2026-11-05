@@ -39,9 +39,9 @@ signature perk. Nobody gets more total "stat"; they trade speed for armour and s
 | | HORNET | METEOR | COMET | BASTION |
 |---|---|---|---|---|
 | Style | light, agile | heavy, rams | boost specialist | tank, team player |
-| Top speed (u/s; x0.36 = km/h) | 1620 | 1646 | 1596 | 1599 |
-| Acceleration | 928 | 776 | 761 | 798 |
-| Turning | sharpest | widest | medium | medium |
+| Top speed (u/s; x0.36 = km/h) | 1616 | 1662 | 1608 | 1618 |
+| Acceleration | 850 | 845 | 785 | 856 |
+| Turning (rad/s at mid speed) | 2.58, sharpest | 2.42 | 2.4 | 2.36, widest |
 | Shield | 108 | 110 | 110 | 115 |
 | Mass (bumps, spin shoves) | 1.0 | 1.6 | 1.0 | 1.3 |
 | Charge capacity | 100 | 100 | 130 | 100 |
@@ -51,8 +51,39 @@ signature perk. Nobody gets more total "stat"; they trade speed for armour and s
 
 The numbers are tuned in `test/sim.cjs` (`node test/sim.cjs 64 100 even,seed=71`: bot races with the same number
 of each car) towards one shape: the light, fast cars win a little more often, the heavy ones wreck more rivals and
-finish in the top 8 more steadily. 18 Oct, 1,200 races of 32 (400 each at bot skill 0.25, 0.5 and 0.85; the
-table is the average of the three; 3,600 races in all went into the tuning):
+finish in the top 8 more steadily.
+
+4 Nov 2026 (v0.7.0), after the retune and with each title's own E moves in: 1,200 races of 32 per title (400 each
+at bot skill 0.25, 0.5 and 0.85, 64 bots in two arenas, the same number of each car; `node test/sim.cjs 64 100
+even,seed=71,skill=...`). Per 100 starts, the average of the three skills; an even share would be 3.1 wins, 9.4
+podiums and 25 top-8s.
+
+| | Space Racer | | | | Neon Racer | | | | Depth Racer | | | |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| per 100 starts | HORNET | METEOR | COMET | BASTION | HORNET | METEOR | COMET | BASTION | HORNET | METEOR | COMET | BASTION |
+| wins | 3.1 | 2.7 | 4.2 | 2.6 | 2.4 | 3.7 | 2.9 | 3.6 | 2.3 | 2.8 | 4.3 | 3.2 |
+| podiums | 8.8 | 8.1 | 10.4 | 10.2 | 7.3 | 10.8 | 6.6 | 12.9 | 6.6 | 10.1 | 10.2 | 10.7 |
+| top 8 | 23 | 23 | 24 | 30 | 20 | 27 | 17 | 35 | 18 | 27 | 25 | 30 |
+| average place (of 32) | 17.7 | 16.0 | 17.9 | 14.5 | 17.1 | 16.0 | 18.4 | 14.5 | 18.1 | 16.2 | 16.4 | 15.3 |
+| wrecked | 15 | 0.7 | 17 | 0.3 | 12 | 8 | 17 | 9 | 9 | 9 | 10 | 8 |
+| rivals wrecked (KO) | 4.1 | 12.6 | 8.8 | 5.8 | 13.0 | 13.2 | 6.8 | 10.9 | 9.0 | 12.0 | 4.0 | 5.1 |
+| E uses | 2.1 | 1.8 | 1.3 | 1.5 | 1.9 | 1.8 | 2.7 | 1.8 | 2.1 | 2.0 | 3.2 | 3.0 |
+| wrecks a race (all cars) | 2.6 | | | | 3.7 | | | | 2.8 | | | |
+
+Every car wins between 2.3 and 4.3 races in 100 in every title (the Comet is the strongest in Space and Depth, the
+Meteor and Bastion in Neon, where walls punish the light cars; the Hornet is weakest in Depth, where its Ink Cloud
+is all offence). The heavy cars still make the top 8 most steadily and the light cars still boom or bust. Neon has
+about a wreck a race more than the others: its walls catch about 43 Light Trail and 35 Firewall crossings a race,
+and boost trails about 60. Depth's ink catches about 80 crossings a race (2 shield each half second inside), its
+Depth Charges go off on about 25 cars and the sea creatures hit about 15. Without any E ability both Neon and Depth
+run at about 0.8 wrecks a race, so the moves are most of the wrecking, as in Space.
+
+Before the retune (29 Oct, +200 km/h), the sim had the Hornet winning 8 in 100 and the Meteor and Bastion 0.5:
+at the new speeds acceleration and turning decided everything. The Hornet lost acceleration (928 -> 850) and
+turning (2.7 -> 2.58) and a little top speed; the Meteor and Bastion gained acceleration (776 -> 845, 798 -> 856),
+top speed (1646 -> 1662, 1599 -> 1618) and a little turning; the Comet gained a little of both.
+
+The earlier table, 18 Oct, 1,200 races of 32 (v0.5, before the +200 km/h):
 
 | per 100 starts | HORNET | METEOR | COMET | BASTION |
 |---|---|---|---|---|
@@ -77,6 +108,11 @@ under a second.
 Every car has one ability on E (it costs charge and has a cooldown; the HUD shows it under the charge bar: gold and
 pulsing when ready, red when there isn't enough charge). Bots use them too.
 
+**Each title has its own set of four** (4 Nov 2026; `ABILITY_SETS` in `src/core/00_defs.js`, picked by `GAME_THEME`,
+which `tools/build.mjs` writes from `SPR_THEME`). The cars themselves - speed, armour, perks, spin attack - are the same
+in all three games, so a favourite car drives the same everywhere; what changes with the title is its E move and one
+title-wide rule. Space Racer keeps the original four below; Neon Racer's and Depth Racer's sets are under them.
+
 | | Ability | Cost / cooldown | What it does |
 |---|---|---|---|
 | HORNET | **Seeker Bolt** | 20 / 6 s | Fires a bolt forward along the road at the Hornet's speed + 900 u/s, out to 2,500 units. It locks on to the first car ahead (by road distance, either team) and curves towards its line at 280 u/s. The car it hits is shoved sideways, skids for 0.6 s, loses 25% of its speed and 10 shield (credited to the Hornet). An Aegis shell stops it. Locked for the first seconds of a race like the Shockwave. (Replaced Phase Dash, a sideways dodge, on 28 Oct 2026.) |
@@ -86,6 +122,56 @@ pulsing when ready, red when there isn't enough charge). Bots use them too.
 
 Balance with the abilities in: see the table under the cars (18 Oct). Bots use their abilities too
 (about 2.9 Seeker Bolts with 2.5 hits, 2.6 Shockwaves, 1.4 Nova Burns and 1.9 Aegis shells per race; bots fire a bolt only at a foe roughly in line).
+
+### Neon Racer: walls of light
+
+Neon's moves are about the road itself: walls you lay, boosts you take away, and a wall only your side can pass.
+The attacks (Light Trail, EMP, Firewall) are locked for the first 6 seconds like spins.
+
+| | Ability | Cost / cooldown | What it does |
+|---|---|---|---|
+| HORNET | **Light Trail** | 20 / 10 s | For 2 s the Hornet runs 6% faster and lays a hard wall of light behind it (a segment every 0.14 s, each standing 2.6 s). A car that crosses it bounces off like a rail: a graze (under 220 u/s into it) just deflects; square on it loses speed like a rail hit, skids for 0.35 s and loses 4 shield plus the rail's damage for the speed into it (up to 20; credited). Each segment catches a car once. The Hornet and its teammates pass through. Cut across in front of a rival and they hit a wall; follow it along and nothing happens. |
+| METEOR | **EMP** | 40 / 14 s | Fries every enemy within 360 units: it loses 35 charge, its boost stops (pads, Nova, Overclock, Hydrojet) and for 0.8 s it can't boost, steer well (half rate) or use spins and E. 2 shield. A ring of blue light; the cars caught see a white flash and "EMP - FRIED" on the ability bar. |
+| COMET | **Overclock** | 30 / 14 s | For 3 s boost costs no charge and is stronger (+0.22 on the multiplier: a Comet boosts at 1.6x instead of 1.38x), and boost pads and rings kick 1.5x as hard. Works in flight. |
+| BASTION | **Firewall** | 30 / 15 s | A wall across the road just behind the Bastion, 35% of the road wide (a lane and a bit), centred on its lane, for 2 s. An enemy driving through it loses a quarter of its speed and 7 shield and skids for half a second, once per car; the wall burns out after catching three. The Bastion's side drives through clean. Shuts the door on the car that was about to pass. (It began as a solid wall across half the road: cars stopped dead at it and the pack piled in, 60 hits and 4 extra wrecks a race.) |
+
+**Title rule - boost trails**: every car boosting on Mouse 1 leaves a short, dim light trail (the last 0.35 s of its
+path). Cut across one at an angle (more than about 20 degrees) and you skid for 0.25 s and lose 1 shield; drive along
+it, as when drafting, and nothing happens. So a boosting car in a pack is a hazard to the cars weaving behind it and
+a Hornet's Light Trail is the big version of something everyone does. `RULES.boostTrail` (seconds of trail; 0 = off).
+
+### Depth Racer: the sea floor
+
+Depth's moves are things you leave in the water and currents you make. Ink Cloud and Depth Charge are locked for the
+first 6 seconds like spins. (In Neon the Light Trail, EMP and Firewall are locked the same way.)
+
+| | Ability | Cost / cooldown | What it does |
+|---|---|---|---|
+| HORNET | **Ink Cloud** | 20 / 8 s | For 0.8 s the Hornet drops ink clouds behind it (one every 0.2 s, 150 units across, lasting 2.5 s). An enemy inside can barely see (the screen goes nearly black), steers at 55% and grips at 45%, and loses 2 shield every half second (credited). The Hornet's side drives through clean. |
+| METEOR | **Depth Charge** | 35 / 12 s | Drops a mine behind the car; it arms after 0.3 s (a car right on the Meteor's tail is past it by then) and goes off when an enemy comes within 130 units (or fizzles after 5 s). Everyone not on the Meteor's side within 260 units is shoved away (360 x mass ratio, more the closer), thrown up a little (so it loses the road for a moment), skids and loses up to 10 shield. Two out at once at most (the oldest goes). |
+| COMET | **Hydrojet** | 35 / 12 s | A 250 u/s kick and a 1.8-second surge (1.38x top speed, double acceleration). While it lasts the Comet rides over every hazard on the road - ink, mines, walls, Nova fire, slick zones - and can't be shoved. |
+| BASTION | **Undertow** | 30 / 12 s | For 3 s the Bastion drags a current: teammates within 520 units behind it (130 to each side) are pulled along (+8% top speed, +10 charge/s); enemies there are dragged back (-10% top speed, 60% grip). A strip of chevrons on the road shows the wake. |
+
+**Title rule - pressure**: the deeper the road (below the track's middle height) the heavier the water: top speed
+down to -5%, grip up to +30% and charge platforms up to +40% faster at the very bottom; up high the opposite (-15%
+grip, +5% speed). Flat tracks (less than 400 units of height) feel nothing. Boost on the climbs and the high decks,
+refill in the trenches. `RULES.pressure` (0 = off), `pressureSpeed`, `pressureGrip`, `pressureCharge`.
+
+Bots use all of these: a Light Trail / Firewall / Ink Cloud / Depth Charge when a foe is close behind, an EMP into a
+crowd or at a boosting foe, Overclock and Hydrojet on straights (a Hydrojet also to ride over a hazard ahead), an
+Undertow with a teammate behind; and bots of skill over 0.35 swerve round an enemy's wall, armed mine or ink cloud in
+their path. `node test/ability_test.cjs` (with `SPR_CORE=<that title's core module>`) prints what each move does to a
+car in numbers; the balance tables per title are in the changelog (v0.7.0).
+
+### How the cars sit on the road (4 Nov 2026)
+
+The CS2 side draws each car resting on the road surface under its four corners in its own frame (nose, tail, left,
+right: `Track.surfaceAt`, which includes the bank and ramp lift): the pitch is the slope nose to tail, the roll the
+slope side to side, and the car is lifted so no corner is in the road. Before this the pitch followed the road's
+own direction whatever way the car faced, so a car turned across a steep incline (a drift, a spin, a shove) dug one
+side into it. `CONFIG.CAR_CLEAR` lifts every car a fixed amount more and `CONFIG.CAR_CLEAR_SLOPE` adds units per
+unit of slope under the car (default 12: a 30% grade adds 3.6), for roads that still catch the hull; both are in the
+script's CONFIG, so they can be tuned on the server without a rebuild.
 
 ## Track mechanics
 

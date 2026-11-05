@@ -9,23 +9,53 @@ const CAR_R = 40;                   // car collision radius (units)
 const CAR_LEN = 115;                // for drawing / grid spacing
 const TEAM_NAMES = ['T', 'CT'];
 
-// The four cars (top speeds +556 u/s = +200 km/h on the speedo since 29 Oct 2026, accel x1.45, brakes x1.3). Speeds in units/s, accel in units/s^2, turn in radians/s at mid speed, grip = how fast sideways
+// The four cars (top speeds +556 u/s = +200 km/h on the speedo since 29 Oct 2026, accel x1.45, brakes x1.3; retuned 4 Nov 2026:
+// at the new speeds the Hornet's acceleration and turning won 8 races in 100 to the heavy cars' 0.5, so the Hornet lost some
+// of both and the Meteor and Bastion gained acceleration, top speed and a little turning - test/sim.cjs, 1,200 races). Speeds in units/s, accel in units/s^2, turn in radians/s at mid speed, grip = how fast sideways
 // speed is bled off (per second); mass only matters when cars bump.
 const CARS = {
-  hornet:  { key: 'hornet',  name: 'HORNET',  maxSpeed: 1620,  accel: 928, brake: 1300, turn: 2.7,  grip: 12, driftGrip: 3.2, mass: 1.0, shield: 108, charge: 100, boost: 1.32, padMult: 1.0, driftCharge: 2.5, spinCost: 18, ram: 1.0, chargeMult: 1.0, draftMult: 1.0, draftRegen: 0,
-             perk: 'DRIFT CHARGE', desc: 'LIGHT AND SHARP. DRIFTING FILLS CHARGE FAST. CHEAP SPIN ATTACK.',
-             ability: 'bolt', abilityName: 'SEEKER BOLT', abilityCd: 6, abilityCost: 20 },
-  meteor:  { key: 'meteor',  name: 'METEOR',  maxSpeed: 1646, accel: 776, brake: 1170,  turn: 2.35, grip: 10, driftGrip: 3.0, mass: 1.6, shield: 110, charge: 100, boost: 1.28, padMult: 1.0, driftCharge: 1.0, spinCost: 30, ram: 1.8, chargeMult: 1.0, draftMult: 1.0, draftRegen: 0,
-             perk: 'RAM', desc: 'HEAVY AND FAST IN A STRAIGHT LINE. BUMPS HURT THEM, NOT YOU.',
-             ability: 'quake', abilityName: 'SHOCKWAVE', abilityCd: 12, abilityCost: 40 },
-  comet:   { key: 'comet',   name: 'COMET',   maxSpeed: 1596,  accel: 761, brake: 1235,  turn: 2.4,  grip: 11, driftGrip: 3.0, mass: 1.0, shield: 110, charge: 130, boost: 1.38, padMult: 1.38, driftCharge: 1.0, spinCost: 30, ram: 1.0, chargeMult: 1.3, draftMult: 1.0, draftRegen: 0,
-             perk: 'AFTERBURN', desc: 'BIGGEST CHARGE TANK, STRONGEST BOOST, PADS LAST LONGER.',
-             ability: 'nova', abilityName: 'NOVA BURN', abilityCd: 12, abilityCost: 40 },
-  bastion: { key: 'bastion', name: 'BASTION', maxSpeed: 1599,  accel: 798, brake: 1235,  turn: 2.3,  grip: 11, driftGrip: 3.0, mass: 1.3, shield: 115, charge: 100, boost: 1.33, padMult: 1.0, driftCharge: 1.0, spinCost: 30, ram: 1.0, chargeMult: 1.0, draftMult: 2.0, draftRegen: 1.5,
-             perk: 'SLIPSTREAM', desc: 'TOUGHEST SHIELD. DRAFTING FILLS CHARGE AND REPAIRS. TEAMMATES BEHIND YOU GAIN TOO.',
-             ability: 'aegis', abilityName: 'AEGIS', abilityCd: 12, abilityCost: 30 },
+  hornet:  { key: 'hornet',  name: 'HORNET',  maxSpeed: 1616,  accel: 850, brake: 1300, turn: 2.58,  grip: 12, driftGrip: 3.2, mass: 1.0, shield: 108, charge: 100, boost: 1.32, padMult: 1.0, driftCharge: 2.5, spinCost: 18, ram: 1.0, chargeMult: 1.0, draftMult: 1.0, draftRegen: 0,
+             perk: 'DRIFT CHARGE', desc: 'LIGHT AND SHARP. DRIFTING FILLS CHARGE FAST. CHEAP SPIN ATTACK.' },
+  meteor:  { key: 'meteor',  name: 'METEOR',  maxSpeed: 1662, accel: 845, brake: 1170,  turn: 2.42, grip: 10, driftGrip: 3.0, mass: 1.6, shield: 110, charge: 100, boost: 1.28, padMult: 1.0, driftCharge: 1.0, spinCost: 30, ram: 1.8, chargeMult: 1.0, draftMult: 1.0, draftRegen: 0,
+             perk: 'RAM', desc: 'HEAVY AND FAST IN A STRAIGHT LINE. BUMPS HURT THEM, NOT YOU.' },
+  comet:   { key: 'comet',   name: 'COMET',   maxSpeed: 1605,  accel: 785, brake: 1235,  turn: 2.4,  grip: 11, driftGrip: 3.0, mass: 1.0, shield: 110, charge: 130, boost: 1.38, padMult: 1.38, driftCharge: 1.0, spinCost: 30, ram: 1.0, chargeMult: 1.3, draftMult: 1.0, draftRegen: 0,
+             perk: 'AFTERBURN', desc: 'BIGGEST CHARGE TANK, STRONGEST BOOST, PADS LAST LONGER.' },
+  bastion: { key: 'bastion', name: 'BASTION', maxSpeed: 1618,  accel: 856, brake: 1235,  turn: 2.36,  grip: 11, driftGrip: 3.0, mass: 1.3, shield: 115, charge: 100, boost: 1.33, padMult: 1.0, driftCharge: 1.0, spinCost: 30, ram: 1.0, chargeMult: 1.0, draftMult: 2.0, draftRegen: 1.5,
+             perk: 'SLIPSTREAM', desc: 'TOUGHEST SHIELD. DRAFTING FILLS CHARGE AND REPAIRS. TEAMMATES BEHIND YOU GAIN TOO.' },
 };
 const CAR_KEYS = ['hornet', 'meteor', 'comet', 'bastion'];
+
+// ---- the E abilities, one set per title (GAME_THEME, set by tools/build.mjs). The cars themselves - speed, armour, perks -
+// are the same in every game, so a favourite car plays the same; its E move is what changes with the title.
+//   SPACE RACER: Seeker Bolt / Shockwave / Nova Burn / Aegis (the originals)
+//   NEON RACER:  Light Trail (a hard wall of light behind the Hornet) / EMP (kills the boost and charge of everyone near)
+//                / Overclock (free boost for a while) / Firewall (a wall across the road that only teammates pass)
+//   DEPTH RACER: Ink Cloud (blinds and greases the road behind) / Depth Charge (a mine) / Hydrojet (a surge that rides
+//                over every hazard) / Undertow (a current that pulls teammates along and drags enemies back)
+const ABILITY_SETS = {
+  space: {
+    hornet:  { ability: 'bolt',      abilityName: 'SEEKER BOLT',  abilityCd: 6,  abilityCost: 20 },
+    meteor:  { ability: 'quake',     abilityName: 'SHOCKWAVE',    abilityCd: 12, abilityCost: 40 },
+    comet:   { ability: 'nova',      abilityName: 'NOVA BURN',    abilityCd: 12, abilityCost: 40 },
+    bastion: { ability: 'aegis',     abilityName: 'AEGIS',        abilityCd: 12, abilityCost: 30 },
+  },
+  neon: {
+    hornet:  { ability: 'trail',     abilityName: 'LIGHT TRAIL',  abilityCd: 10, abilityCost: 20 },
+    meteor:  { ability: 'emp',       abilityName: 'EMP',          abilityCd: 14, abilityCost: 40 },
+    comet:   { ability: 'overclock', abilityName: 'OVERCLOCK',    abilityCd: 14, abilityCost: 30 },
+    bastion: { ability: 'firewall',  abilityName: 'FIREWALL',     abilityCd: 15, abilityCost: 30 },
+  },
+  depth: {
+    hornet:  { ability: 'ink',       abilityName: 'INK CLOUD',    abilityCd: 8,  abilityCost: 20 },
+    meteor:  { ability: 'mine',      abilityName: 'DEPTH CHARGE', abilityCd: 12, abilityCost: 35 },
+    comet:   { ability: 'jet',       abilityName: 'HYDROJET',     abilityCd: 12, abilityCost: 35 },
+    bastion: { ability: 'undertow',  abilityName: 'UNDERTOW',     abilityCd: 12, abilityCost: 30 },
+  },
+};
+const THEME_KEY = typeof GAME_THEME === 'string' && ABILITY_SETS[GAME_THEME] ? GAME_THEME : 'space';
+for (const k of CAR_KEYS) Object.assign(CARS[k], ABILITY_SETS[THEME_KEY][k]);
+// the abilities that hit other cars: locked for the first seconds of a race (RULES.attackLock), like spin attacks
+const ATTACK_ABILITIES = { bolt: 1, quake: 1, trail: 1, emp: 1, firewall: 1, ink: 1, mine: 1 };
 
 // rules that are not per car
 const RULES = {
@@ -103,7 +133,49 @@ const RULES = {
   fireGap: 0.15, fireFor: 0.8, fireTime: 2.0, fireRadius: 90, fireDamage: 4, fireEvery: 0.5,   // fire for the first second
   // AEGIS (Bastion): an energy shell - no damage, no shoves, cars bounce off - and a shield top-up for teammates near
   aegisTime: 2.5, aegisMass: 4, aegisBump: 1, aegisShare: 20, aegisRange: 500,
+  // ---- Neon Racer's abilities
+  // LIGHT TRAIL (Hornet): a hard wall of light laid behind the car for a while; a car that crosses it bounces off like
+  // a rail: a graze (slower than railSoft into it) just deflects, a hit square on costs speed, wallDamage + the rail's
+  // damage for the speed into it (up to contactMax) and a skid; credited to the Hornet. Once per car per segment. The
+  // Hornet and its teammates pass through, and the Hornet runs trailSpeed faster while it lays. Walls fade after wallTime. (4 Nov: hits at any angle cost 8 and a bounce,
+  // and the pack following a Hornet crossed its wiggling trail at shallow angles all the time: 40 hits a race.)
+  trailFor: 2.0, trailGap: 0.14, trailSpeed: 1.06, wallTime: 2.6, wallHeight: 60, wallDamage: 4, wallStagger: 0.35, wallRest: 0.35, hazardCd: 0.6,
+  // EMP (Meteor): every enemy close by loses charge, its boost (pads, Nova, Overclock, Hydrojet) stops and for a moment
+  // it can't boost, steer well or use E (fried)
+  empRadius: 360, empCharge: 35, empTime: 0.8, empDamage: 2, empSteer: 0.5,
+  // OVERCLOCK (Comet): boost is free for a while and a little stronger; boost pads and rings kick harder
+  overclockTime: 3.0, overclockBoost: 0.22, overclockPad: 1.5,
+  // FIREWALL (Bastion): a wall across the road just behind the car, this fraction of the road wide, for firewallTime.
+  // An enemy driving through it loses firewallSlow of its speed and firewallDamage shield and skids (once per car per
+  // wall); teammates pass clean. It burns out after catching firewallHits cars. (It was a solid wall: the car behind stopped dead and the pack behind piled into it,
+  // 50 hits and 4 extra wrecks a race in the sim.)
+  firewallTime: 2.0, firewallWidth: 0.35, firewallDamage: 7, firewallSlow: 0.25, firewallStagger: 0.5, firewallHits: 3,
+  // ---- Depth Racer's abilities
+  // INK CLOUD (Hornet): clouds of ink dropped behind the car for a while; an enemy inside can barely see, steer or grip
+  inkFor: 0.8, inkGap: 0.2, inkRadius: 150, inkTime: 2.5, inkDamage: 2, inkEvery: 0.5, inkSteer: 0.55, inkGrip: 0.45,
+  // DEPTH CHARGE (Meteor): a mine dropped behind; arms after mineArm (a car right on your tail is past it by then), goes off when an enemy comes within mineTrigger
+  // (or fizzles after mineLife): everyone but the Meteor's side within mineRadius is shoved away and thrown up
+  mineArm: 0.3, mineLife: 5.0, mineTrigger: 130, mineRadius: 260, mineKnock: 360, mineDamage: 10, mineLift: 300, mineStagger: 0.35, minesMax: 2,
+  // HYDROJET (Comet): a kick and a surge; while it lasts the car rides over every hazard on the road (ink, mines, walls,
+  // Nova fire, slick zones) and can't be shoved
+  jetTime: 1.8, jetKick: 250, jetSpeed: 1.38,
+  // UNDERTOW (Bastion): a current behind the car: teammates in it are pulled along (speed and charge), enemies in it
+  // are dragged back and lose grip
+  undertowTime: 3.0, undertowRange: 520, undertowSide: 130, undertowPull: 1.08, undertowCharge: 10, undertowDrag: 0.9, undertowGrip: 0.6,
+  // ---- title rules (set per game below)
+  // NEON: every car boosting on Mouse 1 leaves a short light trail; cut across one at an angle and you skid and lose a
+  // little shield (follow it straight and nothing happens). 0 = off.
+  boostTrail: 0, boostTrailDamage: 1, boostTrailStagger: 0.25, boostTrailAngle: 0.35,
+  // DEPTH: pressure. The deeper the road (below the track's middle height), the heavier the water: top speed down to
+  // -pressureSpeed, grip up to +pressureGrip, charge platforms fill up to +pressureCharge faster; higher up the opposite.
+  // 0 = off. Tracks with less than pressureMinRange of height difference feel nothing.
+  pressure: 0, pressureSpeed: 0.05, pressureGrip: 0.3, pressureCharge: 0.4, pressureMinRange: 400,
 };
+const THEME_RULES = {
+  neon: { boostTrail: 0.35 },
+  depth: { pressure: 1 },
+};
+Object.assign(RULES, THEME_RULES[THEME_KEY] || {});
 
 function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 function lerp(a, b, t) { return a + (b - a) * t; }
