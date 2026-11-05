@@ -9,6 +9,7 @@ Paths come from the catalog's "paths" block (env overrides: STEAMCMD, PM_WORK). 
 height, the scale the converter will apply, vertices and missing materials, so the catalog's choices are made from data.
 """
 import glob, json, os, re, subprocess, sys, time
+if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # Workshop titles: any script, any console
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -130,11 +131,12 @@ def suggest(models, scale=(1.0, 1.15), max_verts=100000):
 
 
 if __name__ == '__main__':
-    cat = json.load(open(sys.argv[1]))
+    cat = json.load(open(sys.argv[1], encoding='utf-8'))
     p = paths(cat)
     only = None
-    for a in sys.argv[2:]:
+    for i, a in enumerate(sys.argv[2:], 2):
         if a.startswith('--only='): only = set(a[7:].split(','))
+        if a == '--only' and i + 1 < len(sys.argv): only = set(sys.argv[i + 1].split(','))
     items, seen = [], set()
     for it in cat['items']:                 # one entry per item id (an item can supply several catalog models)
         if (not only or str(it['id']) in only) and it['id'] not in seen: items.append(it); seen.add(it['id'])
@@ -155,13 +157,13 @@ if __name__ == '__main__':
         os.makedirs(os.path.join(p['work'], 'logs'), exist_ok=True)
         old = {}
         sp = os.path.join(p['work'], 'logs', 'scan.json')
-        if os.path.exists(sp): old = json.load(open(sp))
+        if os.path.exists(sp): old = json.load(open(sp, encoding='utf-8'))
         old.update(report)
         json.dump(old, open(sp, 'w'), indent=1)
         print('scan ->', sp)
     if '--suggest' in sys.argv:          # from scan.json: the models that pass the rules, per item
         sp = os.path.join(p['work'], 'logs', 'scan.json')
-        sc = json.load(open(sp)) if os.path.exists(sp) else {}
+        sc = json.load(open(sp, encoding='utf-8')) if os.path.exists(sp) else {}
         print('\nsuggested (passes the rules; first = most detailed):')
         for it in items:
             good = suggest(sc.get(str(it['id']), {}).get('models', []))

@@ -695,6 +695,529 @@
    "slug": "mgs5_dd_female",
    "mdl": "models/clankert/mgs/pm/dds_bb_female.mdl",
    "name": "MGS5 Diamond Dog soldier (female)"
+  },
+  {
+   "id": 3589878364,
+   "title": "The Terminator (T-800) [PM/RAG]",
+   "author": "Terrywitt",
+   "chosen": true,
+   "batch": 4,
+   "slug": "t800",
+   "mdl": "models/terrywitt/terminator/t800_poster.mdl",
+   "name": "The Terminator (T-800)"
+  },
+  {
+   "id": 3617597883,
+   "title": "[PM] Generic Military Unit",
+   "author": "Rednadze93",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "needs CS:S texture t_arctic, not in the item"
+  },
+  {
+   "id": 3425493121,
+   "title": "Agents (The Matrix: Path of Neo) Player Model/NPC Pack",
+   "author": "tchaek",
+   "chosen": true,
+   "batch": 4,
+   "slug": "agent_smith",
+   "mdl": "models/tchaek/agents_pon/agent_smith_pon_pm.mdl",
+   "name": "Agent Smith (The Matrix: Path of Neo)",
+   "note": "smithy_pon_pm (the \"MegaSmith\" boss, a patchwork of Smiths) converted first; the plain suit fits the server better"
+  },
+  {
+   "id": 3485116477,
+   "title": "DOOM 2016: Doom Marine (PM&NPC + Ragdoll)",
+   "author": "Kerosenn",
+   "chosen": true,
+   "batch": 4,
+   "slug": "doom_marine",
+   "mdl": "models/kerosenn/doom/doom_marine/playermodel/doom_marine_pm.mdl",
+   "name": "Doom Marine (DOOM 2016)"
+  },
+  {
+   "id": 3249363824,
+   "title": "[PM] Simon - Cry Of Fear",
+   "author": "salvare000",
+   "chosen": true,
+   "batch": 4,
+   "slug": "cof_simon",
+   "mdl": "models/cryoffear/simon/simon.mdl",
+   "name": "Simon (Cry of Fear)"
+  },
+  {
+   "id": 3674111517,
+   "title": "Postal X [PM & NPC]",
+   "author": "RKiRra",
+   "chosen": true,
+   "batch": 4,
+   "slug": "postal_dude",
+   "mdl": "models/pacagma/amero/postal_x_dude_player.mdl",
+   "name": "Postal Dude (Postal X)"
+  },
+  {
+   "id": 3600797062,
+   "title": "Harry Du Bois aka Tequila Sunset PM & NPC",
+   "author": "Dakasin",
+   "chosen": true,
+   "batch": 4,
+   "slug": "harry_du_bois",
+   "mdl": "models/player/tequila_sunset.mdl",
+   "name": "Harry Du Bois (Disco Elysium)"
+  },
+  {
+   "id": 3215765831,
+   "title": "BLACK (2006) Goons & Operators (Playermodels & NPCs)",
+   "author": "Kapitano Krunchyman",
+   "chosen": true,
+   "batch": 4,
+   "slug": "black_operator",
+   "mdl": "models/bl_player/bl_operator.mdl",
+   "name": "BLACK operator"
+  },
+  {
+   "id": 3576950897,
+   "title": "Doom: Source Guy [Playermodel + Ragdoll]",
+   "author": "Davy",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "needs CS:S texture t_guerilla (plus HL2 eyes), not in the item"
+  },
+  {
+   "id": 3408975131,
+   "title": "Dave's Aperture Subjects [Playermodel + Ragdolls]",
+   "author": "Davy",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "HL2 citizen faces and Kleiner's glasses from the game, not in the item"
+  },
+  {
+   "id": 3363837903,
+   "title": "HL2 \"styled\" Chester Stone [Playermodel + Ragdoll]",
+   "author": "Davy",
+   "chosen": true,
+   "batch": 4,
+   "slug": "chester_stone",
+   "mdl": "models/player/chester_stone.mdl",
+   "name": "Chester Stone (HL2 style)"
+  },
+  {
+   "id": 107768377,
+   "title": "Half-Life: Source Playermodels",
+   "author": "Captain Charles",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "HL1-style rigid low-poly models (under 1k vertices): fists and limbs fold like hlew_security"
+  },
+  {
+   "id": 3752827306,
+   "title": "Doorbell Chud / Harry Dresden [Playermodel",
+   "author": "ItzDannio25",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "suit_sheet material and a texture missing from the item"
+  },
+  {
+   "id": 3612043412,
+   "title": "Male_07 Construct Jacket Playermodel",
+   "author": "BALATRO ALL DAY",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "most of its materials (puffer, pants, undershirt variants) are not in the item"
+  },
+  {
+   "id": 3508475380,
+   "title": "Gasmask Citizen Remake V2 (Playermodel/NPC)",
+   "author": "xinus22",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "about 1k vertices, HL2 citizen base: too low-poly next to the rest"
+  },
+  {
+   "id": 3526247380,
+   "title": "Dr. Caasi Renielk [Playermodel + Ragdoll]",
+   "author": "Davy",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "Walter's face from another item and the clipboard material missing"
+  },
+  {
+   "id": 3587124383,
+   "title": "PAYDAY 2 - Main Crew (Playermodels",
+   "author": "Hedy",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "shared PAYDAY 2 materials (teeth, straps, vest, gloves) missing from the item"
+  },
+  {
+   "id": 3684007048,
+   "title": "[Resident Evil: Requiem] Leon S. Kennedy - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "about 217k vertices: too heavy for many players at once"
+  },
+  {
+   "id": 184512071,
+   "title": "Metal Gear Solid 3: Big Boss Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 4,
+   "slug": "big_boss",
+   "mdl": "models/player/big_boss.mdl",
+   "name": "Big Boss (MGS3)"
+  },
+  {
+   "id": 2907374323,
+   "title": "[Backrooms] Tactical NBC Hazmat (Mark Blume) [Playermodel]",
+   "author": "X Ray",
+   "chosen": true,
+   "batch": 4,
+   "slug": "nbc_hazmat",
+   "mdl": "models/player/tactical_nbc.mdl",
+   "name": "Tactical NBC hazmat"
+  },
+  {
+   "id": 2787370699,
+   "title": "Walter White Playermodel",
+   "author": "HarryA",
+   "chosen": true,
+   "batch": 4,
+   "slug": "walter_white",
+   "mdl": "models/walterwhite/playermodels/walterwhitecas.mdl",
+   "name": "Walter White"
+  },
+  {
+   "id": 3351061882,
+   "title": "Gopnik Freeman Playermodel",
+   "author": "TheBigCube",
+   "chosen": true,
+   "batch": 4,
+   "slug": "gopnik_freeman",
+   "mdl": "models/thebigcube/pm_gopnik_freeman/gopnik_freeman.mdl",
+   "name": "Gopnik Freeman"
+  },
+  {
+   "id": 3339689455,
+   "title": "Batman Arkham City - Playermodel/NPC",
+   "author": "MatMADNESS",
+   "chosen": false,
+   "slug": "batman_ac",
+   "mdl": "models/matmadness/pm/batman_arkham_city/batman_ac.mdl",
+   "name": "Batman (Arkham City)",
+   "looked_at": 4,
+   "skip_reason": "cape on its own bones: CS2 stretches it into a sheet behind the model"
+  },
+  {
+   "id": 3568561943,
+   "title": "[F76] Secret Service Soldiers [Playermodel+Ragdoll]",
+   "author": "Davy",
+   "chosen": true,
+   "batch": 4,
+   "slug": "f76_secret_service",
+   "mdl": "models/ndord/fallout/secretservice_black.mdl",
+   "name": "Fallout 76 Secret Service"
+  },
+  {
+   "id": 3145211994,
+   "title": "Half-Life Ryan Gosling Playermodel",
+   "author": "pvnished dej",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "HL1-style rigid low-poly model"
+  },
+  {
+   "id": 3816440103,
+   "title": "HL2 Styled Travis Bickle [Playermodel/Ragdoll]",
+   "author": "Igloo enjoyer",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "needs the HL2 citizen face eric_facemap, not in the item"
+  },
+  {
+   "id": 3823590914,
+   "title": "[COMM] NCR Veteran Ranger - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": true,
+   "batch": 4,
+   "slug": "ncr_ranger",
+   "mdl": "models/alvaroports/stellarblade/veteranrangerpm.mdl",
+   "name": "NCR Veteran Ranger"
+  },
+  {
+   "id": 3821471704,
+   "title": "Counter-Terrorist Playermodel Pack (Special Forces Group)",
+   "author": "Grotto",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "about 62 u tall (scale 1.32): too small for the deathmatch rule"
+  },
+  {
+   "id": 3818416616,
+   "title": "DEATH STRANDING - Sam Porter Bridges Playermodel",
+   "author": "sammy sam",
+   "chosen": true,
+   "batch": 4,
+   "slug": "sam_bridges",
+   "mdl": "models/deathst/sam.mdl",
+   "name": "Sam Porter Bridges"
+  },
+  {
+   "id": 3829152616,
+   "title": "Joker - The Dark Knight Playermodel",
+   "author": "FRITAS",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "about 104k vertices and no registered player model"
+  },
+  {
+   "id": 3811403972,
+   "title": "Evrart Claire playermodel + ragdoll [Disco Elysium]",
+   "author": "hainzofelps",
+   "chosen": true,
+   "batch": 4,
+   "slug": "evrart_claire",
+   "mdl": "models/hainzofelps/evrart_claire/evrartclaire_pm.mdl",
+   "name": "Evrart Claire (Disco Elysium)"
+  },
+  {
+   "id": 3821061234,
+   "title": "Saints Row IV Ronin Playermodels",
+   "author": "Raccoon",
+   "chosen": false,
+   "slug": "sr4_ronin",
+   "mdl": "models/player/srivroninman.mdl",
+   "name": "Saints Row IV Ronin",
+   "looked_at": 4,
+   "skip_reason": "left hand flattens in CS2's pose (palm and wrist squashed into a ribbon)"
+  },
+  {
+   "id": 3826602682,
+   "title": "Star Wars - Imperial Sentinel Playermodel",
+   "author": "Reaps",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "not picked: 30 were enough (debug texture stand-in needed)"
+  },
+  {
+   "id": 3823097407,
+   "title": "Ghostface (Scream) | Playermodel",
+   "author": "๋",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "no models in the item"
+  },
+  {
+   "id": 3829046493,
+   "title": "Michael Myers — Halloween (2018) & Halloween Kills Inspired | Playermodel",
+   "author": "๋",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "no registered ValveBiped player model"
+  },
+  {
+   "id": 3818111974,
+   "title": "Leatherface — The Texas Chain Saw Massacre | Playermodel",
+   "author": "๋",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "about 225k vertices: too heavy"
+  },
+  {
+   "id": 3749596438,
+   "title": "Michael Jackson [-Thriller Playermodel-]",
+   "author": "Xism",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "no registered ValveBiped player model"
+  },
+  {
+   "id": 3411853782,
+   "title": "[PM] Combine Unit Playermodels (w/accurate c_hands)",
+   "author": "salvare000",
+   "chosen": true,
+   "batch": 4,
+   "slug": "combine_soldier_pm",
+   "mdl": "models/player/combines/combine_soldier.mdl",
+   "name": "Combine soldier"
+  },
+  {
+   "id": 3101353600,
+   "title": "Resident Evil 0: HD Remaster - Albert Wesker (Playermodel",
+   "author": "Chocolat",
+   "chosen": true,
+   "batch": 4,
+   "slug": "wesker",
+   "mdl": "models/player/chocolatfurry3/ema5.mdl",
+   "name": "Albert Wesker (RE0)"
+  },
+  {
+   "id": 157660704,
+   "title": "Hitman Absolution: Agent 47 Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 4,
+   "slug": "agent_47",
+   "mdl": "models/player/agent_47.mdl",
+   "name": "Agent 47"
+  },
+  {
+   "id": 295788137,
+   "title": "WATCH_DOGS: Aiden Pearce Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 4,
+   "slug": "aiden_pearce",
+   "mdl": "models/player/aiden_pearce.mdl",
+   "name": "Aiden Pearce (Watch Dogs)"
+  },
+  {
+   "id": 169011381,
+   "title": "Security Guard Playermodels",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 4,
+   "slug": "security_guard",
+   "mdl": "models/player/guard_pack/guard_08.mdl",
+   "name": "Security guard"
+  },
+  {
+   "id": 229922346,
+   "title": "UK Police Playermodels",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 4,
+   "slug": "uk_police",
+   "mdl": "models/player/uk_police/uk_police_08.mdl",
+   "name": "UK police officer"
+  },
+  {
+   "id": 636790055,
+   "title": "Viper's Operators Playermodels 'Remastered'",
+   "author": "maJor",
+   "chosen": true,
+   "batch": 4,
+   "slug": "mw2_soldier",
+   "mdl": "models/mw2/skin_03/mw2_soldier_03.mdl",
+   "name": "MW2 soldier (Viper)"
+  },
+  {
+   "id": 2421673731,
+   "title": "MW3 Delta Force Playermodels",
+   "author": "TiberiumFusion",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "no registered ValveBiped player model"
+  },
+  {
+   "id": 2409997469,
+   "title": "MW3 SAS Playermodels",
+   "author": "TiberiumFusion",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "no registered ValveBiped player model"
+  },
+  {
+   "id": 812610473,
+   "title": "Police Officers (Playermodels)",
+   "author": "[CZ] Colonel Clanny",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "not picked: 30 were enough (passes the rules: male_09.mdl)"
+  },
+  {
+   "id": 226935476,
+   "title": "Mafia Playermodels",
+   "author": "Dieonar",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "no registered ValveBiped player model"
+  },
+  {
+   "id": 1639925476,
+   "title": "Resident Evil 2 Remake - Hunk [PM",
+   "author": "jolly ol' chap",
+   "chosen": true,
+   "batch": 4,
+   "slug": "re2_hunk",
+   "mdl": "models/auditor/re2/chr_hunk_pmrig.mdl",
+   "name": "HUNK (RE2 Remake)"
+  },
+  {
+   "id": 3826383575,
+   "title": "Dexter: The Game Playermodels",
+   "author": "Chloe Frazer",
+   "chosen": true,
+   "batch": 4,
+   "slug": "dexter_morgan",
+   "mdl": "models/dexter/playerm/dextermorgan.mdl",
+   "name": "Dexter Morgan"
+  },
+  {
+   "id": 3833276773,
+   "title": "Deadlock - Deadman Danny (Playermodel)",
+   "author": "(˶\\u003eᆺ\\u003c˶)ᵐᵉᵒʷˎˊ˗",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "about 162k vertices: too heavy"
+  },
+  {
+   "id": 237984526,
+   "title": "Assassins Creed II: Ezio Auditore Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 4,
+   "slug": "ezio",
+   "mdl": "models/player/ezio.mdl",
+   "name": "Ezio Auditore"
+  },
+  {
+   "id": 2090758421,
+   "title": "CoD: Modern Warfare - Allegiance Operator (Playermodel & NPC)",
+   "author": "kuma7",
+   "chosen": true,
+   "batch": 4,
+   "slug": "mw_allegiance",
+   "mdl": "models/kuma96/codmw/characters/allegiancedef/allegiancedef_pm.mdl",
+   "name": "MW Allegiance operator"
+  },
+  {
+   "id": 412149725,
+   "title": "suits and robbers playermodels",
+   "author": "ムyce",
+   "chosen": true,
+   "batch": 4,
+   "slug": "robber_shirt",
+   "mdl": "models/player/suits/robber_shirt.mdl",
+   "name": "Robber (suits and robbers)"
+  },
+  {
+   "id": 156925148,
+   "title": "Tomb Raider: Lara Croft Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 4,
+   "slug": "lara_croft",
+   "mdl": "models/player/lara_croft.mdl",
+   "name": "Lara Croft"
+  },
+  {
+   "id": 271967400,
+   "title": "Mirrors Edge: Faith Connors Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 4,
+   "slug": "faith_connors",
+   "mdl": "models/player/faith.mdl",
+   "name": "Faith Connors (Mirror's Edge)"
+  },
+  {
+   "id": 905397141,
+   "title": "NieR: Automata 2B ENHANCED (V2) [PM/NPC]",
+   "author": "kuma7",
+   "chosen": false,
+   "looked_at": 4,
+   "skip_reason": "size check: scale 1.15 (height 92 u)"
   }
  ]
 }

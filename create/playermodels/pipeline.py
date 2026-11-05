@@ -9,6 +9,7 @@ Writes (paths from the catalog's "paths" block):
 Prints one progress line per step; each model is independent (a failure is reported and the batch carries on).
 """
 import json, os, re, subprocess, sys, time, traceback
+if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # Workshop titles: any script, any console
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -46,13 +47,14 @@ def contact_sheet(work, slugs, name='contact_sheet'):
 
 
 def main():
-    cat = json.load(open(sys.argv[1]))
+    cat = json.load(open(sys.argv[1], encoding='utf-8'))
     p = fetch.paths(cat)
     p['out'] = os.environ.get('PM_OUT', p.get('out')); p['template'] = os.environ.get('PM_TEMPLATE', p.get('template'))
     only = None; batch = None; batches = None; rc = RC_DEFAULT
     args = sys.argv[2:]
     for i, a in enumerate(args):
         if a.startswith('--only='): only = set(a[7:].split(','))
+        if a == '--only' and i + 1 < len(args): only = set(args[i + 1].split(','))   # both spellings: the usage line shows this one
         if a.startswith('--batch='): batch = int(a[8:]) if ',' not in a else None; batches = [int(x) for x in a[8:].split(',')]
         if a == '--rc': rc = args[i + 1]
     items = [it for it in cat['items'] if it.get('chosen') and (not only or it['slug'] in only) and (batches is None or it.get('batch') in batches)]

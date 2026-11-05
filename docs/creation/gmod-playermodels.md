@@ -11,8 +11,10 @@ SteamCMD (anonymous)          fetch.py            pick in catalog.json          
 workshop_download_item 4000 -> .gma/.bin -> extract -> scan: every .mdl ->  slug + mdl  -> convert -> previews -> resourcecompiler -> report
 ```
 
-1. **Find candidates.** Workshop browse page, tag Model, sorted by top rated. Keep humanoid player models on the **ValveBiped** skeleton
-   (`player_manager.AddValidModel` in the item's lua), human proportions, materials inside the item.
+1. **Find candidates.** `browse.py catalog.json` lists the Workshop items tagged Model that aren't in the catalog yet (top rated over
+   7/30/90/365 days, plus "playermodel" searches: top rated, trending, most subscribed; the browse pages embed their item list as JSON).
+   Keep humanoid player models on the **ValveBiped** skeleton (`player_manager.AddValidModel` in the item's lua), human proportions,
+   materials inside the item. Add the picks to `catalog.json` (`chosen` false, `looked_at` <batch>) before the scan.
 2. **Download + scan** (`fetch.py catalog.json --scan --suggest`; `--suggest` applies step 3's rules and lists the passing models per item). For each item it lists every model with: registered name, ValveBiped yes/no, height,
    head-joint height, **scale** (CS2 head joint 70.8 u / the model's), vertex count, VMTs and colour VTFs missing from the item.
 3. **Choose** (edit `catalog.json`: `chosen`, `slug`, `mdl`; `skin`, `bodygroups`, `depends` if needed). Rules that worked for batch 1:
@@ -22,12 +24,19 @@ workshop_download_item 4000 -> .gma/.bin -> extract -> scan: every .mdl ->  slug
      come out flat grey (the Christmas sweater citizen's face, eyes and mouth did, so it was swapped out).
    - vertex count: CS2 agents are ~20-40k. Under ~100k is fine; the 270k-300k RE Requiem soldiers were left for a decimation pass.
    - skip `c_arms` / `_vm` / `_hands` models (first-person arms come from the CS2 template), `_npc` / `_ragdoll` duplicates.
+   - batch 4's rejects, worth spotting before converting: **capes and coats on their own bones** (Batman Arkham City: CS2 has no such
+     bones, so the cape stays on its bind position and stretches into a sheet behind the model); **HL1-style rigid low-poly** models
+     (under ~1k vertices, one bone per part: fists and limbs fold, as hlew_security showed); models that need **CS:S or HL2 textures**
+     beyond the eyes and mouth (`t_arctic`, `t_guerilla`, citizen `*_facemap`: the PC has no CS:S/HL2 VPKs).
 4. **Convert** (`pipeline.py catalog.json --compile`), then look at `preview/contact_sheet.png`, each `<slug>_bind.png` / `_posed.png`, and
    **`<slug>_hands.png`** (hands in CS2's pose, wrists bent back): broken fingers or a hand through the cuff are the failures to catch.
    Small pokes are acceptable; a wrung finger or a folded wrist is not.
 5. **In game:** compile the addon (the pipeline already compiled the vmdls), put one hidden `prop_dynamic` per model in the map so it's
    precached, and `pawn.SetModel("models/player/gmod/<slug>/<slug>.vmdl")` from cs_script (see [models.md](models.md#player-models) step 8).
-   Not yet checked in game for this batch: see [Status](#status).
+   On the minigames server (slime-mg-gm) the shop precaches and sets them; its test `tests/run.py --no-restart --only none --gmod-models`
+   puts every compiled model on bots that fight on ar_shoots (8 models a round plus 2 stock-agent control bots) and checks from the game
+   log that each model goes on, takes hits by hitgroup and logs no errors. Run it after each batch. What it can't see: textures,
+   first-person arms, ragdoll looks (a client).
 
 ## How the conversion works
 
@@ -117,9 +126,13 @@ The catalog records each item's id, title and author; keep that with any model y
 ## Status
 
 All converted models: [create/playermodels/MODELS.md](../../create/playermodels/MODELS.md). Per batch: [BATCH1.md](../../create/playermodels/BATCH1.md),
-[BATCH2.md](../../create/playermodels/BATCH2.md), [BATCH3.md](../../create/playermodels/BATCH3.md) (tables from `batchnotes.py`, review notes by hand).
-**Not yet tried in game.** Things to check there first: animations and weapons in hand, the ragdoll, the first-person arms (the template's gloves),
-and whether the `csgo_character` materials look right under CS2 lighting.
+[BATCH2.md](../../create/playermodels/BATCH2.md), [BATCH3.md](../../create/playermodels/BATCH3.md), [BATCH4.md](../../create/playermodels/BATCH4.md)
+(tables from `batchnotes.py`, review notes by hand). 80 models, all compiled.
+**On a server (6 Nov 2026):** all 80 worn by bots that fought on ar_shoots (slime-mg-gm `--gmod-models`): every model goes on, the
+animgraph runs (they move and shoot), hits register by hitgroup and nothing logs an error. The hit spread over all models matches stock
+agents in the same fights (head 7.6 % against 9.0, chest 21.5/24.1, stomach 35.7/34.7, arms 8.5/9.8, legs 26.5/22.0), so the hit boxes
+sit where CS2's do. **Still to check with a client:** the `csgo_character` materials under CS2 lighting, the first-person arms (the
+template's gloves), the ragdoll, and the rifle hand on bulky-torso models.
 
 ## Notes
 
@@ -131,4 +144,7 @@ and whether the `csgo_character` materials look right under CS2 lighting.
   converting (`fetch.extract` now uses an existing extract first, but other steps may still want the download).
 - `create/s2/kv3.mjs` can't read models compiled by the Nov 2026 `resourcecompiler` (KV3 types 26/27 in DATA/MDAT; older compiled models read
   fine), so compiled output is checked by the compile log for now.
+- Workshop titles can hold any script and newlines: the tools read the catalog as UTF-8 and print UTF-8; titles are stored on one line.
+- Inverted-hull outlines (a mesh named `Outline`, a black copy pushed out along the normals with its faces turned inward, as on the
+  Postal Dude) look solid black in the software preview but are fine in CS2: its back faces are culled, as in Source.
 - A model's hands look fine in the bind pose even when they will break: the failures only show once CS2 poses them. Look at `_hands.png`.

@@ -48,7 +48,7 @@ def needed(root, mdls):
 
 
 def main():
-    cat = json.load(open(sys.argv[1])); p = fetch.paths(cat)
+    cat = json.load(open(sys.argv[1], encoding='utf-8')); p = fetch.paths(cat)
     dry = '--dry-run' in sys.argv
     used = {}
     for it in cat['items']:

@@ -63,7 +63,7 @@ def main():
         print(json.dumps(fit_one(opt('--model'), opt('--vmdl'), tpl, ch or None), indent=1))
         return
     import fetch
-    cat = json.load(open(args[0]))
+    cat = json.load(open(args[0], encoding='utf-8'))
     p = fetch.paths(cat)
     out = os.environ.get('PM_OUT', p.get('out')); tpl = g.Template(os.environ.get('PM_TEMPLATE', p.get('template')))
     only = set(opt('--only').split(',')) if opt('--only') else None
@@ -81,7 +81,7 @@ def main():
             '' if r['changed'] else ' (unchanged)'), flush=True)
         rp = os.path.join(p['work'], 'reports', slug + '.json')
         if os.path.exists(rp):
-            rep = json.load(open(rp)); rep.update({k: v for k, v in r.items() if k != 'changed'})
+            rep = json.load(open(rp, encoding='utf-8')); rep.update({k: v for k, v in r.items() if k != 'changed'})
             if '--compile' in args and r['changed']:
                 c = subprocess.run([opt('--rc') or RC_DEFAULT, '-i', vm, '-nop4'], capture_output=True, text=True, errors='replace')
                 ok = ' 1 compiled, 0 failed' in c.stdout

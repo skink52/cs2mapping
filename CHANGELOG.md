@@ -3,6 +3,13 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-06: GMod player models batch 4 (80 in all), Workshop candidate finder, server test
+
+- **[create] playermodels**: batch 4: 30 more models (32 converted, Batman and the Saints Row Ronin dropped after review) -> 80, all
+  compiled ([BATCH4.md](create/playermodels/BATCH4.md), [MODELS.md](create/playermodels/MODELS.md)). New `browse.py` lists Workshop
+  candidates not in the catalog. UTF-8 catalog/titles; `--only a,b` accepted as the usage lines say. All 80 passed the minigames
+  server's bot test (slime-mg-gm `--gmod-models`: worn, hits by hitgroup like stock agents, no errors). Cleanup freed 3.9 GB.
+
 ## 2026-11-06: GMod player models batches 2-3 (50 models in all), converter fixes
 
 - **[create] playermodels**: batches 2 and 3 (20 each) -> 50 converted, all compiled; list in

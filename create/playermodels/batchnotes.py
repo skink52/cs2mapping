@@ -17,12 +17,12 @@ MARK = '<!-- review notes: kept by batchnotes.py -->'
 def main():
     cat_path, batch = sys.argv[1], int(sys.argv[2])
     out = sys.argv[3] if len(sys.argv) > 3 else os.path.join(os.path.dirname(os.path.abspath(cat_path)), 'BATCH%d.md' % batch)
-    cat = json.load(open(cat_path)); p = fetch.paths(cat)
+    cat = json.load(open(cat_path, encoding='utf-8')); p = fetch.paths(cat)
     rows, n, ok, warn = [], 0, 0, 0
     for it in cat['items']:
         if not it.get('chosen') or it.get('batch') != batch: continue
         rp = os.path.join(p['work'], 'reports', it['slug'] + '.json')
-        r = json.load(open(rp)) if os.path.exists(rp) else {}
+        r = json.load(open(rp, encoding='utf-8')) if os.path.exists(rp) else {}
         n += 1
         comp = r.get('compile', {}); ok += bool(comp.get('ok')); warn += bool(r.get('warnings'))
         jo = r.get('joint_offsets') or {}

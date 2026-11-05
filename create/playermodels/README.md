@@ -9,6 +9,7 @@ Python 3 with numpy and Pillow. No Blender, Crowbar or SourceIO needed: the Sour
 | File | What it does |
 |---|---|
 | `pipeline.py <catalog.json> [--only slug,..] [--batch=N[,M]] [--no-download] [--no-preview] [--compile]` | The batch: every `chosen` catalog item downloaded, extracted, converted, previewed (incl. the hands check), compiled with `resourcecompiler`, reported (`<work>/reports/<slug>.json`, `summary.md`, `preview/contact_sheet.png`). One model failing doesn't stop the rest. |
+| `browse.py <catalog.json> [--out f.json] [--all]` | Workshop items tagged Model that aren't in the catalog: top rated (7/30/90/365 days) and "playermodel" searches, from the item list the browse pages embed. Prints the ones that look like player models (id, size, subscribers, title, author); all go to `<work>/logs/candidates.json`. Downloads nothing. |
 | `fetch.py <catalog.json> [--only id,..] [--no-download] [--scan] [--suggest]` | SteamCMD (anonymous) `workshop_download_item 4000 <id>`, then extracts `models/`, `materials/`, `lua/`. `--scan` lists every `.mdl` per item with its registered name (`player_manager.AddValidModel`, read as text), ValveBiped yes/no, height, head-joint height, a size-check scale (CS2 head joint / the model's) and the VMTs and colour VTFs missing from the item, into `<work>/logs/scan.json`. `--suggest` lists, per item, the models that pass the selection rules. |
 | `gmod2cs2.py <model.mdl> <slug> --roots <dir,..> --template <dir> --out <content addon> [--skin N] [--bodygroup part=i] [--maxtex 2048] [--preview dir] [--report json] [--fit]` | One model: uniform scale only (no stretching), limbs turned into CS2's bind pose at their own lengths and skinned to the CS2 agent skeleton (`--fit`: the old stretch-onto-CS2-bones method), weights remapped (twist bones included), materials converted, body DMX written into a copy of the template's, vmdl from the template's with the paths swapped. Previews: `_source` (GMod pose), `_bind` (on the CS2 skeleton, joints dotted), `_posed` (skinned to the template's preview pose). |
 | `handcheck.py <model.mdl> <template> <out.png>` | Close-up of both hands in CS2's preview pose and both wrists bent back 60° (rifle grip): where conversions break first. The pipeline writes `preview/<slug>_hands.png` per model; look at it before shipping. |
@@ -40,11 +41,14 @@ sleeves, preview pose: one copy for all), `materials/models/player/gmod/<slug>/*
 
 ```
 cd create/playermodels
-python -I fetch.py catalog.json --scan --suggest --only=<ids>   # download, list candidates, apply the rules
+python -I browse.py catalog.json                                 # new Workshop candidates (add picks: chosen false, looked_at N)
+python -I fetch.py catalog.json --scan --suggest --only <ids>    # download, list candidates, apply the rules
 # edit catalog.json: chosen, batch, slug, mdl for each pick
 python -I pipeline.py catalog.json --batch=3 --compile           # convert, preview, hands check, compile, report
 # review contact_sheet_batch3.png + <slug>_hands.png (warned models first)
 python -I batchnotes.py catalog.json 3 && python -I listmodels.py catalog.json
+# minigames server (slime-mg-gm): tools/model_catalog.py (list + a posed picture per model), then
+#   tests/run.py --no-restart --only none --gmod-models (bots wear every model and fight; tests/results/gmod_models.md)
 python -I cleanup.py catalog.json --prune                         # free disk once the batch is done
 ```
 Runs longer than two minutes go under `autoport/watchdog.py` on the PC (download ~10 s per item; conversion 5-60 s per model, previews 1-3 min).

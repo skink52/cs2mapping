@@ -15,13 +15,13 @@ import fetch
 def main():
     cat_path = sys.argv[1]
     out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(os.path.abspath(cat_path)), 'MODELS.md')
-    cat = json.load(open(cat_path))
+    cat = json.load(open(cat_path, encoding='utf-8'))
     p = fetch.paths(cat)
     rows, n_ok, n_warn = [], 0, 0
     for it in cat['items']:
         if not it.get('chosen'): continue
         rp = os.path.join(p['work'], 'reports', it['slug'] + '.json')
-        r = json.load(open(rp)) if os.path.exists(rp) else {}
+        r = json.load(open(rp, encoding='utf-8')) if os.path.exists(rp) else {}
         comp = r.get('compile', {})
         status = 'not converted yet' if not r else ('compiled' if comp.get('ok') else 'compile FAILED' if comp else 'converted, not compiled')
         warn = '; '.join(r.get('warnings', []))
