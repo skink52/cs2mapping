@@ -18,6 +18,11 @@ and Panorama files recompile. Zach doesn't code: plain-language explanations, li
 ## Update 5 Nov 2026 - server stats for a plugin (mgstat), script v0.2.1
 Script only (src/cs2/00_config.js, 60_main.js): no Hammer/model changes, but the map has to be rebuilt in Hammer and re-uploaded to carry it.
 NOT YET RUN IN CS2.
+Delivered 5 Nov 2026 (late): freedm.js v0.2.1 copied into skink52's content addon `mg_freedm/maps/scripts/` (sha1 59e14b70b44f). Built by
+swapping only the src/cs2 part of the deployed 19 Oct script (its core and generated data checked identical to src/core and the
+19 Oct src/cs2); the old script is kept on the PC as `C:\source1\archive\hellmatch\freedm_v0.2.0_deployed_20261019.js`. Mock re-run
+OK (statsinput, bossonly, lmsonly). Next: skink52 builds the map in Hammer, tests, uploads. SlimeMG sends `fdm_script`
+`RunScriptInput mgstat_on` at map start, so `SERVER_STATS` can stay false.
 - CONFIG `SERVER_STATS` (default false) replaces `MONSTER_KILL_COMMAND`. When on, the script sends server console commands for the
   stats plugin (slime-mg-gm SlimeMG `mgstat <slot> <stat> [n]`; the plugin adds n to that player's count for the current mode):
   `mgstat <slot> pve_kills <n>` (every monster kill by a player: Boss Battle and monsters loose in deathmatch rounds),

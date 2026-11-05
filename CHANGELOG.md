@@ -3,6 +3,10 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-05: Hellmatch v0.2.1 script delivered to the content addon
+
+- Hellmatch: freedm.js v0.2.1 (server stats via mgstat, 45e4f04) copied into the mg_freedm content addon; not yet built in Hammer or uploaded.
+
 ## 2026-11-05: Hellmatch reports stats to a server plugin (mgstat)
 
 - **[hellmatch] server stats.** `CONFIG.SERVER_STATS` (off by default; replaces `MONSTER_KILL_COMMAND`) sends `mgstat <slot> pve_kills <n>`,
