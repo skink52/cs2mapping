@@ -7,6 +7,8 @@ Writes (paths from the catalog's "paths" block):
   <out>/models/player/gmod/<slug>/...      the content addon (compile it with --compile, Hammer or ModelDoc)
   <work>/preview/<slug>_{source,bind,posed}.png and contact_sheet.png
   <work>/reports/<slug>.json and summary.md  (sizes, scale, materials, missing textures, compile result)
+Mode per model: the catalog's "mode", else 'own' (the model's own leg joints; arms, torso and head on CS2's), or 'rigid' for
+"fun": true models (cartoon feet came out wrong with own legs; skink52's in-game check, 6 Nov 2026).
 Prints one progress line per step; each model is independent (a failure is reported and the batch carries on).
 --jobs N: N models at once, each in its own process (the converter is single-threaded: a 6-core PC ran 6 at ~60% CPU, 3-4x faster),
 with its output in <work>/logs/models/<slug>.log; --timeout S (default 1800) kills a model that runs longer (one spun for 2 h) and
@@ -110,7 +112,8 @@ def main():
             roots = [root] + [os.path.join(p['work'], 'extract', str(x)) for x in it.get('depends', [])] + fetch.base_roots(fetch.paths(cat))
             print('   converting %s' % it['mdl'], flush=True)
             r = gmod2cs2.convert(os.path.join(root, *it['mdl'].split('/')), slug, roots, tpl, p['out'], it.get('skin', 0),
-                                 it.get('bodygroups'), it.get('maxtex', 2048), prev, log=lambda s: print(s, flush=True))
+                                 it.get('bodygroups'), it.get('maxtex', 2048), prev, log=lambda s: print(s, flush=True),
+                                 mode=it.get('mode') or ('rigid' if it.get('fun') else 'own'))
             rep.update(r)
             miss = [m['source'] for m in r['materials'] if m.get('flat') or m.get('missing')]
             print('   %d vertices, %d triangles, %d materials, scale %.3f%s (%.0f s)' % (r['vertices'], r['triangles'], len(r['materials']), r['scale'],

@@ -65,6 +65,10 @@ TORSO_RECENTRE = True     # move the upper torso back so the chest is centred on
 CHEST_WARN = 4.0          # warn when the chest front is this much (u) further forward than a stock agent's
 HAND_WARN = 3.0           # warn when, in CS2's preview pose, the chest surface is this far (u) in front of a wrist (fine models: 0-1.6)
 LIMB_WARN = 5.0           # warn when an arm/leg joint ends up this far (u) from CS2's: CS2 bends there, not at the model's joint (6 Nov: Leva at 5.4-6.0 u read as stretched thighs; was 6.0)
+OWN_PARTS = ('leg_', 'ankle_', 'ball_')                     # own-joints mode: only the legs take the model's own joints
+                                                             # (in game 6 Nov: own arms broke weapon poses, own neck stretched)
+ARM_KEEP_HEIGHT = True   # own mode: arms keep the model's shoulder height (CS2's arm joints raised/lowered to it)
+SHOULDER_BLEND = 7.0     # u: torso vertices this close to a snapped shoulder follow the arm's snap (fading out); 0 = off
 HEAD_SNAP = False         # True: the head moves onto CS2's head joint (no sideways neck drag, ~4 u longer neck). Off: skink52 keeps the model's own head (6 Nov)
 GMOD_PLAYER_COLOR = (0.24, 0.34, 0.41)   # GMod's default player colour (PlayerColor proxy), baked into tint-masked textures
 HEAD_HITBOX_MIN = 1.0      # a head this close to a stock agent's keeps the stock head/neck hit boxes exactly (skink52, 6 Nov)
@@ -393,7 +397,7 @@ class Converter:
         # (spine1 half way, so the waist shears gradually); legs stay put, arms are re-seated on the shoulders below.
         self.chest_shift = 0.0
         top = next((n for n in ('spine2', 'spine3', 'spine4') if n in tr), None)
-        if top and TORSO_RECENTRE and not own:
+        if top and TORSO_RECENTRE:
             lo, hi = sorted((self.S(top)[2], self.S('spine4' if 'spine4' in tr else top)[2] + 2 / sc))
             V0 = self.m.V @ self.G.T; V0[:, 2] -= self.floor
             sel = (V0[:, 2] > lo) & (V0[:, 2] < hi) & (np.abs(V0[:, 1] - self.S(top)[1]) < 5 / sc)
@@ -403,13 +407,17 @@ class Converter:
                 dx = np.array([self.chest_shift, 0, 0])
                 for n in subtree(top): tr[n]['pcs'] = tr[n]['pcs'] + dx
                 if 'spine1' in tr and top != 'spine1': tr['spine1']['pcs'] = tr['spine1']['pcs'] + dx / 2
-        self.hand_scale = {}
-        for s in ('' if own else 'LR'):          # own joints: arms and hands stay where the model has them
+        self.hand_scale = {}; self.arm_snap = {}; self.arm_lift = {}
+        for s in 'LR':                           # arms and hands on CS2's pivots in every mode (own joints too: CS2's weapon
+                                                 # poses are built for an agent's shoulders; own arm joints put the hands off the gun)
             l = s.lower()
             root = f'{l}_clavicle' if f'{l}_clavicle' in tr else f'{l}_upperarm'
             if f'{l}_upperarm' not in tr: continue
             d = J(f'arm_upper_{s}') - tr[f'{l}_upperarm']['pcs']
-            for n in subtree(root): tr[n]['pcs'] = tr[n]['pcs'] + d
+            lift = np.array([0.0, 0.0, -d[2]]) if (own and ARM_KEEP_HEIGHT) else np.zeros(3)   # own: keep the model's shoulder height
+            d = d + lift; self.arm_lift[s] = lift
+            for n in subtree(root): tr[n]['pcs'] = tr[n]['pcs'] + d; tr[n]['arm'] = s
+            self.arm_snap[s] = (J(f'arm_upper_{s}') + lift, d.copy())
             h = f'{l}_hand'
             if h not in tr: continue
             k = 1.0
@@ -419,7 +427,7 @@ class Converter:
                 k = float(np.clip(np.linalg.norm(J(mcs) - J('hand_' + s)) / max(1e-6, np.linalg.norm(tr[mid]['pcs'] - tr[h]['pcs'])), 0.8, 1.25))
             hp = tr[h]['pcs'].copy()
             for n in subtree(h):
-                tr[n]['pcs'] = J('hand_' + s) + (tr[n]['pcs'] - hp) * k
+                tr[n]['pcs'] = J('hand_' + s) + lift + (tr[n]['pcs'] - hp) * k
                 tr[n]['along'] = sc * k
             self.hand_scale[s] = round(k, 3)
         # Head on CS2's head joint (6 Nov): GMod heads pivot ~4 u below CS2's head_0 (shorter HL2 necks). CS2's poses turn and
@@ -437,7 +445,12 @@ class Converter:
             self.own_joints = {}
             for n in tr:
                 cs = VB2CS.get(n)
-                if cs and cs not in self.own_joints: self.own_joints[cs] = tr[n]['pcs'].copy()
+                if cs and cs not in self.own_joints and cs.startswith(OWN_PARTS): self.own_joints[cs] = tr[n]['pcs'].copy()
+            for s, lift in self.arm_lift.items():       # the arm chain: CS2's joints, at the model's shoulder height
+                if not lift.any(): continue
+                for j in self.t.joints:
+                    if j.endswith('_' + s) and j.startswith(('clavicle', 'arm_upper', 'arm_lower', 'hand', 'finger', 'weapon_hand')):
+                        self.own_joints[j] = J(j) + lift
         return self._assign(tr)
 
     def transforms_fit(self):
@@ -573,6 +586,16 @@ class Converter:
                 V[sel] += W[sel, k:k + 1] * self.move(V0[sel], t, g)
                 N[sel] += W[sel, k:k + 1] * (N0[sel] @ t['R'].T)
         N /= np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-9)
+        # Shoulder blend: the arm moved onto CS2's shoulder as one piece, but chest, trap and armpit vertices skinned to the torso
+        # stayed put, so the skin between stretched or caved in (skink52, in game: the NCR ranger's traps, Rogue's armpit). Torso
+        # vertices near the shoulder follow the arm's move, fading to nothing SHOULDER_BLEND u away; joints and weapon poses as before.
+        if SHOULDER_BLEND > 0 and getattr(self, 'arm_snap', None):
+            for side, (sh, d) in self.arm_snap.items():
+                armw = np.zeros(len(V))
+                for k in range(3):
+                    armw += W[:, k] * np.array([self.tr_by_bone[b].get('arm') == side for b in B[:, k]])
+                f = np.clip(1 - np.linalg.norm(V - sh, axis=1) / SHOULDER_BLEND, 0, 1) * np.clip(1 - armw, 0, 1)
+                V += f[:, None] * d
         # CS2 weights: by bone, then spread along the twist chains
         J = self.t.J
         weights = []
@@ -1132,6 +1155,8 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
                 Q[i] += x / tot * (Rp @ (Rb.T @ (V[i] - tb)) + tp_)
         render(Q, UV, groups, os.path.join(preview, slug + '_posed.png'), views=('front', 'three', 'side'), H=700,
                label='%s  skinned to the template preview pose' % slug)
+        import poses                     # every pose on one sheet: shooting (CS2's), run, crouch, arms up, twist; textured
+        poses.pose_sheet(t, V, UV, groups, weights, os.path.join(preview, slug + '_poses.png'), slug)
         # the source model as it was (turned to face +X), for comparison
         V0 = m.V[used] @ conv.G.T; V0[:, 2] -= conv.floor
         render(V0, m.UV[used], [(np.asarray(f), texs[k]) for f, k in zip(sets_src, names)], os.path.join(preview, slug + '_source.png'), views=('front', 'side'), H=700,

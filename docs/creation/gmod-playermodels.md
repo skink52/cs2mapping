@@ -180,11 +180,21 @@ template's gloves), the ragdoll, and the rifle hand on bulky-torso models.
   grim reaper's robe, Rogue): every material is `csgo_character` now (279 models reconverted). Skeleton test (`skeltest`, css_swat
   with knee bones 8 u lower): it bent at the lower knee with grounded feet, so **CS2 keeps a model's bone lengths**. That would let
   the converter keep each model's own joint positions (no bends mid-thigh, no head drag, cartoon proportions possible): next step.
-- **Own joints (`--own`, mode 'own'; not the default yet):** CS2's joints go to the model's own joints (CS2's bone names,
-  hierarchy and bind orientations kept), instead of the model's limbs being moved onto CS2's joints. Arms, knees and the neck then
-  pivot where the model has them (the NCR ranger's shoulders were pulled down by the arm snap; long legs bent mid-thigh). Twist
-  bones are spread along their limbs; limb hit box capsules are stretched to the model's limb lengths; the head capsule gets the
-  usual shift from the model's head joint. Previews look right (NCR ranger, Wesker); waiting for an in-game check before switching.
+- **Default mode 'own' (6 Nov 2026, from skink52's in-game and still-pose reviews):**
+  - **Legs on the model's own joints** (`OWN_PARTS`: leg_*, ankle_*, ball_*): CS2's leg joints go to where the model has them, so
+    knees and hips bend at the model's own joints. Better on Wesker, the NCR ranger and Rogue in game; worse on cartoon feet, so
+    `"fun": true` models stay 'rigid' (catalog `"mode"` overrides either way).
+  - **Arms on CS2's pivots across, at the model's own height** (`ARM_KEEP_HEIGHT`): own arm joints (the model's narrower shoulders,
+    own arm lengths) put the hands off the gun in CS2's weapon poses, so each arm still moves onto CS2's shoulder sideways and
+    forward, but keeps the model's shoulder height; CS2's arm joints are raised or lowered to it. Fixes the dropped shoulders and
+    traps (the NCR ranger's arms had moved 4.9 u down) and Rogue's caved armpit. Third person: the gun sits that much higher or lower.
+  - **Shoulder blend** (`SHOULDER_BLEND` 7 u): torso vertices near a moved shoulder follow the arm's move, fading out.
+  - Neck and head stay on CS2's joints (own neck joints stretched the NCR ranger's neck); torso recentring as before.
+  - Rejected in game: everything on own joints (hands converge in front of the chest), the head snapped onto CS2's head joint.
+- **Pose sheets:** every model's previews include `<slug>_poses.png`: CS2's shooting pose, a running stride, a deep crouch, arms
+  raised overhead (shoulders, armpits) and a body twist with the head turned (neck), textured, in one fixed frame (`poses.py`).
+- **Backup:** the library as it was before the 6 Nov shoulder-fix reconversion (content + game addon, reports) is on
+  `E:\backup\gmod_playermodels_2026-11-06` (11 GB). Any model can also be rebuilt the old way with `"mode": "rigid"`.
 - **Duplicates are kept and flagged** (skink52): `dupes.py` writes `possible_dupes`, shown as "possible duplicate of `<id>`" in the
   warnings of MODELS.md and the server catalog. Score: quality (vertices up to 40k, minus flat textures) + ratings (log lifetime
   subscribers and favourites from Steam's GetPublishedFileDetails, no key needed).
