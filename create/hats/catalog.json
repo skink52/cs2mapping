@@ -119,8 +119,8 @@
    "name": "Fedora",
    "batch": 1,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -135,9 +135,8 @@
    "name": "Aviators",
    "batch": 1,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -147,9 +146,8 @@
    "name": "Sombrero",
    "batch": 1,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -164,9 +162,8 @@
     1.5
    ],
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -176,10 +173,8 @@
    "name": "Santa Hat",
    "batch": 1,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "rotated 90 degrees right (anatomical)",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -199,8 +194,8 @@
    "name": "Cowboy Hat",
    "batch": 1,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     1.0,
@@ -221,8 +216,8 @@
    ],
    "scale": 0.9,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -232,9 +227,8 @@
    "name": "Arnold Mask",
    "batch": 1,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -258,8 +252,8 @@
     -3.5
    ],
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "scale": 0.77
   },
@@ -289,9 +283,8 @@
    "name": "Cat Ears",
    "batch": 1,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -316,9 +309,8 @@
    "batch": 1,
    "verts": 290,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -330,8 +322,8 @@
    "verts": 1039,
    "scale": 0.75,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     2.0,
@@ -366,9 +358,8 @@
    "batch": 1,
    "verts": 3044,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -399,8 +390,8 @@
     0.5
    ],
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -411,10 +402,8 @@
    "batch": 1,
    "verts": 1901,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "couple units back",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     -2.0,
@@ -430,10 +419,8 @@
    "batch": 1,
    "verts": 909,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "couple units back",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     -2.0,
@@ -459,9 +446,8 @@
    "batch": 1,
    "verts": 556,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -477,8 +463,8 @@
     4.5
    ],
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -489,9 +475,8 @@
    "batch": 1,
    "verts": 232,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -502,9 +487,8 @@
    "batch": 1,
    "verts": 608,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -522,7 +506,9 @@
     2.0,
     0,
     0.5
-   ]
+   ],
+   "chosen": false,
+   "skip_reason": "skink52 review 4 (6 Nov): drop"
   },
   {
    "id": "majorasmask",
@@ -532,8 +518,8 @@
    "batch": 1,
    "verts": 191,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     1.0,
@@ -549,9 +535,8 @@
    "batch": 1,
    "verts": 343,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -562,8 +547,8 @@
    "batch": 1,
    "verts": 253,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     2.0,
@@ -579,9 +564,8 @@
    "batch": 1,
    "verts": 882,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -592,8 +576,8 @@
    "batch": 1,
    "verts": 558,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     1.0,
@@ -609,11 +593,11 @@
    "batch": 1,
    "verts": 296,
    "review": {
-    "round": 3,
+    "round": 4,
     "verdict": "off"
    },
    "offset": [
-    1.0,
+    1.7,
     0,
     -2.0
    ]
@@ -626,8 +610,8 @@
    "batch": 1,
    "verts": 290,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     1.0,
@@ -643,9 +627,8 @@
    "batch": 1,
    "verts": 290,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -656,9 +639,8 @@
    "batch": 1,
    "verts": 1395,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -669,9 +651,8 @@
    "batch": 1,
    "verts": 2240,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -682,9 +663,8 @@
    "batch": 1,
    "verts": 1645,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -701,9 +681,8 @@
     -0.5
    ],
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -714,10 +693,8 @@
    "batch": 1,
    "verts": 138,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "note": "1 unit forward",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -729,9 +706,8 @@
    "verts": 50,
    "scale": 0.55,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -742,9 +718,8 @@
    "batch": 1,
    "verts": 50,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -756,9 +731,8 @@
    "verts": 374,
    "scale": 0.8,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -769,8 +743,8 @@
    "batch": 1,
    "verts": 1020,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.5,
@@ -805,8 +779,8 @@
    "batch": 1,
    "verts": 5793,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -822,8 +796,8 @@
    "batch": 1,
    "verts": 5244,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -839,8 +813,8 @@
    "batch": 1,
    "verts": 5369,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -856,8 +830,8 @@
    "batch": 1,
    "verts": 5020,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -873,9 +847,8 @@
    "batch": 1,
    "verts": 752,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -919,10 +892,8 @@
    "batch": 1,
    "verts": 45,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "2 units forward",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     2.0,
@@ -938,9 +909,8 @@
    "batch": 1,
    "verts": 1068,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -951,9 +921,8 @@
    "batch": 1,
    "verts": 1318,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -978,9 +947,8 @@
    "batch": 1,
    "verts": 1800,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -991,9 +959,8 @@
    "batch": 1,
    "verts": 786,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1109,8 +1076,8 @@
    "batch": 1,
    "verts": 588,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     1.0,
@@ -1140,8 +1107,8 @@
    "batch": 1,
    "verts": 928,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -1158,8 +1125,8 @@
    "batch": 1,
    "verts": 396,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -1206,9 +1173,8 @@
    "batch": 1,
    "verts": 538,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1219,8 +1185,8 @@
    "batch": 1,
    "verts": 432,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -1261,9 +1227,8 @@
     -1
    ],
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1275,8 +1240,8 @@
    "verts": 3075,
    "scale": 1.56,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     2.0,
@@ -1330,8 +1295,8 @@
    "batch": 1,
    "verts": 434,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -1348,9 +1313,8 @@
    "batch": 1,
    "verts": 1228,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1361,10 +1325,8 @@
    "batch": 1,
    "verts": 1103,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "note": "2 forward",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1389,10 +1351,8 @@
    "batch": 1,
    "verts": 856,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "3 forward",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     3.0,
@@ -1413,9 +1373,8 @@
     -3
    ],
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1440,10 +1399,8 @@
    "batch": 1,
    "verts": 754,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "3 units up",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -1515,8 +1472,8 @@
    "batch": 1,
    "verts": 1372,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     1.0,
@@ -1576,9 +1533,8 @@
    "verts": 338,
    "kind": "mask",
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1589,9 +1545,8 @@
    "batch": 1,
    "verts": 2242,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1603,9 +1558,8 @@
    "verts": 1464,
    "kind": "mask",
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1649,9 +1603,8 @@
    "batch": 1,
    "verts": 1118,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1676,8 +1629,8 @@
    "batch": 1,
    "verts": 10700,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     2.0,
@@ -1698,8 +1651,8 @@
     -3.0
    ],
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "off (no note)"
    }
   },
   {
@@ -1710,9 +1663,8 @@
    "batch": 1,
    "verts": 131,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1723,12 +1675,12 @@
    "batch": 1,
    "verts": 1407,
    "offset": [
-    4.0,
+    5.0,
     0,
     1.0
    ],
    "review": {
-    "round": 3,
+    "round": 4,
     "verdict": "off"
    },
    "rotate": [
@@ -1760,8 +1712,8 @@
    "batch": 1,
    "verts": 97,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     3.0,
@@ -1777,8 +1729,8 @@
    "batch": 1,
    "verts": 1074,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     2.0,
@@ -1795,8 +1747,8 @@
    "batch": 1,
    "verts": 252,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     2.0,
@@ -1812,8 +1764,8 @@
    "batch": 1,
    "verts": 288,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     1.5,
@@ -1844,8 +1796,8 @@
    "batch": 1,
    "verts": 64,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     1.0,
@@ -1867,8 +1819,8 @@
    "batch": 1,
    "verts": 281,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.5,
@@ -1885,9 +1837,8 @@
    "verts": 280,
    "scale": 0.75,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1898,9 +1849,8 @@
    "batch": 1,
    "verts": 99,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -1925,8 +1875,8 @@
    "batch": 1,
    "verts": 312,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -1942,8 +1892,8 @@
    "batch": 1,
    "verts": 378,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -2029,8 +1979,8 @@
    "batch": 1,
    "verts": 865,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     -1.0,
@@ -2047,8 +1997,8 @@
    "batch": 1,
    "verts": 863,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -2444,8 +2394,8 @@
     -4.0
    ],
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -2461,8 +2411,8 @@
     -3.0
    ],
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -2473,9 +2423,8 @@
    "batch": 1,
    "verts": 1661,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -2488,10 +2437,10 @@
    "offset": [
     1.0,
     0,
-    -16.0
+    -15.0
    ],
    "review": {
-    "round": 3,
+    "round": 4,
     "verdict": "off"
    },
    "scale": 0.8
@@ -2504,8 +2453,8 @@
    "batch": 1,
    "verts": 444,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -2536,8 +2485,8 @@
    "batch": 1,
    "verts": 400,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -2553,8 +2502,8 @@
    "batch": 1,
    "verts": 400,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -2570,8 +2519,8 @@
    "batch": 1,
    "verts": 665,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     0.0,
@@ -2629,9 +2578,8 @@
    "batch": 1,
    "verts": 1393,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -2709,12 +2657,12 @@
    "batch": 1,
    "verts": 1507,
    "offset": [
-    1.5,
+    1.0,
     0,
     -7.5
    ],
    "review": {
-    "round": 3,
+    "round": 4,
     "verdict": "off"
    }
   },
@@ -2762,8 +2710,8 @@
     -10.0
    ],
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -2779,8 +2727,8 @@
     -6.0
    ],
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -2862,10 +2810,8 @@
    "batch": 1,
    "verts": 6032,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "forward 3",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     3.0,
@@ -2881,8 +2827,8 @@
    "batch": 1,
    "verts": 6726,
    "review": {
-    "round": 2,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     3.0,
@@ -2898,8 +2844,8 @@
    "batch": 1,
    "verts": 5848,
    "review": {
-    "round": 3,
-    "verdict": "off"
+    "round": 4,
+    "verdict": "ok"
    },
    "offset": [
     2.5,
@@ -2915,9 +2861,8 @@
    "batch": 1,
    "verts": 6102,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -2934,9 +2879,8 @@
    ],
    "scale": 0.9,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -2953,9 +2897,8 @@
    ],
    "scale": 0.9,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -2972,9 +2915,8 @@
    ],
    "scale": 0.9,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -2991,9 +2933,8 @@
    ],
    "scale": 0.9,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {
@@ -3004,9 +2945,8 @@
    "batch": 1,
    "verts": 2000,
    "review": {
-    "round": 1,
-    "verdict": "ok",
-    "round2": "ok"
+    "round": 4,
+    "verdict": "ok"
    }
   },
   {

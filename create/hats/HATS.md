@@ -1,6 +1,6 @@
 # Converted hats
 
-103 hats (103 compiled), from `catalog.json` by `listhats.py`. Each picture: a stock CS2 agent (tm_leet_variantf) three-quarter
+102 hats (102 compiled), from `catalog.json` by `listhats.py`. Each picture: a stock CS2 agent (tm_leet_variantf) three-quarter
 and side, and Gordon (a GMod conversion, with his fit choice). Paths: `models/hats/<id>/<id>.vmdl` in the `gmod_hats` addon.
 How they are placed: [docs/creation/gmod-hats.md](../../docs/creation/gmod-hats.md). Rights: private testing until the author agrees.
 
@@ -26,13 +26,12 @@ How they are placed: [docs/creation/gmod-hats.md](../../docs/creation/gmod-hats.
 | ![](img/afro.jpg) | `afro` Afro 2 | hat | Pointshop lua; offset [-1.5, 0, 4.5] | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | ![](img/kfcbucket.jpg) | `kfcbucket` KFC Bucket | mask | Pointshop lua | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | ![](img/klienerglasses.jpg) | `klienerglasses` Kleiner Glasses | glasses | Pointshop lua | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
-| ![](img/linkhat.jpg) | `linkhat` Link Hat | hat | Pointshop lua; offset [2.0, 0, 0.5] | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | ![](img/majorasmask.jpg) | `majorasmask` Majoras Mask | mask | Pointshop lua; offset [1.0, 0, 0.0] | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | ![](img/midnahat.jpg) | `midnahat` Midna Hat | hat | Pointshop lua | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | ![](img/seusshat.jpg) | `seusshat` Seuss Hat | hat | Pointshop lua; offset [2.0, 0, -2.0] | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | ![](img/starglasses.jpg) | `starglasses` Star Glasses | glasses | Pointshop lua | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | ![](img/toetohat.jpg) | `toetohat` Toeto Hat | hat | Pointshop lua; offset [1.0, 0, 0.0] | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
-| ![](img/tophat.jpg) | `tophat` Tophat | hat | Pointshop lua; offset [1.0, 0, -2.0] | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
+| ![](img/tophat.jpg) | `tophat` Tophat | hat | Pointshop lua; offset [1.7, 0, -2.0] | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | ![](img/witchhat.jpg) | `witchhat` Witch Hat | hat | Pointshop lua; offset [1.0, 0, 0.0] | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | ![](img/highhat.jpg) | `highhat` tophat | hat | Pointshop lua | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | ![](img/horsiemask.jpg) | `horsiemask` HorseMask | mask | Pointshop lua | compiled | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
@@ -75,7 +74,7 @@ How they are placed: [docs/creation/gmod-hats.md](../../docs/creation/gmod-hats.
 | ![](img/turkey.jpg) | `turkey` Turkey | hat | autofit hat (scale 1.07); offset [2.0, 0, 4.0] | compiled | [GMod Tower: Accessories Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=148215278) by MacDGuy |
 | ![](img/billyhatcherhat.jpg) | `billyhatcherhat` Billyhatcherhat | hat | autofit hat (scale 0.85); offset [-9.0, 0, -3.0] | compiled | [GMod Tower: Accessories Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=148215278) by MacDGuy |
 | ![](img/blackmage_hat.jpg) | `blackmage_hat` Blackmage Hat | hat | autofit hat (scale 0.40) | compiled | [GMod Tower: Accessories Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=148215278) by MacDGuy |
-| ![](img/cuboneskull.jpg) | `cuboneskull` Cuboneskull | mask | autofit mask (scale 0.84); offset [4.0, 0, 1.0], rotate [30, 0, 0], scale 1.1 | compiled | [GMod Tower: Accessories Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=148215278) by MacDGuy |
+| ![](img/cuboneskull.jpg) | `cuboneskull` Cuboneskull | mask | autofit mask (scale 0.84); offset [5.0, 0, 1.0], rotate [30, 0, 0], scale 1.1 | compiled | [GMod Tower: Accessories Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=148215278) by MacDGuy |
 | ![](img/generalpepperhat.jpg) | `generalpepperhat` Generalpepperhat | hat | autofit hat (scale 0.83); offset [3.0, 0, 0.0] | compiled | [GMod Tower: Accessories Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=148215278) by MacDGuy |
 | ![](img/keatonmask.jpg) | `keatonmask` Keatonmask | mask | autofit mask (scale 0.60); offset [2.0, 0, 2.0], scale 1.2 | compiled | [GMod Tower: Accessories Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=148215278) by MacDGuy |
 | ![](img/klonoahat.jpg) | `klonoahat` Klonoahat | hat | autofit hat (scale 0.89); offset [2.0, 0, 0.0] | compiled | [GMod Tower: Accessories Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=148215278) by MacDGuy |
@@ -91,13 +90,13 @@ How they are placed: [docs/creation/gmod-hats.md](../../docs/creation/gmod-hats.
 | ![](img/legendary_cap_female.jpg) | `legendary_cap_female` Legendary Cap Female | hat | autofit hat (scale 0.59); offset [3.0, 0, -4.0] | compiled | [Splatoon Full Hats Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=889681148) by FissionMetroid101 |
 | ![](img/legendary_cap_male.jpg) | `legendary_cap_male` Legendary Cap Male | hat | autofit hat (scale 0.51); offset [2.0, 0, -3.0] | compiled | [Splatoon Full Hats Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=889681148) by FissionMetroid101 |
 | ![](img/octoling_goggles.jpg) | `octoling_goggles` Octoling Goggles | glasses | autofit glasses (scale 0.35) | compiled | [Splatoon Full Hats Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=889681148) by FissionMetroid101 |
-| ![](img/bamboo_hat.jpg) | `bamboo_hat` Bamboo Hat | hat | autofit hat (scale 0.99); offset [1.0, 0, -16.0], scale 0.8 | compiled | [Splatoon Full Hats Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=889681148) by FissionMetroid101 |
+| ![](img/bamboo_hat.jpg) | `bamboo_hat` Bamboo Hat | hat | autofit hat (scale 0.99); offset [1.0, 0, -15.0], scale 0.8 | compiled | [Splatoon Full Hats Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=889681148) by FissionMetroid101 |
 | ![](img/blowfish_bell_hat.jpg) | `blowfish_bell_hat` Blowfish Bell Hat | hat | autofit hat (scale 0.52); offset [0.0, 0, -2.0] | compiled | [Splatoon Full Hats Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=889681148) by FissionMetroid101 |
 | ![](img/straw_boaters_female.jpg) | `straw_boaters_female` Straw Boaters Female | hat | autofit hat (scale 0.47); offset [0.0, 0, 0.0] | compiled | [Splatoon Full Hats Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=889681148) by FissionMetroid101 |
 | ![](img/straw_boaters_male.jpg) | `straw_boaters_male` Straw Boaters Male | hat | autofit hat (scale 0.53); offset [0.0, 0, -1.0] | compiled | [Splatoon Full Hats Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=889681148) by FissionMetroid101 |
 | ![](img/treasure_hunter.jpg) | `treasure_hunter` Treasure Hunter | hat | autofit hat (scale 0.45); offset [0.0, 0, -1.0] | compiled | [Splatoon Full Hats Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=889681148) by FissionMetroid101 |
 | ![](img/skate_helmets.jpg) | `skate_helmets` Skate Helmets | mask | autofit mask (scale 0.46) | compiled | [Splatoon Full Hats Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=889681148) by FissionMetroid101 |
-| ![](img/warrior_headdress.jpg) | `warrior_headdress` Warrior Headdress | hat | autofit hat (scale 0.37); offset [1.5, 0, -7.5] | compiled | [Splatoon Full Hats Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=889681148) by FissionMetroid101 |
+| ![](img/warrior_headdress.jpg) | `warrior_headdress` Warrior Headdress | hat | autofit hat (scale 0.37); offset [1.0, 0, -7.5] | compiled | [Splatoon Full Hats Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=889681148) by FissionMetroid101 |
 | ![](img/jojo_hat_black.jpg) | `jojo_hat_black` Jojo Hat Black | hat | autofit hat (scale 1.70); offset [-3.0, 0, -10.0], scale 0.64 | compiled | [JoJo Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1430106952) by Goonya |
 | ![](img/jojo_hat_white.jpg) | `jojo_hat_white` Jojo Hat White | hat | autofit hat (scale 1.22); offset [1.0, 0, -6.0] | compiled | [JoJo Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1430106952) by Goonya |
 | ![](img/maskjeanclaude.jpg) | `maskjeanclaude` Maskjeanclaude | mask | autofit mask (scale 0.91); offset [3.0, 0, 0.0] | compiled | [Animal masks from PAYDAY 2](https://steamcommunity.com/sharedfiles/filedetails/?id=282958377) by Snowz |
@@ -120,6 +119,7 @@ How they are placed: [docs/creation/gmod-hats.md](../../docs/creation/gmod-hats.
 | `beerhat` | beerhat | skink52 review 2 (6 Nov): drop | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | `cakehat` | Cake Hat | skink52 review 1 (6 Nov): drop | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | `gaypolicehat` | Gaypolicehat | recoloured police hat, autofit far too big | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
+| `linkhat` | Link Hat | skink52 review 4 (6 Nov): drop | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | `salesmanhat` | Salesmanhat | skink52 review 1 (6 Nov): drop | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | `vikinghelmet` | Viking Helmet | skink52 review 1 (6 Nov): drop | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
 | `viroshat` | big hat | skink52 review 1 (6 Nov): drop | [Rebels of Gaming Pointshop Hats](https://steamcommunity.com/sharedfiles/filedetails/?id=1083257553) by Xatos |
