@@ -119,12 +119,11 @@
    "name": "Fedora",
    "batch": 1,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "too far back, blends into gordons forehead. looks good on agent though."
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    2.0,
+    0.0,
     0,
     0.0
    ]
@@ -137,7 +136,8 @@
    "batch": 1,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -148,7 +148,8 @@
    "batch": 1,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -164,7 +165,8 @@
    ],
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -176,7 +178,8 @@
    "review": {
     "round": 1,
     "verdict": "off",
-    "note": "rotated 90 degrees right (anatomical)"
+    "note": "rotated 90 degrees right (anatomical)",
+    "round2": "ok"
    },
    "offset": [
     0.0,
@@ -215,13 +218,12 @@
    "offset": [
     0.0,
     0,
-    -6.5
+    -5.5
    ],
    "scale": 0.9,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "unit or so too high."
+    "round": 2,
+    "verdict": "off"
    }
   },
   {
@@ -232,7 +234,8 @@
    "batch": 1,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -251,14 +254,13 @@
    "name": "Beanie",
    "batch": 1,
    "offset": [
-    0.0,
+    1.0,
     0,
     -3.5
    ],
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "very large, maybe 30% larger than needed, sits slightly too high"
+    "round": 2,
+    "verdict": "off"
    },
    "scale": 0.77
   },
@@ -269,16 +271,17 @@
    "name": "Headphones",
    "batch": 1,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "really large, ~10 units too low. maybe reduce size 20%"
+    "round": 2,
+    "verdict": "drop"
    },
    "offset": [
     0.0,
     0,
     8.0
    ],
-   "scale": 0.8
+   "scale": 0.8,
+   "chosen": false,
+   "skip_reason": "skink52 review 2 (6 Nov): drop"
   },
   {
    "id": "catears",
@@ -288,7 +291,8 @@
    "batch": 1,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -314,7 +318,8 @@
    "verts": 290,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -326,14 +331,13 @@
    "verts": 1039,
    "scale": 0.75,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "too high, slightly too far back. needs to go down?from length of agents nose to bottom of beard/chin. ~2 units forward."
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     2.0,
     0,
-    -7.5
+    -1.34
    ]
   },
   {
@@ -344,15 +348,16 @@
    "batch": 1,
    "verts": 2442,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "3 or so units too low"
+    "round": 2,
+    "verdict": "drop"
    },
    "offset": [
     0.0,
     0,
     3.0
-   ]
+   ],
+   "chosen": false,
+   "skip_reason": "skink52 review 2 (6 Nov): drop"
   },
   {
    "id": "bunnyears",
@@ -363,7 +368,8 @@
    "verts": 3044,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -391,12 +397,11 @@
    "offset": [
     0.0,
     0,
-    3.5
+    0.5
    ],
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "5 units or so too low\n"
+    "round": 2,
+    "verdict": "off"
    }
   },
   {
@@ -409,7 +414,8 @@
    "review": {
     "round": 1,
     "verdict": "off",
-    "note": "couple units back"
+    "note": "couple units back",
+    "round2": "ok"
    },
    "offset": [
     -2.0,
@@ -427,7 +433,8 @@
    "review": {
     "round": 1,
     "verdict": "off",
-    "note": "couple units back"
+    "note": "couple units back",
+    "round2": "ok"
    },
    "offset": [
     -2.0,
@@ -454,7 +461,8 @@
    "verts": 556,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -467,12 +475,11 @@
    "offset": [
     -1.5,
     0,
-    6.5
+    4.5
    ],
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "few units higher ~5"
+    "round": 2,
+    "verdict": "off"
    }
   },
   {
@@ -484,7 +491,8 @@
    "verts": 232,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -496,7 +504,8 @@
    "verts": 608,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -507,14 +516,13 @@
    "batch": 1,
    "verts": 275,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "few units forward. "
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    3.0,
+    1.0,
     0,
-    0.0
+    -1.0
    ]
   },
   {
@@ -525,12 +533,11 @@
    "batch": 1,
    "verts": 191,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "2 units forward"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    2.0,
+    1.0,
     0,
     0.0
    ]
@@ -544,7 +551,8 @@
    "verts": 343,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -555,14 +563,13 @@
    "batch": 1,
    "verts": 253,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "2 units forward"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    2.0,
+    1.0,
     0,
-    0.0
+    -2.0
    ]
   },
   {
@@ -574,7 +581,8 @@
    "verts": 882,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -585,14 +593,13 @@
    "batch": 1,
    "verts": 558,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "2 units down, 2 forawrd"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    2.0,
+    0.5,
     0,
-    -2.0
+    -1.0
    ]
   },
   {
@@ -603,14 +610,13 @@
    "batch": 1,
    "verts": 296,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "4 down, 2 forward"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     2.0,
     0,
-    -4.0
+    -1.0
    ]
   },
   {
@@ -621,12 +627,11 @@
    "batch": 1,
    "verts": 290,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "4 forward"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    4.0,
+    1.0,
     0,
     0.0
    ]
@@ -640,7 +645,8 @@
    "verts": 290,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -652,7 +658,8 @@
    "verts": 1395,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -664,7 +671,8 @@
    "verts": 2240,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -676,7 +684,8 @@
    "verts": 1645,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -694,7 +703,8 @@
    ],
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -707,7 +717,8 @@
    "review": {
     "round": 1,
     "verdict": "ok",
-    "note": "1 unit forward"
+    "note": "1 unit forward",
+    "round2": "ok"
    }
   },
   {
@@ -720,7 +731,8 @@
    "scale": 0.55,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -732,7 +744,8 @@
    "verts": 50,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -745,7 +758,8 @@
    "scale": 0.8,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -756,14 +770,13 @@
    "batch": 1,
    "verts": 1020,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "2 units up"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    2.0
+    1.0
    ]
   },
   {
@@ -793,14 +806,13 @@
    "batch": 1,
    "verts": 5793,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "4 units up"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    4.0
+    2.0
    ]
   },
   {
@@ -811,14 +823,13 @@
    "batch": 1,
    "verts": 5244,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "4 units up"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    4.0
+    2.0
    ]
   },
   {
@@ -829,14 +840,13 @@
    "batch": 1,
    "verts": 5369,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "4 units up"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    4.0
+    2.0
    ]
   },
   {
@@ -847,14 +857,13 @@
    "batch": 1,
    "verts": 5020,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "4 units up"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    4.0
+    3.0
    ]
   },
   {
@@ -866,7 +875,8 @@
    "verts": 752,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -912,7 +922,8 @@
    "review": {
     "round": 1,
     "verdict": "off",
-    "note": "2 units forward"
+    "note": "2 units forward",
+    "round2": "ok"
    },
    "offset": [
     2.0,
@@ -929,7 +940,8 @@
    "verts": 1068,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -941,7 +953,8 @@
    "verts": 1318,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -967,7 +980,8 @@
    "verts": 1800,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -979,7 +993,8 @@
    "verts": 786,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -1095,14 +1110,13 @@
    "batch": 1,
    "verts": 588,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "3 units down"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    0.0,
+    1.0,
     0,
-    -3.0
+    -1.0
    ]
   },
   {
@@ -1127,15 +1141,15 @@
    "batch": 1,
    "verts": 928,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "5 units down"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    -5.0
-   ]
+    -2.0
+   ],
+   "scale": 0.75
   },
   {
    "id": "cat_hat",
@@ -1145,15 +1159,15 @@
    "batch": 1,
    "verts": 396,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "4-5 units down"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    -4.5
-   ]
+    -1.5
+   ],
+   "scale": 0.9
   },
   {
    "id": "deadmau5",
@@ -1194,7 +1208,8 @@
    "verts": 538,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -1205,15 +1220,15 @@
    "batch": 1,
    "verts": 432,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "4-5 units down"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    -4.5
-   ]
+    -1.5
+   ],
+   "scale": 0.9
   },
   {
    "id": "heartband",
@@ -1248,7 +1263,8 @@
    ],
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -1258,16 +1274,15 @@
    "name": "Pumpkin",
    "batch": 1,
    "verts": 3075,
-   "scale": 1.3,
+   "scale": 1.56,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "3 units up, 3 forward"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    3.0,
+    2.0,
     0,
-    3.0
+    1.0
    ]
   },
   {
@@ -1316,15 +1331,15 @@
    "batch": 1,
    "verts": 434,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "3 forward, 2 up"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    3.0,
+    1.0,
     0,
-    2.0
-   ]
+    1.0
+   ],
+   "scale": 1.2
   },
   {
    "id": "sunhat",
@@ -1335,7 +1350,8 @@
    "verts": 1228,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -1348,7 +1364,8 @@
    "review": {
     "round": 1,
     "verdict": "ok",
-    "note": "2 forward"
+    "note": "2 forward",
+    "round2": "ok"
    }
   },
   {
@@ -1375,7 +1392,8 @@
    "review": {
     "round": 1,
     "verdict": "off",
-    "note": "3 forward"
+    "note": "3 forward",
+    "round2": "ok"
    },
    "offset": [
     3.0,
@@ -1397,7 +1415,8 @@
    ],
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -1424,7 +1443,8 @@
    "review": {
     "round": 1,
     "verdict": "off",
-    "note": "3 units up"
+    "note": "3 units up",
+    "round2": "ok"
    },
    "offset": [
     0.0,
@@ -1496,14 +1516,13 @@
    "batch": 1,
    "verts": 1372,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "10 units down"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    0.0,
+    1.0,
     0,
-    -10.0
+    -9.0
    ]
   },
   {
@@ -1559,7 +1578,8 @@
    "kind": "mask",
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -1571,7 +1591,8 @@
    "verts": 2242,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -1584,7 +1605,8 @@
    "kind": "mask",
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -1629,7 +1651,8 @@
    "verts": 1118,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -1654,14 +1677,13 @@
    "batch": 1,
    "verts": 10700,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "5 units up"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    0.0,
+    2.0,
     0,
-    5.0
+    4.0
    ]
   },
   {
@@ -1672,14 +1694,13 @@
    "batch": 1,
    "verts": 427,
    "offset": [
-    -12.0,
+    -9.0,
     0,
-    -6.0
+    -3.0
    ],
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "15 units back? 3 units down?"
+    "round": 2,
+    "verdict": "off"
    }
   },
   {
@@ -1691,7 +1712,8 @@
    "verts": 131,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -1702,20 +1724,20 @@
    "batch": 1,
    "verts": 1407,
    "offset": [
-    8.0,
+    6.0,
     0,
-    3.0
+    1.0
    ],
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "8 units forward? angle 30deg forward,"
+    "round": 2,
+    "verdict": "off"
    },
    "rotate": [
     30,
     0,
     0
-   ]
+   ],
+   "scale": 1.1
   },
   {
    "id": "thomas",
@@ -1739,12 +1761,11 @@
    "batch": 1,
    "verts": 97,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "forward 5 units\n"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    5.0,
+    2.0,
     0,
     0.0
    ]
@@ -1757,14 +1778,13 @@
    "batch": 1,
    "verts": 1074,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "forward 4, scale up 20%"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    4.0,
+    3.0,
     0,
-    0.0
+    1.0
    ],
    "scale": 1.2
   },
@@ -1776,12 +1796,11 @@
    "batch": 1,
    "verts": 252,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "forward 5 units"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    5.0,
+    2.0,
     0,
     0.0
    ]
@@ -1794,14 +1813,13 @@
    "batch": 1,
    "verts": 288,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 3 units, forward 1 unit"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     1.0,
     0,
-    -3.0
+    -2.0
    ]
   },
   {
@@ -1827,12 +1845,11 @@
    "batch": 1,
    "verts": 64,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "angle down 15 deg, forward 5, up 2"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    5.0,
+    4.0,
     0,
     2.0
    ],
@@ -1840,7 +1857,8 @@
     15,
     0,
     0
-   ]
+   ],
+   "scale": 1.5
   },
   {
    "id": "mariohat_2",
@@ -1850,14 +1868,13 @@
    "batch": 1,
    "verts": 281,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 3, foward 2"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     2.0,
     0,
-    -3.0
+    -1.0
    ]
   },
   {
@@ -1870,7 +1887,8 @@
    "scale": 0.75,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -1882,7 +1900,8 @@
    "verts": 99,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -1907,14 +1926,13 @@
    "batch": 1,
    "verts": 312,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 5"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    -5.0
+    -3.0
    ]
   },
   {
@@ -1925,14 +1943,13 @@
    "batch": 1,
    "verts": 378,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "up 10"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    10.0
+    5.0
    ]
   },
   {
@@ -2013,15 +2030,15 @@
    "batch": 1,
    "verts": 865,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "drop 20"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
     -8.0
-   ]
+   ],
+   "scale": 0.8
   },
   {
    "id": "bandanas_male",
@@ -2031,15 +2048,15 @@
    "batch": 1,
    "verts": 863,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "drop 20"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
     -8.0
-   ]
+   ],
+   "scale": 0.8
   },
   {
    "id": "bobble_hats",
@@ -2285,15 +2302,16 @@
    "batch": 1,
    "verts": 612,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 8 forward 3"
+    "round": 2,
+    "verdict": "drop"
    },
    "offset": [
     3.0,
     0,
     -8.0
-   ]
+   ],
+   "chosen": false,
+   "skip_reason": "skink52 review 2 (6 Nov): drop"
   },
   {
    "id": "soccer_headband_male",
@@ -2303,15 +2321,16 @@
    "batch": 1,
    "verts": 612,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 4 forward 3"
+    "round": 2,
+    "verdict": "drop"
    },
    "offset": [
     3.0,
     0,
     -4.0
-   ]
+   ],
+   "chosen": false,
+   "skip_reason": "skink52 review 2 (6 Nov): drop"
   },
   {
    "id": "sweatbands",
@@ -2421,14 +2440,13 @@
    "batch": 1,
    "verts": 1207,
    "offset": [
-    4.0,
+    2.0,
     0,
     -4.0
    ],
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "forward 4 down 2"
+    "round": 2,
+    "verdict": "off"
    }
   },
   {
@@ -2439,14 +2457,13 @@
    "batch": 1,
    "verts": 1451,
    "offset": [
-    4.0,
+    1.0,
     0,
-    -4.0
+    -2.0
    ],
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "forward 4 down 2"
+    "round": 2,
+    "verdict": "off"
    }
   },
   {
@@ -2458,7 +2475,8 @@
    "verts": 1661,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -2469,14 +2487,13 @@
    "batch": 1,
    "verts": 649,
    "offset": [
-    0.0,
+    1.0,
     0,
     -16.0
    ],
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 10"
+    "round": 2,
+    "verdict": "off"
    }
   },
   {
@@ -2487,14 +2504,13 @@
    "batch": 1,
    "verts": 444,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 5"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    -5.0
+    -2.0
    ]
   },
   {
@@ -2520,14 +2536,13 @@
    "batch": 1,
    "verts": 400,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 2"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    -2.0
+    -1.0
    ]
   },
   {
@@ -2538,14 +2553,13 @@
    "batch": 1,
    "verts": 400,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 2"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    -2.0
+    -1.0
    ]
   },
   {
@@ -2556,14 +2570,13 @@
    "batch": 1,
    "verts": 665,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 2"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
-    0.0,
+    1.0,
     0,
-    -2.0
+    -1.0
    ]
   },
   {
@@ -2617,7 +2630,8 @@
    "verts": 1393,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -2697,12 +2711,11 @@
    "offset": [
     0.0,
     0,
-    -10.5
+    -7.5
    ],
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 8"
+    "round": 2,
+    "verdict": "off"
    }
   },
   {
@@ -2746,12 +2759,11 @@
    "offset": [
     -3.0,
     0,
-    -13.0
+    -10.0
    ],
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 10, back 3"
+    "round": 2,
+    "verdict": "off"
    }
   },
   {
@@ -2762,14 +2774,13 @@
    "batch": 1,
    "verts": 685,
    "offset": [
-    -3.0,
+    -1.0,
     0,
-    -13.0
+    -8.0
    ],
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 10 back 3"
+    "round": 2,
+    "verdict": "off"
    }
   },
   {
@@ -2853,7 +2864,8 @@
    "review": {
     "round": 1,
     "verdict": "off",
-    "note": "forward 3"
+    "note": "forward 3",
+    "round2": "ok"
    },
    "offset": [
     3.0,
@@ -2869,14 +2881,13 @@
    "batch": 1,
    "verts": 6726,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "forward 3"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     3.0,
     0,
-    0.0
+    -1.0
    ]
   },
   {
@@ -2887,14 +2898,13 @@
    "batch": 1,
    "verts": 5848,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "down 3 forward 4"
+    "round": 2,
+    "verdict": "off"
    },
    "offset": [
     4.0,
     0,
-    -3.0
+    -2.0
    ]
   },
   {
@@ -2906,7 +2916,8 @@
    "verts": 6102,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -2924,7 +2935,8 @@
    "scale": 0.9,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -2942,7 +2954,8 @@
    "scale": 0.9,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -2960,7 +2973,8 @@
    "scale": 0.9,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -2978,7 +2992,8 @@
    "scale": 0.9,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
@@ -2990,7 +3005,8 @@
    "verts": 2000,
    "review": {
     "round": 1,
-    "verdict": "ok"
+    "verdict": "ok",
+    "round2": "ok"
    }
   },
   {
