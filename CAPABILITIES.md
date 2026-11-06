@@ -102,6 +102,7 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Turn old CS:GO custom player models (e.g. Octodad) into working CS2 player models with proper animations, hitboxes, ragdolls and first-person arms.
 - Download Garry's Mod workshop player models and convert them in a batch into CS2 player models (CS2 animations, hitboxes, ragdoll), with preview pictures and a report per model.
 - Find new Garry's Mod player models on the Workshop that haven't been looked at yet, and test converted models on a server with bots wearing them (hits by body part).
+- Convert Garry's Mod Workshop hats, glasses and masks into CS2 hats a server can put on any player (stock agents or converted models): they follow the head through every animation, sit right on each model's head, and are hidden in the wearer's own first-person view. Placement comes from the items' Pointshop data or is fitted automatically, with a preview picture of each on a CS2 head.
 - Animated characters driven by script, with hand-keyed and motion-capture animation retargeted onto the CS2 skeleton (toolkit: mocap retarget, joint checks, rig model writer; game-specific animation *(project repos)*).
 - Read and preview CS2's built-in textures and models to reuse them.
 

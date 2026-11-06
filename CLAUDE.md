@@ -24,6 +24,7 @@ On the PC, Claude Code runs from `C:\source1` and reaches CS2, `C:\source2` and 
 | Unattended ports, autoport, a port cleanup list | `autoport/` | `autoport/README.md`; `autoport/REVIEW.md` when reviewing held maps |
 | A new original addon | new `projects/<name>/` | `docs/creation/guide.md` |
 | GMod player models, converting player models, playermodel batch | `create/playermodels/` (work folder `C:\source1\playermodels\`) | `docs/creation/gmod-playermodels.md`, `create/playermodels/README.md` |
+| GMod hats, hats/accessories for the shop, hat batch | `create/hats/` (work folder `C:\source1\hats\`) | `docs/creation/gmod-hats.md`, `create/hats/README.md` |
 
 Bomb Arena (BomberClone-style) has no folder yet; create `projects/<name>/` when its source is first committed.
 New projects get their own folder under `projects/`, a README (with the AI disclaimer), the licence files, and a row in this table and in `README.md`.

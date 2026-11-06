@@ -3,6 +3,17 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-06: GMod hats and accessories for the minigames shop (create/hats), first-person legs
+
+- **[create] hats** (new, [docs/creation/gmod-hats.md](docs/creation/gmod-hats.md)): research: CS2 agents have no head attachment, so a
+  hat is a prop **bone-merged** onto the pawn (`FollowEntity`), built on the agent skeleton with every vertex on `head_0`; 12 `fit`
+  bodygroup copies for GMod models' lower heads; hidden for the wearer via CounterStrikeSharp `CheckTransmit`. Converter
+  `hat2cs2.py` (Pointshop lua replayed onto an HL2 citizen and mapped to a stock agent's head; mirror-symmetry facing; autofit by
+  kind; catalog overrides), `browse.py`, `fetch.py --scan`, `suggest.py`, `listhats.py` ([HATS.md](create/hats/HATS.md)).
+  18 Workshop packs, 193 models looked at, 174 hats kept (GMod Tower, Pointshop hat packs, Splatoon gear, PAYDAY masks, JoJo,
+  Hokage hats...). Reference head: tm_leet_variantf from CS2's VPK (`s2/agent_mesh.mjs`). Gotchas: bone merge for head cosmetics,
+  fit copies, CheckTransmit for first person, first-person legs (render alpha 254).
+
 ## 2026-11-06: GMod player models batches 7-8 (396 in all), team tint, head hit box rules
 
 - **[create] playermodels**: batch 7 (40, half fun) and batch 8 (192: every distinct character left in the packs already started).

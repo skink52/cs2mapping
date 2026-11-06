@@ -1,0 +1,1861 @@
+{
+ "about": "GMod Workshop hat/accessory items looked at (items) and the hats picked from them (hats). create/hats/README.md",
+ "paths": {},
+ "items": [
+  {
+   "id": 148215278,
+   "title": "GMod Tower: Accessories Pack",
+   "author": "MacDGuy",
+   "looked_at": 1
+  },
+  {
+   "id": 881305303,
+   "title": "SH Accessories Content",
+   "author": "mochi",
+   "looked_at": 1
+  },
+  {
+   "id": 129736354,
+   "title": "Roblox Hats Pack",
+   "author": "Jake4159",
+   "looked_at": 1
+  },
+  {
+   "id": 889681148,
+   "title": "Splatoon Full Hats Pack",
+   "author": "FissionMetroid101",
+   "looked_at": 1
+  },
+  {
+   "id": 1430106952,
+   "title": "JoJo Hats",
+   "author": "Goonya",
+   "looked_at": 1
+  },
+  {
+   "id": 354739227,
+   "title": "Russian hat/Ushanka prop",
+   "author": "CubicTuxedo",
+   "looked_at": 1
+  },
+  {
+   "id": 1946865004,
+   "title": "Christmas hat",
+   "author": "akronman1",
+   "looked_at": 1
+  },
+  {
+   "id": 723112678,
+   "title": "Pointshop Hats",
+   "author": "Lucifer",
+   "looked_at": 1
+  },
+  {
+   "id": 615626726,
+   "title": "PointShop Hats",
+   "author": "Lucifer",
+   "looked_at": 1
+  },
+  {
+   "id": 245941312,
+   "title": "ZARP Pointshop Pack",
+   "author": "|FP| Chuteuk - Micro",
+   "looked_at": 1
+  },
+  {
+   "id": 166177187,
+   "title": "Horse Mask Prop",
+   "author": "Sleeper",
+   "looked_at": 1
+  },
+  {
+   "id": 282958377,
+   "title": "Animal masks from PAYDAY 2",
+   "author": "Snowz",
+   "looked_at": 1
+  },
+  {
+   "id": 301607701,
+   "title": "Hokage Hats",
+   "author": "Akumetsu",
+   "looked_at": 1
+  },
+  {
+   "id": 207275990,
+   "title": "Knuckles' Hat and Sunglasses",
+   "author": "Hyperchaotix",
+   "looked_at": 1
+  },
+  {
+   "id": 2188556382,
+   "title": "100 Glasses",
+   "author": "Hanitora",
+   "looked_at": 1
+  },
+  {
+   "id": 1083257553,
+   "title": "Rebels of Gaming Pointshop Hats",
+   "author": "Xatos",
+   "looked_at": 1
+  },
+  {
+   "id": 630671996,
+   "title": "Pointshop Custom Content",
+   "author": "nerzlakai96",
+   "looked_at": 1
+  },
+  {
+   "id": 635501783,
+   "title": "PointShop",
+   "author": "crester",
+   "looked_at": 1
+  }
+ ],
+ "hats": [
+  {
+   "id": "fedora_gmt",
+   "item": 630671996,
+   "mdl": "models/gmod_tower/fedorahat.mdl",
+   "name": "Fedora",
+   "batch": 1
+  },
+  {
+   "id": "aviators",
+   "item": 630671996,
+   "mdl": "models/gmod_tower/aviators.mdl",
+   "name": "Aviators",
+   "batch": 1
+  },
+  {
+   "id": "sombrero",
+   "item": 630671996,
+   "mdl": "models/gmod_tower/sombrero.mdl",
+   "name": "Sombrero",
+   "batch": 1
+  },
+  {
+   "id": "afro_ps",
+   "item": 615626726,
+   "mdl": "models/afro/afro.mdl",
+   "name": "Afro",
+   "batch": 1,
+   "offset": [
+    0,
+    0,
+    1.5
+   ]
+  },
+  {
+   "id": "santa_ps",
+   "item": 1083257553,
+   "mdl": "models/santa/santa.mdl",
+   "name": "Santa Hat",
+   "batch": 1
+  },
+  {
+   "id": "cowboy_hat",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/cowboyhat.mdl",
+   "name": "Cowboy Hat",
+   "batch": 1
+  },
+  {
+   "id": "hokage",
+   "item": 301607701,
+   "mdl": "models/hats/hokage.mdl",
+   "name": "Hokage Hat",
+   "batch": 1,
+   "offset": [
+    0,
+    0,
+    -5
+   ],
+   "scale": 0.9
+  },
+  {
+   "id": "mask_arnold",
+   "item": 282958377,
+   "mdl": "models/snowzgmod/payday2/masks/maskarnold.mdl",
+   "name": "Arnold Mask",
+   "batch": 1
+  },
+  {
+   "id": "knuckles_shades",
+   "item": 207275990,
+   "mdl": "models/logan_mccloud_models/ova_props/knuckles_ova_sunglasses.mdl",
+   "name": "Knuckles Shades",
+   "batch": 1,
+   "chosen": false,
+   "skip_reason": "one black blob on a CS2 face"
+  },
+  {
+   "id": "beanie",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/beanies/beanies/beanies.mdl",
+   "name": "Beanie",
+   "batch": 1,
+   "offset": [
+    0,
+    0,
+    -1.5
+   ]
+  },
+  {
+   "id": "headphones",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/headphones.mdl",
+   "name": "Headphones",
+   "batch": 1
+  },
+  {
+   "id": "catears",
+   "item": 630671996,
+   "mdl": "models/gmod_tower/catears.mdl",
+   "name": "Cat Ears",
+   "batch": 1
+  },
+  {
+   "id": "russianhat1",
+   "item": 1083257553,
+   "mdl": "models/russianhat1.mdl",
+   "name": "Russian",
+   "batch": 1,
+   "verts": 482
+  },
+  {
+   "id": "americahat",
+   "item": 1083257553,
+   "mdl": "models/americahat/americahat.mdl",
+   "name": "Murica",
+   "batch": 1,
+   "verts": 290
+  },
+  {
+   "id": "astronauthelmet",
+   "item": 1083257553,
+   "mdl": "models/astronauthelmet/astronauthelmet.mdl",
+   "name": "Astronaut Helmet",
+   "batch": 1,
+   "verts": 1039,
+   "scale": 0.75
+  },
+  {
+   "id": "beerhat",
+   "item": 1083257553,
+   "mdl": "models/beerhat/beerhat.mdl",
+   "name": "beerhat",
+   "batch": 1,
+   "verts": 2442
+  },
+  {
+   "id": "bunnyears",
+   "item": 1083257553,
+   "mdl": "models/bunnyears/bunnyears.mdl",
+   "name": "wierd ears",
+   "batch": 1,
+   "verts": 3044
+  },
+  {
+   "id": "cakehat",
+   "item": 1083257553,
+   "mdl": "models/cakehat/cakehat.mdl",
+   "name": "Cake Hat",
+   "batch": 1,
+   "verts": 335,
+   "autofit": true
+  },
+  {
+   "id": "captainshat",
+   "item": 1083257553,
+   "mdl": "models/captainshat/captainshat.mdl",
+   "name": "Captainshat",
+   "batch": 1,
+   "verts": 1502,
+   "offset": [
+    0,
+    0,
+    -1.5
+   ]
+  },
+  {
+   "id": "ghelm",
+   "item": 1083257553,
+   "mdl": "models/daftpunk/ghelm.mdl",
+   "name": "Daft Punk Hat",
+   "batch": 1,
+   "verts": 1901
+  },
+  {
+   "id": "shelm",
+   "item": 1083257553,
+   "mdl": "models/daftpunk/shelm.mdl",
+   "name": "Daft Punk Hat2",
+   "batch": 1,
+   "verts": 909
+  },
+  {
+   "id": "gaypolicehat",
+   "item": 1083257553,
+   "mdl": "models/gaypolicehat/gaypolicehat.mdl",
+   "name": "Gaypolicehat",
+   "batch": 1,
+   "verts": 3415,
+   "chosen": false,
+   "skip_reason": "recoloured police hat, autofit far too big"
+  },
+  {
+   "id": "3dglasses",
+   "item": 1083257553,
+   "mdl": "models/gmod_tower/3dglasses.mdl",
+   "name": "3D Glasses",
+   "batch": 1,
+   "verts": 556
+  },
+  {
+   "id": "afro",
+   "item": 1083257553,
+   "mdl": "models/gmod_tower/afro.mdl",
+   "name": "Afro 2",
+   "batch": 1,
+   "verts": 1283,
+   "offset": [
+    -1.5,
+    0,
+    1.5
+   ]
+  },
+  {
+   "id": "kfcbucket",
+   "item": 1083257553,
+   "mdl": "models/gmod_tower/kfcbucket.mdl",
+   "name": "KFC Bucket",
+   "batch": 1,
+   "verts": 232
+  },
+  {
+   "id": "klienerglasses",
+   "item": 1083257553,
+   "mdl": "models/gmod_tower/klienerglasses.mdl",
+   "name": "Kleiner Glasses",
+   "batch": 1,
+   "verts": 608
+  },
+  {
+   "id": "linkhat",
+   "item": 1083257553,
+   "mdl": "models/gmod_tower/linkhat.mdl",
+   "name": "Link Hat",
+   "batch": 1,
+   "verts": 275
+  },
+  {
+   "id": "majorasmask",
+   "item": 1083257553,
+   "mdl": "models/gmod_tower/majorasmask.mdl",
+   "name": "Majoras Mask",
+   "batch": 1,
+   "verts": 191
+  },
+  {
+   "id": "midnahat",
+   "item": 1083257553,
+   "mdl": "models/gmod_tower/midnahat.mdl",
+   "name": "Midna Hat",
+   "batch": 1,
+   "verts": 343
+  },
+  {
+   "id": "seusshat",
+   "item": 1083257553,
+   "mdl": "models/gmod_tower/seusshat.mdl",
+   "name": "Seuss Hat",
+   "batch": 1,
+   "verts": 253
+  },
+  {
+   "id": "starglasses",
+   "item": 1083257553,
+   "mdl": "models/gmod_tower/starglasses.mdl",
+   "name": "Star Glasses",
+   "batch": 1,
+   "verts": 882
+  },
+  {
+   "id": "toetohat",
+   "item": 1083257553,
+   "mdl": "models/gmod_tower/toetohat.mdl",
+   "name": "Toeto Hat",
+   "batch": 1,
+   "verts": 558
+  },
+  {
+   "id": "tophat",
+   "item": 1083257553,
+   "mdl": "models/gmod_tower/tophat.mdl",
+   "name": "Tophat",
+   "batch": 1,
+   "verts": 296
+  },
+  {
+   "id": "witchhat",
+   "item": 1083257553,
+   "mdl": "models/gmod_tower/witchhat.mdl",
+   "name": "Witch Hat",
+   "batch": 1,
+   "verts": 290
+  },
+  {
+   "id": "highhat",
+   "item": 1083257553,
+   "mdl": "models/highhat/highhat.mdl",
+   "name": "tophat",
+   "batch": 1,
+   "verts": 290
+  },
+  {
+   "id": "horsiemask",
+   "item": 1083257553,
+   "mdl": "models/horsie/horsiemask.mdl",
+   "name": "HorseMask",
+   "batch": 1,
+   "verts": 1395
+  },
+  {
+   "id": "ledmau5",
+   "item": 1083257553,
+   "mdl": "models/ledmau5/ledmau5.mdl",
+   "name": "dea5",
+   "batch": 1,
+   "verts": 2240
+  },
+  {
+   "id": "mariohat",
+   "item": 1083257553,
+   "mdl": "models/mariohat/mariohat.mdl",
+   "name": "mariohat",
+   "batch": 1,
+   "verts": 1645
+  },
+  {
+   "id": "mushroom",
+   "item": 1083257553,
+   "mdl": "models/mushroom/mushroom.mdl",
+   "name": "Mushroom",
+   "batch": 1,
+   "verts": 464,
+   "scale": 0.65,
+   "offset": [
+    0,
+    0,
+    -0.5
+   ]
+  },
+  {
+   "id": "paperbag",
+   "item": 1083257553,
+   "mdl": "models/paperbag/paperbag.mdl",
+   "name": "bag",
+   "batch": 1,
+   "verts": 138
+  },
+  {
+   "id": "partyhat",
+   "item": 1083257553,
+   "mdl": "models/partyhat/partyhat.mdl",
+   "name": "Partyhat",
+   "batch": 1,
+   "verts": 50,
+   "scale": 0.55
+  },
+  {
+   "id": "partyhat2",
+   "item": 1083257553,
+   "mdl": "models/partyhat2/partyhat2.mdl",
+   "name": "partyhat",
+   "batch": 1,
+   "verts": 50
+  },
+  {
+   "id": "pokeball",
+   "item": 1083257553,
+   "mdl": "models/pokeball/pokeball.mdl",
+   "name": "pokeball",
+   "batch": 1,
+   "verts": 374,
+   "scale": 0.8
+  },
+  {
+   "id": "policehat",
+   "item": 1083257553,
+   "mdl": "models/policehat/policehat.mdl",
+   "name": "policehat",
+   "batch": 1,
+   "verts": 1020
+  },
+  {
+   "id": "salesmanhat",
+   "item": 1083257553,
+   "mdl": "models/salesmanhat/salesmanhat.mdl",
+   "name": "Salesmanhat",
+   "batch": 1,
+   "verts": 286,
+   "offset": [
+    0,
+    0,
+    -0.5
+   ]
+  },
+  {
+   "id": "pd2_mask_chains",
+   "item": 1083257553,
+   "mdl": "models/shaklin/payday2/masks/pd2_mask_chains.mdl",
+   "name": "Paydaymask",
+   "batch": 1,
+   "verts": 5793
+  },
+  {
+   "id": "pd2_mask_dallas",
+   "item": 1083257553,
+   "mdl": "models/shaklin/payday2/masks/pd2_mask_dallas.mdl",
+   "name": "paydaymask2",
+   "batch": 1,
+   "verts": 5244
+  },
+  {
+   "id": "pd2_mask_hoxton",
+   "item": 1083257553,
+   "mdl": "models/shaklin/payday2/masks/pd2_mask_hoxton.mdl",
+   "name": "paydaymask2",
+   "batch": 1,
+   "verts": 5369
+  },
+  {
+   "id": "pd2_mask_wolf",
+   "item": 1083257553,
+   "mdl": "models/shaklin/payday2/masks/pd2_mask_wolf.mdl",
+   "name": "paydaymask2",
+   "batch": 1,
+   "verts": 5020
+  },
+  {
+   "id": "solarthing",
+   "item": 1083257553,
+   "mdl": "models/solarthing/solarthing.mdl",
+   "name": "Solarthing",
+   "batch": 1,
+   "verts": 752
+  },
+  {
+   "id": "vikinghelmet",
+   "item": 1083257553,
+   "mdl": "models/vikinghelmet/vikinghelmet.mdl",
+   "name": "Viking Helmet",
+   "batch": 1,
+   "verts": 438
+  },
+  {
+   "id": "viroshat",
+   "item": 1083257553,
+   "mdl": "models/viroshat/viroshat.mdl",
+   "name": "big hat",
+   "batch": 1,
+   "verts": 960,
+   "offset": [
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "id": "duncehat",
+   "item": 630671996,
+   "mdl": "models/duncehat/duncehat.mdl",
+   "name": "Dunce Hat",
+   "batch": 1,
+   "verts": 45
+  },
+  {
+   "id": "antlers",
+   "item": 630671996,
+   "mdl": "models/sam/antlers.mdl",
+   "name": "Antlers",
+   "batch": 1,
+   "verts": 1068
+  },
+  {
+   "id": "drinkcap",
+   "item": 630671996,
+   "mdl": "models/sam/drinkcap.mdl",
+   "name": "Drink Cap",
+   "batch": 1,
+   "verts": 1318
+  },
+  {
+   "id": "glasses_small",
+   "item": 723112678,
+   "mdl": "models/dealwithit/glasses_small.mdl",
+   "name": "Deal with it",
+   "batch": 1,
+   "verts": 792
+  },
+  {
+   "id": "fox",
+   "item": 723112678,
+   "mdl": "models/sal/fox.mdl",
+   "name": "Fox Hat",
+   "batch": 1,
+   "verts": 1800
+  },
+  {
+   "id": "monkey",
+   "item": 723112678,
+   "mdl": "models/sal/halloween/monkey.mdl",
+   "name": "Monkey Hat",
+   "batch": 1,
+   "verts": 786
+  },
+  {
+   "id": "glasses01",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/accessories/glasses01.mdl",
+   "name": "Glasses01",
+   "batch": 1,
+   "verts": 344
+  },
+  {
+   "id": "glasses02",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/accessories/glasses02.mdl",
+   "name": "Glasses02",
+   "batch": 1,
+   "verts": 300
+  },
+  {
+   "id": "glasses03",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/accessories/glasses03.mdl",
+   "name": "Glasses03",
+   "batch": 1,
+   "verts": 116
+  },
+  {
+   "id": "glasses04",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/accessories/glasses04.mdl",
+   "name": "Glasses04",
+   "batch": 1,
+   "verts": 154
+  },
+  {
+   "id": "monocle",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/accessories/monocle.mdl",
+   "name": "Monocle",
+   "batch": 1,
+   "verts": 243,
+   "scale": 0.5,
+   "offset": [
+    0,
+    -1.3,
+    0.3
+   ]
+  },
+  {
+   "id": "mustache",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/accessories/mustache.mdl",
+   "name": "Mustache",
+   "batch": 1,
+   "verts": 219
+  },
+  {
+   "id": "afro_2",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/afro.mdl",
+   "name": "Afro",
+   "batch": 1,
+   "verts": 804,
+   "scale": 0.75
+  },
+  {
+   "id": "bear_hat",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/bear_hat.mdl",
+   "name": "Bear Hat",
+   "batch": 1,
+   "verts": 588
+  },
+  {
+   "id": "bunny_ears",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/bunny_ears.mdl",
+   "name": "Bunny Ears",
+   "batch": 1,
+   "verts": 484
+  },
+  {
+   "id": "cat_ears",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/cat_ears.mdl",
+   "name": "Cat Ears",
+   "batch": 1,
+   "verts": 928
+  },
+  {
+   "id": "cat_hat",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/cat_hat.mdl",
+   "name": "Cat Hat",
+   "batch": 1,
+   "verts": 396
+  },
+  {
+   "id": "deadmau5",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/deadmau5.mdl",
+   "name": "Deadmau5",
+   "batch": 1,
+   "verts": 2537,
+   "scale": 2.0,
+   "offset": [
+    0,
+    0,
+    2
+   ]
+  },
+  {
+   "id": "devhat",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/devhat.mdl",
+   "name": "Devhat",
+   "batch": 1,
+   "verts": 745,
+   "chosen": false,
+   "skip_reason": "a 31 u stovepipe"
+  },
+  {
+   "id": "fedora",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/fedora.mdl",
+   "name": "Fedora",
+   "batch": 1,
+   "verts": 538
+  },
+  {
+   "id": "frog_hat",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/frog_hat.mdl",
+   "name": "Frog Hat",
+   "batch": 1,
+   "verts": 432
+  },
+  {
+   "id": "heartband",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/heartband.mdl",
+   "name": "Heartband",
+   "batch": 1,
+   "verts": 768,
+   "offset": [
+    0,
+    0,
+    -2.5
+   ]
+  },
+  {
+   "id": "maid_headband",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/maid_headband.mdl",
+   "name": "Maid Headband",
+   "batch": 1,
+   "verts": 336,
+   "offset": [
+    0,
+    0,
+    -1
+   ]
+  },
+  {
+   "id": "pumpkin",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/pumpkin.mdl",
+   "name": "Pumpkin",
+   "batch": 1,
+   "verts": 3075,
+   "scale": 1.3
+  },
+  {
+   "id": "santa",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/santa.mdl",
+   "name": "Santa",
+   "batch": 1,
+   "verts": 440,
+   "offset": [
+    0,
+    0,
+    -1.5
+   ]
+  },
+  {
+   "id": "starband",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/starband.mdl",
+   "name": "Starband",
+   "batch": 1,
+   "verts": 784,
+   "offset": [
+    0,
+    0,
+    -2.5
+   ]
+  },
+  {
+   "id": "strawhat",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/strawhat.mdl",
+   "name": "Strawhat",
+   "batch": 1,
+   "verts": 434
+  },
+  {
+   "id": "sunhat",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/sunhat.mdl",
+   "name": "Sunhat",
+   "batch": 1,
+   "verts": 1228
+  },
+  {
+   "id": "tophat02",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/tophat02.mdl",
+   "name": "Tophat02",
+   "batch": 1,
+   "verts": 1103
+  },
+  {
+   "id": "zhat",
+   "item": 148215278,
+   "mdl": "models/captainbigbutt/skeyler/hats/zhat.mdl",
+   "name": "Zhat",
+   "batch": 1,
+   "verts": 574
+  },
+  {
+   "id": "androssmask",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/androssmask.mdl",
+   "name": "Androssmask",
+   "batch": 1,
+   "verts": 856
+  },
+  {
+   "id": "balloonicorn_nojiggle",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/balloonicorn_nojiggle.mdl",
+   "name": "Balloonicorn Nojiggle",
+   "batch": 1,
+   "verts": 1944,
+   "offset": [
+    0,
+    0,
+    -3
+   ]
+  },
+  {
+   "id": "baseballcap",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/baseballcap.mdl",
+   "name": "Baseballcap",
+   "batch": 1,
+   "verts": 579
+  },
+  {
+   "id": "batmanmask",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/batmanmask.mdl",
+   "name": "Batmanmask",
+   "batch": 1,
+   "verts": 754
+  },
+  {
+   "id": "bombermanhelmet",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/bombermanhelmet.mdl",
+   "name": "Bombermanhelmet",
+   "batch": 1,
+   "verts": 791
+  },
+  {
+   "id": "halloween_jasonmask",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/halloween_jasonmask.mdl",
+   "name": "Halloween Jasonmask",
+   "batch": 1,
+   "verts": 540
+  },
+  {
+   "id": "halloween_nightmarehat",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/halloween_nightmarehat.mdl",
+   "name": "Halloween Nightmarehat",
+   "batch": 1,
+   "verts": 419
+  },
+  {
+   "id": "halloween_pumpkinhat",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/halloween_pumpkinhat.mdl",
+   "name": "Halloween Pumpkinhat",
+   "batch": 1,
+   "verts": 436
+  },
+  {
+   "id": "headcrabhat",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/headcrabhat.mdl",
+   "name": "Headcrabhat",
+   "batch": 1,
+   "verts": 1372
+  },
+  {
+   "id": "king_boos_crown",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/king_boos_crown.mdl",
+   "name": "King Boos Crown",
+   "batch": 1,
+   "verts": 266,
+   "scale": 0.45
+  },
+  {
+   "id": "legohead",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/legohead.mdl",
+   "name": "Legohead",
+   "batch": 1,
+   "verts": 315
+  },
+  {
+   "id": "metaknight_mask",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/metaknight_mask.mdl",
+   "name": "Metaknight Mask",
+   "batch": 1,
+   "verts": 417
+  },
+  {
+   "id": "noface",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/noface.mdl",
+   "name": "Noface",
+   "batch": 1,
+   "verts": 338,
+   "kind": "mask"
+  },
+  {
+   "id": "pilgrimhat",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/pilgrimhat.mdl",
+   "name": "Pilgrimhat",
+   "batch": 1,
+   "verts": 2242
+  },
+  {
+   "id": "rubikscube",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/rubikscube.mdl",
+   "name": "Rubikscube",
+   "batch": 1,
+   "verts": 1464,
+   "kind": "mask"
+  },
+  {
+   "id": "santahat",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/santahat.mdl",
+   "name": "Santahat",
+   "batch": 1,
+   "verts": 334,
+   "offset": [
+    0,
+    0,
+    -1
+   ]
+  },
+  {
+   "id": "snowboardgoggles",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/snowboardgoggles.mdl",
+   "name": "Snowboardgoggles",
+   "batch": 1,
+   "verts": 1200
+  },
+  {
+   "id": "teamrockethat",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/teamrockethat.mdl",
+   "name": "Teamrockethat",
+   "batch": 1,
+   "verts": 1118
+  },
+  {
+   "id": "toromask",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/toromask.mdl",
+   "name": "Toromask",
+   "batch": 1,
+   "verts": 78
+  },
+  {
+   "id": "turkey",
+   "item": 148215278,
+   "mdl": "models/gmod_tower/turkey.mdl",
+   "name": "Turkey",
+   "batch": 1,
+   "verts": 10700
+  },
+  {
+   "id": "billyhatcherhat",
+   "item": 148215278,
+   "mdl": "models/lordvipes/billyhatcherhat/billyhatcherhat.mdl",
+   "name": "Billyhatcherhat",
+   "batch": 1,
+   "verts": 427,
+   "offset": [
+    0,
+    0,
+    -3
+   ]
+  },
+  {
+   "id": "blackmage_hat",
+   "item": 148215278,
+   "mdl": "models/lordvipes/blackmage/blackmage_hat.mdl",
+   "name": "Blackmage Hat",
+   "batch": 1,
+   "verts": 131
+  },
+  {
+   "id": "cuboneskull",
+   "item": 148215278,
+   "mdl": "models/lordvipes/cuboneskull/cuboneskull.mdl",
+   "name": "Cuboneskull",
+   "batch": 1,
+   "verts": 1407,
+   "offset": [
+    0,
+    0,
+    3
+   ]
+  },
+  {
+   "id": "thomas",
+   "item": 148215278,
+   "mdl": "models/lordvipes/daftpunk/thomas.mdl",
+   "name": "Thomas",
+   "batch": 1,
+   "verts": 1175
+  },
+  {
+   "id": "generalpepperhat",
+   "item": 148215278,
+   "mdl": "models/lordvipes/generalpepperhat/generalpepperhat.mdl",
+   "name": "Generalpepperhat",
+   "batch": 1,
+   "verts": 97
+  },
+  {
+   "id": "keatonmask",
+   "item": 148215278,
+   "mdl": "models/lordvipes/keatonmask/keatonmask.mdl",
+   "name": "Keatonmask",
+   "batch": 1,
+   "verts": 1074
+  },
+  {
+   "id": "klonoahat",
+   "item": 148215278,
+   "mdl": "models/lordvipes/klonoahat/klonoahat.mdl",
+   "name": "Klonoahat",
+   "batch": 1,
+   "verts": 252
+  },
+  {
+   "id": "luigihat",
+   "item": 148215278,
+   "mdl": "models/lordvipes/luigihat/luigihat.mdl",
+   "name": "Luigihat",
+   "batch": 1,
+   "verts": 288
+  },
+  {
+   "id": "majoramask",
+   "item": 148215278,
+   "mdl": "models/lordvipes/majoramask/majoramask.mdl",
+   "name": "Majoramask",
+   "batch": 1,
+   "verts": 2759,
+   "scale": 1.8
+  },
+  {
+   "id": "makarmask",
+   "item": 148215278,
+   "mdl": "models/lordvipes/makarmask/makarmask.mdl",
+   "name": "Makarmask",
+   "batch": 1,
+   "verts": 64
+  },
+  {
+   "id": "mariohat_2",
+   "item": 148215278,
+   "mdl": "models/lordvipes/mariohat/mariohat.mdl",
+   "name": "Mariohat",
+   "batch": 1,
+   "verts": 281
+  },
+  {
+   "id": "peachcrown",
+   "item": 148215278,
+   "mdl": "models/lordvipes/peachcrown/peachcrown.mdl",
+   "name": "Peachcrown",
+   "batch": 1,
+   "verts": 280,
+   "scale": 0.75
+  },
+  {
+   "id": "redshat",
+   "item": 148215278,
+   "mdl": "models/lordvipes/redshat/redshat.mdl",
+   "name": "Redshat",
+   "batch": 1,
+   "verts": 99
+  },
+  {
+   "id": "servbothead",
+   "item": 148215278,
+   "mdl": "models/lordvipes/servbothead/servbothead.mdl",
+   "name": "Servbothead",
+   "batch": 1,
+   "verts": 432
+  },
+  {
+   "id": "toadhat",
+   "item": 148215278,
+   "mdl": "models/lordvipes/toadhat/toadhat.mdl",
+   "name": "Toadhat",
+   "batch": 1,
+   "verts": 312
+  },
+  {
+   "id": "viewtifuljoehelmet",
+   "item": 148215278,
+   "mdl": "models/lordvipes/viewtifuljoehelmet/viewtifuljoehelmet.mdl",
+   "name": "Viewtifuljoehelmet",
+   "batch": 1,
+   "verts": 378
+  },
+  {
+   "id": "power_mask",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/amiibo/power_mask/power_mask.mdl",
+   "name": "Power Mask",
+   "batch": 1,
+   "verts": 1892,
+   "chosen": false,
+   "skip_reason": "Inkling amiibo gear: comes out as a black scrap"
+  },
+  {
+   "id": "samurai_helmet",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/amiibo/samurai_helmet/samurai_helmet.mdl",
+   "name": "Samurai Helmet",
+   "batch": 1,
+   "verts": 3801,
+   "chosen": false,
+   "skip_reason": "Inkling amiibo gear: comes out as a black scrap"
+  },
+  {
+   "id": "octopus_hairclip_female",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/amiibo/squid_hairclip/octopus_hairclip_female.mdl",
+   "name": "Octopus Hairclip Female",
+   "batch": 1,
+   "verts": 824,
+   "chosen": false,
+   "skip_reason": "side hair clip for Inklings, blown up"
+  },
+  {
+   "id": "squid_hairclip_female",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/amiibo/squid_hairclip/squid_hairclip_female.mdl",
+   "name": "Squid Hairclip Female",
+   "batch": 1,
+   "verts": 748,
+   "chosen": false,
+   "skip_reason": "side hair clip for Inklings, blown up"
+  },
+  {
+   "id": "squid_hairclip_female_alt",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/amiibo/squid_hairclip/squid_hairclip_female_alt.mdl",
+   "name": "Squid Hairclip Female Alt",
+   "batch": 1,
+   "verts": 500,
+   "chosen": false,
+   "skip_reason": "side hair clip for Inklings, blown up"
+  },
+  {
+   "id": "squid_hairclip_male",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/amiibo/squid_hairclip/squid_hairclip_male.mdl",
+   "name": "Squid Hairclip Male",
+   "batch": 1,
+   "verts": 500,
+   "chosen": false,
+   "skip_reason": "side hair clip for Inklings, blown up"
+  },
+  {
+   "id": "squid_hairclip_male_alt",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/amiibo/squid_hairclip/squid_hairclip_male_alt.mdl",
+   "name": "Squid Hairclip Male Alt",
+   "batch": 1,
+   "verts": 748,
+   "chosen": false,
+   "skip_reason": "side hair clip for Inklings, blown up"
+  },
+  {
+   "id": "bandanas_female",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/bandanas/bandanas_female.mdl",
+   "name": "Bandanas Female",
+   "batch": 1,
+   "verts": 865
+  },
+  {
+   "id": "bandanas_male",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/bandanas/bandanas_male.mdl",
+   "name": "Bandanas Male",
+   "batch": 1,
+   "verts": 863
+  },
+  {
+   "id": "bobble_hats",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/beanies/bobble_hats/bobble_hats.mdl",
+   "name": "Bobble Hats",
+   "batch": 1,
+   "verts": 1156
+  },
+  {
+   "id": "squid_nordic",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/beanies/squid_nordic/squid_nordic.mdl",
+   "name": "Squid Nordic",
+   "batch": 1,
+   "verts": 1677,
+   "offset": [
+    0,
+    0,
+    -3
+   ]
+  },
+  {
+   "id": "squid_nordic_no_goggles",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/beanies/squid_nordic/squid_nordic_no_goggles.mdl",
+   "name": "Squid Nordic No Goggles",
+   "batch": 1,
+   "verts": 975,
+   "kind": "hat"
+  },
+  {
+   "id": "baseball_caps",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/caps/baseball_caps/baseball_caps.mdl",
+   "name": "Baseball Caps",
+   "batch": 1,
+   "verts": 2011
+  },
+  {
+   "id": "basketball_caps",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/caps/basketball_caps/basketball_caps.mdl",
+   "name": "Basketball Caps",
+   "batch": 1,
+   "verts": 2967
+  },
+  {
+   "id": "mesh_caps",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/caps/mesh_caps/mesh_caps.mdl",
+   "name": "Mesh Caps",
+   "batch": 1,
+   "verts": 708
+  },
+  {
+   "id": "18k_aviators",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/glasses/18k_aviators/18k_aviators.mdl",
+   "name": "18k Aviators",
+   "batch": 1,
+   "verts": 1050
+  },
+  {
+   "id": "arrowbands",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/glasses/arrowbands/arrowbands.mdl",
+   "name": "Arrowbands",
+   "batch": 1,
+   "verts": 1278,
+   "chosen": false,
+   "skip_reason": "frames float over the head"
+  },
+  {
+   "id": "full_moon_glasses",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/glasses/full_moon_glasses/full_moon_glasses.mdl",
+   "name": "Full Moon Glasses",
+   "batch": 1,
+   "verts": 2046
+  },
+  {
+   "id": "octoglasses",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/glasses/octoglasses/octoglasses.mdl",
+   "name": "Octoglasses",
+   "batch": 1,
+   "verts": 3596
+  },
+  {
+   "id": "retro_specs",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/glasses/retro_specs/retro_specs.mdl",
+   "name": "Retro Specs",
+   "batch": 1,
+   "verts": 582
+  },
+  {
+   "id": "shades",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/glasses/shades/shades.mdl",
+   "name": "Shades",
+   "batch": 1,
+   "verts": 680
+  },
+  {
+   "id": "pilot_goggles",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/goggles/pilot_goggles/pilot_goggles.mdl",
+   "name": "Pilot Goggles",
+   "batch": 1,
+   "verts": 1084
+  },
+  {
+   "id": "snorkel_mask",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/goggles/snorkel_mask/snorkel_mask.mdl",
+   "name": "Snorkel Mask",
+   "batch": 1,
+   "verts": 1221,
+   "chosen": false,
+   "skip_reason": "tube and strap only"
+  },
+  {
+   "id": "splash_goggles",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/goggles/splash_goggles/splash_goggles.mdl",
+   "name": "Splash Goggles",
+   "batch": 1,
+   "verts": 1029
+  },
+  {
+   "id": "stealth_goggles",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/goggles/stealth_goggles/stealth_goggles.mdl",
+   "name": "Stealth Goggles",
+   "batch": 1,
+   "verts": 989
+  },
+  {
+   "id": "stealth_goggles_beta",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/goggles/stealth_goggles/stealth_goggles_beta.mdl",
+   "name": "Stealth Goggles Beta",
+   "batch": 1,
+   "verts": 949
+  },
+  {
+   "id": "soccer_headband_female",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/headbands/soccer_headband/soccer_headband_female.mdl",
+   "name": "Soccer Headband Female",
+   "batch": 1,
+   "verts": 612
+  },
+  {
+   "id": "soccer_headband_male",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/headbands/soccer_headband/soccer_headband_male.mdl",
+   "name": "Soccer Headband Male",
+   "batch": 1,
+   "verts": 612
+  },
+  {
+   "id": "sweatbands",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/headbands/sweatbands/sweatbands.mdl",
+   "name": "Sweatbands",
+   "batch": 1,
+   "verts": 752
+  },
+  {
+   "id": "traditional_headband_female",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/headbands/traditional_headband/traditional_headband_female.mdl",
+   "name": "Traditional Headband Female",
+   "batch": 1,
+   "verts": 1204,
+   "chosen": false,
+   "skip_reason": "a giant white rope"
+  },
+  {
+   "id": "traditional_headband_male",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/headbands/traditional_headband/traditional_headband_male.mdl",
+   "name": "Traditional Headband Male",
+   "batch": 1,
+   "verts": 1204,
+   "chosen": false,
+   "skip_reason": "a giant white rope"
+  },
+  {
+   "id": "designer_headphones",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/headphones/designer_headphones/designer_headphones.mdl",
+   "name": "Designer Headphones",
+   "batch": 1,
+   "verts": 694
+  },
+  {
+   "id": "noise_cancelers",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/headphones/noise_cancelers/noise_cancelers.mdl",
+   "name": "Noise Cancelers",
+   "batch": 1,
+   "verts": 1322
+  },
+  {
+   "id": "studio_headphones",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/headphones/studio_headphones/studio_headphones.mdl",
+   "name": "Studio Headphones",
+   "batch": 1,
+   "verts": 1222
+  },
+  {
+   "id": "armor_helmet",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/octovalley/armor_helmet/armor_helmet.mdl",
+   "name": "Armor Helmet",
+   "batch": 1,
+   "verts": 3674,
+   "chosen": false,
+   "skip_reason": "scraps"
+  },
+  {
+   "id": "hero_headset",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/octovalley/hero_headset/hero_headset.mdl",
+   "name": "Hero Headset",
+   "batch": 1,
+   "verts": 885
+  },
+  {
+   "id": "legendary_cap_female",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/octovalley/legendary_cap/legendary_cap_female.mdl",
+   "name": "Legendary Cap Female",
+   "batch": 1,
+   "verts": 1207,
+   "offset": [
+    0,
+    0,
+    -2
+   ]
+  },
+  {
+   "id": "legendary_cap_male",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/octovalley/legendary_cap/legendary_cap_male.mdl",
+   "name": "Legendary Cap Male",
+   "batch": 1,
+   "verts": 1451,
+   "offset": [
+    0,
+    0,
+    -2
+   ]
+  },
+  {
+   "id": "octoling_goggles",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/octovalley/octoling_goggles/octoling_goggles.mdl",
+   "name": "Octoling Goggles",
+   "batch": 1,
+   "verts": 1661
+  },
+  {
+   "id": "bamboo_hat",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/outdoors/bamboo_hat/bamboo_hat.mdl",
+   "name": "Bamboo Hat",
+   "batch": 1,
+   "verts": 649,
+   "offset": [
+    0,
+    0,
+    -6
+   ]
+  },
+  {
+   "id": "blowfish_bell_hat",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/outdoors/blowfish_bell_hat/blowfish_bell_hat.mdl",
+   "name": "Blowfish Bell Hat",
+   "batch": 1,
+   "verts": 444
+  },
+  {
+   "id": "bucket_hats",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/outdoors/bucket_hats/bucket_hats.mdl",
+   "name": "Bucket Hats",
+   "batch": 1,
+   "verts": 1918,
+   "kind": "hat"
+  },
+  {
+   "id": "straw_boaters_female",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/outdoors/straw_boater/straw_boaters_female.mdl",
+   "name": "Straw Boaters Female",
+   "batch": 1,
+   "verts": 400
+  },
+  {
+   "id": "straw_boaters_male",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/outdoors/straw_boater/straw_boaters_male.mdl",
+   "name": "Straw Boaters Male",
+   "batch": 1,
+   "verts": 400
+  },
+  {
+   "id": "treasure_hunter",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/outdoors/treasure_hunter/treasure_hunter.mdl",
+   "name": "Treasure Hunter",
+   "batch": 1,
+   "verts": 665
+  },
+  {
+   "id": "bike_helmet",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/sports/bike_helmet/bike_helmet.mdl",
+   "name": "Bike Helmet",
+   "batch": 1,
+   "verts": 1352
+  },
+  {
+   "id": "cycling_caps",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/sports/cycling_caps/cycling_caps.mdl",
+   "name": "Cycling Caps",
+   "batch": 1,
+   "verts": 1209
+  },
+  {
+   "id": "paintball_mask",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/sports/paintball_mask/paintball_mask.mdl",
+   "name": "Paintball Mask",
+   "batch": 1,
+   "verts": 1209
+  },
+  {
+   "id": "skate_helmets",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/sports/skate_helmets/skate_helmets.mdl",
+   "name": "Skate Helmets",
+   "batch": 1,
+   "verts": 1393
+  },
+  {
+   "id": "tentacles_helmet",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/sports/tentacles_helmet/tentacles_helmet.mdl",
+   "name": "Tentacles Helmet",
+   "batch": 1,
+   "verts": 1143
+  },
+  {
+   "id": "gas_mask",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/unique/gas_mask/gas_mask.mdl",
+   "name": "Gas Mask",
+   "batch": 1,
+   "verts": 1406
+  },
+  {
+   "id": "special_forces_beret",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/unique/special_forces_beret/special_forces_beret.mdl",
+   "name": "Special Forces Beret",
+   "batch": 1,
+   "verts": 579,
+   "offset": [
+    0,
+    0,
+    -2
+   ]
+  },
+  {
+   "id": "squid_girl_hat_female",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/unique/squid_girl_hat/squid_girl_hat_female.mdl",
+   "name": "Squid Girl Hat Female",
+   "batch": 1,
+   "verts": 511,
+   "chosen": false,
+   "skip_reason": "Inkling squid hat, a white cone"
+  },
+  {
+   "id": "squid_girl_hat_male",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/unique/squid_girl_hat/squid_girl_hat_male.mdl",
+   "name": "Squid Girl Hat Male",
+   "batch": 1,
+   "verts": 457,
+   "chosen": false,
+   "skip_reason": "Inkling squid hat, a white cone"
+  },
+  {
+   "id": "warrior_headdress",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/unique/warrior_headdress/warrior_headdress.mdl",
+   "name": "Warrior Headdress",
+   "batch": 1,
+   "verts": 1507,
+   "offset": [
+    0,
+    0,
+    -2.5
+   ]
+  },
+  {
+   "id": "sun_visor",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/visors/sun_visor/sun_visor.mdl",
+   "name": "Sun Visor",
+   "batch": 1,
+   "verts": 884,
+   "kind": "hat"
+  },
+  {
+   "id": "visors",
+   "item": 889681148,
+   "mdl": "models/props_splatoon/gear/headgear/visors/visors/visors.mdl",
+   "name": "Visors",
+   "batch": 1,
+   "verts": 1484,
+   "kind": "hat"
+  },
+  {
+   "id": "jojo_hat_black",
+   "item": 1430106952,
+   "mdl": "models/jojohats/jojo_hat_black.mdl",
+   "name": "Jojo Hat Black",
+   "batch": 1,
+   "verts": 1902,
+   "scale": 0.8,
+   "offset": [
+    0,
+    0,
+    -3
+   ]
+  },
+  {
+   "id": "jojo_hat_white",
+   "item": 1430106952,
+   "mdl": "models/jojohats/jojo_hat_white.mdl",
+   "name": "Jojo Hat White",
+   "batch": 1,
+   "verts": 685,
+   "offset": [
+    0,
+    0,
+    -3
+   ]
+  },
+  {
+   "id": "josuke_hair",
+   "item": 1430106952,
+   "mdl": "models/jojohats/josuke_hair.mdl",
+   "name": "Josuke Hair",
+   "batch": 1,
+   "verts": 1574
+  },
+  {
+   "id": "hat",
+   "item": 1946865004,
+   "mdl": "models/xmas/hat.mdl",
+   "name": "Hat",
+   "batch": 1,
+   "verts": 306
+  },
+  {
+   "id": "maskbabyrhino",
+   "item": 282958377,
+   "mdl": "models/snowzgmod/payday2/masks/maskbabyrhino.mdl",
+   "name": "Maskbabyrhino",
+   "batch": 1,
+   "verts": 5963
+  },
+  {
+   "id": "maskchuck",
+   "item": 282958377,
+   "mdl": "models/snowzgmod/payday2/masks/maskchuck.mdl",
+   "name": "Maskchuck",
+   "batch": 1,
+   "verts": 6186
+  },
+  {
+   "id": "maskdolph",
+   "item": 282958377,
+   "mdl": "models/snowzgmod/payday2/masks/maskdolph.mdl",
+   "name": "Maskdolph",
+   "batch": 1,
+   "verts": 6451,
+   "scale": 1.6
+  },
+  {
+   "id": "maskjeanclaude",
+   "item": 282958377,
+   "mdl": "models/snowzgmod/payday2/masks/maskjeanclaude.mdl",
+   "name": "Maskjeanclaude",
+   "batch": 1,
+   "verts": 6032
+  },
+  {
+   "id": "maskmark",
+   "item": 282958377,
+   "mdl": "models/snowzgmod/payday2/masks/maskmark.mdl",
+   "name": "Maskmark",
+   "batch": 1,
+   "verts": 6726
+  },
+  {
+   "id": "maskmonkeybusiness",
+   "item": 282958377,
+   "mdl": "models/snowzgmod/payday2/masks/maskmonkeybusiness.mdl",
+   "name": "Maskmonkeybusiness",
+   "batch": 1,
+   "verts": 5848
+  },
+  {
+   "id": "maskthehog",
+   "item": 282958377,
+   "mdl": "models/snowzgmod/payday2/masks/maskthehog.mdl",
+   "name": "Maskthehog",
+   "batch": 1,
+   "verts": 6102
+  },
+  {
+   "id": "kazekage",
+   "item": 301607701,
+   "mdl": "models/hats/kazekage.mdl",
+   "name": "Kazekage",
+   "batch": 1,
+   "verts": 477,
+   "offset": [
+    0,
+    0,
+    -5
+   ],
+   "scale": 0.9
+  },
+  {
+   "id": "mizukage",
+   "item": 301607701,
+   "mdl": "models/hats/mizukage.mdl",
+   "name": "Mizukage",
+   "batch": 1,
+   "verts": 477,
+   "offset": [
+    0,
+    0,
+    -5
+   ],
+   "scale": 0.9
+  },
+  {
+   "id": "raikage",
+   "item": 301607701,
+   "mdl": "models/hats/raikage.mdl",
+   "name": "Raikage",
+   "batch": 1,
+   "verts": 477,
+   "offset": [
+    0,
+    0,
+    -5
+   ],
+   "scale": 0.9
+  },
+  {
+   "id": "tsuchikage",
+   "item": 301607701,
+   "mdl": "models/hats/tsuchikage.mdl",
+   "name": "Tsuchikage",
+   "batch": 1,
+   "verts": 477,
+   "offset": [
+    0,
+    0,
+    -5
+   ],
+   "scale": 0.9
+  },
+  {
+   "id": "knuckles_ova_hat",
+   "item": 207275990,
+   "mdl": "models/logan_mccloud_models/ova_props/knuckles_ova_hat.mdl",
+   "name": "Knuckles Ova Hat",
+   "batch": 1,
+   "verts": 2000
+  },
+  {
+   "id": "knuckles_ova_hat_big",
+   "item": 207275990,
+   "mdl": "models/logan_mccloud_models/ova_props/knuckles_ova_hat_big.mdl",
+   "name": "Knuckles Ova Hat Big",
+   "batch": 1,
+   "verts": 2000,
+   "chosen": false,
+   "skip_reason": "the same hat bigger"
+  },
+  {
+   "id": "knuckles_ova_sunglasses_big",
+   "item": 207275990,
+   "mdl": "models/logan_mccloud_models/ova_props/knuckles_ova_sunglasses_big.mdl",
+   "name": "Knuckles Ova Sunglasses Big",
+   "batch": 1,
+   "verts": 205,
+   "chosen": false,
+   "skip_reason": "one black blob on a CS2 face"
+  }
+ ]
+}

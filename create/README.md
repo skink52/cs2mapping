@@ -70,6 +70,13 @@ preview, compile, report, from one catalog. Index: [playermodels/README.md](play
 `playermodels/srcmdl.py` is the skinned superset of the porting side's static `tools/mdlmesh.py` (bones, weights, body parts, skins, eyeballs);
 `playermodels/vtf.py` also reads VMTs.
 
+
+## Hats from Garry's Mod (hats/)
+
+GMod Workshop hats, glasses, masks and headphones -> CS2 hat models on the agent skeleton (every vertex on `head_0`) that a server
+bone-merges onto any player (`FollowEntity`), with 12 fit copies for GMod models' lower heads. Placement from the items' Pointshop
+lua, else an automatic fit; previews on a stock agent head and converted player models. Index: [hats/README.md](hats/README.md);
+guide: [docs/creation/gmod-hats.md](../docs/creation/gmod-hats.md). Reuses `playermodels/` (readers, materials, DMX writer).
 ## HUD and loading screens
 
 | File | What it does |
