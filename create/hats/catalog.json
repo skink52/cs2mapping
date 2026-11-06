@@ -1648,12 +1648,12 @@
    "offset": [
     -8.0,
     0,
-    -4.0
+    -5.0
    ],
    "review": {
-    "round": 6,
-    "verdict": "off",
-    "note": "back 1"
+    "round": 7,
+    "verdict": "ok",
+    "note": "down 1 (final)"
    },
    "scale": 1.1
   },
@@ -1677,14 +1677,14 @@
    "batch": 1,
    "verts": 1407,
    "offset": [
-    5.0,
+    4.75,
     0,
-    1.0
+    0.0
    ],
    "review": {
-    "round": 5,
-    "verdict": "off",
-    "note": "scale up 150% (instead of down 2)"
+    "round": 6,
+    "verdict": "ok",
+    "note": "down 1, back 0.25 (final)"
    },
    "rotate": [
     30,
