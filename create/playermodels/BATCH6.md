@@ -33,7 +33,7 @@ head hit box moved (z, u); **fingers** = finger fit L/R (u, < 1.8 fine).
 | `low_tier_god` | [Low Tier God (HL2 Style) Playermodel](https://steamcommunity.com/sharedfiles/filedetails/?id=3677358615) by panman | `models/humans/ltg_hl_style.mdl` | 4921 | 1.038 | 2.5 | -1.6 | -3.0 z | 0.4/0.4 | OK | ok |
 | `scary_man` | [Scary Man Playermodel + NPCS](https://steamcommunity.com/sharedfiles/filedetails/?id=3827997124) by Brendan Makes | `models/brendan/scarymanpm.mdl` | 4084 | 1.27 | 5.2 | -0.43 | -0.2 z |  | OK | skeleton does not match CS2 (limb joints more than 5 u off: arm_lower_L 5.2, arm_lower_R 5.2): CS2 will bend the limbs away from the joints of the model |
 | `saxton_hale` | [[TF2] Saxton Hale Playermodel (VSH)](https://steamcommunity.com/sharedfiles/filedetails/?id=3822321444) by danishevsky | `models/player/saxton_hale/standard/saxton_hale.mdl` | 19094 | 1.007 | 3.7 | -0.34 | -1.8 z | 0.6/0.6 | OK | ok |
-| `banana_combine` | [Banana Combine Playermodel](https://steamcommunity.com/sharedfiles/filedetails/?id=3824585333) by bucketofdrums | `models/bucket/combine_banana.mdl` | 7350 | 1.038 | 2.5 | 1.23 | -0.2 z | 0.5/0.6 | OK | bulky torso: chest 6.8 u further forward than a stock agent; CS2 hand poses (two-handed weapons) will clip into it; hand_R inside the torso in the CS2 preview pose (chest surface 5.3 u in front of the wrist); combinesoldiersheet: FLAT GREY (texture missing) |
+| `banana_combine` | [Banana Combine Playermodel](https://steamcommunity.com/sharedfiles/filedetails/?id=3824585333) by bucketofdrums | `models/bucket/combine_banana.mdl` | 7350 | 1.038 | 2.5 | 1.23 | +0.0 z | 0.5/0.6 | OK | bulky torso: chest 6.8 u further forward than a stock agent; CS2 hand poses (two-handed weapons) will clip into it; hand_R inside the torso in the CS2 preview pose (chest surface 5.3 u in front of the wrist); combinesoldiersheet: FLAT GREY (texture missing) |
 | `chicken_dude` | [Bird Citizen Playermodels + NPCs](https://steamcommunity.com/sharedfiles/filedetails/?id=3062759591) by Serika | `models/zekkriel/chickendude.mdl` | 6026 | 1.038 | 2.5 | -1.84 | -3.0 z | 0.3/0.3 | OK | ok |
 | `tf2_heavy` | [TF2 Player Model Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=352668843) by Eligia | `models/player/heavyplayer/heavy.mdl` | 7346 | 1.038 | 2.5 | -0.47 | -2.6 z |  | OK | bulky torso: chest 5.4 u further forward than a stock agent; CS2 hand poses (two-handed weapons) will clip into it; hand_L not aligned to CS2 (the rig has no index finger plus an outer finger): fingers will bend about the wrong points; hand_R not aligned to CS2 (the rig has no index finger plus an outer finger): fingers will bend about the wrong points |
 | `tf2_sniper` | [TF2 Player Model Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=352668843) by Eligia | `models/player/sniperplayer/sniper.mdl` | 6710 | 1.038 | 2.5 | 1.55 | -2.9 z | 1.5/0.7 | OK | ok |
@@ -64,7 +64,6 @@ head hit box moved (z, u); **fingers** = finger fit L/R (u, < 1.8 fine).
 | 3513739317 | Minecraft Playermodels With Sharp Limbs |  |
 
 <!-- review notes: kept by batchnotes.py -->
-
 ## Review
 ## Review (6 Nov 2026, fun skins)
 

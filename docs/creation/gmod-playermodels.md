@@ -130,7 +130,7 @@ The catalog records each item's id, title and author; keep that with any model y
 All converted models, with a picture of each in CS2's pose: [create/playermodels/MODELS.md](../../create/playermodels/MODELS.md). Per batch: [BATCH1.md](../../create/playermodels/BATCH1.md),
 [BATCH2.md](../../create/playermodels/BATCH2.md), [BATCH3.md](../../create/playermodels/BATCH3.md), [BATCH4.md](../../create/playermodels/BATCH4.md),
 [BATCH5.md](../../create/playermodels/BATCH5.md), [BATCH6.md](../../create/playermodels/BATCH6.md) (fun skins) (tables from `batchnotes.py`, review notes by hand).
-164 models, all compiled.
+396 models, all compiled ([BATCH7.md](../../create/playermodels/BATCH7.md), [BATCH8.md](../../create/playermodels/BATCH8.md): the rest of the packs already started). The compiled addon is 2.4 GB: a server ships a selection, not all of them.
 **On a server (6 Nov 2026):** all 80 worn by bots that fought on ar_shoots (slime-mg-gm `--gmod-models`): every model goes on, the
 animgraph runs (they move and shoot), hits register by hitgroup and nothing logs an error. The hit spread over all models matches stock
 agents in the same fights (head 7.6 % against 9.0, chest 21.5/24.1, stomach 35.7/34.7, arms 8.5/9.8, legs 26.5/22.0), so the hit boxes
@@ -141,6 +141,20 @@ template's gloves), the ragdoll, and the rifle hand on bulky-torso models.
 
 - VMTs with a key twice (`$baseTexture` given twice, the second the normal map): Source keeps the **first**; the reader does the same
   (Michael Scott's face came out blue before). 55 of the downloaded VMTs had duplicate keys.
+- **Re-downloading an item `cleanup.py` deleted:** SteamCMD reports "Success" and then removes the files on exit, because its
+  `steamapps/workshop/appworkshop_4000.acf` still lists the item as installed. Move that file aside (SteamCMD rebuilds it) before
+  fetching such items again. Items trimmed by `cleanup.py --prune` must have their extract deleted to get the whole pack back.
+- **Hit boxes:** CS2's stock agent capsules, kept as they are (the mesh is skinned to the same skeleton, so body, arm and leg capsules
+  follow it). Only the head (and half the neck) moves onto the model's head, from its eyes or head mesh, at most 5 u: GMod heads sit
+  a median 3.6 u below a CS2 agent's (shorter HL2 necks). A head within 1 u of stock keeps the stock capsules exactly
+  (`HEAD_HITBOX_MIN`). A model with no head mesh (the B2 battle droid, whose "head" is the top of its chest) gets its head hit box on
+  the top 8 u of its body, up to 12 u (`HEAD_HITBOX_MAX_NOHEAD`).
+- **Head pivot:** GMod heads pivot ~4 u below CS2's `head_0`, so when CS2 tilts the head to aim it swings a little about a pivot above
+  it (the neck looks dragged to the model's right). `HEAD_SNAP = True` moves the head onto `head_0` (neck ~4 u longer, no drag); it is
+  **off**: skink52 keeps the models' own heads (6 Nov).
+- **PlayerColor / team tint** (`$blendtintbybasealpha 1`, GMod's colourable models and the TF2 mercs): the texture's alpha masks parts
+  the game tints at run time (greyscale in the texture). CS2 has no such proxy, so the converter bakes in the VMT's own tint or GMod's
+  default player colour (0.24, 0.34, 0.41) (`GMOD_PLAYER_COLOR`); the TF2 mercs come out BLU.
 - Legacy `.bin` downloads can lack the LZMA end marker; `gma.py` decompresses them as a stream. SteamCMD sometimes answers "Busy": run again.
 - `cleanup.py` after a batch: deletes the SteamCMD copies of catalog items (the extract has everything), the extracts of unused items, and with
   `--prune` everything in used items that the chosen models don't need. Batches 1-3: 8.6 GB freed, then 2.0 GB more by `--prune`; a pruned item still reconverts. Don't run it while a batch is

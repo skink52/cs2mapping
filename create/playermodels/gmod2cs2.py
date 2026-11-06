@@ -65,6 +65,11 @@ TORSO_RECENTRE = True     # move the upper torso back so the chest is centred on
 CHEST_WARN = 4.0          # warn when the chest front is this much (u) further forward than a stock agent's
 HAND_WARN = 3.0           # warn when, in CS2's preview pose, the chest surface is this far (u) in front of a wrist (fine models: 0-1.6)
 LIMB_WARN = 5.0           # warn when an arm/leg joint ends up this far (u) from CS2's: CS2 bends there, not at the model's joint (6 Nov: Leva at 5.4-6.0 u read as stretched thighs; was 6.0)
+HEAD_SNAP = False         # True: the head moves onto CS2's head joint (no sideways neck drag, ~4 u longer neck). Off: skink52 keeps the model's own head (6 Nov)
+GMOD_PLAYER_COLOR = (0.24, 0.34, 0.41)   # GMod's default player colour (PlayerColor proxy), baked into tint-masked textures
+HEAD_HITBOX_MIN = 1.0      # a head this close to a stock agent's keeps the stock head/neck hit boxes exactly (skink52, 6 Nov)
+HEAD_HITBOX_MAX_NOHEAD = 12.0  # no head mesh (B2 droid): the head hit box may move this far onto the top of the body
+HEAD_TOP_BAND = 8.0          # ... taken as the top 8 u of the mesh within 8 u of the centre line
 HEAD_HITBOX_MAX = 5.0     # the head (and half of the neck) hit box moves at most this far (u) onto the model's head
 FINGER_WARN = 1.8         # warn when finger segments' skin centres sit this far (median, u) off their CS2 bones (fine 0.4-1.7, old pivot bug ~2)
 JOINT_SOFTEN = (2.5, 0.5)  # hard-skinned elbows/knees: within 2.5 u of the joint, up to half the weight goes to the other side
@@ -378,6 +383,15 @@ class Converter:
                 tr[n]['pcs'] = J('hand_' + s) + (tr[n]['pcs'] - hp) * k
                 tr[n]['along'] = sc * k
             self.hand_scale[s] = round(k, 3)
+        # Head on CS2's head joint (6 Nov): GMod heads pivot ~4 u below CS2's head_0 (shorter HL2 necks). CS2's poses turn and
+        # tilt the head about head_0, so a head left low swings sideways about a pivot above it and drags the neck. The head
+        # moves rigidly onto head_0 (the neck joint half as far: the neck lengthens evenly); the stock head hit box then fits.
+        self.head_snap = 0.0
+        if HEAD_SNAP and 'head1' in tr:
+            d = J('head_0') - tr['head1']['pcs']
+            self.head_snap = round(float(np.linalg.norm(d)), 2)
+            for n in subtree('head1'): tr[n]['pcs'] = tr[n]['pcs'] + d
+            if 'neck1' in tr: tr['neck1']['pcs'] = tr['neck1']['pcs'] + d / 2
         self.girth = sc
         self.joint_offsets = {VB2CS[n]: round(float(np.linalg.norm(tr[n]['pcs'] - J(VB2CS[n]))), 2) for n in fit}
         return self._assign(tr)
@@ -643,6 +657,19 @@ def write_material(tex, cd, roots, out, slug, maxtex, log):
     if col is None and (prm.get('$envmap') or 'glass' in tex.lower()):
         col = np.full((8, 8, 4), (40, 45, 52, 70), np.uint8); glass = True       # envmap-only lens: dark see-through glass
         info['glass'] = True
+    if col is not None and col.shape[-1] == 4 and prm.get('$blendtintbybasealpha', '0').strip('"') == '1':
+        # GMod's PlayerColor / TF2 team tint: the texture's alpha masks the parts tinted by a colour the game supplies at run time
+        # (greyscale in the texture). CS2 has no such proxy: bake in the VMT's own tint, else GMod's default player colour.
+        tint = None
+        for key in ('$colortint_base', '$color2'):
+            nums = re.findall(r'[-\d.]+', prm.get(key, '') or '')
+            if len(nums) >= 3: tint = np.array([float(x) for x in nums[:3]]); break
+        if tint is None: tint = np.array(GMOD_PLAYER_COLOR)
+        if tint.max() > 1.5: tint = tint / 255.0
+        a = col[..., 3:4].astype(float) / 255.0
+        rgb = col[..., :3].astype(float)
+        col = col.copy(); col[..., :3] = np.clip(rgb * (1 - a) + rgb * tint * a, 0, 255).astype(np.uint8); col[..., 3] = 255
+        info['tinted'] = [round(float(x), 2) for x in tint]
     base_name = os.path.basename(tex).lower()
     if col is None and is_shared_eye(base_name):          # HL2's shared eyeball_l/r: models rely on the game's copy
         col = eye_standin(); eye = True; info['standin'] = 'eye'
@@ -884,12 +911,26 @@ def head_hitbox_shift(conv, t, V, weights):
     else:
         def centre(P, W):
             hs = np.array([bool(w) and max(w, key=lambda x: x[1])[0].startswith('head') for w in W])
-            H = P[hs]; top = H[:, 2].max() - 0.2 * (H[:, 2].max() - H[:, 2].min())
+            H = P[hs]
+            if len(H) < 4: return None                     # no head of its own (the B2 droid's sits in its chest)
+            top = H[:, 2].max() - 0.2 * (H[:, 2].max() - H[:, 2].min())
             H = H[H[:, 2] < top]
-            return (H.min(0) + H.max(0)) / 2
-        d = centre(V, weights) - centre(*t.mesh()); how = 'head mesh'
+            return (H.min(0) + H.max(0)) / 2 if len(H) else None
+        c = centre(V, weights)
+        if c is None:
+            # no mesh on the head bone (the B2 droid: its "head" is the top block of its chest, the head bone floats in the air
+            # above it): the head hit box goes on the top HEAD_TOP_BAND u of the body near the centre line, up to HEAD_HITBOX_MAX_NOHEAD
+            top = V[:, 2].max()
+            B = V[(V[:, 2] > top - HEAD_TOP_BAND) & (np.abs(V[:, 0]) < HEAD_TOP_BAND)]
+            if len(B) < 4: return np.zeros(3), 'none (no head mesh found: stock head hit box)'
+            d = (B.min(0) + B.max(0)) / 2 - centre(*t.mesh()); d[1] = 0.0
+            n = np.linalg.norm(d)
+            if n > HEAD_HITBOX_MAX_NOHEAD: d *= HEAD_HITBOX_MAX_NOHEAD / n
+            return d, 'top of the body (no head mesh)'
+        d = c - centre(*t.mesh()); how = 'head mesh'
     d[1] = 0.0                                              # stay on the centre line
     n = np.linalg.norm(d)
+    if n < HEAD_HITBOX_MIN: return np.zeros(3), how + ' (within %.0f u: stock hit boxes kept)' % HEAD_HITBOX_MIN
     if n > HEAD_HITBOX_MAX: d *= HEAD_HITBOX_MAX / n
     return d, how
 

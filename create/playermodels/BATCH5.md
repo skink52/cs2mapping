@@ -12,7 +12,7 @@ head hit box moved (z, u); **fingers** = finger fit L/R (u, < 1.8 fine).
 |---|---|---|---|---|---|---|---|---|---|---|
 | `iron_man` | [Iron Man [Playermodel/NPC]](https://steamcommunity.com/sharedfiles/filedetails/?id=158326196) by Dusty | `models/avengers/iron man/mark7_player.mdl` | 7796 | 1.038 | 2.5 | -1.6 | -4.3 z | 0.8/0.5 | OK | ok |
 | `gta5_michael` | [GTA 5 Playermodels](https://steamcommunity.com/sharedfiles/filedetails/?id=216408135) by Dusty | `models/grandtheftauto5/michael.mdl` | 24868 | 1.038 | 2.6 | -2.87 | -2.5 z | 0.4/0.4 | OK | ok |
-| `skyrim_daedric` | [The Elder Scrolls V Skyrim: Daedric Playermodel](https://steamcommunity.com/sharedfiles/filedetails/?id=175697854) by Voikanaa | `models/player/daedric.mdl` | 9418 | 1.038 | 2.7 | -1.85 | -0.8 z | 0.5/0.5 | OK | bulky torso: chest 4.9 u further forward than a stock agent; CS2 hand poses (two-handed weapons) will clip into it |
+| `skyrim_daedric` | [The Elder Scrolls V Skyrim: Daedric Playermodel](https://steamcommunity.com/sharedfiles/filedetails/?id=175697854) by Voikanaa | `models/player/daedric.mdl` | 9418 | 1.038 | 2.7 | -1.85 | +0.0 z | 0.5/0.5 | OK | bulky torso: chest 4.9 u further forward than a stock agent; CS2 hand poses (two-handed weapons) will clip into it |
 | `tron_anon` | [TRON Anon Playermodel](https://steamcommunity.com/sharedfiles/filedetails/?id=241187700) by Rokay | `models/player/anon/anon.mdl` | 9840 | 1.038 | 2.5 | -1.77 | -2.5 z | 0.4/0.5 | OK | ok |
 | `deathstroke` | [DeathStroke PlayerModel](https://steamcommunity.com/sharedfiles/filedetails/?id=204411482) by r9 | `models/norpo/arkhamorigins/assassins/deathstroke_valvebiped.mdl` | 23785 | 1.06 | 2.8 | -0.04 | -2.2 z | 0.4/0.4 | OK | bulky torso: chest 5.6 u further forward than a stock agent; CS2 hand poses (two-handed weapons) will clip into it; hand_R inside the torso in the CS2 preview pose (chest surface 3.6 u in front of the wrist) |
 | `halo4_chief` | [Halo 4 - Master Chief (NPC/Playermodel/Ragdoll)](https://steamcommunity.com/sharedfiles/filedetails/?id=139247091) by Dusty | `models/halo4/spartans/masterchief_player.mdl` | 24644 | 1.038 | 2.5 | -1.77 | -3.9 z | 0.7/0.5 | OK | bulky torso: chest 4.6 u further forward than a stock agent; CS2 hand poses (two-handed weapons) will clip into it |
@@ -38,7 +38,7 @@ head hit box moved (z, u); **fingers** = finger fit L/R (u, < 1.8 fine).
 | `ow_reaper` | [OW- Reaper Playermodel](https://steamcommunity.com/sharedfiles/filedetails/?id=726069482) by Zynth | `models/player/tfa_ow_reaper.mdl` | 22690 | 1.057 | 9.2 | -2.03 | -3.5 z | 0.7/0.3 | OK | bulky torso: chest 4.1 u further forward than a stock agent; CS2 hand poses (two-handed weapons) will clip into it; skeleton does not match CS2 (limb joints more than 6 u off: leg_upper_L 9.1, leg_upper_R 9.2): CS2 will bend the limbs away from the joints of the model |
 | `batman_mk` | [Batman Playermodel](https://steamcommunity.com/sharedfiles/filedetails/?id=141049673) by cowboy | `models/batman/slow/jamis/mkvsdcu/batman/slow_pub_v2.mdl` | 15956 | 1.0 | 2.6 | -1.63 | -0.5 z | 0.7/0.6 | OK | ok |
 | `csgo_pirate` | [Counter Strike: Global Offensive T Playermodels and NPCs](https://steamcommunity.com/sharedfiles/filedetails/?id=481607813) by Professor Heavy | `models/csgopirate1pm.mdl` | 13202 | 0.998 | 2.5 | 0.89 | -4.1 z | 0.5/0.5 | OK | ok |
-| `halo3_spartan` | [Halo 3 Spartan Playermodels (MPSC)](https://steamcommunity.com/sharedfiles/filedetails/?id=283815805) by Vipes | `models/player/lordvipes/h3_spartans_mps/h3spartan_mps_cvp.mdl` | 5434 | 1.038 | 2.5 | -1.24 | -2.4 z | 0.5/0.5 | OK | ok |
+| `halo3_spartan` | [Halo 3 Spartan Playermodels (MPSC)](https://steamcommunity.com/sharedfiles/filedetails/?id=283815805) by Vipes | `models/player/lordvipes/h3_spartans_mps/h3spartan_mps_cvp.mdl` | 5410 | 1.038 | 2.5 | -1.24 | -2.4 z | 0.5/0.5 | OK | ok |
 | `thanos` | [Thanos - Avengers: Infinity War Playermodel](https://steamcommunity.com/sharedfiles/filedetails/?id=1371823037) by Kryptonite | `models/kryptonite/inf_thanos/inf_thanos.mdl` | 6705 | 1.046 | 2.7 | -2.81 | -2.9 z | 0.9/0.6 | OK | bulky torso: chest 4.2 u further forward than a stock agent; CS2 hand poses (two-handed weapons) will clip into it |
 | `nanosuit` | [Crysis 2 - Nanosuit 2 NPC and Playermodel](https://steamcommunity.com/sharedfiles/filedetails/?id=124565516) by Nightmare Ω | `models/characters/nanosuit2/nanosuit_player.mdl` | 19454 | 1.038 | 2.4 | -1.51 | -3.1 z | 1.5/1.5 | OK | ok |
 | `spiderman` | [Spiderman - Ultimate Playermodel Bundle](https://steamcommunity.com/sharedfiles/filedetails/?id=1418637320) by Kryptonite | `models/kryptonite/spiderman/spiderman.mdl` | 2914 | 1.046 | 2.7 | -1.94 | -3.0 z | 0.5/0.5 | OK | ok |
@@ -102,7 +102,6 @@ head hit box moved (z, u); **fingers** = finger fit L/R (u, < 1.8 fine).
 | 1167016682 | La muerte (Rework)(GRIM) | the same grim.mdl as 288629547 |
 
 <!-- review notes: kept by batchnotes.py -->
-
 ## Review
 ## Review (6 Nov 2026, light)
 
