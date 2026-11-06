@@ -1646,14 +1646,14 @@
    "batch": 1,
    "verts": 427,
    "offset": [
-    -7.0,
+    -8.0,
     0,
     -4.0
    ],
    "review": {
-    "round": 5,
+    "round": 6,
     "verdict": "off",
-    "note": "scale 110, forward 2 down 1"
+    "note": "back 1"
    },
    "scale": 1.1
   },
@@ -1682,15 +1682,16 @@
     1.0
    ],
    "review": {
-    "round": 4,
-    "verdict": "off"
+    "round": 5,
+    "verdict": "off",
+    "note": "scale up 150% (instead of down 2)"
    },
    "rotate": [
     30,
     0,
     0
    ],
-   "scale": 1.1
+   "scale": 1.65
   },
   {
    "id": "thomas",
