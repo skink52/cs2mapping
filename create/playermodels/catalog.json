@@ -2036,13 +2036,13 @@
    "id": 232539187,
    "title": "DewRitos Playermodels",
    "author": "ellie",
-   "chosen": false,
+   "chosen": true,
    "slug": "big_dew",
    "mdl": "models/player/big_dew.mdl",
    "name": "Big Dew (DewRitos)",
    "fun": true,
-   "skip_reason": "the chips around the bottle are separate pieces on unmapped bones: they scatter",
-   "dropped_after": 6
+   "batch": 6,
+   "note": "the chips are separate pieces on bones CS2 lacks: they float loose around the bag (skink52 keeps them, 6 Nov)"
   },
   {
    "id": 656834283,
@@ -3188,34 +3188,34 @@
    "id": 232539187,
    "title": "DewRitos Playermodels",
    "author": "ellie",
-   "chosen": false,
+   "chosen": true,
    "slug": "dewrito",
    "mdl": "models/player/dewrito.mdl",
    "name": "Dewrito",
-   "dropped_after": 8,
-   "skip_reason": "the chips around the bag are separate pieces on unmapped bones: they scatter"
+   "batch": 8,
+   "note": "the chips are separate pieces on bones CS2 lacks: they float loose around the bag (skink52 keeps them, 6 Nov)"
   },
   {
    "id": 232539187,
    "title": "DewRitos Playermodels",
    "author": "ellie",
-   "chosen": false,
+   "chosen": true,
    "slug": "dewrito_blue",
    "mdl": "models/player/dewrito_blue.mdl",
    "name": "Dewrito Blue",
-   "dropped_after": 8,
-   "skip_reason": "the chips around the bag are separate pieces on unmapped bones: they scatter"
+   "batch": 8,
+   "note": "the chips are separate pieces on bones CS2 lacks: they float loose around the bag (skink52 keeps them, 6 Nov)"
   },
   {
    "id": 232539187,
    "title": "DewRitos Playermodels",
    "author": "ellie",
-   "chosen": false,
+   "chosen": true,
    "slug": "dewrito_custom",
    "mdl": "models/player/dewrito_custom.mdl",
    "name": "Dewrito Custom",
-   "dropped_after": 8,
-   "skip_reason": "the chips around the bag are separate pieces on unmapped bones: they scatter"
+   "batch": 8,
+   "note": "the chips are separate pieces on bones CS2 lacks: they float loose around the bag (skink52 keeps them, 6 Nov)"
   },
   {
    "id": 232539187,
