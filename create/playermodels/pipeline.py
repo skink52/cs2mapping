@@ -1,12 +1,16 @@
 """Batch: every chosen catalog item -> downloaded, extracted, converted to a CS2 player model, previewed, compiled, reported.
 
-usage: python3 -I pipeline.py <catalog.json> [--only slug,slug] [--no-download] [--no-preview] [--compile] [--rc <resourcecompiler.exe>]
+usage: python3 -I pipeline.py <catalog.json> [--only slug,slug] [--batch=N] [--no-download] [--no-preview] [--compile] [--rc <exe>]
+                              [--jobs N] [--timeout S]
 
 Writes (paths from the catalog's "paths" block):
   <out>/models/player/gmod/<slug>/...      the content addon (compile it with --compile, Hammer or ModelDoc)
   <work>/preview/<slug>_{source,bind,posed}.png and contact_sheet.png
   <work>/reports/<slug>.json and summary.md  (sizes, scale, materials, missing textures, compile result)
 Prints one progress line per step; each model is independent (a failure is reported and the batch carries on).
+--jobs N: N models at once, each in its own process (the converter is single-threaded: a 6-core PC ran 6 at ~60% CPU, 3-4x faster),
+with its output in <work>/logs/models/<slug>.log; --timeout S (default 1800) kills a model that runs longer (one spun for 2 h) and
+reports it failed. The summary and contact sheet are written once, at the end.
 """
 import json, os, re, subprocess, sys, time, traceback
 if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # Workshop titles: any script, any console
@@ -46,6 +50,35 @@ def contact_sheet(work, slugs, name='contact_sheet'):
     return out
 
 
+def parallel(items, jobs, timeout, p, rep_dir):
+    """each item in its own `pipeline.py --only <slug> --child` process, `jobs` at a time; a process over `timeout` s is killed"""
+    from concurrent.futures import ThreadPoolExecutor
+    keep = [a for a in sys.argv[2:] if a in ('--no-download', '--no-preview', '--compile')]
+    if '--rc' in sys.argv: keep += ['--rc', sys.argv[sys.argv.index('--rc') + 1]]
+    logs = os.path.join(p['work'], 'logs', 'models'); os.makedirs(logs, exist_ok=True)
+    done = [0]
+    def one(it):
+        slug = it['slug']; t0 = time.time()
+        with open(os.path.join(logs, slug + '.log'), 'w', encoding='utf-8') as lf:
+            try:
+                rc = subprocess.run([sys.executable, '-I', os.path.abspath(__file__), sys.argv[1], '--only', slug, '--child'] + keep,
+                                    stdout=lf, stderr=subprocess.STDOUT, timeout=timeout).returncode
+                why = None if rc == 0 else 'exit %d' % rc
+            except subprocess.TimeoutExpired:
+                why = 'timed out after %.0f s (killed)' % timeout
+        rp = os.path.join(rep_dir, slug + '.json')
+        rep = json.load(open(rp, encoding='utf-8')) if os.path.exists(rp) and os.path.getmtime(rp) >= t0 else None
+        if rep is None:
+            rep = {'slug': slug, 'id': it['id'], 'title': it['title'], 'author': it['author'], 'mdl': it['mdl'],
+                   'workshop': 'https://steamcommunity.com/sharedfiles/filedetails/?id=%s' % it['id'], 'status': 'failed: %s' % (why or 'no report')}
+            json.dump(rep, open(rp, 'w'), indent=1)
+        done[0] += 1
+        print('[%d/%d] %s: %s (%.0f s)' % (done[0], len(items), slug, rep.get('status', '?')[:100], time.time() - t0), flush=True)
+        return rep
+    with ThreadPoolExecutor(jobs) as ex:
+        return list(ex.map(one, items))
+
+
 def main():
     cat = json.load(open(sys.argv[1], encoding='utf-8'))
     p = fetch.paths(cat)
@@ -60,9 +93,13 @@ def main():
     items = [it for it in cat['items'] if it.get('chosen') and (not only or it['slug'] in only) and (batches is None or it.get('batch') in batches)]
     rep_dir = os.path.join(p['work'], 'reports'); os.makedirs(rep_dir, exist_ok=True)
     prev = None if '--no-preview' in sys.argv else os.path.join(p['work'], 'preview')
-    tpl = gmod2cs2.Template(p['template'])
-    results = []
-    for k, it in enumerate(items):
+    jobs = int(args[args.index('--jobs') + 1]) if '--jobs' in args else 1
+    timeout = float(args[args.index('--timeout') + 1]) if '--timeout' in args else 1800.0
+    results, loop_items = [], items
+    if jobs > 1 and '--child' not in args:
+        results = parallel(items, jobs, timeout, p, rep_dir); loop_items = []
+    tpl = gmod2cs2.Template(p['template']) if loop_items else None
+    for k, it in enumerate(loop_items):
         slug = it['slug']; t0 = time.time()
         print('[%d/%d] %s (%s)' % (k + 1, len(items), slug, it['id']), flush=True)
         rep = {'slug': slug, 'id': it['id'], 'title': it['title'], 'author': it['author'], 'mdl': it['mdl'],
@@ -94,6 +131,7 @@ def main():
             print('   FAILED: %s' % ex, flush=True); traceback.print_exc()
         json.dump(rep, open(os.path.join(rep_dir, slug + '.json'), 'w'), indent=1)
         results.append(rep)
+    if '--child' in args: return
     # summary
     lines = ['# GMod -> CS2 player models: batch report', '',
              '| slug | source | verts | tris | scale | joint offset (mean / max u) | materials (flat) | compile | status |', '|---|---|---|---|---|---|---|---|---|']

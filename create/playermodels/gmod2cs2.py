@@ -138,6 +138,7 @@ class Template:
         z0, z1 = self.J('spine_2')[2], self.J('spine_3')[2] + 2
         sel = (V[:, 2] > z0) & (V[:, 2] < z1) & (np.abs(V[:, 1]) < 5)
         x = V[sel, 0] - self.J('spine_2')[0]
+        if not len(x): return None                      # no mesh at chest height near the centre line (FragTrap, Hollow Knight's vessel)
         return float(x.max()), float(x.min()), float((x.max() + x.min()) / 2) + float(self.J('spine_2')[0])
 
     def hands_in_torso(self, V, W):
@@ -956,7 +957,7 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
     meshes = m.default_meshes(choices)
     used, remap, V, N, weights = conv.convert_mesh(meshes)
     # fit checks against a stock agent body: chest depth and hands in CS2's preview pose
-    chest_t, chest_m = t.chest(), t.chest(V)
+    chest_t = t.chest(); chest_m = t.chest(V) or chest_t      # no chest mesh: no chest check
     hands = t.hands_in_torso(V, weights)
     warnings = []
     extra = chest_m[0] - chest_t[0]

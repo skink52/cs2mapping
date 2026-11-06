@@ -55,6 +55,7 @@ def main():
         comp = r.get('compile', {})
         status = 'not converted yet' if not r else ('compiled' if comp.get('ok') else 'compile FAILED' if comp else 'converted, not compiled')
         warn = '; '.join(r.get('warnings', []))
+        if it.get('possible_dupes'): warn = '; '.join(x for x in (warn, 'possible duplicate of ' + ', '.join('`%s`' % d for d in it['possible_dupes'])) if x)
         stand = [m['source'] for m in r.get('materials', []) if m.get('standin') or m.get('glass') or m.get('flat')]
         if comp.get('ok'): n_ok += 1
         if warn: n_warn += 1

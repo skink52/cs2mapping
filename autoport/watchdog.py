@@ -15,6 +15,8 @@ N seconds (elapsed against expected, CPU used, MB written, idle time, last log l
 Exit code: the command's own (or 0 when an attached root ends), 124 hung, 125 runaway, 126 --attach found nothing to watch, 127 --slow-phase over budget.
 """
 import argparse, json, os, subprocess, sys, time
+for _s in (sys.stdout, sys.stderr):   # a watched log line can hold any script (Workshop titles): never crash printing it
+    if hasattr(_s, "reconfigure"): _s.reconfigure(encoding="utf-8", errors="replace")
 
 SNAPSHOT = ('Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine,KernelModeTime,UserModeTime,WriteTransferCount'
             ' | ConvertTo-Json -Compress')

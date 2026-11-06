@@ -130,7 +130,7 @@ The catalog records each item's id, title and author; keep that with any model y
 All converted models, with a picture of each in CS2's pose: [create/playermodels/MODELS.md](../../create/playermodels/MODELS.md). Per batch: [BATCH1.md](../../create/playermodels/BATCH1.md),
 [BATCH2.md](../../create/playermodels/BATCH2.md), [BATCH3.md](../../create/playermodels/BATCH3.md), [BATCH4.md](../../create/playermodels/BATCH4.md),
 [BATCH5.md](../../create/playermodels/BATCH5.md), [BATCH6.md](../../create/playermodels/BATCH6.md) (fun skins) (tables from `batchnotes.py`, review notes by hand).
-396 models, all compiled ([BATCH7.md](../../create/playermodels/BATCH7.md), [BATCH8.md](../../create/playermodels/BATCH8.md): the rest of the packs already started). The compiled addon is 2.4 GB: a server ships a selection, not all of them.
+691 models, all compiled ([BATCH9.md](../../create/playermodels/BATCH9.md): 291 from 396 new Workshop items, X-Men incl. Rogue). Earlier: 396 models, all compiled ([BATCH7.md](../../create/playermodels/BATCH7.md), [BATCH8.md](../../create/playermodels/BATCH8.md): the rest of the packs already started). The compiled addon is 2.4 GB: a server ships a selection, not all of them.
 **On a server (6 Nov 2026):** all 80 worn by bots that fought on ar_shoots (slime-mg-gm `--gmod-models`): every model goes on, the
 animgraph runs (they move and shoot), hits register by hitgroup and nothing logs an error. The hit spread over all models matches stock
 agents in the same fights (head 7.6 % against 9.0, chest 21.5/24.1, stomach 35.7/34.7, arms 8.5/9.8, legs 26.5/22.0), so the hit boxes
@@ -176,4 +176,11 @@ template's gloves), the ragdoll, and the rifle hand on bulky-torso models.
   Non-ValveBiped rigs (Minecraft Steve, Domo, Left Shark) fail the converter outright.
 - Capes, coats and props on their own bones (Batman, Boba Fett, the Lich King, Big Dew's chips) stretch or scatter: CS2 has no such
   bones. Drop them in review (or later: jiggle bones / cloth in ModelDoc).
+- **Duplicates are kept and flagged** (skink52): `dupes.py` writes `possible_dupes`, shown as "possible duplicate of `<id>`" in the
+  warnings of MODELS.md and the server catalog. Score: quality (vertices up to 40k, minus flat textures) + ratings (log lifetime
+  subscribers and favourites from Steam's GetPublishedFileDetails, no key needed).
+- **Speed:** the converter is single-threaded; `pipeline.py --jobs 6` runs six models at once (6-core PC: ~60% CPU, 3-4x faster).
+  `--timeout` (default 30 min) kills a model that never finishes (Batman Animated spun for 2 h). Models with no mesh at chest
+  height (Hollow Knight's vessel, FragTrap) skip the chest check instead of crashing.
+- Some packs register their models in lua the scan doesn't read (Rogue, Marvel Rivals): add them by hand (`mdl` in the catalog).
 - A model's hands look fine in the bind pose even when they will break: the failures only show once CS2 poses them. Look at `_hands.png`.

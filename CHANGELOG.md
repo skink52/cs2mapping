@@ -14,6 +14,13 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   Hokage hats...). Reference head: tm_leet_variantf from CS2's VPK (`s2/agent_mesh.mjs`). Gotchas: bone merge for head cosmetics,
   fit copies, CheckTransmit for first person, first-person legs (render alpha 254).
 
+## 2026-11-06: GMod player models batch 9 (691 in all), duplicates flagged, parallel conversion
+
+- **[create] playermodels**: batch 9: 291 models from 396 new Workshop items (browse.py --search with 18 extra terms; X-Men incl.
+  Rogue for skink52). New `dupes.py` (possible duplicates flagged, kept); `cleanup.py --unchosen`; `pipeline.py --jobs/--timeout`;
+  chest check skips models without a chest. Dropped in review: Mad Mahoraga, Omni-Man, Elsa, Toothless, FragTrap, Grug (2),
+  a hate-symbol model and an unsuitable meme name. autoport/watchdog.py prints UTF-8 (a Workshop title crashed it).
+
 ## 2026-11-06: GMod player models batches 7-8 (396 in all), team tint, head hit box rules
 
 - **[create] playermodels**: batch 7 (40, half fun) and batch 8 (192: every distinct character left in the packs already started).

@@ -1,13 +1,15 @@
 """Free disk space after a batch: downloads and extracted files that aren't needed any more.
 
-usage: python3 -I cleanup.py <catalog.json> [--prune] [--dry-run]
+usage: python3 -I cleanup.py <catalog.json> [--prune] [--unchosen] [--dry-run]
 
   - SteamCMD downloads (<steamcmd>/steamapps/workshop/content/4000/<id>/) of every catalog item: the extract holds what's needed and
     fetch.py downloads again if ever needed. Only ids in the catalog are touched (other GMod downloads, e.g. TTT maps, stay).
   - <work>/extract/<id>/ of items with no chosen model.
   - --prune: in items that are used, delete everything the chosen models don't need (other characters in a pack, props, arms, lua):
     keeps each chosen .mdl with its .vvd/.vtx/.phy and the VMTs/VTFs its materials reference, so it can be reconverted.
-The converted addon and the reports are never touched. Prints what it deletes and the space freed.
+  - --unchosen (only this): the converted files of models no longer chosen (dropped in review, duplicates): their folders in the
+    content and game addons, report, compile log and MODELS.md picture. Nothing else.
+Otherwise the converted addon and the reports are never touched. Prints what it deletes and the space freed.
 """
 import json, os, re, shutil, sys
 
@@ -47,9 +49,28 @@ def needed(root, mdls):
     return keep
 
 
+def unchosen(cat, p, dry):
+    chosen = {it['slug'] for it in cat['items'] if it.get('chosen') and it.get('slug')}
+    gone = sorted({it['slug'] for it in cat['items'] if it.get('slug') and not it.get('chosen')} - chosen)
+    out = p.get('out') or ''
+    addons = [out, out.replace(os.sep + 'content' + os.sep, os.sep + 'game' + os.sep)]
+    freed = 0
+    for slug in gone:
+        targets = [os.path.join(a, *sub) for a in addons for sub in (('models', 'player', 'gmod', slug), ('materials', 'models', 'player', 'gmod', slug))]
+        targets += [os.path.join(p['work'], 'reports', slug + x) for x in ('.json', '_compile.log')]
+        targets += [os.path.join(HERE, 'img', slug + '.jpg')]
+        for t in targets:
+            if not os.path.exists(t) or not t.rstrip(os.sep).endswith((slug, slug + '.json', slug + '_compile.log', slug + '.jpg')): continue
+            n = size(t); freed += n
+            print('%s %s (%.1f MB)' % ('would delete' if dry else 'delete', t, n / 1e6))
+            if not dry: shutil.rmtree(t) if os.path.isdir(t) else os.remove(t)
+    print('%s %.2f GB' % ('would free' if dry else 'freed', freed / 1e9))
+
+
 def main():
     cat = json.load(open(sys.argv[1], encoding='utf-8')); p = fetch.paths(cat)
     dry = '--dry-run' in sys.argv
+    if '--unchosen' in sys.argv: return unchosen(cat, p, dry)
     used = {}
     for it in cat['items']:
         if it.get('chosen'): used.setdefault(it['id'], []).append(it['mdl'].lower())

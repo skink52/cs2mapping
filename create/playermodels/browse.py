@@ -1,6 +1,6 @@
 """Candidate finder: GMod Workshop (app 4000) items tagged Model that aren't in the catalog yet, from the Workshop browse pages.
 
-usage: python3 -I browse.py <catalog.json> [--out candidates.json] [--all]
+usage: python3 -I browse.py <catalog.json> [--out candidates.json] [--all] [--search word,word]
 
 Reads the browse pages the way a browser gets them (top rated over 7/30/90/365 days, then "playermodel" searches: top rated,
 trending, most subscribed) and keeps the item list each page embeds as JSON (id, title, author, size, subscribers). Prints the
@@ -49,7 +49,11 @@ def main():
     have = {it['id'] for it in cat['items']}
     out_path = sys.argv[sys.argv.index('--out') + 1] if '--out' in sys.argv else os.path.join(fetch.paths(cat)['work'], 'logs', 'candidates.json')
     found = {}
-    for sort, days, q, pages in QUERIES:
+    queries = list(QUERIES)
+    if '--search' in sys.argv:          # extra searches: top rated over a year and all-time most subscribed, 4 pages each
+        for w in sys.argv[sys.argv.index('--search') + 1].split(','):
+            queries += [('toprated', 365, w.replace(' ', '+'), 4), ('totaluniquesubscribers', -1, w.replace(' ', '+'), 4)]
+    for sort, days, q, pages in queries:
         for p in range(1, pages + 1):
             req = urllib.request.Request(URL.format(sort=sort, p=p, days=days, q=q), headers={'User-Agent': 'Mozilla/5.0'})
             try: text = urllib.request.urlopen(req, timeout=30).read().decode('utf-8', 'replace')
