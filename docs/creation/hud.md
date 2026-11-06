@@ -8,7 +8,7 @@ classes and text on its panels, for everyone or per player.
 **Files** (in the addon's content folder; they compile with the map, or with `resourcecompiler -f -i <file>`):
 
 ```
-panorama/layout/custom_game/<name>.xml      -> the entity's layout keyvalue points at the compiled .vxml
+panorama/layout/custom_game/<name>.xml      -> the entity's layout keyvalue: in Hammer pick the .vxml; the entity stores the source name (`.xml`). A plugin spawning one must pass the `.xml` name (a `.vxml` name is refused by the client: cs2-gotchas)
 panorama/styles/custom_game/<name>.css
 panorama/images/custom_game/<name>/*.png    -> url("file://{images}/custom_game/<name>/x.png") in the css
 ```
