@@ -117,21 +117,39 @@
    "item": 630671996,
    "mdl": "models/gmod_tower/fedorahat.mdl",
    "name": "Fedora",
-   "batch": 1
+   "batch": 1,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "too far back, blends into gordons forehead. looks good on agent though."
+   },
+   "offset": [
+    2.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "aviators",
    "item": 630671996,
    "mdl": "models/gmod_tower/aviators.mdl",
    "name": "Aviators",
-   "batch": 1
+   "batch": 1,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "sombrero",
    "item": 630671996,
    "mdl": "models/gmod_tower/sombrero.mdl",
    "name": "Sombrero",
-   "batch": 1
+   "batch": 1,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "afro_ps",
@@ -143,21 +161,50 @@
     0,
     0,
     1.5
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "santa_ps",
    "item": 1083257553,
    "mdl": "models/santa/santa.mdl",
    "name": "Santa Hat",
-   "batch": 1
+   "batch": 1,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "rotated 90 degrees right (anatomical)"
+   },
+   "offset": [
+    0.0,
+    0,
+    0.0
+   ],
+   "rotate": [
+    0,
+    90,
+    0
+   ]
   },
   {
    "id": "cowboy_hat",
    "item": 148215278,
    "mdl": "models/captainbigbutt/skeyler/hats/cowboyhat.mdl",
    "name": "Cowboy Hat",
-   "batch": 1
+   "batch": 1,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "slightly too high"
+   },
+   "offset": [
+    0.0,
+    0,
+    -2.0
+   ]
   },
   {
    "id": "hokage",
@@ -166,18 +213,27 @@
    "name": "Hokage Hat",
    "batch": 1,
    "offset": [
+    0.0,
     0,
-    0,
-    -5
+    -6.5
    ],
-   "scale": 0.9
+   "scale": 0.9,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "unit or so too high."
+   }
   },
   {
    "id": "mask_arnold",
    "item": 282958377,
    "mdl": "models/snowzgmod/payday2/masks/maskarnold.mdl",
    "name": "Arnold Mask",
-   "batch": 1
+   "batch": 1,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "knuckles_shades",
@@ -195,24 +251,45 @@
    "name": "Beanie",
    "batch": 1,
    "offset": [
+    0.0,
     0,
-    0,
-    -1.5
-   ]
+    -3.5
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "very large, maybe 30% larger than needed, sits slightly too high"
+   },
+   "scale": 0.77
   },
   {
    "id": "headphones",
    "item": 148215278,
    "mdl": "models/gmod_tower/headphones.mdl",
    "name": "Headphones",
-   "batch": 1
+   "batch": 1,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "really large, ~10 units too low. maybe reduce size 20%"
+   },
+   "offset": [
+    0.0,
+    0,
+    8.0
+   ],
+   "scale": 0.8
   },
   {
    "id": "catears",
    "item": 630671996,
    "mdl": "models/gmod_tower/catears.mdl",
    "name": "Cat Ears",
-   "batch": 1
+   "batch": 1,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "russianhat1",
@@ -220,7 +297,13 @@
    "mdl": "models/russianhat1.mdl",
    "name": "Russian",
    "batch": 1,
-   "verts": 482
+   "verts": 482,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "americahat",
@@ -228,7 +311,11 @@
    "mdl": "models/americahat/americahat.mdl",
    "name": "Murica",
    "batch": 1,
-   "verts": 290
+   "verts": 290,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "astronauthelmet",
@@ -237,7 +324,17 @@
    "name": "Astronaut Helmet",
    "batch": 1,
    "verts": 1039,
-   "scale": 0.75
+   "scale": 0.75,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "too high, slightly too far back. needs to go down?from length of agents nose to bottom of beard/chin. ~2 units forward."
+   },
+   "offset": [
+    2.0,
+    0,
+    -7.5
+   ]
   },
   {
    "id": "beerhat",
@@ -245,7 +342,17 @@
    "mdl": "models/beerhat/beerhat.mdl",
    "name": "beerhat",
    "batch": 1,
-   "verts": 2442
+   "verts": 2442,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "3 or so units too low"
+   },
+   "offset": [
+    0.0,
+    0,
+    3.0
+   ]
   },
   {
    "id": "bunnyears",
@@ -253,7 +360,11 @@
    "mdl": "models/bunnyears/bunnyears.mdl",
    "name": "wierd ears",
    "batch": 1,
-   "verts": 3044
+   "verts": 3044,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "cakehat",
@@ -262,7 +373,13 @@
    "name": "Cake Hat",
    "batch": 1,
    "verts": 335,
-   "autofit": true
+   "autofit": true,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "captainshat",
@@ -272,10 +389,15 @@
    "batch": 1,
    "verts": 1502,
    "offset": [
+    0.0,
     0,
-    0,
-    -1.5
-   ]
+    3.5
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "5 units or so too low\n"
+   }
   },
   {
    "id": "ghelm",
@@ -283,7 +405,17 @@
    "mdl": "models/daftpunk/ghelm.mdl",
    "name": "Daft Punk Hat",
    "batch": 1,
-   "verts": 1901
+   "verts": 1901,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "couple units back"
+   },
+   "offset": [
+    -2.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "shelm",
@@ -291,7 +423,17 @@
    "mdl": "models/daftpunk/shelm.mdl",
    "name": "Daft Punk Hat2",
    "batch": 1,
-   "verts": 909
+   "verts": 909,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "couple units back"
+   },
+   "offset": [
+    -2.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "gaypolicehat",
@@ -309,7 +451,11 @@
    "mdl": "models/gmod_tower/3dglasses.mdl",
    "name": "3D Glasses",
    "batch": 1,
-   "verts": 556
+   "verts": 556,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "afro",
@@ -321,8 +467,13 @@
    "offset": [
     -1.5,
     0,
-    1.5
-   ]
+    6.5
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "few units higher ~5"
+   }
   },
   {
    "id": "kfcbucket",
@@ -330,7 +481,11 @@
    "mdl": "models/gmod_tower/kfcbucket.mdl",
    "name": "KFC Bucket",
    "batch": 1,
-   "verts": 232
+   "verts": 232,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "klienerglasses",
@@ -338,7 +493,11 @@
    "mdl": "models/gmod_tower/klienerglasses.mdl",
    "name": "Kleiner Glasses",
    "batch": 1,
-   "verts": 608
+   "verts": 608,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "linkhat",
@@ -346,7 +505,17 @@
    "mdl": "models/gmod_tower/linkhat.mdl",
    "name": "Link Hat",
    "batch": 1,
-   "verts": 275
+   "verts": 275,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "few units forward. "
+   },
+   "offset": [
+    3.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "majorasmask",
@@ -354,7 +523,17 @@
    "mdl": "models/gmod_tower/majorasmask.mdl",
    "name": "Majoras Mask",
    "batch": 1,
-   "verts": 191
+   "verts": 191,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "2 units forward"
+   },
+   "offset": [
+    2.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "midnahat",
@@ -362,7 +541,11 @@
    "mdl": "models/gmod_tower/midnahat.mdl",
    "name": "Midna Hat",
    "batch": 1,
-   "verts": 343
+   "verts": 343,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "seusshat",
@@ -370,7 +553,17 @@
    "mdl": "models/gmod_tower/seusshat.mdl",
    "name": "Seuss Hat",
    "batch": 1,
-   "verts": 253
+   "verts": 253,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "2 units forward"
+   },
+   "offset": [
+    2.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "starglasses",
@@ -378,7 +571,11 @@
    "mdl": "models/gmod_tower/starglasses.mdl",
    "name": "Star Glasses",
    "batch": 1,
-   "verts": 882
+   "verts": 882,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "toetohat",
@@ -386,7 +583,17 @@
    "mdl": "models/gmod_tower/toetohat.mdl",
    "name": "Toeto Hat",
    "batch": 1,
-   "verts": 558
+   "verts": 558,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "2 units down, 2 forawrd"
+   },
+   "offset": [
+    2.0,
+    0,
+    -2.0
+   ]
   },
   {
    "id": "tophat",
@@ -394,7 +601,17 @@
    "mdl": "models/gmod_tower/tophat.mdl",
    "name": "Tophat",
    "batch": 1,
-   "verts": 296
+   "verts": 296,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "4 down, 2 forward"
+   },
+   "offset": [
+    2.0,
+    0,
+    -4.0
+   ]
   },
   {
    "id": "witchhat",
@@ -402,7 +619,17 @@
    "mdl": "models/gmod_tower/witchhat.mdl",
    "name": "Witch Hat",
    "batch": 1,
-   "verts": 290
+   "verts": 290,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "4 forward"
+   },
+   "offset": [
+    4.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "highhat",
@@ -410,7 +637,11 @@
    "mdl": "models/highhat/highhat.mdl",
    "name": "tophat",
    "batch": 1,
-   "verts": 290
+   "verts": 290,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "horsiemask",
@@ -418,7 +649,11 @@
    "mdl": "models/horsie/horsiemask.mdl",
    "name": "HorseMask",
    "batch": 1,
-   "verts": 1395
+   "verts": 1395,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "ledmau5",
@@ -426,7 +661,11 @@
    "mdl": "models/ledmau5/ledmau5.mdl",
    "name": "dea5",
    "batch": 1,
-   "verts": 2240
+   "verts": 2240,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "mariohat",
@@ -434,7 +673,11 @@
    "mdl": "models/mariohat/mariohat.mdl",
    "name": "mariohat",
    "batch": 1,
-   "verts": 1645
+   "verts": 1645,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "mushroom",
@@ -448,7 +691,11 @@
     0,
     0,
     -0.5
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "paperbag",
@@ -456,7 +703,12 @@
    "mdl": "models/paperbag/paperbag.mdl",
    "name": "bag",
    "batch": 1,
-   "verts": 138
+   "verts": 138,
+   "review": {
+    "round": 1,
+    "verdict": "ok",
+    "note": "1 unit forward"
+   }
   },
   {
    "id": "partyhat",
@@ -465,7 +717,11 @@
    "name": "Partyhat",
    "batch": 1,
    "verts": 50,
-   "scale": 0.55
+   "scale": 0.55,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "partyhat2",
@@ -473,7 +729,11 @@
    "mdl": "models/partyhat2/partyhat2.mdl",
    "name": "partyhat",
    "batch": 1,
-   "verts": 50
+   "verts": 50,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "pokeball",
@@ -482,7 +742,11 @@
    "name": "pokeball",
    "batch": 1,
    "verts": 374,
-   "scale": 0.8
+   "scale": 0.8,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "policehat",
@@ -490,7 +754,17 @@
    "mdl": "models/policehat/policehat.mdl",
    "name": "policehat",
    "batch": 1,
-   "verts": 1020
+   "verts": 1020,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "2 units up"
+   },
+   "offset": [
+    0.0,
+    0,
+    2.0
+   ]
   },
   {
    "id": "salesmanhat",
@@ -503,7 +777,13 @@
     0,
     0,
     -0.5
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "pd2_mask_chains",
@@ -511,7 +791,17 @@
    "mdl": "models/shaklin/payday2/masks/pd2_mask_chains.mdl",
    "name": "Paydaymask",
    "batch": 1,
-   "verts": 5793
+   "verts": 5793,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "4 units up"
+   },
+   "offset": [
+    0.0,
+    0,
+    4.0
+   ]
   },
   {
    "id": "pd2_mask_dallas",
@@ -519,7 +809,17 @@
    "mdl": "models/shaklin/payday2/masks/pd2_mask_dallas.mdl",
    "name": "paydaymask2",
    "batch": 1,
-   "verts": 5244
+   "verts": 5244,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "4 units up"
+   },
+   "offset": [
+    0.0,
+    0,
+    4.0
+   ]
   },
   {
    "id": "pd2_mask_hoxton",
@@ -527,7 +827,17 @@
    "mdl": "models/shaklin/payday2/masks/pd2_mask_hoxton.mdl",
    "name": "paydaymask2",
    "batch": 1,
-   "verts": 5369
+   "verts": 5369,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "4 units up"
+   },
+   "offset": [
+    0.0,
+    0,
+    4.0
+   ]
   },
   {
    "id": "pd2_mask_wolf",
@@ -535,7 +845,17 @@
    "mdl": "models/shaklin/payday2/masks/pd2_mask_wolf.mdl",
    "name": "paydaymask2",
    "batch": 1,
-   "verts": 5020
+   "verts": 5020,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "4 units up"
+   },
+   "offset": [
+    0.0,
+    0,
+    4.0
+   ]
   },
   {
    "id": "solarthing",
@@ -543,7 +863,11 @@
    "mdl": "models/solarthing/solarthing.mdl",
    "name": "Solarthing",
    "batch": 1,
-   "verts": 752
+   "verts": 752,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "vikinghelmet",
@@ -551,7 +875,13 @@
    "mdl": "models/vikinghelmet/vikinghelmet.mdl",
    "name": "Viking Helmet",
    "batch": 1,
-   "verts": 438
+   "verts": 438,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "viroshat",
@@ -564,7 +894,13 @@
     0,
     0,
     1
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "duncehat",
@@ -572,7 +908,17 @@
    "mdl": "models/duncehat/duncehat.mdl",
    "name": "Dunce Hat",
    "batch": 1,
-   "verts": 45
+   "verts": 45,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "2 units forward"
+   },
+   "offset": [
+    2.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "antlers",
@@ -580,7 +926,11 @@
    "mdl": "models/sam/antlers.mdl",
    "name": "Antlers",
    "batch": 1,
-   "verts": 1068
+   "verts": 1068,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "drinkcap",
@@ -588,7 +938,11 @@
    "mdl": "models/sam/drinkcap.mdl",
    "name": "Drink Cap",
    "batch": 1,
-   "verts": 1318
+   "verts": 1318,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "glasses_small",
@@ -596,7 +950,13 @@
    "mdl": "models/dealwithit/glasses_small.mdl",
    "name": "Deal with it",
    "batch": 1,
-   "verts": 792
+   "verts": 792,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "fox",
@@ -604,7 +964,11 @@
    "mdl": "models/sal/fox.mdl",
    "name": "Fox Hat",
    "batch": 1,
-   "verts": 1800
+   "verts": 1800,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "monkey",
@@ -612,7 +976,11 @@
    "mdl": "models/sal/halloween/monkey.mdl",
    "name": "Monkey Hat",
    "batch": 1,
-   "verts": 786
+   "verts": 786,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "glasses01",
@@ -620,7 +988,13 @@
    "mdl": "models/captainbigbutt/skeyler/accessories/glasses01.mdl",
    "name": "Glasses01",
    "batch": 1,
-   "verts": 344
+   "verts": 344,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "glasses02",
@@ -628,7 +1002,13 @@
    "mdl": "models/captainbigbutt/skeyler/accessories/glasses02.mdl",
    "name": "Glasses02",
    "batch": 1,
-   "verts": 300
+   "verts": 300,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "glasses03",
@@ -636,7 +1016,13 @@
    "mdl": "models/captainbigbutt/skeyler/accessories/glasses03.mdl",
    "name": "Glasses03",
    "batch": 1,
-   "verts": 116
+   "verts": 116,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "glasses04",
@@ -644,7 +1030,13 @@
    "mdl": "models/captainbigbutt/skeyler/accessories/glasses04.mdl",
    "name": "Glasses04",
    "batch": 1,
-   "verts": 154
+   "verts": 154,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "monocle",
@@ -658,7 +1050,13 @@
     0,
     -1.3,
     0.3
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "mustache",
@@ -666,7 +1064,13 @@
    "mdl": "models/captainbigbutt/skeyler/accessories/mustache.mdl",
    "name": "Mustache",
    "batch": 1,
-   "verts": 219
+   "verts": 219,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "afro_2",
@@ -675,7 +1079,13 @@
    "name": "Afro",
    "batch": 1,
    "verts": 804,
-   "scale": 0.75
+   "scale": 0.75,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "bear_hat",
@@ -683,7 +1093,17 @@
    "mdl": "models/captainbigbutt/skeyler/hats/bear_hat.mdl",
    "name": "Bear Hat",
    "batch": 1,
-   "verts": 588
+   "verts": 588,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "3 units down"
+   },
+   "offset": [
+    0.0,
+    0,
+    -3.0
+   ]
   },
   {
    "id": "bunny_ears",
@@ -691,7 +1111,13 @@
    "mdl": "models/captainbigbutt/skeyler/hats/bunny_ears.mdl",
    "name": "Bunny Ears",
    "batch": 1,
-   "verts": 484
+   "verts": 484,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "cat_ears",
@@ -699,7 +1125,17 @@
    "mdl": "models/captainbigbutt/skeyler/hats/cat_ears.mdl",
    "name": "Cat Ears",
    "batch": 1,
-   "verts": 928
+   "verts": 928,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "5 units down"
+   },
+   "offset": [
+    0.0,
+    0,
+    -5.0
+   ]
   },
   {
    "id": "cat_hat",
@@ -707,7 +1143,17 @@
    "mdl": "models/captainbigbutt/skeyler/hats/cat_hat.mdl",
    "name": "Cat Hat",
    "batch": 1,
-   "verts": 396
+   "verts": 396,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "4-5 units down"
+   },
+   "offset": [
+    0.0,
+    0,
+    -4.5
+   ]
   },
   {
    "id": "deadmau5",
@@ -721,7 +1167,13 @@
     0,
     0,
     2
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "devhat",
@@ -739,7 +1191,11 @@
    "mdl": "models/captainbigbutt/skeyler/hats/fedora.mdl",
    "name": "Fedora",
    "batch": 1,
-   "verts": 538
+   "verts": 538,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "frog_hat",
@@ -747,7 +1203,17 @@
    "mdl": "models/captainbigbutt/skeyler/hats/frog_hat.mdl",
    "name": "Frog Hat",
    "batch": 1,
-   "verts": 432
+   "verts": 432,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "4-5 units down"
+   },
+   "offset": [
+    0.0,
+    0,
+    -4.5
+   ]
   },
   {
    "id": "heartband",
@@ -760,7 +1226,13 @@
     0,
     0,
     -2.5
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "maid_headband",
@@ -773,7 +1245,11 @@
     0,
     0,
     -1
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "pumpkin",
@@ -782,7 +1258,17 @@
    "name": "Pumpkin",
    "batch": 1,
    "verts": 3075,
-   "scale": 1.3
+   "scale": 1.3,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "3 units up, 3 forward"
+   },
+   "offset": [
+    3.0,
+    0,
+    3.0
+   ]
   },
   {
    "id": "santa",
@@ -795,7 +1281,13 @@
     0,
     0,
     -1.5
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "starband",
@@ -808,7 +1300,13 @@
     0,
     0,
     -2.5
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "strawhat",
@@ -816,7 +1314,17 @@
    "mdl": "models/captainbigbutt/skeyler/hats/strawhat.mdl",
    "name": "Strawhat",
    "batch": 1,
-   "verts": 434
+   "verts": 434,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "3 forward, 2 up"
+   },
+   "offset": [
+    3.0,
+    0,
+    2.0
+   ]
   },
   {
    "id": "sunhat",
@@ -824,7 +1332,11 @@
    "mdl": "models/captainbigbutt/skeyler/hats/sunhat.mdl",
    "name": "Sunhat",
    "batch": 1,
-   "verts": 1228
+   "verts": 1228,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "tophat02",
@@ -832,7 +1344,12 @@
    "mdl": "models/captainbigbutt/skeyler/hats/tophat02.mdl",
    "name": "Tophat02",
    "batch": 1,
-   "verts": 1103
+   "verts": 1103,
+   "review": {
+    "round": 1,
+    "verdict": "ok",
+    "note": "2 forward"
+   }
   },
   {
    "id": "zhat",
@@ -840,7 +1357,13 @@
    "mdl": "models/captainbigbutt/skeyler/hats/zhat.mdl",
    "name": "Zhat",
    "batch": 1,
-   "verts": 574
+   "verts": 574,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "androssmask",
@@ -848,7 +1371,17 @@
    "mdl": "models/gmod_tower/androssmask.mdl",
    "name": "Androssmask",
    "batch": 1,
-   "verts": 856
+   "verts": 856,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "3 forward"
+   },
+   "offset": [
+    3.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "balloonicorn_nojiggle",
@@ -861,7 +1394,11 @@
     0,
     0,
     -3
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "baseballcap",
@@ -869,7 +1406,13 @@
    "mdl": "models/gmod_tower/baseballcap.mdl",
    "name": "Baseballcap",
    "batch": 1,
-   "verts": 579
+   "verts": 579,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "batmanmask",
@@ -877,7 +1420,17 @@
    "mdl": "models/gmod_tower/batmanmask.mdl",
    "name": "Batmanmask",
    "batch": 1,
-   "verts": 754
+   "verts": 754,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "3 units up"
+   },
+   "offset": [
+    0.0,
+    0,
+    3.0
+   ]
   },
   {
    "id": "bombermanhelmet",
@@ -885,7 +1438,13 @@
    "mdl": "models/gmod_tower/bombermanhelmet.mdl",
    "name": "Bombermanhelmet",
    "batch": 1,
-   "verts": 791
+   "verts": 791,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "halloween_jasonmask",
@@ -893,7 +1452,13 @@
    "mdl": "models/gmod_tower/halloween_jasonmask.mdl",
    "name": "Halloween Jasonmask",
    "batch": 1,
-   "verts": 540
+   "verts": 540,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "halloween_nightmarehat",
@@ -901,7 +1466,13 @@
    "mdl": "models/gmod_tower/halloween_nightmarehat.mdl",
    "name": "Halloween Nightmarehat",
    "batch": 1,
-   "verts": 419
+   "verts": 419,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "halloween_pumpkinhat",
@@ -909,7 +1480,13 @@
    "mdl": "models/gmod_tower/halloween_pumpkinhat.mdl",
    "name": "Halloween Pumpkinhat",
    "batch": 1,
-   "verts": 436
+   "verts": 436,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "headcrabhat",
@@ -917,7 +1494,17 @@
    "mdl": "models/gmod_tower/headcrabhat.mdl",
    "name": "Headcrabhat",
    "batch": 1,
-   "verts": 1372
+   "verts": 1372,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "10 units down"
+   },
+   "offset": [
+    0.0,
+    0,
+    -10.0
+   ]
   },
   {
    "id": "king_boos_crown",
@@ -926,7 +1513,13 @@
    "name": "King Boos Crown",
    "batch": 1,
    "verts": 266,
-   "scale": 0.45
+   "scale": 0.45,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "legohead",
@@ -934,7 +1527,13 @@
    "mdl": "models/gmod_tower/legohead.mdl",
    "name": "Legohead",
    "batch": 1,
-   "verts": 315
+   "verts": 315,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "metaknight_mask",
@@ -942,7 +1541,13 @@
    "mdl": "models/gmod_tower/metaknight_mask.mdl",
    "name": "Metaknight Mask",
    "batch": 1,
-   "verts": 417
+   "verts": 417,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "noface",
@@ -951,7 +1556,11 @@
    "name": "Noface",
    "batch": 1,
    "verts": 338,
-   "kind": "mask"
+   "kind": "mask",
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "pilgrimhat",
@@ -959,7 +1568,11 @@
    "mdl": "models/gmod_tower/pilgrimhat.mdl",
    "name": "Pilgrimhat",
    "batch": 1,
-   "verts": 2242
+   "verts": 2242,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "rubikscube",
@@ -968,7 +1581,11 @@
    "name": "Rubikscube",
    "batch": 1,
    "verts": 1464,
-   "kind": "mask"
+   "kind": "mask",
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "santahat",
@@ -981,7 +1598,13 @@
     0,
     0,
     -1
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "snowboardgoggles",
@@ -989,7 +1612,13 @@
    "mdl": "models/gmod_tower/snowboardgoggles.mdl",
    "name": "Snowboardgoggles",
    "batch": 1,
-   "verts": 1200
+   "verts": 1200,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "teamrockethat",
@@ -997,7 +1626,11 @@
    "mdl": "models/gmod_tower/teamrockethat.mdl",
    "name": "Teamrockethat",
    "batch": 1,
-   "verts": 1118
+   "verts": 1118,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "toromask",
@@ -1005,7 +1638,13 @@
    "mdl": "models/gmod_tower/toromask.mdl",
    "name": "Toromask",
    "batch": 1,
-   "verts": 78
+   "verts": 78,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "turkey",
@@ -1013,7 +1652,17 @@
    "mdl": "models/gmod_tower/turkey.mdl",
    "name": "Turkey",
    "batch": 1,
-   "verts": 10700
+   "verts": 10700,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "5 units up"
+   },
+   "offset": [
+    0.0,
+    0,
+    5.0
+   ]
   },
   {
    "id": "billyhatcherhat",
@@ -1023,10 +1672,15 @@
    "batch": 1,
    "verts": 427,
    "offset": [
+    -12.0,
     0,
-    0,
-    -3
-   ]
+    -6.0
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "15 units back? 3 units down?"
+   }
   },
   {
    "id": "blackmage_hat",
@@ -1034,7 +1688,11 @@
    "mdl": "models/lordvipes/blackmage/blackmage_hat.mdl",
    "name": "Blackmage Hat",
    "batch": 1,
-   "verts": 131
+   "verts": 131,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "cuboneskull",
@@ -1044,9 +1702,19 @@
    "batch": 1,
    "verts": 1407,
    "offset": [
+    8.0,
     0,
+    3.0
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "8 units forward? angle 30deg forward,"
+   },
+   "rotate": [
+    30,
     0,
-    3
+    0
    ]
   },
   {
@@ -1055,7 +1723,13 @@
    "mdl": "models/lordvipes/daftpunk/thomas.mdl",
    "name": "Thomas",
    "batch": 1,
-   "verts": 1175
+   "verts": 1175,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "generalpepperhat",
@@ -1063,7 +1737,17 @@
    "mdl": "models/lordvipes/generalpepperhat/generalpepperhat.mdl",
    "name": "Generalpepperhat",
    "batch": 1,
-   "verts": 97
+   "verts": 97,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "forward 5 units\n"
+   },
+   "offset": [
+    5.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "keatonmask",
@@ -1071,7 +1755,18 @@
    "mdl": "models/lordvipes/keatonmask/keatonmask.mdl",
    "name": "Keatonmask",
    "batch": 1,
-   "verts": 1074
+   "verts": 1074,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "forward 4, scale up 20%"
+   },
+   "offset": [
+    4.0,
+    0,
+    0.0
+   ],
+   "scale": 1.2
   },
   {
    "id": "klonoahat",
@@ -1079,7 +1774,17 @@
    "mdl": "models/lordvipes/klonoahat/klonoahat.mdl",
    "name": "Klonoahat",
    "batch": 1,
-   "verts": 252
+   "verts": 252,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "forward 5 units"
+   },
+   "offset": [
+    5.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "luigihat",
@@ -1087,7 +1792,17 @@
    "mdl": "models/lordvipes/luigihat/luigihat.mdl",
    "name": "Luigihat",
    "batch": 1,
-   "verts": 288
+   "verts": 288,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 3 units, forward 1 unit"
+   },
+   "offset": [
+    1.0,
+    0,
+    -3.0
+   ]
   },
   {
    "id": "majoramask",
@@ -1096,7 +1811,13 @@
    "name": "Majoramask",
    "batch": 1,
    "verts": 2759,
-   "scale": 1.8
+   "scale": 1.8,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "makarmask",
@@ -1104,7 +1825,22 @@
    "mdl": "models/lordvipes/makarmask/makarmask.mdl",
    "name": "Makarmask",
    "batch": 1,
-   "verts": 64
+   "verts": 64,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "angle down 15 deg, forward 5, up 2"
+   },
+   "offset": [
+    5.0,
+    0,
+    2.0
+   ],
+   "rotate": [
+    15,
+    0,
+    0
+   ]
   },
   {
    "id": "mariohat_2",
@@ -1112,7 +1848,17 @@
    "mdl": "models/lordvipes/mariohat/mariohat.mdl",
    "name": "Mariohat",
    "batch": 1,
-   "verts": 281
+   "verts": 281,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 3, foward 2"
+   },
+   "offset": [
+    2.0,
+    0,
+    -3.0
+   ]
   },
   {
    "id": "peachcrown",
@@ -1121,7 +1867,11 @@
    "name": "Peachcrown",
    "batch": 1,
    "verts": 280,
-   "scale": 0.75
+   "scale": 0.75,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "redshat",
@@ -1129,7 +1879,11 @@
    "mdl": "models/lordvipes/redshat/redshat.mdl",
    "name": "Redshat",
    "batch": 1,
-   "verts": 99
+   "verts": 99,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "servbothead",
@@ -1137,7 +1891,13 @@
    "mdl": "models/lordvipes/servbothead/servbothead.mdl",
    "name": "Servbothead",
    "batch": 1,
-   "verts": 432
+   "verts": 432,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "toadhat",
@@ -1145,7 +1905,17 @@
    "mdl": "models/lordvipes/toadhat/toadhat.mdl",
    "name": "Toadhat",
    "batch": 1,
-   "verts": 312
+   "verts": 312,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 5"
+   },
+   "offset": [
+    0.0,
+    0,
+    -5.0
+   ]
   },
   {
    "id": "viewtifuljoehelmet",
@@ -1153,7 +1923,17 @@
    "mdl": "models/lordvipes/viewtifuljoehelmet/viewtifuljoehelmet.mdl",
    "name": "Viewtifuljoehelmet",
    "batch": 1,
-   "verts": 378
+   "verts": 378,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "up 10"
+   },
+   "offset": [
+    0.0,
+    0,
+    10.0
+   ]
   },
   {
    "id": "power_mask",
@@ -1231,7 +2011,17 @@
    "mdl": "models/props_splatoon/gear/headgear/bandanas/bandanas_female.mdl",
    "name": "Bandanas Female",
    "batch": 1,
-   "verts": 865
+   "verts": 865,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "drop 20"
+   },
+   "offset": [
+    0.0,
+    0,
+    -8.0
+   ]
   },
   {
    "id": "bandanas_male",
@@ -1239,7 +2029,17 @@
    "mdl": "models/props_splatoon/gear/headgear/bandanas/bandanas_male.mdl",
    "name": "Bandanas Male",
    "batch": 1,
-   "verts": 863
+   "verts": 863,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "drop 20"
+   },
+   "offset": [
+    0.0,
+    0,
+    -8.0
+   ]
   },
   {
    "id": "bobble_hats",
@@ -1247,7 +2047,13 @@
    "mdl": "models/props_splatoon/gear/headgear/beanies/bobble_hats/bobble_hats.mdl",
    "name": "Bobble Hats",
    "batch": 1,
-   "verts": 1156
+   "verts": 1156,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "squid_nordic",
@@ -1260,7 +2066,13 @@
     0,
     0,
     -3
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "squid_nordic_no_goggles",
@@ -1269,7 +2081,13 @@
    "name": "Squid Nordic No Goggles",
    "batch": 1,
    "verts": 975,
-   "kind": "hat"
+   "kind": "hat",
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "baseball_caps",
@@ -1277,7 +2095,13 @@
    "mdl": "models/props_splatoon/gear/headgear/caps/baseball_caps/baseball_caps.mdl",
    "name": "Baseball Caps",
    "batch": 1,
-   "verts": 2011
+   "verts": 2011,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "basketball_caps",
@@ -1285,7 +2109,13 @@
    "mdl": "models/props_splatoon/gear/headgear/caps/basketball_caps/basketball_caps.mdl",
    "name": "Basketball Caps",
    "batch": 1,
-   "verts": 2967
+   "verts": 2967,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "mesh_caps",
@@ -1293,7 +2123,13 @@
    "mdl": "models/props_splatoon/gear/headgear/caps/mesh_caps/mesh_caps.mdl",
    "name": "Mesh Caps",
    "batch": 1,
-   "verts": 708
+   "verts": 708,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "18k_aviators",
@@ -1301,7 +2137,13 @@
    "mdl": "models/props_splatoon/gear/headgear/glasses/18k_aviators/18k_aviators.mdl",
    "name": "18k Aviators",
    "batch": 1,
-   "verts": 1050
+   "verts": 1050,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "arrowbands",
@@ -1319,7 +2161,13 @@
    "mdl": "models/props_splatoon/gear/headgear/glasses/full_moon_glasses/full_moon_glasses.mdl",
    "name": "Full Moon Glasses",
    "batch": 1,
-   "verts": 2046
+   "verts": 2046,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "octoglasses",
@@ -1327,7 +2175,13 @@
    "mdl": "models/props_splatoon/gear/headgear/glasses/octoglasses/octoglasses.mdl",
    "name": "Octoglasses",
    "batch": 1,
-   "verts": 3596
+   "verts": 3596,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "retro_specs",
@@ -1335,7 +2189,13 @@
    "mdl": "models/props_splatoon/gear/headgear/glasses/retro_specs/retro_specs.mdl",
    "name": "Retro Specs",
    "batch": 1,
-   "verts": 582
+   "verts": 582,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "shades",
@@ -1343,7 +2203,13 @@
    "mdl": "models/props_splatoon/gear/headgear/glasses/shades/shades.mdl",
    "name": "Shades",
    "batch": 1,
-   "verts": 680
+   "verts": 680,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "pilot_goggles",
@@ -1351,7 +2217,13 @@
    "mdl": "models/props_splatoon/gear/headgear/goggles/pilot_goggles/pilot_goggles.mdl",
    "name": "Pilot Goggles",
    "batch": 1,
-   "verts": 1084
+   "verts": 1084,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "snorkel_mask",
@@ -1369,7 +2241,13 @@
    "mdl": "models/props_splatoon/gear/headgear/goggles/splash_goggles/splash_goggles.mdl",
    "name": "Splash Goggles",
    "batch": 1,
-   "verts": 1029
+   "verts": 1029,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "stealth_goggles",
@@ -1377,7 +2255,13 @@
    "mdl": "models/props_splatoon/gear/headgear/goggles/stealth_goggles/stealth_goggles.mdl",
    "name": "Stealth Goggles",
    "batch": 1,
-   "verts": 989
+   "verts": 989,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "stealth_goggles_beta",
@@ -1385,7 +2269,13 @@
    "mdl": "models/props_splatoon/gear/headgear/goggles/stealth_goggles/stealth_goggles_beta.mdl",
    "name": "Stealth Goggles Beta",
    "batch": 1,
-   "verts": 949
+   "verts": 949,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "soccer_headband_female",
@@ -1393,7 +2283,17 @@
    "mdl": "models/props_splatoon/gear/headgear/headbands/soccer_headband/soccer_headband_female.mdl",
    "name": "Soccer Headband Female",
    "batch": 1,
-   "verts": 612
+   "verts": 612,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 8 forward 3"
+   },
+   "offset": [
+    3.0,
+    0,
+    -8.0
+   ]
   },
   {
    "id": "soccer_headband_male",
@@ -1401,7 +2301,17 @@
    "mdl": "models/props_splatoon/gear/headgear/headbands/soccer_headband/soccer_headband_male.mdl",
    "name": "Soccer Headband Male",
    "batch": 1,
-   "verts": 612
+   "verts": 612,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 4 forward 3"
+   },
+   "offset": [
+    3.0,
+    0,
+    -4.0
+   ]
   },
   {
    "id": "sweatbands",
@@ -1409,7 +2319,13 @@
    "mdl": "models/props_splatoon/gear/headgear/headbands/sweatbands/sweatbands.mdl",
    "name": "Sweatbands",
    "batch": 1,
-   "verts": 752
+   "verts": 752,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "traditional_headband_female",
@@ -1437,7 +2353,13 @@
    "mdl": "models/props_splatoon/gear/headgear/headphones/designer_headphones/designer_headphones.mdl",
    "name": "Designer Headphones",
    "batch": 1,
-   "verts": 694
+   "verts": 694,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "noise_cancelers",
@@ -1445,7 +2367,13 @@
    "mdl": "models/props_splatoon/gear/headgear/headphones/noise_cancelers/noise_cancelers.mdl",
    "name": "Noise Cancelers",
    "batch": 1,
-   "verts": 1322
+   "verts": 1322,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "studio_headphones",
@@ -1453,7 +2381,13 @@
    "mdl": "models/props_splatoon/gear/headgear/headphones/studio_headphones/studio_headphones.mdl",
    "name": "Studio Headphones",
    "batch": 1,
-   "verts": 1222
+   "verts": 1222,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "armor_helmet",
@@ -1471,7 +2405,13 @@
    "mdl": "models/props_splatoon/gear/headgear/octovalley/hero_headset/hero_headset.mdl",
    "name": "Hero Headset",
    "batch": 1,
-   "verts": 885
+   "verts": 885,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "legendary_cap_female",
@@ -1481,10 +2421,15 @@
    "batch": 1,
    "verts": 1207,
    "offset": [
+    4.0,
     0,
-    0,
-    -2
-   ]
+    -4.0
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "forward 4 down 2"
+   }
   },
   {
    "id": "legendary_cap_male",
@@ -1494,10 +2439,15 @@
    "batch": 1,
    "verts": 1451,
    "offset": [
+    4.0,
     0,
-    0,
-    -2
-   ]
+    -4.0
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "forward 4 down 2"
+   }
   },
   {
    "id": "octoling_goggles",
@@ -1505,7 +2455,11 @@
    "mdl": "models/props_splatoon/gear/headgear/octovalley/octoling_goggles/octoling_goggles.mdl",
    "name": "Octoling Goggles",
    "batch": 1,
-   "verts": 1661
+   "verts": 1661,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "bamboo_hat",
@@ -1515,10 +2469,15 @@
    "batch": 1,
    "verts": 649,
    "offset": [
+    0.0,
     0,
-    0,
-    -6
-   ]
+    -16.0
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 10"
+   }
   },
   {
    "id": "blowfish_bell_hat",
@@ -1526,7 +2485,17 @@
    "mdl": "models/props_splatoon/gear/headgear/outdoors/blowfish_bell_hat/blowfish_bell_hat.mdl",
    "name": "Blowfish Bell Hat",
    "batch": 1,
-   "verts": 444
+   "verts": 444,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 5"
+   },
+   "offset": [
+    0.0,
+    0,
+    -5.0
+   ]
   },
   {
    "id": "bucket_hats",
@@ -1535,7 +2504,13 @@
    "name": "Bucket Hats",
    "batch": 1,
    "verts": 1918,
-   "kind": "hat"
+   "kind": "hat",
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "straw_boaters_female",
@@ -1543,7 +2518,17 @@
    "mdl": "models/props_splatoon/gear/headgear/outdoors/straw_boater/straw_boaters_female.mdl",
    "name": "Straw Boaters Female",
    "batch": 1,
-   "verts": 400
+   "verts": 400,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 2"
+   },
+   "offset": [
+    0.0,
+    0,
+    -2.0
+   ]
   },
   {
    "id": "straw_boaters_male",
@@ -1551,7 +2536,17 @@
    "mdl": "models/props_splatoon/gear/headgear/outdoors/straw_boater/straw_boaters_male.mdl",
    "name": "Straw Boaters Male",
    "batch": 1,
-   "verts": 400
+   "verts": 400,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 2"
+   },
+   "offset": [
+    0.0,
+    0,
+    -2.0
+   ]
   },
   {
    "id": "treasure_hunter",
@@ -1559,7 +2554,17 @@
    "mdl": "models/props_splatoon/gear/headgear/outdoors/treasure_hunter/treasure_hunter.mdl",
    "name": "Treasure Hunter",
    "batch": 1,
-   "verts": 665
+   "verts": 665,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 2"
+   },
+   "offset": [
+    0.0,
+    0,
+    -2.0
+   ]
   },
   {
    "id": "bike_helmet",
@@ -1567,7 +2572,13 @@
    "mdl": "models/props_splatoon/gear/headgear/sports/bike_helmet/bike_helmet.mdl",
    "name": "Bike Helmet",
    "batch": 1,
-   "verts": 1352
+   "verts": 1352,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "cycling_caps",
@@ -1575,7 +2586,13 @@
    "mdl": "models/props_splatoon/gear/headgear/sports/cycling_caps/cycling_caps.mdl",
    "name": "Cycling Caps",
    "batch": 1,
-   "verts": 1209
+   "verts": 1209,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "paintball_mask",
@@ -1583,7 +2600,13 @@
    "mdl": "models/props_splatoon/gear/headgear/sports/paintball_mask/paintball_mask.mdl",
    "name": "Paintball Mask",
    "batch": 1,
-   "verts": 1209
+   "verts": 1209,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "skate_helmets",
@@ -1591,7 +2614,11 @@
    "mdl": "models/props_splatoon/gear/headgear/sports/skate_helmets/skate_helmets.mdl",
    "name": "Skate Helmets",
    "batch": 1,
-   "verts": 1393
+   "verts": 1393,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "tentacles_helmet",
@@ -1599,7 +2626,13 @@
    "mdl": "models/props_splatoon/gear/headgear/sports/tentacles_helmet/tentacles_helmet.mdl",
    "name": "Tentacles Helmet",
    "batch": 1,
-   "verts": 1143
+   "verts": 1143,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "gas_mask",
@@ -1607,7 +2640,13 @@
    "mdl": "models/props_splatoon/gear/headgear/unique/gas_mask/gas_mask.mdl",
    "name": "Gas Mask",
    "batch": 1,
-   "verts": 1406
+   "verts": 1406,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "special_forces_beret",
@@ -1620,7 +2659,13 @@
     0,
     0,
     -2
-   ]
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "squid_girl_hat_female",
@@ -1650,10 +2695,15 @@
    "batch": 1,
    "verts": 1507,
    "offset": [
+    0.0,
     0,
-    0,
-    -2.5
-   ]
+    -10.5
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 8"
+   }
   },
   {
    "id": "sun_visor",
@@ -1662,7 +2712,13 @@
    "name": "Sun Visor",
    "batch": 1,
    "verts": 884,
-   "kind": "hat"
+   "kind": "hat",
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "visors",
@@ -1671,7 +2727,13 @@
    "name": "Visors",
    "batch": 1,
    "verts": 1484,
-   "kind": "hat"
+   "kind": "hat",
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "jojo_hat_black",
@@ -1682,10 +2744,15 @@
    "verts": 1902,
    "scale": 0.8,
    "offset": [
+    -3.0,
     0,
-    0,
-    -3
-   ]
+    -13.0
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 10, back 3"
+   }
   },
   {
    "id": "jojo_hat_white",
@@ -1695,10 +2762,15 @@
    "batch": 1,
    "verts": 685,
    "offset": [
+    -3.0,
     0,
-    0,
-    -3
-   ]
+    -13.0
+   ],
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 10 back 3"
+   }
   },
   {
    "id": "josuke_hair",
@@ -1706,7 +2778,13 @@
    "mdl": "models/jojohats/josuke_hair.mdl",
    "name": "Josuke Hair",
    "batch": 1,
-   "verts": 1574
+   "verts": 1574,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "hat",
@@ -1714,7 +2792,13 @@
    "mdl": "models/xmas/hat.mdl",
    "name": "Hat",
    "batch": 1,
-   "verts": 306
+   "verts": 306,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "maskbabyrhino",
@@ -1722,7 +2806,13 @@
    "mdl": "models/snowzgmod/payday2/masks/maskbabyrhino.mdl",
    "name": "Maskbabyrhino",
    "batch": 1,
-   "verts": 5963
+   "verts": 5963,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "maskchuck",
@@ -1730,7 +2820,13 @@
    "mdl": "models/snowzgmod/payday2/masks/maskchuck.mdl",
    "name": "Maskchuck",
    "batch": 1,
-   "verts": 6186
+   "verts": 6186,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "maskdolph",
@@ -1739,7 +2835,13 @@
    "name": "Maskdolph",
    "batch": 1,
    "verts": 6451,
-   "scale": 1.6
+   "scale": 1.6,
+   "review": {
+    "round": 1,
+    "verdict": "drop"
+   },
+   "chosen": false,
+   "skip_reason": "skink52 review 1 (6 Nov): drop"
   },
   {
    "id": "maskjeanclaude",
@@ -1747,7 +2849,17 @@
    "mdl": "models/snowzgmod/payday2/masks/maskjeanclaude.mdl",
    "name": "Maskjeanclaude",
    "batch": 1,
-   "verts": 6032
+   "verts": 6032,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "forward 3"
+   },
+   "offset": [
+    3.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "maskmark",
@@ -1755,7 +2867,17 @@
    "mdl": "models/snowzgmod/payday2/masks/maskmark.mdl",
    "name": "Maskmark",
    "batch": 1,
-   "verts": 6726
+   "verts": 6726,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "forward 3"
+   },
+   "offset": [
+    3.0,
+    0,
+    0.0
+   ]
   },
   {
    "id": "maskmonkeybusiness",
@@ -1763,7 +2885,17 @@
    "mdl": "models/snowzgmod/payday2/masks/maskmonkeybusiness.mdl",
    "name": "Maskmonkeybusiness",
    "batch": 1,
-   "verts": 5848
+   "verts": 5848,
+   "review": {
+    "round": 1,
+    "verdict": "off",
+    "note": "down 3 forward 4"
+   },
+   "offset": [
+    4.0,
+    0,
+    -3.0
+   ]
   },
   {
    "id": "maskthehog",
@@ -1771,7 +2903,11 @@
    "mdl": "models/snowzgmod/payday2/masks/maskthehog.mdl",
    "name": "Maskthehog",
    "batch": 1,
-   "verts": 6102
+   "verts": 6102,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "kazekage",
@@ -1785,7 +2921,11 @@
     0,
     -5
    ],
-   "scale": 0.9
+   "scale": 0.9,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "mizukage",
@@ -1799,7 +2939,11 @@
     0,
     -5
    ],
-   "scale": 0.9
+   "scale": 0.9,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "raikage",
@@ -1813,7 +2957,11 @@
     0,
     -5
    ],
-   "scale": 0.9
+   "scale": 0.9,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "tsuchikage",
@@ -1827,7 +2975,11 @@
     0,
     -5
    ],
-   "scale": 0.9
+   "scale": 0.9,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "knuckles_ova_hat",
@@ -1835,7 +2987,11 @@
    "mdl": "models/logan_mccloud_models/ova_props/knuckles_ova_hat.mdl",
    "name": "Knuckles Ova Hat",
    "batch": 1,
-   "verts": 2000
+   "verts": 2000,
+   "review": {
+    "round": 1,
+    "verdict": "ok"
+   }
   },
   {
    "id": "knuckles_ova_hat_big",
