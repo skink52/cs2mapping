@@ -199,14 +199,13 @@
    "name": "Cowboy Hat",
    "batch": 1,
    "review": {
-    "round": 1,
-    "verdict": "off",
-    "note": "slightly too high"
+    "round": 3,
+    "verdict": "off"
    },
    "offset": [
-    0.0,
+    1.0,
     0,
-    -2.0
+    -1.0
    ]
   },
   {
@@ -254,12 +253,12 @@
    "name": "Beanie",
    "batch": 1,
    "offset": [
-    1.0,
+    0.5,
     0,
     -3.5
    ],
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "scale": 0.77
@@ -331,13 +330,13 @@
    "verts": 1039,
    "scale": 0.75,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
     2.0,
     0,
-    -1.34
+    -3.34
    ]
   },
   {
@@ -516,13 +515,13 @@
    "batch": 1,
    "verts": 275,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    1.0,
+    2.0,
     0,
-    -1.0
+    0.5
    ]
   },
   {
@@ -563,11 +562,11 @@
    "batch": 1,
    "verts": 253,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    1.0,
+    2.0,
     0,
     -2.0
    ]
@@ -593,13 +592,13 @@
    "batch": 1,
    "verts": 558,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    0.5,
+    1.0,
     0,
-    -1.0
+    0.0
    ]
   },
   {
@@ -610,13 +609,13 @@
    "batch": 1,
    "verts": 296,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    2.0,
+    1.0,
     0,
-    -1.0
+    -2.0
    ]
   },
   {
@@ -770,11 +769,11 @@
    "batch": 1,
    "verts": 1020,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    0.0,
+    0.5,
     0,
     1.0
    ]
@@ -1331,11 +1330,11 @@
    "batch": 1,
    "verts": 434,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    1.0,
+    0.0,
     0,
     1.0
    ],
@@ -1724,12 +1723,12 @@
    "batch": 1,
    "verts": 1407,
    "offset": [
-    6.0,
+    4.0,
     0,
     1.0
    ],
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "rotate": [
@@ -1761,11 +1760,11 @@
    "batch": 1,
    "verts": 97,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    2.0,
+    3.0,
     0,
     0.0
    ]
@@ -1778,13 +1777,13 @@
    "batch": 1,
    "verts": 1074,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    3.0,
+    2.0,
     0,
-    1.0
+    2.0
    ],
    "scale": 1.2
   },
@@ -1813,11 +1812,11 @@
    "batch": 1,
    "verts": 288,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    1.0,
+    1.5,
     0,
     -2.0
    ]
@@ -1845,11 +1844,11 @@
    "batch": 1,
    "verts": 64,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    4.0,
+    1.0,
     0,
     2.0
    ],
@@ -1868,11 +1867,11 @@
    "batch": 1,
    "verts": 281,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    2.0,
+    0.5,
     0,
     -1.0
    ]
@@ -1943,13 +1942,13 @@
    "batch": 1,
    "verts": 378,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    5.0
+    3.0
    ]
   },
   {
@@ -2030,13 +2029,13 @@
    "batch": 1,
    "verts": 865,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    0.0,
+    -1.0,
     0,
-    -8.0
+    -9.0
    ],
    "scale": 0.8
   },
@@ -2440,12 +2439,12 @@
    "batch": 1,
    "verts": 1207,
    "offset": [
-    2.0,
+    3.0,
     0,
     -4.0
    ],
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    }
   },
@@ -2457,12 +2456,12 @@
    "batch": 1,
    "verts": 1451,
    "offset": [
-    1.0,
+    2.0,
     0,
-    -2.0
+    -3.0
    ],
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    }
   },
@@ -2492,9 +2491,10 @@
     -16.0
    ],
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
-   }
+   },
+   "scale": 0.8
   },
   {
    "id": "blowfish_bell_hat",
@@ -2536,13 +2536,13 @@
    "batch": 1,
    "verts": 400,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
     0.0,
     0,
-    -1.0
+    0.0
    ]
   },
   {
@@ -2570,11 +2570,11 @@
    "batch": 1,
    "verts": 665,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    1.0,
+    0.0,
     0,
     -1.0
    ]
@@ -2709,12 +2709,12 @@
    "batch": 1,
    "verts": 1507,
    "offset": [
-    0.0,
+    1.5,
     0,
     -7.5
    ],
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    }
   },
@@ -2755,14 +2755,14 @@
    "name": "Jojo Hat Black",
    "batch": 1,
    "verts": 1902,
-   "scale": 0.8,
+   "scale": 0.64,
    "offset": [
     -3.0,
     0,
     -10.0
    ],
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    }
   },
@@ -2774,12 +2774,12 @@
    "batch": 1,
    "verts": 685,
    "offset": [
-    -1.0,
+    1.0,
     0,
-    -8.0
+    -6.0
    ],
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    }
   },
@@ -2898,11 +2898,11 @@
    "batch": 1,
    "verts": 5848,
    "review": {
-    "round": 2,
+    "round": 3,
     "verdict": "off"
    },
    "offset": [
-    4.0,
+    2.5,
     0,
     -2.0
    ]
