@@ -52,7 +52,6 @@ head hit box moved (z, u); **fingers** = finger fit L/R (u, < 1.8 fine).
 | `ua_rangemaster` | [Urban Assault Playermodels (WIP)](https://steamcommunity.com/sharedfiles/filedetails/?id=3772745299) by TalonSolid | `models/urbanassault/ua_rangemaster.mdl` | 6288 | 1.038 | 2.6 | -3.86 | -4.0 z | 1.1/1.0 | OK | ok |
 
 <!-- review notes: kept by batchnotes.py -->
-
 ## Review
 ## Review (6 Nov 2026, light)
 

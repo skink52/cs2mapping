@@ -176,6 +176,15 @@ template's gloves), the ragdoll, and the rifle hand on bulky-torso models.
   Non-ValveBiped rigs (Minecraft Steve, Domo, Left Shark) fail the converter outright.
 - Capes, coats and props on their own bones (Batman, Boba Fett, the Lich King, Big Dew's chips) stretch or scatter: CS2 has no such
   bones. Drop them in review (or later: jiggle bones / cloth in ModelDoc).
+- **In game (6 Nov 2026, skink52's client, ar_shoots, bots):** materials on `csgo_complex` were invisible on player models (the
+  grim reaper's robe, Rogue): every material is `csgo_character` now (279 models reconverted). Skeleton test (`skeltest`, css_swat
+  with knee bones 8 u lower): it bent at the lower knee with grounded feet, so **CS2 keeps a model's bone lengths**. That would let
+  the converter keep each model's own joint positions (no bends mid-thigh, no head drag, cartoon proportions possible): next step.
+- **Own joints (`--own`, mode 'own'; not the default yet):** CS2's joints go to the model's own joints (CS2's bone names,
+  hierarchy and bind orientations kept), instead of the model's limbs being moved onto CS2's joints. Arms, knees and the neck then
+  pivot where the model has them (the NCR ranger's shoulders were pulled down by the arm snap; long legs bent mid-thigh). Twist
+  bones are spread along their limbs; limb hit box capsules are stretched to the model's limb lengths; the head capsule gets the
+  usual shift from the model's head joint. Previews look right (NCR ranger, Wesker); waiting for an in-game check before switching.
 - **Duplicates are kept and flagged** (skink52): `dupes.py` writes `possible_dupes`, shown as "possible duplicate of `<id>`" in the
   warnings of MODELS.md and the server catalog. Score: quality (vertices up to 40k, minus flat textures) + ratings (log lifetime
   subscribers and favourites from Steam's GetPublishedFileDetails, no key needed).

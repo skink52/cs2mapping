@@ -103,6 +103,13 @@ class Template:
         dm = dmx9.DMX.load(self.body)
         self.joints = [j.name for j in dm.root['skeleton']['jointList'] if j.type == 'DmeJoint']
         self.W = self.joint_world(dm)
+        self.parent, self.order = {}, []
+        def walk(j, p):
+            self.parent[j.name] = p; self.order.append(j.name)
+            for c in j['children'] or []:
+                if c.type == 'DmeJoint': walk(c, j.name)
+        for c in dm.root['skeleton']['children']:
+            if c.type == 'DmeJoint': walk(c, None)
 
     @staticmethod
     def joint_world(dm, pose=None):
@@ -169,6 +176,36 @@ class Template:
             lay = log['layers'][0]
             if lay['values']: pose.setdefault(el.name, {})[at] = lay['values'][0]
         return self.joint_world(dmx9.DMX.load(self.body), pose)
+
+
+def own_template(t, own):
+    """a copy of the template whose joints sit at the model's own joints (own: {CS2 joint: position}), CS2's bind orientations
+    kept (CS2's animations rotate bones: in game on 6 Nov 2026 a model kept its own bone lengths). Twist bones are spread along
+    their limb; other unmapped joints (eyes, weapon, jiggle) move with their parent."""
+    ot = copy.copy(t); ot.stock = t; W = {}
+    seg = {}
+    for base, chain in TWIST.items():
+        for x in chain[1:]: seg[x] = (base, TWIST_END[base])
+    for j in t.order:
+        Rt, tt = t.W[j]
+        if j in own: pos = np.asarray(own[j], float)
+        elif j in seg and seg[j][0] in W and seg[j][1] in own:
+            a, b = seg[j]
+            f = np.linalg.norm(tt - t.J(a)) / max(1e-6, np.linalg.norm(t.J(b) - t.J(a)))
+            pos = W[a][1] + f * (np.asarray(own[b]) - W[a][1])
+        elif t.parent[j] is not None: pos = W[t.parent[j]][1] + (tt - t.J(t.parent[j]))
+        else: pos = tt
+        W[j] = (Rt, pos)
+    ot.W = W
+    def preview_pose():
+        Wt = t.preview_pose(); P = {}
+        for j in t.order:
+            Rp, tp = Wt[j]; Rb, tb = W[j]; p = t.parent[j]
+            if p is None: P[j] = (Rp, tp + Rp @ (t.W[j][0].T @ (tb - t.W[j][1])))
+            else: P[j] = (Rp, P[p][0] @ (W[p][0].T @ (tb - W[p][1])) + P[p][1])
+        return P
+    ot.preview_pose = preview_pose
+    return ot
 
 
 # ---------------------------------------------------------------- ValveBiped -> CS2
@@ -245,6 +282,7 @@ class Converter:
     def transforms(self, mode='rigid'):
         """rigid (default): pieces keep their own lengths and shape; fit: pieces stretched onto CS2's bone lengths (old method)"""
         self.mode = mode
+        if mode == 'own': return self.transforms_rigid(own=True)
         return self.transforms_rigid() if mode == 'rigid' else self.transforms_fit()
 
     def rotations(self, spine=False):
@@ -304,7 +342,7 @@ class Converter:
                 if self.has(f'{l}_toe0'): R[f'{l}_toe0'] = R[f'{l}_foot']
         return R, tw
 
-    def transforms_rigid(self):
+    def transforms_rigid(self, own=False):
         """Each piece only turns; it stays joined to its parent at its own length (forward kinematics down the model's own
         skeleton). One uniform scale (least squares over the main joints) and a horizontal offset are fitted so the joints land as
         near CS2's as they can; the feet stay on the floor. self.joint_offsets: distance from each CS2 joint after the fit."""
@@ -355,7 +393,7 @@ class Converter:
         # (spine1 half way, so the waist shears gradually); legs stay put, arms are re-seated on the shoulders below.
         self.chest_shift = 0.0
         top = next((n for n in ('spine2', 'spine3', 'spine4') if n in tr), None)
-        if top and TORSO_RECENTRE:
+        if top and TORSO_RECENTRE and not own:
             lo, hi = sorted((self.S(top)[2], self.S('spine4' if 'spine4' in tr else top)[2] + 2 / sc))
             V0 = self.m.V @ self.G.T; V0[:, 2] -= self.floor
             sel = (V0[:, 2] > lo) & (V0[:, 2] < hi) & (np.abs(V0[:, 1] - self.S(top)[1]) < 5 / sc)
@@ -366,7 +404,7 @@ class Converter:
                 for n in subtree(top): tr[n]['pcs'] = tr[n]['pcs'] + dx
                 if 'spine1' in tr and top != 'spine1': tr['spine1']['pcs'] = tr['spine1']['pcs'] + dx / 2
         self.hand_scale = {}
-        for s in 'LR':
+        for s in ('' if own else 'LR'):          # own joints: arms and hands stay where the model has them
             l = s.lower()
             root = f'{l}_clavicle' if f'{l}_clavicle' in tr else f'{l}_upperarm'
             if f'{l}_upperarm' not in tr: continue
@@ -388,13 +426,18 @@ class Converter:
         # tilt the head about head_0, so a head left low swings sideways about a pivot above it and drags the neck. The head
         # moves rigidly onto head_0 (the neck joint half as far: the neck lengthens evenly); the stock head hit box then fits.
         self.head_snap = 0.0
-        if HEAD_SNAP and 'head1' in tr:
+        if HEAD_SNAP and 'head1' in tr and not own:
             d = J('head_0') - tr['head1']['pcs']
             self.head_snap = round(float(np.linalg.norm(d)), 2)
             for n in subtree('head1'): tr[n]['pcs'] = tr[n]['pcs'] + d
             if 'neck1' in tr: tr['neck1']['pcs'] = tr['neck1']['pcs'] + d / 2
         self.girth = sc
         self.joint_offsets = {VB2CS[n]: round(float(np.linalg.norm(tr[n]['pcs'] - J(VB2CS[n]))), 2) for n in fit}
+        if own:
+            self.own_joints = {}
+            for n in tr:
+                cs = VB2CS.get(n)
+                if cs and cs not in self.own_joints: self.own_joints[cs] = tr[n]['pcs'].copy()
         return self._assign(tr)
 
     def transforms_fit(self):
@@ -686,7 +729,9 @@ def write_material(tex, cd, roots, out, slug, maxtex, log):
     nocull = prm.get('$nocull', '0').strip('"') == '1'
     lines = ['// GMod material %s (%s)' % (tex, shader), 'Layer0', '{']
     cutout = alphatest or translucent
-    lines.append('\tshader "%s"' % ('csgo_complex.vfx' if cutout else 'csgo_character.vfx'))
+    # csgo_character for everything: on a player model CS2 doesn't draw csgo_complex at all (in game, 6 Nov 2026: the grim reaper's
+    # alpha-tested robe and Rogue were invisible); csgo_character takes F_ALPHA_TEST with TextureTranslucency
+    lines.append('\tshader "csgo_character.vfx"')
     save_png(col[..., :3], os.path.join(d, base + '_color.png'), maxtex)
     lines.append('\tTextureColor "%s_color.png"' % mat_rel)
     if cutout:
@@ -719,7 +764,7 @@ def write_material(tex, cd, roots, out, slug, maxtex, log):
 
 
 # ---------------------------------------------------------------- writing the mesh into a copy of the template DMX
-def write_dmx(tpl, path, name, V, N, cuv, mats, sets, weights):
+def write_dmx(tpl, path, name, V, N, cuv, mats, sets, weights, joints=None):
     """the template's first mesh gets this geometry (one DMX vertex per input vertex), its other meshes go.
     weights: per vertex [(joint, w), ...]. Faces are re-wound counter-clockwise from the normals' side if needed."""
     agree = 0
@@ -754,6 +799,17 @@ def write_dmx(tpl, path, name, V, N, cuv, mats, sets, weights):
         model['jointList'] = [j for j in model['jointList'] if not any(j is g for g in gone)]
         model['baseStates'] = model['baseStates'][:len(model['baseStates']) - len(gone)]
     jidx = {j.name: i for i, j in enumerate(dm.root['skeleton']['jointList']) if j.type == 'DmeJoint'}
+    if joints:            # own joints: {joint: (R world, position world)}; local position in the parent's frame, orientation kept
+        def place(j, pw):
+            if j.name in joints:
+                pos = joints[j.name][1] if pw is None else pw[0].T @ (joints[j.name][1] - pw[1])
+                old = j['transform']['position']
+                try: j['transform']['position'] = type(old)(tuple(map(float, pos)))
+                except Exception: j['transform']['position'] = tuple(map(float, pos))
+            for c in j['children'] or []:
+                if c.type == 'DmeJoint': place(c, joints.get(j.name))
+        for c in dm.root['skeleton']['children']:
+            if c.type == 'DmeJoint': place(c, None)
     fs0 = mesh['faceSets'][0]
     n = len(V); jc = vd['jointCount']
     vd['position$0'] = [tuple(map(float, x)) for x in V]
@@ -929,6 +985,7 @@ def head_hitbox_shift(conv, t, V, weights):
             if n > HEAD_HITBOX_MAX_NOHEAD: d *= HEAD_HITBOX_MAX_NOHEAD / n
             return d, 'top of the body (no head mesh)'
         d = c - centre(*t.mesh()); how = 'head mesh'
+        if hasattr(t, 'stock'): d = d - (t.J('head_0') - t.stock.J('head_0'))   # own joints: the capsule already moved with the head bone
     d[1] = 0.0                                              # stay on the centre line
     n = np.linalg.norm(d)
     if n < HEAD_HITBOX_MIN: return np.zeros(3), how + ' (within %.0f u: stock hit boxes kept)' % HEAD_HITBOX_MIN
@@ -949,11 +1006,29 @@ def shift_capsules(txt, t, bone, d):
     return re.sub(r'_class = "HitboxCapsule".*?\}', fix, txt, flags=re.S)
 
 
+LIMB_SEGMENTS = {f'{b}_{s}': f'{c}_{s}' for s in 'LR' for b, c in (('arm_upper', 'arm_lower'), ('arm_lower', 'hand'),
+                                                                   ('leg_upper', 'leg_lower'), ('leg_lower', 'ankle'))}
+
+
+def scale_capsules(txt, bone, k):
+    """stretch the HitboxCapsule entries on a limb bone along the bone (its local x) by k: own joints with a longer or shorter limb"""
+    def fix(mo):
+        blk = mo.group(0)
+        if not re.search(r'parent_bone\s*=\s*"%s"' % re.escape(bone), blk, re.I): return blk
+        def pt(m2):
+            v = np.array([float(x) for x in m2.group(2).split(',')]); v[0] *= k
+            return '%s[ %s ]' % (m2.group(1), ', '.join('%.3f' % x for x in v))
+        return re.sub(r'(point[01]\s*=\s*)\[\s*([^\]]+)\]', pt, blk)
+    return re.sub(r'_class = "HitboxCapsule".*?\}', fix, txt, flags=re.S)
+
+
 def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2048, preview=None, log=print, mode='rigid'):
     m = SrcModel(mdl_path)
     t = Template(template) if isinstance(template, str) else template
     conv = Converter(m, t, log)
     conv.transforms(mode)
+    if mode == 'own':                    # CS2's joints move to the model's own (skin weights, checks, previews, the DMX)
+        t = own_template(t, conv.own_joints); conv.t = t
     meshes = m.default_meshes(choices)
     used, remap, V, N, weights = conv.convert_mesh(meshes)
     # fit checks against a stock agent body: chest depth and hands in CS2's preview pose
@@ -966,7 +1041,7 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
     for side in 'LR':
         if hands[side] is not None and hands[side] > HAND_WARN:
             warnings.append('hand_%s inside the torso in the CS2 preview pose (chest surface %.1f u in front of the wrist)' % (side, hands[side]))
-    far = {j: d for j, d in (getattr(conv, 'joint_offsets', None) or {}).items() if j.startswith(('arm_', 'leg_', 'hand_', 'ankle_')) and d > LIMB_WARN}
+    far = {j: d for j, d in (getattr(conv, 'joint_offsets', None) or {}).items() if j.startswith(('arm_', 'leg_', 'hand_', 'ankle_')) and d > LIMB_WARN and mode != 'own'}
     if far: warnings.append('skeleton does not match CS2 (limb joints more than %.0f u off: %s): CS2 will bend the limbs away from the joints of the model'
                             % (LIMB_WARN, ', '.join('%s %.1f' % kv for kv in sorted(far.items()))))
     fingers = finger_fit(t, V, weights)
@@ -1003,13 +1078,18 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
         if n_sub: log('   . %d triangles added along low-poly limbs (twist spread)' % n_sub)
     else: n_sub = 0
     d = os.path.join(out, MODEL_DIR, slug); os.makedirs(d, exist_ok=True)
-    sets, flipped = write_dmx(t.body, os.path.join(d, slug + '_body.dmx'), 'gmod_%s_body' % slug, V, N, UV, mats, sets, weights)
+    sets, flipped = write_dmx(t.body, os.path.join(d, slug + '_body.dmx'), 'gmod_%s_body' % slug, V, N, UV, mats, sets, weights,
+                              joints=t.W if mode == 'own' else None)
     # shared first-person arms, sleeves and preview pose: the template's
     sh = os.path.join(out, MODEL_DIR, 'shared'); os.makedirs(sh, exist_ok=True)
     for sfx, dst in (('_firstperson_arms.dmx', 'firstperson_arms.dmx'), ('_firstperson_sleeves.dmx', 'firstperson_sleeves.dmx'), ('_tools_preview.dmx', 'tools_preview.dmx')):
         if not os.path.exists(os.path.join(sh, dst)): shutil.copy(t.file(sfx), os.path.join(sh, dst))
     txt = open(t.vmdl, encoding='utf-8').read()
     hd, hhow = head_hitbox_shift(conv, t, V, weights)
+    if mode == 'own':                    # limb capsules stretched to the model's own limb lengths
+        for b, c in LIMB_SEGMENTS.items():
+            k = np.linalg.norm(t.J(c) - t.J(b)) / max(1e-6, np.linalg.norm(t.stock.J(c) - t.stock.J(b)))
+            if abs(k - 1) > 0.02: txt = scale_capsules(txt, b, float(np.clip(k, 0.6, 1.6)))
     txt = shift_capsules(txt, t, 'head_0', hd)
     txt = shift_capsules(txt, t, 'neck_0', hd * 0.5)
     import hitboxes
@@ -1064,10 +1144,10 @@ if __name__ == '__main__':
     ap.add_argument('mdl'); ap.add_argument('slug')
     ap.add_argument('--roots', required=True); ap.add_argument('--template', required=True); ap.add_argument('--out', required=True)
     ap.add_argument('--skin', type=int, default=0); ap.add_argument('--bodygroup', action='append', default=[])
-    ap.add_argument('--fit', action='store_true', help='old method: stretch pieces onto CS2 bone lengths'); ap.add_argument('--maxtex', type=int, default=2048); ap.add_argument('--preview'); ap.add_argument('--report')
+    ap.add_argument('--fit', action='store_true', help='old method: stretch pieces onto CS2 bone lengths'); ap.add_argument('--own', action='store_true', help="CS2's joints at the model's own joints"); ap.add_argument('--maxtex', type=int, default=2048); ap.add_argument('--preview'); ap.add_argument('--report')
     a = ap.parse_args()
     ch = {k: int(v) for k, v in (b.split('=') for b in a.bodygroup)}
-    rep = convert(a.mdl, a.slug, a.roots.split(','), a.template, a.out, a.skin, ch, a.maxtex, a.preview, mode='fit' if a.fit else 'rigid')
+    rep = convert(a.mdl, a.slug, a.roots.split(','), a.template, a.out, a.skin, ch, a.maxtex, a.preview, mode='fit' if a.fit else 'own' if a.own else 'rigid')
     js = json.dumps(rep, indent=1)
     if a.report: open(a.report, 'w').write(js)
     print(js)
