@@ -14,6 +14,7 @@ preview.py) without changing it. Run with `python -I` (the inputs are downloaded
 | `fetch.py <catalog.json> [--only id,..] [--no-download] [--scan]` | SteamCMD (anonymous) download + extract of every catalog item into `<work>/extract/<id>/`; `--scan` lists each `.mdl` (bones, vertices, size, missing VMTs/VTFs) and the Pointshop item that places it, into `<work>/logs/scan.json`. |
 | `suggest.py <catalog.json> --batch N [--only id,..] [--dry-run]` | Adds one copy of every head-worn prop in the scan to the catalog's `hats` (no player models, arms, weapons, tails, wings; nothing missing; a model shared by several packs once, the copy with Pointshop data first). |
 | `hat2cs2.py <catalog.json> [--only id,..] [--no-preview] [--compile] [--sheet]` | Places each hat on the head (Pointshop lua, else autofit; catalog overrides), writes `models/hats/<id>/<id>.vmdl` + 12 fit DMXs and the materials into the `gmod_hats` content addon, previews (`<work>/preview/<id>.png`, `_tile.png`, `--sheet`: `sheet_<n>.jpg`), compiles, reports (`<work>/reports/<id>.json`). |
+| `pack.py <catalog.json> [--prune] [--no-zip]` | The collection for a server manager: `--prune` deletes the dropped hats from the `gmod_hats` addon (both halves), then `<work>/dist/gmod_hats_collection_<date>.zip` = the kept hats compiled + source, `HATS.md` with the pictures, README.txt. The manager's steps: slime-mg-gm `docs/hats.md#adding-hats`. |
 | `luahats.py <extract dir>` | Reads Pointshop 1 items (`ITEM.Model`, `ITEM.Attachment`/`Bone`, `ModifyClientsideModel` replayed: moves, turns, scale) as text. |
 | `mdlextra.py` | MDL attachments (srcmdl.py doesn't read them): the HL2 citizen's `eyes`. |
 | `agents.py` | Stock agents from `s2/agent_mesh.mjs` JSON: bind pose, meshes, the head's measures. |
@@ -41,6 +42,7 @@ python -I suggest.py catalog.json --batch 2               # hats from the scan i
 python -I hat2cs2.py catalog.json --sheet                 # place, write, preview: review sheet_<n>.jpg
 # fix misplaced hats in catalog.json (offset/rotate/scale/pre_rotate/kind) or set "chosen": false; re-run with --only
 python -I hat2cs2.py catalog.json --compile --no-preview  # compile the chosen ones (resourcecompiler)
+python -I listhats.py catalog.json && python -I pack.py catalog.json --prune   # HATS.md + the collection zip for the manager
 # one-off: the reference agent (Valve data, not in git)
 node ../s2/agent_mesh.mjs agents/models/tm_leet/tm_leet_variantf.vmdl_c C:\source1\hats\agents\tm_leet_variantf.json --vpk "<CS2>\game\csgo"
 ```

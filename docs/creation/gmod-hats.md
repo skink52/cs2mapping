@@ -58,8 +58,13 @@ from the scan) -> hat2cs2.py (place, write, preview) -> review sheets -> catalog
 3. **Pick**: `suggest.py catalog.json --batch N` adds one copy of each head-worn prop (packs share models; the copy with Pointshop
    data wins), skipping player models, arms, weapons, tails, wings, jetpacks.
 4. **Convert**: `hat2cs2.py catalog.json [--only a,b] [--sheet] [--compile]`.
-5. **Review** `<work>/preview/sheet_<n>.jpg` (a stock agent three-quarter and side, Gordon from the conversions) and each
+5. **Review** (6 Nov: skink52 marked every hat on a review page, 4 rounds, OK / off with moves in game units / drop; 102 of 193 kept)
+   `<work>/preview/sheet_<n>.jpg` (a stock agent three-quarter and side, Gordon from the conversions) and each
    `<id>.png` (agent three views, Gordon, a female citizen). Fix with catalog keys, drop with `chosen: false`.
+
+6. **Hand over**: `listhats.py` rebuilds [HATS.md](../../create/hats/HATS.md) (a picture of each hat), `pack.py --prune` zips the
+   collection for the server manager, who picks hats for the server (slime-mg-gm `docs/hats.md#adding-hats`). Hats stay local, like
+   the player models: only the ones a server nominates are uploaded.
 
 ## How a hat is placed
 
