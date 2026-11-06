@@ -1646,14 +1646,16 @@
    "batch": 1,
    "verts": 427,
    "offset": [
-    -9.0,
+    -7.0,
     0,
-    -3.0
+    -4.0
    ],
    "review": {
-    "round": 4,
-    "verdict": "off (no note)"
-   }
+    "round": 5,
+    "verdict": "off",
+    "note": "scale 110, forward 2 down 1"
+   },
+   "scale": 1.1
   },
   {
    "id": "blackmage_hat",

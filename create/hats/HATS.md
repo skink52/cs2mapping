@@ -189,7 +189,7 @@ moves with it through its `fit` choice).
 | `rubikscube` | autofit mask (scale 0.50) | kind mask | 4 |
 | `teamrockethat` | autofit hat (scale 1.36) |  | 4 |
 | `turkey` | autofit hat (scale 1.07) | offset [2.0, 0, 4.0] | 4 |
-| `billyhatcherhat` | autofit hat (scale 0.85) | offset [-9.0, 0, -3.0] | 4 |
+| `billyhatcherhat` | autofit hat (scale 0.85) | offset [-7.0, 0, -4.0], scale 1.1 | 5 |
 | `blackmage_hat` | autofit hat (scale 0.40) |  | 4 |
 | `cuboneskull` | autofit mask (scale 0.84) | offset [5.0, 0, 1.0], rotate [30, 0, 0], scale 1.1 | 4 |
 | `generalpepperhat` | autofit hat (scale 0.83) | offset [3.0, 0, 0.0] | 4 |
