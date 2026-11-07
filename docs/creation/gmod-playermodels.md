@@ -132,6 +132,9 @@ GLBs work too (Briar, a League of Legends rip with a Riot skeleton: L_Hip/L_Knee
 the exporter maps those names (a skeleton with its own clavicle makes 'Shoulder' the upper arm), leaves out meshes with no skin weights
 (a stray Icosphere), saves the textures embedded in the material nodes (unlit glTF materials included; glTF normal maps flipped to Y-)
 and `"drop_materials"` removes props (her pillory, lying at her feet in the bind pose).
+Riot rigs skin parts of the body to `<bone>_SNAP` helpers parented to the root (Briar's kneecaps: `L_Hip_SNAP`); in game they follow
+their base bone, so the exporter reparents each `_SNAP` onto it. Left on the root they mapped to the pelvis and her knees folded into a
+forward spike when bent. To see knees and elbows bend, render the pose sheet from the side: `POSE_VIEWS=side,three`.
 Related: trenchwarfare's `tools/soldiers.py` makes CS2 players from Mixamo-rigged GLBs by stretching each bone to CS2's length (fine for
 generated soldiers; not used here, where models keep their proportions).
 

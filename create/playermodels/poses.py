@@ -4,6 +4,8 @@ overhead (shoulders, armpits) and a body twist with the head turned (neck). Buil
     from poses import pose_sheet
     pose_sheet(t, V, UV, groups, weights, 'out.png', label)     # t: gmod2cs2.Template (or its own-joints copy)
 
+Views: env POSE_VIEWS (default front,three; e.g. side,three to see knees and elbows bend).
+
 Each pose is {joint: [(world axis, degrees), ...]}: the joint and everything below it turn about that axis through the joint's
 bind-pose position (model faces +X, left is +Y, up is +Z). 'drop' lowers the whole body (crouch). Rotations compose down the chain.
 """
@@ -75,7 +77,7 @@ def pose_sheet(t, V, UV, groups, weights, out, label, H=520):
     for name, S in todo:
         Q = skin(V, weights, S)
         p = out[:-4] + '_%s.png' % name.replace(' ', '')
-        render(Q, UV, groups, p, views=('front', 'three'), H=H, label='%s  %s' % (label, name), box=BOX)
+        render(Q, UV, groups, p, views=tuple(os.environ.get('POSE_VIEWS', 'front,three').split(',')), H=H, label='%s  %s' % (label, name), box=BOX)
         tiles.append(Image.open(p).convert('RGB')); os.remove(p)
     w = max(im.width for im in tiles); cols = 3
     sheet = Image.new('RGB', (w * cols, H * ((len(tiles) + cols - 1) // cols)), (46, 50, 58))

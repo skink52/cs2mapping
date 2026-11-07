@@ -105,6 +105,11 @@ def main():
         if 'ValveBiped.Bip01_' + need not in used: print('  MISSING main bone', need)
     index = {b.name: i for i, b in enumerate(bones)}
     parents = [index[b.parent.name] if b.parent else -1 for b in bones]
+    lower = {b.name.lower(): i for i, b in enumerate(bones)}
+    for i, b in enumerate(bones):      # Riot '<bone>_SNAP' helpers (skinned, parented to the root) follow their base bone in game
+        m = re.match(r'(?i)(.+)_snap$', b.name)
+        if m and m.group(1).lower() in lower:
+            parents[i] = lower[m.group(1).lower()]; print('  %-28s follows %s' % (b.name, m.group(1)))
     world = []
     for b in bones:
         M = arm.matrix_world @ b.matrix_local
