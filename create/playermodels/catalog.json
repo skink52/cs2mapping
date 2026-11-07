@@ -344,7 +344,8 @@
    "mdl": "models/player/stilllifepm/sl_mary_pm.mdl",
    "name": "Mary (Still Life)",
    "possible_dupes": [
-    "still_life"
+    "still_life",
+    "larping_rooms_still_life"
    ]
   },
   {
@@ -505,7 +506,10 @@
    "batch": 3,
    "slug": "jack_sparrow",
    "mdl": "models/sujelo/jack_sparrow_kh3.mdl",
-   "name": "Captain Jack Sparrow (KH3)"
+   "name": "Captain Jack Sparrow (KH3)",
+   "possible_dupes": [
+    "captain_jack_sparrow"
+   ]
   },
   {
    "id": 3401507374,
@@ -1314,7 +1318,8 @@
    "mdl": "models/pechenko_121/deadpool/chr_deadpool2.mdl",
    "name": "Deadpool",
    "possible_dupes": [
-    "deadpool_2"
+    "deadpool_2",
+    "deadpool_3"
    ]
   },
   {
@@ -1662,7 +1667,22 @@
    "batch": 5,
    "slug": "spiderman",
    "mdl": "models/kryptonite/spiderman/spiderman.mdl",
-   "name": "Spider-Man"
+   "name": "Spider-Man",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spider_man",
+    "spider_man_miles_morales",
+    "spider_man_blood",
+    "spider_man_jammie",
+    "spider_man_black_jammie",
+    "spider_man_miles_morales_2",
+    "spider_man_symbiote",
+    "miles_morales_spider_man",
+    "miles_morales_suit",
+    "symbiote_spider",
+    "spectacular_spider_man",
+    "superior_spider_man"
+   ]
   },
   {
    "id": 125456150,
@@ -2050,7 +2070,10 @@
    "slug": "cgi_death",
    "mdl": "models/player/artel/death/death666.mdl",
    "name": "Death (Clone Wars CGI trooper)",
-   "batch": 5
+   "batch": 5,
+   "possible_dupes": [
+    "death_trooper"
+   ]
   },
   {
    "id": 1167016682,
@@ -6948,6 +6971,7 @@
    "mdl": "models/kryptonite/deadpool/deadpool.mdl",
    "name": "[K] Deadpool",
    "possible_dupes": [
+    "deadpool_3",
     "deadpool"
    ]
   },
@@ -7856,7 +7880,10 @@
    "batch": 9,
    "slug": "police",
    "mdl": "models/kerry/player/police_usa/male_08.mdl",
-   "name": "Police_8"
+   "name": "Police_8",
+   "possible_dupes": [
+    "police_2"
+   ]
   },
   {
    "id": 1389809127,
@@ -10401,6 +10428,7 @@
    "mdl": "models/rooms/playerm/stilllife.mdl",
    "name": "Still Life",
    "possible_dupes": [
+    "larping_rooms_still_life",
     "stilllife_mary"
    ]
   },
@@ -10781,7 +10809,10 @@
    "batch": 9,
    "slug": "soviet_soldier",
    "mdl": "models/player/sev2/russian_soldier.mdl",
-   "name": "Soviet Soldier"
+   "name": "Soviet Soldier",
+   "possible_dupes": [
+    "mgs_tps_soviet_soldier"
+   ]
   },
   {
    "id": 1586714339,
@@ -11084,6 +11115,6144 @@
    "slug": "fr_police08",
    "mdl": "models/player/kerry-mrssx/policefr_08.mdl",
    "name": "FR_Police08"
+  },
+  {
+   "id": 310559057,
+   "title": "Five Nights at Freddy's - Playermodels",
+   "author": "Ninya",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 869012672,
+   "title": "Kanna Kamui P.M. & NPC",
+   "author": "dewobedil",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 503568129,
+   "title": "Chibiterasu Playermodel",
+   "author": "❤Yuki❤",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 104533079,
+   "title": "Minecraft Playermodel",
+   "author": "Sam",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 562524462,
+   "title": "OW: Tracer P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 171925253,
+   "title": "Doll PM and NPC model",
+   "author": "Vinrax",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 426924291,
+   "title": "FNAF 3 - Springtrap (Playermodel)",
+   "author": "Kitsumy ✦",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 506770737,
+   "title": "Portal 2: Atlas P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2849884169,
+   "title": "[PM] Lego Walter White",
+   "author": "L̶i̶l̶_RedShift",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 870523620,
+   "title": "Kizuna AI P.M. & NPC",
+   "author": "dewobedil",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 187243854,
+   "title": "Sonic Player Models V3 and V2 RePack",
+   "author": "_TailS_",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 180601311,
+   "title": "Jack Skellington PM and NPC",
+   "author": "Vinrax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 454787966,
+   "title": "MKX: Scorpion P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 489473735,
+   "title": "Portal 2: P-Body P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1343983153,
+   "title": "Sonic Adventure Playermodels (With Voices)",
+   "author": "Lazy",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 466357313,
+   "title": "MKX: Jason P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2230068995,
+   "title": "Among Us: Suit P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 699784388,
+   "title": "Fnaf 2 | Withered Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 386152879,
+   "title": "Purple Man Playermodel/NPC [FNAF 2]",
+   "author": "we dont use natural ingredients",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 574428148,
+   "title": "R6S: Doc P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 608928002,
+   "title": "(Official Pack) Security Guards { P.M.",
+   "author": "[CZ] Colonel Clanny",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 952118754,
+   "title": "Cat Playermodel & Ragdoll",
+   "author": "Yevocore",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 262279954,
+   "title": "Silviu's Silly Dragon playermodel",
+   "author": "Silviu",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 746214499,
+   "title": "DragonBall Z Budokai Goku Playermodel",
+   "author": "Sc4recroW",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 908040809,
+   "title": "Tohru P.M. & NPC",
+   "author": "dewobedil",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 170910643,
+   "title": "Boxman PM and NPC model",
+   "author": "Vinrax",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 731546692,
+   "title": "OW: Reinhardt P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 166961856,
+   "title": "Ghostface player model (scream)",
+   "author": "jonty789",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2706993119,
+   "title": "FNaF AFTON PACK (Playermodels/Ragdoll)",
+   "author": "mochi",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 914604640,
+   "title": "Shimakaze (Kancolle) P.M. & NPC",
+   "author": "dewobedil",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 572872442,
+   "title": "R6S: IQ P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 658731183,
+   "title": "Fnaf 1 | Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3495178291,
+   "title": "Funny Cats Playermodel",
+   "author": "Electric Blood Mage",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 733881374,
+   "title": "Fnaf 2 | Unwithered Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 974221698,
+   "title": "Lucoa P.M. & NPC",
+   "author": "dewobedil",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3408699282,
+   "title": "Sonic Redux Pack- PM/RAGDOLL (ADVENTURE UPDATE!)",
+   "author": "mochi",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 533059094,
+   "title": "DOA5: Honoka Bunny P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 681674225,
+   "title": "POSTAL 2: Postal Dude P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2175750122,
+   "title": "Peter Griffin Family Guy Player Model/NPC/Ragdoll/Custom Animations",
+   "author": "Petaly",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 663489035,
+   "title": "Zootopia: Nick and Judy P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 255208275,
+   "title": "Cry Of Fear: Simon Henriksson P.M.",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 608930711,
+   "title": "(Official Pack) Fire Fighter { P.M.",
+   "author": "[CZ] Colonel Clanny",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2821092011,
+   "title": "Sonic Generations: Sonic the Hedgehog [PM/NPC]",
+   "author": "MIRALEN",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 852648377,
+   "title": "Appearence Miku (Default) P.M. & NPC",
+   "author": "dewobedil",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3454531733,
+   "title": "Forsaken Survivor Playermodels/NPCs (Roblox)",
+   "author": "prion disease",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 854634173,
+   "title": "Appearence Miku (Stroll) P.M. & NPC",
+   "author": "dewobedil",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2586573261,
+   "title": "[FIXED] Furry (Protogen) | NKD Protogen PM / Ragdoll | Hitboxes | LOD | NPC",
+   "author": "Light Shoro",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 749314549,
+   "title": "DragonBall Z Budokai Vegeta Playermodel",
+   "author": "Sc4recroW",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 247181062,
+   "title": "Metal Gear Solid 4: Old Snake Playermodel",
+   "author": "Voikanaa",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 460211741,
+   "title": "GOT: Jon Snow P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 172303156,
+   "title": "Spider-Man Player Models",
+   "author": "Littlefoot",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 788031787,
+   "title": "Fnaf 3 | Phantom Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 783517400,
+   "title": "MK Baby P.M. & NPC",
+   "author": "dewobedil",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 808616397,
+   "title": "R6S: Caveira P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 608936011,
+   "title": "(Official Pack) Police Officer { P.M.",
+   "author": "[CZ] Colonel Clanny",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 650242617,
+   "title": "L.A. Noire: Detective P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1136617425,
+   "title": "Invisible PlayerModel",
+   "author": "ArachnitCZ",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 815623528,
+   "title": "Fnaf 4 | Nightmare Animatronics | Part 1 | NPCs and Playermodels",
+   "author": "Sneglen",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 667986439,
+   "title": "R6S: Jäger P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3664042277,
+   "title": "Uncanny Cat And Canny Cat [PM",
+   "author": "GhostPants64",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3757377368,
+   "title": "fih playermodel | sneaker fish",
+   "author": "moloko",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 901330121,
+   "title": "R6S: Mute P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 678248473,
+   "title": "High Dragon Playermodel",
+   "author": "2XMM2",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3414764340,
+   "title": "N64 Mario Pack (Playermodel/NPC/Ragdoll)",
+   "author": "Rueven2005",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3381709420,
+   "title": "LEGO Lord Beerus Player Model & NPC (Lythero Dragon Ball Meme)",
+   "author": "CKTheAmazingFrog",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1855801445,
+   "title": "Hazardous Environment Combat Unit - Remastered (P.M. and NPCs)",
+   "author": "Giga Sigma Goon",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 790460967,
+   "title": "R6S: R6-Hazmat P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 631336969,
+   "title": "Ender Dragon Playermodels + NPC",
+   "author": "2XMM2",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 237223649,
+   "title": "Rayman Player Model",
+   "author": "MonkeysInRavenholm",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 764885322,
+   "title": "HL: Gordon Freeman P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 775770264,
+   "title": "Fnaf 2 | Misfits Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 771927440,
+   "title": "Russian Spetsnaz FSB & O.M.O.N. [P.M. and NPCs]",
+   "author": "Giga Sigma Goon",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 652373442,
+   "title": "Skyrim Dragon Playermodels",
+   "author": "2XMM2",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2808212654,
+   "title": "Junio Sonic Playermodel",
+   "author": "mochi",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 929735824,
+   "title": "Grillby (Undertale) Ragdoll + P.M.",
+   "author": "Denic",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1102689890,
+   "title": "Fnaf 4 | Nightmare Animatronics | Part 2 | NPCs and Playermodels",
+   "author": "Sneglen",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3487606298,
+   "title": "Kirby | PLAYERMODEL (Customizable)",
+   "author": "Grudomir",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1163295415,
+   "title": "Family Guy - Joe Swanson Playermodel",
+   "author": "General Gilroy",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 973656364,
+   "title": "Spider-Man Homecoming: Playermodel & NPC",
+   "author": "VALLEYOFDEA7H",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 901439159,
+   "title": "R6S: Thatcher P.M. and Ragdoll",
+   "author": "jolly ol' chap",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1182767918,
+   "title": "Indominus Rex Playermodel",
+   "author": "2XMM2",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 400119994,
+   "title": "Digimon: Veemon player model + NPC",
+   "author": "Kuro",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3308382517,
+   "title": "[SONIC] Metal Sonic (PM)",
+   "author": "That cat from Oured",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 326082700,
+   "title": "Princess Ariel Playermodel & NPC",
+   "author": "❤Yuki❤",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3392364168,
+   "title": "Mort Playermodel",
+   "author": "A_Thing",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1591021785,
+   "title": "Spider-Man: Into the Spider-Verse - Ultimate Playermodel Bundle 2",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3571918361,
+   "title": "Chibi Matikanetannhauser (Mambo) {Ragdoll | NPC | PM",
+   "author": "KaoTix_Dynamix",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3389958930,
+   "title": "[PM][NPC] Counter strike Stickman animation character pack",
+   "author": "AKDMMMMM233",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3602222305,
+   "title": "Die of Death Killer Playermodels/NPCs {Roblox)",
+   "author": "prion disease",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3401991681,
+   "title": "Super Mario 64 - Playermodels/NPCs",
+   "author": "Mario",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 776819574,
+   "title": "Russian Federation Army Infantry [P.M. and NPCs]",
+   "author": "Giga Sigma Goon",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3685998993,
+   "title": "LEGO BATMAN PM Project",
+   "author": "Saint Aldrich ⚜✟⚜",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3636132631,
+   "title": "Low Poly Pikachu Playermodel",
+   "author": "A_Thing",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 754056569,
+   "title": "DragonBall Z Budokai Nappa Playermodel",
+   "author": "Sc4recroW",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3503078679,
+   "title": "A Minecraft Movie - Steve (PM/Ragdoll)",
+   "author": "Mr. P Gremlin",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3620278320,
+   "title": "Kiwi PM",
+   "author": "Serika",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2025359557,
+   "title": "Sonic [PLAYERMODEL] // Movie",
+   "author": "K",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2189942240,
+   "title": "Doctor Robotnik (Sonic Movie) [PM]",
+   "author": "Kermit the Frog",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1598884950,
+   "title": "Spider-Man: Into The Spider-Verse - Miles Morales (Playermodel)",
+   "author": "Bunny",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3487456553,
+   "title": "Sonic.EXE The Disasters 1.3 Characters [PM",
+   "author": "xXElxan",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1713088581,
+   "title": "[JJBA] Giorno Giovanna P.M.",
+   "author": "Chaotzu",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 709670467,
+   "title": "Spider-Man PlayerModel (Symbiote)",
+   "author": "Nogitsu",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 777496756,
+   "title": "Resident Evil 6: HUNK and Agent [P.M. and NPCs]",
+   "author": "Giga Sigma Goon",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3767892962,
+   "title": "John Rod [PM]",
+   "author": "Nostrilpiper Von Headcheddar",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3440276321,
+   "title": "Library of Ruina - Zena Cat [PM/NPC] 제나",
+   "author": "finished my contracts award",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3544319932,
+   "title": "Classic Lego Construction Workers Playermodels",
+   "author": "GrandpaGaming",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 583702046,
+   "title": "MGS TPP: Soviet Soldier P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2938130316,
+   "title": "Murder Drones Playermodels (With different animations)",
+   "author": "Flandre Scarlet",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3783501201,
+   "title": "[PM/RAGDOLL] FNaF: ANIMAIDS",
+   "author": "mochi",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3370470121,
+   "title": "The Akaneia Build: Sonic & Friends (Playermodel/NPC/Ragdolls)",
+   "author": "Rueven2005",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2815939581,
+   "title": "[PM] Tyrannosaurus Rex ARK:survival evolved",
+   "author": "Echo",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3538204656,
+   "title": "Lego Indiana Jones Playermodel",
+   "author": "GrandpaGaming",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2043131115,
+   "title": "Transformers: Devastation Soundwave (Playermodel)",
+   "author": "BubbaDaKing",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 949417172,
+   "title": "Transformers Prime: Optimus PlayerModel",
+   "author": "IssYaBoiRay",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2799291250,
+   "title": "Sonic Movie Playermodel/ragdoll pack",
+   "author": "Christianity Gaming",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3760743409,
+   "title": "(OBSOLETE) DELTARUNE - Customizable VESSEL Playermodel",
+   "author": "OmegaSoftware",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2614740720,
+   "title": "Jujutsu Kaisen Satoru Gojo Playermodel",
+   "author": "Delamain",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3667490595,
+   "title": "Crack Man (Original Model) Playermodel",
+   "author": "A_Thing",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1564047073,
+   "title": "Robot Playermodels (OLD)",
+   "author": "Hog Cranker",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3352140994,
+   "title": "Fortnite: Meow Skulls Playermodel (Low Poly)",
+   "author": "JGeoo",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1107766458,
+   "title": "Smashing Alyx PM",
+   "author": "amusquiz",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1371734362,
+   "title": "Captain America - Avengers: Infinity War Playermodel",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1100477369,
+   "title": "Anime Star Platinum Playermodel",
+   "author": "Ivretor",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1196025448,
+   "title": "Star Wars - EA Battlefront 2: Huge Officer Pack [Playermodel]",
+   "author": "smitty",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1193960837,
+   "title": "Thor: Ragnarok - Gladiator Thor Playermodel",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2386183057,
+   "title": "Police K9 Dog Playermodel",
+   "author": "BadMan578",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3766150494,
+   "title": "[Updated]Larping the rooms PM playermodel",
+   "author": "所罗门啊",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 476339604,
+   "title": "Metro: Last Light - Hansa Soldier - Playermodel and Ragdoll",
+   "author": "Ninya",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2849235954,
+   "title": "Luffy Gear 5 [PM]",
+   "author": "Falko",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3383143572,
+   "title": "K3RF (Omega Kerfus[r]) - Voices of the Void - PM/NPC [MeerCat]",
+   "author": "MeerCat",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2466973185,
+   "title": "Megumi Fushiguro | Playermodel | Jujutsu no Kaisen |",
+   "author": "Kuroso4",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1540321543,
+   "title": "Spawn Playermodel",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2186161677,
+   "title": "Barry B. Benson (Bee Movie) Playermodel & NPCs",
+   "author": "Nightbane",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1872021497,
+   "title": "Fortnite: Batman - Playermodel",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1000987652,
+   "title": "DS2 Securities PM/Ragdolls",
+   "author": "Legion",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 527998421,
+   "title": "Scarface The World Is Yours - Tony Montana (Player Model & NPC) V2",
+   "author": "korka007",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3781996675,
+   "title": "Charple+ (Playermodels)",
+   "author": "Vexx",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3453904373,
+   "title": "Psychopomp - Pompy [PM/NPC]",
+   "author": "finished my contracts award",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3752514646,
+   "title": "( STYLIZED TETO ) PM NPC and RAGDOLL",
+   "author": "anasjam (José Anás)",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1518446445,
+   "title": "Closers - Seulbi (Sylvi) Lee 4 Pack Playermodels & NPCs",
+   "author": "8sianDude",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1538947946,
+   "title": "Mike Wazowski Player Model + NPC",
+   "author": "Gushiavo_N2",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1206963211,
+   "title": "Wonder Woman - Gal Gadot Playermodel (Injustice 2 IOS)",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2623117736,
+   "title": "A-Soul VTuber 嘉然\"Jia'Ran\"Diana [PM/NPC]",
+   "author": "Atso℞ubine O",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2818731474,
+   "title": "Cassy [Playermodel]",
+   "author": "mochi",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1206870014,
+   "title": "Cyborg - Ray Fisher PM&NPC (Injustice 2 IOS)",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3251588940,
+   "title": "Main Pokepi - Playermodels + NPCS [Doko Demo Issyo]",
+   "author": "Croissant",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1724104103,
+   "title": "Hulk - Avengers: Endgame Playermodel",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 735106535,
+   "title": "Battlefield 3 - MP USA Playermodels",
+   "author": "Giga Sigma Goon",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1102058691,
+   "title": "Mr. Robot: Elliot Alderson Playermodel",
+   "author": "le beige",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3313788058,
+   "title": "Chiitan - Japan's Crazy Mascot [Playermodel",
+   "author": "ItzDannio25",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1785838055,
+   "title": "Bill \"Veteran\" (L4d2) [ PM / Npc / Ragdoll ]",
+   "author": "Kemot44",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3025210916,
+   "title": "One Piece | Luffy Gear 5 Playermodel & Ragdoll ( NPC )",
+   "author": "mad",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3298401394,
+   "title": "[PM/NPC] Battlefield 1 German Cavalry Anime girl",
+   "author": "沙花叉クロヱ",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1862222751,
+   "title": "Kisame | Playermodel [Naruto]",
+   "author": "Otis gah",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3459915726,
+   "title": "Verbalase Eli [PM]",
+   "author": "BrayMurph",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1159097832,
+   "title": "Star Wars: EA's Battlefront II - First Order Stormtrooper (PM&NPC)",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3167996234,
+   "title": "[UNDERTALE] Undyne (PM)",
+   "author": "That cat from Oured",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 727976558,
+   "title": "IMC Spectre (Titanfall) Robot Playermodel",
+   "author": "bug crusher",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3698956513,
+   "title": "[OC] Sevyn & Nyne (PM/Ragdoll)",
+   "author": "sevyn",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3798171771,
+   "title": "[PM] Papa Louie - Papa's Pizzeria",
+   "author": "trapitooo_",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3022317395,
+   "title": "Joe Biden Playermodel + Ragdoll",
+   "author": "I love BBW's",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2608786379,
+   "title": "Demon Slayer Akaza Playermodel",
+   "author": "Delamain",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1253658868,
+   "title": "Reverse Flash - Playermodel (Injustice 2)",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2637910983,
+   "title": "Headcrab Gijinka Playermodel",
+   "author": "mochi",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 918920904,
+   "title": "Afterfall InSanity - Soldiers pack [Gmod - Playermodel",
+   "author": "jolly ol' chap",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2829204868,
+   "title": "Global Occult Coalition Operative [PM][SCP]",
+   "author": "asian feet lover /CHSV/",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2600090284,
+   "title": "Girls Und Panzer Anzio Pack [PM/NPC]",
+   "author": "Ceiling★Spiders",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2525666563,
+   "title": "Star Wars Battlefront Animated Playermodels Expanded",
+   "author": "Dopey",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1937300813,
+   "title": "Arknights - Skyfire [MemeSheep] - Player Model",
+   "author": "Nuj03",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3301259551,
+   "title": "[Chunkerbuns] Krystal Fox - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1471023829,
+   "title": "SG' Classic Metal Sonic P.M.",
+   "author": "Chaotzu",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1232265546,
+   "title": "Star Wars EA Battlefront 2 - First Order Stormtrooper Playermodel Pack v1.3",
+   "author": "Grady",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2680093013,
+   "title": "Emmet Playermodel & Npc (The Lego Movie)",
+   "author": "EddyMcmenu",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1207813610,
+   "title": "Hellboy - Injustice 2 IOS Playermodel",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1206934309,
+   "title": "Batman - Ben Affleck PM&NPC (Injustice 2 IOS)",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3808127987,
+   "title": "Irresponsible Dad - Happy Wheels [PM]",
+   "author": "Ellis",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2467868542,
+   "title": "Yuji Itadori | Playermodel | Jujutsu no Kaisen |",
+   "author": "Kuroso4",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3672993818,
+   "title": "Tda-Stylized Teto [PM & NPC]",
+   "author": "RKiRra",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3529502995,
+   "title": "Crash Twinsanity - Animated Playermodels",
+   "author": "Dopey",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 268874004,
+   "title": "Black Teletubby Playermodel & NPC",
+   "author": "Saint Baron",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 915353728,
+   "title": "Deadpool 2016 movie playermodel (HD)",
+   "author": "AshraldRails",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 694701717,
+   "title": "Enhanced Russian military playermodels",
+   "author": "maJor",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3820587929,
+   "title": "Kick the Buddy (PM/NPC/ITEM)",
+   "author": "Cake",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1454906698,
+   "title": "Aquaman - Jason Momoa Playermodel (Injustice 2 IOS)",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3501432330,
+   "title": "L Lawliet (DEATH NOTE Killer Within) [PM/NPC]",
+   "author": "shleepy",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2948253794,
+   "title": "(Half-Life) Snark Monster Girl PM/RAGDOLL",
+   "author": "mochi",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1975444754,
+   "title": "MGS4 PMC Pack (PM+Rag)",
+   "author": "Hugh Tamlin (Piggo)",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3163500274,
+   "title": "[PM/NPC] Patrick Star | Spongebob Squarepants",
+   "author": "Maygik",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3782840023,
+   "title": "[PM] Vortigaunt Half-Life 2",
+   "author": "Echo",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 893522250,
+   "title": "Call of Duty: Black Ops 2 CDC Soldier (P.M. and NPCs)-(Version 2!)",
+   "author": "Giga Sigma Goon",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1186994337,
+   "title": "Halloween Clone Troopers Playermodels",
+   "author": "Kralich/Gonzo",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1371091981,
+   "title": "Knightfall Batman Playermodel",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 286531139,
+   "title": "Soap and Yuri Playermodel Pack",
+   "author": "Deika",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3820096301,
+   "title": "Pictogram Playermodel",
+   "author": "Polyframe",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3638168031,
+   "title": "PUR-03 (PM/RAGDOLL)",
+   "author": "Dr. Bobox man (Therapist)",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1542813882,
+   "title": "Call of Duty: Advanced Warfare Hazmat [PM and Nutscript!]",
+   "author": "Giga Sigma Goon",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 299469403,
+   "title": "Killing Floor Survivors - Playermodels",
+   "author": "Lyth",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3473040375,
+   "title": "[VRChat] Seraphim V-01 - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3710937801,
+   "title": "FunVideo TV Red Angry Bird Playermodel",
+   "author": "A_Thing",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3682038825,
+   "title": "Matpat (HL2 Style) PM",
+   "author": "panman",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 760331637,
+   "title": "Death Trooper Playermodel Pack",
+   "author": "Zatomus",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2775328136,
+   "title": "Police K-9 Dog - Playermodel",
+   "author": "Arctos",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3362260684,
+   "title": "(A Quiet Place) Death Angel Playermodel/Ragdoll",
+   "author": "Christianity Gaming",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1525452547,
+   "title": "Racist Yoda Playermodel [REUPLOAD]",
+   "author": "Biozeminade",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1455045773,
+   "title": "Lord Joker Playermodel (Injustice 2 IOS)",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1367249830,
+   "title": "Knightmare Batman - Ben Affleck Playermodel (Injustice 2 IOS)",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3503348188,
+   "title": "Mordecai Playermodel - Regular Show (Fortnite)",
+   "author": "Westycj",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1377053196,
+   "title": "Black Panther Movie Playermodel",
+   "author": "Kyle",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3469477315,
+   "title": "Laddy (Playermodel/Ragdoll)",
+   "author": "devious critter",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3598103142,
+   "title": "Tony [Hotline Miami 2] [Pm",
+   "author": "Fozer_T89",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2983611653,
+   "title": "Chef Citizen - Playermodel",
+   "author": "BadMan578",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1647492195,
+   "title": "Cyberdimension Neptunia - CPU Candidates - P.M. / NPC",
+   "author": "Loyalists™",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3762133592,
+   "title": "Yume Nikki - madotsuki playermodel (調理器具)",
+   "author": "nobonet edmin",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3689982220,
+   "title": "[Poppy Playtime] - Playtime Worker Playermodel",
+   "author": "Goldermor",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 780260649,
+   "title": "MGSV: Sneaking Suit Playermodel",
+   "author": "76561198121568138",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 564773784,
+   "title": "CB-BRP PM Pack - Police Bear",
+   "author": "Comrade Bear",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3503806603,
+   "title": "Bean PM & Npc | Spore",
+   "author": "JUSTAGROX",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1223656163,
+   "title": "Armed Forces of Ukraine P.M.",
+   "author": "Reemiel",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1279917778,
+   "title": "Security Service of Ukraine P.M.",
+   "author": "Reemiel",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1145025185,
+   "title": "Green Lantern - Hal Jordan - Ryan Reynolds Playermodel",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2616803370,
+   "title": "Robotic arm. (Playermodel",
+   "author": "DisTac",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1723937697,
+   "title": "Captain America - Avengers: Endgame Playermodel",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 782646199,
+   "title": "Phase II ARC Troopers Playermodel Pack V2.0",
+   "author": "Sono",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 431305857,
+   "title": "hhgregg Player Model + NPC",
+   "author": "jacob",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1123234042,
+   "title": "Star Wars - EA Battlefront 2: 501st Legion [Playermodel]",
+   "author": "smitty",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3265738060,
+   "title": "MrBeast Citizen Playermodel",
+   "author": "Gordon Freakman",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 754145149,
+   "title": "Early 2000s U.S. Military [P.M. Version]",
+   "author": "Giga Sigma Goon",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3404916714,
+   "title": "Moth Playermodel",
+   "author": "EVE",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3019993454,
+   "title": "[Pseudoregalia] Sybil Playermodel",
+   "author": "Losos",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3596514380,
+   "title": "faceless_07 PM",
+   "author": "panman",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 395599961,
+   "title": "TFP Arcee Player Model",
+   "author": "FeyThing.TTV",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3629336136,
+   "title": "Chowder (Monster House) Playermodel",
+   "author": "A_Thing",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1753209092,
+   "title": "Fempyro Playermodel Pack",
+   "author": "Alaxe",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2810132455,
+   "title": "Captain Jack Sparrow SoT [PM]",
+   "author": "Falko",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3616379468,
+   "title": "Syobon Playermodel & Npc (Syobon action)",
+   "author": "EddyMcmenu",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3078936862,
+   "title": "[Helluva Boss] Vortex - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 743734344,
+   "title": "Call Of Duty: Modern Warfare 3-Delta Force Playermodels",
+   "author": "Giga Sigma Goon",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3439084220,
+   "title": "Chewling [Playermodel/NPC]",
+   "author": "ThatAverageJoe",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3734037843,
+   "title": "Deltarune SM64/Low Poly Playermodels",
+   "author": "JGeoo",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3579737562,
+   "title": "Homestuck Low-Poly Playermodels (THE REST OF THEM)",
+   "author": "mochi",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3578537285,
+   "title": "Fortnite - Daft Punk [PM/NPC/Ragdoll]",
+   "author": "blop",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 939009415,
+   "title": "RE ORC | USS Alpha Team Playermodels",
+   "author": "reborn",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 238250508,
+   "title": "Blacklight Retribution NPCs and Playermodels Minipack",
+   "author": "Professor Heavy",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3768794479,
+   "title": "Lego Worlds Playermodels and Npcs",
+   "author": "IDontHaveAName",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3825514777,
+   "title": "[PM/RAGDOLL] FNaF: DOLLFACES",
+   "author": "mochi",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3779044997,
+   "title": "Bon & Shell AD PM",
+   "author": "Burd",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3580006023,
+   "title": "The General's Boilers [PM",
+   "author": "Fozer_T89",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3330392192,
+   "title": "Steve Playermodel (Minecraft Movie)",
+   "author": "ChrisMNGames",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3419284289,
+   "title": "TF2 Casual Medic Playermodel + NPC",
+   "author": "acres",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3077302606,
+   "title": "[Bad Guys] MR. Wolf - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 759496275,
+   "title": "Militaires Français - Playermodel",
+   "author": "Ricardum",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3627692437,
+   "title": "Realistic Beavis & Butt-Head [PM]",
+   "author": "✞ poop seizure ✞",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1995621040,
+   "title": "Imperial Knight Solaria - Warhammer 40k [PM]",
+   "author": "Nick",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3350601733,
+   "title": "Sunflower Plants Vs. Zombies Garden Warfare 2 PM",
+   "author": "Peashooter",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2877889266,
+   "title": "Don't Hug Me I'm Scared Player Model Pack",
+   "author": "Ink Retired Man",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3515929598,
+   "title": "Abbie / Starlight [PM]",
+   "author": "TheDragonSlayer",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2796156477,
+   "title": "Furrball Custom Playermodel",
+   "author": "Bump Attack",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 694700909,
+   "title": "Enhanced Russian military playermodels materials",
+   "author": "maJor",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2173441207,
+   "title": "Bulldoger Playermodel",
+   "author": "Inactivity",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1816373858,
+   "title": "Diego Brando | Alt Outfit | Playermodel {JoJo's Bizarre Adventure",
+   "author": "Otis gah",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2045972797,
+   "title": "Timmy's Dad (Fairly OddParents) Playermodel & NPCs",
+   "author": "Hell Inspector",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1439548148,
+   "title": "Chloe Price Pack for NPC & Playermodels",
+   "author": "On The Railroad",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3544392594,
+   "title": "TOE The Locust - Playermodel - Doctor Nowhere",
+   "author": "Doumty",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3139608359,
+   "title": "[VRChat] Marceline \"Marcy\" - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2930426722,
+   "title": "[PM] The Last of Us Part II: Ellie Williams",
+   "author": "odesza",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 556134845,
+   "title": "Grand Theft Auto IV N.O.O.S.E. (PM Ragdoll)",
+   "author": "Gazhelmet",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 760778144,
+   "title": "SCP - Playermodel Pack",
+   "author": "Ricardum",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3813655422,
+   "title": "[PM] Lord Verity (Horror Skunx)",
+   "author": "croshx2",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3145834997,
+   "title": "Ayumu Kasuga/Osaka HEV suit Playermodel",
+   "author": "Miss Nirny",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2466084290,
+   "title": "Mahito | Playermodel | Jujutsu no Kaisen |",
+   "author": "Kuroso4",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3663878988,
+   "title": "yume nikki playermodels",
+   "author": "nobonet edmin",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3135927065,
+   "title": "[Madness Combat] Deimos - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1222573658,
+   "title": "Star Wars Battlefront II: Phase One Regimental Pack- Playermodels",
+   "author": "NotSWorthy",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3287483015,
+   "title": "Dead by Daylight - The Unknown (PM)",
+   "author": "gilles671games",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1545859585,
+   "title": "Call of Duty: Modern Warfare 2 Operator - Remastered Edition [P.M. & NPCs]",
+   "author": "Giga Sigma Goon",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3633925831,
+   "title": "Bootleg Woody [PM]",
+   "author": "olleyvar",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 669868438,
+   "title": "U.S. Army Military {Playermodels & NPC's",
+   "author": "[CZ] Colonel Clanny",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3718949503,
+   "title": "(OUTDATED!!) DELTARUNE - Omegasoftware.straw.page Playermodels (Kris",
+   "author": "OmegaSoftware",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3383788625,
+   "title": "Incredible Gassy | Playermodel",
+   "author": "2freele",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3641283205,
+   "title": "Chrome Dino (PM & Ragdoll)",
+   "author": "ThatOneFurry",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 709110329,
+   "title": "Spider-Man PlayerModel (Miles Morales)",
+   "author": "Nogitsu",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1285241667,
+   "title": "Metal Gear Solid V: The Phantom Pain - Soviet Soldier [PM & NPCs]",
+   "author": "Giga Sigma Goon",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3582007348,
+   "title": "Re:memento: White Shadows - Yuri (PM & NPCs)",
+   "author": "SheepyLord",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1907744644,
+   "title": "Shirtless Senator Steven Armstrong (PM)",
+   "author": "picigu9 Deadlock",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3547257171,
+   "title": "Bipedal Antlion Playermodel",
+   "author": "Sgt Stacker",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1202134036,
+   "title": "Aquaman - Jason Momoa PM&NPC (DC Legends)",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1840826402,
+   "title": "Pesci | Playermodel | La Squadra Esecuzioni {JoJo's Bizarre Adventure",
+   "author": "Otis gah",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1567760820,
+   "title": "PaperBag Playermodel",
+   "author": "Hog Cranker",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 400684744,
+   "title": "Monster Hunter Playermodel",
+   "author": "Zenmorn",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2853825647,
+   "title": "Entropy Zero 2 Playermodels",
+   "author": "sarodip hcipap",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3543451853,
+   "title": "RetroPop Steve PM+NPC",
+   "author": "Licuatronix",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2221220551,
+   "title": "Astronaut (Always has been) [PM]",
+   "author": "Kermit the Frog",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3153331534,
+   "title": "Poppy Playtime CH 3 Monster Catnap Playermodel/ragdoll Pack",
+   "author": "ColbekkGal",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1219730614,
+   "title": "Gendo Ikari - [PM/Ragdoll]",
+   "author": "onge",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2569975873,
+   "title": "(P.M.) Madness Combat 2-4 - Tricky",
+   "author": "L̶i̶l̶_RedShift",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3575388493,
+   "title": "Outcome Memories [PM] |RCL| {VB",
+   "author": "Gapster !!!",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2599091514,
+   "title": "Bendy Playermodel (CARTOON BENDY)",
+   "author": "Christianity Gaming",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2415738513,
+   "title": "MW3 PMC Playermodels",
+   "author": "TiberiumFusion",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1957206549,
+   "title": "GEMS Paramedic Playermodels",
+   "author": "Ceiling★Spiders",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3575409619,
+   "title": "Re:memento: White Shadows - Chesha - Summer Never Ends (PM & NPCs)",
+   "author": "SheepyLord",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1731817344,
+   "title": "Gothic - Hero & Mud [Playermodel]",
+   "author": "Duckie",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 899849019,
+   "title": "S.T.A.L.K.E.R.: Sunrise Model-Pack (PM & NPC)",
+   "author": "YourProfileName",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2934437069,
+   "title": "Carter [Virtual Insanity] (Family Guy) Playermodel & NPCs",
+   "author": "Hell Inspector",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3813104489,
+   "title": "Realistic Fish Head Playermodel",
+   "author": "A_Thing",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3752197531,
+   "title": "Verity Monster Playermodel [FIXED RIG]",
+   "author": "Brendan Makes",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3363938556,
+   "title": "Gordon Freeman PM",
+   "author": "galunga",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3524268195,
+   "title": "FNAF Movie Yellow Rabbit Playermodel (Fractured Franchise)",
+   "author": "Nissanette",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2123122154,
+   "title": "Elizabeth Police PM",
+   "author": "Jun Nagase ´ ω`",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 371420002,
+   "title": "Dr. Nefarious Playermodel",
+   "author": "FeyThing.TTV",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3667147454,
+   "title": "[COMM] Girlfriend - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 709124848,
+   "title": "Spider-Man PlayerModel (Symbiote Concept)",
+   "author": "Nogitsu",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 623586429,
+   "title": "Deathrow Servers Military police playermodels",
+   "author": "FLASHtheSTROBE",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 724316656,
+   "title": "Sven Co-op Playermodel Pack",
+   "author": "tiki",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2935871483,
+   "title": "SpongeBob SquarePants Player Model & NPCs (The SpongeBob SquarePants Movie)",
+   "author": "CKTheAmazingFrog",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3725822429,
+   "title": "Frickbears 3 Lolbit (Playermodel",
+   "author": "coolbeanslol101",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3053003273,
+   "title": "Zombie Legs / PlayerModel",
+   "author": "Chens",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 232683100,
+   "title": "Black-Mesa: P.M. Zombie Guard",
+   "author": "Lenoax",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1917903551,
+   "title": "Silent Hill Downpour Doll [ PM ]",
+   "author": "PsycedeliMuc",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3578348366,
+   "title": "Beavis & Butt-Head [PM]",
+   "author": "✞ poop seizure ✞",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 107760829,
+   "title": "Half-Life DM:S Playermodels",
+   "author": "Captain Charles",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1655107538,
+   "title": "Female Monster Playermodel",
+   "author": "Kalimando",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3605034675,
+   "title": "MTF RF Juggernaut [PM",
+   "author": "Fozer_T89",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3509759049,
+   "title": "William Afton (Yellow Rabbit) | PM & RAGDOLL | FNAF Movie",
+   "author": "Rimkk",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3460337827,
+   "title": "Junk Droid Playermodels",
+   "author": "Serika",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3300446068,
+   "title": "Angel from TWHL (PM / Ragdoll)",
+   "author": "Overbrutalized",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3789134595,
+   "title": "Vector(PM)",
+   "author": "PIpin",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1230208712,
+   "title": "Superman - Injustice 2 (PM & NPC)",
+   "author": "Kryptonite",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2048978091,
+   "title": "[IOWA] SLIPKNOT - Corey Taylor PM",
+   "author": "PsycedeliMuc",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 832352895,
+   "title": "SW:TOR Master Orgus Din Playermodel",
+   "author": "Horrible",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3301461004,
+   "title": "[PM/NPC] Battlefield 1 British Cavalry Anime girl",
+   "author": "沙花叉クロヱ",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3156251606,
+   "title": "[JASDF] Omaneko PM/NPC",
+   "author": "iGotThatPizza",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1189011807,
+   "title": "Star Wars - EA Battlefront 2: Unassigned Clone Pack [Playermodel]",
+   "author": "smitty",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 709117432,
+   "title": "Spider-Man PlayerModel (Spectacular)",
+   "author": "Nogitsu",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2477287901,
+   "title": "Baby Sonic Player Model & NPCs (Sonic Movie)",
+   "author": "CKTheAmazingFrog",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 760120358,
+   "title": "PMC France - Playermodel",
+   "author": "Ricardum",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2755869851,
+   "title": "[Arknights] Reunion Soldier - Playermodel + NPC",
+   "author": "Naitsak",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3642103669,
+   "title": "Spiderman Noir [PM/NPC]",
+   "author": "finished my contracts award",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3438072540,
+   "title": "Niko - OneShot Playermodel (Pungsun)",
+   "author": "Niko #teamtojo",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3593419116,
+   "title": "Ragdoll Pm (Mutilate-a-Doll 2)",
+   "author": "Funny Monkey",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1159050019,
+   "title": "Ultimis Crew in PES Suits Playermodels",
+   "author": "Hidden",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2998751781,
+   "title": "Cat Kleiner [Playermodel]",
+   "author": "Tonyhuh_h",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3304565903,
+   "title": "Zenless Zone Zero Soldier 11 [PM&NPCs]",
+   "author": "R. Star?",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1498408515,
+   "title": "Infinity Blade 3 Enemy Knight Playermodels: 66 Pack!",
+   "author": "Stuffy360",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 709118555,
+   "title": "Spider-Man PlayerModel (Superior)",
+   "author": "Nogitsu",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3738396884,
+   "title": "[COMM] [Re:Zero] Echidna - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1360582652,
+   "title": "The Amazing World Of Gumball - Teri [PM]",
+   "author": "Pirangunter21",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1844702627,
+   "title": "Diego Brando | Alt Outfit 2 | Playermodel {JoJo's Bizarre Adventure",
+   "author": "Otis gah",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3795622734,
+   "title": "NPC PM Anim Fix",
+   "author": "sarodip hcipap",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 1951568610,
+   "title": "Uncle Grandpa Player Model + NPC",
+   "author": "Gushiavo_N2",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 483666187,
+   "title": "Bioshock Infinite: Booker DeWitt (NPC & Playermodels)",
+   "author": "//RatedR4Ryan//",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1602587017,
+   "title": "Packmule Robot Playermodel",
+   "author": "Hog Cranker",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 753580222,
+   "title": "Resident Evil 2 U.S.S. Alpha Team Playermodels & NPCs [Version 2 !]",
+   "author": "Giga Sigma Goon",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3306508949,
+   "title": "[Adventure Time] MultiVersus - Finn the Human (PM/RAG)",
+   "author": "That cat from Oured",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3186772239,
+   "title": "Foot Soldier PvZ GW2 Playermodel",
+   "author": "A_Thing",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1574071896,
+   "title": "Handhead Playermodel",
+   "author": "Hog Cranker",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 709872429,
+   "title": "Military Personal Models { Playermodels & NPC's",
+   "author": "[CZ] Colonel Clanny",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3587791655,
+   "title": "Jake [Hotline Miami 2] [Pm",
+   "author": "Fozer_T89",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3291722474,
+   "title": "Riz's Catbine Playermodels",
+   "author": "Goobert",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1976566039,
+   "title": "Silent Hill Robbie The Rabbit DELUXE [PM & NPC]",
+   "author": "PsycedeliMuc",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 495034153,
+   "title": "Cuddles (Happy Tree Friends) Playermodel",
+   "author": "FZone96",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3598734494,
+   "title": "Fortnite x The Simpsons - Part One (PM/Ragdolls)",
+   "author": "Mr. P Gremlin",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1127357933,
+   "title": "Star Wars - EA Battlefront 2: Shock Trooper [Playermodel]",
+   "author": "smitty",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3758644531,
+   "title": "Cabo verde - Playermodel",
+   "author": "Epidox",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3153526694,
+   "title": "[PM/NPC] Garfield | Nickeloden All-Star Brawl",
+   "author": "Maygik",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3491723394,
+   "title": "Scary Ghost Player Model and NPC (She Glows in the Dark)",
+   "author": "gtamike_TSGK",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3366513462,
+   "title": "Ravenfield Soldier [PM/NPCS]",
+   "author": "w/^keski",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1365119967,
+   "title": "The Amazing World Of Gumball - Larry [PM]",
+   "author": "Pirangunter21",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3091219488,
+   "title": "Half-Life 25th Anniversary Skeleton (PM + Ragdoll)",
+   "author": "Pyrotion",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 534745025,
+   "title": "HazMat Citizens (NPCs and Playermodels)",
+   "author": "Dr.Towers",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3476656879,
+   "title": "[Optional] Green Alma Player Model and NPC (Ghost from GM Nightmare Church 2)",
+   "author": "gtamike_TSGK",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3694740435,
+   "title": "Leon Kennedy - RE9 | Resident Evil: Requiem [PM/NPC]",
+   "author": "finished my contracts award",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 3590476317,
+   "title": "FOG Playermodel",
+   "author": "aboba",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 2813197201,
+   "title": "Horror (Dusk) Playermodel",
+   "author": "LordCthulhu814",
+   "chosen": false,
+   "looked_at": 10,
+   "skip_reason": "batch 10: no model passed the rules, or only duplicates of better ones"
+  },
+  {
+   "id": 2126816568,
+   "title": "Bulk Bogan [PM]",
+   "author": "Kermit the Frog",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3611941971,
+   "title": "[COMM] Gwen Rift - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1796447169,
+   "title": "Customizable Military Males (PM/NPC)",
+   "author": "critson",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 1168934210,
+   "title": "Tiplar and Tiplee Playermodels",
+   "author": "suno",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3804934163,
+   "title": "Wawario & Wawaluigi [PM",
+   "author": "Kirbin'",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 918847379,
+   "title": "[Monster Hunter] Tigrex Playermodel",
+   "author": "Mailer",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 3034885357,
+   "title": "Azura Cyberpunk [PM",
+   "author": "Deadwater Timbles",
+   "chosen": false,
+   "looked_at": 10
+  },
+  {
+   "id": 870523620,
+   "title": "Kizuna AI P.M. & NPC",
+   "author": "dewobedil",
+   "chosen": true,
+   "batch": 10,
+   "slug": "kizuna_ai",
+   "mdl": "models/player/dewobedil/vocaloid/kizuna_ai/default_p.mdl",
+   "name": "Kizuna AI"
+  },
+  {
+   "id": 426924291,
+   "title": "FNAF 3 - Springtrap (Playermodel)",
+   "author": "Kitsumy ✦",
+   "chosen": true,
+   "batch": 10,
+   "slug": "fnaf3_springtrap",
+   "mdl": "models/player/maximo/springtrap1.mdl",
+   "name": "FNAF3 - Springtrap"
+  },
+  {
+   "id": 699784388,
+   "title": "Fnaf 2 | Withered Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "withered_foxy",
+   "mdl": "models/player/aileri_withered_foxy.mdl",
+   "name": "Withered Foxy"
+  },
+  {
+   "id": 699784388,
+   "title": "Fnaf 2 | Withered Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "withered_golden_freddy",
+   "mdl": "models/player/aileri_withered_golden_freddy.mdl",
+   "name": "Withered Golden Freddy",
+   "possible_dupes": [
+    "golden_freddy"
+   ]
+  },
+  {
+   "id": 699784388,
+   "title": "Fnaf 2 | Withered Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "withered_chica",
+   "mdl": "models/player/aileri_withered_chica.mdl",
+   "name": "Withered Chica"
+  },
+  {
+   "id": 1855801445,
+   "title": "Hazardous Environment Combat Unit - Remastered (P.M. and NPCs)",
+   "author": "Giga Sigma Goon",
+   "chosen": true,
+   "batch": 10,
+   "slug": "hecu_a3_heads",
+   "mdl": "models/yukon/hecu/hecu_01_player.mdl",
+   "name": "HECU A3 Heads"
+  },
+  {
+   "id": 658731183,
+   "title": "Fnaf 1 | Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "bonnie",
+   "mdl": "models/player/aileri_bonnie.mdl",
+   "name": "Bonnie"
+  },
+  {
+   "id": 658731183,
+   "title": "Fnaf 1 | Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "chica",
+   "mdl": "models/player/aileri_chica.mdl",
+   "name": "Chica"
+  },
+  {
+   "id": 658731183,
+   "title": "Fnaf 1 | Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "freddy",
+   "mdl": "models/player/aileri_freddy.mdl",
+   "name": "Freddy"
+  },
+  {
+   "id": 733881374,
+   "title": "Fnaf 2 | Unwithered Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "unwithered_bonnie",
+   "mdl": "models/player/aileri_unwithered_bonnie.mdl",
+   "name": "Unwithered Bonnie"
+  },
+  {
+   "id": 733881374,
+   "title": "Fnaf 2 | Unwithered Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "fredbear",
+   "mdl": "models/player/aileri_fredbear.mdl",
+   "name": "Fredbear"
+  },
+  {
+   "id": 733881374,
+   "title": "Fnaf 2 | Unwithered Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "unwithered_freddy",
+   "mdl": "models/player/aileri_unwithered_freddy.mdl",
+   "name": "Unwithered Freddy"
+  },
+  {
+   "id": 2175750122,
+   "title": "Peter Griffin Family Guy Player Model/NPC/Ragdoll/Custom Animations",
+   "author": "Petaly",
+   "chosen": true,
+   "batch": 10,
+   "slug": "peter_griffin_2",
+   "mdl": "models/petaly/peter_griffin/petergriffin.mdl",
+   "name": "Peter Griffin"
+  },
+  {
+   "id": 788031787,
+   "title": "Fnaf 3 | Phantom Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "phantom_foxy",
+   "mdl": "models/player/aileri_ph_foxy.mdl",
+   "name": "Phantom Foxy"
+  },
+  {
+   "id": 788031787,
+   "title": "Fnaf 3 | Phantom Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "phantom_mangle",
+   "mdl": "models/player/aileri_ph_mangle.mdl",
+   "name": "Phantom Mangle"
+  },
+  {
+   "id": 788031787,
+   "title": "Fnaf 3 | Phantom Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "phantom_chica",
+   "mdl": "models/player/aileri_ph_chica.mdl",
+   "name": "Phantom Chica"
+  },
+  {
+   "id": 790460967,
+   "title": "R6S: R6-Hazmat P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "r6s_r6_hazmat",
+   "mdl": "models/player/r6s_r6hazmat.mdl",
+   "name": "R6S: R6 Hazmat"
+  },
+  {
+   "id": 775770264,
+   "title": "Fnaf 2 | Misfits Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mangle",
+   "mdl": "models/player/aileri_mangle.mdl",
+   "name": "Mangle"
+  },
+  {
+   "id": 572872442,
+   "title": "R6S: IQ P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "rainbow_six_siege_iq",
+   "mdl": "models/player/r6s_iq.mdl",
+   "name": "Rainbow Six| Siege: IQ"
+  },
+  {
+   "id": 3414764340,
+   "title": "N64 Mario Pack (Playermodel/NPC/Ragdoll)",
+   "author": "Rueven2005",
+   "chosen": true,
+   "batch": 10,
+   "slug": "n64_waluigi",
+   "mdl": "models/rueven/n64/waluigi.mdl",
+   "name": "N64 Waluigi"
+  },
+  {
+   "id": 2829204868,
+   "title": "Global Occult Coalition Operative [PM][SCP]",
+   "author": "asian feet lover /CHSV/",
+   "chosen": true,
+   "batch": 10,
+   "slug": "xv_global_occult_coaliti",
+   "mdl": "models/player/xuvon/xuvon_goc_re_base.mdl",
+   "name": "XV Global Occult Coalition"
+  },
+  {
+   "id": 667986439,
+   "title": "R6S: Jäger P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "r6s_jager",
+   "mdl": "models/player/r6s_jager.mdl",
+   "name": "R6S: Jager"
+  },
+  {
+   "id": 3503078679,
+   "title": "A Minecraft Movie - Steve (PM/Ragdoll)",
+   "author": "Mr. P Gremlin",
+   "chosen": true,
+   "batch": 10,
+   "slug": "steve_jack_black_a_minec",
+   "mdl": "models/player/purpl/filmsteve.mdl",
+   "name": "Steve (Jack Black; A Minecraft Movie)"
+  },
+  {
+   "id": 489473735,
+   "title": "Portal 2: P-Body P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "p2_p_body",
+   "mdl": "models/player/p2_p-body.mdl",
+   "name": "P2: P-Body"
+  },
+  {
+   "id": 754145149,
+   "title": "Early 2000s U.S. Military [P.M. Version]",
+   "author": "Giga Sigma Goon",
+   "chosen": true,
+   "batch": 10,
+   "slug": "soldier2_desert",
+   "mdl": "models/player/soldier2_desert.mdl",
+   "name": "soldier2_desert"
+  },
+  {
+   "id": 754145149,
+   "title": "Early 2000s U.S. Military [P.M. Version]",
+   "author": "Giga Sigma Goon",
+   "chosen": true,
+   "batch": 10,
+   "slug": "soldier2_woodland",
+   "mdl": "models/player/soldier2_woodland.mdl",
+   "name": "soldier2_woodland"
+  },
+  {
+   "id": 3781996675,
+   "title": "Charple+ (Playermodels)",
+   "author": "Vexx",
+   "chosen": true,
+   "batch": 10,
+   "slug": "charple",
+   "mdl": "models/player/charple/charple.mdl",
+   "name": "charple+"
+  },
+  {
+   "id": 1222573658,
+   "title": "Star Wars Battlefront II: Phase One Regimental Pack- Playermodels",
+   "author": "NotSWorthy",
+   "chosen": true,
+   "batch": 10,
+   "slug": "bf2_reg_clonetrooper_bf2",
+   "mdl": "models/player/worthy/phase_1/104th/bf2_p1_trooper.mdl",
+   "name": "bf2_reg_clonetrooper_bf2_p1_104th"
+  },
+  {
+   "id": 1655107538,
+   "title": "Female Monster Playermodel",
+   "author": "Kalimando",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mirasu_female",
+   "mdl": "models/player/kalimando/mirasu_fem.mdl",
+   "name": "mirasu female"
+  },
+  {
+   "id": 754145149,
+   "title": "Early 2000s U.S. Military [P.M. Version]",
+   "author": "Giga Sigma Goon",
+   "chosen": true,
+   "batch": 10,
+   "slug": "soldier1_mopp1",
+   "mdl": "models/player/soldier1_mopp1.mdl",
+   "name": "soldier1_mopp1"
+  },
+  {
+   "id": 3139608359,
+   "title": "[VRChat] Marceline \"Marcy\" - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": true,
+   "batch": 10,
+   "slug": "marceline",
+   "mdl": "models/alvaroports/marcelinepm.mdl",
+   "name": "Marceline"
+  },
+  {
+   "id": 3473040375,
+   "title": "[VRChat] Seraphim V-01 - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": true,
+   "batch": 10,
+   "slug": "seraphim",
+   "mdl": "models/alvaroports/seraphimpm.mdl",
+   "name": "Seraphim"
+  },
+  {
+   "id": 1206870014,
+   "title": "Cyborg - Ray Fisher PM&NPC (Injustice 2 IOS)",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "cyborg",
+   "mdl": "models/kryptonite/inj2_cyborg/inj2_cyborg.mdl",
+   "name": "[K] Cyborg"
+  },
+  {
+   "id": 3034885357,
+   "title": "Azura Cyberpunk [PM",
+   "author": "Deadwater Timbles",
+   "chosen": true,
+   "batch": 10,
+   "slug": "azura",
+   "mdl": "models/timbleweebs/azura/azura_cyberpunk_pm.mdl",
+   "name": "Azura"
+  },
+  {
+   "id": 939009415,
+   "title": "RE ORC | USS Alpha Team Playermodels",
+   "author": "reborn",
+   "chosen": true,
+   "batch": 10,
+   "slug": "umbrela_corpse_soldier",
+   "mdl": "models/trent/umbrellacorpse/soldier.mdl",
+   "name": "Umbrela Corpse Soldier"
+  },
+  {
+   "id": 574428148,
+   "title": "R6S: Doc P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "rainbow_six_siege_doc",
+   "mdl": "models/player/r6s_doc.mdl",
+   "name": "Rainbow Six| Siege: Doc"
+  },
+  {
+   "id": 1232265546,
+   "title": "Star Wars EA Battlefront 2 - First Order Stormtrooper Playermodel Pack v1.3",
+   "author": "Grady",
+   "chosen": true,
+   "batch": 10,
+   "slug": "bf2_first_order_heavy_st",
+   "mdl": "models/grady/fo_heavy_stormtrooper/fo_heavy_stormtrooper.mdl",
+   "name": "BF2 First Order Heavy Stormtrooper"
+  },
+  {
+   "id": 808616397,
+   "title": "R6S: Caveira P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "rainbow_six_siege_cavier",
+   "mdl": "models/player/r6s_caviera.mdl",
+   "name": "Rainbow Six| Siege: Caviera"
+  },
+  {
+   "id": 3605034675,
+   "title": "MTF RF Juggernaut [PM",
+   "author": "Fozer_T89",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mtf_rf_juggernaut",
+   "mdl": "models/fozer/mtf_ru_juggernaut.mdl",
+   "name": "MTF RF - Juggernaut"
+  },
+  {
+   "id": 1975444754,
+   "title": "MGS4 PMC Pack (PM+Rag)",
+   "author": "Hugh Tamlin (Piggo)",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mgs4_pieuvre_armament",
+   "mdl": "models/ninja/mgs4_pieuvre_armament_merc.mdl",
+   "name": "Mgs4 Pieuvre Armament"
+  },
+  {
+   "id": 2877889266,
+   "title": "Don't Hug Me I'm Scared Player Model Pack",
+   "author": "Ink Retired Man",
+   "chosen": true,
+   "batch": 10,
+   "slug": "dhmis_yellowguy",
+   "mdl": "models/bonbunfilms/dhmis/yellowguy_pm.mdl",
+   "name": "dhmis_yellowguy"
+  },
+  {
+   "id": 2877889266,
+   "title": "Don't Hug Me I'm Scared Player Model Pack",
+   "author": "Ink Retired Man",
+   "chosen": true,
+   "batch": 10,
+   "slug": "dhmis_duckguy",
+   "mdl": "models/bonbunfilms/dhmis/duckguy_pm.mdl",
+   "name": "dhmis_duckguy"
+  },
+  {
+   "id": 2877889266,
+   "title": "Don't Hug Me I'm Scared Player Model Pack",
+   "author": "Ink Retired Man",
+   "chosen": true,
+   "batch": 10,
+   "slug": "dhmis_roy",
+   "mdl": "models/bonbunfilms/dhmis/roy_pm.mdl",
+   "name": "dhmis_roy"
+  },
+  {
+   "id": 3404916714,
+   "title": "Moth Playermodel",
+   "author": "EVE",
+   "chosen": true,
+   "batch": 10,
+   "slug": "moff",
+   "mdl": "models/eve/moff/moth_pm.mdl",
+   "name": "Moff"
+  },
+  {
+   "id": 1186994337,
+   "title": "Halloween Clone Troopers Playermodels",
+   "author": "Kralich/Gonzo",
+   "chosen": true,
+   "batch": 10,
+   "slug": "pumpkintrooper",
+   "mdl": "models/gonzo/halloweentroopers/pumpkintrooper/pumpkintrooper.mdl",
+   "name": "pumpkintrooper"
+  },
+  {
+   "id": 2608786379,
+   "title": "Demon Slayer Akaza Playermodel",
+   "author": "Delamain",
+   "chosen": true,
+   "batch": 10,
+   "slug": "pmakazan",
+   "mdl": "models/aka/akazan - willywood#2840/akazan - willywood#2840.mdl",
+   "name": "pmakazan"
+  },
+  {
+   "id": 2930426722,
+   "title": "[PM] The Last of Us Part II: Ellie Williams",
+   "author": "odesza",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ellie_tlou",
+   "mdl": "models/the_last_of_us/ellie_part2_pm.mdl",
+   "name": "Ellie Tlou 2"
+  },
+  {
+   "id": 775770264,
+   "title": "Fnaf 2 | Misfits Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "puppet",
+   "mdl": "models/player/aileri_puppet.mdl",
+   "name": "Puppet"
+  },
+  {
+   "id": 2467868542,
+   "title": "Yuji Itadori | Playermodel | Jujutsu no Kaisen |",
+   "author": "Kuroso4",
+   "chosen": true,
+   "batch": 10,
+   "slug": "yuji_itadori",
+   "mdl": "models/itadori_kuroso.mdl",
+   "name": "Yuji Itadori"
+  },
+  {
+   "id": 2810132455,
+   "title": "Captain Jack Sparrow SoT [PM]",
+   "author": "Falko",
+   "chosen": true,
+   "batch": 10,
+   "slug": "captain_jack_sparrow",
+   "mdl": "models/models/sot_jack_sparrow/sot_jack_sparrow.mdl",
+   "name": "Captain Jack Sparrow",
+   "possible_dupes": [
+    "jack_sparrow"
+   ]
+  },
+  {
+   "id": 3287483015,
+   "title": "Dead by Daylight - The Unknown (PM)",
+   "author": "gilles671games",
+   "chosen": true,
+   "batch": 10,
+   "slug": "unknown",
+   "mdl": "models/vsj/dbd_the_unknown/the_unknown.mdl",
+   "name": "The Unknown"
+  },
+  {
+   "id": 1574071896,
+   "title": "Handhead Playermodel",
+   "author": "Hog Cranker",
+   "chosen": true,
+   "batch": 10,
+   "slug": "handhead_guy",
+   "mdl": "models/player/stanmcg/handguy/handguy_playermodel.mdl",
+   "name": "HandHead Guy"
+  },
+  {
+   "id": 1186994337,
+   "title": "Halloween Clone Troopers Playermodels",
+   "author": "Kralich/Gonzo",
+   "chosen": true,
+   "batch": 10,
+   "slug": "deviltrooper",
+   "mdl": "models/gonzo/halloweentroopers/deviltrooper/deviltrooper.mdl",
+   "name": "deviltrooper"
+  },
+  {
+   "id": 1439548148,
+   "title": "Chloe Price Pack for NPC & Playermodels",
+   "author": "On The Railroad",
+   "chosen": true,
+   "batch": 10,
+   "slug": "chloe_skull",
+   "mdl": "models/ontherailroad/lis/chloe/ch_m_chloe_du3a_player.mdl",
+   "name": "Chloe(21 Skull)"
+  },
+  {
+   "id": 371420002,
+   "title": "Dr. Nefarious Playermodel",
+   "author": "FeyThing.TTV",
+   "chosen": true,
+   "batch": 10,
+   "slug": "dr_nefarious",
+   "mdl": "models/player/nefarious/nefarious.mdl",
+   "name": "Dr. Nefarious"
+  },
+  {
+   "id": 3689982220,
+   "title": "[Poppy Playtime] - Playtime Worker Playermodel",
+   "author": "Goldermor",
+   "chosen": true,
+   "batch": 10,
+   "slug": "playtime_worker_hazmat",
+   "mdl": "models/ppt/player/pt_worker_hazmat.mdl",
+   "name": "Playtime Worker Hazmat"
+  },
+  {
+   "id": 3077302606,
+   "title": "[Bad Guys] MR. Wolf - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mr_wolf_bad_guys",
+   "mdl": "models/mr_wolf.mdl",
+   "name": "MR.Wolf - The Bad Guys"
+  },
+  {
+   "id": 1232265546,
+   "title": "Star Wars EA Battlefront 2 - First Order Stormtrooper Playermodel Pack v1.3",
+   "author": "Grady",
+   "chosen": true,
+   "batch": 10,
+   "slug": "bf2_first_order_jet_stor",
+   "mdl": "models/grady/fo_jet_stormtrooper/fo_jet_stormtrooper.mdl",
+   "name": "BF2 First Order Jet Stormtrooper"
+  },
+  {
+   "id": 3779044997,
+   "title": "Bon & Shell AD PM",
+   "author": "Burd",
+   "chosen": true,
+   "batch": 10,
+   "slug": "shellythesheep",
+   "mdl": "models/stxrburd/shellythesheep/shellythesheep_pm.mdl",
+   "name": "ShellyTheSheep"
+  },
+  {
+   "id": 1186994337,
+   "title": "Halloween Clone Troopers Playermodels",
+   "author": "Kralich/Gonzo",
+   "chosen": true,
+   "batch": 10,
+   "slug": "vampiretrooper",
+   "mdl": "models/gonzo/halloweentroopers/vampiretrooper/vampiretrooper.mdl",
+   "name": "vampiretrooper"
+  },
+  {
+   "id": 915353728,
+   "title": "Deadpool 2016 movie playermodel (HD)",
+   "author": "AshraldRails",
+   "chosen": true,
+   "batch": 10,
+   "slug": "deadpool_3",
+   "mdl": "models/player/deadpool/deadpool.mdl",
+   "name": "Deadpool",
+   "possible_dupes": [
+    "deadpool_2",
+    "deadpool"
+   ]
+  },
+  {
+   "id": 564773784,
+   "title": "CB-BRP PM Pack - Police Bear",
+   "author": "Comrade Bear",
+   "chosen": true,
+   "batch": 10,
+   "slug": "comradebearpolice",
+   "mdl": "models/player/comradebear/comradebear_policeru.mdl",
+   "name": "ComradeBearPolice"
+  },
+  {
+   "id": 3598734494,
+   "title": "Fortnite x The Simpsons - Part One (PM/Ragdolls)",
+   "author": "Mr. P Gremlin",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ned_flanders_fortnite",
+   "mdl": "models/player/mrp/fortnite/flanders.mdl",
+   "name": "Ned Flanders (Fortnite)"
+  },
+  {
+   "id": 3598734494,
+   "title": "Fortnite x The Simpsons - Part One (PM/Ragdolls)",
+   "author": "Mr. P Gremlin",
+   "chosen": true,
+   "batch": 10,
+   "slug": "marge_simpson_fortnite",
+   "mdl": "models/player/mrp/fortnite/marge.mdl",
+   "name": "Marge Simpson (Fortnite)"
+  },
+  {
+   "id": 3672993818,
+   "title": "Tda-Stylized Teto [PM & NPC]",
+   "author": "RKiRra",
+   "chosen": true,
+   "batch": 10,
+   "slug": "tda_stylized_teto",
+   "mdl": "models/pacagma/vocaloid/teto_style/teto_style_player.mdl",
+   "name": "Tda-Stylized Teto"
+  },
+  {
+   "id": 454787966,
+   "title": "MKX: Scorpion P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mkx_scorpion",
+   "mdl": "models/player/mkx_scorpion.mdl",
+   "name": "MKX: Scorpion"
+  },
+  {
+   "id": 815623528,
+   "title": "Fnaf 4 | Nightmare Animatronics | Part 1 | NPCs and Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "nightmarionne",
+   "mdl": "models/player/aileri_nightmarionne.mdl",
+   "name": "Nightmarionne"
+  },
+  {
+   "id": 3813655422,
+   "title": "[PM] Lord Verity (Horror Skunx)",
+   "author": "croshx2",
+   "chosen": true,
+   "batch": 10,
+   "slug": "lord_verity",
+   "mdl": "models/horrorskunx/lordverity/lordverity.mdl",
+   "name": "lord_verity"
+  },
+  {
+   "id": 1230208712,
+   "title": "Superman - Injustice 2 (PM & NPC)",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "superman_injustice",
+   "mdl": "models/kryptonite/superman_inj2/superman_inj2.mdl",
+   "name": "[K] Superman Injustice 2"
+  },
+  {
+   "id": 2599091514,
+   "title": "Bendy Playermodel (CARTOON BENDY)",
+   "author": "Christianity Gaming",
+   "chosen": true,
+   "batch": 10,
+   "slug": "bendy",
+   "mdl": "models/player/bendy.mdl",
+   "name": "Bendy"
+  },
+  {
+   "id": 2599091514,
+   "title": "Bendy Playermodel (CARTOON BENDY)",
+   "author": "Christianity Gaming",
+   "chosen": true,
+   "batch": 10,
+   "slug": "cartoon_bendy",
+   "mdl": "models/player/bendy_cartoon.mdl",
+   "name": "Cartoon Bendy"
+  },
+  {
+   "id": 3752197531,
+   "title": "Verity Monster Playermodel [FIXED RIG]",
+   "author": "Brendan Makes",
+   "chosen": true,
+   "batch": 10,
+   "slug": "verity_monster",
+   "mdl": "models/brendan/veritymonster.mdl",
+   "name": "Verity Monster"
+  },
+  {
+   "id": 3598734494,
+   "title": "Fortnite x The Simpsons - Part One (PM/Ragdolls)",
+   "author": "Mr. P Gremlin",
+   "chosen": true,
+   "batch": 10,
+   "slug": "bart_simpson_fortnite",
+   "mdl": "models/player/mrp/fortnite/bart.mdl",
+   "name": "Bart Simpson (Fortnite)"
+  },
+  {
+   "id": 1232265546,
+   "title": "Star Wars EA Battlefront 2 - First Order Stormtrooper Playermodel Pack v1.3",
+   "author": "Grady",
+   "chosen": true,
+   "batch": 10,
+   "slug": "bf2_first_order_executio",
+   "mdl": "models/grady/fo_executioner_stormtrooper/fo_executioner_stormtrooper.mdl",
+   "name": "BF2 First Order Executioner Stormtrooper"
+  },
+  {
+   "id": 901330121,
+   "title": "R6S: Mute P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "r6s_mute",
+   "mdl": "models/player/r6s_mute.mdl",
+   "name": "R6S: Mute"
+  },
+  {
+   "id": 1602587017,
+   "title": "Packmule Robot Playermodel",
+   "author": "Hog Cranker",
+   "chosen": true,
+   "batch": 10,
+   "slug": "stanmcgcorp_packmule_b",
+   "mdl": "models/player/stanmcg/packmule/packmule_blue_playermodel.mdl",
+   "name": "stanmcgcorp - packmule B"
+  },
+  {
+   "id": 1602587017,
+   "title": "Packmule Robot Playermodel",
+   "author": "Hog Cranker",
+   "chosen": true,
+   "batch": 10,
+   "slug": "stanmcgcorp_packmule_cle",
+   "mdl": "models/player/stanmcg/packmule/packmule_custom_clean_playermodel.mdl",
+   "name": "stanmcgcorp - packmule custom - clean"
+  },
+  {
+   "id": 1602587017,
+   "title": "Packmule Robot Playermodel",
+   "author": "Hog Cranker",
+   "chosen": true,
+   "batch": 10,
+   "slug": "stanmcgcorp_packmule_dam",
+   "mdl": "models/player/stanmcg/packmule/packmule_custom_damaged_playermodel.mdl",
+   "name": "stanmcgcorp - packmule custom - damaged"
+  },
+  {
+   "id": 1206963211,
+   "title": "Wonder Woman - Gal Gadot Playermodel (Injustice 2 IOS)",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "wonder_woman",
+   "mdl": "models/kryptonite/inj2_wonderwoman/inj2_wonderwoman.mdl",
+   "name": "[K] Wonder Woman"
+  },
+  {
+   "id": 3078936862,
+   "title": "[Helluva Boss] Vortex - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": true,
+   "batch": 10,
+   "slug": "vortex_helluva_boss",
+   "mdl": "models/hlb_vortex.mdl",
+   "name": "Vortex - Helluva Boss"
+  },
+  {
+   "id": 3145834997,
+   "title": "Ayumu Kasuga/Osaka HEV suit Playermodel",
+   "author": "Miss Nirny",
+   "chosen": true,
+   "batch": 10,
+   "slug": "hev_osaka",
+   "mdl": "models/nirny/vroid/hev_osaka_san.mdl",
+   "name": "HEV Osaka"
+  },
+  {
+   "id": 1159097832,
+   "title": "Star Wars: EA's Battlefront II - First Order Stormtrooper (PM&NPC)",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "sbfii_first_order_troope",
+   "mdl": "models/kryptonite/sbii_fotrooper/sbii_fotrooper.mdl",
+   "name": "[K] SBFII First Order Trooper"
+  },
+  {
+   "id": 1975444754,
+   "title": "MGS4 PMC Pack (PM+Rag)",
+   "author": "Hugh Tamlin (Piggo)",
+   "chosen": true,
+   "batch": 10,
+   "slug": "praying_mantis_merc_slee",
+   "mdl": "models/ninja/mgs4_praying_mantis_merc_short_sleeved.mdl",
+   "name": "Praying_Mantis_Merc_Sleeves"
+  },
+  {
+   "id": 852648377,
+   "title": "Appearence Miku (Default) P.M. & NPC",
+   "author": "dewobedil",
+   "chosen": true,
+   "batch": 10,
+   "slug": "appearance_miku_default",
+   "mdl": "models/player/dewobedil/vocaloid/appearance_miku/default_p.mdl",
+   "name": "Appearance Miku (Default)"
+  },
+  {
+   "id": 1182767918,
+   "title": "Indominus Rex Playermodel",
+   "author": "2XMM2",
+   "chosen": true,
+   "batch": 10,
+   "slug": "indominus",
+   "mdl": "models/indoplayer/indo.mdl",
+   "name": "Indominus"
+  },
+  {
+   "id": 1207813610,
+   "title": "Hellboy - Injustice 2 IOS Playermodel",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "hellboy",
+   "mdl": "models/kryptonite/inj2_hellboy/inj2_hellboy.mdl",
+   "name": "[K] Hellboy"
+  },
+  {
+   "id": 1975444754,
+   "title": "MGS4 PMC Pack (PM+Rag)",
+   "author": "Hugh Tamlin (Piggo)",
+   "chosen": true,
+   "batch": 10,
+   "slug": "praying_mantis_merc",
+   "mdl": "models/ninja/mgs4_praying_mantis_merc.mdl",
+   "name": "Praying_Mantis_Merc"
+  },
+  {
+   "id": 2586573261,
+   "title": "[FIXED] Furry (Protogen) | NKD Protogen PM / Ragdoll | Hitboxes | LOD | NPC",
+   "author": "Light Shoro",
+   "chosen": true,
+   "batch": 10,
+   "slug": "protogen",
+   "mdl": "models/eradium/protogen_player.mdl",
+   "name": "Protogen"
+  },
+  {
+   "id": 310559057,
+   "title": "Five Nights at Freddy's - Playermodels",
+   "author": "Ninya",
+   "chosen": true,
+   "batch": 10,
+   "slug": "fnaf_chica",
+   "mdl": "models/i6nis/chica_player.mdl",
+   "name": "fnaf_chica"
+  },
+  {
+   "id": 562524462,
+   "title": "OW: Tracer P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ow_tracer",
+   "mdl": "models/player/ow_tracer.mdl",
+   "name": "OW: Tracer"
+  },
+  {
+   "id": 854634173,
+   "title": "Appearence Miku (Stroll) P.M. & NPC",
+   "author": "dewobedil",
+   "chosen": true,
+   "batch": 10,
+   "slug": "appearance_miku_stroll",
+   "mdl": "models/player/dewobedil/vocaloid/appearance_miku/stroll_p.mdl",
+   "name": "Appearance Miku (Stroll)"
+  },
+  {
+   "id": 466357313,
+   "title": "MKX: Jason P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mkx_jason",
+   "mdl": "models/player/mkx_jason.mdl",
+   "name": "MKX: Jason"
+  },
+  {
+   "id": 2853825647,
+   "title": "Entropy Zero 2 Playermodels",
+   "author": "sarodip hcipap",
+   "chosen": true,
+   "batch": 10,
+   "slug": "clone_cop",
+   "mdl": "models/ez2models/clone_cop.mdl",
+   "name": "Clone_cop"
+  },
+  {
+   "id": 678248473,
+   "title": "High Dragon Playermodel",
+   "author": "2XMM2",
+   "chosen": true,
+   "batch": 10,
+   "slug": "high_dragon",
+   "mdl": "models/highdragon_player/hidrgpl.mdl",
+   "name": "High Dragon"
+  },
+  {
+   "id": 1976566039,
+   "title": "Silent Hill Robbie The Rabbit DELUXE [PM & NPC]",
+   "author": "PsycedeliMuc",
+   "chosen": true,
+   "batch": 10,
+   "slug": "robbie_suit_deluxe",
+   "mdl": "models/psycedelicum/sh3/robbie_rabbit_deluxe/robbie_rabbit_deluxe.mdl",
+   "name": "Robbie Suit Deluxe"
+  },
+  {
+   "id": 310559057,
+   "title": "Five Nights at Freddy's - Playermodels",
+   "author": "Ninya",
+   "chosen": true,
+   "batch": 10,
+   "slug": "fnaf_bonnie",
+   "mdl": "models/i6nis/bonnie_player.mdl",
+   "name": "fnaf_bonnie"
+  },
+  {
+   "id": 310559057,
+   "title": "Five Nights at Freddy's - Playermodels",
+   "author": "Ninya",
+   "chosen": true,
+   "batch": 10,
+   "slug": "fnaf_freddy",
+   "mdl": "models/i6nis/freddy_player.mdl",
+   "name": "fnaf_freddy"
+  },
+  {
+   "id": 2466973185,
+   "title": "Megumi Fushiguro | Playermodel | Jujutsu no Kaisen |",
+   "author": "Kuroso4",
+   "chosen": true,
+   "batch": 10,
+   "slug": "megumi_kuroso",
+   "mdl": "models/megumi_kuroso.mdl",
+   "name": "Megumi Kuroso"
+  },
+  {
+   "id": 1206934309,
+   "title": "Batman - Ben Affleck PM&NPC (Injustice 2 IOS)",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "batman",
+   "mdl": "models/kryptonite/inj2_batman_jl/inj2_batman_jl.mdl",
+   "name": "[K] Batman"
+  },
+  {
+   "id": 1542813882,
+   "title": "Call of Duty: Advanced Warfare Hazmat [PM and Nutscript!]",
+   "author": "Giga Sigma Goon",
+   "chosen": true,
+   "batch": 10,
+   "slug": "call_of_duty_advanced_wa",
+   "mdl": "models/cod_aw_hazmat_player.mdl",
+   "name": "Call of Duty: Advanced Warfare Hazmat"
+  },
+  {
+   "id": 901439159,
+   "title": "R6S: Thatcher P.M. and Ragdoll",
+   "author": "jolly ol' chap",
+   "chosen": true,
+   "batch": 10,
+   "slug": "rainbow_six_siege_thatch",
+   "mdl": "models/player/auditor/r6s/thatcher.mdl",
+   "name": "Rainbow Six Siege - Thatcher"
+  },
+  {
+   "id": 918920904,
+   "title": "Afterfall InSanity - Soldiers pack [Gmod - Playermodel",
+   "author": "jolly ol' chap",
+   "chosen": true,
+   "batch": 10,
+   "slug": "afterfall_insanity_soldi",
+   "mdl": "models/player/ai_soldiers.mdl",
+   "name": "Afterfall InSanity - Soldier"
+  },
+  {
+   "id": 3779044997,
+   "title": "Bon & Shell AD PM",
+   "author": "Burd",
+   "chosen": true,
+   "batch": 10,
+   "slug": "bonohare",
+   "mdl": "models/stxrburd/bonohare/bonohare_pm.mdl",
+   "name": "BonOhare"
+  },
+  {
+   "id": 2123122154,
+   "title": "Elizabeth Police PM",
+   "author": "Jun Nagase ´ ω`",
+   "chosen": true,
+   "batch": 10,
+   "slug": "elizacop",
+   "mdl": "models/player/elizacop.mdl",
+   "name": "ElizaCop"
+  },
+  {
+   "id": 1196025448,
+   "title": "Star Wars - EA Battlefront 2: Huge Officer Pack [Playermodel]",
+   "author": "smitty",
+   "chosen": true,
+   "batch": 10,
+   "slug": "black_officer",
+   "mdl": "models/smitty/bf2_reg/black_officer/black_officer.mdl",
+   "name": "black_officer"
+  },
+  {
+   "id": 1196025448,
+   "title": "Star Wars - EA Battlefront 2: Huge Officer Pack [Playermodel]",
+   "author": "smitty",
+   "chosen": true,
+   "batch": 10,
+   "slug": "blue_officer",
+   "mdl": "models/smitty/bf2_reg/blue_officer/blue_officer.mdl",
+   "name": "blue_officer"
+  },
+  {
+   "id": 1196025448,
+   "title": "Star Wars - EA Battlefront 2: Huge Officer Pack [Playermodel]",
+   "author": "smitty",
+   "chosen": true,
+   "batch": 10,
+   "slug": "brown_officer",
+   "mdl": "models/smitty/bf2_reg/brown_officer/brown_officer.mdl",
+   "name": "brown_officer"
+  },
+  {
+   "id": 815623528,
+   "title": "Fnaf 4 | Nightmare Animatronics | Part 1 | NPCs and Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "nightmare_mangle",
+   "mdl": "models/player/aileri_nightmare_mangle.mdl",
+   "name": "Nightmare Mangle"
+  },
+  {
+   "id": 815623528,
+   "title": "Fnaf 4 | Nightmare Animatronics | Part 1 | NPCs and Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "nightmare_freddy",
+   "mdl": "models/player/aileri_nightmare_freddy.mdl",
+   "name": "Nightmare Freddy"
+  },
+  {
+   "id": 760331637,
+   "title": "Death Trooper Playermodel Pack",
+   "author": "Zatomus",
+   "chosen": true,
+   "batch": 10,
+   "slug": "death_trooper_scout",
+   "mdl": "models/player/death_troopers/death_scout.mdl",
+   "name": "Death Trooper Scout"
+  },
+  {
+   "id": 652373442,
+   "title": "Skyrim Dragon Playermodels",
+   "author": "2XMM2",
+   "chosen": true,
+   "batch": 10,
+   "slug": "paarthurnax",
+   "mdl": "models/skyrimdragons/parthy.mdl",
+   "name": "Paarthurnax"
+  },
+  {
+   "id": 3766150494,
+   "title": "[Updated]Larping the rooms PM playermodel",
+   "author": "所罗门啊",
+   "chosen": true,
+   "batch": 10,
+   "slug": "larping_rooms",
+   "mdl": "models/pm/larping_the_rooms.mdl",
+   "name": "Larping_the_rooms"
+  },
+  {
+   "id": 1253658868,
+   "title": "Reverse Flash - Playermodel (Injustice 2)",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "reverse_flash",
+   "mdl": "models/kryptonite/inj2_reverse_flash/inj2_reverse_flash.mdl",
+   "name": "[K] Reverse Flash"
+  },
+  {
+   "id": 760331637,
+   "title": "Death Trooper Playermodel Pack",
+   "author": "Zatomus",
+   "chosen": true,
+   "batch": 10,
+   "slug": "death_trooper",
+   "mdl": "models/player/death_troopers/death_trooper.mdl",
+   "name": "Death Trooper",
+   "possible_dupes": [
+    "cgi_death"
+   ]
+  },
+  {
+   "id": 3167996234,
+   "title": "[UNDERTALE] Undyne (PM)",
+   "author": "That cat from Oured",
+   "chosen": true,
+   "batch": 10,
+   "slug": "undertale_undyne",
+   "mdl": "models/kapuyas/undertale/undyne/undyne_pm.mdl",
+   "name": "Undertale - Undyne"
+  },
+  {
+   "id": 2755869851,
+   "title": "[Arknights] Reunion Soldier - Playermodel + NPC",
+   "author": "Naitsak",
+   "chosen": true,
+   "batch": 10,
+   "slug": "arksoldier",
+   "mdl": "models/guy/arksoldier.mdl",
+   "name": "arksoldier"
+  },
+  {
+   "id": 652373442,
+   "title": "Skyrim Dragon Playermodels",
+   "author": "2XMM2",
+   "chosen": true,
+   "batch": 10,
+   "slug": "alduin",
+   "mdl": "models/skyrimdragons/alduin.mdl",
+   "name": "Alduin"
+  },
+  {
+   "id": 771927440,
+   "title": "Russian Spetsnaz FSB & O.M.O.N. [P.M. and NPCs]",
+   "author": "Giga Sigma Goon",
+   "chosen": true,
+   "batch": 10,
+   "slug": "tpamodern1",
+   "mdl": "models/tpamodern.mdl",
+   "name": "TPAModern1"
+  },
+  {
+   "id": 764885322,
+   "title": "HL: Gordon Freeman P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "lenoax_gordon_freeman",
+   "mdl": "models/player/lenoax_gordon.mdl",
+   "name": "Lenoax: Gordon Freeman"
+  },
+  {
+   "id": 652373442,
+   "title": "Skyrim Dragon Playermodels",
+   "author": "2XMM2",
+   "chosen": true,
+   "batch": 10,
+   "slug": "sdragon",
+   "mdl": "models/skyrimdragons/dragon1.mdl",
+   "name": "SDragon 1"
+  },
+  {
+   "id": 2637910983,
+   "title": "Headcrab Gijinka Playermodel",
+   "author": "mochi",
+   "chosen": true,
+   "batch": 10,
+   "slug": "lamarr",
+   "mdl": "models/player/lamarr.mdl",
+   "name": "Lamarr"
+  },
+  {
+   "id": 1796447169,
+   "title": "Customizable Military Males (PM/NPC)",
+   "author": "critson",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mfa",
+   "mdl": "models/mfa/mfa_08.mdl",
+   "name": "MFA_08"
+  },
+  {
+   "id": 2466084290,
+   "title": "Mahito | Playermodel | Jujutsu no Kaisen |",
+   "author": "Kuroso4",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mahito_kuroso",
+   "mdl": "models/mahito_kuroso.mdl",
+   "name": "Mahito Kuroso"
+  },
+  {
+   "id": 3578348366,
+   "title": "Beavis & Butt-Head [PM]",
+   "author": "✞ poop seizure ✞",
+   "chosen": true,
+   "batch": 10,
+   "slug": "butthead",
+   "mdl": "models/player/models/bb/bathed.mdl",
+   "name": "butthead"
+  },
+  {
+   "id": 3781996675,
+   "title": "Charple+ (Playermodels)",
+   "author": "Vexx",
+   "chosen": true,
+   "batch": 10,
+   "slug": "charple_skeleton",
+   "mdl": "models/player/charple/charple_skeleton.mdl",
+   "name": "charple_skeleton"
+  },
+  {
+   "id": 746214499,
+   "title": "DragonBall Z Budokai Goku Playermodel",
+   "author": "Sc4recroW",
+   "chosen": true,
+   "batch": 10,
+   "slug": "gok",
+   "mdl": "models/player/b3gok/b3gok.mdl",
+   "name": "GOK"
+  },
+  {
+   "id": 1102058691,
+   "title": "Mr. Robot: Elliot Alderson Playermodel",
+   "author": "le beige",
+   "chosen": true,
+   "batch": 10,
+   "slug": "sp_mr_robot",
+   "mdl": "models/playermodel/sterling/mr_robot.mdl",
+   "name": "SP Mr Robot"
+  },
+  {
+   "id": 753580222,
+   "title": "Resident Evil 2 U.S.S. Alpha Team Playermodels & NPCs [Version 2 !]",
+   "author": "Giga Sigma Goon",
+   "chosen": true,
+   "batch": 10,
+   "slug": "resident_evil_hunk",
+   "mdl": "models/player/uss_re2hunk.mdl",
+   "name": "Resident Evil 2 Hunk"
+  },
+  {
+   "id": 3580006023,
+   "title": "The General's Boilers [PM",
+   "author": "Fozer_T89",
+   "chosen": true,
+   "batch": 10,
+   "slug": "general_kotov",
+   "mdl": "models/memes/fozer/kotli_general_kotov.mdl",
+   "name": "General Kotov"
+  },
+  {
+   "id": 1000987652,
+   "title": "DS2 Securities PM/Ragdolls",
+   "author": "Legion",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ds2_security",
+   "mdl": "models/player/n7legion/security_suit.mdl",
+   "name": "DS2 Security"
+  },
+  {
+   "id": 1000987652,
+   "title": "DS2 Securities PM/Ragdolls",
+   "author": "Legion",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ds2_arctic",
+   "mdl": "models/player/n7legion/security_suit_arctic.mdl",
+   "name": "DS2 Arctic"
+  },
+  {
+   "id": 1000987652,
+   "title": "DS2 Securities PM/Ragdolls",
+   "author": "Legion",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ds2_earthgov",
+   "mdl": "models/player/n7legion/security_suit_egov.mdl",
+   "name": "DS2 EarthGov"
+  },
+  {
+   "id": 753580222,
+   "title": "Resident Evil 2 U.S.S. Alpha Team Playermodels & NPCs [Version 2 !]",
+   "author": "Giga Sigma Goon",
+   "chosen": true,
+   "batch": 10,
+   "slug": "resident_evil_hunk_wound",
+   "mdl": "models/player/uss_wounded.mdl",
+   "name": "Resident Evil 2 Hunk Wounded"
+  },
+  {
+   "id": 3766150494,
+   "title": "[Updated]Larping the rooms PM playermodel",
+   "author": "所罗门啊",
+   "chosen": true,
+   "batch": 10,
+   "slug": "larping_rooms_still_life",
+   "mdl": "models/pm/larping_the_rooms_still_life.mdl",
+   "name": "Larping_the_rooms_still_life",
+   "possible_dupes": [
+    "still_life",
+    "stilllife_mary"
+   ]
+  },
+  {
+   "id": 3638168031,
+   "title": "PUR-03 (PM/RAGDOLL)",
+   "author": "Dr. Bobox man (Therapist)",
+   "chosen": true,
+   "batch": 10,
+   "slug": "pur",
+   "mdl": "models/boboxmanmissions/fuch/pur03.mdl",
+   "name": "PUR-03"
+  },
+  {
+   "id": 3789134595,
+   "title": "Vector(PM)",
+   "author": "PIpin",
+   "chosen": true,
+   "batch": 10,
+   "slug": "vector",
+   "mdl": "models/vector.mdl",
+   "name": "Vector"
+  },
+  {
+   "id": 3019993454,
+   "title": "[Pseudoregalia] Sybil Playermodel",
+   "author": "Losos",
+   "chosen": true,
+   "batch": 10,
+   "slug": "sybil_pseudoregalia",
+   "mdl": "models/losos/pseudoregalia/sybil/sybil.mdl",
+   "name": "Sybil Pseudoregalia"
+  },
+  {
+   "id": 1872021497,
+   "title": "Fortnite: Batman - Playermodel",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "batman_fortnite",
+   "mdl": "models/kryptonite/batman_fortnite/batman_fortnite.mdl",
+   "name": "[K] Batman: Fortnite"
+  },
+  {
+   "id": 247181062,
+   "title": "Metal Gear Solid 4: Old Snake Playermodel",
+   "author": "Voikanaa",
+   "chosen": true,
+   "batch": 10,
+   "slug": "snake",
+   "mdl": "models/player/old_snake.mdl",
+   "name": "Old Snake"
+  },
+  {
+   "id": 3627692437,
+   "title": "Realistic Beavis & Butt-Head [PM]",
+   "author": "✞ poop seizure ✞",
+   "chosen": true,
+   "batch": 10,
+   "slug": "butthead_real",
+   "mdl": "models/junk/beavisbutthead/butthead_pm.mdl",
+   "name": "butthead_real"
+  },
+  {
+   "id": 3304565903,
+   "title": "Zenless Zone Zero Soldier 11 [PM&NPCs]",
+   "author": "R. Star?",
+   "chosen": true,
+   "batch": 10,
+   "slug": "zenless_zone_zero_soldie",
+   "mdl": "models/soldier_11/zzz/rstar/soldier_11/soldier_11.mdl",
+   "name": "Zenless Zone Zero Soldier 11"
+  },
+  {
+   "id": 3611941971,
+   "title": "[COMM] Gwen Rift - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": true,
+   "batch": 10,
+   "slug": "gwen_rift",
+   "mdl": "models/alvaroports/gwenriftpm.mdl",
+   "name": "Gwen Rift"
+  },
+  {
+   "id": 608928002,
+   "title": "(Official Pack) Security Guards { P.M.",
+   "author": "[CZ] Colonel Clanny",
+   "chosen": true,
+   "batch": 10,
+   "slug": "security",
+   "mdl": "models/player/portal/male_09_security.mdl",
+   "name": "security_9"
+  },
+  {
+   "id": 1785838055,
+   "title": "Bill \"Veteran\" (L4d2) [ PM / Npc / Ragdoll ]",
+   "author": "Kemot44",
+   "chosen": true,
+   "batch": 10,
+   "slug": "bill_vietnam",
+   "mdl": "models/kemot44/models/l4d2/characters/bill_vietnam_pm.mdl",
+   "name": "Bill Vietnam"
+  },
+  {
+   "id": 3578537285,
+   "title": "Fortnite - Daft Punk [PM/NPC/Ragdoll]",
+   "author": "blop",
+   "chosen": true,
+   "batch": 10,
+   "slug": "tb3",
+   "mdl": "models/blop/daftpunk/tb3.mdl",
+   "name": "TB3"
+  },
+  {
+   "id": 3503348188,
+   "title": "Mordecai Playermodel - Regular Show (Fortnite)",
+   "author": "Westycj",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mordecai",
+   "mdl": "models/westycj/mordecai.mdl",
+   "name": "Mordecai"
+  },
+  {
+   "id": 3578537285,
+   "title": "Fortnite - Daft Punk [PM/NPC/Ragdoll]",
+   "author": "blop",
+   "chosen": true,
+   "batch": 10,
+   "slug": "gm08",
+   "mdl": "models/blop/daftpunk/gm08.mdl",
+   "name": "GM08"
+  },
+  {
+   "id": 608930711,
+   "title": "(Official Pack) Fire Fighter { P.M.",
+   "author": "[CZ] Colonel Clanny",
+   "chosen": true,
+   "batch": 10,
+   "slug": "fireman",
+   "mdl": "models/player/portal/male_09_fireman.mdl",
+   "name": "fireman_7"
+  },
+  {
+   "id": 3578348366,
+   "title": "Beavis & Butt-Head [PM]",
+   "author": "✞ poop seizure ✞",
+   "chosen": true,
+   "batch": 10,
+   "slug": "beavis",
+   "mdl": "models/player/models/bb/bibis.mdl",
+   "name": "beavis"
+  },
+  {
+   "id": 3524268195,
+   "title": "FNAF Movie Yellow Rabbit Playermodel (Fractured Franchise)",
+   "author": "Nissanette",
+   "chosen": true,
+   "batch": 10,
+   "slug": "yellow_rabbit",
+   "mdl": "models/nissanette/yellowrabbit/yellowrabbit_pm.mdl",
+   "name": "Yellow Rabbit"
+  },
+  {
+   "id": 1193960837,
+   "title": "Thor: Ragnarok - Gladiator Thor Playermodel",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "thor_ragnarok",
+   "mdl": "models/kryptonite/thor_gladiator/thor_gladiator_new.mdl",
+   "name": "[K] Thor: Ragnarok"
+  },
+  {
+   "id": 3642103669,
+   "title": "Spiderman Noir [PM/NPC]",
+   "author": "finished my contracts award",
+   "chosen": true,
+   "batch": 10,
+   "slug": "spider_man_noir",
+   "mdl": "models/furuki/spidernoirtex/spiderman_noir_model.mdl",
+   "name": "Spider-Man Noir",
+   "possible_dupes": [
+    "spider_man",
+    "spiderman",
+    "spider_man_miles_morales",
+    "spider_man_blood",
+    "spider_man_jammie",
+    "spider_man_black_jammie",
+    "spider_man_miles_morales_2",
+    "spider_man_symbiote",
+    "miles_morales_spider_man",
+    "miles_morales_suit",
+    "symbiote_spider",
+    "spectacular_spider_man",
+    "superior_spider_man"
+   ]
+  },
+  {
+   "id": 2849235954,
+   "title": "Luffy Gear 5 [PM]",
+   "author": "Falko",
+   "chosen": true,
+   "batch": 10,
+   "slug": "luffy_gear",
+   "mdl": "models/models/player/luffy_gear5_falko.mdl",
+   "name": "Luffy Gear 5 [Falko]"
+  },
+  {
+   "id": 2173441207,
+   "title": "Bulldoger Playermodel",
+   "author": "Inactivity",
+   "chosen": true,
+   "batch": 10,
+   "slug": "bulldoger",
+   "mdl": "models/bulldoger_pm.mdl",
+   "name": "Bulldoger"
+  },
+  {
+   "id": 1957206549,
+   "title": "GEMS Paramedic Playermodels",
+   "author": "Ceiling★Spiders",
+   "chosen": true,
+   "batch": 10,
+   "slug": "gems_paramedic_robot",
+   "mdl": "models/player/gems_paramedic1/male_10.mdl",
+   "name": "GEMS Paramedic Robot"
+  },
+  {
+   "id": 1917903551,
+   "title": "Silent Hill Downpour Doll [ PM ]",
+   "author": "PsycedeliMuc",
+   "chosen": true,
+   "batch": 10,
+   "slug": "downpour_doll",
+   "mdl": "models/psycedelicum/downpour/doll/doll.mdl",
+   "name": "Downpour Doll"
+  },
+  {
+   "id": 3627692437,
+   "title": "Realistic Beavis & Butt-Head [PM]",
+   "author": "✞ poop seizure ✞",
+   "chosen": true,
+   "batch": 10,
+   "slug": "beavis_real",
+   "mdl": "models/junk/beavisbutthead/beavis_pm.mdl",
+   "name": "beavis_real"
+  },
+  {
+   "id": 556134845,
+   "title": "Grand Theft Auto IV N.O.O.S.E. (PM Ragdoll)",
+   "author": "Gazhelmet",
+   "chosen": true,
+   "batch": 10,
+   "slug": "noose",
+   "mdl": "models/gashelmet/gta iv/noose/noose.mdl",
+   "name": "NOOSE"
+  },
+  {
+   "id": 650242617,
+   "title": "L.A. Noire: Detective P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "l_a_noire_gray_detective",
+   "mdl": "models/player/lanoire_gray_detective.mdl",
+   "name": "L.A. Noire: Gray Detective"
+  },
+  {
+   "id": 650242617,
+   "title": "L.A. Noire: Detective P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "l_a_noire_detective",
+   "mdl": "models/player/lanoire_detective.mdl",
+   "name": "L.A. Noire: Detective"
+  },
+  {
+   "id": 2189942240,
+   "title": "Doctor Robotnik (Sonic Movie) [PM]",
+   "author": "Kermit the Frog",
+   "chosen": true,
+   "batch": 10,
+   "slug": "doctor_robotnik",
+   "mdl": "models/sonicthemovie/characters/doctorrobotnikpm.mdl",
+   "name": "Doctor Robotnik"
+  },
+  {
+   "id": 2616803370,
+   "title": "Robotic arm. (Playermodel",
+   "author": "DisTac",
+   "chosen": true,
+   "batch": 10,
+   "slug": "robo_man",
+   "mdl": "models/bloo_ltcom/citizens/male_09_robohand.mdl",
+   "name": "Robo_Man"
+  },
+  {
+   "id": 386152879,
+   "title": "Purple Man Playermodel/NPC [FNAF 2]",
+   "author": "we dont use natural ingredients",
+   "chosen": true,
+   "batch": 10,
+   "slug": "purple_guy_dark",
+   "mdl": "models/player/quentindylanp/purpleguy_dark.mdl",
+   "name": "Purple Guy Dark"
+  },
+  {
+   "id": 386152879,
+   "title": "Purple Man Playermodel/NPC [FNAF 2]",
+   "author": "we dont use natural ingredients",
+   "chosen": true,
+   "batch": 10,
+   "slug": "purple_guy_human",
+   "mdl": "models/player/quentindylanp/purpleguy_human.mdl",
+   "name": "Purple Guy Human"
+  },
+  {
+   "id": 973656364,
+   "title": "Spider-Man Homecoming: Playermodel & NPC",
+   "author": "VALLEYOFDEA7H",
+   "chosen": true,
+   "batch": 10,
+   "slug": "spider_man",
+   "mdl": "models/player/snickers/homecoming_spidey_pm.mdl",
+   "name": "Spider-Man",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spiderman",
+    "spider_man_miles_morales",
+    "spider_man_blood",
+    "spider_man_jammie",
+    "spider_man_black_jammie",
+    "spider_man_miles_morales_2",
+    "spider_man_symbiote",
+    "miles_morales_spider_man",
+    "miles_morales_suit",
+    "symbiote_spider",
+    "spectacular_spider_man",
+    "superior_spider_man"
+   ]
+  },
+  {
+   "id": 583702046,
+   "title": "MGS TPP: Soviet Soldier P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mgs_tps_soviet_soldier",
+   "mdl": "models/player/mgstps_sovietsoldier.mdl",
+   "name": "MGS TPS: Soviet Soldier",
+   "possible_dupes": [
+    "soviet_soldier"
+   ]
+  },
+  {
+   "id": 460211741,
+   "title": "GOT: Jon Snow P.M. and Ragdoll",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "got_jon_snow",
+   "mdl": "models/player/got_jonsnow.mdl",
+   "name": "GOT: Jon Snow"
+  },
+  {
+   "id": 1540321543,
+   "title": "Spawn Playermodel",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "spawn",
+   "mdl": "models/kryptonite/spawn/spawn.mdl",
+   "name": "[K] Spawn"
+  },
+  {
+   "id": 608936011,
+   "title": "(Official Pack) Police Officer { P.M.",
+   "author": "[CZ] Colonel Clanny",
+   "chosen": true,
+   "batch": 10,
+   "slug": "police_2",
+   "mdl": "models/player/santosrp/male_09_santosrp.mdl",
+   "name": "Police_7",
+   "possible_dupes": [
+    "police"
+   ]
+  },
+  {
+   "id": 749314549,
+   "title": "DragonBall Z Budokai Vegeta Playermodel",
+   "author": "Sc4recroW",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ssj_vgt",
+   "mdl": "models/player/b3ssj_vgt/b3ssj_vgt.mdl",
+   "name": "SSJ_VGT"
+  },
+  {
+   "id": 1647492195,
+   "title": "Cyberdimension Neptunia - CPU Candidates - P.M. / NPC",
+   "author": "Loyalists™",
+   "chosen": true,
+   "batch": 10,
+   "slug": "4go_nepgear",
+   "mdl": "models/loyalists/hdn/nepgear/nepgear_n04cos00_mp_pm.mdl",
+   "name": "4GO Nepgear [Sailor Uniform]"
+  },
+  {
+   "id": 3781996675,
+   "title": "Charple+ (Playermodels)",
+   "author": "Vexx",
+   "chosen": true,
+   "batch": 10,
+   "slug": "charple_elitesoldier",
+   "mdl": "models/player/charple/charple_elitesoldier.mdl",
+   "name": "charple_elitesoldier"
+  },
+  {
+   "id": 3515929598,
+   "title": "Abbie / Starlight [PM]",
+   "author": "TheDragonSlayer",
+   "chosen": true,
+   "batch": 10,
+   "slug": "abbie",
+   "mdl": "models/thedragonslayer/mindwave_abbie/abbie_pm.mdl",
+   "name": "Abbie"
+  },
+  {
+   "id": 2706993119,
+   "title": "FNaF AFTON PACK (Playermodels/Ragdoll)",
+   "author": "mochi",
+   "chosen": true,
+   "batch": 10,
+   "slug": "springtrap8bit",
+   "mdl": "models/player/springtrap.mdl",
+   "name": "springtrap8bit"
+  },
+  {
+   "id": 1279917778,
+   "title": "Security Service of Ukraine P.M.",
+   "author": "Reemiel",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ssu_heavy",
+   "mdl": "models/player/ssu_security_heavy.mdl",
+   "name": "SSU Heavy"
+  },
+  {
+   "id": 1279917778,
+   "title": "Security Service of Ukraine P.M.",
+   "author": "Reemiel",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ssu",
+   "mdl": "models/player/ssu_security_standard.mdl",
+   "name": "SSU"
+  },
+  {
+   "id": 1145025185,
+   "title": "Green Lantern - Hal Jordan - Ryan Reynolds Playermodel",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "hal_jordan",
+   "mdl": "models/kryptonite/jordan/jordan.mdl",
+   "name": "[K] Hal Jordan"
+  },
+  {
+   "id": 1862222751,
+   "title": "Kisame | Playermodel [Naruto]",
+   "author": "Otis gah",
+   "chosen": true,
+   "batch": 10,
+   "slug": "kisame",
+   "mdl": "models/player/kis/kisame_pm/kisame_pm.mdl",
+   "name": "Kisame"
+  },
+  {
+   "id": 1223656163,
+   "title": "Armed Forces of Ukraine P.M.",
+   "author": "Reemiel",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ukrainian_soldier_heavy",
+   "mdl": "models/player/afu_security_heavy.mdl",
+   "name": "Ukrainian Soldier Heavy"
+  },
+  {
+   "id": 1223656163,
+   "title": "Armed Forces of Ukraine P.M.",
+   "author": "Reemiel",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ukrainian_soldier",
+   "mdl": "models/player/afu_security_standard.mdl",
+   "name": "Ukrainian Soldier"
+  },
+  {
+   "id": 3135927065,
+   "title": "[Madness Combat] Deimos - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": true,
+   "batch": 10,
+   "slug": "deimos_madness_combat",
+   "mdl": "models/alvaroports/deimos_pm.mdl",
+   "name": "Deimos - Madness Combat"
+  },
+  {
+   "id": 754056569,
+   "title": "DragonBall Z Budokai Nappa Playermodel",
+   "author": "Sc4recroW",
+   "chosen": true,
+   "batch": 10,
+   "slug": "nappa",
+   "mdl": "models/player/b3nap/b3nap.mdl",
+   "name": "Nappa"
+  },
+  {
+   "id": 777496756,
+   "title": "Resident Evil 6: HUNK and Agent [P.M. and NPCs]",
+   "author": "Giga Sigma Goon",
+   "chosen": true,
+   "batch": 10,
+   "slug": "re6_agent",
+   "mdl": "models/bloocobalt/resident_evil/re6_agent.mdl",
+   "name": "RE6 Agent"
+  },
+  {
+   "id": 1371091981,
+   "title": "Knightfall Batman Playermodel",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "batman_knightfall",
+   "mdl": "models/kryptonite/batman_knightfall/batman_knightfall.mdl",
+   "name": "[K] Batman Knightfall"
+  },
+  {
+   "id": 1564047073,
+   "title": "Robot Playermodels (OLD)",
+   "author": "Hog Cranker",
+   "chosen": true,
+   "batch": 10,
+   "slug": "army_robot",
+   "mdl": "models/player/bot_camo/bot_t.mdl",
+   "name": "Army Robot"
+  },
+  {
+   "id": 1564047073,
+   "title": "Robot Playermodels (OLD)",
+   "author": "Hog Cranker",
+   "chosen": true,
+   "batch": 10,
+   "slug": "counter_terrorist_robot",
+   "mdl": "models/player/bot_ct/bot_ct.mdl",
+   "name": "Counter-Terrorist Robot"
+  },
+  {
+   "id": 3798171771,
+   "title": "[PM] Papa Louie - Papa's Pizzeria",
+   "author": "trapitooo_",
+   "chosen": true,
+   "batch": 10,
+   "slug": "papalouie",
+   "mdl": "models/papalouie.mdl",
+   "name": "PapaLouie"
+  },
+  {
+   "id": 180601311,
+   "title": "Jack Skellington PM and NPC",
+   "author": "Vinrax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "jack_skellington",
+   "mdl": "models/vinrax/player/jack_player.mdl",
+   "name": "Jack Skellington"
+  },
+  {
+   "id": 238250508,
+   "title": "Blacklight Retribution NPCs and Playermodels Minipack",
+   "author": "Professor Heavy",
+   "chosen": true,
+   "batch": 10,
+   "slug": "blacklight1",
+   "mdl": "models/player/blacklight1player.mdl",
+   "name": "blacklight1"
+  },
+  {
+   "id": 1279917778,
+   "title": "Security Service of Ukraine P.M.",
+   "author": "Reemiel",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ssu_light",
+   "mdl": "models/player/ssu_security_light.mdl",
+   "name": "SSU Light"
+  },
+  {
+   "id": 1753209092,
+   "title": "Fempyro Playermodel Pack",
+   "author": "Alaxe",
+   "chosen": true,
+   "batch": 10,
+   "slug": "femmepyro_corvalho",
+   "mdl": "models/alaxe/tf2/playermodels/femmepyro_corvalho.mdl",
+   "name": "femmepyro_corvalho"
+  },
+  {
+   "id": 1223656163,
+   "title": "Armed Forces of Ukraine P.M.",
+   "author": "Reemiel",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ukrainian_soldier_light",
+   "mdl": "models/player/afu_security_light.mdl",
+   "name": "Ukrainian Soldier Light"
+  },
+  {
+   "id": 780260649,
+   "title": "MGSV: Sneaking Suit Playermodel",
+   "author": "76561198121568138",
+   "chosen": true,
+   "batch": 10,
+   "slug": "venom_snake_sneaking_var",
+   "mdl": "models/emmaemmerich/sneakingsuit/playermodel/sneaking_suit_venom_snake.mdl",
+   "name": "Venom Snake Sneaking Variation"
+  },
+  {
+   "id": 2853825647,
+   "title": "Entropy Zero 2 Playermodels",
+   "author": "sarodip hcipap",
+   "chosen": true,
+   "batch": 10,
+   "slug": "radioguy",
+   "mdl": "models/ez2models/radioguy.mdl",
+   "name": "Radioguy"
+  },
+  {
+   "id": 255208275,
+   "title": "Cry Of Fear: Simon Henriksson P.M.",
+   "author": "Lenoax",
+   "chosen": true,
+   "batch": 10,
+   "slug": "simon_henriksson",
+   "mdl": "models/player/player_simon_henriksson.mdl",
+   "name": "Simon Henriksson"
+  },
+  {
+   "id": 1498408515,
+   "title": "Infinity Blade 3 Enemy Knight Playermodels: 66 Pack!",
+   "author": "Stuffy360",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ib3_ronin_movie",
+   "mdl": "models/infinityblade3/playermodels/ib3_ronin_movie.mdl",
+   "name": "IB3 Ronin Movie"
+  },
+  {
+   "id": 3487456553,
+   "title": "Sonic.EXE The Disasters 1.3 Characters [PM",
+   "author": "xXElxan",
+   "chosen": true,
+   "batch": 10,
+   "slug": "eggman_td",
+   "mdl": "models/td/playermodels/eggman.mdl",
+   "name": "Eggman_TD"
+  },
+  {
+   "id": 1100477369,
+   "title": "Anime Star Platinum Playermodel",
+   "author": "Ivretor",
+   "chosen": true,
+   "batch": 10,
+   "slug": "anime_star_platinum",
+   "mdl": "models/player/animejojo3/asp.mdl",
+   "name": "Anime Star Platinum"
+  },
+  {
+   "id": 3544392594,
+   "title": "TOE The Locust - Playermodel - Doctor Nowhere",
+   "author": "Doumty",
+   "chosen": true,
+   "batch": 10,
+   "slug": "locust",
+   "mdl": "models/doumty/locust/playermodel/locust_pm.mdl",
+   "name": "Locust"
+  },
+  {
+   "id": 1567760820,
+   "title": "PaperBag Playermodel",
+   "author": "Hog Cranker",
+   "chosen": true,
+   "batch": 10,
+   "slug": "paper_bag_guy",
+   "mdl": "models/player/generic01/paper_bag_guy.mdl",
+   "name": "Paper Bag Guy"
+  },
+  {
+   "id": 1498408515,
+   "title": "Infinity Blade 3 Enemy Knight Playermodels: 66 Pack!",
+   "author": "Stuffy360",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ib3_red_bull",
+   "mdl": "models/infinityblade3/playermodels/ib3_red_bull.mdl",
+   "name": "IB3 Red Bull"
+  },
+  {
+   "id": 2983611653,
+   "title": "Chef Citizen - Playermodel",
+   "author": "BadMan578",
+   "chosen": true,
+   "batch": 10,
+   "slug": "citizen_chef",
+   "mdl": "models/ecott/chefcitizen.mdl",
+   "name": "Citizen chef"
+  },
+  {
+   "id": 1498408515,
+   "title": "Infinity Blade 3 Enemy Knight Playermodels: 66 Pack!",
+   "author": "Stuffy360",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ib3_collector_female",
+   "mdl": "models/infinityblade3/playermodels/ib3_thecollector_female.mdl",
+   "name": "IB3 The Collector Female"
+  },
+  {
+   "id": 2048978091,
+   "title": "[IOWA] SLIPKNOT - Corey Taylor PM",
+   "author": "PsycedeliMuc",
+   "chosen": true,
+   "batch": 10,
+   "slug": "corey_taylor",
+   "mdl": "models/psycedelicum/slipknot/corey_taylor/corey_taylor2.mdl",
+   "name": "Corey Taylor"
+  },
+  {
+   "id": 1367249830,
+   "title": "Knightmare Batman - Ben Affleck Playermodel (Injustice 2 IOS)",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "batman_knightmare",
+   "mdl": "models/kryptonite/knightmare_batman/knightmare_batman.mdl",
+   "name": "[K] Batman Knightmare"
+  },
+  {
+   "id": 1518446445,
+   "title": "Closers - Seulbi (Sylvi) Lee 4 Pack Playermodels & NPCs",
+   "author": "8sianDude",
+   "chosen": true,
+   "batch": 10,
+   "slug": "closers_seulbi_sylvi_lee",
+   "mdl": "models/player/closers_sylvi.mdl",
+   "name": "Closers Seulbi (Sylvi) Lee"
+  },
+  {
+   "id": 3580006023,
+   "title": "The General's Boilers [PM",
+   "author": "Fozer_T89",
+   "chosen": true,
+   "batch": 10,
+   "slug": "gopnik",
+   "mdl": "models/memes/fozer/kotli_gopnik.mdl",
+   "name": "Gopnik"
+  },
+  {
+   "id": 3291722474,
+   "title": "Riz's Catbine Playermodels",
+   "author": "Goobert",
+   "chosen": true,
+   "batch": 10,
+   "slug": "metrocat",
+   "mdl": "models/rizgblue/metrocat.mdl",
+   "name": "Metrocat"
+  },
+  {
+   "id": 1202134036,
+   "title": "Aquaman - Jason Momoa PM&NPC (DC Legends)",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "aquaman_legends",
+   "mdl": "models/kryptonite/dc_aquaman/dc_aquaman.mdl",
+   "name": "[K] Aquaman Legends"
+  },
+  {
+   "id": 286531139,
+   "title": "Soap and Yuri Playermodel Pack",
+   "author": "Deika",
+   "chosen": true,
+   "batch": 10,
+   "slug": "soap",
+   "mdl": "models/humans/soap.mdl",
+   "name": "Soap"
+  },
+  {
+   "id": 1957206549,
+   "title": "GEMS Paramedic Playermodels",
+   "author": "Ceiling★Spiders",
+   "chosen": true,
+   "batch": 10,
+   "slug": "gems_paramedic_female_04",
+   "mdl": "models/player/gems_paramedic2/female_04.mdl",
+   "name": "GEMS Paramedic Female 04a"
+  },
+  {
+   "id": 1518446445,
+   "title": "Closers - Seulbi (Sylvi) Lee 4 Pack Playermodels & NPCs",
+   "author": "8sianDude",
+   "chosen": true,
+   "batch": 10,
+   "slug": "closers_seulbi_sylvi_lee_2",
+   "mdl": "models/player/closers_sylvi_maid.mdl",
+   "name": "Closers Seulbi (Sylvi) Lee Maid"
+  },
+  {
+   "id": 3685998993,
+   "title": "LEGO BATMAN PM Project",
+   "author": "Saint Aldrich ⚜✟⚜",
+   "chosen": true,
+   "batch": 10,
+   "slug": "lbpp_mr_freeze",
+   "mdl": "models/aldrich/lego/batman/playermodels/mrfreeze_pm.mdl",
+   "name": "(LBPP) Mr. Freeze"
+  },
+  {
+   "id": 2853825647,
+   "title": "Entropy Zero 2 Playermodels",
+   "author": "sarodip hcipap",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mossman_young",
+   "mdl": "models/ez2models/mossman_young.mdl",
+   "name": "Mossman_young"
+  },
+  {
+   "id": 3186772239,
+   "title": "Foot Soldier PvZ GW2 Playermodel",
+   "author": "A_Thing",
+   "chosen": true,
+   "batch": 10,
+   "slug": "foot_soldier",
+   "mdl": "models/a_thing/pvzgw2/footsoldier_pm.mdl",
+   "name": "Foot Soldier"
+  },
+  {
+   "id": 3685998993,
+   "title": "LEGO BATMAN PM Project",
+   "author": "Saint Aldrich ⚜✟⚜",
+   "chosen": true,
+   "batch": 10,
+   "slug": "lbpp_man_bat",
+   "mdl": "models/aldrich/lego/batman/playermodels/manbat_pm.mdl",
+   "name": "(LBPP) Man-Bat"
+  },
+  {
+   "id": 286531139,
+   "title": "Soap and Yuri Playermodel Pack",
+   "author": "Deika",
+   "chosen": true,
+   "batch": 10,
+   "slug": "yuri",
+   "mdl": "models/humans/yuri.mdl",
+   "name": "Yuri"
+  },
+  {
+   "id": 1591021785,
+   "title": "Spider-Man: Into the Spider-Verse - Ultimate Playermodel Bundle 2",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "spider_man_miles_morales",
+   "mdl": "models/kryptonite/spiderman_miles_morales/spiderman_miles_morales.mdl",
+   "name": "[K] Spider-Man Miles Morales",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spider_man",
+    "spiderman",
+    "spider_man_blood",
+    "spider_man_jammie",
+    "spider_man_black_jammie",
+    "spider_man_miles_morales_2",
+    "spider_man_symbiote",
+    "miles_morales_spider_man",
+    "miles_morales_suit",
+    "symbiote_spider",
+    "spectacular_spider_man",
+    "superior_spider_man"
+   ]
+  },
+  {
+   "id": 1371734362,
+   "title": "Captain America - Avengers: Infinity War Playermodel",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "captain_america",
+   "mdl": "models/kryptonite/inf_captainamerica/inf_captainamerica.mdl",
+   "name": "[K] Captain America",
+   "possible_dupes": [
+    "endgame_captain_america"
+   ]
+  },
+  {
+   "id": 1159050019,
+   "title": "Ultimis Crew in PES Suits Playermodels",
+   "author": "Hidden",
+   "chosen": true,
+   "batch": 10,
+   "slug": "astronaut_dempsey",
+   "mdl": "models/player/black_ops_1/ultimis/p_dempsey_pes.mdl",
+   "name": "Astronaut (Dempsey)"
+  },
+  {
+   "id": 631336969,
+   "title": "Ender Dragon Playermodels + NPC",
+   "author": "2XMM2",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ender_dragon",
+   "mdl": "models/enderdragon_player/enderdragon_player.mdl",
+   "name": "Ender Dragon"
+  },
+  {
+   "id": 631336969,
+   "title": "Ender Dragon Playermodels + NPC",
+   "author": "2XMM2",
+   "chosen": true,
+   "batch": 10,
+   "slug": "aether_dragon",
+   "mdl": "models/enderdragon_player/enderdragon_player_aether.mdl",
+   "name": "Aether Dragon"
+  },
+  {
+   "id": 631336969,
+   "title": "Ender Dragon Playermodels + NPC",
+   "author": "2XMM2",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ender_dragon_red_eyes",
+   "mdl": "models/enderdragon_player/enderdragon_player_ered.mdl",
+   "name": "Ender Dragon Red Eyes"
+  },
+  {
+   "id": 3698956513,
+   "title": "[OC] Sevyn & Nyne (PM/Ragdoll)",
+   "author": "sevyn",
+   "chosen": true,
+   "batch": 10,
+   "slug": "sevyn_nyne",
+   "mdl": "models/xinus22/sevyn.mdl",
+   "name": "Sevyn Nyne"
+  },
+  {
+   "id": 760778144,
+   "title": "SCP - Playermodel Pack",
+   "author": "Ricardum",
+   "chosen": true,
+   "batch": 10,
+   "slug": "marine_black_mesa",
+   "mdl": "models/player/blackmesa_marine.mdl",
+   "name": "Marine Black Mesa"
+  },
+  {
+   "id": 1713088581,
+   "title": "[JJBA] Giorno Giovanna P.M.",
+   "author": "Chaotzu",
+   "chosen": true,
+   "batch": 10,
+   "slug": "giorno",
+   "mdl": "models/giorno_pm/giorno_pm.mdl",
+   "name": "giorno_pm"
+  },
+  {
+   "id": 760778144,
+   "title": "SCP - Playermodel Pack",
+   "author": "Ricardum",
+   "chosen": true,
+   "batch": 10,
+   "slug": "scientific_female_black",
+   "mdl": "models/player/blackmesa_scientific_female.mdl",
+   "name": "Scientific Female Black Mesa"
+  },
+  {
+   "id": 1454906698,
+   "title": "Aquaman - Jason Momoa Playermodel (Injustice 2 IOS)",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "aquaman_armor",
+   "mdl": "models/kryptonite/inj2_aquaman_jl/inj2_aquaman_jl.mdl",
+   "name": "[K] Aquaman (Armor)"
+  },
+  {
+   "id": 1518446445,
+   "title": "Closers - Seulbi (Sylvi) Lee 4 Pack Playermodels & NPCs",
+   "author": "8sianDude",
+   "chosen": true,
+   "batch": 10,
+   "slug": "closers_seulbi_sylvi_lee_3",
+   "mdl": "models/player/closers_sylvi_union_agent.mdl",
+   "name": "Closers Seulbi (Sylvi) Lee Union Agent"
+  },
+  {
+   "id": 1107766458,
+   "title": "Smashing Alyx PM",
+   "author": "amusquiz",
+   "chosen": true,
+   "batch": 10,
+   "slug": "smashing_alyx",
+   "mdl": "models/amusquiz/player/smashingalyx.mdl",
+   "name": "Smashing Alyx"
+  },
+  {
+   "id": 3685998993,
+   "title": "LEGO BATMAN PM Project",
+   "author": "Saint Aldrich ⚜✟⚜",
+   "chosen": true,
+   "batch": 10,
+   "slug": "lbpp_killer_moth",
+   "mdl": "models/aldrich/lego/batman/playermodels/killermoth_pm.mdl",
+   "name": "(LBPP) Killer Moth"
+  },
+  {
+   "id": 1591021785,
+   "title": "Spider-Man: Into the Spider-Verse - Ultimate Playermodel Bundle 2",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "spider_man_miles_morales_2",
+   "mdl": "models/kryptonite/spiderman_miles_suit/spiderman_miles_suit.mdl",
+   "name": "[K] Spider-Man Miles Morales Suit",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spider_man",
+    "spiderman",
+    "spider_man_miles_morales",
+    "spider_man_blood",
+    "spider_man_jammie",
+    "spider_man_black_jammie",
+    "spider_man_symbiote",
+    "miles_morales_spider_man",
+    "miles_morales_suit",
+    "symbiote_spider",
+    "spectacular_spider_man",
+    "superior_spider_man"
+   ]
+  },
+  {
+   "id": 760331637,
+   "title": "Death Trooper Playermodel Pack",
+   "author": "Zatomus",
+   "chosen": true,
+   "batch": 10,
+   "slug": "death_commando",
+   "mdl": "models/player/death_troopers/death_commando.mdl",
+   "name": "Death Commando"
+  },
+  {
+   "id": 1163295415,
+   "title": "Family Guy - Joe Swanson Playermodel",
+   "author": "General Gilroy",
+   "chosen": true,
+   "batch": 10,
+   "slug": "joe_swanson",
+   "mdl": "models/players/joeswanson.mdl",
+   "name": "Joe Swanson"
+  },
+  {
+   "id": 760120358,
+   "title": "PMC France - Playermodel",
+   "author": "Ricardum",
+   "chosen": true,
+   "batch": 10,
+   "slug": "pmc1",
+   "mdl": "models/player/pmc_1/pmc__07.mdl",
+   "name": "PMC1_07"
+  },
+  {
+   "id": 1591021785,
+   "title": "Spider-Man: Into the Spider-Verse - Ultimate Playermodel Bundle 2",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "spider_man_blood",
+   "mdl": "models/kryptonite/spiderman_blood2/spiderman_blood2.mdl",
+   "name": "[K] Spider-Man Blood 2",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spider_man",
+    "spiderman",
+    "spider_man_miles_morales",
+    "spider_man_jammie",
+    "spider_man_black_jammie",
+    "spider_man_miles_morales_2",
+    "spider_man_symbiote",
+    "miles_morales_spider_man",
+    "miles_morales_suit",
+    "symbiote_spider",
+    "spectacular_spider_man",
+    "superior_spider_man"
+   ]
+  },
+  {
+   "id": 1377053196,
+   "title": "Black Panther Movie Playermodel",
+   "author": "Kyle",
+   "chosen": true,
+   "batch": 10,
+   "slug": "black_panther",
+   "mdl": "models/kaesar/blackpanther/blackpanther.mdl",
+   "name": "Black Panther"
+  },
+  {
+   "id": 3587791655,
+   "title": "Jake [Hotline Miami 2] [Pm",
+   "author": "Fozer_T89",
+   "chosen": true,
+   "batch": 10,
+   "slug": "jake_hotline_miami",
+   "mdl": "models/fozer/hm2/jake_hm2.mdl",
+   "name": "Jake - Hotline Miami 2"
+  },
+  {
+   "id": 760778144,
+   "title": "SCP - Playermodel Pack",
+   "author": "Ricardum",
+   "chosen": true,
+   "batch": 10,
+   "slug": "scientific_black_mesa",
+   "mdl": "models/player/blackmesa_scientific.mdl",
+   "name": "Scientific Black Mesa"
+  },
+  {
+   "id": 172303156,
+   "title": "Spider-Man Player Models",
+   "author": "Littlefoot",
+   "chosen": true,
+   "batch": 10,
+   "slug": "spider_man_jammie",
+   "mdl": "models/spiderman/spiderman.mdl",
+   "name": "Spider-Man (Jammie)",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spider_man",
+    "spiderman",
+    "spider_man_miles_morales",
+    "spider_man_blood",
+    "spider_man_black_jammie",
+    "spider_man_miles_morales_2",
+    "spider_man_symbiote",
+    "miles_morales_spider_man",
+    "miles_morales_suit",
+    "symbiote_spider",
+    "spectacular_spider_man",
+    "superior_spider_man"
+   ]
+  },
+  {
+   "id": 172303156,
+   "title": "Spider-Man Player Models",
+   "author": "Littlefoot",
+   "chosen": true,
+   "batch": 10,
+   "slug": "spider_man_black_jammie",
+   "mdl": "models/spiderman/spidermanblack.mdl",
+   "name": "Spider-Man Black (Jammie)",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spider_man",
+    "spiderman",
+    "spider_man_miles_morales",
+    "spider_man_blood",
+    "spider_man_jammie",
+    "spider_man_miles_morales_2",
+    "spider_man_symbiote",
+    "miles_morales_spider_man",
+    "miles_morales_suit",
+    "symbiote_spider",
+    "spectacular_spider_man",
+    "superior_spider_man"
+   ]
+  },
+  {
+   "id": 483666187,
+   "title": "Bioshock Infinite: Booker DeWitt (NPC & Playermodels)",
+   "author": "//RatedR4Ryan//",
+   "chosen": true,
+   "batch": 10,
+   "slug": "booker_cover_art",
+   "mdl": "models/player/ratedr4ryan/booker_darker.mdl",
+   "name": "Booker_Cover_art"
+  },
+  {
+   "id": 483666187,
+   "title": "Bioshock Infinite: Booker DeWitt (NPC & Playermodels)",
+   "author": "//RatedR4Ryan//",
+   "chosen": true,
+   "batch": 10,
+   "slug": "booker_dewitt_bsi",
+   "mdl": "models/player/ratedr4ryan/booker_dewitt_bsi.mdl",
+   "name": "Booker_Dewitt_BSI"
+  },
+  {
+   "id": 1598884950,
+   "title": "Spider-Man: Into The Spider-Verse - Miles Morales (Playermodel)",
+   "author": "Bunny",
+   "chosen": true,
+   "batch": 10,
+   "slug": "miles_morales_hoodie",
+   "mdl": "models/player/bunny/miles_morales_spider_verse/hoodie/spiderman_miles_morales_hoodie.mdl",
+   "name": "Miles Morales Hoodie"
+  },
+  {
+   "id": 3808127987,
+   "title": "Irresponsible Dad - Happy Wheels [PM]",
+   "author": "Ellis",
+   "chosen": true,
+   "batch": 10,
+   "slug": "jim",
+   "mdl": "models/player/happywheels/irresponsible_dad.mdl",
+   "name": "Jim"
+  },
+  {
+   "id": 724316656,
+   "title": "Sven Co-op Playermodel Pack",
+   "author": "tiki",
+   "chosen": true,
+   "batch": 10,
+   "slug": "sc_h_e_v_barney",
+   "mdl": "models/player/sven/hevbarney2.mdl",
+   "name": "SC H.E.V. Barney 2"
+  },
+  {
+   "id": 3389958930,
+   "title": "[PM][NPC] Counter strike Stickman animation character pack",
+   "author": "AKDMMMMM233",
+   "chosen": true,
+   "batch": 10,
+   "slug": "cs_stickman_lagger",
+   "mdl": "models/cs_lagger.mdl",
+   "name": "Cs_stickman_lagger"
+  },
+  {
+   "id": 3389958930,
+   "title": "[PM][NPC] Counter strike Stickman animation character pack",
+   "author": "AKDMMMMM233",
+   "chosen": true,
+   "batch": 10,
+   "slug": "cs_stickman_striker",
+   "mdl": "models/cs_striker.mdl",
+   "name": "Cs_stickman_striker"
+  },
+  {
+   "id": 3389958930,
+   "title": "[PM][NPC] Counter strike Stickman animation character pack",
+   "author": "AKDMMMMM233",
+   "chosen": true,
+   "batch": 10,
+   "slug": "cs_stickman_swat",
+   "mdl": "models/cs_swat.mdl",
+   "name": "Cs_stickman_swat"
+  },
+  {
+   "id": 3291722474,
+   "title": "Riz's Catbine Playermodels",
+   "author": "Goobert",
+   "chosen": true,
+   "batch": 10,
+   "slug": "catbine_elite",
+   "mdl": "models/rizgblue/catbineelite.mdl",
+   "name": "Catbine Elite"
+  },
+  {
+   "id": 3291722474,
+   "title": "Riz's Catbine Playermodels",
+   "author": "Goobert",
+   "chosen": true,
+   "batch": 10,
+   "slug": "catbine_prison",
+   "mdl": "models/rizgblue/catbineprospekt.mdl",
+   "name": "Catbine Prison"
+  },
+  {
+   "id": 3022317395,
+   "title": "Joe Biden Playermodel + Ragdoll",
+   "author": "I love BBW's",
+   "chosen": true,
+   "batch": 10,
+   "slug": "joe_biden",
+   "mdl": "models/collumz/joe_biden/joe.mdl",
+   "name": "Joe Biden"
+  },
+  {
+   "id": 3590476317,
+   "title": "FOG Playermodel",
+   "author": "aboba",
+   "chosen": true,
+   "batch": 10,
+   "slug": "fogmat",
+   "mdl": "models/player/fogmat.mdl",
+   "name": "Fogmat"
+  },
+  {
+   "id": 709670467,
+   "title": "Spider-Man PlayerModel (Symbiote)",
+   "author": "Nogitsu",
+   "chosen": true,
+   "batch": 10,
+   "slug": "spider_man_symbiote",
+   "mdl": "models/player/nogitsu/blacksuitspider/blacksuitspider_pm.mdl",
+   "name": "Spider-Man Symbiote",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spider_man",
+    "spiderman",
+    "spider_man_miles_morales",
+    "spider_man_blood",
+    "spider_man_jammie",
+    "spider_man_black_jammie",
+    "spider_man_miles_morales_2",
+    "miles_morales_spider_man",
+    "miles_morales_suit",
+    "symbiote_spider",
+    "spectacular_spider_man",
+    "superior_spider_man"
+   ]
+  },
+  {
+   "id": 832352895,
+   "title": "SW:TOR Master Orgus Din Playermodel",
+   "author": "Horrible",
+   "chosen": true,
+   "batch": 10,
+   "slug": "swtor_master_orgus_din",
+   "mdl": "models/players/malacore/swtor_master_orgus_din.mdl",
+   "name": "SWTOR Master Orgus Din"
+  },
+  {
+   "id": 724316656,
+   "title": "Sven Co-op Playermodel Pack",
+   "author": "tiki",
+   "chosen": true,
+   "batch": 10,
+   "slug": "sc_gordon_freeman",
+   "mdl": "models/player/sven/gordon.mdl",
+   "name": "SC Gordon Freeman"
+  },
+  {
+   "id": 3783501201,
+   "title": "[PM/RAGDOLL] FNaF: ANIMAIDS",
+   "author": "mochi",
+   "chosen": true,
+   "batch": 10,
+   "slug": "animaid_freddie_low_poly",
+   "mdl": "models/player/animaids/animaid_freddie_lp.mdl",
+   "name": "Animaid Freddie (Low-Poly)"
+  },
+  {
+   "id": 237223649,
+   "title": "Rayman Player Model",
+   "author": "MonkeysInRavenholm",
+   "chosen": true,
+   "batch": 10,
+   "slug": "rayman",
+   "mdl": "models/player/rayman.mdl",
+   "name": "Rayman"
+  },
+  {
+   "id": 299469403,
+   "title": "Killing Floor Survivors - Playermodels",
+   "author": "Lyth",
+   "chosen": true,
+   "batch": 10,
+   "slug": "kf_survior_gasmask",
+   "mdl": "models/brit_soldier_gasmask2.mdl",
+   "name": "KF survior gasmask 2"
+  },
+  {
+   "id": 3783501201,
+   "title": "[PM/RAGDOLL] FNaF: ANIMAIDS",
+   "author": "mochi",
+   "chosen": true,
+   "batch": 10,
+   "slug": "animaid_chica_low_poly",
+   "mdl": "models/player/animaids/animaid_chica_lp.mdl",
+   "name": "Animaid Chica (Low-Poly)"
+  },
+  {
+   "id": 3783501201,
+   "title": "[PM/RAGDOLL] FNaF: ANIMAIDS",
+   "author": "mochi",
+   "chosen": true,
+   "batch": 10,
+   "slug": "animaid_foxy_low_poly",
+   "mdl": "models/player/animaids/animaid_foxy_lp.mdl",
+   "name": "Animaid Foxy (Low-Poly)"
+  },
+  {
+   "id": 431305857,
+   "title": "hhgregg Player Model + NPC",
+   "author": "jacob",
+   "chosen": true,
+   "batch": 10,
+   "slug": "hhgregg",
+   "mdl": "models/hhgregg/hhgregg.mdl",
+   "name": "hhgregg"
+  },
+  {
+   "id": 1724104103,
+   "title": "Hulk - Avengers: Endgame Playermodel",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "endgame_hulk",
+   "mdl": "models/kryptonite/hulk_endgame/hulk_endgame.mdl",
+   "name": "[K] Endgame: Hulk"
+  },
+  {
+   "id": 3738396884,
+   "title": "[COMM] [Re:Zero] Echidna - [Playermodel]",
+   "author": "Alvaro",
+   "chosen": true,
+   "batch": 10,
+   "slug": "echidna_re_zero",
+   "mdl": "models/alvaroports/rezero/echidnapm.mdl",
+   "name": "Echidna - RE:Zero"
+  },
+  {
+   "id": 3313788058,
+   "title": "Chiitan - Japan's Crazy Mascot [Playermodel",
+   "author": "ItzDannio25",
+   "chosen": true,
+   "batch": 10,
+   "slug": "chiitan",
+   "mdl": "models/dannio/pm/chiitan.mdl",
+   "name": "Chiitan"
+  },
+  {
+   "id": 3760743409,
+   "title": "(OBSOLETE) DELTARUNE - Customizable VESSEL Playermodel",
+   "author": "OmegaSoftware",
+   "chosen": true,
+   "batch": 10,
+   "slug": "goner_maker",
+   "mdl": "models/omegasoftware/vessel/vessel.mdl",
+   "name": "GONER-MAKER"
+  },
+  {
+   "id": 3330392192,
+   "title": "Steve Playermodel (Minecraft Movie)",
+   "author": "ChrisMNGames",
+   "chosen": true,
+   "batch": 10,
+   "slug": "stevemovie",
+   "mdl": "models/player/stevemovie_pm.mdl",
+   "name": "SteveMovie"
+  },
+  {
+   "id": 949417172,
+   "title": "Transformers Prime: Optimus PlayerModel",
+   "author": "IssYaBoiRay",
+   "chosen": true,
+   "batch": 10,
+   "slug": "optimus_prime_tfp",
+   "mdl": "models/player/optimustfp/optimus_tfp.mdl",
+   "name": "Optimus Prime TFP: PM"
+  },
+  {
+   "id": 1723937697,
+   "title": "Captain America - Avengers: Endgame Playermodel",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "endgame_captain_america",
+   "mdl": "models/kryptonite/captain_america_endgame/captain_america_endgame.mdl",
+   "name": "[K] Endgame: Captain America",
+   "possible_dupes": [
+    "captain_america"
+   ]
+  },
+  {
+   "id": 3682038825,
+   "title": "Matpat (HL2 Style) PM",
+   "author": "panman",
+   "chosen": true,
+   "batch": 10,
+   "slug": "matpat_hl2_style",
+   "mdl": "models/humans/panman/matpat_09.mdl",
+   "name": "Matpat (Hl2 Style)"
+  },
+  {
+   "id": 669868438,
+   "title": "U.S. Army Military {Playermodels & NPC's",
+   "author": "[CZ] Colonel Clanny",
+   "chosen": true,
+   "batch": 10,
+   "slug": "us",
+   "mdl": "models/player/military_navy/male_08.mdl",
+   "name": "US_08"
+  },
+  {
+   "id": 1455045773,
+   "title": "Lord Joker Playermodel (Injustice 2 IOS)",
+   "author": "Kryptonite",
+   "chosen": true,
+   "batch": 10,
+   "slug": "lord_joker",
+   "mdl": "models/kryptonite/lord_joker/lord_joker.mdl",
+   "name": "[K] Lord Joker"
+  },
+  {
+   "id": 3602222305,
+   "title": "Die of Death Killer Playermodels/NPCs {Roblox)",
+   "author": "prion disease",
+   "chosen": true,
+   "batch": 10,
+   "slug": "killdroid_dod",
+   "mdl": "models/dieofdeath/killdroid_pm.mdl",
+   "name": "Killdroid DoD"
+  },
+  {
+   "id": 3633925831,
+   "title": "Bootleg Woody [PM]",
+   "author": "olleyvar",
+   "chosen": true,
+   "batch": 10,
+   "slug": "bootleg_woody",
+   "mdl": "models/olleyvar/bootleg_woody_costume/woody_pm.mdl",
+   "name": "Bootleg Woody"
+  },
+  {
+   "id": 3596514380,
+   "title": "faceless_07 PM",
+   "author": "panman",
+   "chosen": true,
+   "batch": 10,
+   "slug": "faceless",
+   "mdl": "models/faceless_07.mdl",
+   "name": "faceless_07"
+  },
+  {
+   "id": 3265738060,
+   "title": "MrBeast Citizen Playermodel",
+   "author": "Gordon Freakman",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mrbeast",
+   "mdl": "models/gfreakman/mrbeast.mdl",
+   "name": "MrBeast"
+  },
+  {
+   "id": 709110329,
+   "title": "Spider-Man PlayerModel (Miles Morales)",
+   "author": "Nogitsu",
+   "chosen": true,
+   "batch": 10,
+   "slug": "miles_morales_spider_man",
+   "mdl": "models/player/nogitsu/moralesspider/moralesspider_pm.mdl",
+   "name": "Miles Morales Spider-Man",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spider_man",
+    "spiderman",
+    "spider_man_miles_morales",
+    "spider_man_blood",
+    "spider_man_jammie",
+    "spider_man_black_jammie",
+    "spider_man_miles_morales_2",
+    "spider_man_symbiote",
+    "miles_morales_suit",
+    "symbiote_spider",
+    "spectacular_spider_man",
+    "superior_spider_man"
+   ]
+  },
+  {
+   "id": 1598884950,
+   "title": "Spider-Man: Into The Spider-Verse - Miles Morales (Playermodel)",
+   "author": "Bunny",
+   "chosen": true,
+   "batch": 10,
+   "slug": "miles_morales_suit",
+   "mdl": "models/player/bunny/miles_morales_spider_verse/suit/spiderman_miles_morales_suit.mdl",
+   "name": "Miles Morales Suit",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spider_man",
+    "spiderman",
+    "spider_man_miles_morales",
+    "spider_man_blood",
+    "spider_man_jammie",
+    "spider_man_black_jammie",
+    "spider_man_miles_morales_2",
+    "spider_man_symbiote",
+    "miles_morales_spider_man",
+    "symbiote_spider",
+    "spectacular_spider_man",
+    "superior_spider_man"
+   ]
+  },
+  {
+   "id": 2126816568,
+   "title": "Bulk Bogan [PM]",
+   "author": "Kermit the Frog",
+   "chosen": true,
+   "batch": 10,
+   "slug": "bulk_bogan",
+   "mdl": "models/vinesauce/memehouse/bulk/bulk.mdl",
+   "name": "Bulk Bogan"
+  },
+  {
+   "id": 709872429,
+   "title": "Military Personal Models { Playermodels & NPC's",
+   "author": "[CZ] Colonel Clanny",
+   "chosen": true,
+   "batch": 10,
+   "slug": "finleyobrien",
+   "mdl": "models/player/finleyobrien/male_02.mdl",
+   "name": "finleyobrien_02"
+  },
+  {
+   "id": 395599961,
+   "title": "TFP Arcee Player Model",
+   "author": "FeyThing.TTV",
+   "chosen": true,
+   "batch": 10,
+   "slug": "arcee",
+   "mdl": "models/player/arcee/arcee.mdl",
+   "name": "Arcee"
+  },
+  {
+   "id": 709124848,
+   "title": "Spider-Man PlayerModel (Symbiote Concept)",
+   "author": "Nogitsu",
+   "chosen": true,
+   "batch": 10,
+   "slug": "symbiote_spider",
+   "mdl": "models/player/nogitsu/symbiotespider/symbiotespider_pm.mdl",
+   "name": "Symbiote Spider",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spider_man",
+    "spiderman",
+    "spider_man_miles_morales",
+    "spider_man_blood",
+    "spider_man_jammie",
+    "spider_man_black_jammie",
+    "spider_man_miles_morales_2",
+    "spider_man_symbiote",
+    "miles_morales_spider_man",
+    "miles_morales_suit",
+    "spectacular_spider_man",
+    "superior_spider_man"
+   ]
+  },
+  {
+   "id": 1168934210,
+   "title": "Tiplar and Tiplee Playermodels",
+   "author": "suno",
+   "chosen": true,
+   "batch": 10,
+   "slug": "tiplee",
+   "mdl": "models/player/suno/p_tiplar.mdl",
+   "name": "Tiplee"
+  },
+  {
+   "id": 3825514777,
+   "title": "[PM/RAGDOLL] FNaF: DOLLFACES",
+   "author": "mochi",
+   "chosen": true,
+   "batch": 10,
+   "slug": "animaid_bon_low_poly",
+   "mdl": "models/player/animaids/animaid_bon_lp.mdl",
+   "name": "Animaid Bon (Low-Poly)"
+  },
+  {
+   "id": 3602222305,
+   "title": "Die of Death Killer Playermodels/NPCs {Roblox)",
+   "author": "prion disease",
+   "chosen": true,
+   "batch": 10,
+   "slug": "artful_dod",
+   "mdl": "models/dieofdeath/artful_pm.mdl",
+   "name": "Artful DoD"
+  },
+  {
+   "id": 3804934163,
+   "title": "Wawario & Wawaluigi [PM",
+   "author": "Kirbin'",
+   "chosen": true,
+   "batch": 10,
+   "slug": "wawaluigi",
+   "mdl": "models/kirbin/wawaluigi/wawaluigi.mdl",
+   "name": "Wawaluigi"
+  },
+  {
+   "id": 400684744,
+   "title": "Monster Hunter Playermodel",
+   "author": "Zenmorn",
+   "chosen": true,
+   "batch": 10,
+   "slug": "mh_armor",
+   "mdl": "models/player/mh/armor.mdl",
+   "name": "MH Armor"
+  },
+  {
+   "id": 3825514777,
+   "title": "[PM/RAGDOLL] FNaF: DOLLFACES",
+   "author": "mochi",
+   "chosen": true,
+   "batch": 10,
+   "slug": "animaid_freida_low_poly",
+   "mdl": "models/player/animaids/animaid_freida_lp.mdl",
+   "name": "Animaid Freida (Low-Poly)"
+  },
+  {
+   "id": 3366513462,
+   "title": "Ravenfield Soldier [PM/NPCS]",
+   "author": "w/^keski",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ravenfield_soldier_blue",
+   "mdl": "models/ravenfield_blue_soldier.mdl",
+   "name": "Ravenfield Soldier Blue"
+  },
+  {
+   "id": 3366513462,
+   "title": "Ravenfield Soldier [PM/NPCS]",
+   "author": "w/^keski",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ravenfield_soldier_color",
+   "mdl": "models/ravenfield_colorable_soldier.mdl",
+   "name": "Ravenfield Soldier Colorable"
+  },
+  {
+   "id": 3366513462,
+   "title": "Ravenfield Soldier [PM/NPCS]",
+   "author": "w/^keski",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ravenfield_soldier_red",
+   "mdl": "models/ravenfield_red_soldier.mdl",
+   "name": "Ravenfield Soldier Red"
+  },
+  {
+   "id": 3825514777,
+   "title": "[PM/RAGDOLL] FNaF: DOLLFACES",
+   "author": "mochi",
+   "chosen": true,
+   "batch": 10,
+   "slug": "animaid_marianne_low_pol",
+   "mdl": "models/player/animaids/animaid_marianne_lp.mdl",
+   "name": "Animaid Marianne (Low-Poly)"
+  },
+  {
+   "id": 709117432,
+   "title": "Spider-Man PlayerModel (Spectacular)",
+   "author": "Nogitsu",
+   "chosen": true,
+   "batch": 10,
+   "slug": "spectacular_spider_man",
+   "mdl": "models/player/nogitsu/spectacularspider/spectacularspider_pm.mdl",
+   "name": "Spectacular Spider-Man",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spider_man",
+    "spiderman",
+    "spider_man_miles_morales",
+    "spider_man_blood",
+    "spider_man_jammie",
+    "spider_man_black_jammie",
+    "spider_man_miles_morales_2",
+    "spider_man_symbiote",
+    "miles_morales_spider_man",
+    "miles_morales_suit",
+    "symbiote_spider",
+    "superior_spider_man"
+   ]
+  },
+  {
+   "id": 709118555,
+   "title": "Spider-Man PlayerModel (Superior)",
+   "author": "Nogitsu",
+   "chosen": true,
+   "batch": 10,
+   "slug": "superior_spider_man",
+   "mdl": "models/player/nogitsu/superiorspider/superiorspider_pm.mdl",
+   "name": "Superior Spider-Man",
+   "possible_dupes": [
+    "spider_man_noir",
+    "spider_man",
+    "spiderman",
+    "spider_man_miles_morales",
+    "spider_man_blood",
+    "spider_man_jammie",
+    "spider_man_black_jammie",
+    "spider_man_miles_morales_2",
+    "spider_man_symbiote",
+    "miles_morales_spider_man",
+    "miles_morales_suit",
+    "symbiote_spider",
+    "spectacular_spider_man"
+   ]
+  },
+  {
+   "id": 3460337827,
+   "title": "Junk Droid Playermodels",
+   "author": "Serika",
+   "chosen": true,
+   "batch": 10,
+   "slug": "junk_droid_b",
+   "mdl": "models/serika/junkdroids/boxydroid.mdl",
+   "name": "Junk Droid B"
+  },
+  {
+   "id": 759496275,
+   "title": "Militaires Français - Playermodel",
+   "author": "Ricardum",
+   "chosen": true,
+   "batch": 10,
+   "slug": "hecu_gogglesdown",
+   "mdl": "models/wgrunt/wgrunt4/wgrunt4.mdl",
+   "name": "HECU GogglesDown"
+  },
+  {
+   "id": 759496275,
+   "title": "Militaires Français - Playermodel",
+   "author": "Ricardum",
+   "chosen": true,
+   "batch": 10,
+   "slug": "hecu_gogglesdown5",
+   "mdl": "models/wgrunt/wgrunt4e.mdl",
+   "name": "HECU GogglesDown5"
+  },
+  {
+   "id": 759496275,
+   "title": "Militaires Français - Playermodel",
+   "author": "Ricardum",
+   "chosen": true,
+   "batch": 10,
+   "slug": "hecu_corpsman3",
+   "mdl": "models/wgrunt/wgrunt7c.mdl",
+   "name": "HECU Corpsman3"
+  },
+  {
+   "id": 3718949503,
+   "title": "(OUTDATED!!) DELTARUNE - Omegasoftware.straw.page Playermodels (Kris",
+   "author": "OmegaSoftware",
+   "chosen": true,
+   "batch": 10,
+   "slug": "susiedeltarune",
+   "mdl": "models/omegasoftware/lpsusie/lpsusie.mdl",
+   "name": "SusieDeltarune"
+  },
+  {
+   "id": 2186161677,
+   "title": "Barry B. Benson (Bee Movie) Playermodel & NPCs",
+   "author": "Nightbane",
+   "chosen": true,
+   "batch": 10,
+   "slug": "barry_b_benson",
+   "mdl": "models/barry_b_benson/barry_b_benson_pm.mdl",
+   "name": "Barry B. Benson"
+  },
+  {
+   "id": 3718949503,
+   "title": "(OUTDATED!!) DELTARUNE - Omegasoftware.straw.page Playermodels (Kris",
+   "author": "OmegaSoftware",
+   "chosen": true,
+   "batch": 10,
+   "slug": "kris_omegasoftware",
+   "mdl": "models/omegasoftware/kris/kris.mdl",
+   "name": "Kris (OmegaSoftware)"
+  },
+  {
+   "id": 3718949503,
+   "title": "(OUTDATED!!) DELTARUNE - Omegasoftware.straw.page Playermodels (Kris",
+   "author": "OmegaSoftware",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ralseideltarune",
+   "mdl": "models/omegasoftware/ralsei/ralsei.mdl",
+   "name": "RalseiDeltarune"
+  },
+  {
+   "id": 3579737562,
+   "title": "Homestuck Low-Poly Playermodels (THE REST OF THEM)",
+   "author": "mochi",
+   "chosen": true,
+   "batch": 10,
+   "slug": "nepeta_leijon_low_poly",
+   "mdl": "models/player/hs_trolls/nepeta_lp.mdl",
+   "name": "Nepeta Leijon (Low Poly)"
+  },
+  {
+   "id": 3579737562,
+   "title": "Homestuck Low-Poly Playermodels (THE REST OF THEM)",
+   "author": "mochi",
+   "chosen": true,
+   "batch": 10,
+   "slug": "vriska_serket_low_poly",
+   "mdl": "models/player/hs_trolls/vriska_lp.mdl",
+   "name": "Vriska Serket (Low Poly)"
+  },
+  {
+   "id": 1219730614,
+   "title": "Gendo Ikari - [PM/Ragdoll]",
+   "author": "onge",
+   "chosen": true,
+   "batch": 10,
+   "slug": "ikari",
+   "mdl": "models/hesyr/ikari/ikari.mdl",
+   "name": "Ikari"
+  },
+  {
+   "id": 3579737562,
+   "title": "Homestuck Low-Poly Playermodels (THE REST OF THEM)",
+   "author": "mochi",
+   "chosen": true,
+   "batch": 10,
+   "slug": "aranea_serket_low_poly",
+   "mdl": "models/player/hs_trolls/aranea_lp.mdl",
+   "name": "Aranea Serket (Low Poly)"
+  },
+  {
+   "id": 918847379,
+   "title": "[Monster Hunter] Tigrex Playermodel",
+   "author": "Mailer",
+   "chosen": true,
+   "batch": 10,
+   "slug": "monsterhuntertigrex",
+   "mdl": "models/mailer/characters/tigrex.mdl",
+   "name": "MonsterHunterTigrex"
+  },
+  {
+   "id": 3383788625,
+   "title": "Incredible Gassy | Playermodel",
+   "author": "2freele",
+   "chosen": true,
+   "batch": 10,
+   "slug": "incredible_gassy",
+   "mdl": "models/player/incredibles/mr_incredible_gassy.mdl",
+   "name": "Incredible Gassy"
+  },
+  {
+   "id": 658731183,
+   "title": "Fnaf 1 | Animatronics | NPCs + Playermodels",
+   "author": "Sneglen",
+   "chosen": true,
+   "batch": 10,
+   "slug": "golden_freddy",
+   "mdl": "models/player/aileri_golden_freddy.mdl",
+   "name": "Golden Freddy",
+   "possible_dupes": [
+    "withered_golden_freddy"
+   ]
   }
  ]
 }
