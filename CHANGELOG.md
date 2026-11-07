@@ -5,6 +5,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-11-07: player model gallery; ba_jail_keimusho fire game stop button; builds with CS2 open
 
+- **[port jb_mangaroons]** watermelons break: all 202 stock `models/food/fruits/watermelon01a` props swapped to the imported CS:GO `models/props_junk/watermelon01` with its six chunk gibs and `fruit_objects01` material, copied from ba_jail_seaside's content into the addon (stock watermelon01a breaks into gibs CS2 never shipped).
 - **[create] playermodels**: batch 10 (309 models, library at 1000; 9 sexualised picks left out), then rigged FBX imports:
   `fbx_export.py` (Blender) + `fbxprep.py` feed any rigged humanoid FBX through the GMod converter; first two: It Takes Two's Cody (own fit:
   the rigid fit put his shoulders level with his head) and May (batch 11, private testing only: commercial rips). Batch notes have pictures;
