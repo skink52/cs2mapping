@@ -6,7 +6,7 @@
 | Source BSP | `ba_jail_os_keimusho_v3` (imported); `ba_jail_os_keimusho_v3.bsp` and `_v2.bsp` are in `C:\source1\bspsrc-windows\bsp's` |
 | Original map | Crycelia |
 | Imported | 2026-10-07 |
-| Map last changed | 2026-11-05 |
+| Map last changed | 2026-11-07 |
 | How | Valve importer, Hammer by hand, then a one-off fix script ([`fix_20261031.py`](fix_20261031.py)) |
 
 Loading text: `Map by Crycelia` / `CS2 Port by skink52 for Slime Servers`.
@@ -128,6 +128,19 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
   whole map) all set to Medium, so the whole map is Medium; compile time traded for robustness. Backup: `maps/ba_jail_keimusho_vmap_backup_20261105.zip`.
 - Built with `build_maps.ps1 final ba_jail_keimusho` (new mode: full build, 2048 lightmaps, VRAD quality 2): OK in 70.6 min, vpk 152 MB.
   Vis: 586,031 regions, 31,697 clusters merged to 16,384 (the cap); boundary ray pass 25 min, large-cluster pass 14 min.
+
+## 2026-11-07
+
+- **Fire game hurt after it was stopped / with no fire.** The stop button `fireoff` disabled (and unswept) only `firehurt1-10`; `firehurt11-20`
+  stayed enabled while their particles were stopped, so the right half (x -1972..-1405) kept doing 4 dps with nothing visible until round end.
+  A fire picked just before Stop also enabled its hurt 2 s later (the `firecase1/2` outputs are delayed 2 s). `fireoff` now sends, at 0 s and
+  again at 2.5 s, Disable + `Unsweep_firehurtN` + `fireN` Stop + `fireNbrush` Lock for all 20 (old duplicate fire outputs removed)
+  ([`fix_20261107_firegame.py`](fix_20261107_firegame.py)). Backup: `maps/ba_jail_keimusho_vmap_backup_20261107.zip`. Not yet tested in game.
+- Each `firehurtN` covers its whole half of the room (as in CS:GO), not just the spot around `fireN`: while any fire in a half is burning,
+  everyone in that half takes 4 dps (stacking per fire). **Intended, keep it:** it's a team game, and each half (fire1-10 / fire11-20,
+  `firecase1` / `firecase2`) is its own game container; only `firebrush`, which locks players in, spans both (skink52).
+- Built (final, 10 threads, CS2 open alongside): OK in 49.3 min, 1,125 compiled, 0 failed; vpk 159,391,550 bytes copied into `game\`.
+- Bump mine HUD: text and charge count centred as one group in a card that fits its contents ([`panorama/keimusho_bump.css`](panorama/keimusho_bump.css)).
 
 ## Open
 
