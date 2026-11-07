@@ -334,5 +334,9 @@ the original addons are in [../creation/](../creation/); cs_script API details a
   A stale list keeps Hammer reporting classes and scripts you've already removed (mg_50arenas). When a script adds or removes entities or materials,
   rewrite those lists from the real entities and strip stale material refs (Hellmatch, Space Racer).
 - Moving outputs from a trigger onto a `logic_relay`: rename `OnStartTouch` to `OnTrigger`, or they never fire (yolo's scores).
+- **Command-line map build with CS2 open** (7 Nov 2026, ba_jail_keimusho): works if CS2 is started **before** `resourcecompiler` and stays open
+  until it ends. The compiler then uses the running game: quitting CS2 mid-build kills the compiler. Normal CS2 doesn't mount `csgo_addons`, so the
+  built `.vpk` copies into `game\csgo_addons` with CS2 open. Hammer's `-threads 5` / `_threads 6` are low: logical cores - 2 (10) cut a final build
+  from 70.6 to 49.3 min.
 - Hammer while CS2 is running: a second instance with `cs2.exe -addon <name> -tools -steam -retail -insecure -noassetbrowser -vulkan` (≈2× RAM/VRAM;
   don't build while both have the addon mounted; untested).

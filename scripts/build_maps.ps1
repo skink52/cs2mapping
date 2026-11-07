@@ -10,6 +10,9 @@
 #   a line "lighting mg_x [map]" recompiles the world and lighting but not vis or nav - for texture / material changes with no brush moved
 #   a line "final mg_x [map]" is a full build (world, vis, nav, audio) with release lighting: 2048 lightmaps, VRAD quality 2
 #   entities / lighting need an earlier full build: they start from the map's current .vpk in game\, and fall back to a full build when there is none.
+# CS2 can stay open (tested 7 Nov 2026): start it BEFORE the build and keep it open until the build ends - the compiler uses the
+# running game and dies if CS2 quits mid-build. Only a map loaded in CS2/Hammer blocks the final .vpk copy (retried, then reported).
+# Threads: logical cores - 2, leaving room for the game.
 # Logs: C:\source1\cs2port\logs\<addon>_build.log and logs\stage_d_done.txt
 # Successful builds are marked [in progress, built] in existing_ports.txt.
 
@@ -22,6 +25,7 @@ $Port    = 'C:\source1\cs2port'
 $OutRoot = Join-Path $env:LOCALAPPDATA 'Temp\valve\hammermapbuild\game'
 $Logs    = Join-Path $Port 'logs'
 $Ports   = Join-Path $Port 'existing_ports.txt'
+$Threads = [string][Math]::Max(1, [Environment]::ProcessorCount - 2)   # 10 on a 12-thread PC: ba_jail_keimusho final 49 min (70 min at 5)
 New-Item -ItemType Directory -Force -Path $Logs | Out-Null
 
 function Mark-Built([string]$name) {
@@ -69,11 +73,14 @@ foreach ($ln in $lines) {
     $queue += ,@($p[0], $(if ($p.Count -gt 1) { $p[1] } else { $p[0] }), $assetsOnly, $mode)
 }
 
-# CS2 / Hammer holding a map open stops the vpk being replaced
-# (only this install's cs2.exe: a dedicated server from another folder doesn't hold these files)
-while (Get-Process -Name cs2 -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith($CS2, [StringComparison]::OrdinalIgnoreCase) }) {
-    Write-Host 'CS2 / Hammer is running. Close it, then press Enter (the build cannot replace a map that is loaded).' -ForegroundColor Yellow
-    Read-Host | Out-Null
+# CS2 may stay open during a build, but only if it was started first: the compiler uses the running game, so quitting CS2
+# mid-build kills the compiler. A map loaded in CS2 or Hammer can still lock its .vpk; the move below retries, then reports it.
+# (only this install's cs2.exe: a dedicated server from another folder doesn't matter)
+if (Get-Process -Name cs2 -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith($CS2, [StringComparison]::OrdinalIgnoreCase) }) {
+    Write-Host 'CS2 / Hammer is running: keep it open until this build finishes (quitting it stops the compiler),' -ForegroundColor Yellow
+    Write-Host 'and do not have a map that is being built loaded.' -ForegroundColor Yellow
+} else {
+    Write-Host 'CS2 is not running. To play during the build: Ctrl+C now, start CS2, then run the build again (do not launch CS2 mid-build).' -ForegroundColor DarkGray
 }
 while (Get-Process -Name resourcecompiler -ErrorAction SilentlyContinue) {
     Write-Host 'Another resourcecompiler is still running - waiting for it to finish...' -ForegroundColor Yellow
@@ -142,16 +149,16 @@ foreach ($q in $queue) {
     $in = ($vmap -replace '\\', '/').ToLower()
     if ($mode -in @('full', 'final')) {
         $lmRes = $(if ($mode -eq 'final') { '2048' } else { '1024' }); $lmQ = $(if ($mode -eq 'final') { '2' } else { '1' })
-        $rcArgs = @('-threads', '5', '-fshallow', '-maxtextureres', '256', '-quiet', '-unbufferedio', '-i', $in,
+        $rcArgs = @('-threads', $Threads, '-fshallow', '-maxtextureres', '256', '-quiet', '-unbufferedio', '-i', $in,
             '-noassert', '-world', '-rebake_surfacegraph', '-bakelighting', '-lightmapMaxResolution', $lmRes,
-            '-lightmapVRadQuality', $lmQ, '-phys', '-vis', '-nav', '-sareverb', '-sareverb_threads', '6', '-sapaths',
-            '-sareverb_threads', '6', '-sacustomdata', '-sacustomdata_threads', '6', '-breakpad', '-nop4',
+            '-lightmapVRadQuality', $lmQ, '-phys', '-vis', '-nav', '-sareverb', '-sareverb_threads', $Threads, '-sapaths',
+            '-sacustomdata', '-sacustomdata_threads', $Threads, '-breakpad', '-nop4',
             '-outroot', $OutRoot)
     } else {
         # skink52's Hammer arguments for an entity-only / lighting-only build. They update the map's existing build, so the current .vpk goes back
         # into the outroot first (the copy keeps its old date, so a compile that writes nothing still counts as failed below)
         $part = $(if ($mode -eq 'entities') { '-entities' } else { '-world' })
-        $rcArgs = @('-threads', '5', '-fshallow', '-maxtextureres', '256', '-quiet', '-html', '-unbufferedio', '-i', $in,
+        $rcArgs = @('-threads', $Threads, '-fshallow', '-maxtextureres', '256', '-quiet', '-unbufferedio', '-i', $in,
             '-noassert', $part, '-rebake_surfacegraph', '-bakelighting', '-lightmapMaxResolution', '2048',
             '-lightmapVRadQuality', '2', '-breakpad', '-nop4', '-outroot', $OutRoot)
         New-Item -ItemType Directory -Force -Path (Split-Path $built) | Out-Null
@@ -186,7 +193,7 @@ foreach ($q in $queue) {
             $summary += "$addon OK $mins min$warn"
             Mark-Built $addon
         } else {
-            Write-Host "     FAILED - could not move $built to $dest (is CS2 open?)" -ForegroundColor Red
+            Write-Host "     FAILED - could not move $built to $dest (is the map loaded in CS2 or Hammer?)" -ForegroundColor Red
             $summary += "$addon FAILED (vpk built but not moved - it is still in the temp outroot)"
         }
     } else {

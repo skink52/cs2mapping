@@ -3,7 +3,15 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
-## 2026-11-07: player model gallery
+## 2026-11-07: player model gallery; ba_jail_keimusho fire game stop button; builds with CS2 open
+
+- **[scripts] build_maps.ps1**: no longer waits for CS2 to close. Tested: a command-line build runs with CS2 open if CS2 was started first and
+  stays open (quitting it kills the compiler), and the .vpk copies into the game. Threads = logical cores - 2 (ba_jail_keimusho final 49 min vs 70.6
+  at 5); `-html` dropped from the entity/lighting line. Docs: pipeline.md stage D, setup.md, cs2-gotchas.md.
+
+- **[port ba_jail_keimusho]** Fire game kept hurting after Stop: `fireoff` only disabled `firehurt1-10`, so a fire from 11-20 burned on
+  invisibly. Stop now disables, unsweeps and locks all 20 (again at 2.5 s, after any case output still queued). Bump mine HUD text centred.
+  [fix_20261107_firegame.py](ports/ba_jail_keimusho/fix_20261107_firegame.py).
 
 - **[create] playermodels**: [GALLERY.md](create/playermodels/GALLERY.md), a browsable picture grid of all 691 converted models
   (fun skins first, then A-Z with a letter bar; name links to the Workshop item; tags for fun, similar character, fit warning).
