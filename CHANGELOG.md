@@ -3,6 +3,11 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-08: ba_jail_keimusho built without vis
+
+- **[port ba_jail_keimusho]** player bodies vanished (weapons stayed) at some camera angles around the cell block; `vis_enable 0` fixed it with fine FPS,
+  so the map now builds without `-vis`. **[scripts]** `build_maps.ps1`: `$NoVis` list of addons built without `-vis`.
+
 ## 2026-11-07: player model gallery; ba_jail_keimusho fire game stop button; builds with CS2 open
 
 - **[port jb_mangaroons]** watermelons break: all 202 stock `models/food/fruits/watermelon01a` props swapped to the imported CS:GO `models/props_junk/watermelon01` with its six chunk gibs and `fruit_objects01` material, copied from ba_jail_seaside's content into the addon (stock watermelon01a breaks into gibs CS2 never shipped).

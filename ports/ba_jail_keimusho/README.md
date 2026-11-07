@@ -142,6 +142,20 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
 - Built (final, 10 threads, CS2 open alongside): OK in 49.3 min, 1,125 compiled, 0 failed; vpk 159,391,550 bytes copied into `game\`.
 - Bump mine HUD: text and charge count centred as one group in a card that fits its contents ([`panorama/keimusho_bump.css`](panorama/keimusho_bump.css)).
 
+## 2026-11-08: built without vis
+
+- **Player bodies invisible around the cell block** (skink52, spectating and in third person): the body vanished while the held weapon stayed,
+  only at some view angles (the same setpos switched with the camera angle), mostly with the camera at grass level in the courtyard between the
+  cell rows, or high above it. It happened with Medium hints everywhere and again with a High (8-unit) hint over the cell block
+  (x -1944..-280, y -1558..302, z -22..394). `vis_enable 0` brings the bodies back; `vis_debug_lock 1` showed the world itself isn't culled,
+  and the `vis_debug_*` commands print nothing. Nothing solid lies between body and camera (the courtyard is open air up past z 340), and in vis
+  terms the whole map is open to the void (88% of its vis geometry is nodraw), so the bad cull couldn't be pinned to one surface.
+- Fix: keimusho is built **without `-vis`** (`$NoVis` in `scripts/build_maps.ps1`). FPS with `vis_enable 0` checked fine across the map by
+  skink52. Cost: no PVS, so the server sends every player everywhere (wallhacks see more). Vis was also most of the build time:
+  final build without vis (2048 lightmaps, quality 2, 10 threads) 15 min against 49 min with it; vpk 153,628,119 bytes, no
+  `world_visibility.vvis_c` inside (checked). **Confirmed in game by skink52:** bodies stay visible around the cells.
+- Entity-only / lighting builds start from the current .vpk, so they keep whatever vis it has: do one full or final build first.
+
 ## Open
 
 - Not tested in game: all of the above. Build, then check the doors, gun room equips, skipping rope cases, samurai mask (speed/invisibility/mask

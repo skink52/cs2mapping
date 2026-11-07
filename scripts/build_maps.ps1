@@ -9,6 +9,7 @@
 #   a line "entities mg_x [map]" recompiles only the entities (Hammer's entity-only build: no world, vis or nav) - for entity edits
 #   a line "lighting mg_x [map]" recompiles the world and lighting but not vis or nav - for texture / material changes with no brush moved
 #   a line "final mg_x [map]" is a full build (world, vis, nav, audio) with release lighting: 2048 lightmaps, VRAD quality 2
+#   addons in $NoVis (below) build without -vis
 #   entities / lighting need an earlier full build: they start from the map's current .vpk in game\, and fall back to a full build when there is none.
 # CS2 can stay open (tested 7 Nov 2026): start it BEFORE the build and keep it open until the build ends - the compiler uses the
 # running game and dies if CS2 quits mid-build. Only a map loaded in CS2/Hammer blocks the final .vpk copy (retried, then reported).
@@ -26,6 +27,9 @@ $OutRoot = Join-Path $env:LOCALAPPDATA 'Temp\valve\hammermapbuild\game'
 $Logs    = Join-Path $Port 'logs'
 $Ports   = Join-Path $Port 'existing_ports.txt'
 $Threads = [string][Math]::Max(1, [Environment]::ProcessorCount - 2)   # 10 on a 12-thread PC: ba_jail_keimusho final 49 min (70 min at 5)
+# maps built without -vis (full / final): their vis data culled things wrongly and the map runs fine with none
+#   ba_jail_keimusho (8 Nov 2026): player bodies vanished at some view angles around the cell block (weapons stayed); vis_enable 0 fixed it, FPS fine
+$NoVis   = @('ba_jail_keimusho')
 New-Item -ItemType Directory -Force -Path $Logs | Out-Null
 
 function Mark-Built([string]$name) {
@@ -154,6 +158,7 @@ foreach ($q in $queue) {
             '-lightmapVRadQuality', $lmQ, '-phys', '-vis', '-nav', '-sareverb', '-sareverb_threads', $Threads, '-sapaths',
             '-sacustomdata', '-sacustomdata_threads', $Threads, '-breakpad', '-nop4',
             '-outroot', $OutRoot)
+        if ($addon -in $NoVis) { $rcArgs = @($rcArgs | Where-Object { $_ -ne '-vis' }); Write-Host "     no vis for $addon (`$NoVis in build_maps.ps1)" -ForegroundColor DarkGray }
     } else {
         # skink52's Hammer arguments for an entity-only / lighting-only build. They update the map's existing build, so the current .vpk goes back
         # into the outroot first (the copy keeps its old date, so a compile that writes nothing still counts as failed below)
