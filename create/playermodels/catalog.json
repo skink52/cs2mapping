@@ -18480,7 +18480,9 @@
    "url": "https://modelviewer.lol/model-viewer?id=518000",
    "note": "League of Legends model: private testing only",
    "drop_weapons": true,
-   "fold_bones": "C_Tail.*"
+   "fold_bones": "C_Tail.*",
+   "fold_dir": "backdown",
+   "fold_scale": 0.5
   },
   {
    "id": 0,

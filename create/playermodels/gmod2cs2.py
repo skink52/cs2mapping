@@ -610,8 +610,28 @@ class Converter:
                 for j, w in self.spread(cs, V[i]): acc[j] = acc.get(j, 0) + W[i, k] * w
             self.wrist_blend(acc, V[i])
             self.soften_joint(acc, V[i])
+            self.spine_spread(acc, V[i])
             weights.append(sorted(acc.items(), key=lambda x: -x[1])[:3])
         return used, remap, V, N, weights
+
+    def spine_spread(self, acc, x):
+        """A rig with fewer spine bones than CS2's four (Riot: Spine1/Spine2) leaves spine_1/spine_2 unskinned: CS2's poses turn the
+        body there, so the whole twist lands at one crease (Neeko's waist folded in the shooting pose). Such a rig's spine skin is
+        spread over spine_0..spine_3 by height (linear between the two joints either side). Rigs with all four are left alone."""
+        if getattr(self, '_spine_full', None) is None:
+            self._spine_full = all(self.has(n) for n in ('spine', 'spine1', 'spine2'))
+        if self._spine_full: return
+        js = ['spine_0', 'spine_1', 'spine_2', 'spine_3']
+        w = sum(acc.pop(j) for j in js if j in acc)
+        if w <= 0: return
+        z = [self.t.J(j)[2] for j in js]
+        if x[2] <= z[0]: acc['spine_0'] = acc.get('spine_0', 0) + w; return
+        if x[2] >= z[3]: acc['spine_3'] = acc.get('spine_3', 0) + w; return
+        for k in range(3):
+            if z[k] <= x[2] <= z[k + 1]:
+                f = (x[2] - z[k]) / max(1e-6, z[k + 1] - z[k])
+                acc[js[k]] = acc.get(js[k], 0) + w * (1 - f); acc[js[k + 1]] = acc.get(js[k + 1], 0) + w * f
+                return
 
     def soften_joint(self, acc, x):
         """Hard-skinned rigs (every vertex 100% one bone, HL1/low-poly style) fold into a thin wedge when CS2 bends an elbow or knee.

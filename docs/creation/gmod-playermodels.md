@@ -152,7 +152,10 @@ that holds body bones (that made a loop in the tree and hung the converter: Vi).
 floor or flat at the feet are left out (`"drop_weapons"` also matches weapon names in bones and materials, never the main material).
 `"fold_dir"`: down (capes, Garen's scarf), back (Renekton's tail), backdown (default). Mode `ownall` + `"scale"`: every joint the model's
 own and its own size, hit boxes scaled to the body: yordles stay small, Blitzcrank and Wukong keep their shapes, Cody's shoulders sit
-under his head. `partlist.py` lists a model's materials and unmapped chains; `legcheck.py` ranks leg tearing in run/crouch.
+under his head. Also: a limb's own helpers that sit further down it move onto that bone (Neeko's `L_Elbow_Noodle_Up` hung off the clavicle);
+rigs with fewer than four spine bones get their spine skin spread over CS2's spine_0..3 by height (the shooting pose's twist creased
+Neeko's waist); `"fold_scale"` shrinks a folded chain (her tail, halved). Pose sheets have a sixth pose, knife (arms apart, forearms up).
+`partlist.py` lists a model's materials and unmapped chains; `legcheck.py` ranks leg tearing in run/crouch.
 Related: trenchwarfare's `tools/soldiers.py` makes CS2 players from Mixamo-rigged GLBs by stretching each bone to CS2's length (fine for
 generated soldiers; not used here, where models keep their proportions).
 

@@ -19,7 +19,7 @@ import fetch
 
 PIC_H = 220           # picture height (pixels)
 POSE_H = 260          # pose strip height
-POSE_NAMES = ('shooting', 'run', 'crouch', 'arms up', 'twist')   # poses.pose_sheet's tile order (3 tiles a row, 2 views a tile)
+POSE_NAMES = ('shooting', 'run', 'crouch', 'arms up', 'knife', 'twist')   # poses.pose_sheet's tile order (3 tiles a row, 2 views a tile)
 GALLERY_COLS = 5
 
 

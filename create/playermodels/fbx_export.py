@@ -1,7 +1,7 @@
 """Blender script: a rigged humanoid FBX or GLB (Mixamo / Unreal / Riot style bone names, as The Models Resource rips carry) ->
 <out>.npz for the converter, with the skeleton renamed to GMod's ValveBiped names so gmod2cs2 treats it like any GMod player model.
 
-    blender -b --factory-startup -P fbx_export.py -- <model.fbx|.glb> <out.npz> [--drop material,material] [--drop-bones regex] [--fold-bones regex [--fold-dir down|back|backdown]] [--drop-orphans] [--drop-weapons] [--anim-pose]
+    blender -b --factory-startup -P fbx_export.py -- <model.fbx|.glb> <out.npz> [--drop material,material] [--drop-bones regex] [--fold-bones regex [--fold-dir down|back|backdown] [--fold-scale k]] [--drop-orphans] [--drop-weapons] [--anim-pose]
 
 --drop leaves out the triangles of those materials (props lying at the feet, a weapon held in the bind pose); --drop-bones leaves out
 triangles with a vertex mostly (> 50 %) skinned to bones whose name matches (tails or wings CS2 can't move: Ahri's '.*Tail.*').
@@ -90,7 +90,7 @@ def node_images(mat):
     return out
 
 
-def fold(arm, rx, how='backdown'):
+def fold(arm, rx, how='backdown', scale=1.0):
     """swing every chain of bones matching rx (from its first matching bone) to point back and down, keeping a little of its
     sideways spread; children follow. Front is found from the feet (toe - foot), else -Y (glTF imports face -Y)."""
     from mathutils import Matrix
@@ -125,6 +125,7 @@ def fold(arm, rx, how='backdown'):
         M = Matrix.Translation(h) @ q.to_matrix().to_4x4() @ Matrix.Translation(-h)
         p = pb[b.name]
         p.matrix = M @ p.matrix
+        if scale != 1.0: p.scale = (p.scale[0] * scale, p.scale[1] * scale, p.scale[2] * scale)   # --fold-scale: a long tail shortened
         bpy.context.view_layer.update()
     print('  folded %d chains back and down (%s)' % (len(roots), rx.pattern))
 
@@ -159,7 +160,11 @@ def chains(arm, meshes, bones, names, index, parents, deps, fold_rx):
     segs = []                                         # mapped bone -> its first mapped child: the segment its skin lies along
     for i, n in enumerate(names):
         if not mapped[i]: continue
-        kids = [c for c in range(len(names)) if parents[c] == i and mapped[c]]
+        def up(c):                                    # nearest mapped ancestor (Ezreal: Thigh -> KneeUpper -> Calf)
+            q = parents[c]
+            while q >= 0 and not mapped[q]: q = parents[q]
+            return q
+        kids = [c for c in range(len(names)) if mapped[c] and up(c) == i]
         for c in kids or [i]: segs.append((i, head(i), head(c) if c != i else head(i) + np.array([0, 0, 0.12 if 'Head' in n else 0.04])))
     def seg_dist(x, a, b):
         ab = b - a; t = np.clip((x - a) @ ab / max(1e-9, ab @ ab), 0, 1); return np.linalg.norm(x - (a + t * ab))
@@ -178,7 +183,14 @@ def chains(arm, meshes, bones, names, index, parents, deps, fold_rx):
             props.update(bones[i].name for i in sub)
             print('  prop left out: %s (%d vertices, centre %s)' % (bones[r].name, len(P), np.round(c / 0.0254, 1)))
             continue
-        if par >= 0 and pname not in torso: continue
+        best = min((sg for sg in segs if names[sg[0]].replace('ValveBiped.Bip01_', '') not in torso), key=lambda sg: seg_dist(c, sg[1], sg[2]), default=None)
+        def descends(q, anc):
+            while q >= 0:
+                if q == anc: return True
+                q = parents[q]
+            return False
+        if par >= 0 and pname not in torso and not (best and best[0] != par and descends(best[0], par)): continue   # Neeko: an
+        # elbow helper hung off the clavicle moves onto the forearm it lies on; a limb's own helpers otherwise stay where they are
         below = set()                                  # never re-parent a chain that holds body bones (a loop in the tree: Vi, Shaco)
         stack = [r]
         while stack:
@@ -221,7 +233,8 @@ def main():
             bpy.context.scene.frame_set(int(act.frame_range[0])); bpy.context.view_layer.update()
             print('  rest pose from animation %s frame %d' % (act.name, act.frame_range[0]))
         else: print('  no animation: bind pose kept'); anim = False
-    if fold_bones: fold(arm, fold_bones, fold_dir)
+    fold_scale = float(a[a.index('--fold-scale') + 1]) if '--fold-scale' in a else 1.0
+    if fold_bones: fold(arm, fold_bones, fold_dir, fold_scale)
     deps = bpy.context.evaluated_depsgraph_get()
     keys = [re.sub(r'^.*[:|]', '', b.name).lower().replace('_', '') for b in bones]
     sides = [(side_rest(b.name) or ('', ''))[1] for b in bones]
@@ -329,7 +342,7 @@ def main():
                 got[key] = os.path.basename(path)
             tex[m.name] = got
             print('  material %s: %s' % (m.name, ', '.join(got) or 'no textures'))
-    np.savez_compressed(out, drop=np.array(','.join(sorted(drop)) + ('|' + drop_bones.pattern if drop_bones else '') + ('^' + fold_bones.pattern + fold_dir if fold_bones else '') + ('~orphans' if drop_orphans else '') + ('~weapons' if drop_weapons else '') + ('~anim' if anim else '')), textures=np.array(json.dumps(tex)), names=np.array(names), parents=np.array(parents), world=np.array(world), V=np.array(V), N=np.array(N),
+    np.savez_compressed(out, drop=np.array(','.join(sorted(drop)) + ('|' + drop_bones.pattern if drop_bones else '') + ('^' + fold_bones.pattern + fold_dir + ('%g' % fold_scale) if fold_bones else '') + ('~orphans' if drop_orphans else '') + ('~weapons' if drop_weapons else '') + ('~anim' if anim else '')), textures=np.array(json.dumps(tex)), names=np.array(names), parents=np.array(parents), world=np.array(world), V=np.array(V), N=np.array(N),
                         UV=np.array(UV), W=np.array(W), B=np.array(B, np.int32), tris=np.array(tris, np.int64), tri_mat=np.array(tmat),
                         materials=np.array(mats))
     print('wrote %s: %d bones, %d vertices, %d triangles, %d materials' % (out, len(names), len(V), len(tris), len(mats)))

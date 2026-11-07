@@ -50,16 +50,17 @@ def prepare(work, it, log=print):
     weap = bool(it.get('drop_weapons'))                       # "drop_weapons": true, weapons/props by bone and material name
     orph = bool(it.get('drop_orphans'))                       # "drop_orphans": true, props/weapons hung off the root left out
     foldb = it.get('fold_bones', '')
-    foldd = it.get('fold_dir', 'backdown')                    # "fold_dir": down (capes) / back (a tail out behind) / backdown                            # "fold_bones": regex, chains swung back and down, kept rigid
+    foldd = it.get('fold_dir', 'backdown')
+    folds = float(it.get('fold_scale', 1.0))                  # "fold_scale": a folded chain shrunk about its root (Neeko's tail)                    # "fold_dir": down (capes) / back (a tail out behind) / backdown                            # "fold_bones": regex, chains swung back and down, kept rigid
     stale = not os.path.exists(npz) or max(os.path.getmtime(fbx), os.path.getmtime(os.path.join(HERE, 'fbx_export.py'))) > os.path.getmtime(npz)
     if not stale:
-        z0 = np.load(npz); stale = (str(z0['drop']) if 'drop' in z0.files else '') != drop + ('|' + dropb if dropb else '') + ('^' + foldb + foldd if foldb else '') + ('~orphans' if orph else '') + ('~weapons' if weap else '') + ('~anim' if animp else '')
+        z0 = np.load(npz); stale = (str(z0['drop']) if 'drop' in z0.files else '') != drop + ('|' + dropb if dropb else '') + ('^' + foldb + foldd + ('%g' % folds) if foldb else '') + ('~orphans' if orph else '') + ('~weapons' if weap else '') + ('~anim' if animp else '')
     if stale:
         log('   blender: exporting %s' % fbx)
         r = subprocess.run([blender(), '-b', '--factory-startup', '-P', os.path.join(HERE, 'fbx_export.py'), '--',
-                            fbx.replace('\\', '/'), npz.replace('\\', '/')] + (['--drop', drop] if drop else []) + (['--drop-bones', dropb] if dropb else []) + (['--fold-bones', foldb, '--fold-dir', foldd] if foldb else []) + (['--drop-orphans'] if orph else []) + (['--drop-weapons'] if weap else []) + (['--anim-pose'] if animp else []), capture_output=True, text=True, encoding='utf-8', errors='replace')
+                            fbx.replace('\\', '/'), npz.replace('\\', '/')] + (['--drop', drop] if drop else []) + (['--drop-bones', dropb] if dropb else []) + (['--fold-bones', foldb, '--fold-dir', foldd, '--fold-scale', str(folds)] if foldb else []) + (['--drop-orphans'] if orph else []) + (['--drop-weapons'] if weap else []) + (['--anim-pose'] if animp else []), capture_output=True, text=True, encoding='utf-8', errors='replace')
         for line in r.stdout.splitlines():
-            if 'MISSING' in line or 'folded' in line or 'rest pose' in line or 'left out' in line or line.startswith('wrote'): log('   ' + line.strip())
+            if 'MISSING' in line or 'folded' in line or 'rest pose' in line or 're-parented' in line or 'left out' in line or line.startswith('wrote'): log('   ' + line.strip())
         if not os.path.exists(npz): raise RuntimeError('fbx_export failed: %s' % (r.stderr or r.stdout)[-600:])
     mtl = {m: {k: os.path.join(os.path.dirname(fbx), v) for k, v in tx.items()}
            for m, tx in read_mtl(it.get('mtl') or os.path.splitext(fbx)[0] + '.mtl').items()}

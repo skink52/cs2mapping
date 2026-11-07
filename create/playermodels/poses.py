@@ -1,5 +1,5 @@
 """Still poses for checking a converted model: CS2's own shooting pose (the template's preview pose) and a running stride, a deep crouch, arms raised
-overhead (shoulders, armpits) and a body twist with the head turned (neck). Built on the CS2 skeleton the model is skinned to.
+overhead (shoulders, armpits), a knife hold (arms apart, forearms up: bulky bodies) and a body twist with the head turned (neck). Built on the CS2 skeleton the model is skinned to.
 
     from poses import pose_sheet
     pose_sheet(t, V, UV, groups, weights, 'out.png', label)     # t: gmod2cs2.Template (or its own-joints copy)
@@ -21,6 +21,7 @@ POSES = {
     'crouch': {'drop': 22, 'leg_upper_L': [(Y, -100)], 'leg_upper_R': [(Y, -100)], 'leg_lower_L': [(Y, 125)], 'leg_lower_R': [(Y, 125)],
                'ankle_L': [(Y, -25)], 'ankle_R': [(Y, -25)], 'spine_1': [(Y, 25)], 'arm_lower_L': [(Y, -45)], 'arm_lower_R': [(Y, -45)]},
     'arms up': {'arm_upper_L': [(X, 115)], 'arm_upper_R': [(X, -115)], 'arm_lower_L': [(X, 15)], 'arm_lower_R': [(X, -15)]},
+    'knife': {'arm_upper_L': [(X, 30), (Y, -20)], 'arm_upper_R': [(X, -30), (Y, -20)], 'arm_lower_L': [(Y, -55)], 'arm_lower_R': [(Y, -55)]},
     'twist': {'spine_1': [(Z, 15)], 'spine_2': [(Z, 15)], 'neck_0': [(Z, 15), (X, 10)], 'head_0': [(Z, 30), (X, 12)],
               'arm_upper_L': [(Y, -30)], 'arm_upper_R': [(Y, 30)]},
 }
