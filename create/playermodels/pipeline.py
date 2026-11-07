@@ -117,7 +117,7 @@ def main():
             print('   converting %s' % it['mdl'], flush=True)
             r = gmod2cs2.convert(os.path.join(root, *it['mdl'].split('/')), slug, roots, tpl, p['out'], it.get('skin', 0),
                                  it.get('bodygroups'), it.get('maxtex', 2048), prev, log=lambda s: print(s, flush=True),
-                                 mode=it.get('mode') or ('rigid' if it.get('fun') else 'own'))
+                                 mode=it.get('mode') or ('rigid' if it.get('fun') else 'own'), scale=it.get('scale'))
             rep.update(r)
             miss = [m['source'] for m in r['materials'] if m.get('flat') or m.get('missing')]
             print('   %d vertices, %d triangles, %d materials, scale %.3f%s (%.0f s)' % (r['vertices'], r['triangles'], len(r['materials']), r['scale'],

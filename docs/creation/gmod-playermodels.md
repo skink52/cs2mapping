@@ -145,6 +145,14 @@ CS2 can't animate (Ahri's nine tails) back and down and pins them rigidly to the
 them instead. Left out (no CS2 player fit): snake, centaur, no-legs floaters, a dog pack, a mech, spider legs, insect arms, plus the
 quadrupeds and blobs lol_export skips. Yordles scale to human head height, so they come out big-headed like the fun skins (Poppy's hammer
 makes her about 230 u tall: review).
+Review fixes (8 Nov): League meshes carry inward normals, which the converter's winding check turned into invisible faces (abdomens):
+the exporter flips any corner normal facing away from its triangle. `KneeLower` is the shin (Caitlyn's hangs off the thigh). Unmapped
+parts hung off the root or torso are re-parented onto the limb or head they lie on (Ezreal's shin helpers, Aurora's hat), never a chain
+that holds body bones (that made a loop in the tree and hung the converter: Vi). Props: root-hung parts far from the body, below the
+floor or flat at the feet are left out (`"drop_weapons"` also matches weapon names in bones and materials, never the main material).
+`"fold_dir"`: down (capes, Garen's scarf), back (Renekton's tail), backdown (default). Mode `ownall` + `"scale"`: every joint the model's
+own and its own size, hit boxes scaled to the body: yordles stay small, Blitzcrank and Wukong keep their shapes, Cody's shoulders sit
+under his head. `partlist.py` lists a model's materials and unmapped chains; `legcheck.py` ranks leg tearing in run/crouch.
 Related: trenchwarfare's `tools/soldiers.py` makes CS2 players from Mixamo-rigged GLBs by stretching each bone to CS2's length (fine for
 generated soldiers; not used here, where models keep their proportions).
 

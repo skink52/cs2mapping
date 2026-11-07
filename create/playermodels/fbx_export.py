@@ -1,14 +1,18 @@
 """Blender script: a rigged humanoid FBX or GLB (Mixamo / Unreal / Riot style bone names, as The Models Resource rips carry) ->
 <out>.npz for the converter, with the skeleton renamed to GMod's ValveBiped names so gmod2cs2 treats it like any GMod player model.
 
-    blender -b --factory-startup -P fbx_export.py -- <model.fbx|.glb> <out.npz> [--drop material,material] [--drop-bones regex] [--fold-bones regex] [--drop-orphans]
+    blender -b --factory-startup -P fbx_export.py -- <model.fbx|.glb> <out.npz> [--drop material,material] [--drop-bones regex] [--fold-bones regex [--fold-dir down|back|backdown]] [--drop-orphans] [--drop-weapons] [--anim-pose]
 
 --drop leaves out the triangles of those materials (props lying at the feet, a weapon held in the bind pose); --drop-bones leaves out
 triangles with a vertex mostly (> 50 %) skinned to bones whose name matches (tails or wings CS2 can't move: Ahri's '.*Tail.*').
 --fold-bones keeps them instead: each matching chain is swung from its root to hang back and down behind the body (its curl kept), the
 mesh baked in that pose, and the chain then rides rigidly on its nearest mapped parent (pelvis for tails), like a hat on the head.
+--anim-pose takes the file's first animation frame as the rest pose (modelviewer.lol exports carry the T-Pose picked there; some Riot
+bind poses are contorted: Wukong's head sits beside his body).
 --drop-orphans leaves out parts mostly skinned to bones with no body bone above them (Riot: weapons and props hung off the root,
-which would float where the bind pose left them: Aatrox's sword, Caitlyn's rifle, Annie's Tibbers). A CS2 player holds CS2 weapons.
+which would float where the bind pose left them). --drop-weapons leaves out weapons and props by name: materials matching WEAPON
+(never the model's largest material: Graves' body texture is "gunslinger") and parts mostly skinned to a bone matching it or below one.
+A CS2 player holds CS2 weapons.
 
 Meshes with no skin weights (stray spheres, markers) are left out when the file has an armature. Textures a material carries in its
 nodes (GLB: embedded) are saved beside the npz as <material>_color.png / _normal.png / _alpha.png and listed in 'textures' (JSON);
@@ -24,6 +28,8 @@ from mathutils import Vector
 import numpy as np
 
 INCH = 1 / 0.0254
+WEAPON = re.compile(r'(?i)weapon|wpn|sword|blade|(?<![a-z])axe|gun|rifle|pistol|cannon|staff|spear|scythe|hammer|shield|(?<![a-z])bow(?![a-z])|'
+                    r'kama|kunai|lantern|club|mace|dagger|knife|wand|sickle|glaive|halberd|lance|teddy|tibbers|guitar|umbrella|chakram')
 SIDE = {'left': 'L', 'right': 'R'}
 FINGER = {'thumb': 0, 'index': 1, 'middle': 2, 'ring': 3, 'pinky': 4}
 
@@ -49,7 +55,7 @@ def vb_name(n, spines, riot, leg_is_thigh=False):
     s, rest = sr
     part = {'shoulder': 'UpperArm' if riot else 'Clavicle', 'clavicle': 'Clavicle', 'arm': 'UpperArm', 'upperarm': 'UpperArm',
             'uparm': 'UpperArm', 'forearm': 'Forearm', 'elbow': 'Forearm', 'lowarm': 'Forearm', 'hand': 'Hand', 'upleg': 'Thigh', 'thigh': 'Thigh', 'hip': 'Thigh',
-            'leg': 'Thigh' if leg_is_thigh else 'Calf', 'calf': 'Calf', 'forarm': 'Forearm', 'kneeupper': 'Calf', 'knee': 'Calf', 'foot': 'Foot', 'toebase': 'Toe0', 'toe': 'Toe0',
+            'leg': 'Thigh' if leg_is_thigh else 'Calf', 'calf': 'Calf', 'forarm': 'Forearm', 'kneelower': 'Calf', 'knee': 'Calf', 'foot': 'Foot', 'toebase': 'Toe0', 'toe': 'Toe0',
             'armroll': 'Bicep', 'shouldertwist': 'Bicep', 'forearmroll': 'Ulna', 'handtwist': 'Ulna', 'uplegroll': 'Quad'}
     part = part.get(rest) or (part.get(rest[:-1]) if rest.endswith('1') else None)        # Blitzcrank: L_uparm1
     if part: return 'ValveBiped.Bip01_%s_%s' % (s, part)
@@ -84,7 +90,7 @@ def node_images(mat):
     return out
 
 
-def fold(arm, rx):
+def fold(arm, rx, how='backdown'):
     """swing every chain of bones matching rx (from its first matching bone) to point back and down, keeping a little of its
     sideways spread; children follow. Front is found from the feet (toe - foot), else -Y (glTF imports face -Y)."""
     from mathutils import Matrix
@@ -108,18 +114,82 @@ def fold(arm, rx):
         else: roots.append(b)
     for b in roots:
         tips = [c for c in b.children_recursive] or [b]
-        tip = max(tips, key=lambda c: (c.tail_local - b.head_local).length)
-        d = (tip.tail_local - b.head_local)
+        tip = max(tips, key=lambda c: (pb[c.name].tail - pb[b.name].head).length)
+        d = (pb[tip.name].tail - pb[b.name].head)
         if d.length < 1e-4: continue
         side = d - back * d.dot(back); side.z = 0
-        target = (back * 0.7 + down * 0.6 + (side.normalized() * 0.25 if side.length > 1e-4 else Vector())).normalized()
+        bw, dw = {'down': (0.25, 1.0), 'back': (1.0, 0.15)}.get(how, (0.7, 0.6))     # capes hang down; a tail sticks out back
+        target = (back * bw + down * dw + (side.normalized() * 0.25 if side.length > 1e-4 else Vector())).normalized()
         q = d.normalized().rotation_difference(target)
-        h = b.head_local
+        h = pb[b.name].head.copy()
         M = Matrix.Translation(h) @ q.to_matrix().to_4x4() @ Matrix.Translation(-h)
         p = pb[b.name]
         p.matrix = M @ p.matrix
         bpy.context.view_layer.update()
     print('  folded %d chains back and down (%s)' % (len(roots), rx.pattern))
+
+
+def chains(arm, meshes, bones, names, index, parents, deps, fold_rx):
+    """Unmapped skinned parts (a chain = the first unmapped bone below a mapped one or the root, with everything under it).
+    A chain hung off the root or the torso that sits on a limb or the head is re-parented onto that bone (Riot helpers: Ezreal's
+    R_MidLeg on the pelvis, Aurora's hat on the root); a chain that is a prop is returned (its bones' skin is left out): hung off the
+    root and away from the body, below the floor or lying flat at the feet, or anything (not on an arm, not folded) whose centre is
+    far out from the body. parents[] is edited in place."""
+    from collections import defaultdict
+    pb = arm.pose.bones
+    mapped = [x.startswith('ValveBiped.') for x in names]
+    def root_of(i):
+        r = i
+        while parents[r] >= 0 and not mapped[parents[r]]: r = parents[r]
+        return r
+    pts = defaultdict(list)
+    for o in meshes:
+        ev = o.evaluated_get(deps).data
+        gname = {g.index: g.name for g in o.vertex_groups}
+        for v in o.data.vertices:
+            gs = [(g.weight, gname.get(g.group)) for g in v.groups if gname.get(g.group) in index]
+            if not gs: continue
+            w, nm = max(gs)
+            i = index[nm]
+            if mapped[i]: continue
+            pts[root_of(i)].append(np.array(o.matrix_world @ ev.vertices[v.index].co))
+    def head(i): return np.array(pb[bones[i].name].head)
+    pel = next((i for i, n in enumerate(names) if n.endswith('_Pelvis')), None)
+    axis = head(pel)[:2] if pel is not None else np.zeros(2)
+    segs = []                                         # mapped bone -> its first mapped child: the segment its skin lies along
+    for i, n in enumerate(names):
+        if not mapped[i]: continue
+        kids = [c for c in range(len(names)) if parents[c] == i and mapped[c]]
+        for c in kids or [i]: segs.append((i, head(i), head(c) if c != i else head(i) + np.array([0, 0, 0.12 if 'Head' in n else 0.04])))
+    def seg_dist(x, a, b):
+        ab = b - a; t = np.clip((x - a) @ ab / max(1e-9, ab @ ab), 0, 1); return np.linalg.norm(x - (a + t * ab))
+    torso = ('Pelvis', 'Spine', 'Spine1', 'Spine2', 'Spine4')
+    props = set()
+    for r, P in pts.items():
+        P = np.array(P); c = P.mean(0); lo, hi = P.min(0), P.max(0)
+        par = parents[r]; pname = names[par].replace('ValveBiped.Bip01_', '') if par >= 0 else None
+        if fold_rx and fold_rx.fullmatch(bones[r].name): continue
+        hd = np.linalg.norm(c[:2] - axis)
+        on_arm = pname is not None and any(k in pname for k in ('Clavicle', 'UpperArm', 'Forearm', 'Hand', 'Finger'))
+        prop = (par < 0 and (hd > 0.23 or lo[2] < -0.025 or (hi[2] < 0.25 and hi[2] - lo[2] < 0.2))) or lo[2] < -0.05 \
+            or (not on_arm and hd > 0.38)
+        if prop:
+            sub = [i for i in range(len(names)) if root_of(i) == r and not mapped[i]]
+            props.update(bones[i].name for i in sub)
+            print('  prop left out: %s (%d vertices, centre %s)' % (bones[r].name, len(P), np.round(c / 0.0254, 1)))
+            continue
+        if par >= 0 and pname not in torso: continue
+        below = set()                                  # never re-parent a chain that holds body bones (a loop in the tree: Vi, Shaco)
+        stack = [r]
+        while stack:
+            q = stack.pop(); below.add(q); stack += [c for c in range(len(names)) if parents[c] == q]
+        if any(mapped[q] for q in below): continue
+        best = min(segs, key=lambda sg: seg_dist(c, sg[1], sg[2]))
+        d = seg_dist(c, best[1], best[2])
+        if best[0] != par and d < 0.08 and names[best[0]].replace('ValveBiped.Bip01_', '') not in torso:
+            parents[r] = best[0]
+            print('  re-parented %s onto %s (%.1f in from it)' % (bones[r].name, names[best[0]].replace('ValveBiped.Bip01_', ''), d / 0.0254))
+    return props
 
 
 def main():
@@ -128,6 +198,8 @@ def main():
     drop = set(a[a.index('--drop') + 1].split(',')) if '--drop' in a else set()
     drop_bones = re.compile(a[a.index('--drop-bones') + 1], re.I) if '--drop-bones' in a else None
     drop_orphans = '--drop-orphans' in a
+    drop_weapons = '--drop-weapons' in a
+    fold_dir = a[a.index('--fold-dir') + 1] if '--fold-dir' in a else 'backdown'
     fold_bones = re.compile(a[a.index('--fold-bones') + 1], re.I) if '--fold-bones' in a else None
     bpy.ops.wm.read_factory_settings(use_empty=True)
     gltf = src.lower().endswith(('.glb', '.gltf'))
@@ -140,7 +212,16 @@ def main():
         if not o.vertex_groups: print('  left out unskinned mesh %s (%d vertices)' % (o.name, len(o.data.vertices))); continue
         meshes.append(o)
     bones = list(arm.data.bones)
-    if fold_bones: fold(arm, fold_bones)
+    anim = '--anim-pose' in a
+    if anim:
+        ad = arm.animation_data
+        act = ad.action if ad else None
+        if act is None and bpy.data.actions: act = bpy.data.actions[0]; arm.animation_data_create().action = act
+        if act:
+            bpy.context.scene.frame_set(int(act.frame_range[0])); bpy.context.view_layer.update()
+            print('  rest pose from animation %s frame %d' % (act.name, act.frame_range[0]))
+        else: print('  no animation: bind pose kept'); anim = False
+    if fold_bones: fold(arm, fold_bones, fold_dir)
     deps = bpy.context.evaluated_depsgraph_get()
     keys = [re.sub(r'^.*[:|]', '', b.name).lower().replace('_', '') for b in bones]
     sides = [(side_rest(b.name) or ('', ''))[1] for b in bones]
@@ -166,6 +247,13 @@ def main():
             b = b.parent
         return False
     orphans = {b.name for b in bones if not body_above(b)}
+    def weapon_above(b):
+        while b is not None:
+            if WEAPON.search(b.name) and not names[index[b.name]].startswith('ValveBiped.'): return True
+            b = b.parent
+        return False
+    weapons = {b.name for b in bones if weapon_above(b)} if drop_weapons else set()
+    if weapons: print('  weapon bones left out: %s' % ', '.join(sorted(weapons))[:300])
     parents = [index[b.parent.name] if b.parent else -1 for b in bones]
     lower = {b.name.lower(): i for i, b in enumerate(bones)}
     for i, b in enumerate(bones):      # Riot '<bone>_SNAP' helpers (skinned, parented to the root) follow their base bone in game
@@ -174,13 +262,15 @@ def main():
             parents[i] = lower[m.group(1).lower()]; print('  %-28s follows %s' % (b.name, m.group(1)))
     world = []
     for b in bones:
-        M = arm.matrix_world @ b.matrix_local
+        M = arm.matrix_world @ (arm.pose.bones[b.name].matrix if anim else b.matrix_local)
         R = np.array(M.to_3x3().normalized()); t = np.array(M.translation) * INCH
         world.append(np.hstack([R, t[:, None]]))
+    props = set()
+    if drop_weapons: props = chains(arm, meshes, bones, names, index, parents, deps, fold_bones)
     V, N, UV, W, B, tris, tmat, mats = [], [], [], [], [], [], [], []
     for o in meshes:
         me = o.data
-        ev = o.evaluated_get(deps).data if fold_bones else me        # folded chains: the posed (armature-deformed) positions
+        ev = o.evaluated_get(deps).data if (fold_bones or anim) else me        # folded chains: the posed (armature-deformed) positions
         me.calc_loop_triangles()
         uvl = me.uv_layers.active.data if me.uv_layers.active else None
         cn = me.corner_normals if hasattr(me, 'corner_normals') else None
@@ -188,16 +278,22 @@ def main():
         gname = {g.index: g.name for g in o.vertex_groups}
         vw, dropv = [], []
         for v in me.vertices:
-            if drop_bones or drop_orphans:
+            if drop_bones or drop_orphans or weapons or props:
                 gs = [(g.weight, gname.get(g.group, '')) for g in v.groups if g.weight > 0]
                 t_ = sum(w for w, _ in gs) or 1.0
-                dropv.append(sum(w for w, nm in gs if (drop_bones and drop_bones.fullmatch(nm)) or (drop_orphans and nm in orphans)) / t_)
+                dropv.append(sum(w for w, nm in gs if (drop_bones and drop_bones.fullmatch(nm)) or (drop_orphans and nm in orphans) or nm in weapons or nm in props) / t_)
             ws = sorted(((g.weight, index[gname[g.group]]) for g in v.groups if g.group in gname and gname[g.group] in index and g.weight > 0),
                         reverse=True)[:3]
             if not ws: ws = [(1.0, index.get(o.parent_bone) or 0)]
             tot = sum(w for w, _ in ws)
             vw.append((([w / tot for w, _ in ws] + [0, 0, 0])[:3], ([j for _, j in ws] + [0, 0, 0])[:3]))
         mbase = len(mats)
+        if drop_weapons and me.materials:
+            from collections import Counter
+            use = Counter(lt.material_index for lt in me.loop_triangles)
+            big = use.most_common(1)[0][0] if use else -1
+            wmat = {m.name for k, m in enumerate(me.materials) if m and k != big and WEAPON.search(m.name)}
+            if wmat: print('  weapon materials left out: %s' % ', '.join(sorted(wmat))); drop |= wmat
         mats += [m.name if m else 'default' for m in me.materials] or ['default']
         key = {}
         for lt in me.loop_triangles:
@@ -206,7 +302,9 @@ def main():
             tri = []
             for vi, li in zip(lt.vertices, lt.loops):
                 uv = tuple(round(x, 5) for x in uvl[li].uv) if uvl else (0.0, 0.0)
-                n = tuple(round(x, 3) for x in (cn[li].vector if cn else me.vertices[vi].normal))
+                nv = Vector(cn[li].vector if cn else me.vertices[vi].normal)
+                if nv.dot(lt.normal) < 0: nv = -nv          # Riot meshes carry inward normals; the converter flips triangles to match normals
+                n = tuple(round(x, 3) for x in nv)
                 k = (vi, uv, n)
                 if k not in key:
                     key[k] = len(V)
@@ -231,7 +329,7 @@ def main():
                 got[key] = os.path.basename(path)
             tex[m.name] = got
             print('  material %s: %s' % (m.name, ', '.join(got) or 'no textures'))
-    np.savez_compressed(out, drop=np.array(','.join(sorted(drop)) + ('|' + drop_bones.pattern if drop_bones else '') + ('^' + fold_bones.pattern if fold_bones else '') + ('~orphans' if drop_orphans else '')), textures=np.array(json.dumps(tex)), names=np.array(names), parents=np.array(parents), world=np.array(world), V=np.array(V), N=np.array(N),
+    np.savez_compressed(out, drop=np.array(','.join(sorted(drop)) + ('|' + drop_bones.pattern if drop_bones else '') + ('^' + fold_bones.pattern + fold_dir if fold_bones else '') + ('~orphans' if drop_orphans else '') + ('~weapons' if drop_weapons else '') + ('~anim' if anim else '')), textures=np.array(json.dumps(tex)), names=np.array(names), parents=np.array(parents), world=np.array(world), V=np.array(V), N=np.array(N),
                         UV=np.array(UV), W=np.array(W), B=np.array(B, np.int32), tris=np.array(tris, np.int64), tri_mat=np.array(tmat),
                         materials=np.array(mats))
     print('wrote %s: %d bones, %d vertices, %d triangles, %d materials' % (out, len(names), len(V), len(tris), len(mats)))

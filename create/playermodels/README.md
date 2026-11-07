@@ -26,6 +26,8 @@ Python 3 with numpy and Pillow. No Blender, Crowbar or SourceIO needed: the Sour
 | `fbxprep.py <catalog.json> <slug>` | For catalog items with `"fbx"`: runs the export (when the FBX is newer) and writes Source-style VMTs + PNGs from the `.mtl` (map_Kd, map_Bump, map_d -> alpha test) under `<work>/fbx/<slug>/`. The pipeline calls it; such items have `"id": 0` and a `"url"`. |
 | `lol_export.py <out dir> [--only a,b] [--delay 6] [--headed]` | League of Legends champions (base skin, T-pose) as GLB from modelviewer.lol through its own Export button (Playwright + installed Edge); skips existing files and non-humanoids; `export_log.json`. |
 | `lol_catalog.py <catalog.json> <glb dir> [--batch 12]` | Adds each exported champion GLB to the catalog (`lol_<champion>`, `drop_orphans`, known `fold_bones`). |
+| `partlist.py <npz> [...]` | An imported model's materials and unmapped skinned chains (vertices, centre, size): to choose drop/fold settings. |
+| `legcheck.py <catalog.json> [--batch N] [--jobs 8]` | Poses each model's legs (run, crouch) and ranks torn knee/foot skin. |
 | `vpk.py <x_dir.vpk> [--list] [--prefix p] [--out DIR]` | Lists or extracts a Source 1 VPK (v1/v2). Used once for the base-game materials (HL2 + CS:S from the GMod dedicated server's `sourceengine/`) into `<work>/basegame/`. |
 | `gma.py <file.gma\|.bin> [out dir]` | Lists or extracts a GMod addon archive (also the LZMA legacy `.bin`). Paths are sanitised; nothing in the archive is run. |
 | `preview.py` | Textured software renderer for the previews (fork of `projects/cs21.6/preview/model_render.py`). |

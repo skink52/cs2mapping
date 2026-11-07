@@ -18,6 +18,7 @@ NAMES = ("Aatrox Ahri Akali Akshan Alistar Ambessa Amumu Anivia Annie Aphelios A
          "Udyr Urgot Varus Vayne Veigar|Vel'Koz|Vex Vi Viego Viktor Vladimir Volibear Warwick Wukong Xayah Xerath|Xin Zhao|Yasuo Yone Yorick "
          "Yunara Yuumi Zaahen Zac Zed Zeri Ziggs Zilean Zoe Zyra")
 FOLD = {'ahri': '.*Tail.*'}
+SMALL = {'amumu', 'gnar', 'heimerdinger', 'fizz', 'kennen', 'lulu', 'teemo', 'tristana', 'veigar', 'vex', 'ziggs', 'poppy', 'blitzcrank', 'annie', 'zoe'}   # own size + own joints (mode ownall)
 
 
 def names():
@@ -48,7 +49,8 @@ def main():
               'batch': batch, 'slug': slug, 'mdl': slug + '.npz', 'name': nm.get(k, k.title()), 'fbx': os.path.join(d, f).replace('\\', '/'),
               'url': 'https://modelviewer.lol' + (m.group(1) if m else '/champions/' + k), 'note': 'League of Legends model: private testing only'}
         if k in FOLD: it['fold_bones'] = FOLD[k]
-        it['drop_orphans'] = True
+        it['drop_weapons'] = True
+        if k in SMALL: it['mode'] = 'ownall'; it['scale'] = 1.25        # yordles and odd shapes keep their size
         cat['items'].append(it); added.append(slug)
     open(cat_path, 'w', encoding='utf-8', newline='\n').write(json.dumps(cat, indent=1, ensure_ascii=False) + '\n')
     print('added %d: %s' % (len(added), ', '.join(added)))

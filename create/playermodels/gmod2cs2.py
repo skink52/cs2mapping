@@ -287,6 +287,7 @@ class Converter:
         """rigid (default): pieces keep their own lengths and shape; fit: pieces stretched onto CS2's bone lengths (old method)"""
         self.mode = mode
         if mode == 'own': return self.transforms_rigid(own=True)
+        if mode == 'ownall': self.own_all = True; return self.transforms_rigid(own=True)
         return self.transforms_rigid() if mode == 'rigid' else self.transforms_fit()
 
     def rotations(self, spine=False):
@@ -372,6 +373,8 @@ class Converter:
         Q = np.array([fk(1.0)[n]['pcs'] for n in fit]); P = np.array([J(VB2CS[n]) for n in fit])
         Qc, Pc = Q - Q.mean(0), P - P.mean(0)
         sc = float((Qc * Pc).sum() / (Qc * Qc).sum())           # least-squares uniform scale
+        if getattr(self, 'fixed_scale', None): sc = float(self.fixed_scale)       # catalog "scale": the model's own size kept
+        own_all = getattr(self, 'own_all', False)
         tr = fk(sc)
         Qs = np.array([tr[n]['pcs'] for n in fit]); off = (P - Qs).mean(0)
         off[2] = 0.0                                             # feet stay on the floor
@@ -397,7 +400,7 @@ class Converter:
         # (spine1 half way, so the waist shears gradually); legs stay put, arms are re-seated on the shoulders below.
         self.chest_shift = 0.0
         top = next((n for n in ('spine2', 'spine3', 'spine4') if n in tr), None)
-        if top and TORSO_RECENTRE:
+        if top and TORSO_RECENTRE and not own_all:
             lo, hi = sorted((self.S(top)[2], self.S('spine4' if 'spine4' in tr else top)[2] + 2 / sc))
             V0 = self.m.V @ self.G.T; V0[:, 2] -= self.floor
             sel = (V0[:, 2] > lo) & (V0[:, 2] < hi) & (np.abs(V0[:, 1] - self.S(top)[1]) < 5 / sc)
@@ -412,7 +415,7 @@ class Converter:
                                                  # poses are built for an agent's shoulders; own arm joints put the hands off the gun)
             l = s.lower()
             root = f'{l}_clavicle' if f'{l}_clavicle' in tr else f'{l}_upperarm'
-            if f'{l}_upperarm' not in tr: continue
+            if f'{l}_upperarm' not in tr or own_all: continue      # ownall: arms stay on the model's own joints
             d = J(f'arm_upper_{s}') - tr[f'{l}_upperarm']['pcs']
             lift = np.array([0.0, 0.0, -d[2]]) if (own and ARM_KEEP_HEIGHT) else np.zeros(3)   # own: keep the model's shoulder height
             d = d + lift; self.arm_lift[s] = lift
@@ -445,7 +448,7 @@ class Converter:
             self.own_joints = {}
             for n in tr:
                 cs = VB2CS.get(n)
-                if cs and cs not in self.own_joints and cs.startswith(OWN_PARTS): self.own_joints[cs] = tr[n]['pcs'].copy()
+                if cs and cs not in self.own_joints and (own_all or cs.startswith(OWN_PARTS)): self.own_joints[cs] = tr[n]['pcs'].copy()
             for s, lift in self.arm_lift.items():       # the arm chain: CS2's joints, at the model's shoulder height
                 if not lift.any(): continue
                 for j in self.t.joints:
@@ -1033,6 +1036,18 @@ LIMB_SEGMENTS = {f'{b}_{s}': f'{c}_{s}' for s in 'LR' for b, c in (('arm_upper',
                                                                    ('leg_upper', 'leg_lower'), ('leg_lower', 'ankle'))}
 
 
+def scale_all_capsules(txt, k):
+    """every HitboxCapsule scaled by k about its bone (points and radius): a body much smaller or larger than an agent"""
+    def fix(mo):
+        blk = mo.group(0)
+        def pt(m2):
+            v = np.array([float(x) for x in m2.group(2).split(',')]) * k
+            return '%s[ %s ]' % (m2.group(1), ', '.join('%.3f' % x for x in v))
+        blk = re.sub(r'(point[01]\s*=\s*)\[\s*([^\]]+)\]', pt, blk)
+        return re.sub(r'(radius\s*=\s*)([-\d.]+)', lambda m2: '%s%.3f' % (m2.group(1), float(m2.group(2)) * k), blk)
+    return re.sub(r'_class = "HitboxCapsule".*?\}', fix, txt, flags=re.S)
+
+
 def scale_capsules(txt, bone, k):
     """stretch the HitboxCapsule entries on a limb bone along the bone (its local x) by k: own joints with a longer or shorter limb"""
     def fix(mo):
@@ -1045,12 +1060,13 @@ def scale_capsules(txt, bone, k):
     return re.sub(r'_class = "HitboxCapsule".*?\}', fix, txt, flags=re.S)
 
 
-def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2048, preview=None, log=print, mode='rigid'):
+def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2048, preview=None, log=print, mode='rigid', scale=None):
     m = SrcModel(mdl_path)
     t = Template(template) if isinstance(template, str) else template
     conv = Converter(m, t, log)
+    conv.fixed_scale = scale
     conv.transforms(mode)
-    if mode == 'own':                    # CS2's joints move to the model's own (skin weights, checks, previews, the DMX)
+    if mode in ('own', 'ownall'):        # CS2's joints move to the model's own (skin weights, checks, previews, the DMX)
         t = own_template(t, conv.own_joints); conv.t = t
     meshes = m.default_meshes(choices)
     used, remap, V, N, weights = conv.convert_mesh(meshes)
@@ -1058,13 +1074,13 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
     chest_t = t.chest(); chest_m = t.chest(V) or chest_t      # no chest mesh: no chest check
     hands = t.hands_in_torso(V, weights)
     warnings = []
-    extra = chest_m[0] - chest_t[0]
+    extra = chest_m[0] - chest_t[0] if chest_m and chest_t else 0.0     # ownall: a tiny body has no stock-agent chest band
     if extra > CHEST_WARN:
         warnings.append('bulky torso: chest %.1f u further forward than a stock agent; CS2 hand poses (two-handed weapons) will clip into it' % extra)
     for side in 'LR':
         if hands[side] is not None and hands[side] > HAND_WARN:
             warnings.append('hand_%s inside the torso in the CS2 preview pose (chest surface %.1f u in front of the wrist)' % (side, hands[side]))
-    far = {j: d for j, d in (getattr(conv, 'joint_offsets', None) or {}).items() if j.startswith(('arm_', 'leg_', 'hand_', 'ankle_')) and d > LIMB_WARN and mode != 'own'}
+    far = {j: d for j, d in (getattr(conv, 'joint_offsets', None) or {}).items() if j.startswith(('arm_', 'leg_', 'hand_', 'ankle_')) and d > LIMB_WARN and mode not in ('own', 'ownall')}
     if far: warnings.append('skeleton does not match CS2 (limb joints more than %.0f u off: %s): CS2 will bend the limbs away from the joints of the model'
                             % (LIMB_WARN, ', '.join('%s %.1f' % kv for kv in sorted(far.items()))))
     fingers = finger_fit(t, V, weights)
@@ -1102,13 +1118,17 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
     else: n_sub = 0
     d = os.path.join(out, MODEL_DIR, slug); os.makedirs(d, exist_ok=True)
     sets, flipped = write_dmx(t.body, os.path.join(d, slug + '_body.dmx'), 'gmod_%s_body' % slug, V, N, UV, mats, sets, weights,
-                              joints=t.W if mode == 'own' else None)
+                              joints=t.W if mode in ('own', 'ownall') else None)
     # shared first-person arms, sleeves and preview pose: the template's
     sh = os.path.join(out, MODEL_DIR, 'shared'); os.makedirs(sh, exist_ok=True)
     for sfx, dst in (('_firstperson_arms.dmx', 'firstperson_arms.dmx'), ('_firstperson_sleeves.dmx', 'firstperson_sleeves.dmx'), ('_tools_preview.dmx', 'tools_preview.dmx')):
         if not os.path.exists(os.path.join(sh, dst)): shutil.copy(t.file(sfx), os.path.join(sh, dst))
     txt = open(t.vmdl, encoding='utf-8').read()
     hd, hhow = head_hitbox_shift(conv, t, V, weights)
+    if mode == 'ownall': hd = np.zeros(3); hhow = 'ownall: the head capsule rides head_0 (the model\'s own head joint)'
+    if mode == 'ownall':                 # every joint the model's own (yordles, odd shapes): capsules ride their bones, sized to the body
+        k_all = float(np.clip(t.J('head_0')[2] / max(1e-6, t.stock.J('head_0')[2]), 0.25, 1.5))
+        txt = scale_all_capsules(txt, k_all)
     if mode == 'own':                    # limb capsules stretched to the model's own limb lengths
         for b, c in LIMB_SEGMENTS.items():
             k = np.linalg.norm(t.J(c) - t.J(b)) / max(1e-6, np.linalg.norm(t.stock.J(c) - t.stock.J(b)))

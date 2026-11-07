@@ -17273,7 +17273,7 @@
    "fbx": "C:\\source1\\playermodels\\ittakestwo\\cody\\Cody.fbx",
    "url": "https://models.spriters-resource.com/pc_computer/ittakestwo/",
    "note": "rigged FBX from a commercial game: private testing only",
-   "mode": "own"
+   "mode": "ownall"
   },
   {
    "id": 0,
@@ -17323,7 +17323,7 @@
    "url": "https://modelviewer.lol/model-viewer?id=103000",
    "note": "League of Legends model: private testing only",
    "fold_bones": ".*Tail.*",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17337,7 +17337,7 @@
    "fbx": "C:/source1/playermodels/league of legends/aatrox.glb",
    "url": "https://modelviewer.lol/model-viewer?id=266000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17351,7 +17351,7 @@
    "fbx": "C:/source1/playermodels/league of legends/akali.glb",
    "url": "https://modelviewer.lol/model-viewer?id=84000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17365,7 +17365,7 @@
    "fbx": "C:/source1/playermodels/league of legends/akshan.glb",
    "url": "https://modelviewer.lol/model-viewer?id=166000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17379,7 +17379,7 @@
    "fbx": "C:/source1/playermodels/league of legends/alistar.glb",
    "url": "https://modelviewer.lol/model-viewer?id=12000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17393,7 +17393,7 @@
    "fbx": "C:/source1/playermodels/league of legends/ambessa.glb",
    "url": "https://modelviewer.lol/model-viewer?id=799000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17407,7 +17407,9 @@
    "fbx": "C:/source1/playermodels/league of legends/amumu.glb",
    "url": "https://modelviewer.lol/model-viewer?id=32000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
@@ -17421,7 +17423,9 @@
    "fbx": "C:/source1/playermodels/league of legends/annie.glb",
    "url": "https://modelviewer.lol/model-viewer?id=1000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
@@ -17435,7 +17439,7 @@
    "fbx": "C:/source1/playermodels/league of legends/aphelios.glb",
    "url": "https://modelviewer.lol/model-viewer?id=523000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17449,7 +17453,7 @@
    "fbx": "C:/source1/playermodels/league of legends/ashe.glb",
    "url": "https://modelviewer.lol/model-viewer?id=22000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17463,7 +17467,7 @@
    "fbx": "C:/source1/playermodels/league of legends/aurora.glb",
    "url": "https://modelviewer.lol/model-viewer?id=893000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17477,7 +17481,8 @@
    "fbx": "C:/source1/playermodels/league of legends/azir.glb",
    "url": "https://modelviewer.lol/model-viewer?id=268000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "drop_bones": ".*Feathers.*"
   },
   {
    "id": 0,
@@ -17491,14 +17496,14 @@
    "fbx": "C:/source1/playermodels/league of legends/belveth.glb",
    "url": "https://modelviewer.lol/model-viewer?id=200000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true,
-   "skip_reason": "not humanoid enough for the CS2 player skeleton (insect arms / no legs)"
+   "skip_reason": "not humanoid enough for the CS2 player skeleton (insect arms / no legs)",
+   "drop_weapons": true
   },
   {
    "id": 0,
    "title": "League of Legends - Blitzcrank",
    "author": "Riot Games (export: modelviewer.lol)",
-   "chosen": true,
+   "chosen": false,
    "batch": 12,
    "slug": "lol_blitzcrank",
    "mdl": "lol_blitzcrank.npz",
@@ -17506,7 +17511,10 @@
    "fbx": "C:/source1/playermodels/league of legends/blitzcrank.glb",
    "url": "https://modelviewer.lol/model-viewer?id=53000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "mode": "ownall",
+   "scale": 1.25,
+   "drop_weapons": true,
+   "skip_reason": "skink52 review: broken"
   },
   {
    "id": 0,
@@ -17520,7 +17528,7 @@
    "fbx": "C:/source1/playermodels/league of legends/brand.glb",
    "url": "https://modelviewer.lol/model-viewer?id=63000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17534,7 +17542,7 @@
    "fbx": "C:/source1/playermodels/league of legends/braum.glb",
    "url": "https://modelviewer.lol/model-viewer?id=201000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17548,7 +17556,7 @@
    "fbx": "C:/source1/playermodels/league of legends/briar.glb",
    "url": "https://modelviewer.lol/model-viewer?id=233000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true,
+   "drop_weapons": true,
    "possible_dupes": [
     "itt_briar"
    ]
@@ -17565,7 +17573,7 @@
    "fbx": "C:/source1/playermodels/league of legends/caitlyn.glb",
    "url": "https://modelviewer.lol/model-viewer?id=51000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17579,7 +17587,7 @@
    "fbx": "C:/source1/playermodels/league of legends/camille.glb",
    "url": "https://modelviewer.lol/model-viewer?id=164000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17593,7 +17601,8 @@
    "fbx": "C:/source1/playermodels/league of legends/cassiopeia.glb",
    "url": "https://modelviewer.lol/model-viewer?id=69000",
    "note": "League of Legends model: private testing only",
-   "skip_reason": "not humanoid enough for the CS2 player skeleton (snake / centaur / no legs)"
+   "skip_reason": "not humanoid enough for the CS2 player skeleton (snake / centaur / no legs)",
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17607,7 +17616,7 @@
    "fbx": "C:/source1/playermodels/league of legends/darius.glb",
    "url": "https://modelviewer.lol/model-viewer?id=122000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17621,7 +17630,7 @@
    "fbx": "C:/source1/playermodels/league of legends/diana.glb",
    "url": "https://modelviewer.lol/model-viewer?id=131000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17635,7 +17644,7 @@
    "fbx": "C:/source1/playermodels/league of legends/draven.glb",
    "url": "https://modelviewer.lol/model-viewer?id=119000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17649,7 +17658,7 @@
    "fbx": "C:/source1/playermodels/league of legends/drmundo.glb",
    "url": "https://modelviewer.lol/model-viewer?id=36000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17663,7 +17672,7 @@
    "fbx": "C:/source1/playermodels/league of legends/ekko.glb",
    "url": "https://modelviewer.lol/model-viewer?id=245000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17677,7 +17686,7 @@
    "fbx": "C:/source1/playermodels/league of legends/elise.glb",
    "url": "https://modelviewer.lol/model-viewer?id=60000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17691,7 +17700,7 @@
    "fbx": "C:/source1/playermodels/league of legends/evelynn.glb",
    "url": "https://modelviewer.lol/model-viewer?id=28000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17705,7 +17714,7 @@
    "fbx": "C:/source1/playermodels/league of legends/ezreal.glb",
    "url": "https://modelviewer.lol/model-viewer?id=81000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17719,7 +17728,7 @@
    "fbx": "C:/source1/playermodels/league of legends/fiddlesticks.glb",
    "url": "https://modelviewer.lol/model-viewer?id=9000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17733,7 +17742,7 @@
    "fbx": "C:/source1/playermodels/league of legends/fiora.glb",
    "url": "https://modelviewer.lol/model-viewer?id=114000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17747,7 +17756,9 @@
    "fbx": "C:/source1/playermodels/league of legends/fizz.glb",
    "url": "https://modelviewer.lol/model-viewer?id=105000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
@@ -17761,7 +17772,7 @@
    "fbx": "C:/source1/playermodels/league of legends/gangplank.glb",
    "url": "https://modelviewer.lol/model-viewer?id=41000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17775,7 +17786,9 @@
    "fbx": "C:/source1/playermodels/league of legends/garen.glb",
    "url": "https://modelviewer.lol/model-viewer?id=86000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "fold_bones": "Scarf.*",
+   "fold_dir": "down"
   },
   {
    "id": 0,
@@ -17789,7 +17802,9 @@
    "fbx": "C:/source1/playermodels/league of legends/gnar.glb",
    "url": "https://modelviewer.lol/model-viewer?id=150000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
@@ -17803,7 +17818,7 @@
    "fbx": "C:/source1/playermodels/league of legends/gragas.glb",
    "url": "https://modelviewer.lol/model-viewer?id=79000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17817,7 +17832,7 @@
    "fbx": "C:/source1/playermodels/league of legends/graves.glb",
    "url": "https://modelviewer.lol/model-viewer?id=104000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17831,7 +17846,7 @@
    "fbx": "C:/source1/playermodels/league of legends/gwen.glb",
    "url": "https://modelviewer.lol/model-viewer?id=887000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17845,7 +17860,8 @@
    "fbx": "C:/source1/playermodels/league of legends/hecarim.glb",
    "url": "https://modelviewer.lol/model-viewer?id=120000",
    "note": "League of Legends model: private testing only",
-   "skip_reason": "not humanoid enough for the CS2 player skeleton (snake / centaur / no legs)"
+   "skip_reason": "not humanoid enough for the CS2 player skeleton (snake / centaur / no legs)",
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17859,7 +17875,13 @@
    "fbx": "C:/source1/playermodels/league of legends/heimerdinger.glb",
    "url": "https://modelviewer.lol/model-viewer?id=74000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25,
+   "drop_materials": [
+    "Heimerdinger_Rocket",
+    "Heimerdinger_Rocket_Holder"
+   ]
   },
   {
    "id": 0,
@@ -17873,7 +17895,7 @@
    "fbx": "C:/source1/playermodels/league of legends/hwei.glb",
    "url": "https://modelviewer.lol/model-viewer?id=910000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17887,7 +17909,7 @@
    "fbx": "C:/source1/playermodels/league of legends/illaoi.glb",
    "url": "https://modelviewer.lol/model-viewer?id=420000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17901,7 +17923,7 @@
    "fbx": "C:/source1/playermodels/league of legends/irelia.glb",
    "url": "https://modelviewer.lol/model-viewer?id=39000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17915,7 +17937,7 @@
    "fbx": "C:/source1/playermodels/league of legends/ivern.glb",
    "url": "https://modelviewer.lol/model-viewer?id=427000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17929,7 +17951,7 @@
    "fbx": "C:/source1/playermodels/league of legends/janna.glb",
    "url": "https://modelviewer.lol/model-viewer?id=40000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17943,7 +17965,7 @@
    "fbx": "C:/source1/playermodels/league of legends/jarvaniv.glb",
    "url": "https://modelviewer.lol/model-viewer?id=59000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17957,7 +17979,7 @@
    "fbx": "C:/source1/playermodels/league of legends/jax.glb",
    "url": "https://modelviewer.lol/model-viewer?id=24000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17971,7 +17993,7 @@
    "fbx": "C:/source1/playermodels/league of legends/jayce.glb",
    "url": "https://modelviewer.lol/model-viewer?id=126000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17985,7 +18007,7 @@
    "fbx": "C:/source1/playermodels/league of legends/jhin.glb",
    "url": "https://modelviewer.lol/model-viewer?id=202000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -17999,7 +18021,7 @@
    "fbx": "C:/source1/playermodels/league of legends/jinx.glb",
    "url": "https://modelviewer.lol/model-viewer?id=222000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18013,7 +18035,7 @@
    "fbx": "C:/source1/playermodels/league of legends/kaisa.glb",
    "url": "https://modelviewer.lol/model-viewer?id=145000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18027,7 +18049,7 @@
    "fbx": "C:/source1/playermodels/league of legends/kalista.glb",
    "url": "https://modelviewer.lol/model-viewer?id=429000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18041,7 +18063,7 @@
    "fbx": "C:/source1/playermodels/league of legends/karma.glb",
    "url": "https://modelviewer.lol/model-viewer?id=43000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18055,7 +18077,7 @@
    "fbx": "C:/source1/playermodels/league of legends/karthus.glb",
    "url": "https://modelviewer.lol/model-viewer?id=30000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18069,7 +18091,8 @@
    "fbx": "C:/source1/playermodels/league of legends/kassadin.glb",
    "url": "https://modelviewer.lol/model-viewer?id=38000",
    "note": "League of Legends model: private testing only",
-   "skip_reason": "not humanoid enough for the CS2 player skeleton (snake / centaur / no legs)"
+   "skip_reason": "not humanoid enough for the CS2 player skeleton (snake / centaur / no legs)",
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18083,7 +18106,7 @@
    "fbx": "C:/source1/playermodels/league of legends/katarina.glb",
    "url": "https://modelviewer.lol/model-viewer?id=55000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18097,7 +18120,7 @@
    "fbx": "C:/source1/playermodels/league of legends/kayle.glb",
    "url": "https://modelviewer.lol/model-viewer?id=10000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18111,7 +18134,7 @@
    "fbx": "C:/source1/playermodels/league of legends/kayn.glb",
    "url": "https://modelviewer.lol/model-viewer?id=141000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18125,13 +18148,15 @@
    "fbx": "C:/source1/playermodels/league of legends/kennen.glb",
    "url": "https://modelviewer.lol/model-viewer?id=85000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
    "title": "League of Legends - Kha'Zix",
    "author": "Riot Games (export: modelviewer.lol)",
-   "chosen": true,
+   "chosen": false,
    "batch": 12,
    "slug": "lol_khazix",
    "mdl": "lol_khazix.npz",
@@ -18139,7 +18164,8 @@
    "fbx": "C:/source1/playermodels/league of legends/khazix.glb",
    "url": "https://modelviewer.lol/model-viewer?id=121000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "skip_reason": "skink52 review: insect body does not fit"
   },
   {
    "id": 0,
@@ -18153,7 +18179,7 @@
    "fbx": "C:/source1/playermodels/league of legends/ksante.glb",
    "url": "https://modelviewer.lol/model-viewer?id=897000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18167,7 +18193,7 @@
    "fbx": "C:/source1/playermodels/league of legends/leblanc.glb",
    "url": "https://modelviewer.lol/model-viewer?id=7000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18181,7 +18207,7 @@
    "fbx": "C:/source1/playermodels/league of legends/leesin.glb",
    "url": "https://modelviewer.lol/model-viewer?id=64000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18195,13 +18221,13 @@
    "fbx": "C:/source1/playermodels/league of legends/leona.glb",
    "url": "https://modelviewer.lol/model-viewer?id=89000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
    "title": "League of Legends - Lillia",
    "author": "Riot Games (export: modelviewer.lol)",
-   "chosen": true,
+   "chosen": false,
    "batch": 12,
    "slug": "lol_lillia",
    "mdl": "lol_lillia.npz",
@@ -18209,13 +18235,14 @@
    "fbx": "C:/source1/playermodels/league of legends/lillia.glb",
    "url": "https://modelviewer.lol/model-viewer?id=876000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "skip_reason": "centaur (deer body): not a CS2 player fit",
+   "drop_weapons": true
   },
   {
    "id": 0,
    "title": "League of Legends - Lissandra",
    "author": "Riot Games (export: modelviewer.lol)",
-   "chosen": true,
+   "chosen": false,
    "batch": 12,
    "slug": "lol_lissandra",
    "mdl": "lol_lissandra.npz",
@@ -18223,7 +18250,8 @@
    "fbx": "C:/source1/playermodels/league of legends/lissandra.glb",
    "url": "https://modelviewer.lol/model-viewer?id=127000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "skip_reason": "skink52 review: icicles beneath the legs"
   },
   {
    "id": 0,
@@ -18237,7 +18265,7 @@
    "fbx": "C:/source1/playermodels/league of legends/locke.glb",
    "url": "https://modelviewer.lol/model-viewer?id=805000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18251,7 +18279,7 @@
    "fbx": "C:/source1/playermodels/league of legends/lucian.glb",
    "url": "https://modelviewer.lol/model-viewer?id=236000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18265,7 +18293,9 @@
    "fbx": "C:/source1/playermodels/league of legends/lulu.glb",
    "url": "https://modelviewer.lol/model-viewer?id=117000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
@@ -18279,7 +18309,7 @@
    "fbx": "C:/source1/playermodels/league of legends/lux.glb",
    "url": "https://modelviewer.lol/model-viewer?id=99000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18293,7 +18323,7 @@
    "fbx": "C:/source1/playermodels/league of legends/malzahar.glb",
    "url": "https://modelviewer.lol/model-viewer?id=90000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18307,7 +18337,7 @@
    "fbx": "C:/source1/playermodels/league of legends/masteryi.glb",
    "url": "https://modelviewer.lol/model-viewer?id=11000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18321,7 +18351,7 @@
    "fbx": "C:/source1/playermodels/league of legends/mel.glb",
    "url": "https://modelviewer.lol/model-viewer?id=800000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18335,7 +18365,7 @@
    "fbx": "C:/source1/playermodels/league of legends/milio.glb",
    "url": "https://modelviewer.lol/model-viewer?id=902000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18349,7 +18379,7 @@
    "fbx": "C:/source1/playermodels/league of legends/missfortune.glb",
    "url": "https://modelviewer.lol/model-viewer?id=21000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18363,7 +18393,7 @@
    "fbx": "C:/source1/playermodels/league of legends/mordekaiser.glb",
    "url": "https://modelviewer.lol/model-viewer?id=82000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18377,7 +18407,7 @@
    "fbx": "C:/source1/playermodels/league of legends/morgana.glb",
    "url": "https://modelviewer.lol/model-viewer?id=25000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18391,7 +18421,8 @@
    "fbx": "C:/source1/playermodels/league of legends/naafiri.glb",
    "url": "https://modelviewer.lol/model-viewer?id=950000",
    "note": "League of Legends model: private testing only",
-   "skip_reason": "not humanoid enough for the CS2 player skeleton (pack of dogs / mech / no legs)"
+   "skip_reason": "not humanoid enough for the CS2 player skeleton (pack of dogs / mech / no legs)",
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18405,7 +18436,8 @@
    "fbx": "C:/source1/playermodels/league of legends/nami.glb",
    "url": "https://modelviewer.lol/model-viewer?id=267000",
    "note": "League of Legends model: private testing only",
-   "skip_reason": "not humanoid enough for the CS2 player skeleton (pack of dogs / mech / no legs)"
+   "skip_reason": "not humanoid enough for the CS2 player skeleton (pack of dogs / mech / no legs)",
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18419,7 +18451,7 @@
    "fbx": "C:/source1/playermodels/league of legends/nasus.glb",
    "url": "https://modelviewer.lol/model-viewer?id=75000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18433,7 +18465,7 @@
    "fbx": "C:/source1/playermodels/league of legends/nautilus.glb",
    "url": "https://modelviewer.lol/model-viewer?id=111000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18447,7 +18479,8 @@
    "fbx": "C:/source1/playermodels/league of legends/neeko.glb",
    "url": "https://modelviewer.lol/model-viewer?id=518000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "fold_bones": "C_Tail.*"
   },
   {
    "id": 0,
@@ -18461,7 +18494,7 @@
    "fbx": "C:/source1/playermodels/league of legends/nidalee.glb",
    "url": "https://modelviewer.lol/model-viewer?id=76000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18475,7 +18508,7 @@
    "fbx": "C:/source1/playermodels/league of legends/nilah.glb",
    "url": "https://modelviewer.lol/model-viewer?id=895000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18489,7 +18522,8 @@
    "fbx": "C:/source1/playermodels/league of legends/nocturne.glb",
    "url": "https://modelviewer.lol/model-viewer?id=56000",
    "note": "League of Legends model: private testing only",
-   "skip_reason": "not humanoid enough for the CS2 player skeleton (pack of dogs / mech / no legs)"
+   "skip_reason": "not humanoid enough for the CS2 player skeleton (pack of dogs / mech / no legs)",
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18503,7 +18537,7 @@
    "fbx": "C:/source1/playermodels/league of legends/olaf.glb",
    "url": "https://modelviewer.lol/model-viewer?id=2000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18517,7 +18551,7 @@
    "fbx": "C:/source1/playermodels/league of legends/orianna.glb",
    "url": "https://modelviewer.lol/model-viewer?id=61000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18531,7 +18565,9 @@
    "fbx": "C:/source1/playermodels/league of legends/pantheon.glb",
    "url": "https://modelviewer.lol/model-viewer?id=80000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "fold_bones": "C_Cape.*",
+   "fold_dir": "down"
   },
   {
    "id": 0,
@@ -18545,7 +18581,9 @@
    "fbx": "C:/source1/playermodels/league of legends/poppy.glb",
    "url": "https://modelviewer.lol/model-viewer?id=78000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "mode": "ownall",
+   "scale": 1.25,
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18559,7 +18597,7 @@
    "fbx": "C:/source1/playermodels/league of legends/pyke.glb",
    "url": "https://modelviewer.lol/model-viewer?id=555000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18573,7 +18611,7 @@
    "fbx": "C:/source1/playermodels/league of legends/qiyana.glb",
    "url": "https://modelviewer.lol/model-viewer?id=246000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18587,7 +18625,7 @@
    "fbx": "C:/source1/playermodels/league of legends/quinn.glb",
    "url": "https://modelviewer.lol/model-viewer?id=133000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18601,13 +18639,13 @@
    "fbx": "C:/source1/playermodels/league of legends/rakan.glb",
    "url": "https://modelviewer.lol/model-viewer?id=497000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
    "title": "League of Legends - Rell",
    "author": "Riot Games (export: modelviewer.lol)",
-   "chosen": true,
+   "chosen": false,
    "batch": 12,
    "slug": "lol_rell",
    "mdl": "lol_rell.npz",
@@ -18615,7 +18653,8 @@
    "fbx": "C:/source1/playermodels/league of legends/rell.glb",
    "url": "https://modelviewer.lol/model-viewer?id=526000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "skip_reason": "skink52 review: horse mount"
   },
   {
    "id": 0,
@@ -18629,7 +18668,7 @@
    "fbx": "C:/source1/playermodels/league of legends/renataglasc.glb",
    "url": "https://modelviewer.lol/model-viewer?id=888000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18643,7 +18682,9 @@
    "fbx": "C:/source1/playermodels/league of legends/renekton.glb",
    "url": "https://modelviewer.lol/model-viewer?id=58000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "fold_bones": "tail.*",
+   "fold_dir": "back"
   },
   {
    "id": 0,
@@ -18657,7 +18698,7 @@
    "fbx": "C:/source1/playermodels/league of legends/rengar.glb",
    "url": "https://modelviewer.lol/model-viewer?id=107000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18671,7 +18712,7 @@
    "fbx": "C:/source1/playermodels/league of legends/riven.glb",
    "url": "https://modelviewer.lol/model-viewer?id=92000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18685,7 +18726,10 @@
    "fbx": "C:/source1/playermodels/league of legends/rumble.glb",
    "url": "https://modelviewer.lol/model-viewer?id=68000",
    "note": "League of Legends model: private testing only",
-   "skip_reason": "not humanoid enough for the CS2 player skeleton (pack of dogs / mech / no legs)"
+   "skip_reason": "not humanoid enough for the CS2 player skeleton (pack of dogs / mech / no legs)",
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
@@ -18699,7 +18743,7 @@
    "fbx": "C:/source1/playermodels/league of legends/ryze.glb",
    "url": "https://modelviewer.lol/model-viewer?id=13000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18713,13 +18757,13 @@
    "fbx": "C:/source1/playermodels/league of legends/samira.glb",
    "url": "https://modelviewer.lol/model-viewer?id=360000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
    "title": "League of Legends - Sejuani",
    "author": "Riot Games (export: modelviewer.lol)",
-   "chosen": true,
+   "chosen": false,
    "batch": 12,
    "slug": "lol_sejuani",
    "mdl": "lol_sejuani.npz",
@@ -18727,7 +18771,8 @@
    "fbx": "C:/source1/playermodels/league of legends/sejuani.glb",
    "url": "https://modelviewer.lol/model-viewer?id=113000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "skip_reason": "skink52 review: boar mount"
   },
   {
    "id": 0,
@@ -18741,13 +18786,13 @@
    "fbx": "C:/source1/playermodels/league of legends/senna.glb",
    "url": "https://modelviewer.lol/model-viewer?id=235000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
    "title": "League of Legends - Seraphine",
    "author": "Riot Games (export: modelviewer.lol)",
-   "chosen": true,
+   "chosen": false,
    "batch": 12,
    "slug": "lol_seraphine",
    "mdl": "lol_seraphine.npz",
@@ -18755,7 +18800,8 @@
    "fbx": "C:/source1/playermodels/league of legends/seraphine.glb",
    "url": "https://modelviewer.lol/model-viewer?id=147000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "skip_reason": "skink52 review: large hoverboard"
   },
   {
    "id": 0,
@@ -18769,7 +18815,7 @@
    "fbx": "C:/source1/playermodels/league of legends/sett.glb",
    "url": "https://modelviewer.lol/model-viewer?id=875000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18783,7 +18829,7 @@
    "fbx": "C:/source1/playermodels/league of legends/shaco.glb",
    "url": "https://modelviewer.lol/model-viewer?id=35000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18797,7 +18843,7 @@
    "fbx": "C:/source1/playermodels/league of legends/shen.glb",
    "url": "https://modelviewer.lol/model-viewer?id=98000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18811,7 +18857,7 @@
    "fbx": "C:/source1/playermodels/league of legends/shyvana.glb",
    "url": "https://modelviewer.lol/model-viewer?id=102000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18825,7 +18871,7 @@
    "fbx": "C:/source1/playermodels/league of legends/singed.glb",
    "url": "https://modelviewer.lol/model-viewer?id=27000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18839,7 +18885,7 @@
    "fbx": "C:/source1/playermodels/league of legends/sion.glb",
    "url": "https://modelviewer.lol/model-viewer?id=14000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18853,7 +18899,7 @@
    "fbx": "C:/source1/playermodels/league of legends/sivir.glb",
    "url": "https://modelviewer.lol/model-viewer?id=15000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18867,8 +18913,8 @@
    "fbx": "C:/source1/playermodels/league of legends/sona.glb",
    "url": "https://modelviewer.lol/model-viewer?id=37000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true,
-   "skip_reason": "not humanoid enough for the CS2 player skeleton (insect arms / no legs)"
+   "skip_reason": "not humanoid enough for the CS2 player skeleton (insect arms / no legs)",
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18882,7 +18928,7 @@
    "fbx": "C:/source1/playermodels/league of legends/soraka.glb",
    "url": "https://modelviewer.lol/model-viewer?id=16000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18896,7 +18942,7 @@
    "fbx": "C:/source1/playermodels/league of legends/swain.glb",
    "url": "https://modelviewer.lol/model-viewer?id=50000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18910,7 +18956,11 @@
    "fbx": "C:/source1/playermodels/league of legends/sylas.glb",
    "url": "https://modelviewer.lol/model-viewer?id=517000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "drop_materials": [
+    "chain_left",
+    "chain_right"
+   ]
   },
   {
    "id": 0,
@@ -18924,7 +18974,7 @@
    "fbx": "C:/source1/playermodels/league of legends/syndra.glb",
    "url": "https://modelviewer.lol/model-viewer?id=134000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18938,7 +18988,8 @@
    "fbx": "C:/source1/playermodels/league of legends/taliyah.glb",
    "url": "https://modelviewer.lol/model-viewer?id=163000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "drop_bones": ".*Sleeve.*"
   },
   {
    "id": 0,
@@ -18952,7 +19003,7 @@
    "fbx": "C:/source1/playermodels/league of legends/talon.glb",
    "url": "https://modelviewer.lol/model-viewer?id=91000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18966,7 +19017,9 @@
    "fbx": "C:/source1/playermodels/league of legends/taric.glb",
    "url": "https://modelviewer.lol/model-viewer?id=44000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "fold_bones": "(J|L|R)_Cape.*",
+   "fold_dir": "down"
   },
   {
    "id": 0,
@@ -18980,7 +19033,9 @@
    "fbx": "C:/source1/playermodels/league of legends/teemo.glb",
    "url": "https://modelviewer.lol/model-viewer?id=17000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "mode": "ownall",
+   "scale": 1.25,
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -18994,7 +19049,7 @@
    "fbx": "C:/source1/playermodels/league of legends/thresh.glb",
    "url": "https://modelviewer.lol/model-viewer?id=412000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true,
+   "drop_weapons": true,
    "possible_dupes": [
     "thresh"
    ]
@@ -19011,7 +19066,9 @@
    "fbx": "C:/source1/playermodels/league of legends/tristana.glb",
    "url": "https://modelviewer.lol/model-viewer?id=18000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
@@ -19025,7 +19082,7 @@
    "fbx": "C:/source1/playermodels/league of legends/trundle.glb",
    "url": "https://modelviewer.lol/model-viewer?id=48000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19039,7 +19096,7 @@
    "fbx": "C:/source1/playermodels/league of legends/tryndamere.glb",
    "url": "https://modelviewer.lol/model-viewer?id=23000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19053,7 +19110,7 @@
    "fbx": "C:/source1/playermodels/league of legends/twistedfate.glb",
    "url": "https://modelviewer.lol/model-viewer?id=4000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19067,7 +19124,7 @@
    "fbx": "C:/source1/playermodels/league of legends/twitch.glb",
    "url": "https://modelviewer.lol/model-viewer?id=29000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19081,7 +19138,7 @@
    "fbx": "C:/source1/playermodels/league of legends/udyr.glb",
    "url": "https://modelviewer.lol/model-viewer?id=77000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19095,8 +19152,8 @@
    "fbx": "C:/source1/playermodels/league of legends/urgot.glb",
    "url": "https://modelviewer.lol/model-viewer?id=6000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true,
-   "skip_reason": "not humanoid enough for the CS2 player skeleton (spider legs)"
+   "skip_reason": "not humanoid enough for the CS2 player skeleton (spider legs)",
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19110,7 +19167,7 @@
    "fbx": "C:/source1/playermodels/league of legends/varus.glb",
    "url": "https://modelviewer.lol/model-viewer?id=110000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19124,7 +19181,7 @@
    "fbx": "C:/source1/playermodels/league of legends/vayne.glb",
    "url": "https://modelviewer.lol/model-viewer?id=67000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19138,7 +19195,9 @@
    "fbx": "C:/source1/playermodels/league of legends/veigar.glb",
    "url": "https://modelviewer.lol/model-viewer?id=45000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
@@ -19152,7 +19211,9 @@
    "fbx": "C:/source1/playermodels/league of legends/vex.glb",
    "url": "https://modelviewer.lol/model-viewer?id=711000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
@@ -19166,7 +19227,7 @@
    "fbx": "C:/source1/playermodels/league of legends/vi.glb",
    "url": "https://modelviewer.lol/model-viewer?id=254000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19180,7 +19241,7 @@
    "fbx": "C:/source1/playermodels/league of legends/viego.glb",
    "url": "https://modelviewer.lol/model-viewer?id=234000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19194,7 +19255,7 @@
    "fbx": "C:/source1/playermodels/league of legends/viktor.glb",
    "url": "https://modelviewer.lol/model-viewer?id=112000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19208,7 +19269,7 @@
    "fbx": "C:/source1/playermodels/league of legends/vladimir.glb",
    "url": "https://modelviewer.lol/model-viewer?id=8000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19222,7 +19283,7 @@
    "fbx": "C:/source1/playermodels/league of legends/volibear.glb",
    "url": "https://modelviewer.lol/model-viewer?id=106000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19236,7 +19297,7 @@
    "fbx": "C:/source1/playermodels/league of legends/warwick.glb",
    "url": "https://modelviewer.lol/model-viewer?id=19000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19250,7 +19311,9 @@
    "fbx": "C:/source1/playermodels/league of legends/wukong.glb",
    "url": "https://modelviewer.lol/model-viewer?id=62000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
@@ -19264,7 +19327,7 @@
    "fbx": "C:/source1/playermodels/league of legends/xayah.glb",
    "url": "https://modelviewer.lol/model-viewer?id=498000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19278,7 +19341,7 @@
    "fbx": "C:/source1/playermodels/league of legends/xerath.glb",
    "url": "https://modelviewer.lol/model-viewer?id=101000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19292,7 +19355,7 @@
    "fbx": "C:/source1/playermodels/league of legends/xinzhao.glb",
    "url": "https://modelviewer.lol/model-viewer?id=5000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19306,7 +19369,7 @@
    "fbx": "C:/source1/playermodels/league of legends/yasuo.glb",
    "url": "https://modelviewer.lol/model-viewer?id=157000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19320,7 +19383,7 @@
    "fbx": "C:/source1/playermodels/league of legends/yone.glb",
    "url": "https://modelviewer.lol/model-viewer?id=777000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19334,7 +19397,7 @@
    "fbx": "C:/source1/playermodels/league of legends/yorick.glb",
    "url": "https://modelviewer.lol/model-viewer?id=83000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19348,7 +19411,7 @@
    "fbx": "C:/source1/playermodels/league of legends/yunara.glb",
    "url": "https://modelviewer.lol/model-viewer?id=804000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19362,7 +19425,7 @@
    "fbx": "C:/source1/playermodels/league of legends/zaahen.glb",
    "url": "https://modelviewer.lol/model-viewer?id=904000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19376,7 +19439,7 @@
    "fbx": "C:/source1/playermodels/league of legends/zed.glb",
    "url": "https://modelviewer.lol/model-viewer?id=238000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true,
+   "drop_weapons": true,
    "possible_dupes": [
     "zed"
    ]
@@ -19393,7 +19456,7 @@
    "fbx": "C:/source1/playermodels/league of legends/zeri.glb",
    "url": "https://modelviewer.lol/model-viewer?id=221000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19407,7 +19470,9 @@
    "fbx": "C:/source1/playermodels/league of legends/ziggs.glb",
    "url": "https://modelviewer.lol/model-viewer?id=115000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
@@ -19421,7 +19486,7 @@
    "fbx": "C:/source1/playermodels/league of legends/zilean.glb",
    "url": "https://modelviewer.lol/model-viewer?id=26000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   },
   {
    "id": 0,
@@ -19435,7 +19500,9 @@
    "fbx": "C:/source1/playermodels/league of legends/zoe.glb",
    "url": "https://modelviewer.lol/model-viewer?id=142000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true,
+   "mode": "ownall",
+   "scale": 1.25
   },
   {
    "id": 0,
@@ -19449,7 +19516,7 @@
    "fbx": "C:/source1/playermodels/league of legends/zyra.glb",
    "url": "https://modelviewer.lol/model-viewer?id=143000",
    "note": "League of Legends model: private testing only",
-   "drop_orphans": true
+   "drop_weapons": true
   }
  ]
 }
