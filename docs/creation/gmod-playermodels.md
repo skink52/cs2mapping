@@ -135,6 +135,16 @@ and `"drop_materials"` removes props (her pillory, lying at her feet in the bind
 Riot rigs skin parts of the body to `<bone>_SNAP` helpers parented to the root (Briar's kneecaps: `L_Hip_SNAP`); in game they follow
 their base bone, so the exporter reparents each `_SNAP` onto it. Left on the root they mapped to the pelvis and her knees folded into a
 forward spike when bent. To see knees and elbows bend, render the pose sheet from the side: `POSE_VIEWS=side,three`.
+League of Legends (Nov 2026, batch 12, 142 champions): `lol_export.py` drives modelviewer.lol's own Export button in Edge through
+Playwright (base skin, T-Pose, "Minimal Size" GLB; about 9 s each, resumable), `lol_catalog.py` adds each GLB to the catalog with
+`"drop_orphans": true` (weapons and props hung off the root would float: Aatrox's sword, Caitlyn's rifle, Annie's Tibbers). T-pose does not
+shrink the files (textures dominate) and the converter reads the rest pose anyway. Older Riot skeletons name bones every way: UpArm / uparm /
+uparm1 / forarm, a bare hip / waist / C_Hip / even "pevis" as the pelvis, no pelvis at all (the lowest spine is used), L_leg + L_calf
+(leg = thigh), fingers as Index1-3, index/_b/_c or Hand_Finger_Index_b_jnt; the exporter maps all of them. `"fold_bones"` swings chains
+CS2 can't animate (Ahri's nine tails) back and down and pins them rigidly to their nearest body bone, like a hat; `"drop_bones"` removes
+them instead. Left out (no CS2 player fit): snake, centaur, no-legs floaters, a dog pack, a mech, spider legs, insect arms, plus the
+quadrupeds and blobs lol_export skips. Yordles scale to human head height, so they come out big-headed like the fun skins (Poppy's hammer
+makes her about 230 u tall: review).
 Related: trenchwarfare's `tools/soldiers.py` makes CS2 players from Mixamo-rigged GLBs by stretching each bone to CS2's length (fine for
 generated soldiers; not used here, where models keep their proportions).
 

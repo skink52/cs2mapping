@@ -45,15 +45,18 @@ def prepare(work, it, log=print):
     root = os.path.join(work, 'fbx', slug); os.makedirs(root, exist_ok=True)
     npz = os.path.join(root, slug + '.npz')
     drop = ','.join(sorted(it.get('drop_materials', [])))     # "drop_materials": [names] leaves those materials out
-    stale = not os.path.exists(npz) or os.path.getmtime(fbx) > os.path.getmtime(npz)
+    dropb = it.get('drop_bones', '')                            # "drop_bones": regex, parts skinned to those bones left out
+    orph = bool(it.get('drop_orphans'))                       # "drop_orphans": true, props/weapons hung off the root left out
+    foldb = it.get('fold_bones', '')                            # "fold_bones": regex, chains swung back and down, kept rigid
+    stale = not os.path.exists(npz) or max(os.path.getmtime(fbx), os.path.getmtime(os.path.join(HERE, 'fbx_export.py'))) > os.path.getmtime(npz)
     if not stale:
-        z0 = np.load(npz); stale = (str(z0['drop']) if 'drop' in z0.files else '') != drop
+        z0 = np.load(npz); stale = (str(z0['drop']) if 'drop' in z0.files else '') != drop + ('|' + dropb if dropb else '') + ('^' + foldb if foldb else '') + ('~orphans' if orph else '')
     if stale:
         log('   blender: exporting %s' % fbx)
         r = subprocess.run([blender(), '-b', '--factory-startup', '-P', os.path.join(HERE, 'fbx_export.py'), '--',
-                            fbx.replace('\\', '/'), npz.replace('\\', '/')] + (['--drop', drop] if drop else []), capture_output=True, text=True, encoding='utf-8', errors='replace')
+                            fbx.replace('\\', '/'), npz.replace('\\', '/')] + (['--drop', drop] if drop else []) + (['--drop-bones', dropb] if dropb else []) + (['--fold-bones', foldb] if foldb else []) + (['--drop-orphans'] if orph else []), capture_output=True, text=True, encoding='utf-8', errors='replace')
         for line in r.stdout.splitlines():
-            if 'MISSING' in line or line.startswith('wrote'): log('   ' + line.strip())
+            if 'MISSING' in line or 'folded' in line or line.startswith('wrote'): log('   ' + line.strip())
         if not os.path.exists(npz): raise RuntimeError('fbx_export failed: %s' % (r.stderr or r.stdout)[-600:])
     mtl = {m: {k: os.path.join(os.path.dirname(fbx), v) for k, v in tx.items()}
            for m, tx in read_mtl(it.get('mtl') or os.path.splitext(fbx)[0] + '.mtl').items()}
