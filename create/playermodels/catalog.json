@@ -17282,6 +17282,24 @@
    "fbx": "C:\\source1\\playermodels\\ittakestwo\\may\\May.fbx",
    "url": "https://models.spriters-resource.com/pc_computer/ittakestwo/",
    "note": "rigged FBX from a commercial game: private testing only"
+  },
+  {
+   "id": 0,
+   "title": "League of Legends - Briar",
+   "author": "Riot Games (rip, user-supplied GLB)",
+   "chosen": true,
+   "batch": 11,
+   "slug": "itt_briar",
+   "mdl": "itt_briar.npz",
+   "name": "Briar",
+   "fbx": "C:/source1/playermodels/ittakestwo/briar/briar.glb",
+   "url": "https://leagueoflegends.fandom.com/wiki/Briar",
+   "note": "rigged GLB from a commercial game: private testing only",
+   "drop_materials": [
+    "ShacklePieces",
+    "Crystal",
+    "ShackleBlades"
+   ]
   }
  ]
 }

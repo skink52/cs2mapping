@@ -5,7 +5,8 @@ Source-style material folder beside it so gmod2cs2 finds each material's texture
 
 Catalog item: {"slug", "fbx": "<path to .fbx>", "mtl": "<path to .mtl>" (default: the .fbx's name with .mtl), "id": 0,
 "url": "<source page>", ...}. Textures come from the .mtl (map_Kd colour, map_Bump normal, map_d opacity: alpha-tested), the
-form The Models Resource ships next to its FBX/OBJ rips. Materials: <root>/materials/fbx/<slug>/<material>.vmt + _c.png / _n.png.
+form The Models Resource ships next to its FBX/OBJ rips, else from the images fbx_export.py saved from the material nodes (GLB).
+"fbx" may name a .glb. Materials: <root>/materials/fbx/<slug>/<material>.vmt + _c.png / _n.png.
 Re-exported when the FBX is newer than the npz. Blender: env BLENDER, else the newest under Program Files/Blender Foundation.
 """
 import glob, json, os, re, subprocess, sys
@@ -43,31 +44,38 @@ def prepare(work, it, log=print):
     slug, fbx = it['slug'], it['fbx']
     root = os.path.join(work, 'fbx', slug); os.makedirs(root, exist_ok=True)
     npz = os.path.join(root, slug + '.npz')
-    if not os.path.exists(npz) or os.path.getmtime(fbx) > os.path.getmtime(npz):
+    drop = ','.join(sorted(it.get('drop_materials', [])))     # "drop_materials": [names] leaves those materials out
+    stale = not os.path.exists(npz) or os.path.getmtime(fbx) > os.path.getmtime(npz)
+    if not stale:
+        z0 = np.load(npz); stale = (str(z0['drop']) if 'drop' in z0.files else '') != drop
+    if stale:
         log('   blender: exporting %s' % fbx)
         r = subprocess.run([blender(), '-b', '--factory-startup', '-P', os.path.join(HERE, 'fbx_export.py'), '--',
-                            fbx.replace('\\', '/'), npz.replace('\\', '/')], capture_output=True, text=True, encoding='utf-8', errors='replace')
+                            fbx.replace('\\', '/'), npz.replace('\\', '/')] + (['--drop', drop] if drop else []), capture_output=True, text=True, encoding='utf-8', errors='replace')
         for line in r.stdout.splitlines():
             if 'MISSING' in line or line.startswith('wrote'): log('   ' + line.strip())
         if not os.path.exists(npz): raise RuntimeError('fbx_export failed: %s' % (r.stderr or r.stdout)[-600:])
-    mtl = read_mtl(it.get('mtl') or os.path.splitext(fbx)[0] + '.mtl')
-    src_dir = os.path.dirname(fbx)
+    mtl = {m: {k: os.path.join(os.path.dirname(fbx), v) for k, v in tx.items()}
+           for m, tx in read_mtl(it.get('mtl') or os.path.splitext(fbx)[0] + '.mtl').items()}
+    z = np.load(npz)
+    node_tex = json.loads(str(z['textures'])) if 'textures' in z.files else {}      # textures saved from the material nodes (GLB)
     md = os.path.join(root, 'materials', 'fbx', slug); os.makedirs(md, exist_ok=True)
-    for m in np.load(npz)['materials']:
-        m = str(m); b = safe(m); tx = mtl.get(m, {})
+    for m in z['materials']:
+        m = str(m); b = safe(m)
+        tx = mtl.get(m) or {k: os.path.join(root, v) for k, v in node_tex.get(m, {}).items()}
         vmt = os.path.join(md, b + '.vmt')
         if os.path.exists(vmt) and os.path.getmtime(vmt) > os.path.getmtime(npz): continue
         lines = ['"VertexLitGeneric"', '{']
         if tx.get('color'):
-            im = Image.open(os.path.join(src_dir, tx['color'])).convert('RGBA')
+            im = Image.open(tx['color']).convert('RGBA')
             if tx.get('alpha'):
-                a = Image.open(os.path.join(src_dir, tx['alpha'])).convert('L').resize(im.size)
+                a = Image.open(tx['alpha']).convert('L').resize(im.size)
                 im.putalpha(a); lines.append('\t"$alphatest" "1"')
             else: im.putalpha(255)
             im.save(os.path.join(md, b + '_c.png')); lines.append('\t"$basetexture" "fbx/%s/%s_c"' % (slug, b))
         else: log('   ! %s: no colour texture in the .mtl' % m)
-        if tx.get('normal') and os.path.exists(os.path.join(src_dir, tx['normal'])):
-            Image.open(os.path.join(src_dir, tx['normal'])).convert('RGBA').save(os.path.join(md, b + '_n.png'))
+        if tx.get('normal') and os.path.exists(tx['normal']):
+            Image.open(tx['normal']).convert('RGBA').save(os.path.join(md, b + '_n.png'))
             lines.append('\t"$bumpmap" "fbx/%s/%s_n"' % (slug, b))
         open(vmt, 'w', newline='\n').write('\n'.join(lines + ['}']) + '\n')
     return root, slug + '.npz'

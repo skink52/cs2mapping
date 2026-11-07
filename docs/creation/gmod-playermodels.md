@@ -128,6 +128,10 @@ and writes an npz that `srcmdl.SrcModel` loads. `fbxprep.py` builds the material
 like Source's, `map_d` opacity as an alpha test). Catalog item: `"fbx"`, `"url"` (source page), `"id": 0`, plus the usual slug/name/mode.
 Everything after that (fit, hit boxes, compile, pose sheets, gallery) is the GMod path. Chibi proportions: check the shoulder height against
 the head first; Cody's rigid fit lifted his arms 9 u to CS2's shoulder (level with his head), `"mode": "own"` kept them at his own height.
+GLBs work too (Briar, a League of Legends rip with a Riot skeleton: L_Hip/L_KneeUpper/L_Clavicle/L_Shoulder/L_Elbow, Spine1/Spine2/Chest):
+the exporter maps those names (a skeleton with its own clavicle makes 'Shoulder' the upper arm), leaves out meshes with no skin weights
+(a stray Icosphere), saves the textures embedded in the material nodes (unlit glTF materials included; glTF normal maps flipped to Y-)
+and `"drop_materials"` removes props (her pillory, lying at her feet in the bind pose).
 Related: trenchwarfare's `tools/soldiers.py` makes CS2 players from Mixamo-rigged GLBs by stretching each bone to CS2's length (fine for
 generated soldiers; not used here, where models keep their proportions).
 
