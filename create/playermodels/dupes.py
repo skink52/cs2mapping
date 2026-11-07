@@ -40,7 +40,7 @@ def same(a, b):
 def workshop_stats(ids):
     """{id: (lifetime subscribers, lifetime favourites)} from ISteamRemoteStorage/GetPublishedFileDetails (no key)"""
     out = {}
-    ids = sorted(set(ids))
+    ids = sorted(set(x for x in ids if int(x) > 0))          # 0: not a Workshop item (an FBX import)
     for k in range(0, len(ids), 100):
         chunk = ids[k:k + 100]
         data = {'itemcount': len(chunk)}

@@ -23,6 +23,11 @@ POSE_NAMES = ('shooting', 'run', 'crouch', 'arms up', 'twist')   # poses.pose_sh
 GALLERY_COLS = 5
 
 
+def link(it):
+    """the source page: the Workshop item, or a catalog item's own url (an FBX import)"""
+    return it.get('url') or 'https://steamcommunity.com/sharedfiles/filedetails/?id=%s' % it['id']
+
+
 def picture(slug, previews, img_dir):
     """img/<slug>.jpg from the posed preview (3 views side by side on a flat background, a caption line on top): the front and
     three-quarter views, each cropped to the model, side by side. Returns the path relative to MODELS.md, or ''."""
@@ -95,8 +100,8 @@ def gallery(cards, out_dir, n_models):
                 if c['fun']: tags.append('fun')
                 if c['dupes']: tags.append('similar: ' + ', '.join(c['dupes']))
                 elif c['warn']: tags.append('fit warning')
-                rows.append('<td align="center" valign="bottom">%s<br><a href="https://steamcommunity.com/sharedfiles/filedetails/?id=%s"><b>%s</b></a><br><sub>by %s<br><code>%s</code>%s</sub></td>' % (
-                    img, c['id'], html.escape(c['name']), html.escape(c['author']), c['slug'], ('<br>' + html.escape('; '.join(tags))) if tags else ''))
+                rows.append('<td align="center" valign="bottom">%s<br><a href="%s"><b>%s</b></a><br><sub>by %s<br><code>%s</code>%s</sub></td>' % (
+                    img, c['url'], html.escape(c['name']), html.escape(c['author']), c['slug'], ('<br>' + html.escape('; '.join(tags))) if tags else ''))
             rows.append('</tr>')
         return rows + ['</table>', '']
 
@@ -137,12 +142,12 @@ def main():
         if comp.get('ok'): n_ok += 1
         if warn: n_warn += 1
         pic = picture(it['slug'], os.path.join(p['work'], 'preview'), img_dir)
-        cards.append({'name': it.get('name', it['slug']), 'slug': it['slug'], 'id': it['id'], 'pic': pic, 'fun': it.get('fun'), 'author': it['author'],
+        cards.append({'name': it.get('name', it['slug']), 'slug': it['slug'], 'id': it['id'], 'url': link(it), 'pic': pic, 'fun': it.get('fun'), 'author': it['author'],
                       'poses': pose_strip(it['slug'], os.path.join(p['work'], 'preview'), img_dir), 'warn': bool(r.get('warnings')),
                       'dupes': it.get('possible_dupes', [])})
         pic = '<img src="%s" height="110" alt="%s">' % (pic, it['slug']) if pic else ''
-        rows.append('| %d | %s | `models/player/gmod/%s/%s.vmdl` | %s | [%s](https://steamcommunity.com/sharedfiles/filedetails/?id=%s) by %s | %s | %s | %s |' % (
-            it.get('batch', 0), pic, it['slug'], it['slug'], it.get('name', it['slug']), it['title'].replace('|', '/'), it['id'], it['author'],
+        rows.append('| %d | %s | `models/player/gmod/%s/%s.vmdl` | %s | [%s](%s) by %s | %s | %s | %s |' % (
+            it.get('batch', 0), pic, it['slug'], it['slug'], it.get('name', it['slug']), it['title'].replace('|', '/'), link(it), it['author'],
             r.get('triangles', ''), status, (('**WARN** ' + warn) if warn else '') + (('; ' if warn else '') + 'stand-in/glass: ' + ', '.join(stand) if stand else '')))
     rows.sort(key=lambda r: (int(r.split('|')[1]), r.split('|')[3]))
     txt = ['# Converted player models', '',

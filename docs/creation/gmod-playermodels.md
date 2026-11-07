@@ -118,6 +118,19 @@ skeleton can't be changed to fit the mesh. Method from `projects/cs21.6/tools/mo
 `eye_test` removed, `thirdperson_default_gloves` removed, the 14 ragdoll joints added (the decompile has none). Any agent prepared that way works
 ([models.md](models.md#rebuilding-a-csgo-player-model-as-a-cs2-agent) steps 1-4). It's Valve data: it stays on the PC, out of git.
 
+## Rigged FBX imports (not from GMod)
+
+A rigged humanoid FBX goes through the same converter (Nov 2026, It Takes Two's Cody and May from The Models Resource):
+`fbx_export.py` (Blender, headless) renames the skeleton to ValveBiped (Hips -> Pelvis, Spine/Spine1/Spine2 -> Spine/Spine2/Spine4,
+Left/RightShoulder/Arm/ForeArm/Hand, UpLeg/Leg/Foot/ToeBase, Hand{Thumb,Index,Middle,Ring,Pinky}1-3 -> Finger0-4, ArmRoll/ForeArmRoll ->
+Bicep/Ulna helpers; face and prop bones follow their nearest mapped parent), keeps 3 weights per vertex, converts metres to inches and flips V,
+and writes an npz that `srcmdl.SrcModel` loads. `fbxprep.py` builds the materials from the `.mtl` beside the FBX (colour, DirectX normal map
+like Source's, `map_d` opacity as an alpha test). Catalog item: `"fbx"`, `"url"` (source page), `"id": 0`, plus the usual slug/name/mode.
+Everything after that (fit, hit boxes, compile, pose sheets, gallery) is the GMod path. Chibi proportions: check the shoulder height against
+the head first; Cody's rigid fit lifted his arms 9 u to CS2's shoulder (level with his head), `"mode": "own"` kept them at his own height.
+Related: trenchwarfare's `tools/soldiers.py` makes CS2 players from Mixamo-rigged GLBs by stretching each bone to CS2's length (fine for
+generated soldiers; not used here, where models keep their proportions).
+
 ## Rights
 
 Workshop authors keep their rights, and many GMod player models are themselves ported from commercial games (batch 1 includes characters from

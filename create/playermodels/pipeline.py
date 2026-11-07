@@ -72,7 +72,7 @@ def parallel(items, jobs, timeout, p, rep_dir):
         rep = json.load(open(rp, encoding='utf-8')) if os.path.exists(rp) and os.path.getmtime(rp) >= t0 else None
         if rep is None:
             rep = {'slug': slug, 'id': it['id'], 'title': it['title'], 'author': it['author'], 'mdl': it['mdl'],
-                   'workshop': 'https://steamcommunity.com/sharedfiles/filedetails/?id=%s' % it['id'], 'status': 'failed: %s' % (why or 'no report')}
+                   'workshop': it.get('url') or 'https://steamcommunity.com/sharedfiles/filedetails/?id=%s' % it['id'], 'status': 'failed: %s' % (why or 'no report')}
             json.dump(rep, open(rp, 'w'), indent=1)
         done[0] += 1
         print('[%d/%d] %s: %s (%.0f s)' % (done[0], len(items), slug, rep.get('status', '?')[:100], time.time() - t0), flush=True)
@@ -105,10 +105,14 @@ def main():
         slug = it['slug']; t0 = time.time()
         print('[%d/%d] %s (%s)' % (k + 1, len(items), slug, it['id']), flush=True)
         rep = {'slug': slug, 'id': it['id'], 'title': it['title'], 'author': it['author'], 'mdl': it['mdl'],
-               'workshop': 'https://steamcommunity.com/sharedfiles/filedetails/?id=%s' % it['id']}
+               'workshop': it.get('url') or 'https://steamcommunity.com/sharedfiles/filedetails/?id=%s' % it['id']}
         try:
-            if '--no-download' not in sys.argv: fetch.download(p, it['id'])
-            root = fetch.extract(p, it['id'])
+            if it.get('fbx'):                # a rigged FBX (not a GMod item): Blender export + materials (fbxprep.py)
+                import fbxprep
+                root, it = fbxprep.prepare(p['work'], it, log=lambda s: print(s, flush=True))[0], dict(it, mdl=it['slug'] + '.npz')
+            else:
+                if '--no-download' not in sys.argv: fetch.download(p, it['id'])
+                root = fetch.extract(p, it['id'])
             roots = [root] + [os.path.join(p['work'], 'extract', str(x)) for x in it.get('depends', [])] + fetch.base_roots(fetch.paths(cat))
             print('   converting %s' % it['mdl'], flush=True)
             r = gmod2cs2.convert(os.path.join(root, *it['mdl'].split('/')), slug, roots, tpl, p['out'], it.get('skin', 0),

@@ -59,6 +59,9 @@ def _unpack(fmt, w, h, b):
 
 
 def load_vtf(path):
+    if path.lower().endswith('.png'):                  # fbxprep.py's textures (rigged FBX imports): already an image
+        from PIL import Image
+        return np.array(Image.open(path).convert('RGBA'))
     d = open(path, 'rb').read()
     if d[:4] != b'VTF\0': raise ValueError('%s: not a VTF' % path)
     vmaj, vmin, hsize = struct.unpack_from('<III', d, 4)

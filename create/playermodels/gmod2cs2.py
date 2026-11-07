@@ -713,7 +713,7 @@ def write_material(tex, cd, roots, out, slug, maxtex, log):
     def tex_of(key):
         v = prm.get(key)
         if not v: return None
-        p = vtf.find_file('materials/%s.vtf' % v.replace('.vtf', ''), roots)
+        p = vtf.find_file('materials/%s.vtf' % v.replace('.vtf', ''), roots) or vtf.find_file('materials/%s.png' % v.replace('.vtf', ''), roots)
         if not p: info.setdefault('missing', []).append(v); return None
         try: return vtf.load_vtf(p)
         except Exception as e: info.setdefault('missing', []).append('%s (%s)' % (v, e)); return None

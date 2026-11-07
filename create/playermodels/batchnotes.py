@@ -36,8 +36,8 @@ def main():
             if m.get('flat'): notes.append('%s: FLAT GREY (texture missing)' % m['source'])
         here = os.path.dirname(os.path.abspath(out))
         pic = '<a href="img/poses/%s.jpg"><img src="img/%s.jpg" height="90" alt="%s"></a>' % ((it['slug'],) * 3) if os.path.exists(os.path.join(here, 'img', it['slug'] + '.jpg')) else ''
-        rows.append('| %s | `%s` | [%s](https://steamcommunity.com/sharedfiles/filedetails/?id=%s) by %s | `%s` | %s | %s | %.1f | %s | %s | %s | %s | %s |' % (
-            pic, it['slug'], it['title'].replace('|', '/'), it['id'], it['author'], it['mdl'], r.get('triangles', ''), r.get('scale', ''), limb,
+        rows.append('| %s | `%s` | [%s](%s) by %s | `%s` | %s | %s | %.1f | %s | %s | %s | %s | %s |' % (
+            pic, it['slug'], it['title'].replace('|', '/'), it.get('url') or 'https://steamcommunity.com/sharedfiles/filedetails/?id=%s' % it['id'], it['author'], it['mdl'], r.get('triangles', ''), r.get('scale', ''), limb,
             r.get('chest_shift', ''), '%+.1f z' % hb[2] if hb else '', '/'.join('%.1f' % v for v in ff.values() if v is not None),
             'OK' if comp.get('ok') else ('FAILED' if comp else '-'), '; '.join(notes) or 'ok'))
     skipped = ['| %s | %s | %s |' % (it['id'], it['title'].replace('|', '/'), it.get('skip_reason', ''))

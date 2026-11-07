@@ -5,6 +5,11 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-11-07: player model gallery; ba_jail_keimusho fire game stop button; builds with CS2 open
 
+- **[create] playermodels**: batch 10 (309 models, library at 1000; 9 sexualised picks left out), then rigged FBX imports:
+  `fbx_export.py` (Blender) + `fbxprep.py` feed any rigged humanoid FBX through the GMod converter; first two: It Takes Two's Cody (own fit:
+  the rigid fit put his shoulders level with his head) and May (batch 11, private testing only: commercial rips). Batch notes have pictures;
+  gallery cards show the author and drop author tags like [K]. [docs](docs/creation/gmod-playermodels.md#rigged-fbx-imports-not-from-gmod).
+
 - **[scripts] build_maps.ps1**: no longer waits for CS2 to close. Tested: a command-line build runs with CS2 open if CS2 was started first and
   stays open (quitting it kills the compiler), and the .vpk copies into the game. Threads = logical cores - 2 (ba_jail_keimusho final 49 min vs 70.6
   at 5); `-html` dropped from the entity/lighting line. Docs: pipeline.md stage D, setup.md, cs2-gotchas.md.

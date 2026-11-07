@@ -17253,6 +17253,35 @@
    "possible_dupes": [
     "withered_golden_freddy"
    ]
+  },
+  {
+   "id": 0,
+   "title": "It Takes Two - Playable Characters - Cody",
+   "author": "Hazelight Studios (rip: The Models Resource)",
+   "chosen": true,
+   "batch": 11,
+   "slug": "itt_cody",
+   "mdl": "itt_cody.npz",
+   "name": "Cody (clay figure)",
+   "fun": true,
+   "fbx": "C:\\source1\\playermodels\\ittakestwo\\cody\\Cody.fbx",
+   "url": "https://models.spriters-resource.com/pc_computer/ittakestwo/",
+   "note": "rigged FBX from a commercial game: private testing only",
+   "mode": "own"
+  },
+  {
+   "id": 0,
+   "title": "It Takes Two - Playable Characters - May",
+   "author": "Hazelight Studios (rip: The Models Resource)",
+   "chosen": true,
+   "batch": 11,
+   "slug": "itt_may",
+   "mdl": "itt_may.npz",
+   "name": "May (wooden doll)",
+   "fun": true,
+   "fbx": "C:\\source1\\playermodels\\ittakestwo\\may\\May.fbx",
+   "url": "https://models.spriters-resource.com/pc_computer/ittakestwo/",
+   "note": "rigged FBX from a commercial game: private testing only"
   }
  ]
 }

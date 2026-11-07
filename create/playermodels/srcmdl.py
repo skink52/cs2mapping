@@ -10,9 +10,12 @@ LOD0 skinned mesh, read with numpy only.
     m.W, m.B         (n,3) bone weights and bone indices
     m.eyeballs   [{'bone', 'org', 'radius', 'up', 'forward', 'iris_scale', 'texture'}]
 
+A .npz from fbx_export.py (a rigged FBX renamed to ValveBiped) loads the same way: one body part, one mesh per material,
+textures named fbx/<npz name>/<material> (fbxprep.py writes their VMTs and PNGs), no eyeballs.
+
 python3 -I srcmdl.py <model.mdl> prints a summary (bones, parts, materials, height).
 """
-import os, struct, sys
+import os, re, struct, sys
 import numpy as np
 
 VVD_VERTEX = np.dtype([('w', '<f4', 3), ('b', 'u1', 3), ('nb', 'u1'), ('p', '<f4', 3), ('n', '<f4', 3), ('uv', '<f4', 2)])
@@ -26,6 +29,7 @@ def _str(data, off):
 class SrcModel:
     def __init__(self, path):
         self.path = path
+        if path.lower().endswith('.npz'): return self._load_npz(path)
         d = self.data = open(path, 'rb').read()
         if d[:4] != b'IDST': raise ValueError('%s: not a Source MDL' % path)
         self.version, self.checksum = struct.unpack_from('<ii', d, 4)
@@ -78,6 +82,22 @@ class SrcModel:
             self.parts.append(part)
         self._read_vvd()
         self._read_vtx()
+
+    def _load_npz(self, path):
+        z = np.load(path)
+        self.data = b''; self.version = 0; self.checksum = 0; self.flags = 0
+        self.name = os.path.splitext(os.path.basename(path))[0]
+        self.bones = [{'name': str(n), 'parent': int(p), 'world': w} for n, p, w in zip(z['names'], z['parents'], z['world'])]
+        mats = [str(m) for m in z['materials']]
+        self.textures = ['fbx/%s/%s' % (self.name, re.sub(r'[^A-Za-z0-9_]', '_', m).lower()) for m in mats]
+        self.cdtextures = ['']
+        self.skins = [list(range(len(mats)))]
+        self.V, self.N, self.UV = z['V'].astype(float), z['N'].astype(float), z['UV'].astype(float)
+        self.W, self.B = z['W'].astype(float), z['B'].astype(int)
+        tris, tm = z['tris'], z['tri_mat']
+        meshes = [{'material': k, 'nverts': len(self.V), 'tris': tris[tm == k], 'eyeball': -1} for k in range(len(mats)) if (tm == k).any()]
+        self.parts = [{'name': 'body', 'models': [{'name': 'body', 'vstart': 0, 'nverts': len(self.V), 'meshes': meshes}]}]
+        self.eyeballs = []
 
     # ------------------------------------------------------------ files next to the .mdl
     def _sibling(self, *exts):
