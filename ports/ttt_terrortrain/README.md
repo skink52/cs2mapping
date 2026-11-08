@@ -12,6 +12,11 @@ Other CS2 ports on the Workshop: `ttt_cs2_terrortrain_v1` ([3363645918](https://
 
 ## History
 
+- 2026-11-08: radar re-rendered before upload with the fixed `tools/radar.py` (`slopes=True`; pos -4035 4050, scale 7.25, was
+  -4098 4171, 7.38): the same picture, the carriage roofs end to end (the one func_water is below the ground, 0% drawn). Compiled.
+  Loading text in `maps/ttt_terrortrain.txt` now matches ttt_island's (the map, !ttt / !rules, "Ported to CS2 by skink52"; the
+  original author isn't recorded). Old files in `C:\source1\archive\ttt_terrortrain_radar_20261108\`.
+
 - 2026-11-02: stage A–D through autoport, including the 3D skybox split, overlaydepth and probecover.
 - 2026-11-02: plain `visfit` found almost no play space (0.0 billion cubic units, 1 Lowest hint), because the map is open to the void. `visfit_detail` found 1.1 billion: 7 Medium, 11 Low, 1 Lower, 1 Lowest. Vis took 29 s and collapsed 1,164,619 regions to 12,543.
 
