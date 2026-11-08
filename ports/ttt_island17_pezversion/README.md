@@ -25,7 +25,7 @@ A CS2 Island17 is on the Workshop: [[TTT] Island17](https://steamcommunity.com/s
 - 2026-11-08: **renamed to ttt_island** before its first upload. First tried without a recompile (repacking the compiled vpk under
   the new name): it loaded, but the whole world had no collision when skink52 tested it from Hammer, so that repack is withdrawn
   (kept in the archive folder below, `broken_repack/`) and the map is recompiled as `maps/ttt_island.vmap` (skink52 renamed the
-  content vmap). In the game addon, `maps/ttt_island.txt`, `_cameras.txt`, `_retakes.txt`,
+  content vmap; built 8 Nov 13:52, `maps/ttt_island.vpk` with its world under `maps/ttt_island/`, the old-name vpk gone). In the game addon, `maps/ttt_island.txt`, `_cameras.txt`, `_retakes.txt`,
   `resource/overviews/ttt_island.txt` and the radar `ttt_island_radar_psd.vtex_c` replace the old-name files, and the stub
   `cfg/maps/ttt_island17_pezversion.cfg` is gone; the skybox vpk, postprocess and lighting keep the old name (referenced by path).
   The originals are in `C:\source1\archive\ttt_island17_pezversion_before_rename\`. The addon folders and the content `.vmap`
