@@ -1,0 +1,99 @@
+<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:generic:version{7412167c-06e9-4698-aff2-e63eb59037e7} -->
+{
+	// Bump mine kit sound events. CS2 only loads an addon's soundevents/soundevents_addon.vsndevts, so:
+	//   - your addon already has that file: paste the three events below (bumpmine.base, bumpmine.land, bumpmine.detonate) inside its outer { }
+	//   - it has none: save this file as soundevents/soundevents_addon.vsndevts
+	// bumpmine.base is a copy of the addon template's amb.base, so it doesn't depend on amb.base being in your file.
+
+	"bumpmine.base" = 
+	{
+		type = "csgo_mega"
+		mixgroup = "Amb_Common"
+		occlusion_intensity = 0.0
+		distance_effect_mix = 0.0
+		restrict_source_reverb = true
+		use_distance_unfiltered_stereo_mapping_curve = true
+		use_time_volume_mapping_curve = true
+		distance_volume_mapping_curve = 
+		[
+			[
+				0.0, 1.0, -0.00394, -0.00394,
+				2.0, 3.0,
+			],
+			[
+				300.0, 0.0, -0.002991, -0.002991,
+				2.0, 3.0,
+			],
+		]
+		fadetime_volume_mapping_curve = 
+		[
+			[
+				0.0, 1.0, -1.223776, -1.223776,
+				2.0, 3.0,
+			],
+			[
+				0.208571, 0.0, 0.0, 0.0,
+				2.0, 3.0,
+			],
+		]
+		distance_unfiltered_stereo_mapping_curve = 
+		[
+			[
+				0.0, 0.0, 0.0, 0.0,
+				2.0, 3.0,
+			],
+			[
+				300.0, 0.0, 0.0, 0.0,
+				2.0, 3.0,
+			],
+		]
+		time_volume_mapping_curve = 
+		[
+			[
+				0.0, 0.0, 0.0, 0.0,
+				2.0, 3.0,
+			],
+			[
+				0.297143, 1.0, 0.0, 0.0,
+				2.0, 3.0,
+			],
+		]
+	}
+
+	"bumpmine.land" =
+	{
+		base = "bumpmine.base"
+		volume = 1.00
+		use_time_volume_mapping_curve = false
+		vsnd_files_track_01 = "sounds/bumpmine/bumpmine_land_01.vsnd"
+		distance_volume_mapping_curve =
+		[
+			[
+				0.0, 1.0, 0.0, 0.0,
+				2.0, 3.0,
+			],
+			[
+				1250.0, 0.0, 0.0, 0.0,
+				2.0, 3.0,
+			],
+		]
+	}
+	"bumpmine.detonate" =
+	{
+		base = "bumpmine.base"
+		volume = 1.00
+		use_time_volume_mapping_curve = false
+		vsnd_files_track_01 = "sounds/bumpmine/bumpmine_detonate.vsnd"
+		distance_volume_mapping_curve =
+		[
+			[
+				0.0, 1.0, 0.0, 0.0,
+				2.0, 3.0,
+			],
+			[
+				2000.0, 0.0, 0.0, 0.0,
+				2.0, 3.0,
+			],
+		]
+	}
+}

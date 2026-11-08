@@ -11,6 +11,10 @@
 
 Loading text: `Map by Crycelia` / `CS2 Port by skink52 for Slime Servers`.
 
+**Shareable bump mine kit** ([`bumpmine_kit/`](bumpmine_kit/), 2026-11-08): this map's bump mines packaged for any CS2 map, with agent
+setup instructions, a Hammer prefab and a `.vmap` installer. `python bumpmine_kit/make_kit.py` builds `cs2_bumpmine_kit.zip`, copying the
+Valve model, materials and sounds in from the content addon at build time (they stay out of git). The kit has no HUD charge count.
+
 ## v2 vs v3
 
 Update (later on 31 Oct): with the v3 BSP on the PC the vmap matches v3 exactly apart from the outputs the importer dropped (the door pairs

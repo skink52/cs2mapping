@@ -1,0 +1,10 @@
+<root>
+	<styles>
+		<include src="file://{resources}/styles/custom_game/bumpmine_hud.css" />
+	</styles>
+	<Panel class="KbRoot" hittest="false">
+		<Panel id="BumpReady" class="KbCard" hittest="false">
+			<Label id="BumpText" class="KbText" text="BUMP MINE READY  -  MOUSE1 THROW" hittest="false" />
+		</Panel>
+	</Panel>
+</root>
