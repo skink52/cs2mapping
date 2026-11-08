@@ -26,6 +26,7 @@ Trouble in Terrorist Town on {original_credit}, ported to CS2. Everything runs i
 [*]The map sets the cvars it needs.
 [*]Plugins that force teams, respawn players or punish team kills will break it.
 [*]Karma resets on map change.
+[*]When the map loads, the server console prints the line "ttt_srv_hello" once. That's the map asking whether a TTT plugin is there (it sends [i]echo ttt_srv_hello[/i], and its map events as [i]echo ttt_srv_msg ...[/i], because Workshop maps may only send commands on Valve's allow list); without one it's harmless. Plugin contract: projects/cs2mapTTT/docs/SERVER_MAP_ENTITIES.md on GitHub.
 [/list]
 
 [h2]Known limits[/h2]
