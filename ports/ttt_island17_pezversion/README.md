@@ -12,6 +12,15 @@ A CS2 Island17 is on the Workshop: [[TTT] Island17](https://steamcommunity.com/s
 
 ## History
 
+- 2026-11-08: **new radar and loading-screen text** for the upload as ttt_island. The 2 Nov radar was rendered before the 126
+  displacements were restored, so it showed only the buildings and paths on white. Re-rendered with `tools/radar.py` from the
+  current vmap (`radar.run(m, c, pct=0.5)` with `c.addon = 'ttt_island'`): terrain, water and buildings, pos -4392 3272, scale
+  6.08. Steep ground (0.15 < n.z <= 0.6, rock and dirt cliffs) left white gaps, since radar.py draws only n.z > 0.6; those 572
+  faces were painted underneath the radar (same projection, a little darker). Content `ttt_island_radar_psd.png/.vtex` (the old
+  ones are archived), compiled with resourcecompiler; game `resource/overviews/ttt_island.txt`. Loading text in
+  `maps/ttt_island.txt`: the map, a one-line pitch with !ttt / !rules, "Ported to CS2 by skink52" (Island17's original author isn't
+  recorded). Not yet seen in game.
+
 - 2026-11-08: **renamed to ttt_island** before its first upload, without a recompile: `scripts/rename_map_vpk.py` repacked the
   compiled `maps/ttt_island17_pezversion.vpk` as `maps/ttt_island.vpk` (tested on the dedicated server: the world loads, SlimeMG runs
   TTT and switches the map's ttt.js off). In the game addon, `maps/ttt_island.txt`, `_cameras.txt`, `_retakes.txt`,
