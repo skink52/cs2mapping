@@ -23,6 +23,9 @@ def guess_colour(mat):
     base = re.sub(r'\.vmat$', '', n.rsplit('/', 1)[-1])
     for w, c in COLOUR_WORDS:
         if re.search(r'(^|[_\-/])' + w + r'([_\-0-9]|$)', base): return c
+    if base.startswith('blend'):                       # blend<A><B>: CS:GO's base texture is A (blendsandgrass -> sand)
+        hits = [(base.find(w), c) for w, c in KINDS if w in base]
+        if hits: return min(hits)[1]
     for w, c in KINDS:
         if w in n: return c
     m = re.search(r'dev[_/].*?(\d{2})', base)                 # dev_55, dev_gray-09, valuesand30: grey level
@@ -45,6 +48,16 @@ class Textures:
         stem = re.sub(r'^materials/', '', mat.lower().replace('\\', '/'))[:-5] if mat.lower().endswith('.vmat') else mat.lower()
         for k in (stem, stem + '_color', stem + '_diffuse', stem + '_basecolor'):
             if k in s.index: return s.index[k]
+        # the material's own colour texture: a rebuilt CS:GO blend material is one layer whose image has another name
+        # (blendsandgrass008a.vmat -> sandfloor009a.png; the name alone guessed grass, ttt_island17_pezversion 8 Nov 2026)
+        for r in s.roots:
+            vp = os.path.join(r, stem + '.vmat')
+            if not os.path.isfile(vp): continue
+            try: txt = open(vp, encoding='utf-8', errors='ignore').read()
+            except OSError: continue
+            for t in re.findall(r'TextureColor[A-Z0-9_]*\s+"([^"]+)"', txt):
+                k = re.sub(r'\.(png|tga|jpg|psd)$', '', re.sub(r'^materials/', '', t.lower().replace('\\', '/')))
+                if k in s.index: return s.index[k]
         return None
     def get(s, mat, px_per_tile):
         """(tile RGB uint8 array of px_per_tile x px_per_tile, is_texture). Flat colour arrays are 1x1."""

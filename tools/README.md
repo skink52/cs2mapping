@@ -90,7 +90,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `lightcover.py` | `lightcover` (D) | Stationary lights for maps whose rooms all connect to the sky (`lights` then sees one compartment and switches only a few): roofed compartments (doors/brushes count as walls) each get lights switched until 90% of the walkable floor is lit with line of sight (range ≤ 640, ≤ 4 overlapping); uncovered pockets near spawns/buttons/triggers/weapons get new unshadowed stationary omnis; open-to-sky play areas get a stationary fill each. Never deletes lights (ba_jail_keimusho) |
 | `probecover.py` | `probes` (C, report) / `probecover` (D, fix) | Static func_breakable / func_brush meshes outside every light probe volume: listed in TO CHECK, or a volume added around each uncovered group |
 | `daylight.py` | `daylight` (D only) | Stationary sun, ceilings without shadows, probe volumes, maxexposure 2 for dark indoor maps |
-| `radar.py` | `radar` | Radar png + vtex + `resource/overviews/<map>.txt` from the standable floors, painted with their materials |
+| `radar.py` | `radar` | Radar png + vtex + `resource/overviews/<map>.txt` from the standable floors, painted with their materials. Python-only options: `slopes=True` paints steep ground (0.15 < n.z <= 0.6) under the floors, `open_water=True` draws water where nothing is under it (open sea); the water line is per pixel |
 | `firefx.py` | `fire` | env_fire (no flames, no damage in CS2) → `<name>_fx` stock `particles/burning_fx/env_fire_<size>[_smoke]` (generated vpcf66 if missing) + `<name>_hurt` 2/s burn trigger_hurt, I/O per CS:GO fire.cpp (burn-out Kill, Extinguish delay); env_spark → `<name>_fx` generated spark particle (`particles/port_spark/`) |
 | `vpcf66.py` | library | Writes generated particles in the CS2 particle editor's vpcf66 layout (steam, fire, spark, tesla, glowfix use it) |
 | `splitfaces.py` | `splitfaces` | Lit faces over 512x512 cut on a 512 world grid, one mesh (cs2-slop-porting 3.5, MIT); also `mesh_read` / `mesh_write` / `mesh_check` for half-edge meshes |
@@ -99,7 +99,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `spotbeam.py` | `python3 -c` / port scripts: `spotbeam.run(m, c, spots)` | point_spotlight (importer exclusion list) → never-solid func_brush cone, additive fading `materials/spotlights/spot_<rgb>.vmat`, cut at the first wall/floor; LightOn/LightOff → Enable/Disable (ba_jail_keimusho) |
 | `radar_props.py` | (radar) | Props on the radar: each prop's up-facing CS:GO model triangles (embedded files, then CS:GO pak01) as `radar.run(extra_polys=...)`, coloured by the texture's average; roofs/ceilings/canopies skipped; also writes world material textures from VTFs as PNGs for radartex (ba_jail_keimusho) |
 | `mdlmesh.py` | (radar_props) | CS:GO `.mdl` + `.vvd` + `.dx90.vtx` → LOD0 triangles per material |
-| `radartex.py` | (radar, vmap_preview) | Material name → tiled source texture or a colour guessed from the name |
+| `radartex.py` | (radar, vmap_preview) | Material name → tiled source texture (by name, or the `TextureColor` the `.vmat` names) or a colour guessed from the name (`blend<A><B>`: A) |
 
 ## Libraries
 

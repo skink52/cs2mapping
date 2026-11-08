@@ -219,7 +219,12 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
   world-aligned; stock CS2 materials, whose textures aren't readable from the workspace, get a colour guessed from the name (`radartex.py`: colour words
   first, then grass/dirt/sand/water/concrete/metal/wood/tile/brick…; dev_NN greys). Darker towards the bottom of the map, glass translucent, walls outlined.
   Water planes never set the extent. `pct` trims that percentile off each edge of the floor extent (default 0.5; 0 keeps everything — jb_sides_cs2 needed it).
-  `pct` is a Python argument only: `radar.run(m, c, pct=0, tex=radar.textures_for(c))`; stage C and stage D's `radar` use 0.5. Output:
+  `pct` is a Python argument only: `radar.run(m, c, pct=0, tex=radar.textures_for(c))`; stage C and stage D's `radar` use 0.5. Also Python-only
+  (8 Nov 2026, ttt_island): `slopes=True` paints steep ground (0.15 < n.z <= 0.6, cliffs between terrain levels) under the floors, which
+  otherwise leaves gaps; `open_water=True` draws water where nothing is under it (open sea). The water line is decided per pixel from the
+  height interpolated across each face (it was each face's average). A material whose own image has another name (CS:GO blend materials
+  rebuilt as one layer, `blendsandgrass008a.vmat` → `sandfloor009a.png`) is painted with the `TextureColor` its `.vmat` names; a
+  `blend<A><B>` name with no image is coloured as A (it was guessed as grass). Output:
   `panorama/images/overheadmaps/<map>_radar_psd.png` + `.vtex`, plus game `resource/overviews/<map>.txt`.
   - Stacked maps (towers, one spawn directly above another): split into vertical sections like Nuke/Vertigo. `"verticalsections"` in the overview txt with
     `"default"` (image `<map>_radar_psd`) and `"lower"` (image `<map>_lower_radar_psd`), each with AltitudeMin/Max; all sections share pos_x/pos_y/scale.

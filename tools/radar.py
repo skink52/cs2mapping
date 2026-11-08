@@ -78,7 +78,28 @@ def textures_for(c, tile_units=128.0):
     import os
     return radartex.Textures([os.path.join(c.content, 'materials'), os.path.join(c.root, 'embedded', c.addon, 'materials')], tile_units)
 
-def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None):   # extra_polys: [(material, Nx3 loop)] drawn as floors too (radar_props.py: prop tops)   # pct: percentile trimmed off each edge of the floor extent (0 = keep every floor); tex: radartex.Textures to paint floors with their materials
+def raster_z(Z, pts, zs):
+    """Raise the height map Z (pixels) to the face's interpolated height wherever the face covers a pixel (fan triangles)."""
+    H, W = Z.shape
+    for i in range(1, len(pts) - 1):
+        (x0, y0), (x1, y1), (x2, y2) = pts[0], pts[i], pts[i + 1]
+        z0, z1, z2 = zs[0], zs[i], zs[i + 1]
+        d = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0 - y2)
+        if abs(d) < 1e-9: continue
+        bx0, bx1 = max(int(min(x0, x1, x2)), 0), min(int(max(x0, x1, x2)) + 1, W)
+        by0, by1 = max(int(min(y0, y1, y2)), 0), min(int(max(y0, y1, y2)) + 1, H)
+        if bx0 >= bx1 or by0 >= by1: continue
+        X, Y = np.meshgrid(np.arange(bx0, bx1) + 0.5, np.arange(by0, by1) + 0.5)
+        a = ((y1 - y2) * (X - x2) + (x2 - x1) * (Y - y2)) / d
+        b = ((y2 - y0) * (X - x2) + (x0 - x2) * (Y - y2)) / d
+        g = 1 - a - b
+        ins = (a >= -1e-3) & (b >= -1e-3) & (g >= -1e-3)
+        if not ins.any(): continue
+        z = a * z0 + b * z1 + g * z2
+        blk = Z[by0:by1, bx0:bx1]
+        np.maximum(blk, np.where(ins, z, -1e9), out=blk)
+
+def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None, slopes=False, open_water=False):   # slopes: also paint steep ground (0.15 < n.z <= 0.6: cliffs between terrain levels) under the floors; open_water: draw water where nothing is under it (open sea), not only over a floor below the water line   # extra_polys: [(material, Nx3 loop)] drawn as floors too (radar_props.py: prop tops)   # pct: percentile trimmed off each edge of the floor extent (0 = keep every floor); tex: radartex.Textures to paint floors with their materials
     polys = list(lighting.world_polys(m)); water = []
     for e in m.entities():                         # solid brush entities (doors, func_brush, breakables...) count too
         if m.cls(e) == 'func_water':               # water surfaces go on as see-through floors (pools show their bottom)
@@ -90,7 +111,7 @@ def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None):   # extra_p
             if m.type(ch) == b'CMapMesh': polys.extend(lighting.mesh_polys(m, ch))
     nworld = len(polys)
     if extra_polys: polys.extend(extra_polys)
-    floors, walls = [], []
+    floors, walls, steep = [], [], []
     for k, (mat, loop) in enumerate(polys):
         if any(s in mat for s in SKIP) or len(loop) < 3: continue
         P = np.array(loop)
@@ -100,6 +121,7 @@ def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None):   # extra_p
         if ln < 1e-6: continue
         n /= ln
         if n[2] > 0.6: floors.append((mat, P))
+        elif slopes and n[2] > 0.15: steep.append((mat, P))
         elif abs(n[2]) < 0.3 and k < nworld: walls.append(P)
     if not floors: return
     if tex is None and getattr(c, 'textures', None): tex = c.textures
@@ -153,22 +175,27 @@ def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None):   # extra_p
     def to_img(P): return [((x - px) / scale * ss, (py - y) / scale * ss) for x, y in P[:, :2]]
     zlo, zhi = np.percentile(allp[:, 2], 2), np.percentile(allp[:, 2], 98)
     img = Image.new('RGBA', (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
-    zbuf = Image.new('F', (S, S), -1e9); dz = ImageDraw.Draw(zbuf)   # height of the top floor drawn at each pixel
+    Zb = np.full((S, S), -1e9, np.float32)        # height of the top surface at each pixel (interpolated across each face), for the water line
+    for mat, P in sorted(steep, key=lambda f: f[1][:, 2].mean()):   # steep ground first: the floors cover it where they overlap
+        t = float(np.clip((P[:, 2].mean() - zlo) / max(zhi - zlo, 1), 0, 1))
+        if wfaces: raster_z(Zb, to_img(P), P[:, 2])
+        if tex is None: d.polygon(to_img(P), fill=(int(60 + 100 * t), int(65 + 100 * t), int(75 + 105 * t), 255)); continue
+        paint_face(img, to_img(P), P, mat, t * 0.8, tex, px, py, scale, ss)
     for mat, P in sorted(floors, key=lambda f: f[1][:, 2].mean()):
         t = float(np.clip((P[:, 2].mean() - zlo) / max(zhi - zlo, 1), 0, 1))
-        if wfaces: dz.polygon(to_img(P), fill=float(P[:, 2].mean()))
+        if wfaces: raster_z(Zb, to_img(P), P[:, 2])
         if tex is None:
             col = (int(70 + 120 * t), int(80 + 120 * t), int(95 + 125 * t), 255)
             d.polygon(to_img(P), fill=col); continue
         paint_face(img, to_img(P), P, mat, t, tex, px, py, scale, ss)
     wstat = []
     if wfaces:
-        Z = np.asarray(zbuf)
+        Z = Zb
         for mat, P in sorted(wfaces, key=lambda f: f[1][:, 2].mean()):
             wz = float(P[:, 2].max())
             area = Image.new('L', (S, S), 0); ImageDraw.Draw(area).polygon(to_img(P), fill=255)
             inside = np.asarray(area) > 0
-            vis = inside & (Z > -1e8) & (Z <= wz + 2)    # a floor under it, nothing standing above the water line
+            vis = inside & (Z <= wz + 2) & ((Z > -1e8) | open_water)    # a floor under it (or open sea), nothing standing above the water line
             wstat.append('%s z%d %d%%' % (mat.split('/')[-1].replace('.vmat', ''), wz, 100 * vis.sum() / max(inside.sum(), 1)))
             if not vis.any(): continue
             ys, xs = np.nonzero(vis); y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
@@ -195,8 +222,8 @@ def run(m, c, size=1024, ss=2, pct=0.5, tex=None, extra_polys=None):   # extra_p
     ctx, cty = frac('info_player_counterterrorist'); tx, ty = frac('info_player_terrorist')
     c.game_files['resource/overviews/%s.txt' % c.addon] = (OVERVIEW % dict(map=c.addon, px=px, py=py, scale=scale, ctx=ctx, cty=cty, tx=tx, ty=ty)).encode()
     if wstat: c.log.append('radar water (share of each water face drawn): ' + ', '.join(wstat))
-    c.log.append('radar: rendered from geometry (%d floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/%s_radar_psd.png + game resource/overviews/%s.txt (pos %d %d, scale %.2f)'
-                 % (len(floors), c.addon, c.addon, px, py, scale))
+    c.log.append('radar: rendered from geometry (%d floor faces shaded by height, ' % len(floors) + ('%d steep faces under them, ' % len(steep) if slopes else '') + 'walls outlined) -> panorama/images/overheadmaps/%s_radar_psd.png + game resource/overviews/%s.txt (pos %d %d, scale %.2f)'
+                 % (c.addon, c.addon, px, py, scale))
 
 def paint_face(img, pts, P, mat, t, tex, px, py, scale, ss):
     """Fill one floor polygon with its material: the source texture tiled every tex.tile world units (world-aligned, so
