@@ -184,11 +184,13 @@ for (let i = 0; i < HUMANS + BOTS; i++) {
 // ---------------------------------------------------------------- Instance
 // ---------------------------------------------------------------- mgstat (server stats for a plugin)
 // 'stats': the script is run with SERVER_STATS on. 'statsinput': off in CONFIG, a plugin sends RunScriptInput mgstat_on at
-// t=5 s. Every command is checked against the plugin's contract ("mgstat <slot> <stat> [n]" / "mgstat <slot> time <track> <ms>",
-// no ; or ", a connected human's slot), and the totals are checked against each other at the end.
+// t=5 s. Every command is checked against the plugin's contract ("echo mgstat <slot> <stat> [n]" / "echo mgstat <slot> time <track>
+// <ms>", sent through echo; no ; or ", a connected human's slot), and the totals are checked against each other at the end.
 const mg = { sent: 0, byStat: {}, times: {}, bad: [], bots: 0, early: 0 };
 function mgstat(c) {
   mg.sent++;
+  if (!c.startsWith('echo mgstat ')) { mg.bad.push(c); return; }   // a bare mgstat never reaches a plugin on a Workshop map
+  c = c.slice(5);
   const m = /^mgstat (\d+) (?:([a-z_]+)(?: (\d+))?|time ([a-z0-9_]+) (\d+))$/.exec(c);
   if (!m || /[;"]/.test(c)) { mg.bad.push(c); return; }
   const ctrl = players.find((p) => p.slot === +m[1] && p.connected);
@@ -220,7 +222,7 @@ const Instance = {
   FindEntitiesByName: (n) => (world.get(n) ? [world.get(n)] : []),
   GetAllPlayerControllers: () => players.filter((p) => p.connected),
   GetPlayerController: (s) => players.find((p) => p.slot === s && p.connected),
-  ServerCommand: (c) => { if (TRACE) obs.events.push('cmd ' + c); const [k, v] = c.split(' '); if (k === 'say') stats.says.push(c.slice(4)); else if (k === 'mgstat') mgstat(c); else stats.cvars[k] = v; },
+  ServerCommand: (c) => { if (TRACE) obs.events.push('cmd ' + c); const [k, v] = c.split(' '); if (k === 'say') stats.says.push(c.slice(4)); else if (k === 'mgstat' || (k === 'echo' && v === 'mgstat')) mgstat(c); else stats.cvars[k] = v; },
   ClientCommand: () => {},
   EntFireAtTarget: ({ target, input, value }) => {
     if (input === 'Skin') { stats.skins++; target.skin = value; obsEnt(target); }

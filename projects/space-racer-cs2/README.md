@@ -80,9 +80,11 @@ cd test && tsc -p tsconfig.json    # type check against point_script.d.ts
 ## Server stats
 
 The maps need no plugin, but they can report stats to one: `SERVER_STATS: true` in the script's `CONFIG` (off by default) sends
-`mgstat <slot> races_finished|race_podiums|race_wins|track_kills` and `mgstat <slot> time <track>[_lap] <ms>` as server commands, or a
-plugin switches it on at load with `RunScriptInput mgstat_on` on the map's `spr_script` (SlimeMG does). The mock test checks the
-commands: `node test/mock_cs2.mjs 20 44 400 churn,statsinput`. Details in `CHANGELOG.md` (v0.7.0).
+`echo mgstat <slot> races_finished|race_podiums|race_wins|track_kills` and `echo mgstat <slot> time <track>[_lap] <ms>` as server
+commands, or a plugin switches it on at load with `RunScriptInput mgstat_on` on the map's `spr_script` (SlimeMG does). They go through
+`echo` because a dedicated server drops Workshop map commands that are not on Valve's allow list; a plugin reads the echo lines that
+start `mgstat ` (v0.7.1). The mock test checks the commands: `node test/mock_cs2.mjs 20 44 400 churn,statsinput`. Details in
+`CHANGELOG.md` (v0.7.0, v0.7.1).
 
 ## Next compile (earmarked 5 Nov 2026, from the slime-mg-gm server tests)
 - `CONFIG.CVARS_ALWAYS` is sent once at activation; a server that re-runs its mode cfg after the map loads (slime-mg-gm does, 0.25 s in) overrides it. Send it again at every round start too. (The server repeats the values in its own per-map cfg meanwhile.)

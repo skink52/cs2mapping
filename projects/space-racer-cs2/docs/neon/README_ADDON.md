@@ -59,3 +59,5 @@ Source: github.com/skink52/cs2mapping/tree/main/projects/space-racer-cs2. `SPR_T
 The map needs no plugin. With one that understands `mgstat` (SlimeMG), the script reports each human's finishes, podiums, wins,
 wrecks dealt during the race and best race and lap times per track. It is off in the build (`CONFIG.SERVER_STATS`); the plugin
 switches it on at load (`RunScriptInput mgstat_on` on `spr_script`). Without a plugin the switch stays off and nothing is sent.
+The lines go out as `echo mgstat ...` (v0.7.1): a dedicated server drops Workshop map commands that are not on Valve's allow list,
+and `echo` is on it.

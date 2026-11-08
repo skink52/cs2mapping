@@ -36,11 +36,12 @@ function cvars(list) { if (CONFIG.APPLY_CVARS) for (const c of list) Instance.Se
 // <track> <ms>" keeps the best time per map and track. Sent at the finish (races_finished; race_podiums for the top 3;
 // race_wins for first; the race time; the final lap, which has no lap event of its own), at every lap (the lap time) and
 // at a wreck dealt to the other side during the race (track_kills: the end-of-race kill cascade is left out). Bots and
-// warmup don't count. A few commands a race per human, so nothing is batched.
+// warmup don't count. A few commands a race per human, so nothing is batched. Each goes out as "echo mgstat ...": a dedicated
+// server drops any command a Workshop map sends that isn't on Valve's allow list, and echo is on it (the plugin reads echo lines).
 let statsOn = !!CONFIG.SERVER_STATS;
 function mgstat(pe, rest) {
   if (!statsOn || !pe || pe.bot || Instance.IsWarmupPeriod()) return;
-  guard('mgstat', () => Instance.ServerCommand('mgstat ' + Math.floor(pe.slot) + ' ' + rest));
+  guard('mgstat', () => Instance.ServerCommand('echo mgstat ' + Math.floor(pe.slot) + ' ' + rest));
 }
 const trackKey = (T) => String(T.id).replace(/[^a-z0-9_]/gi, '');
 const msOf = (s) => Math.max(0, Math.round(s * 1000));

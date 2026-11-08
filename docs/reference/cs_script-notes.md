@@ -186,7 +186,11 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   `mp_buy_anywhere 0`, `mp_buytime 0`, `mp_death_drop_gun 0` (Hellmatch, Space Racer). `sv_disable_radar 1` if the radar would show parked pawns.
   Offer a switch (Hellmatch `APPLY_CVARS`) so a server can keep its own config. Auto teams without the menu:
   `mp_force_assign_teams 1`, `sv_disable_teamselect_menu 1`. No starting pistols: `mp_t_default_secondary ""`, `mp_ct_default_secondary ""`.
-- Talking to a server plugin: `Instance.ServerCommand("<plugin_cmd> {slot} …")` is the only channel.
+- Talking to a server plugin: `Instance.ServerCommand("echo <plugin_cmd> {slot} …")` is the only channel. Send it through `echo`: a
+  dedicated server drops any command a Workshop map sends that is not on Valve's allow list (`scripts/workshop_cvar_whitelist.txt` in
+  pak01; the console prints `DISALLOWED WORKSHOP COMMANDS: <cmd>`) unless it runs with `-disable_workshop_command_filtering`, and
+  `echo` is on the list. The plugin listens to `echo` and acts on lines that start with its command (SlimeMG: `mgstat`,
+  `ttt_srv_msg`, `ttt_srv_hello`; 8 Nov 2026). Without a plugin the line only prints in the server console.
 - The other way, plugin to script: the plugin sends the `point_script` `RunScriptInput <name>` and the script's `OnScriptInput(name)` runs. Scripts can't
   read cvars, and `RegisterCheatCommand` needs `sv_cheats`, so this is how a server switches a map script off (cs2mapTTT `ttt:server`; untested with a real plugin).
 

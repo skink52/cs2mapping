@@ -19,8 +19,8 @@ done
 echo "== server plugin at load"
 out=$(MOCK_VERBOSE=1 node "$CM/create/test/mock_point_script.mjs" "$JS" "$T/ents.json" players=16 seconds=300 seed=4 held churn noinputs=ttt:server,ttt_server fire=ttt_server@1 hud="$HUD") || { echo "$out" | tail -20; exit 1; }
 echo "$out" | grep -q "ttt.js is off" || { echo "FAIL: no off message"; exit 1; }
-# only the plugin channel (ttt_srv_hello at load, ttt_srv_msg for map messages) may reach the server while switched off
-echo "$out" | grep -E "^Instance calls:" | grep -oE "ServerCommand [A-Za-z_]+ x" | grep -v "ServerCommand ttt_srv_" | grep -q . && { echo "FAIL: ServerCommand while switched off"; exit 1; }
+# only the plugin channel (echo ttt_srv_hello at load, echo ttt_srv_msg for map messages) may reach the server while switched off
+echo "$out" | grep -E "^Instance calls:" | grep -oE "ServerCommand [A-Za-z_]+ x" | grep -vE "ServerCommand (ttt_srv_|echo)" | grep -q . && { echo "FAIL: ServerCommand while switched off"; exit 1; }
 echo "$out" | grep -E "^EntFire:" | grep -q "ttt_" && { echo "FAIL: map relays fired while switched off"; exit 1; }
 echo "$out" | grep -E "^OK" || exit 1
 m="$D/maps/ttt_minecraft.json"; [ -f "$m" ] || m=$(ls "$D"/maps/*.json 2>/dev/null | head -1)

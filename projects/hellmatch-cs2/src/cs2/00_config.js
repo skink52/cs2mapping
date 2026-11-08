@@ -38,8 +38,9 @@ const CONFIG = {
   MONSTER_PODIUM: true,          // Boss Battle: at round end the arena's top 3 monster killers get real CS2 kills, the others dying credited to them
   MONSTER_PODIUM_SHARES: [50, 30, 20],   // how the others are shared out: 1st, 2nd, 3rd (like Space Racer's podium)
 
-  // ---- stats for a server plugin: "mgstat <slot> <stat> [n]" server commands (pve_kills, boss_kills, lms_wins).
-  // Off by default: a server without the plugin would print "Unknown command" in its console for each one.
+  // ---- stats for a server plugin: "echo mgstat <slot> <stat> [n]" server commands (pve_kills, boss_kills, lms_wins), through
+  // echo because a dedicated server drops Workshop map commands that aren't on Valve's allow list.
+  // Off by default: a server without the plugin would print each one in its console.
   // A plugin can also switch it on for the current map: point_script fdm_script, input RunScriptInput "mgstat_on"
   SERVER_STATS: false,
   SERVER_STATS_EVERY: 1,         // seconds: monster kills are added up per player and sent at most this often
@@ -111,4 +112,4 @@ const CONFIG = {
 };
 
 const ZSCALE = 1.2;
-const VERSION = "0.2.1";
+const VERSION = "0.2.2";

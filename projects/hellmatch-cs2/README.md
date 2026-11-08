@@ -53,8 +53,10 @@ entities onto that map instead of starting from the template.
 ## Server stats
 
 The map needs no plugin, but it can report stats to one: `SERVER_STATS: true` in the script's `CONFIG` (off by default) sends
-`mgstat <slot> pve_kills|boss_kills <n>` and `mgstat <slot> lms_wins` as server commands, or a plugin switches it on at load with
-`RunScriptInput mgstat_on` on `fdm_script`. Details in `README_HELLMATCH.md` (Server stats) and `docs/STATUS.md` (5 Nov 2026).
+`echo mgstat <slot> pve_kills|boss_kills <n>` and `echo mgstat <slot> lms_wins` as server commands, or a plugin switches it on at load
+with `RunScriptInput mgstat_on` on `fdm_script`. They go through `echo` (v0.2.2) because a dedicated server drops Workshop map commands
+that are not on Valve's allow list; a plugin reads the echo lines that start `mgstat `. Details in `README_HELLMATCH.md` (Server stats)
+and `docs/STATUS.md` (5 and 8 Nov 2026).
 
 ## Credits and licences
 

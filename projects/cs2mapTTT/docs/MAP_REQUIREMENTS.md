@@ -1,6 +1,6 @@
 # What ttt.js needs for the ported TTT maps: status
 
-Requirements from the cs2mapping ports (ttt_minecraft, ttt_cg_skyscraper_2017), 29 Oct 2026, and how cs2mapTTT covers them.
+Requirements from the cs2mapping ports (ttt_minecraft, ttt_cg_skyscraper_2017; its map data is keyed `ttt_skyscraper`, the name its Workshop build loads as), 29 Oct 2026, and how cs2mapTTT covers them.
 Mock-engine tested only; in-game checks are in [../TESTING.md](../TESTING.md).
 
 | # | Requirement | Status |

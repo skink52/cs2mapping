@@ -118,10 +118,11 @@ const CONFIG = {
   SOUND_PREFIX: 'spr_snd_',
   MAP_PARAMS: 'spr_map_params',
 
-  // ---- stats for a server plugin: "mgstat <slot> <stat> [n]" / "mgstat <slot> time <track> <ms>" server commands at the
+  // ---- stats for a server plugin: "echo mgstat <slot> <stat> [n]" / "echo mgstat <slot> time <track> <ms>" server commands at the
   // finish (races_finished, race_podiums, race_wins, the race time and the final lap), every lap (the lap time) and a wreck
-  // dealt during the race (track_kills; the end-of-race cascade is not counted). Off by default: a server without the
-  // plugin would print "Unknown command" for each one. A plugin switches it on for the map without a map edit:
+  // dealt during the race (track_kills; the end-of-race cascade is not counted). Sent through echo because a dedicated server
+  // drops Workshop map commands that aren't on Valve's allow list. Off by default: a server without the plugin would print
+  // each one in its console. A plugin switches it on for the map without a map edit:
   // point_script spr_script, input RunScriptInput "mgstat_on" (SlimeMG's MapScriptInputs).
   SERVER_STATS: false,
 
@@ -129,4 +130,4 @@ const CONFIG = {
   DEBUG: false,
 };
 
-const VERSION = '0.7.0';
+const VERSION = '0.7.1';

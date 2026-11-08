@@ -1,5 +1,16 @@
 # Space Racer changelog
 
+## v0.7.1: server stats reach a plugin on Workshop maps (8 Nov 2026)
+
+- **Stats go out as `echo mgstat ...`** (all three games). A dedicated server drops any command a Workshop map's script
+  sends that is not on Valve's allow list (`DISALLOWED WORKSHOP COMMANDS: mgstat` in its console), so the stats only
+  reached a plugin on maps not loaded from the Workshop, or on a server started with `-disable_workshop_command_filtering`.
+  `echo` is on the list, and SlimeMG reads echo lines that start `mgstat ` (it still takes the plain command). The
+  arguments are unchanged: `mgstat <slot> <stat> [n]` / `mgstat <slot> time <track> <ms>`. Without a plugin (and stats
+  switched on) the only effect is the echo line in the server console. The mock now requires the `echo ` prefix
+  (`node test/mock_cs2.mjs 20 44 400 churn,held,statsinput`: 0 off-contract commands; the v0.7.0 script fails it).
+  Needs a Hammer rebuild and Workshop update of mg_space_racer, mg_neon_racer and mg_depth_racer.
+
 ## v0.7.0: a move set per title, the cars retuned, cars sit on the road (4 Nov 2026)
 
 - **Each title has its own four E moves** (`ABILITY_SETS` in `src/core/00_defs.js`, picked by `GAME_THEME`, which

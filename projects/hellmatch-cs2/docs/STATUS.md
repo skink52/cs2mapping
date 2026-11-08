@@ -20,6 +20,13 @@ and Panorama files recompile. Zach doesn't code: plain-language explanations, li
 - `CONFIG.CVARS_ALWAYS` (radar off, no money, no buy time, respawn immunity 0) is sent once at activation and the server's mode cfg re-run 0.25 s later overrode it (radar was on, start money 800). The server now repeats them in its per-map cfg; in the script, send them again at every round start too.
 - The game addon has the CS2 stub `cfg/maps/mg_freedm.cfg` (old name, so harmless now); delete it before the next upload (docs/reference/cs2-gotchas.md).
 
+## Update 8 Nov 2026 - stats through echo, script v0.2.2
+Script only (src/cs2/00_config.js, 60_main.js; the built maps/scripts/freedm.js in the PC addon was patched the same way, since a full
+build needs Freedoom): each stat now goes out as `echo mgstat <slot> <stat> [n]`. A dedicated server drops any command a Workshop map
+sends that is not on Valve's allow list (`DISALLOWED WORKSHOP COMMANDS: mgstat`), unless it runs with `-disable_workshop_command_filtering`;
+`echo` is on the list and SlimeMG reads echo lines that start `mgstat ` (it still takes the plain command). The mock requires the prefix
+now; it was not run on the PC (no build outputs there). Rebuild mg_hellmatch in Hammer and update its Workshop item to carry it.
+
 ## Update 5 Nov 2026 - server stats for a plugin (mgstat), script v0.2.1
 Script only (src/cs2/00_config.js, 60_main.js): no Hammer/model changes, but the map has to be rebuilt in Hammer and re-uploaded to carry it.
 NOT YET RUN IN CS2.

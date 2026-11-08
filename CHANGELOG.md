@@ -3,6 +3,19 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-08: map scripts reach a server plugin on Workshop maps (echo)
+
+- **[ttt]** `ttt.js` sends `echo ttt_srv_msg …` and `echo ttt_srv_hello` instead of the bare commands: a dedicated server drops
+  Workshop map commands that are not on Valve's allow list (`DISALLOWED WORKSHOP COMMANDS: ttt_srv_hello` on the server manager's
+  server with ttt_minecraft), and `echo` is on it. Arguments unchanged. `test/run_mock.sh` lets `echo` through while the script is
+  switched off (passes). The skyscraper's map data is now keyed `ttt_skyscraper` (`maps/ttt_skyscraper.json`), the name its Workshop
+  build loads as; under the old key ttt.js registered none of its alpha triggers. Copied into all four TTT addons on the PC.
+- **[space-racer] v0.7.1** and **[hellmatch] v0.2.2**: stats go out as `echo mgstat …` (same arguments); both mocks require the prefix.
+  The racer mock passes (0 off-contract commands); Hellmatch's mock needs build outputs this PC doesn't have, so its built
+  `freedm.js` was patched like the source and checked by syntax and by running its stat sender. Copied into the PC addons.
+- Needs Hammer rebuilds and Workshop updates: ttt_minecraft, ttt_skyscraper, mg_space_racer, mg_neon_racer, mg_depth_racer,
+  mg_hellmatch. Gotcha and cs_script note added. slime-mg-gm's SlimeMG reads the echo lines (and still the plain commands).
+
 ## 2026-11-08: ba_jail_keimusho built without vis
 
 - **[port ba_jail_keimusho]** player bodies vanished (weapons stayed) at some camera angles around the cell block; `vis_enable 0` fixed it with fine FPS,

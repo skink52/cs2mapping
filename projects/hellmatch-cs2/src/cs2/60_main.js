@@ -248,12 +248,13 @@ function monsterScore(arena, e) {
 // pve_kills (every monster kill, Boss Battle or monsters loose in deathmatch), boss_kills (a boss, also a pve kill),
 // lms_wins (the last man standing). Monster kills are added up per player and sent once a second (SERVER_STATS_EVERY),
 // and before the player's slot is freed and at the end of the round. Bots and warmup don't count.
-// PvP kills and deaths are real CS2 kills, so the plugin gets those from game events.
+// PvP kills and deaths are real CS2 kills, so the plugin gets those from game events. Each goes out as "echo mgstat ...": a
+// dedicated server drops any command a Workshop map sends that isn't on Valve's allow list, and echo is on it (the plugin reads echo lines).
 let statsOn = !!CONFIG.SERVER_STATS;
 const statPending = new Map();   // slot -> { pve, boss }
 let statNext = 0;
 function statSend(slot, stat, n) {
-  const cmd = "mgstat " + Math.floor(slot) + " " + String(stat).replace(/[^a-z0-9_]/gi, "") + (n > 1 ? " " + Math.floor(n) : "");
+  const cmd = "echo mgstat " + Math.floor(slot) + " " + String(stat).replace(/[^a-z0-9_]/gi, "") + (n > 1 ? " " + Math.floor(n) : "");
   guard("mgstat", () => Instance.ServerCommand(cmd));
 }
 function statHuman(slot) {

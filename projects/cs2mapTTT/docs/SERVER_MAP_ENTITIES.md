@@ -20,7 +20,7 @@ ttt.js starts TTT `SERVER_WAIT` seconds (3) after the map loads. With the plugin
 | Map | TTT messages it sends | Data in `MAP_DATA` | Own io script |
 |---|---|---|---|
 | ttt_minecraft | chk, role, txt, txtoff, own, unown, cred, btnoff, ptouch, duck, win; 5 traitor buttons | yes, full | `ttt_minecraft_io` (needs §6 carry owner) |
-| ttt_cg_skyscraper_2017 | alpha only | yes, alphas only | `ttt_cg_skyscraper_2017_io` |
+| ttt_skyscraper (port of ttt_cg_skyscraper_2017) | alpha only | yes, alphas only (key `ttt_skyscraper`, the name the Workshop build loads as) | `ttt_cg_skyscraper_2017_io` |
 | ttt_island17_pezversion | none | none, a plain map | none |
 | ttt_terrortrain | none | none, a plain map | `ttt_terrortrain_io` |
 
@@ -64,13 +64,16 @@ Check in game: the server console shows the line above on every map load, and ne
 server command, so the plugin needs no entity IO hook:
 
 ```
-ttt_srv_msg <slot> <activator name> <op> <id>      slot: the activator's player slot, or -1 (a prop or none)
-                                                   activator name: its targetname for a non-player, "-" for a player or none
-ttt_srv_hello                                       sent once at script load: answer with ttt:server (§0) at once
+echo ttt_srv_msg <slot> <activator name> <op> <id>   slot: the activator's player slot, or -1 (a prop or none)
+                                                     activator name: its targetname for a non-player, "-" for a player or none
+echo ttt_srv_hello                                   sent once at script load: answer with ttt:server (§0) at once
 ```
 
-Register both as server-only console commands. The console splits arguments at `:`, so don't put colons in them; ids are joined back from
-the remaining arguments. A server without a plugin prints "Unknown command" once for `ttt_srv_hello` and nothing else changes.
+They go through `echo` (8 Nov 2026) because a dedicated server drops any command a Workshop map sends that is not on Valve's allow list
+(`DISALLOWED WORKSHOP COMMANDS` in the console), and `echo` is on it. Listen for the server-only `echo` command and act on lines whose
+first word is `ttt_srv_msg` or `ttt_srv_hello`; keep the plain commands registered too, for older map builds. The console splits
+arguments at `:`, so don't put colons in them; ids are joined back from the remaining arguments. A server without a plugin just prints
+the echo lines in its console and nothing else changes.
 Why: on CounterStrikeSharp 1.0.379, reading entity IO connections crashes the server (CSS issue #975; `HookEntityOutput("*","*")` crashed
 a test server on round restarts), and the `CEntityInstance_AcceptInput` / `AddEntityIOEvent` hooks never see zero-delay map outputs.
 Maps from before this change don't forward; they need the new ttt.js. The input-hook text below is kept for other plugin frameworks.

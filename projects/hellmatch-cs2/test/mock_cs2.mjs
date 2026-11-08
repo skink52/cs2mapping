@@ -181,6 +181,8 @@ for (let i = 0; i < HUMANS + BOTS; i++) players.push(new Controller(i, (i < HUMA
 const mg = { sent: 0, byStat: {}, bad: [], bots: 0, early: 0, perSecond: new Map() };
 function mgstat(c) {
   mg.sent++;
+  if (!c.startsWith('echo mgstat ')) { mg.bad.push(c); return; }   // a bare mgstat never reaches a plugin on a Workshop map
+  c = c.slice(5);
   const m = /^mgstat (\d+) ([a-z_]+)(?: (\d+))?$/.exec(c);
   if (!m || /[;"]/.test(c)) { mg.bad.push(c); return; }
   const ctrl = players.find((p) => p.slot === +m[1] && p.connected);
@@ -214,7 +216,7 @@ const Instance = {
   FindEntitiesByName: (n) => (world.get(n) ? [world.get(n)] : []),
   GetAllPlayerControllers: () => players.filter((p) => p.connected),
   GetPlayerController: (s) => players.find((p) => p.slot === s && p.connected),
-  ServerCommand: (c) => { const [k, v] = c.split(' '); if (k === 'say') stats.says.push(c.slice(4)); else if (k === 'mgstat') mgstat(c); else stats.cvars[k] = v; },
+  ServerCommand: (c) => { const [k, v] = c.split(' '); if (k === 'say') stats.says.push(c.slice(4)); else if (k === 'mgstat' || (k === 'echo' && v === 'mgstat')) mgstat(c); else stats.cvars[k] = v; },
   ClientCommand: () => {},
   EntFireAtTarget: ({ target, input, value }) => { TRACE && th('E' + target.name + input + (value === undefined ? '' : value));
     if (input === 'Skin') stats.skins++;
