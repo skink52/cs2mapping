@@ -3,6 +3,12 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-08: ttt_island recompiled; the no-recompile rename withdrawn
+
+- **[port ttt_island17_pezversion]** the repacked `ttt_island.vpk` (entry below) loaded but had **no collision** anywhere (skink52,
+  testing from Hammer). `scripts/rename_map_vpk.py` is removed; the gotcha now says to recompile under the new name. The content vmap
+  is now `maps/ttt_island.vmap` and skink52 is recompiling it.
+
 ## 2026-11-08: ttt_island17_pezversion renamed to ttt_island without a recompile
 
 - **[port ttt_island17_pezversion]** the compiled map now loads as **ttt_island**: new `scripts/rename_map_vpk.py` repacks a map vpk
