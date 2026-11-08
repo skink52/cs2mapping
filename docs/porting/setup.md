@@ -12,6 +12,7 @@ folders but can't start programs there.
 | `tools/*` except `tools/weapons/` (a creation tool, not needed for porting) | `C:\source1\cs2port\tools\` (this includes `tools/README.md`, the tool index) |
 | `docs/porting/pipeline.md` | `C:\source1\cs2port\cs2_port_pipeline.md` (and the claude.ai project doc `claude/cs2_port_pipeline.md`) |
 | `scripts/run_import.bat`, `run_build.bat`, `build_maps.ps1`, `run_import_then_build.bat`, `run_build_one_example.bat` | `C:\source1\cs2port\` |
+| `scripts/rename_map_vpk.py` | `C:\source1\cs2port\` |
 | `scripts/make_import_map_auto.py` | `C:\source1\cs2port\` - run once (below); it writes `C:\source1\cs2port\import_map_auto.py` |
 | `scripts/post_import_cleanup.py`, `scripts/vmap_refs.py`, `scripts/modelsfromrefs.py` | `<CS2>\game\csgo\import_scripts\` (next to Valve's `import_map_community.py`, they import its `utils`) |
 | `data/existing_ports.txt` | `C:\source1\cs2port\existing_ports.txt` (the PC copy is the live one) |

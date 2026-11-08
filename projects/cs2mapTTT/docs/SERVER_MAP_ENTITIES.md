@@ -21,7 +21,7 @@ ttt.js starts TTT `SERVER_WAIT` seconds (3) after the map loads. With the plugin
 |---|---|---|---|
 | ttt_minecraft | chk, role, txt, txtoff, own, unown, cred, btnoff, ptouch, duck, win; 5 traitor buttons | yes, full | `ttt_minecraft_io` (needs §6 carry owner) |
 | ttt_skyscraper (port of ttt_cg_skyscraper_2017) | alpha only | yes, alphas only (key `ttt_skyscraper`, the name the Workshop build loads as) | `ttt_cg_skyscraper_2017_io` |
-| ttt_island17_pezversion | none | none, a plain map | none |
+| ttt_island (port of ttt_island17_pezversion) | none | none, a plain map | none |
 | ttt_terrortrain | none | none, a plain map | `ttt_terrortrain_io` |
 
 **Where the map data is:** in `ttt.js` between `// MAP_DATA_BEGIN` and `// MAP_DATA_END`. It is one JSON object keyed by map name,

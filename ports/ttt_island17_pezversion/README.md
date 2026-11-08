@@ -12,6 +12,15 @@ A CS2 Island17 is on the Workshop: [[TTT] Island17](https://steamcommunity.com/s
 
 ## History
 
+- 2026-11-08: **renamed to ttt_island** before its first upload, without a recompile: `scripts/rename_map_vpk.py` repacked the
+  compiled `maps/ttt_island17_pezversion.vpk` as `maps/ttt_island.vpk` (tested on the dedicated server: the world loads, SlimeMG runs
+  TTT and switches the map's ttt.js off). In the game addon, `maps/ttt_island.txt`, `_cameras.txt`, `_retakes.txt`,
+  `resource/overviews/ttt_island.txt` and the radar `ttt_island_radar_psd.vtex_c` replace the old-name files, and the stub
+  `cfg/maps/ttt_island17_pezversion.cfg` is gone; the skybox vpk, postprocess and lighting keep the old name (referenced by path).
+  The originals are in `C:\source1\archive\ttt_island17_pezversion_before_rename\`. The addon folders and the content `.vmap`
+  keep the old name: before the next compile, Save As `maps/ttt_island.vmap` in Hammer (and rename the radar png in content to
+  `ttt_island_radar_psd.png`), or the build writes ttt_island17_pezversion again. Also has the 8 Nov ttt.js (echo channel).
+
 - 2026-11-02: stage A–D through autoport: 126 dropped displacements restored, 3D skybox split, water pass, final `visfit`.
 - Vis: 87.9 billion cubic units of play space, 17 Low, 1 Lower, 1 Lowest. About 13 minutes, collapsing 218,171 regions to 53,423. The whole map build takes about 15 minutes.
 

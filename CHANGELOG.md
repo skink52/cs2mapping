@@ -3,6 +3,14 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-08: ttt_island17_pezversion renamed to ttt_island without a recompile
+
+- **[port ttt_island17_pezversion]** the compiled map now loads as **ttt_island**: new `scripts/rename_map_vpk.py` repacks a map vpk
+  under a new name (copies `maps/<name>.vmap_c`, `.nav` and the top-level world files to the new name and rewrites the paths and
+  resource ids in the new map file and manifests; ids are MurmurHash64B, seed 0xEDABCDEF). Tested on the dedicated server: the world
+  loads and SlimeMG runs TTT on it. Side files renamed, old vpk and cfg stub removed (originals archived). Gotcha added: renaming
+  the vpk alone fails (`CREATE_SERVER_FAILED`). The content `.vmap` still has the old name: Save As before the next compile.
+
 ## 2026-11-08: map scripts reach a server plugin on Workshop maps (echo)
 
 - **[ttt]** `ttt.js` sends `echo ttt_srv_msg …` and `echo ttt_srv_hello` instead of the bare commands: a dedicated server drops
