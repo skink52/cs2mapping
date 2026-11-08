@@ -12,6 +12,7 @@ Mario-themed multigame lobby with 20+ minigames (Mario Says, Hexagon Heat, Platf
 
 ## History
 
+- 2026-11-09: **ranged music resumes when you come back** (28_slowly_slowly_converted): CS2 stopped a non-looping sound for good once the listener was out of range. `voice_culling_threshold = -1.0` keeps it playing silently (`tools/rangedmusic.py`). vsndevts compiled, backup `soundevents_addon.vsndevts.bak_20261109`; not yet heard in game or uploaded.
 - 2026-10-11: soundevents built from the map's 46 sounds. Every ambient_generic became a point_soundevent, with `PlaySound` → `StartSound` (`StopSound` stays).
 - 2026-10-11/13: ported with the manual flow. `mario_io.js` replaced the `!activator AddOutput targetname` filters, player alpha/colour, player_speedmod, trigger_gravity, retargetable teleporters (`AddOutput target`), game_round_end, the Block Fort random spawn sorter, the Chain Chomp's 16 phys_thrusters (the script glides Dog_box), the spawn-box mushroom power-up and the spawn strip. `overlays.js` + Panorama replaced 25 env_screenoverlays. `teleports.js` replaced SetRemoteDestination for the MVP game. `changemodel.js` and `mvp_health_increase.js` are ports of the map's VScripts.
 - 2026-10-12: filter audit (warnings about missing filter targets are names the script gives players, such as `predator` and `marine`). A new `part1_spawn` destination for the five part1 teleports, which pointed at one that never existed. Dead Mario Kart teleports removed. Moondome with `sky_pipeplaza`.

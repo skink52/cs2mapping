@@ -9,6 +9,7 @@
 
 ## History
 
+- 2026-11-09: **ranged music resumes when you come back** (kohzteccourse.06_metal_man): CS2 stopped a non-looping sound for good once the listener was out of range. `voice_culling_threshold = -1.0` keeps it playing silently (`tools/rangedmusic.py`). vsndevts compiled, backup `soundevents_addon.vsndevts.bak_20261109`; not yet heard in game or uploaded.
 - 2026-10-16: stages A–C in the second pipeline batch. Its assets went over in two zips. The extra knife equip was dropped because the map already gives one.
 - 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 48 Low → 87 Low, 103 Lower, 1 Lowest; hint volume in billion cubic units Low 71.8, Lowest 629.9 → Low 39.1, Lower 18.5, Lowest 764.5. Sky shells: 8 of 35 set to Exclude from Vis. The big sky-boxed room in the south-west has no spawn or teleport destination, but it has a button and triggers, so it is treated as playable. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 

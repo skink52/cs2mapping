@@ -11,6 +11,7 @@ Separate 3D skybox map (`ba_jail_lightsout_3dskybox.vmap`, referenced by a `skyb
 
 ## History
 
+- 2026-11-09: **ranged music resumes when you come back** (disco1-3): CS2 stopped a non-looping sound for good once the listener was out of range. `voice_culling_threshold = -1.0` keeps it playing silently (`tools/rangedmusic.py`). vsndevts compiled, backup `soundevents_addon.vsndevts.bak_20261109`; not yet heard in game or uploaded.
 - 2026-10-25: radar re-rendered with textured floors (`radar.py` + `radartex.py`).
 - 2026-10-24: Radar (`radar.py`), 3 loading-screen images (Workshop thumbnails, upscaled). Credits file already existed (Dom). Assets compile with `run_build.bat "assets ba_jail_lightsout"`.
 - Around its import (10-01): the importer needed the content root `C:\source1` (where the VMF is), not the CS:GO content folder. The environment prefab (about 15 MB, 1,457 entities) was pasted in with Paste Special. Alpha masks for glow and blood decals; static overlays toned down with `g_fTextureColorBrightness` 0.3. Its compile log: 123 light_omni2 asked for shadow slots and 102 failed; the vis boundary pass took about 1,018 s.

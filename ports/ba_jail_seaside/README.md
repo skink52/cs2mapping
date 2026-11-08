@@ -11,6 +11,7 @@ Jailbreak map with cs_script additions: a knife dodgeball minigame (balls `Dball
 
 ## History
 
+- 2026-11-09: **ranged music resumes when you come back** (disco1-3, inthenavy): CS2 stopped a non-looping sound for good once the listener was out of range. `voice_culling_threshold = -1.0` keeps it playing silently (`tools/rangedmusic.py`). vsndevts compiled, backup `soundevents_addon.vsndevts.bak_20261109`; not yet heard in game or uploaded.
 - 2026-10-25: radar re-rendered with textured floors (`radar.py` + `radartex.py`).
 - 2026-10-24: Radar (`radar.py`; the earlier RadGen one was never in the content folder). Loading screen already existed. Credits file rewritten with the `COMMUNITYMAPCREDITS:` header it was missing (hyphen). Assets compile with `run_build.bat "assets ba_jail_seaside"`.
 - 2026-08: `post_import_cleanup.py` was written for this map, because Valve's importer stopped at the first asset it couldn't handle. Its models also exposed the `cs_mdl_import` crashes: `-r` with `*.mdl` scanned about 12,164 stock models and crashed (253 of 255 failed), and an explicit file list got 152 through before one mdl/vtx checksum mismatch crashed it.

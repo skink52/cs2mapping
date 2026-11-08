@@ -3,6 +3,15 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-09: ranged music resumes when you come back
+
+- **[tools]** New `tools/rangedmusic.py`, also run by stage C `sounds`: CS2 culls an out-of-range voice (`voice_culling_threshold` 0.001 in the
+  csgo_mega stack) and a non-looping one never restarts, so disco/jukebox music stopped for good once you left its range. Ranged events with
+  ≥ 20 s of audio now get `voice_culling_threshold = -1.0` (keeps playing silently, in step when you return).
+- **[ports]** Applied and compiled (vsndevts only; backups `soundevents_addon.vsndevts.bak_20261109`): ba_jail_lightsout, ba_jail_seaside,
+  ba_jail_skylight, jb_mangaroons, jb_sides_cs2 (disco1–3, barbie, inthenavy, the Mangaroons songs), mg_enjoy_multigames (4 songs),
+  mg_kohztec_course (metal man), mg_mario_party (slowly slowly). Not yet tested in game or re-uploaded.
+
 ## 2026-11-08: cs2-slop-porting 2026-11-08g recheck (pipeline)
 
 - **[tools]** `splitfaces.mesh_write` links the open edges at corners where separate fans of faces meet fan to fan (`link_bowties`), as Valve's

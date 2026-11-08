@@ -603,7 +603,18 @@ def sounds(m, c):
         block = '\n\t///////////////////////////////////////////////////////////\n\t/////////////// MAP SOUNDS - added by the CS2 post-import clean (ambient_generic)\n\n' + '\n'.join(new.values())
         i = ev.rstrip().rfind('}')
         ev = ev[:i] + block + ev[i:]
-        c.write('soundevents/soundevents_addon.vsndevts', ev)
+    # ranged music: CS2 culls an out-of-range voice and a non-looping one never comes back; keep it playing silently (rangedmusic.py)
+    import rangedmusic
+    def _len(vsnd):
+        stem = os.path.splitext(vsnd)[0]
+        for x in ('.wav', '.mp3'):
+            d = c.files.get(stem + x)
+            if d is None and os.path.exists(os.path.join(c.content, stem + x)): d = open(os.path.join(c.content, stem + x), 'rb').read()
+            if d: return rangedmusic.length_of_bytes(d)
+        return None
+    ev, kept = rangedmusic.apply_text(ev, _len)
+    if new or kept: c.write('soundevents/soundevents_addon.vsndevts', ev)
+    if kept: c.log.append('ranged music kept playing silently out of range, so it resumes when players come back (voice_culling_threshold -1): %s' % '; '.join(kept)[:600])
     if fixed: c.log.append('%d ambient_generics pointed at %d new soundevents (%s) instead of raw .vsnd paths' % (fixed, len(added), ', '.join(sorted(added))))
     if extracted: c.log.append('stock CS:GO sounds extracted from the CS:GO VPK into the addon: %s' % ', '.join(sorted(extracted)))
     if converted: c.log.append('wavs re-encoded to 16-bit PCM: %s' % ', '.join(converted))

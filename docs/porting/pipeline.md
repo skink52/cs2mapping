@@ -93,7 +93,8 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
   (Color, Texture, Glow, Additive …) → `kRenderTransAlpha`. Not yet checked in game (see [cs2-gotchas](../reference/cs2-gotchas.md#entities-that-changed-or-vanished)).
 - **Sounds** (`sounds`): ambient_generic custom sounds → soundevents in `soundevents_addon.vsndevts` ("Play everywhere" uses the stereo base; others a 3D
   event with the original radius; radius 0 plays everywhere, as in Source 1). Stock CS:GO sounds are pulled out of CS:GO's VPK into the addon. WAVs that aren't 16-bit PCM are re-encoded (ADPCM is
-  flagged). Looping wavs with no cue marker get one (at the `smpl` loop start if there is one), since CS2 only loops wavs with markers.
+  flagged). Looping wavs with no cue marker get one (at the `smpl` loop start if there is one), since CS2 only loops wavs with markers. Ranged sounds of 20 s or more (music) get `voice_culling_threshold = -1.0` so they keep playing
+  silently out of range and resume in step when a player comes back (`tools/rangedmusic.py`; it runs over the whole vsndevts, hand-written events too).
 - **Soundscript names** (`soundscripts`, `tools/soundscripts.py`): Source 1 soundscript names (`MetalGrate.ImpactHard`) in any entity keyvalue, or in a
   CS:GO door's noise1/noise2, are silent in CS2. Each becomes a soundevent with the same name (no entity changes), from the map's own
   `maps/<map>_level_sounds.txt` / `scripts/*sound*.txt` first, then CS:GO's `scripts/game_sounds_manifest.txt` files: every wave (rndwave → a list),
