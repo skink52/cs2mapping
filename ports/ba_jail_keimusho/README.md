@@ -159,6 +159,19 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
   final build without vis (2048 lightmaps, quality 2, 10 threads) 15 min against 49 min with it; vpk 153,628,119 bytes, no
   `world_visibility.vvis_c` inside (checked). **Confirmed in game by skink52:** bodies stay visible around the cells.
 - Entity-only / lighting builds start from the current .vpk, so they keep whatever vis it has: do one full or final build first.
+- **Fire game hurt with all fires out** (skink52, seen on the fire11-20 side). A case pick starts `fireN` at 0.1 s but enables `firehurtN`
+  and unlocks `fireNbrush` at 2.0 s (Sweep at 2.1 s). When a burning fire was picked again and put out inside that window, the late
+  Enable/Unlock/Sweep landed after the button's Disable: that half took 4 dps with no fire, and an invisible button stayed usable. Not a designed
+  penalty, but the slower side has more fires burning, so more re-picks, so it hit this more often.
+  Fix ([`fix_20261108_firebuttons.py`](fix_20261108_firebuttons.py)): a `logic_branch` `fire_litN` per fire. A pick sets it with the Start
+  (0.1 s) and Tests it at 2.0 s instead of enabling directly; OnTrue enables the hurt, unlocks the button, sweeps and (re)starts the fire;
+  OnFalse stops all four. The button clears it and Tests again at 0.15 s; `fireoff` clears all 20 at 0 and 2.5 s. `fire2brush`/`fire3brush`
+  now lock themselves. (A first try, the button repeating its stop 2.15 s later, failed the mock below: up to 2 s of fire-less damage,
+  and a fire re-picked just after being put out lost its flames but kept its hurt.)
+  **Mock-tested** with [`mock_firegame_io.py`](mock_firegame_io.py), which runs the map's own outputs from the .vmap through entity models
+  with simulated fast/slow teams and fireoff, plus scripted re-pick races, and with same-tick outputs in random order (`--shuffle`).
+  Pre-fix map: 3,653 s of fire-less damage in 20 games, longest 183 s. Fixed: none, apart from one 0.05 s blip when a press lands in the very tick of
+  the 2 s test (settled by the 0.15 s Test). Backup: `maps/ba_jail_keimusho_vmap_backup_20261108.zip`. Needs an entity build; not tested in game.
 
 ## Open
 
