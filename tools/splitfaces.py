@@ -9,6 +9,8 @@ therefore bakes blotchy and reflects the wrong place.  This cuts faces over `lim
 
 All geometry is rebuilt from polygons: vertices are welded by position, every undirected edge gets two half-edges (the twin of
 a boundary edge has face -1), and the corner data (texcoord / normal / tangent / vertex paint) is interpolated along cut edges.
+Open edges where separate fans of faces meet at one corner are linked fan to fan, as the importer writes them (link_bowties: linked
+back to their own fan, the mesh crashes Hammer on load; from cs2-slop-porting 2026-11-08g, MIT, 8 Nov 2026).
 Meshes with subdivision data (importer displacements) and non-convex faces are left alone.
 """
 import numpy as np
@@ -319,7 +321,58 @@ def mesh_write(m, node, polys):
     sd = m.g(md, b'subdivisionData')
     if sd is not None:
         setv(sd, b'subdivisionLevels', [0] * H)
+    link_bowties(m, node)
     return None
+
+
+def link_bowties(m, node):
+    """Open edges at a bowtie corner (separate fans of faces meeting at one vertex) linked fan to fan: each fan's incoming open edge ->
+    the NEXT fan's outgoing open edge, the way Valve's importer writes them (all 4,453 such corners in 6 ported maps, 8 Nov 2026; this
+    changes none of them). mesh_write's boundary pass picks the outgoing edge by index, which links most of them back to their own fan
+    (ttt_island 73 of 75, mg_n64_goldeneye 1,096 of 1,116 when re-written), and a mesh linked that way crashes Hammer on load (hammer.dll
+    null write; cs2-slop-porting 2026-11-08g found it on mg_divine / mg_hellz, MIT). Only edgeNextIndices of those open edges change.
+    -> links changed (0 if none), -1 if a fan has no open edge (left as it was)"""
+    import dmx
+    md = m.g(node, b'meshData')
+    if md is None:
+        return 0
+    dest, opp, face = m.g(md, b'edgeVertexIndices'), m.g(md, b'edgeOppositeIndices'), m.g(md, b'edgeFaceIndices')
+    na = dmx.geta(m.E[md], b'edgeNextIndices')
+    if not dest or na is None:
+        return 0
+    nxt = na[2]
+    H = len(dest)
+    inc = {}
+    for h in range(H):
+        if face[h] == -1:
+            inc.setdefault(dest[h], []).append(h)
+    if all(len(v) < 2 for v in inc.values()):
+        return 0
+    prev = [0] * H
+    for h in range(H):
+        prev[nxt[h]] = h
+    plan = []
+    for v, hs in inc.items():
+        if len(hs) < 2:
+            continue
+        pairs = []
+        for h in hs:                                # h runs into v along an open edge; turn about v through h's fan to its outgoing open edge
+            x, own = opp[h], None
+            for _ in range(H):
+                if face[x] == -1:
+                    own = x
+                    break
+                x = opp[prev[x]]
+            if own is None:
+                return -1
+            pairs.append((h, own))
+        plan += [(h, pairs[(i + 1) % len(pairs)][1]) for i, (h, _) in enumerate(pairs)]
+    changed = 0
+    for h, want in plan:
+        if nxt[h] != want:
+            nxt[h] = want
+            changed += 1
+    return changed
 
 
 # ----------------------------------------------------------------------------------------------------------- checking

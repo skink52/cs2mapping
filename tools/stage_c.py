@@ -6,13 +6,13 @@ python3 stage_c.py <addon> <local_root>
 Writes changed files to <local_root>/out/<addon>/... (content), <local_root>/out/<addon>_game/... (game-side files)
 and <local_root>/out/<addon>_result.json (log, TO CHECK lines, file list, CS:GO archives still needed).
 Step keys, in run order (run_pass.py takes any of them): merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity,
-dead, trigmat, trigsplit, toolpaths, steam, fire, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, culled, displaybrush, splitfaces,
+dead, trigmat, trigsplit, toolpaths, rendermode, renderamt, steam, fire, particles, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, culled, displaybrush, splitfaces,
 sky, skyvis, vis, beams, lights, alpha, probes, waterprobe, radar, assets, matflags, origindup (report only), droppedio
 (+ overlaydepth, physpush, nullparams when asked; nullparams always runs with io). daylight is a stage_d.py pass only.
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import dmx, vmf as vmfmod, vmapedit as V, gen_script, repair, firefx, splitfaces, waterprobe, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch, droppedio, ovlquad, ropes
+import dmx, vmf as vmfmod, vmapedit as V, gen_script, repair, firefx, particles, splitfaces, waterprobe, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch, droppedio, ovlquad, ropes
 
 CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 
@@ -238,6 +238,28 @@ def render_alpha(m, c):
         if amt < 255 and (m.P(e, 'rendermode', '0') or '0') in ('0', 'kRenderNormal'):
             m.setp(e, 'renderamt', '255'); n += 1
     if n: c.log.append('%d entities had renderamt < 255 with rendermode Normal (ignored in CS:GO, see-through in CS2): renderamt 255' % n)
+
+CS2_RENDERMODES = ('kRenderNormal', 'kRenderTransAlpha', 'kRenderNone')
+S1_RENDERMODE_NONE = ('6', '10', 'krenderenvironmental', 'krendernone')
+def render_modes(m, c):
+    """CS2's RenderMode_t has three values: kRenderNormal, kRenderTransAlpha, kRenderNone (the only kRender* mode names in the 5 Nov 2026
+    server.dll / client.dll, in that order; source1import.exe knows only kRenderNormal / kRenderNone). Its FGD still lists Source 1's ten
+    (Color, Texture, Glow, Additive ...), and the importer copies CS:GO's numbers (1, 2, 4, 5, 10 in our ports): 5 is out of range (the
+    game logs a bad enum value, cs2-slop-porting 2026-11-08g), and by value 2 would be kRenderNone. Every number / old name becomes one
+    of the three: 0 Normal; 10 Don't Render and 6 Environmental (never drawn) -> kRenderNone; every translucent / additive / glow mode
+    -> kRenderTransAlpha (CS2 has nothing closer)."""
+    cnt = collections.Counter()
+    for e in m.entities():
+        rm = m.P(e, 'rendermode')
+        if rm is None: continue
+        v = rm.strip()
+        if v in CS2_RENDERMODES or v in ('', '0'): continue           # 0 is kRenderNormal in both
+        if not (v.isdigit() or v.lower().startswith('krender')): continue
+        nv = 'kRenderNormal' if v.lower() in ('0', 'krendernormal') else 'kRenderNone' if v.lower() in S1_RENDERMODE_NONE else 'kRenderTransAlpha'
+        m.setp(e, 'rendermode', nv); cnt['%s %s -> %s' % (m.cls(e), v, nv)] += 1
+    if cnt: c.log.append('rendermode: %d entities given CS2 render mode names (CS2 has only kRenderNormal / kRenderTransAlpha / kRenderNone): %s'
+                         % (sum(cnt.values()), ', '.join('%s x%d' % kv for kv in sorted(cnt.items()))[:600]))
+    return sum(cnt.values())
 
 NATIVE_UP_PUSH = 40 / 700.0
 
@@ -590,13 +612,22 @@ def sounds(m, c):
 
 # ------------------------------------------------------------------ door sounds
 DOOR_KEYS = (('noise1', ('OnOpen', 'OnClose')), ('noise2', ('OnFullyOpen', 'OnFullyClosed')))
+# CS:GO filled an empty (or "0") move sound with these (Source SDK 2013 doors.cpp CBaseDoor::Precache, UTIL_ValidateSoundName); CS:GO's
+# scripts/game_sounds_world.txt plays ~doors/default_move.wav at volume 0.2 for both. The arrive defaults are common/null.wav (silent),
+# Door Silent (spawnflags 4096) doors play nothing, func_movelinear has no defaults. CS2 has no event of either name (8 Nov 2026).
+DOOR_DEFAULT_MOVE = {'func_door': 'DoorSound.DefaultMove', 'func_door_rotating': 'RotDoorSound.DefaultMove'}
 def vmf_door_sounds(vmfpath):
-    """(classname, targetname, [origin or brush centre], {noise1/noise2: sound}) for every CS:GO door with sounds"""
+    """(classname, targetname, [origin or brush centre], {noise1/noise2: sound}) for every CS:GO door with sounds, the default
+    move sound included (DOOR_DEFAULT_MOVE)"""
     root = vmfmod.parse(open(vmfpath, encoding='utf-8', errors='replace').read())
     out = []
     for e in root.ch:
         if e.name != 'entity' or (e.get('classname') or '').lower() not in ('func_door', 'func_door_rotating', 'func_movelinear'): continue
         snd = {k: e.get(k) for k, _ in DOOR_KEYS if e.get(k) and e.get(k) != '0'}
+        cl = e.get('classname').lower()
+        try: silent = int(float(e.get('spawnflags') or 0)) & 4096
+        except ValueError: silent = 0
+        if 'noise1' not in snd and cl in DOOR_DEFAULT_MOVE and not silent: snd['noise1'] = DOOR_DEFAULT_MOVE[cl]
         if not snd: continue
         pts = [[float(x) for x in p.split()] for s in e.ch if s.name == 'solid' for f in s.ch if f.name == 'side'
                for p in re.findall(r'\(([^)]+)\)', f.get('plane', ''))]
@@ -614,13 +645,16 @@ def door_sounds(m, c, vmfpath):
     ev = c.files.get('soundevents/soundevents_addon.vsndevts')
     ev = ev.decode('utf-8') if ev else open(evp, encoding='utf-8').read()
     prefix = re.sub(r'^(mg|de|jb|ba|cs|surf|bhop|kz)_', '', c.addon).replace('_', '')
-    added = {}; missing = set(); unmatched = 0; k = 0; nse = 0; used = set(); used_ev = set()
+    added = {}; missing = set(); unmatched = 0; k = 0; named = 0; nse = 0; dflt = 0; used = set(); used_ev = set()
+    taken = {m.name(x).lower() for x in m.entities() if m.name(x)}     # rerun-safe: port_door_N never reuses a name, outputs are never doubled
     doors = [e for e in m.by_class('func_door', 'func_door_rotating', 'func_movelinear')]
     def spots(e):
         bb = m.bounds(e)
         return [m.origin(e)] + ([[(a + b) / 2 for a, b in zip(*bb)]] if bb else [])
     for cls, name, where, snd in vmf_door_sounds(vmfpath):
-        pool = [e for e in doors if m.cls(e).lower() == cls and m.name(e).lower() == name.lower() and e not in used]
+        # an unnamed CS:GO door may already be port_door_N from an earlier run: it stays a candidate, so a rerun can't hand its sound to a neighbour
+        pool = [e for e in doors if m.cls(e).lower() == cls and e not in used and
+                (m.name(e).lower() == name.lower() or (not name and m.name(e).lower().startswith('port_door_')))]
         best = None
         if len(pool) == 1 and name: best = pool[0]
         elif pool and where:
@@ -653,7 +687,9 @@ def door_sounds(m, c, vmfpath):
                                                        vsnd=os.path.splitext(src)[0] + '.vsnd', radius=1250.0, far=0.0)
             dn = m.name(e)
             if not dn:
-                k += 1; dn = 'port_door_%d' % k; m.setp(e, 'targetname', dn)
+                k += 1
+                while 'port_door_%d' % k in taken: k += 1
+                dn = 'port_door_%d' % k; taken.add(dn); named += 1; m.setp(e, 'targetname', dn)
             sp = spots(e)[-1]
             sn = '%s_%s_snd' % (dn, key)
             if not any(m.name(x) == sn for x in m.by_class('point_soundevent')):
@@ -661,13 +697,17 @@ def door_sounds(m, c, vmfpath):
                 m.new_entity('point_soundevent', sp, {'targetname': sn, 'soundName': evname, 'sourceEntityName': dn,
                                                       'startOnSpawn': '0', 'toLocalPlayer': '0', 'stopOnNew': '1'})
                 nse += 1
-            for out in outs: m.add_conn(e, out, sn, 'StartSound')
+            have = {tuple(x.lower() for x in m.conn_tuple(cc)[:3]) for cc in m.conns(e)}
+            for out in outs:
+                if (out.lower(), sn.lower(), 'startsound') not in have: m.add_conn(e, out, sn, 'StartSound')
+            if key == 'noise1' and msg in DOOR_DEFAULT_MOVE.values(): dflt += 1
     new = {kk: v for kk, v in added.items() if '"%s"' % kk not in ev}
     if new:
         block = '\n\t///////////////////////////////////////////////////////////\n\t/////////////// DOOR SOUNDS - added by the CS2 post-import clean (func_door noise1/noise2)\n\n' + '\n'.join(new.values())
         i = ev.rstrip().rfind('}')
         c.write('soundevents/soundevents_addon.vsndevts', ev[:i] + block + ev[i:])
-    if nse: c.log.append('door sounds: %d point_soundevents (%s), started by the doors\' OnOpen/OnClose (noise1) and OnFullyOpen/OnFullyClosed (noise2); %d unnamed doors named port_door_N' % (nse, ', '.join(sorted(set(added) | used_ev)), k))
+    if nse: c.log.append('door sounds: %d point_soundevents (%s), started by the doors\' OnOpen/OnClose (noise1) and OnFullyOpen/OnFullyClosed (noise2); %d unnamed doors named port_door_N' % (nse, ', '.join(sorted(set(added) | used_ev)), named))
+    if dflt: c.log.append("door sounds: %d CS:GO doors had no move sound and played CS:GO's default (DoorSound.DefaultMove / RotDoorSound.DefaultMove: doors/default_move.wav at volume 0.2); they get it too" % dflt)
     if unmatched: c.todo.append('door sounds: %d CS:GO doors with sounds could not be matched in the vmap' % unmatched)
     if missing: c.todo.append('door sounds not found in the addon, CS2 or CS:GO: %s' % ', '.join(sorted(missing)))
 
@@ -919,7 +959,7 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'trigmat', 'toolpaths', 'trigsplit', 'renderamt', 'steam', 'fire', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'culled', 'displaybrush', 'splitfaces', 'sky', 'skyvis', 'vis', 'beams', 'ropes', 'lights', 'alpha', 'probes', 'waterprobe', 'radar', 'assets', 'matflags', 'origindup', 'droppedio']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'trigmat', 'toolpaths', 'trigsplit', 'rendermode', 'renderamt', 'steam', 'fire', 'particles', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'culled', 'displaybrush', 'splitfaces', 'sky', 'skyvis', 'vis', 'beams', 'ropes', 'lights', 'alpha', 'probes', 'waterprobe', 'radar', 'assets', 'matflags', 'origindup', 'droppedio']
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
     if 'io' in steps or 'nullparams' in steps: repair.null_params(m, c)        # before restore_io: a "(null)" output would be re-added as a "" duplicate
@@ -937,6 +977,7 @@ def run(addon, root, passes=None):
     if 'dead' in steps: dead_entities(m, c)
     if 'trigmat' in steps: repair.trigger_materials(m, c)
     if 'trigsplit' in steps: repair.split_triggers(m, c)
+    if 'rendermode' in steps: render_modes(m, c)                # Source 1 numbers -> CS2's three render mode names
     if 'renderamt' in steps: render_alpha(m, c)
     vd = os.path.join(root, 'vpk')
     if os.path.exists(os.path.join(vd, 'cs2_pak01_dir.vpk')):
@@ -946,6 +987,7 @@ def run(addon, root, passes=None):
     if 'toolpaths' in steps: repair.tool_paths(m, c)
     if 'steam' in steps: steam.run(m, c, vmfp)
     if 'fire' in steps: firefx.run(m, c)
+    if 'particles' in steps: particles.run(m, c)               # CS:GO particle system names -> CS2's particle of that name
     if 'physpush' in steps: physpush.run(m, c)
     if 'sounds' in steps: sounds(m, c)
     if 'soundscripts' in steps: soundscripts.run(m, c, vmfp)

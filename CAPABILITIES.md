@@ -49,10 +49,11 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Lighting so players and weapons aren't black: the right number of lights switched to Stationary per room; for dark indoor maps a follow-up daylight step
   adds sunlight and light probe volumes so props and players match the world; breakables and brush walls that don't move are checked to sit fully
   inside a light probe volume, and volumes are added where they don't.
-- Door sounds, ambient sounds and looping sounds converted to CS2 sound events, including stock CS:GO sounds; sound files in formats CS2 can't play re-encoded.
+- Door sounds, ambient sounds and looping sounds converted to CS2 sound events, including stock CS:GO sounds; sound files in formats CS2 can't play re-encoded. Doors that had no sound of their own get CS:GO's default door sound.
 - Named CS:GO sounds ("sound scripts", e.g. a grate clang used by a button) recreated under the same names so they play again.
 - Every light rebuilt from the original map: real colours, brightness, spotlight cones and aim, flickering and switchable lights, plus lights under water so it isn't pitch black.
 - Steam jets and heat-shimmer effects (gone in CS2) rebuilt as particle effects that switch on and off the same way.
+- Built-in CS:GO particle effects (embers, burning engines, splashes, sparks, confetti) pointed at CS2's own copies so they play again.
 - Fires that burn and hurt again (CS2's own fire effect, switched and burnt out like the original) and sparks that spark again.
 - Huge floors cut into tiles so they light evenly; water given one lighting volume so its reflection doesn't show squares.
 - Importer leftovers cleaned up: sea floors under water put back, trigger volumes spread over several pieces split so they work, decorative brushes merged into the world for even lighting, stray copies of moving parts in the middle of the map found.

@@ -57,7 +57,7 @@ do any of them by hand.
 ## Stage C fixes (automatic; the importer's main .vmap is keyvalues2 text and is saved back as binary)
 
 Step keys in run order (from `stage_c.run()`; `run_pass.py` takes these names): `merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity, dead,
-trigmat, trigsplit, toolpaths, steam, fire, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, culled, displaybrush, splitfaces, sky, skyvis, vis, beams, lights, alpha, probes,
+trigmat, trigsplit, toolpaths, rendermode, renderamt, steam, fire, particles, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, culled, displaybrush, splitfaces, sky, skyvis, vis, beams, lights, alpha, probes,
 waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`, `physpush` and `nullparams` when named; `nullparams` always runs with `io`).
 `alpha` and `assets` need CS2's `pak01_dir.vpk` staged as `<root>/vpk/cs2_pak01_dir.vpk`. `skyvis` runs only when `vis` isn't in the list.
 
@@ -87,6 +87,10 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
   targeted) or prop_static; func_breakable_surf → func_breakable (glass); func_physbox_multiplayer → func_physbox. Listed as TO CHECK, not converted: env_spritetrail, env_screenoverlay, point_clientcommand, game_ui (use the stage D `gameui` pass),
   logic_script, env_entity_igniter, func_precipitation, env_fog_controller, entities with a `vscripts` key, VScript inputs in I/O (RunScriptCode,
   RunScriptFile, CallScriptFunction), and a CS:GO 3D skybox (`sky_camera`), which needs a separate skybox map in CS2 (`skysplit.py`).
+- **Render modes** (`rendermode`, before `renderamt`; also a stage D pass): CS2's `RenderMode_t` has only `kRenderNormal`, `kRenderTransAlpha` and
+  `kRenderNone` (the game DLLs, 5 Nov 2026; the FGD still lists Source 1's ten). The importer copies CS:GO's numbers (1, 2, 4, 5, 10 in our ports), which CS2
+  reads as bad enum values or, by value, as the wrong mode (2 = kRenderNone). 0 stays; 10 Don't Render and 6 → `kRenderNone`; every other number or old name
+  (Color, Texture, Glow, Additive …) → `kRenderTransAlpha`. Not yet checked in game (see [cs2-gotchas](../reference/cs2-gotchas.md#entities-that-changed-or-vanished)).
 - **Sounds** (`sounds`): ambient_generic custom sounds → soundevents in `soundevents_addon.vsndevts` ("Play everywhere" uses the stereo base; others a 3D
   event with the original radius; radius 0 plays everywhere, as in Source 1). Stock CS:GO sounds are pulled out of CS:GO's VPK into the addon. WAVs that aren't 16-bit PCM are re-encoded (ADPCM is
   flagged). Looping wavs with no cue marker get one (at the `smpl` loop start if there is one), since CS2 only loops wavs with markers.
@@ -98,7 +102,11 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
   map-wide) and listed in TO CHECK. Method from cs2-slop-porting.
 - **Door sounds** (`doors`): the importer drops func_door / func_door_rotating / func_movelinear `noise1`/`noise2`. They are read from the VMF, made into
   soundevents (addon file, stock CS2 sound, or extracted from CS:GO's VPK), and each door gets a `point_soundevent` per sound (source entity = the door;
-  unnamed doors become `port_door_N`) started from OnOpen/OnClose (noise1) and OnFullyOpen/OnFullyClosed (noise2).
+  unnamed doors become `port_door_N`) started from OnOpen/OnClose (noise1) and OnFullyOpen/OnFullyClosed (noise2). A func_door / func_door_rotating with no
+  move sound (empty or `0`, not Door Silent) gets CS:GO's default, `DoorSound.DefaultMove` / `RotDoorSound.DefaultMove` (`doors/default_move.wav` at volume
+  0.2, defined by the `soundscripts` step; Source SDK 2013 `CBaseDoor::Precache`; 8 Nov 2026, from cs2-slop-porting 2026-11-08g). Rerun-safe: outputs are never
+  doubled, new `port_door_N` names skip ones in use, and doors an earlier run named `port_door_N` still match their CS:GO door
+  (`run_pass.py <addon> <root> soundscripts,doors` adds the defaults to a ported map).
 - **Overlays on brush entities** (`ovlquads`, after `overlayfix`; `tools/ovlquad.py`, from cs2-slop-porting, MIT): CS2 static overlays don't project onto
   entity meshes. An overlay that reaches exactly one entity and no world face becomes a translucent quad (`<material>_quad.vmat`, csgo_vertexlitgeneric,
   F_TRANSLUCENT, F_RENDER_BACKFACES) 0.25 u in front of the face, parented to the entity so it moves/breaks with it. World+entity, two entities, slanted
@@ -122,6 +130,11 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
   plus Kill at health s (+1 s for flames) unless Infinite (CS:GO removes a burnt-out fire); Extinguish s → flames stop after s, hurt at once; Disable → off;
   Kill → Kill. env_spark keeps its sound and gets `<name>_fx` with a generated vpcf66 spark particle (`particles/port_spark/`); StartSpark/StopSpark/SparkOnce/Kill
   mirrored, ToggleSpark flagged. Rerun-safe. From cs2-slop-porting 3.5 (MIT).
+- **CS:GO particle names** (`particles`, after `fire`, needs the CS2 VPK; also a stage D pass; `tools/particles.py`): an info_particle_system naming a CS:GO
+  particle system (`effect_name dust_embers`, a .pcf name) plays nothing in CS2 (import log: "Failed to find source 2 file for particle system"; build log:
+  "FixupResourceName: Illegal path, missing extension"). It gets CS2's particle of the same name (`particles/maps/de_dust/dust_embers.vpcf`; the addon's own
+  first); all 20 names our ports used are in csgo/pak01 (187 entities, 151 on mg_antique_course). Names with several or no matches are listed in TO CHECK. From
+  cs2-slop-porting 2026-11-08g (MIT), 8 Nov 2026.
 - **Trigger repairs** (`tools/repair.py`): `trigmat` sets trigger meshes that store another material (a copied floor brush) to toolstrigger; `toolpaths` repoints
   `tools*.vmat` referenced outside `materials/tools/`; `trigsplit` splits trigger_teleport / trigger_hurt / trigger_multiple spread over several meshes (or one
   mesh of separate pieces) into one entity per piece with the same name, keyvalues and outputs (they don't work in game as Hammer shows them; group them in
@@ -292,7 +305,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
 - `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, lightcover, visfit_detail, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
-  equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water, fire, splitfaces, waterprobe, culled, displaybrush, trigmat, toolpaths, trigsplit, nullparams, origindup` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
+  equipitems, rendermode, particles, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water, fire, splitfaces, waterprobe, culled, displaybrush, trigmat, toolpaths, trigsplit, nullparams, origindup` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
   - **Daylight** (`daylight`, stage D only; for indoor maps that are still dark after stage C): adds a stationary light_environment using the map's env_sky

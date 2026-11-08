@@ -3,6 +3,23 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-08: cs2-slop-porting 2026-11-08g recheck (pipeline)
+
+- **[tools]** `splitfaces.mesh_write` links the open edges at corners where separate fans of faces meet fan to fan (`link_bowties`), as Valve's
+  importer does: linked back to their own fan (what mesh_write wrote for most of them) the mesh crashes Hammer on load. Affects `splitfaces` and
+  `trigsplit`; none of the 81 vmaps on the PC has the bad kind.
+- **[tools]** New stage C step / stage D pass `particles` (`tools/particles.py`): info_particle_systems naming a CS:GO particle system get CS2's
+  particle of that name (187 entities in our ports played nothing; 151 on mg_antique_course).
+- **[tools]** New stage C step / stage D pass `rendermode`: Source 1 render mode numbers → CS2's only three names (kRenderNormal / kRenderTransAlpha /
+  kRenderNone, read from the game DLLs). In-game look of the old numbers not checked yet (ttt_terrortrain windows, kohztec `climb_endbutton`).
+- **[tools]** `doors`: doors with no move sound get CS:GO's default (`DoorSound.DefaultMove` / `RotDoorSound.DefaultMove`, doors/default_move.wav at 0.2);
+  reruns no longer double outputs or reuse `port_door_N` names. `run_c.py` default list gains `rendermode`.
+- **[autoport]** `profiles.py`: the `particles` TO CHECK lines for ambiguous / custom names are `minor` (an unknown line holds the map); CS2 VPK
+  not staged still holds it (`missing`).
+- Tested on scratch copies of four ports (no entity removed, no doubled output), not in game. Ported maps unchanged. The rest of the script, ranked:
+  [docs/reference/cs2-slop-porting-review.md](docs/reference/cs2-slop-porting-review.md). Gotchas: render modes, particle names, default door sounds,
+  the bowtie crash, the `toolsskybox_occluder` path.
+
 ## 2026-11-08: ttt_island recompiled; the no-recompile rename withdrawn
 
 - **[port ttt_island17_pezversion]** the repacked `ttt_island.vpk` (entry below) loaded but had **no collision** anywhere (skink52,

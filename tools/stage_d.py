@@ -7,7 +7,7 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         from the VMF; run before lights), equipitems (item_* out of equip slots),
         steam (env_steam -> particles), soundscripts (Source 1 soundscript names -> same-named soundevents), physpush (players push physics props by mass),
         gameui (game_ui -> key polling in the io script), physlaunch (physics-only trigger_push cannons -> script launch),
-        renderamt (renderamt 255 where rendermode is Normal), ventlight (stationary lights in vents behind func_breakable grates),
+        rendermode (Source 1 render mode numbers -> CS2's kRenderNormal / kRenderTransAlpha / kRenderNone), renderamt (renderamt 255 where rendermode is Normal), ventlight (stationary lights in vents behind func_breakable grates),
         doorsolid (doors flagged Non-solid to Player: meshes -> never-solid func_brush parented to the door),
         skyshell (moondome sky shells -> toolsskybox: the sun bakes through toolsskybox, not through a moondome),
         water (water meshes -> func_water, underwater post_processing_volume, master volume),
@@ -17,7 +17,7 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         probedetail (finer nested volumes over walkable floors: 32 outdoors, 24 indoors),
         visfit_detail (visfit + Medium over busy enclosed cells, open-sky cells with nothing standing in them left to Lowest, maps open to the void),
         lightcover (stationary lights by line-of-sight floor cover per roofed compartment + open-sky fills; for maps that are one open compartment), overlays (static overlay materials -> csgo_static_overlay, opaque ones as <name>_overlay),
-        fire (env_fire -> stock burning_fx particle + burn trigger_hurt; env_spark -> spark particle), splitfaces (lit faces over 512x512 cut on a 512 grid),
+        fire (env_fire -> stock burning_fx particle + burn trigger_hurt; env_spark -> spark particle), particles (CS:GO particle system names -> CS2's particle of that name), splitfaces (lit faces over 512x512 cut on a 512 grid),
         waterprobe (one probe volume per water surface crossed by several; also runs after water / probefill / probedetail), culled (faces culled under
         water rebuilt from the VMF), displaybrush (display-only func_brush/func_illusionary -> world meshes), trigmat, toolpaths, trigsplit (multi-mesh
         triggers -> one entity per piece), nullparams, origindup (delete the importer's copies of brush entities at the origin; stage C only reports them)
@@ -25,7 +25,7 @@ Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/conte
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import tesla, probefill, repair, firefx, splitfaces, waterprobe, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol, ropes
+import tesla, probefill, repair, firefx, splitfaces, waterprobe, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol, ropes, particles
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -68,6 +68,7 @@ def run(addon, root, passes):
             if not any(m.name(e) == c.script for e in m.by_class('point_script')):
                 sp = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]; o = m.origin(sp)
                 m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
+    if 'rendermode' in passes: stage_c.render_modes(m, c)
     if 'renderamt' in passes: stage_c.render_alpha(m, c)
     if 'ventlight' in passes: ventlight.run(m, c)
     if 'doorsolid' in passes: doorsolid.run(m, c)
@@ -85,6 +86,7 @@ def run(addon, root, passes):
     if 'toolpaths' in passes: repair.tool_paths(m, c)
     if 'trigsplit' in passes: repair.split_triggers(m, c)
     if 'fire' in passes: firefx.run(m, c)
+    if 'particles' in passes: particles.run(m, c)
     if 'culled' in passes and os.path.exists(vmfp): repair.culled_faces(m, c, vmfp)
     if 'displaybrush' in passes: repair.display_brushes(m, c)
     if 'splitfaces' in passes: splitfaces.run(m, c)

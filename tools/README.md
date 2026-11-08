@@ -47,13 +47,13 @@ Everything runs with Python 3 + numpy, scipy and Pillow, normally on the PC itse
 
 ### Stage C step keys (run order, from `stage_c.run()`)
 
-`merge, io, wall, equip, launch, push, cmd, roundcfg, score, speed, gravity, dead, renderamt, steam, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags, droppedio`,
+`merge, io, wall, equip, launch, push, cmd, roundcfg, score, speed, gravity, dead, rendermode, renderamt, steam, fire, particles, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags, droppedio`,
 plus `overlaydepth` (= `overlayfix` + projection depth 8) and `physpush` (opt-in) when named. `vis` runs `visfit.py`; `skyvis` (the older shell-only pass) runs only when `vis` isn't in the list.
 `alpha` and `assets` need `<root>/vpk/cs2_pak01_dir.vpk` and are skipped silently without it. `daylight` is **not** a stage C step.
 
 ### stage_d.py passes
 
-`beams, lights, lightcover, visfit_detail, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water`.
+`beams, lights, lightcover, visfit_detail, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, rendermode, particles, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -93,7 +93,8 @@ steps aren't stage D passes: use `run_pass.py`.
 | `radar.py` | `radar` | Radar png + vtex + `resource/overviews/<map>.txt` from the standable floors, painted with their materials. Python-only options: `slopes=True` paints steep ground (0.15 < n.z <= 0.6) under the floors, `open_water=True` draws water where nothing is under it (open sea); the water line is per pixel |
 | `firefx.py` | `fire` | env_fire (no flames, no damage in CS2) → `<name>_fx` stock `particles/burning_fx/env_fire_<size>[_smoke]` (generated vpcf66 if missing) + `<name>_hurt` 2/s burn trigger_hurt, I/O per CS:GO fire.cpp (burn-out Kill, Extinguish delay); env_spark → `<name>_fx` generated spark particle (`particles/port_spark/`) |
 | `vpcf66.py` | library | Writes generated particles in the CS2 particle editor's vpcf66 layout (steam, fire, spark, tesla, glowfix use it) |
-| `splitfaces.py` | `splitfaces` | Lit faces over 512x512 cut on a 512 world grid, one mesh (cs2-slop-porting 3.5, MIT); also `mesh_read` / `mesh_write` / `mesh_check` for half-edge meshes |
+| `splitfaces.py` | `splitfaces` | Lit faces over 512x512 cut on a 512 world grid, one mesh (cs2-slop-porting 3.5, MIT); also `mesh_read` / `mesh_write` / `mesh_check` for half-edge meshes. `mesh_write` links open edges at corners where separate fans of faces meet fan to fan, as the importer does (`link_bowties`; linked back to their own fan, the mesh crashes Hammer on load) |
+| `particles.py` | `particles` | info_particle_system still naming a CS:GO particle system (`dust_embers`, no path; plays nothing) → CS2's particle of that name from the CS2 VPK (`particles/maps/de_dust/dust_embers.vpcf`), the addon's own first; names with several or no matches listed (cs2-slop-porting 2026-11-08g, MIT) |
 | `waterprobe.py` | `waterprobe` | A func_water surface crossed by several probe volumes gets one thin volume of its own at a higher priority |
 | `repair.py` | `nullparams`, `trigmat`, `toolpaths`, `culled`, `trigsplit`, `displaybrush`, `origindup` | `(null)` output params cleared; trigger meshes → toolstrigger; tool material paths; faces culled under water rebuilt from the VMF; multi-mesh triggers → one entity per piece; display-only brushes → world meshes; importer copies of brush entities at the origin (C reports, D deletes) |
 | `spotbeam.py` | `python3 -c` / port scripts: `spotbeam.run(m, c, spots)` | point_spotlight (importer exclusion list) → never-solid func_brush cone, additive fading `materials/spotlights/spot_<rgb>.vmat`, cut at the first wall/floor; LightOn/LightOff → Enable/Disable (ba_jail_keimusho) |

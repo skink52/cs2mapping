@@ -51,7 +51,8 @@ TODO_RULES = [
     ('minor', r'env_spritetrail|overlay materials not converted|door sounds|ambient_generic|soundscript names|placeholder static overlays|non-box sky|importer leaves these out|'
               r'face scales fixed|faces still with|material file names|splitfaces: not split|env_spark|env_steam inputs|env_fire Enable|beams with no usable|re-encode|'
               r'overlays touching brush entities|projection depth|origindup|physpush: no CS:GO|compartments|'
-              r'ssbump normal maps|no VMF at|left as a prefab|was rotated|no map path|CS:GO 3D skybox|static func_breakable'),
+              r'ssbump normal maps|no VMF at|left as a prefab|was rotated|no map path|CS:GO 3D skybox|static func_breakable|'
+              r'particles: several CS2 particles|particles: no CS2 or addon particle'),
 ]
 
 def classify_todo(text):
