@@ -1,18 +1,23 @@
 {
  "copies": {
   "create/bake.py": {
+   "monsoon-cs2": "tools/bake.py",
    "trenchwarfare-cs2": "tools/bake.py"
   },
   "create/build_all_props.py": {
+   "monsoon-cs2": "tools/build_all_props.py",
    "trenchwarfare-cs2": "tools/build_all_props.py"
   },
   "create/build_prop.py": {
+   "monsoon-cs2": "tools/build_prop.py",
    "trenchwarfare-cs2": "tools/build_prop.py"
   },
   "create/check_mesh.py": {
+   "monsoon-cs2": "tools/check_mesh.py",
    "trenchwarfare-cs2": "tools/check_mesh.py"
   },
   "create/clean_stale.py": {
+   "monsoon-cs2": "tools/clean_stale.py",
    "trenchwarfare-cs2": "tools/clean_stale.py"
   },
   "create/dmx.py": {
@@ -21,60 +26,87 @@
     "tools/weapons/dmx.py"
    ],
    "hellmatch-cs2": "tools/dmx.py",
+   "monsoon-cs2": "tools/dmx.py",
    "space-racer-cs2": "tools/dmx.py",
    "trenchwarfare-cs2": "tools/dmx.py"
   },
   "create/dmx9.py": {
    "cs2-fighter": "tools/dmx9.py",
    "cs21.6": "tools/dmx9.py",
+   "monsoon-cs2": "tools/dmx9.py",
    "trenchwarfare-cs2": "tools/dmx9.py"
   },
   "create/dump_entities.py": {
+   "monsoon-cs2": "tools/dump_entities.py",
    "trenchwarfare-cs2": "tools/dump_entities.py"
   },
   "create/ext_smd.py": {
+   "monsoon-cs2": "tools/ext_smd.py",
    "trenchwarfare-cs2": "tools/ext_smd.py"
   },
   "create/fx_models.py": {
+   "monsoon-cs2": "tools/fx_models.py",
    "trenchwarfare-cs2": "tools/fx_models.py"
   },
   "create/geo.py": {
+   "monsoon-cs2": "tools/geo.py",
    "trenchwarfare-cs2": "tools/geo.py"
   },
   "create/glb2cs2_multi.py": {
+   "monsoon-cs2": "tools/glb2cs2_multi.py",
    "trenchwarfare-cs2": "tools/glb2cs2_multi.py"
   },
   "create/glbmesh.py": {
    "cs2mapping": "tools/weapons/glbmesh.py"
   },
+  "create/hud_check.py": {
+   "monsoon-cs2": "tools/hud_check.py"
+  },
+  "create/loading.py": {
+   "monsoon-cs2": "tools/loading.py"
+  },
   "create/lod_decimate.py": {
+   "monsoon-cs2": "tools/lod_decimate.py",
    "trenchwarfare-cs2": "tools/lod_decimate.py"
   },
   "create/make_skybox.py": {
+   "monsoon-cs2": "tools/make_skybox.py",
    "trenchwarfare-cs2": "tools/make_skybox.py"
   },
   "create/merge_snd.py": {
-   "hellmatch-cs2": "tools/merge_snd.py"
+   "hellmatch-cs2": "tools/merge_snd.py",
+   "monsoon-cs2": "tools/merge_snd.py"
   },
   "create/modelio.py": {
+   "monsoon-cs2": "tools/modelio.py",
    "trenchwarfare-cs2": "tools/modelio.py"
   },
   "create/music_analysis.py": {
    "hellmatch-cs2": "tools/music_analysis.py"
   },
   "create/noise.py": {
+   "monsoon-cs2": "tools/noise.py",
    "trenchwarfare-cs2": "tools/noise.py"
   },
   "create/p_sandbag.py": {
+   "monsoon-cs2": "tools/p_sandbag.py",
    "trenchwarfare-cs2": "tools/p_sandbag.py"
+  },
+  "create/panorama.py": {
+   "monsoon-cs2": "tools/panorama.py"
+  },
+  "create/patch_vmap.py": {
+   "monsoon-cs2": "tools/patch_vmap.py"
   },
   "create/pixfont.py": {
    "space-racer-cs2": "tools/pixfont.py"
   },
   "create/placer.py": {
+   "monsoon-cs2": "tools/placer.py",
    "trenchwarfare-cs2": "tools/placer.py"
   },
   "create/render.py": {
+   "monsoon-cs2": "tools/render.py",
    "trenchwarfare-cs2": "tools/render.py"
   },
   "create/retro.py": {
@@ -84,43 +116,61 @@
    "space-racer-cs2": "tools/s2.py"
   },
   "create/shaders.py": {
+   "monsoon-cs2": "tools/shaders.py",
    "trenchwarfare-cs2": "tools/shaders.py"
   },
   "create/skies.py": {
    "space-racer-cs2": "tools/skies.py"
   },
   "create/sndevents.py": {
-   "hellmatch-cs2": "tools/sndevents.py"
+   "hellmatch-cs2": "tools/sndevents.py",
+   "monsoon-cs2": "tools/sndevents.py"
+  },
+  "create/split_parts.py": {
+   "monsoon-cs2": "tools/split_parts.py"
   },
   "create/stock.py": {
+   "monsoon-cs2": "tools/stock.py",
    "trenchwarfare-cs2": "tools/stock.py"
   },
   "create/synth.py": {
    "hellmatch-cs2": "tools/synth.py",
    "space-racer-cs2": "tools/synth.py"
   },
+  "create/test/mock_point_script.mjs": {
+   "monsoon-cs2": "test/mock_point_script.mjs"
+  },
   "create/test/point_script.d.ts": {
    "cs2-fighter": "test/tscheck/point_script.d.ts",
    "cs21.6": "test/types/point_script.d.ts",
    "hellmatch-cs2": "test/types/point_script.d.ts",
+   "monsoon-cs2": "test/point_script.d.ts",
    "space-racer-cs2": "test/types/point_script.d.ts",
    "trenchwarfare-cs2": "test/point_script.d.ts"
   },
+  "create/vmapgen.py": {
+   "monsoon-cs2": "tools/vmapgen.py"
+  },
   "create/vmaplib.py": {
    "hellmatch-cs2": "tools/vmaplib.py",
+   "monsoon-cs2": "tools/vmaplib.py",
    "space-racer-cs2": "tools/vmaplib.py",
    "trenchwarfare-cs2": "tools/vmaplib.py"
   },
   "create/vmesh.py": {
+   "monsoon-cs2": "tools/vmesh.py",
    "trenchwarfare-cs2": "tools/vmesh.py"
   },
   "create/vpkdir.py": {
+   "monsoon-cs2": "tools/vpkdir.py",
    "trenchwarfare-cs2": "tools/vpkdir.py"
   },
   "create/vtexread.py": {
+   "monsoon-cs2": "tools/vtexread.py",
    "trenchwarfare-cs2": "tools/vtexread.py"
   },
   "create/weld_cracks.py": {
+   "monsoon-cs2": "tools/weld_cracks.py",
    "trenchwarfare-cs2": "tools/weld_cracks.py"
   },
   "tools/vpk.py": {

@@ -1,0 +1,1220 @@
+[
+{
+"name": "mv_sun",
+"cls": "light_environment",
+"origin": [
+0.0,
+0.0,
+3000.0
+],
+"angles": [
+28.0,
+205.0,
+0.0
+]
+},
+{
+"name": "sky",
+"cls": "env_sky",
+"origin": [
+64.0,
+0.0,
+3000.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_vfog",
+"cls": "env_volumetric_fog_controller",
+"origin": [
+192.0,
+0.0,
+3000.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "valley_probe",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+0.0,
+0.0,
+300.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "ct_probe",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+3900.0,
+-2900.0,
+760.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "t_probe",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+-3900.0,
+2900.0,
+600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "far_probe_0",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+0.0,
+4800.0,
+900.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "far_probe_1",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+0.0,
+-4800.0,
+900.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "far_probe_2",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+-6850.0,
+0.0,
+900.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "far_probe_3",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+6850.0,
+0.0,
+900.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "karst_probe_-5000",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+-5000.0,
+3700.0,
+1471.9684673688653
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "karst_probe_-4300",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+-4300.0,
+4500.0,
+1363.2149255086624
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "karst_probe_-3000",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+-3000.0,
+4350.0,
+1255.8597141589526
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "karst_probe_1400",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+1400.0,
+3900.0,
+1323.8758419912294
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "karst_probe_4900",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+4900.0,
+3200.0,
+1112.4767071367874
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "karst_probe_-1500",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+-1500.0,
+-4100.0,
+1315.1279123297586
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "karst_probe_-5300",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+-5300.0,
+-2200.0,
+948.0592705045133
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "karst_probe_5700",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+5700.0,
+-1300.0,
+746.9878310592951
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_skybox",
+"cls": "skybox_reference",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-600.0,
+-420.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-520.0,
+-80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-440.0,
+-420.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-360.0,
+-80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-280.0,
+-420.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-200.0,
+-80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-120.0,
+-420.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-40.0,
+-80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+40.0,
+-420.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+120.0,
+-80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+200.0,
+-420.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+280.0,
+-80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+360.0,
+-420.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+440.0,
+-80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+520.0,
+-420.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+600.0,
+-80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-600.0,
+-340.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-520.0,
+0.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-440.0,
+-340.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-360.0,
+0.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-280.0,
+-340.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-200.0,
+0.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-120.0,
+-340.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-40.0,
+0.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+40.0,
+-340.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+120.0,
+0.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+200.0,
+-340.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+280.0,
+0.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+360.0,
+-340.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+440.0,
+0.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+520.0,
+-340.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+600.0,
+0.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-600.0,
+-260.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-520.0,
+80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-440.0,
+-260.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-360.0,
+80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-280.0,
+-260.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-200.0,
+80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-120.0,
+-260.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-40.0,
+80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+40.0,
+-260.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+120.0,
+80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+200.0,
+-260.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+280.0,
+80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+360.0,
+-260.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+440.0,
+80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+520.0,
+-260.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+600.0,
+80.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-600.0,
+-180.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-520.0,
+160.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-440.0,
+-180.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-360.0,
+160.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-280.0,
+-180.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-200.0,
+160.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+-120.0,
+-180.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+-40.0,
+160.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+40.0,
+-180.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+120.0,
+160.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+200.0,
+-180.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+280.0,
+160.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+360.0,
+-180.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+440.0,
+160.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_terrorist",
+"origin": [
+520.0,
+-180.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "",
+"cls": "info_player_counterterrorist",
+"origin": [
+600.0,
+160.0,
+-3392.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "lobby_probe",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+0.0,
+0.0,
+-3224.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_script",
+"cls": "point_script",
+"origin": [
+0.0,
+0.0,
+-3300.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_hud",
+"cls": "custom_hud_layout",
+"origin": [
+32.0,
+0.0,
+-3300.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_params",
+"cls": "info_map_parameters",
+"origin": [
+-32.0,
+0.0,
+-3300.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+}
+]

@@ -1,0 +1,31 @@
+{
+ "out_env": "MV_OUT",
+ "model_prefix": "mv",
+ "tag": "mg_monsoon",
+ "preview_dir": "../preview",
+ "stock_preview_dir": "../out/stockprev",
+ "single_lod": [],
+ "props": {
+  "modules": ["p_heli", "p_arty", "p_guns", "p_base", "p_village", "p_jungle", "p_wreck", "p_bridge", "p_temple"],
+  "calls": {
+   "sandbag_wall": ["p_sandbag.spec", [0], {"courses": 3}],
+   "sandbag_wall_b": ["p_sandbag.spec", [1], {"courses": 3}],
+   "sandbag_wall_128": ["p_sandbag.spec", [7], {"courses": 3, "length": 128}],
+   "sandbag_low": ["p_sandbag.spec", [5], {"courses": 2}],
+   "sandbag_low_128": ["p_sandbag.spec", [6], {"courses": 2, "length": 128}]
+  }
+ },
+ "fx": {
+  "model_tag": "mv",
+  "stems": {"marker": "mission_ring", "sight": "gunpip", "bomb": "rocket"},
+  "one_sided": [],
+  "comment": "mg_monsoon effect material"
+ },
+ "skybox": {
+  "layout": "layout",
+  "group": "mv_sky",
+  "seed": 1968,
+  "noise_seed": 0,
+  "plain": true
+ }
+}

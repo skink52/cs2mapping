@@ -1,6 +1,7 @@
 """Builds every procedural prop from spec modules and records model path, triangle counts and bounds per prop in props.json
 (placer.py and clean_stale.py read it). Each spec module provides specs() -> {name: spec} (a spec is what build_prop.build takes);
-a module with only spec() gives one prop named after the module (p_sandbag -> sandbag).
+a module with only spec() gives one prop named after the module (p_sandbag -> sandbag). A spec may be a callable returning the spec
+(built lazily, so listing many heavy props costs nothing until they are built).
 
 usage: build_all_props.py <module>[,<module>...] [prop names...] [--no-preview]
        build_all_props.py props.list.json [prop names...]      JSON: {"modules": ["p_sandbag", "p_crates"]}
@@ -48,7 +49,8 @@ def main(argv):
     for n in (names or sorted(sp)):
         if n not in sp: print('no spec', n); bad += 1; continue
         try:
-            info[n] = build_prop.build(n, sp[n], preview=preview)
+            spec = sp[n]() if callable(sp[n]) else sp[n]      # a callable spec builds its meshes only when asked for
+            info[n] = build_prop.build(n, spec, preview=preview)
         except Exception:
             traceback.print_exc(); bad += 1
         os.makedirs(os.path.dirname(PROPS_JSON), exist_ok=True)
