@@ -135,13 +135,21 @@ def run(m, c, vs=32.0):
     exterior = exterior - open_ext
     for r in open_ext:
         if r not in centres:
-            idx = np.argwhere(lab == r)
-            pts_r = lo + (idx + 0.5) * vs
-            near = np.zeros(len(pts_r), bool)
-            for e in m.by_class('info_player_terrorist', 'info_player_counterterrorist', 'info_teleport_destination'):
-                near |= np.linalg.norm(pts_r - np.array(m.origin(e)), axis=1) < 2048
-            pts_r = pts_r[near] if near.any() else pts_r
-            if len(pts_r) > 4000: pts_r = pts_r[np.random.RandomState(r).choice(len(pts_r), 4000, replace=False)]
+            # in chunks: an open exterior can be ~90M voxels, and building every point at once needed > 6 GB
+            # (mg_nature_multigames ran out of memory, 9 Nov 2026). Same order and seed as before, so the same sample.
+            flat = np.flatnonzero(lab == r)
+            spots = [np.array(m.origin(e), float) for e in m.by_class('info_player_terrorist', 'info_player_counterterrorist', 'info_teleport_destination')]
+            keep = []
+            for s in range(0, len(flat), 4000000):
+                f = flat[s:s + 4000000]
+                p = lo + (np.stack(np.unravel_index(f, lab.shape), axis=1) + 0.5) * vs
+                nr = np.zeros(len(f), bool)
+                for q in spots: nr |= np.linalg.norm(p - q, axis=1) < 2048
+                keep.append(f[nr])
+            sel = np.concatenate(keep) if keep else flat[:0]
+            if not len(sel): sel = flat
+            if len(sel) > 4000: sel = sel[np.random.RandomState(r).choice(len(sel), 4000, replace=False)]
+            pts_r = lo + (np.stack(np.unravel_index(sel, lab.shape), axis=1) + 0.5) * vs
             centres[r] = pts_r
             offs[r] = (len(all_samples), len(all_samples) + len(pts_r))
             all_samples = np.concatenate([all_samples, pts_r]); overlap = np.concatenate([overlap, np.zeros(len(pts_r), np.int32)])

@@ -1,6 +1,6 @@
 """Run individual clean passes on an already-cleaned map (keeps your own Hammer edits).
 
-python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
+python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, roundend (game_round_end / player_weaponstrip -> io script), weaponmodels (CS:GO w_ weapon props -> CS2 weapon models), playercolor (!activator Color -> io script SetColor), envglobal (env_global + logic_autos reading a global state -> io script),
         overlayfix (rebuild placeholder overlay quads), overlaydepth (same + projection depth 8 on every overlay), facescale, matflags,
         probes (report static func_breakable/func_brush outside probe volumes), probecover (add volumes for them),
         lightbright (rebuild light brightness from the VMF: the importer's brightness = nan / too dim), relight (delete every light and rebuild it
@@ -25,7 +25,7 @@ Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/conte
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import tesla, probefill, repair, firefx, splitfaces, waterprobe, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol, ropes, particles
+import tesla, probefill, repair, firefx, splitfaces, waterprobe, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol, ropes, particles, roundend
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -125,6 +125,38 @@ def run(addon, root, passes):
             o = m.origin(spawn)
             m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
             c.log.append('added point_script %s (maps/scripts/%s_io.js)' % (c.script, addon))
+    if 'weaponmodels' in passes:
+        import weaponmodels
+        weaponmodels.run(m, c)
+    if 'playercolor' in passes:
+        import playercolor
+        playercolor.run(m, c, vmfp)
+        if c.colors:
+            rel = 'maps/scripts/%s_io.js' % addon; jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
+            js = c.files[rel].decode('utf-8') if rel in c.files else open(jp, encoding='utf-8').read() if os.path.exists(jp) else ''
+            c.write(rel, playercolor.patch_script(js, c.colors))
+    if 'envglobal' in passes:
+        import envglobal
+        envglobal.run(m, c)
+        if c.globals:
+            rel = 'maps/scripts/%s_io.js' % addon; jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
+            js = c.files[rel].decode('utf-8') if rel in c.files else open(jp, encoding='utf-8').read() if os.path.exists(jp) else ''
+            c.write(rel, envglobal.patch_script(js, c.globals))
+            if not any(m.name(e) == c.script for e in m.by_class('point_script')):
+                spawn = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]
+                o = m.origin(spawn)
+                m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
+    if 'roundend' in passes:
+        roundend.run(m, c)
+        if c.roundend or c.weaponstrip:
+            rel = 'maps/scripts/%s_io.js' % addon; jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
+            js = c.files[rel].decode('utf-8') if rel in c.files else open(jp, encoding='utf-8').read() if os.path.exists(jp) else ''
+            c.write(rel, roundend.patch_script(js, c))
+            if not any(m.name(e) == c.script for e in m.by_class('point_script')):
+                spawn = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]
+                o = m.origin(spawn)
+                m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
+                c.log.append('added point_script %s (maps/scripts/%s_io.js)' % (c.script, addon))
     if 'physlaunch' in passes and physlaunch.run(m, c):
         jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
         js = open(jp, encoding='utf-8').read() if os.path.exists(jp) else 'import { Instance } from "cs_script/point_script";\n'

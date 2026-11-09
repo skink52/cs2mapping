@@ -29,7 +29,9 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Merge the importer's separate prefab pieces back into one map.
 - Replace things CS2 no longer has, with scripts that behave like the original:
   push triggers (CS:GO-style speed), low-gravity zones, player speed changers, scoreboard points, server commands, weapon givers (with the right slots),
-  toggling walls, hallucination props, breakable glass, multiplayer physics boxes.
+  toggling walls, hallucination props, breakable glass, multiplayer physics boxes, round-ending entities (a team wins or a draw), weapon strippers,
+  player colour tints, and "global state" switches that remember things between rounds (a mini-game picker's cooldowns).
+- Display props showing CS:GO weapon models swapped for CS2's own weapon models.
 - Controls that take over the player's movement keys ("game_ui": steering a boat, aiming a cannon) rebuilt in script with the same outputs *(follow-up step)*.
 - Screen overlays rebuilt as on-screen HUD overlays *(by hand per map, e.g. Mario Party)*.
 - Lasers and beams (which CS2 can't create) redrawn as glowing beams in the right colour; lasers that did damage get a damage zone along them (a separate step right after the automatic fixes).

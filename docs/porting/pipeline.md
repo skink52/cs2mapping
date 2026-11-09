@@ -83,6 +83,16 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
   Enable/Disable are kept. While a player is airborne the script adds back `(1 - scale) * 800 * dt` of vertical velocity each tick. Leaving the trigger fires
   `Gravity_1` (OnEndTouch), so a zone is low-gravity only while you are inside it; a respawn also resets it. `gravity.py`; stage D runs it as `gravity` on an
   already-cleaned map and adds the section to the existing `<addon>_io.js`.
+- **game_round_end / player_weaponstrip** (stage D `roundend`, `tools/roundend.py`; autoport runs it when the VMF has either class): neither class is in CS2's
+  .fgd. EndRound_Draw / _TerroristsWin / _CounterTerroristsWin → script `RoundEnd_<n>_<mode>` (CS:GO's delay parameter added to the output delay):
+  FireWinCondition on the map's info_map_parameters (`port_map_params` added if there is none; Hellmatch's verified method), and if the round hasn't
+  ended 1.5 s later, mg_mario_party's fallback (kill the losing team, then `mp_default_team_winner_no_objective` and the clock run out). The entity's
+  OnRoundEnded outputs fire from the script. Strip / StripWeaponsAndSuit → script `WeaponStrip` (`DestroyWeapons()` on the activator). mg_minecraft_multigames
+  and mg_nature_multigames, 9 Nov 2026; not yet checked in game.
+- **CS:GO weapon world models on props** (stage D `weaponmodels`, `tools/weaponmodels.py`): cs_mdl_import can't compile `models/weapons/w_*.mdl`
+  ("Models failed to compile" in the import report); the props get CS2's `weapons/models/<dir>/weapon_<name>.vmdl` and Hammer's asset list is updated.
+- **Dropped player tints** (stage D `playercolor`, `tools/playercolor.py`): `!activator Color "r g b"` outputs the importer dropped come back from the VMF as
+  script `Color_<r>_<g>_<b>` (`SetColor`); the ones it kept (20 of 23 on mg_color_multigames) are left alone.
 - **Dead entities** (`dead`): env_sun removed; point_viewcontrols that no output targets (and unnamed ones) removed; prop_hallucination → prop_dynamic (if
   targeted) or prop_static; func_breakable_surf → func_breakable (glass); func_physbox_multiplayer → func_physbox. Listed as TO CHECK, not converted: env_spritetrail, env_screenoverlay, point_clientcommand, game_ui (use the stage D `gameui` pass),
   logic_script, env_entity_igniter, func_precipitation, env_fog_controller, entities with a `vscripts` key, VScript inputs in I/O (RunScriptCode,
@@ -306,7 +316,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
 - `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, lightcover, visfit_detail, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
-  equipitems, rendermode, particles, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water, fire, splitfaces, waterprobe, culled, displaybrush, trigmat, toolpaths, trigsplit, nullparams, origindup` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
+  roundend, weaponmodels, playercolor, equipitems, rendermode, particles, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water, fire, splitfaces, waterprobe, culled, displaybrush, trigmat, toolpaths, trigsplit, nullparams, origindup` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
   - **Daylight** (`daylight`, stage D only; for indoor maps that are still dark after stage C): adds a stationary light_environment using the map's env_sky

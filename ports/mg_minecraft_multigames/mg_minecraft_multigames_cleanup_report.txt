@@ -1,0 +1,26 @@
+Cleanup report for addon: mg_minecraft_multigames
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_minecraft_multigames\maps\mg_minecraft_multigames_vmap_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (2) ===
+models\weapons\w_pist_deagle.mdl
+models\weapons\w_snip_awp.mdl
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (2) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/ennergy/minecraft/lava_moving.vmt
+materials/skybox/minecraft.vmt
+
+=== WHY MISSING: where each is used, and files with the same name elsewhere ===
+materials/ennergy/minecraft/lava_moving.vmt
+    used by: maps/prefabs/mg_minecraft_multigames/mg_minecraft_multigames_environment_prefab.vmap
+    same name elsewhere: cscontent: materials/ENNERGY/MINECRAFT/lava_moving.vmt
+materials/skybox/minecraft.vmt
+    used by: maps/prefabs/mg_minecraft_multigames/mg_minecraft_multigames_lighting_prefab.vmap
+    same name elsewhere: none

@@ -46,6 +46,11 @@ which also covers other porters' maps, external ports and skink52's originals: m
 | [ttt_minecraft](ttt_minecraft/) | Stage C done, waiting for build | | | cs2port pipeline (TTT scripting: cs2mapTTT) |
 | [ttt_terrortrain](ttt_terrortrain/) | Built with TTT, not tested in game | | 2026-11-02 | autoport (TTT profile) |
 | [ttt_island17_pezversion](ttt_island17_pezversion/) | Built with TTT, not tested in game | | 2026-11-02 | autoport (TTT profile) |
+| [mg_minecraft_multigames](mg_minecraft_multigames/) | Built, not tested in game | | 2026-11-09 | autoport (parallel workers, from Briar's Dropbox) |
+| [mg_nature_multigames](mg_nature_multigames/) | Built, not tested in game | | 2026-11-09 | autoport (parallel workers, from Briar's Dropbox) |
+| [mg_pokemon_adventure](mg_pokemon_adventure/) | Built, not tested in game | | 2026-11-09 | autoport (parallel workers, from Briar's Dropbox) |
+| [mg_arcs_multigames](mg_arcs_multigames/) | Built, not tested in game | | 2026-11-09 | autoport (parallel workers, from Briar's Dropbox) |
+| [mg_color_multigames](mg_color_multigames/) | Built, not tested in game | | 2026-11-09 | autoport (parallel workers, from Briar's Dropbox) |
 
 ## Jailbreak maps (earlier ports)
 

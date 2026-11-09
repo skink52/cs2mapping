@@ -1,0 +1,41 @@
+Cleanup report for addon: mg_pokemon_adventure
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_pokemon_adventure\maps\mg_pokemon_adventure_vmap_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (6) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/liquids/canalswater_cheap.vmt
+materials/liquids/shack_water.vmt
+materials/pkmn/misc/mountainwall_scrolling.vmt
+materials/pkmn/strugen/feebas.vmt
+materials/pkmn/strugen/green_cloud.vmt
+materials/skybox/sky138a.vmt
+
+=== WHY MISSING: where each is used, and files with the same name elsewhere ===
+materials/liquids/canalswater_cheap.vmt
+    used by: maps/prefabs/mg_pokemon_adventure/mg_pokemon_adventure_environment_prefab.vmap
+    same name elsewhere: cscontent: materials/liquids/canalswater_cheap.vmt
+materials/liquids/shack_water.vmt
+    used by: maps/prefabs/mg_pokemon_adventure/mg_pokemon_adventure_environment_prefab.vmap
+    same name elsewhere: cscontent: materials/liquids/shack_water.vmt
+materials/pkmn/misc/mountainwall_scrolling.vmt
+    used by: maps/prefabs/mg_pokemon_adventure/mg_pokemon_adventure_environment_prefab.vmap
+    same name elsewhere: cscontent: materials/pkmn/misc/mountainwall_scrolling.vmt
+materials/pkmn/strugen/feebas.vmt
+    used by: maps/prefabs/mg_pokemon_adventure/mg_pokemon_adventure_environment_prefab.vmap
+    same name elsewhere: none
+materials/pkmn/strugen/green_cloud.vmt
+    used by: maps/prefabs/mg_pokemon_adventure/mg_pokemon_adventure_environment_prefab.vmap
+    same name elsewhere: none
+materials/skybox/sky138a.vmt
+    used by: maps/prefabs/mg_pokemon_adventure/mg_pokemon_adventure_lighting_prefab.vmap
+    same name elsewhere: none

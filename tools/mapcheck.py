@@ -22,7 +22,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dmx, vmapedit as V
 
 CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
-SAFE_REMOVE = {'info_ladder_dismount': 'CS2 ladders dismount on their own', 'info_landmark': 'level transitions', 'func_detail_blocker': 'a compile hint'}
+SAFE_REMOVE = {'info_ladder_dismount': 'CS2 ladders dismount on their own', 'info_landmark': 'level transitions', 'func_detail_blocker': 'a compile hint',
+               'env_cascade_light': "CS:GO's cascaded sun shadows; CS2's light_environment casts them",
+               'env_spritetrail': 'draws nothing in CS2 (no class); a particle trail would replace it'}
 # classes CS2 lacks that one of its own entities does the job of: (new class, keys to set). Converted with an out path.
 CONVERT = {
     # CS:GO's leeches: hurts anyone in the water until they get out. A trigger_hurt in the same place does the same.
@@ -30,7 +32,9 @@ CONVERT = {
     # a solid brush entity with no behaviour of its own
     'func_wall': ('func_brush', {'Solidity': '2', 'solidbsp': '0'}),
 }
-INPUT_RENAME = {'turnon': 'Enable', 'turnoff': 'Disable'}   # fixed only where the target class has the new input
+INPUT_RENAME = {'turnon': 'Enable', 'turnoff': 'Disable',   # fixed only where the target class has the new input
+                # CS2's prop_dynamic splits these by looping (mg_nature_multigames' elevator doors, 9 Nov 2026); NotLooping is CS:GO's one-shot play
+                'setanimationnoreset': 'SetAnimationNoResetNotLooping', 'setanimation': 'SetAnimationNotLooping'}
 DYNAMIC_INPUTS = {'runscriptinput', 'runscriptcode', 'callscriptfunction', 'addoutput', 'fireuser1', 'fireuser2', 'fireuser3', 'fireuser4', 'kill', 'killhierarchy'}
 
 def fgd_files():
@@ -103,6 +107,8 @@ def check(m, fix=False):
                 m.remove_node(e); removed += 1; continue
             found.append(('excluded', '%s %s at %s: CS2 removes this class%s' % (c, m.name(e) or '(unnamed)', ' '.join('%g' % x for x in m.origin(e)), '' if c not in SAFE_REMOVE else ' (fix removes it: %s)' % SAFE_REMOVE[c])))
         elif c not in classes:
+            if fix and c in SAFE_REMOVE:
+                m.remove_node(e); removed += 1; continue
             found.append(('unknown', '%s %s at %s: no CS2 .fgd defines this class, so it does nothing in game' % (c, m.name(e) or '(unnamed)', ' '.join('%g' % x for x in m.origin(e)))))
     ents = m.entities()
     by_name = {}

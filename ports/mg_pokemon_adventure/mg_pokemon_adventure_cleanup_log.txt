@@ -1,0 +1,72 @@
+CS2 post-import clean - mg_pokemon_adventure (2026-11-09)
+
+- collapsed 6 prefabs into the map, world offsets kept: mg_pokemon_adventure_gameplay.vmap (213 nodes, 213 entities), mg_pokemon_adventure_environment_prefab.vmap (1154 nodes, 311 entities), mg_pokemon_adventure_lighting_prefab.vmap (3 nodes, 3 entities), mg_pokemon_adventure_cubemaps_prefab.vmap (3 nodes, 3 entities), mg_pokemon_adventure_audio_prefab.vmap (1 nodes, 1 entities), mg_pokemon_adventure_nav_prefab.vmap (0 nodes, 0 entities)
+- outputs restored that the importer dropped: 0
+- 27 trigger_push (speeds [40.0, 800.0, 1200.0, 1500.0, 2000.0]; CS2 would keep accelerating) -> trigger_multiple + script push zones holding CS:GO speed (clamped to 3500); names/filters/Enable/Disable kept
+- added point_servercommand port_servercommand + logic_auto port_logic_auto: OnMapSpawn -> mp_freezetime 0, mp_roundtime 10, sv_airaccelerate 2000, mp_limitteams 0, mp_solid_teammates 0 (only T spawns); only T spawns (30), so game_player_equip port_knife_equip gives weapon_knife on spawn and OnMapSpawn (TriggerForAllPlayers)
+- 10 entities had renderamt < 255 with rendermode Normal (ignored in CS:GO, see-through in CS2): renderamt 255
+- 1 Source 1 soundscript names used by entities defined as same-named soundevents: RotDoorSound.DefaultMove
+- soundscript waves copied into the addon from the map's packed files / CS:GO VPK: sounds/doors/default_move.wav
+- door sounds: 2 point_soundevents (RotDoorSound.DefaultMove), started by the doors' OnOpen/OnClose (noise1) and OnFullyOpen/OnFullyClosed (noise2); 2 unnamed doors named port_door_N
+- door sounds: 2 CS:GO doors had no move sound and played CS:GO's default (DoorSound.DefaultMove / RotDoorSound.DefaultMove: doors/default_move.wav at volume 0.2); they get it too
+- 1 static overlay materials -> csgo_static_overlay with translucency masks from the original alpha: mrstrugen.vmat
+- face texture scales: 4830 brush faces, 4663 matched to one VMF mapping; 4663 matched: same plane; 8 no VMF side on the same plane + material; 159 overlapping VMF brushes with different mappings (left as imported)
+- face texture mapping repaired: 4635 faces re-scaled / re-shifted from the VMF, 4711 faces with texture coordinates rewritten: pwood1 (1), canalswater_cheap (31), shack_water (41), fire (42), house_rug (27), housedoor (10), labdoor (6), labouterwall (102), labwindow (80), oaks_floor (150), tabletop (132), tiling (138), tiling2 (920), tiling3 (6), brock (3), gary (2), misty (2), professor_oak (6), darkblue (426), darkgrey (76), lightergrey (6), cavewall (1593), docks_platform (90), grass (25), mountainground (54), mountainwall (115), path_end (6), path_straight (6), pkmn_docks (155), pkmn_sand (6), pkmn_water_animated (6), rock (222), tallgrass_ground (12), mountainwall_scrolling (8), pokeball_sprite (12), scrolling_water (78), blastoise (2), charizard (5), cliffjumptop (1), cliffjumpwall (12), cloud (56), fence (25), green_cloud (6), pidgey (2), tree_end (10), tree_looping (4), tree_start (8), venusaur (6), whip (55), infwllg (2)
+- face texture scales: no known texture size (coordinates not checked): canalswater_cheap
+- splitfaces: 1204 lit faces over 512x512 in 311 meshes cut into 11366 pieces on a 512 grid (one lightmap chart / probe sample per face: big floors baked blotchy)
+- env_sky materials/skybox/sky138a.vmat: rebuilt from the six CS:GO faces
+- restored 19 sky brushes (dropped by the importer) as toolsskybox meshes using materials/tools/toolsskybox.vmat
+- visfit (48-unit voxels): 3905.8 billion cubic units of playable air, 25.9 of it walkable band; hints 162 Medium, 309 Low, 624 Lower, 1 Lowest
+- visfit: 0 of 19 sky shell meshes set to Exclude from Vis, 19 kept because they close playable air
+- visfit: 200 Medium cells along 203206 long sight lines across gaps, so nothing pops out of view at the far end
+- 10 env_laser + 0 env_beam (CS2 cannot spawn them) -> 10 never-solid func_brush beams between their end points (mutual laser pairs drawn once), coloured self-illuminated laser materials materials/lasers/laser_<rgb>.vmat; 0 TurnOn/TurnOff/Toggle -> Enable/Disable/Toggle; 0 StrikeOnce -> Enable, then Disable after the beam life; no damage added
+- relight: deleted 239 imported lights; rebuilt from the VMF 239 light -> light_omni2, 0 light_spot -> light_barn (colour, HDR intensity, range, cone); 0 Dynamic (start dark / switched / style)
+- light_environment: Static -> Stationary (directlight 3), so the sun lights players and weapons
+- added 5 stationary light_omni2 to sealed rooms with spawns / teleport destinations that had no light at all
+- stationary lights: 9 of 239 lights switched Static -> Stationary (directlight 3) across 5 sealed compartments, ranges trimmed so no spot is inside more than 4; 1 of the compartments are open to sky (one stationary light each, on top of light_environment)
+- 17 materials were alpha-tested / translucent in CS:GO but imported opaque - fixed with a mask from the texture alpha: fire (translucent), brock (alpha test), gary (alpha test), misty (alpha test), professor_oak (alpha test), pkmn_docks (alpha test), pokeball_sprite (alpha test), blastoise (translucent), charizard (translucent), cloud (translucent), fence (translucent), pidgey (translucent), tree_end (translucent), tree_looping (translucent), tree_start (translucent), venusaur (translucent), whip (translucent)
+- radar water (share of each water face drawn): shack_water z-3776 16%, shack_water z-3776 73%, shack_water z-3744 0%, shack_water z-3744 13%, shack_water z-3744 8%, shack_water z-3744 52%, shack_water z-3552 0%, canalswater_cheap z-832 76%, canalswater_cheap z-832 96%, canalswater_cheap z-832 61%, canalswater_cheap z-832 11%, canalswater_cheap z-768 64%, pkmn_water_animated z-768 0%, scrolling_water z-688 0%, scrolling_water z-656 98%, scrolling_water z-320 100%, scrolling_water z-320 100%, scrolling_water z-320 100%, scrolling_water z-80 100%, scrolling_water z-64 100%, scrolling_water z-64 100%, scrolling_water z-64 100%, scrolling_water z-64 100%, scrolling_water z-48 100%, scrolling_water z-48 100%, scrolling_water z-48 100%
+- radar: rendered from geometry (1652 floor faces shaded by height, walls outlined) -> panorama/images/overheadmaps/mg_pokemon_adventure_radar_psd.png + game resource/overviews/mg_pokemon_adventure.txt (pos -4926 13916, scale 16.69)
+- built 1 missing materials from the original CS:GO textures: mountainwall_scrolling
+- CS:GO water materials (no CS2 equivalent shader) -> stock: materials/liquids/canalswater_cheap.vmat -> materials/anubis/anubis_water_canal.vmat; materials/liquids/shack_water.vmat -> materials/anubis/anubis_water_canal.vmat
+- materials missing everywhere swapped for the closest stock CS2 ones: materials/pkmn/strugen/feebas.vmat -> materials/models/sprays/weeds.vmat; materials/pkmn/strugen/green_cloud.vmat -> materials/effects/fire_cloud2.vmat
+- %compilewater materials (CS:GO water, see-through) -> F_TRANSLUCENT, opacity 0.55, back faces drawn: pkmn_water_animated
+- added point_script mg_pokemon_adventure_io_script (maps/scripts/mg_pokemon_adventure_io.js)
+- dropped I/O report (maps/mg_pokemon_adventure_dropped_io.txt): 0 .vmf owners with 0 outputs, 0 matched; 0 outputs missing with the target still there (probable losses), 0 with the target gone, 0 to !special targets; 0 handled by our own steps (script / converted); 0 owners not found (0 outputs not compared)
+- pruned 1014 orphaned elements
+- TO CHECK: overlay materials not converted: materials/pkmn/strugen/feebas.vmat (vmat not in addon)
+- TO CHECK: 2 static overlays have a projection depth >= 32 (can show as a box with the overlay invisible) - stage_d overlaydepth sets them to 8
+- TO CHECK: placeholder static overlays left alone, no CS:GO texture size: materials/pkmn/strugen/feebas.vmat
+- TO CHECK: faces still with an absurd texture scale (<0.01 or >8), left as imported: labwindow x28 (VMF: 0.25x0.25/1.5x13/0.5x13), professor_oak x5 (VMF: 0.002x0.2187/0.2187x0.2187), labdoor x4 (VMF: 0.375x0.375/0.0078x0.375/0.0078x0.1875), path_straight x4 (VMF: 0.002x0.375/0.002x1.0002/0.3751x1.0002), path_end x4 (VMF: 0.002x0.375/0.002x0.625/0.375x0.625), housedoor x2 (VMF: 0.5x0.5/0.0078x0.5/0.5x0.25)
+- TO CHECK: face scales fixed but texture coordinates not rewritten (no CS:GO texture size): materials/liquids/canalswater_cheap.vmat
+- TO CHECK: splitfaces: check the cut floors / ramps for seams after the bake
+- TO CHECK: vis: 14114 long sight lines got no Medium corridor (over the 200 cell limit): look for props popping out across long gaps
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+- TO CHECK: these lasers did damage in CS:GO but there is no trigger_hurt along them, so in CS2 they are only visual: F3T2L1 at -1215.79 11104 164 (damage 100), torn11 at -1215.44 11424 544 (damage 100)
+- TO CHECK: relight: brightness scale (1000 lumens per 265 _light) is not checked against a real CS2 bake - compare a few rooms with CS:GO
+- TO CHECK: 1 compartments could not get a stationary light without going over 4 overlapping - check them
+- TO CHECK: 3 compartments only partly covered by stationary light (overlap cap) - check weapons are lit there
+- TO CHECK: 60 static func_breakable / func_brush meshes are not fully inside an env_combined_light_probe_volume, so their lighting will be wrong (stage_d.py ... probecover adds volumes): func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unname
+- TO CHECK: check the substituted materials look right: materials/pkmn/strugen/feebas.vmat -> materials/models/sprays/weeds.vmat; materials/pkmn/strugen/green_cloud.vmat -> materials/effects/fire_cloud2.vmat
+- TO CHECK: the map has 8 physics props: if player pushes on them feel wrong in game (too easy or too hard for the prop's size), run the physpush step (run_pass.py ... physpush)
+
+Follow-up pass (2026-11-09): overlaydepth, probecover, water, visfit
+- static overlays: projection depth set to 8 on 2 overlays
+- visfit (48-unit voxels): 3904.9 billion cubic units of playable air, 25.6 of it walkable band; hints 160 Medium, 310 Low, 629 Lower, 1 Lowest (replacing 162 Medium, 309 Low, 624 Lower, 1 Lowest)
+- visfit: 0 of 19 sky shell meshes set to Exclude from Vis, 19 kept because they close playable air
+- visfit: 200 Medium cells along 203532 long sight lines across gaps, so nothing pops out of view at the far end
+- water: 13 water meshes -> 5 func_water; 4 underwater post_processing_volumes (lighting/postprocessing/postprocess_filmic_underwater.vpost, top 80 u below the surface); master post_processing_volume already there
+- water: 23 underwater light_omni2 (map median brightness, range 512, no shadows) in water with no light inside
+- probecover: added 45 light probe volumes around 60 static func_breakable / func_brush meshes that no volume fully covered: func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unnamed), func_brush (unname
+- pruned 4384 orphaned elements
+- TO CHECK: 1 placeholder static overlays had no infodecal/info_overlay of the same material within 40 units in the VMF - size them by hand (scale = size/2)
+- TO CHECK: vis: 14179 long sight lines got no Medium corridor (over the 200 cell limit): look for props popping out across long gaps
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+- TO CHECK: underwater lights are a heuristic (Source water was lightmap-lit, CS2 water needs lights): check the water areas after the bake
+- TO CHECK: probecover: check the new probe volumes look right next to the existing ones
+
+Follow-up pass (2026-11-09): visfit_lean
+- visfit (48-unit voxels): 3906.7 billion cubic units of playable air, 26.6 of it walkable band; hints 0 Medium, 0 Low, 188 Lower, 1 Lowest (replacing 160 Medium, 310 Low, 629 Lower, 1 Lowest)
+- visfit: 0 of 19 sky shell meshes set to Exclude from Vis, 19 kept because they close playable air
+- pruned 4400 orphaned elements
+- TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)

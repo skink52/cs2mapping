@@ -116,6 +116,26 @@ python C:\source1\cs2port\autoport\autoport.py review redo ttt_x build --mode en
 
 Only the worker writes map state. Commands go through `work\autoport_state\inbox`, so a review can't collide with a running step.
 
+## Several maps at once (by hand, 9 Nov 2026)
+
+One worker does one map at a time, and stage C is single-threaded Python, so a 12-thread PC sat at ~4% CPU. Five maps ran side by side
+from worker folders `C:\source1\cs2port_w2` … `_w5`, each started with `CS2PORT=<folder>` and its own `TEMP`/`TMP`:
+
+- **Shared through links:** `tools`, `autoport`, `assets`, `logs` (junctions to `C:\source1\cs2port`), `existing_ports.txt` (a hard link:
+  `ports.py add` and `build_maps.ps1` rewrite it in place). Own: `work` (state, lock, inbox, root), `queue.txt`.
+- **Copies with locks:** `run_import.bat` (own `PORT`) and `run_fixrefs.bat` both take `C:\source1\cs2port\import.lock` (they run inside
+  CS2's `import_scripts` folder); `build_maps.ps1` is a wrapper that waits for `build.lock` and for no running resourcecompiler (a build uses
+  10 threads), then calls the main one. Each wait prints a line, so the watchdog sees activity.
+- **Traps hit:** BSPSource writes `%TEMP%\autoport_bspsrc.log`, so workers sharing TEMP failed prep ("being used by another process");
+  `run_fixrefs.bat` missing from a worker folder left the gibs unimported; `lighting.py` needed > 6 GB for one big open region (now chunked);
+  the vis-budget kill takes the wrapper down before its `finally`, so the build lock stayed and the next builds waited on nobody (the lock now
+  holds the owner's pid, and a dead owner's lock counts as free). The main worker's own `build_maps.ps1` takes no lock, so its builds overlapped
+  the others', ran slower and two maps hit the 20 min vis budget and were rebuilt with lean hints: run every map from a worker folder.
+- Start a worker for a held map by posting to its inbox (`common.post_command`) and running `autoport.py serve --no-wait` under the
+  watchdog yourself; `review` would start a separate minimised one.
+
+Prep for five maps took about 1.5 hours in parallel (stage C 6–50 min each, several NEED reruns); builds took turns at ~13 min each.
+
 ## Hang protection and the live view
 
 [watchdog.py](watchdog.py) wraps every long step. A process tree counts as active while it uses CPU, writes data, starts a process or changes its log.

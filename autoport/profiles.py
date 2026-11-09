@@ -37,12 +37,13 @@ water_lod_control env_cubemap info_overlay infodecal trigger_push env_sprite mov
 env_laser env_beam point_spotlight game_score trigger_gravity player_speedmod shadow_control env_detail_controller env_tonemap_controller func_breakable_surf
 func_wall_toggle func_precipitation env_steam env_spark env_fire point_viewcontrol func_physbox_multiplayer game_ui func_water_analog point_tesla func_illusionary
 env_spritetrail env_screenoverlay point_clientcommand point_servercommand game_weapon_manager
-prop_physics_respawnable info_ladder_dismount trigger_waterydeath func_wall'''.split())   # last line: tools/respawnable.py and mapcheck.py
+prop_physics_respawnable info_ladder_dismount trigger_waterydeath func_wall
+postprocess_controller env_cascade_light game_round_end player_weaponstrip env_global info_landmark'''.split())   # respawnable.py and mapcheck.py; postprocess_controller is CS:GO bloom/vignette (cosmetic, no CS2 class); roundend.py
 
 TODO_RULES = [
     # lines only someone in the game can answer
     ('playtest', r'pops? in|flicker|compare a few rooms|feel wrong|seams after the bake|counter fed by|in game|in Hammer|heuristic|chat messages use|check the substituted|'
-                 r'check the new probe|starts on|Don.t Drop|still works in CS2|ropes rebuilt|no Medium corridor'),
+                 r'check the new probe|starts on|roundend: check|weaponmodels: CS2 weapon models|envglobal: check|Don.t Drop|still works in CS2|ropes rebuilt|no Medium corridor'),
     # stops the map working or looking right: a person decides before the build
     ('missing', r'materials still missing|models referenced but not|outputs from the \.vmf are missing|could not be matched 1:1|prefab .* not found|not staged|'
                 r'could not rebuild|sky brushes dropped by the importer were not rebuilt|moondome cube map|soundscript events built with some waves missing'),
@@ -52,7 +53,7 @@ TODO_RULES = [
               r'face scales fixed|faces still with|material file names|splitfaces: not split|env_spark|env_steam inputs|env_fire Enable|beams with no usable|re-encode|'
               r'overlays touching brush entities|projection depth|origindup|physpush: no CS:GO|compartments|'
               r'ssbump normal maps|no VMF at|left as a prefab|was rotated|no map path|CS:GO 3D skybox|static func_breakable|'
-              r'particles: several CS2 particles|particles: no CS2 or addon particle'),
+              r'particles: several CS2 particles|particles: no CS2 or addon particle|weaponmodels: no CS2 weapon model'),
 ]
 
 def classify_todo(text):

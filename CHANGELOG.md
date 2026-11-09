@@ -3,6 +3,23 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-09: five multigames maps from Briar's Dropbox, ported in parallel
+
+- **[ports]** mg_minecraft_multigames, mg_nature_multigames, mg_pokemon_adventure, mg_arcs_multigames, mg_color_multigames: BSPs from Briar's
+  shared Dropbox (`CSGO/compiled maps/minigames`), ported by autoport and built (0 failed compiles each); not yet tested in game or uploaded.
+  Records in `ports/<map>/`. Pokemon, nature and arcs were rebuilt with visfit_lean hints after the 20 min vis budget (look for pop-in).
+  mg_pokemon_adventure's author is unknown; mg_arcs_multigames packs commercial songs (decide before upload).
+- **[ports]** mg_pokemon_adventure: music added, eight Pokemon FireRed & LeafGreen tracks shuffled from round start (`coursemusic.py`;
+  WAVs encoded to 128 kbps mp3 with `lameenc`, since the PC has no ffmpeg).
+- **[tools]** New stage D passes, which autoport now runs when the VMF needs them: `roundend` (game_round_end → script FireWinCondition with a
+  forced fallback; player_weaponstrip → script strip), `weaponmodels` (CS:GO `models/weapons/w_*` props → CS2 weapon models, renamed ones
+  mapped), `playercolor` (dropped `!activator Color` tints → script SetColor), `envglobal` (env_global and the logic_autos reading it → states
+  kept in the io script across rounds).
+- **[tools]** `mapcheck.py`: `SAFE_REMOVE` also covers classes no CS2 fgd defines (env_cascade_light, env_spritetrail added); `INPUT_RENAME`
+  SetAnimation[NoReset] → ...NotLooping (CS2 prop_dynamic). `lighting.py`: open-region sampling in chunks (was > 6 GB on a big exterior, same
+  result). **[autoport]** `pclocal.py root` adds underscore copies of embedded files with spaces (the importer's refs); `profiles.py` knows the
+  new conversions; README section on running several workers at once and the traps hit (shared TEMP, build lock left by a vis-budget kill).
+
 ## 2026-11-09: ranged music resumes when you come back
 
 - **[tools]** New `tools/rangedmusic.py`, also run by stage C `sounds`: CS2 culls an out-of-range voice (`voice_culling_threshold` 0.001 in the

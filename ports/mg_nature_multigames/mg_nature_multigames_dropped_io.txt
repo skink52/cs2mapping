@@ -1,0 +1,52 @@
+Outputs (I/O) in the .vmf that are not in the .vmap - mg_nature_multigames. Report only, nothing was changed.
+Method from github.com/Ninja-Chris/cs2-slop-porting (MIT).
+LOSS    = target still exists in the vmap: probably a real loss, re-add it (Hammer) or check why it went.
+SPECIAL = target is !activator / !self / ...: resolved at run time, treat like LOSS.
+GONE    = nothing in the vmap has the target name: the logic was removed / replaced (an edited map), or the target was lost too.
+Our own conversions (io script, renamed inputs, replaced entities) are listed at the end and are not losses.
+
+# dropped I/O report (maps/mg_nature_multigames_dropped_io.txt): 54 .vmf owners with 335 outputs, 54 matched; 0 outputs missing with the target still there (probable losses), 0 with the target gone, 0 to !special targets; 41 handled by our own steps (script / converted); 0 owners not found (0 outputs not compared)
+
+== handled by the pipeline (not losses)
+  trigger_once 'elevator_warning' (-12656 10352 4624)  OnStartTouch -> main_server.Command(sm_say ***Will you survive?.... Test your luck.) delay 0 times -1   [SCRIPT: -> io script Cmd_0 (target was point_servercommand)]
+  trigger_multiple 'trapper_targetname_speed' (-10168 1844 4007)  OnStartTouch -> speed.ModifySpeed(1.5) delay 0 times -1   [SCRIPT: -> io script Speed_1.5 (target was player_speedmod)]
+  logic_relay 'slider_relay' (3424 -2904 -1576)  OnTrigger -> main_server.Command(sm_say ***Teleporting Everyone In 15 Seconds***) delay 85 times -1   [SCRIPT: -> io script Cmd_1 (target was point_servercommand)]
+  logic_relay 'slider_relay' (3424 -2904 -1576)  OnTrigger -> main_server.Command(sm_say ***Teleporting Everyone In 15 Seconds***) delay 170 times -1   [SCRIPT: -> io script Cmd_2 (target was point_servercommand)]
+  trigger_teleport 'deathrun_winner_to_trapper' (-9136 10344 4324)  OnStartTouch -> speed.ModifySpeed(3) delay 0 times -1   [SCRIPT: -> io script Speed_3 (target was player_speedmod)]
+  trigger_teleport 'deathrun_winner_to_trapper' (-9136 10344 4324)  OnStartTouch -> negev_giver.Use() delay 0 times -1   [CONVERTED: negev_giver input use -> triggerforactivatedplayer (target was game_player_equip)]
+  func_button 'random' (3886 -3128 -2914)  OnPressed -> main_server.Command(sm_say [Picking Random Level]) delay 0 times -1   [SCRIPT: -> io script Cmd_3 (target was point_servercommand)]
+  trigger_multiple 'soccer_ct_win' (3279 3204 -1376)  OnStartTouch -> soccer_awp.Use() delay 1 times -1   [CONVERTED: soccer_awp input use -> triggerforactivatedplayer (target was game_player_equip)]
+  trigger_multiple 'soccer_t_win' (3279 3204 -1372)  OnStartTouch -> soccer_awp.Use() delay 1 times -1   [CONVERTED: soccer_awp input use -> triggerforactivatedplayer (target was game_player_equip)]
+  trigger_teleport 'spawn_teleport_to_pick' (3384 -3118 -1395)  OnStartTouch -> main_server.Command(sm_say ***Waiting 5 Seconds To Prevent Levels From Breaking***) delay 0 times -1   [SCRIPT: -> io script Cmd_4 (target was point_servercommand)]
+  func_button 'soccer_level' (3008 -2737 -2914)  OnPressed -> main_server.Command(sm_say [Soccer]) delay 0 times -1   [SCRIPT: -> io script Cmd_5 (target was point_servercommand)]
+  func_button 'waterski_level' (3384 -2614 -2914)  OnPressed -> main_server.Command(sm_say [Waterski]) delay 0 times -1   [SCRIPT: -> io script Cmd_6 (target was point_servercommand)]
+  func_button 'ze_level' (3765 -2739 -2914)  OnPressed -> main_server.Command(sm_say [Deathrun]) delay 1 times -1   [SCRIPT: -> io script Cmd_7 (target was point_servercommand)]
+  func_button 'ze_level' (3765 -2739 -2914)  OnPressed -> main_server.Command(sm_cvar mp_teammates_are_enemies 1) delay 0 times -1   [SCRIPT: -> io script Cmd_8 (target was point_servercommand)]
+  func_button 'ze_level' (3765 -2739 -2914)  OnPressed -> main_server.Command(sm_say ***Everyone is Your Enemy, Even Your Teammates***) delay 3 times -1   [SCRIPT: -> io script Cmd_9 (target was point_servercommand)]
+  func_button 'ze_level' (3765 -2739 -2914)  OnPressed -> main_server.Command(sm_say ***You Have 20 Seconds To Exit The Zoo***) delay 110 times -1   [SCRIPT: -> io script Cmd_10 (target was point_servercommand)]
+  func_button 'ze_level' (3765 -2739 -2914)  OnPressed -> main_server.Command(sm_say ***You Have 20 Seconds to Get to the End) delay 230 times -1   [SCRIPT: -> io script Cmd_11 (target was point_servercommand)]
+  func_button 'ze_level' (3765 -2739 -2914)  OnPressed -> main_server.Command(sm_say ***Killing AFKs In 5 Seconds***) delay 15 times -1   [SCRIPT: -> io script Cmd_12 (target was point_servercommand)]
+  func_button 'awp_level' (3763 -3500 -2914)  OnPressed -> main_server.Command(sm_say [Awp]) delay 0 times -1   [SCRIPT: -> io script Cmd_13 (target was point_servercommand)]
+  func_button 'battleslider_level' (3384 -3626 -2914)  OnPressed -> main_server.Command(sm_say [Battle Slider]) delay 0 times -1   [SCRIPT: -> io script Cmd_14 (target was point_servercommand)]
+  func_button 'battleslider_level' (3384 -3626 -2914)  OnPressed -> main_server.Command(sm_say ***Enabling Knives in 5 Seconds***) delay 2 times -1   [SCRIPT: -> io script Cmd_15 (target was point_servercommand)]
+  func_button 'battleslider_level' (3384 -3626 -2914)  OnPressed -> main_server.Command(sm_say ***Enabling Shotguns in 5 Seconds***) delay 7 times -1   [SCRIPT: -> io script Cmd_16 (target was point_servercommand)]
+  func_button 'knife_level' (3002 -3503 -2914)  OnPressed -> main_server.Command(sm_say [Knife]) delay 0 times -1   [SCRIPT: -> io script Cmd_17 (target was point_servercommand)]
+  func_button 'skipping_rope_level' (2876 -3120 -2914)  OnPressed -> main_server.Command(sm_say [Skipping Rope]) delay 0 times -1   [SCRIPT: -> io script Cmd_18 (target was point_servercommand)]
+  logic_case 'song_picker' (3352 -2904 -1576)  OnCase01 -> main_server.Command(sm_say [Music: Die Young (Edit) by Ke$sha & Becky G]) delay 5 times -1   [SCRIPT: -> io script Cmd_19 (target was point_servercommand)]
+  logic_case 'song_picker' (3352 -2904 -1576)  OnCase02 -> main_server.Command(sm_say [Music: La La La (White Panda X Gazzo Remix)]) delay 5 times -1   [SCRIPT: -> io script Cmd_20 (target was point_servercommand)]
+  logic_case 'song_picker' (3352 -2904 -1576)  OnCase03 -> main_server.Command(sm_say [Music: Always This Late (Illenium Remix) by ODESZA]) delay 5 times -1   [SCRIPT: -> io script Cmd_21 (target was point_servercommand)]
+  logic_case 'song_picker' (3352 -2904 -1576)  OnCase04 -> main_server.Command(sm_say [Music: Pop Culture by Madeon]) delay 5 times -1   [SCRIPT: -> io script Cmd_22 (target was point_servercommand)]
+  logic_case 'song_picker' (3352 -2904 -1576)  OnCase05 -> main_server.Command(sm_say [Music: Idols by Virutal Riot]) delay 0 times -1   [SCRIPT: -> io script Cmd_23 (target was point_servercommand)]
+  logic_case 'song_picker' (3352 -2904 -1576)  OnCase06 -> main_server.Command(sm_say [Music: Cool Kids (Gazzo & Two Friends Remix)]) delay 0 times -1   [SCRIPT: -> io script Cmd_24 (target was point_servercommand)]
+  logic_auto (unnamed, 3304 -2904 -1576)  OnMapSpawn -> main_server.Command(sm_cvar cs_enable_player_physics_box 1) delay 0 times -1   [SCRIPT: -> io script Cmd_25 (target was point_servercommand)]
+  logic_auto (unnamed, 3304 -2904 -1576)  OnMapSpawn -> main_server.Command(sm_cvar phys_pushscale 900) delay 0 times -1   [SCRIPT: -> io script Cmd_26 (target was point_servercommand)]
+  logic_auto (unnamed, 3304 -2904 -1576)  OnMapSpawn -> main_server.Command(sm_say ***Map by Punky***) delay 5 times -1   [SCRIPT: -> io script Cmd_27 (target was point_servercommand)]
+  logic_auto (unnamed, 3304 -2904 -1576)  OnMapSpawn -> main_server.Command(sm_cvar sv_airaccelerate 250) delay 0 times -1   [SCRIPT: -> io script Cmd_28 (target was point_servercommand)]
+  logic_auto (unnamed, 3304 -2904 -1576)  OnMapSpawn -> main_server.Command(sm_say ***Adjust the Music Volume in Your CS:GO Settings***) delay 2 times -1   [SCRIPT: -> io script Cmd_29 (target was point_servercommand)]
+  logic_auto (unnamed, 3304 -2904 -1576)  OnMapSpawn -> main_server.Command(sm_cvar mp_teammates_are_enemies 0) delay 0 times -1   [SCRIPT: -> io script Cmd_30 (target was point_servercommand)]
+  math_counter 'soccer_counter_ct' (3282 3286 -1583)  OnHitMax -> main_server.Command(sm_say ***CT's Have Scored***) delay 0.1 times -1   [SCRIPT: -> io script Cmd_31 (target was point_servercommand)]
+  math_counter 'soccer_counter_ct' (3282 3286 -1583)  OnHitMax -> main_server.Command(sm_say ***GOAL!!!!***) delay 0 times -1   [SCRIPT: -> io script Cmd_32 (target was point_servercommand)]
+  math_counter 'soccer_counter_t' (3283 3313 -1584)  OnHitMax -> main_server.Command(sm_say ***T's Have Scored***) delay 0.1 times -1   [SCRIPT: -> io script Cmd_33 (target was point_servercommand)]
+  math_counter 'soccer_counter_t' (3283 3313 -1584)  OnHitMax -> main_server.Command(sm_say ***GOAL!!!!***) delay 0 times -1   [SCRIPT: -> io script Cmd_34 (target was point_servercommand)]
+  logic_relay 'skipping_rope_relay' (10060 -7698 -1711)  OnTrigger -> main_server.Command(sm_say ***Enabling Rope Killer In 5 Seconds***) delay 5 times -1   [SCRIPT: -> io script Cmd_35 (target was point_servercommand)]
+

@@ -1,0 +1,9 @@
+Outputs (I/O) in the .vmf that are not in the .vmap - mg_pokemon_adventure. Report only, nothing was changed.
+Method from github.com/Ninja-Chris/cs2-slop-porting (MIT).
+LOSS    = target still exists in the vmap: probably a real loss, re-add it (Hammer) or check why it went.
+SPECIAL = target is !activator / !self / ...: resolved at run time, treat like LOSS.
+GONE    = nothing in the vmap has the target name: the logic was removed / replaced (an edited map), or the target was lost too.
+Our own conversions (io script, renamed inputs, replaced entities) are listed at the end and are not losses.
+
+# dropped I/O report (maps/mg_pokemon_adventure_dropped_io.txt): 0 .vmf owners with 0 outputs, 0 matched; 0 outputs missing with the target still there (probable losses), 0 with the target gone, 0 to !special targets; 0 handled by our own steps (script / converted); 0 owners not found (0 outputs not compared)
+

@@ -1,0 +1,65 @@
+Cleanup report for addon: mg_nature_multigames
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_nature_multigames\maps\mg_nature_multigames_vmap_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (12) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/de_aztec/carving01_cheap.vmt
+materials/de_aztec/carving03b_cheap.vmt
+materials/de_dust/rockwall_blend.vmt
+materials/de_train/blendgrassdirt001a.vmt
+materials/liquids/inferno_water.vmt
+materials/metal/citadel_metalwall060a.vmt
+materials/metal/citadel_tilefloor016a.vmt
+materials/metal/hr_metal/hr_metal_wood_a.vmt
+materials/metal/metal_treadplate-ssbump.vmt
+materials/nature/blendrocksgrass006a.vmt
+materials/skybox/mpa115.vmt
+materials/wood/infwoodfloor008a.vmt
+
+=== WHY MISSING: where each is used, and files with the same name elsewhere ===
+materials/de_aztec/carving01_cheap.vmt
+    used by: maps/prefabs/mg_nature_multigames/mg_nature_multigames_environment_prefab.vmap
+    same name elsewhere: cscontent: materials/de_aztec/carving01_cheap.vmt
+materials/de_aztec/carving03b_cheap.vmt
+    used by: maps/prefabs/mg_nature_multigames/mg_nature_multigames_environment_prefab.vmap
+    same name elsewhere: cscontent: materials/de_aztec/carving03b_cheap.vmt
+materials/de_dust/rockwall_blend.vmt
+    used by: maps/prefabs/mg_nature_multigames/mg_nature_multigames_environment_prefab.vmap, maps/prefabs/mg_nature_multigames/mg_nature_multigames_gameplay.vmap
+    same name elsewhere: cscontent: materials/de_dust/rockwall_blend.vmt
+materials/de_train/blendgrassdirt001a.vmt
+    used by: maps/prefabs/mg_nature_multigames/mg_nature_multigames_environment_prefab.vmap
+    same name elsewhere: cscontent: materials/de_train/blendgrassdirt001a.vmt
+materials/liquids/inferno_water.vmt
+    used by: maps/prefabs/mg_nature_multigames/mg_nature_multigames_environment_prefab.vmap, maps/prefabs/mg_nature_multigames/mg_nature_multigames_gameplay.vmap
+    same name elsewhere: cscontent: materials/liquids/inferno_water.vmt
+materials/metal/citadel_metalwall060a.vmt
+    used by: maps/prefabs/mg_nature_multigames/mg_nature_multigames_environment_prefab.vmap, maps/prefabs/mg_nature_multigames/mg_nature_multigames_gameplay.vmap
+    same name elsewhere: cscontent: materials/metal/citadel_metalwall060a.vmt
+materials/metal/citadel_tilefloor016a.vmt
+    used by: maps/prefabs/mg_nature_multigames/mg_nature_multigames_environment_prefab.vmap, maps/prefabs/mg_nature_multigames/mg_nature_multigames_gameplay.vmap
+    same name elsewhere: cscontent: materials/metal/citadel_tilefloor016a.vmt
+materials/metal/hr_metal/hr_metal_wood_a.vmt
+    used by: maps/prefabs/mg_nature_multigames/mg_nature_multigames_gameplay.vmap
+    same name elsewhere: cscontent: materials/metal/hr_metal/hr_metal_wood_a.vmt
+materials/metal/metal_treadplate-ssbump.vmt
+    used by: maps/prefabs/mg_nature_multigames/mg_nature_multigames_gameplay.vmap
+    same name elsewhere: cscontent: materials/metal/metal_treadplate-ssbump.vmt
+materials/nature/blendrocksgrass006a.vmt
+    used by: maps/prefabs/mg_nature_multigames/mg_nature_multigames_environment_prefab.vmap
+    same name elsewhere: cscontent: materials/nature/blendrocksgrass006a.vmt
+materials/skybox/mpa115.vmt
+    used by: maps/prefabs/mg_nature_multigames/mg_nature_multigames_lighting_prefab.vmap
+    same name elsewhere: none
+materials/wood/infwoodfloor008a.vmt
+    used by: maps/prefabs/mg_nature_multigames/mg_nature_multigames_environment_prefab.vmap, maps/prefabs/mg_nature_multigames/mg_nature_multigames_gameplay.vmap
+    same name elsewhere: cscontent: materials/models/pripyat/infwoodfloor008a.vmt; cscontent: materials/wood/infwoodfloor008a.vmt

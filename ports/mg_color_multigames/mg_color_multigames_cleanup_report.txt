@@ -1,0 +1,21 @@
+Cleanup report for addon: mg_color_multigames
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_color_multigames\maps\mg_color_multigames_vmap_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (0) ===
+(none)
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (1) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/skybox/mikis_hdr.vmt
+
+=== WHY MISSING: where each is used, and files with the same name elsewhere ===
+materials/skybox/mikis_hdr.vmt
+    used by: maps/prefabs/mg_color_multigames/mg_color_multigames_lighting_prefab.vmap
+    same name elsewhere: none

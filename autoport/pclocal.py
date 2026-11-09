@@ -42,7 +42,17 @@ def root(addon, r):
     for z in glob.glob(os.path.join(S1, 'maps', addon + '_embedded*.zip')):
         with zipfile.ZipFile(z) as f:
             f.extractall(emb); n += len(f.namelist())
-    print('root %s ready for %s (%d embedded files)' % (r, addon, n))
+    # the importer turns spaces in material paths into underscores, so the vmap asks for names the BSP never packed
+    # (mg_arcs_multigames: 49 of 52 "missing" textures were packed as "materials/MISC/128x128 arena screenie.vmt"): add underscore copies
+    alias = 0
+    for dp, _, fs in os.walk(emb):
+        for fn in fs:
+            rel = os.path.relpath(os.path.join(dp, fn), emb)
+            if ' ' not in rel: continue
+            dst = os.path.join(emb, rel.replace(' ', '_'))
+            if not os.path.exists(dst):
+                os.makedirs(os.path.dirname(dst), exist_ok=True); shutil.copyfile(os.path.join(dp, fn), dst); alias += 1
+    print('root %s ready for %s (%d embedded files%s)' % (r, addon, n, ', %d underscore copies of names with spaces' % alias if alias else ''))
 
 def apply(addon, r):
     stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S'); copied = 0

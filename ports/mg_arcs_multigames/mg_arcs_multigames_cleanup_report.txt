@@ -1,0 +1,231 @@
+Cleanup report for addon: mg_arcs_multigames
+Refs file used: C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\content\csgo_addons\mg_arcs_multigames\maps\mg_arcs_multigames_vmap_refs.txt
+
+=== MODELS - FAILED TO IMPORT (0) ===
+(none)
+
+=== MODELS - FAILED TO COMPILE (7) ===
+models\weapons\w_pist_223.mdl
+models\weapons\w_pist_elite.mdl
+models\weapons\w_rif_ak47.mdl
+models\weapons\w_rif_m4a1.mdl
+models\weapons\w_smg_mp7.mdl
+models\weapons\w_snip_awp.mdl
+models\weapons\w_snip_ssg08.mdl
+
+=== TEXTURES - STILL NEED VTF -> PNG CONVERSION (0) ===
+(staged in VTF_STAGING_INPUT; run VTFCmd/VTFEdit manually if VTFCMD_PATH isn't set, or investigate if it is and these still failed)
+(none)
+
+=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (52) ===
+(these need the manual Crowbar/Blender/ModelDoc pipeline)
+materials/course_map/black.vmt
+materials/grids/128x128_awp_screenie.vmt
+materials/grids/128x128_knife_screenie.vmt
+materials/grids/128x128_orange_coral_tile.vmt
+materials/misc/128x128_arena_screenie.vmt
+materials/misc/128x128_blinddeagle_screenshot.vmt
+materials/misc/128x128_boosterknife_screenie.vmt
+materials/misc/128x128_breakbox_screenie.vmt
+materials/misc/128x128_bunnyhop_screenie.vmt
+materials/misc/128x128_buy_screenie.vmt
+materials/misc/128x128_cannonsurf_screenie.vmt
+materials/misc/128x128_iceskate_screenie.vmt
+materials/misc/128x128_lens_flare.vmt
+materials/misc/128x128_question_marks.vmt
+materials/misc/128x128_question_marks2.vmt
+materials/misc/128x128_random_text.vmt
+materials/misc/128x128_shotgun_screenie.vmt
+materials/misc/128x128_sliderace_screenie.vmt
+materials/misc/128x128_smallawp_screenie.vmt
+materials/misc/128x128_speedclimb_screenie.vmt
+materials/misc/128x128_spray_wall_fix.vmt
+materials/misc/128x128_trains_text.vmt
+materials/misc/128x16_arena_text2.vmt
+materials/misc/128x16_arena_text3.vmt
+materials/misc/128x16_blinddeagle_text.vmt
+materials/misc/128x16_boosterknife_text.vmt
+materials/misc/128x16_breakbox_text.vmt
+materials/misc/128x16_bunnyhop_text.vmt
+materials/misc/128x16_buy_text.vmt
+materials/misc/128x16_cannonsurf_text.vmt
+materials/misc/128x16_defuse_text.vmt
+materials/misc/128x16_iceskate_text.vmt
+materials/misc/128x16_knife_text.vmt
+materials/misc/128x16_shotgun_text.vmt
+materials/misc/128x16_sliderace_text.vmt
+materials/misc/128x16_snipers_small_text.vmt
+materials/misc/128x16_snipers_text.vmt
+materials/misc/128x16_trains_text.vmt
+materials/misc/256x128_lastthanks.vmt
+materials/misc/256x128_name_wall.vmt
+materials/misc/256x256 music credits.vmt
+materials/misc/256x256_special_thanks.vmt
+materials/misc/32x32_backstab.vmt
+materials/misc/64x64 saying_helen_keller.vmt
+materials/misc/64x64 saying_henry_thoreau.vmt
+materials/misc/64x64 saying_lucille_ball.vmt
+materials/misc/64x64 saying_mark_twain.vmt
+materials/misc/64x64 saying_norman_peale.vmt
+materials/misc/64x64 saying_old_playing.vmt
+materials/misc/arcanine.vmt
+materials/misc/skull_and_crossbones.vmt
+materials/skybox/mpa110.vmt
+
+=== WHY MISSING: where each is used, and files with the same name elsewhere ===
+materials/course_map/black.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: cscontent: materials/cable/black.vtf; cscontent: materials/color/black.vmt; cscontent: materials/color/black.vtf; cscontent: materials/color2/black.vmt
+materials/grids/128x128_awp_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/grids/128x128_knife_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/grids/128x128_orange_coral_tile.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_arena_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_blinddeagle_screenshot.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_boosterknife_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_breakbox_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_bunnyhop_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_buy_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_cannonsurf_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_iceskate_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_lens_flare.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_question_marks.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_question_marks2.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_random_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_shotgun_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_sliderace_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_smallawp_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_speedclimb_screenie.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x128_spray_wall_fix.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_gameplay.vmap
+    same name elsewhere: none
+materials/misc/128x128_trains_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_arena_text2.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_arena_text3.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_blinddeagle_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_boosterknife_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_breakbox_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_bunnyhop_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_buy_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_cannonsurf_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_defuse_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_iceskate_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_knife_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_shotgun_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_sliderace_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_snipers_small_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_snipers_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/128x16_trains_text.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/256x128_lastthanks.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/256x128_name_wall.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/256x256 music credits.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/256x256_special_thanks.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/32x32_backstab.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/64x64 saying_helen_keller.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/64x64 saying_henry_thoreau.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/64x64 saying_lucille_ball.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/64x64 saying_mark_twain.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/64x64 saying_norman_peale.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/64x64 saying_old_playing.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/arcanine.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/misc/skull_and_crossbones.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_environment_prefab.vmap
+    same name elsewhere: none
+materials/skybox/mpa110.vmt
+    used by: maps/prefabs/mg_arcs_multigames/mg_arcs_multigames_lighting_prefab.vmap
+    same name elsewhere: none

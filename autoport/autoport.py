@@ -216,6 +216,10 @@ def passes(m):
         if re.search(pat, todo): chosen.append((pat, name))
     chosen += [('', p) for p in m.profile.passes]
     if vmf_has(m, 'move_rope') or vmf_has(m, 'keyframe_rope'): chosen.append(('', 'ropes'))   # stage C does it too; this covers maps redone from here
+    if vmf_has(m, 'game_round_end') or vmf_has(m, 'player_weaponstrip'): chosen.append(('', 'roundend'))   # neither class is in CS2
+    if vmf_has(m, 'env_global'): chosen.append(('', 'envglobal'))   # not in CS2; logic_autos reading its states never fire
+    if re.search(r'models/weapons/w_', read(os.path.join(S1, 'maps', m.addon + '.vmf')), re.I): chosen.append(('', 'weaponmodels'))   # cs_mdl_import can't compile them
+    if re.search(r'"!activator.Color.', read(os.path.join(S1, 'maps', m.addon + '.vmf')), re.I): chosen.append(('', 'playercolor'))   # the importer drops them (the separator is ESC or a comma)
     mp = V.Map(m.vmap)
     if any('water' in x.lower() for x in assets.mesh_materials(mp)) and not mp.by_class('func_water'): chosen.append(('', 'water'))
     chosen.append(('', m.profile.vis))   # always last: fixups changed the geometry stage C fitted its hints to
