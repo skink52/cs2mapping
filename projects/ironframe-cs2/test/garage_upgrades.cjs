@@ -40,7 +40,7 @@ vm.createContext(base);
 const prog = fs.readFileSync(path.join(root, 'src/core/70_progress.js'), 'utf8');
 const coreFns = ['IF_upgradeCost', 'IF_tierName'].map((n) => { const i = prog.indexOf('function ' + n + '('); if (i < 0) throw new Error('no ' + n + ' in 70_progress.js'); const one = prog.indexOf('\n', i), body = prog.indexOf('\n}\n', i); return prog.slice(i, prog.slice(i, one).trim().endsWith('}') ? one : body + 2); }).join('\n');
 const src = coreFns + '\n' + ['50_hud.js', '60_garage.js', '70_server.js'].map((f) => fs.readFileSync(path.join(root, 'src/cs2', f), 'utf8')).join('\n');
-const API = '\n;this.__api = { garageOpen, garageClick, garageSave, garageDraw, garageTrackValue, garageLevel, onPilotInput, srvDecodeInts, parsePilot, mailEnts, setServer: (v) => { serverMode = v; }, isServer: () => serverMode };';
+const API = '\n;this.__api = { garageOpen, garagePick, garagePreviewIds, garageClick, garageSave, garageDraw, garageTrackValue, garageLevel, onPilotInput, srvDecodeInts, parsePilot, mailEnts, setServer: (v) => { serverMode = v; }, isServer: () => serverMode };';
 for (let i = 0; i < 40; i++) {
   try { vm.runInContext(src + API, base); break; }
   catch (e) { const m = /(\w+) is not defined/.exec(e.message); if (!m) throw e; base[m[1]] = stub; vm.createContext(base); }
@@ -180,6 +180,26 @@ function newGameWith(draft, pilot) { const g = newGame(12); g.addPlayer(0, { tea
     }
   }
   ok(n > 100, 'catalogue sweep ran (' + n + ' part levels)');
+}
+
+// ---------------------------------------------------------------- quick starts: a new pilot's first garage opens on SORTIE, a preset launches
+{
+  A.setServer(false);
+  const g = newGame(31); base.game = g;
+  const pe = { slot: 3, human: true, team: 2, pilot: null, status: 'dead' };
+  people.set(3, pe);
+  g.addPlayer(3, { team: 2, human: true, name: 'P3', pilot: null });
+  A.garageOpen(pe, '');
+  const G = pe.garage, rows = G.rows;
+  ok(rows[0] && rows[0].name === 'SORTIE' && G.col === 1 && G.row === 0, 'first garage of the session: SORTIE tab, cursor on the launch row');
+  const q = rows.filter((r) => r.preset);
+  ok(q.length === 3 && q.every((r) => r.c === 'GO' && r.help), 'three quick starts under the launch row');
+  G.row = rows.indexOf(q[2]);
+  ok(A.garagePreviewIds(pe).ids.join(',') === q[2].preset, 'the quick start under the cursor stands in the bay');
+  A.garagePick(pe);
+  ok(!G.open && pe.ready, 'Space on a quick start launches');
+  const lp = pe.localPilot; ok(lp && lp.loadouts[G.slot - 1] === q[2].preset, 'and the build is the active loadout of the pilot');
+  A.garageOpen(pe, ''); ok(pe.garage.tab === 0 && pe.garage.col === 0, 'later garages open on the list as before');
 }
 
 if (logs.some((l) => /garage HUD section|: .*Error/.test(l))) console.log('log: ' + logs.filter((l) => /garage HUD section|Error/.test(l)).join(' | '));

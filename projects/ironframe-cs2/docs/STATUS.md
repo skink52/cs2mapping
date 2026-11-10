@@ -15,6 +15,16 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**11 Nov 2026, ~04:55 (04:01 continuation): list item 8 C, first half (quick starts) done, tested (all suites + 64-player mock), deployed
+to both addons 04:51. Unseen in game.**
+- A pilot's first garage of the session opens on the SORTIE tab with the cursor on the launch row (Space flies at once); under it
+  three quick starts from `parts.json` starter loadouts: `Quick: Assault` (White Glint), `Quick: Scout` (Krasnaya), `Quick: Brawler`
+  (Ogre). The one under the cursor stands in the bay; Space saves it to the active slot and launches. Own key legend on that tab.
+  A ranked pilot of the server (rank > 1) and every later garage open on the list as before. 60_garage.js `GARAGE_QUICK`, `garageRows`,
+  `garagePick`, `garagePreviewIds`, `garageOpen`; test/garage_upgrades.cjs last section (419 checks).
+- Left of C: the RECOMMENDED tag and sort in the part lists, the first-sortie training wave with prompts.
+- Next: 7 A (the mech as one machine), the rest of C, then E, F, S4, M4, M5.
+
 **11 Nov 2026, ~05:00 (04:01 continuation): list item 8 D (teammate marks) done, tested, deployed to both addons. Unseen in game.**
 - Each pilot's HUD puts a green triangle (`ally.png`, tools/hud_images.py `ally_mark`) over the head of up to 8 living teammates that
   are on screen and within 9 000 u, nearest first, dimmed past 4 500 u (`stFar`); a mark keeps its mech so marks do not swap.

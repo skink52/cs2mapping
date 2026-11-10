@@ -29,6 +29,8 @@ const GARAGE_CLASS_ORDER = ['light', 'medium', 'heavy'];
 // short forms of the server's refusal texts for the narrow garage boxes
 const GARAGE_DENY = { 0: 'SERVER SAID NO', 1: 'PART NOT OWNED', 2: 'RANK TOO LOW', 3: 'NOT ENOUGH CREDITS', 4: 'OVER WEIGHT LIMIT', 5: 'OVER EN BUDGET', 6: 'AT MAX LEVEL', 7: 'LOADOUT NOT VALID', 8: 'TOO FAST, RETRY', 9: 'TEXT NOT ALLOWED', 10: 'NOT EARNED YET' };
 const GARAGE_WTYPE = { proj: 'PROJECTILE', missile: 'MISSILE', hitscan: 'HITSCAN', lob: 'LOB', melee: 'MELEE', shield: 'SHIELD', ability: 'ABILITY' };
+const GARAGE_QUICK = { medium: ['Assault', 'MEDIUM', 'Two rifles, vertical missiles, chaff. Good at everything.'], light: ['Scout', 'LIGHT', 'Quick and hard to hit, thin armour. Keep moving.'],
+  heavy: ['Brawler', 'HEAVY', 'Two shotguns and thick armour. Close in and stay there.'] };
 const PART_BY_ID = {};
 for (const p of (PARTS.parts || [])) PART_BY_ID[p.id] = p;
 const STARTER = PARTS.starter || { owned: [], loadouts: [] };
@@ -39,6 +41,7 @@ const gfmt = (n) => (typeof ifrHudFmtNum === 'function' ? ifrHudFmtNum(n) : Stri
 function garageTab(g) { return GARAGE_TABS[g.tab]; }
 
 function garageOpen(pe, why) {
+  const fresh = !pe.garage;
   if (!pe.garage) pe.garage = { tab: 0, row: 0, col: 0, urow: 0, draft: null, slot: 1, msg: '', msgAt: 0, pending: false, rows: [], tracks: [], scroll: 0, confirm: null, yaw: 300, spinAt: -99, lastT: 0, drawAt: -99, dirty: true, bay: null };
   const g = pe.garage;
   g.open = true;
@@ -47,6 +50,9 @@ function garageOpen(pe, why) {
   const src = pilot && pilot.loadouts[g.slot - 1] ? pilot.loadouts[g.slot - 1] : STARTER.loadouts[0] || '4,101,103,201,209,301,401,501,601';
   g.draft = garageParse(src);
   g.tab = 0; g.row = 0; g.scroll = 0; g.col = 0; g.urow = 0; g.confirm = null; g.msg = why || ''; g.msgAt = gameTime(); g.pending = false; g.nextSide = { arm: 0, shoulder: 0 };
+  // a pilot's first garage of the session opens on SORTIE with the cursor on the launch row: Space flies, S walks the quick starts,
+  // A goes to the tabs (a ranked pilot of the server knows the way: the list as before)
+  if (fresh && !(pilot && pilot.rank > 1)) { g.tab = GARAGE_TABS.length - 1; g.col = 1; }
   hangarOrigin = null;
   // stand-alone: the core gets the local pilot (its upgrades); in server mode a stale local one is dropped for the server's record
   if (game && !serverMode && pe.localPilot) guard('local pilot', () => game.setPilot(pe.slot, pe.localPilot));
@@ -138,6 +144,12 @@ function garageRows(pe) {
     const b = garageBudgets(pe), f = PART_BY_ID[g.draft[0]];
     rows.push({ id: 0, name: 'SORTIE', type: b.valid ? 'LAUNCH THIS LOADOUT' : (GARAGE_DENY[b.deny] || 'INVALID LOADOUT'), c: b.valid ? 'GO' : 'BLOCKED', r: '', state: b.valid ? 'owned' : 'locked', pic: f ? f.key : '' });
     rows.push({ id: -10, name: 'Save to slot ' + g.slot, type: 'KEEP THIS LOADOUT', c: 'SAVE', r: '', state: 'owned', pic: f ? f.key : '' });
+    // quick starts (11 Nov 2026; the third playtest's "hard to jump into"): the three starter builds, one Space from the fight
+    STARTER.loadouts.forEach((l, k) => {
+      const pf = PART_BY_ID[garageParse(l)[0]]; if (!pf || k > 2) return;
+      const q = GARAGE_QUICK[pf.class] || GARAGE_QUICK.medium;
+      rows.push({ id: -(11 + k), preset: l, name: 'Quick: ' + q[0], type: pf.name.toUpperCase() + '  ' + q[1], c: 'GO', r: '', state: 'owned', pic: pf.key, help: q[2] + ' Space launches it now.' });
+    });
   } else {
     if (tab.key === 'pri') for (const i of [1, 2]) rows.push({ id: -(20 + i), name: 'Empty ' + GARAGE_SLOTS[i], type: 'REMOVE EQUIPMENT', c: g.draft[i] === 0 ? 'ACTIVE' : '', r: '', state: g.draft[i] === 0 ? 'equipped' : 'owned', empty: i });
     if (tab.key === 'sec' || tab.key === 'spe') for (const i of [3, 4]) rows.push({ id: -(20 + i), name: 'Empty ' + GARAGE_SLOTS[i], type: 'REMOVE EQUIPMENT', c: g.draft[i] === 0 ? 'ACTIVE' : '', r: '', state: g.draft[i] === 0 ? 'equipped' : 'owned', empty: i });
@@ -276,6 +288,7 @@ function garageSay(pe, msg) { pe.garage.msg = msg; pe.garage.msgAt = gameTime();
 // the draft with the highlighted list item swapped in: what the preview shows (an unowned item too: look before you buy)
 function garagePreviewIds(pe) {
   const g = pe.garage, ids = g.draft.slice(), sel = g.col === 1 ? g.rows[g.row] : null;
+  if (sel && sel.preset) return { ids: garageParse(sel.preset), swap: null };       // a quick start under the cursor stands in the bay
   if (sel && sel.part && sel.state !== 'locked') { const t = garageTarget(g, sel.part, 0); if (t >= 0) ids[t] = sel.part.id; return { ids, swap: sel.part }; }
   return { ids, swap: null };
 }
@@ -364,6 +377,7 @@ function garageDraw(pe) {
   const info = g.col !== 2 && sel && sel.help ? { name: sel.name, type: sel.type || '', lines: ifrHudWrap(['gpd', 'gpd2', 'gpd3'], sel.help), key: '', cmp: '' } : garageInfo(pe, focus);
   const arm = tab.key === 'pri' || tab.key === 'sec' || tab.key === 'spe' || tab.key === 'all', setup = tab.key === 'plt' || tab.key === 'load';
   const legend = g.confirm ? 'SPACE CONFIRM   CTRL CANCEL   OR CLICK' : g.col === 0 ? 'W/S TAB   SPACE OPEN   E/R TURN THE MECH   CTRL BACK'
+    : g.col === 1 && tab.key === 'sortie' ? 'SPACE LAUNCH   W/S PICK A BUILD   A TABS: CHANGE PARTS   E/R TURN'
     : g.col === 1 ? 'W/S ITEM   SPACE EQUIP   A TABS   D TRACKS   F UPGRADE   CTRL BACK' : 'W/S TRACK   SPACE OR CLICK UPGRADES   A LIST   CTRL BACK';
   const st = { tabs: GARAGE_TABS.map((t) => t.title), tab: g.tab, col: g.col, rows: g.rows.slice(g.scroll, g.scroll + GARAGE_VISIBLE), sel: g.row - g.scroll, scroll: g.scroll, total: g.rows.length,
     tracks: g.tracks, urow: g.urow, utitle: !g.tracks.length ? 'NO UPGRADES' : serverMode ? 'COST BASE X (LV+1)' : 'OFFLINE: FREE', budgets: b, lock: fcs && fcs.f ? fcs.f.range : undefined,
@@ -557,6 +571,7 @@ function garagePick(pe) {
   if (!sel) return;
   if (tab.key === 'sortie') {
     if (sel.id === -10) { garageSave(pe, false); return; }
+    if (sel.preset) { g.draft = garageParse(sel.preset); garageRows(pe); }      // a quick start: that build, checked and launched like any other
     const b = garageBudgets(pe);
     if (!b.valid) { garageSay(pe, DENY_TEXT[b.deny] || 'invalid loadout'); sndTone(pe.slot, 'ui_garage_deny'); return; }
     garageSave(pe, true); return;
