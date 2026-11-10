@@ -55,6 +55,7 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Named CS:GO sounds ("sound scripts", e.g. a grate clang used by a button) recreated under the same names so they play again.
 - Every light rebuilt from the original map: real colours, brightness, spotlight cones and aim, flickering and switchable lights, plus lights under water so it isn't pitch black.
 - Steam jets and heat-shimmer effects (gone in CS2) rebuilt as particle effects that switch on and off the same way.
+- Checking a map without opening Hammer: against CS2's own entity definitions, for spawn, light and probe problems, and for floating or buried props; then loading the built map in the running game and reading its errors and script output (learned from cs2-map-mcp).
 - Built-in CS:GO particle effects (embers, burning engines, splashes, sparks, confetti) pointed at CS2's own copies so they play again.
 - Fires that burn and hurt again (CS2's own fire effect, switched and burnt out like the original) and sparks that spark again.
 - Huge floors cut into tiles so they light evenly; water given one lighting volume so its reflection doesn't show squares.

@@ -3,6 +3,17 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-10: cs2-map-mcp ported (validation, compiler, generators, live game, MCP server)
+
+- **[tools]** From Rmgs123/cs2-map-mcp (MIT), written fresh as new files: `fgdcat` / `fgdcheck` (vmap vs CS2's FGDs), `mapsanity`, `visualcheck`,
+  `rcompile` (presets, single assets, build-log reader), `mapbackup`, `release` (dry-run release plan), `propatlas`, `kv3text`, and `mcp_server.py`
+  (stdio MCP server for all of it). 101 offline tests in `tools/tests`.
+- **[create]** `primitives`, `meshedit` (CSG, UVs), `mapops` (JSON batches), `gen_*` generators (layout, buildings, world, kits, gameplay, light,
+  physics), `matkit`, `sndkit`, `fxkit`, `blenderkit`, `mechkit` + `mech/*.js`.
+- **[autoport]** Live game: `vconsole` (VConsole2, TCP 29000), `cs2live`, `livetest`, `crashdump`, `ingame_check`, `mcp_live`; new `ingame` build step,
+  opt-in with `--ingame` / `--ingame-launch`. 65 tests against a fake CS2; only the console link tried on the real game.
+- Not the default creation method yet: parts not ported and nothing run in CS2 ([docs/creation/guide.md](docs/creation/guide.md) section 9).
+
 ## 2026-11-10: mg_pirates CS:GO water and underwater fog, ropes parented to the masts
 
 - **[port mg_pirates]** sea and 3D skybox sea in CS:GO's `liquids/inferno_water` colour and murkiness (`pirates_water_csgo.vmat`, cs2-slop-porting's

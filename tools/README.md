@@ -46,6 +46,23 @@ Everything runs with Python 3 + numpy, scipy and Pillow, normally on the PC itse
 | `vmdlfix.py` | Names the empty bodygroup choices cs_mdl_import writes (CS2 won't compile a model with any) | `python3 vmdlfix.py <addon content folder or .vmdl> [...]` |
 | `setup_bspsrc.sh` | Extracts BSPSource from its jlink image and patches the class files to Java 21; writes `<dest>/bspsrc.sh` | `sh setup_bspsrc.sh <staged bspsrc-windows/lib/modules> <dest dir>` (use `<dest>` = `tools/` so prep.py finds it, or set `BSPSRC=`) |
 
+**From cs2-map-mcp (Rmgs123, MIT; ported fresh 10 Nov 2026, offline tests only):**
+
+| File | What it does | Usage |
+|---|---|---|
+| `fgdcat.py` | Entity catalog from CS2's installed FGDs (keys, defaults, choices, I/O; `@exclude`, `@OverrideClass` as Hammer reads them) | `python fgdcat.py describe\|search\|defaults <class>` |
+| `fgdcheck.py` | Read-only vmap validation against the FGDs: classes, keys, values, I/O, targets, missing assets | `python fgdcheck.py <map.vmap> [--json] [--no-assets]` |
+| `mapsanity.py` | Read-only gameplay checks: spawns (floor, headroom, spacing), sun / sky, probes, lightmapres, nav seeds, buyzones | `python mapsanity.py <map.vmap> [--mode classic\|minigame\|course\|story]` |
+| `visualcheck.py` | Read-only: floating / buried / overlapping props, z-fighting (zfight.py), open meshes. Noisy on terrain and model-built maps | `python visualcheck.py <map.vmap>` |
+| `rcompile.py` | resourcecompiler presets (fast, nav, full, final, entities, lighting), single-asset compile, build-log reader | `python rcompile.py map\|asset\|analyze ...` |
+| `mapbackup.py` | Tiered lzma map backups with pins and source snapshots | `python mapbackup.py save\|list\|restore\|pin\|scan\|trim ...` |
+| `release.py` | One-map release addon plan + PUBLISH.md (dry run; `--apply` copies; never uploads) | `python release.py <map.vmap> [--apply]` |
+| `propatlas.py` | Stock prop search with real sizes and notes | `python propatlas.py search <words> --sizes` |
+| `kv3text.py` | KV3 text parse / write (.vmdl, .vpost, .vsndevts, .vpcf, .vdata) | `python kv3text.py <file>` |
+| `mcp_server.py` | MCP server (stdio, no dependencies) for these tools, the create/ generators and the autoport live-game tools (`MCP_TOOLS` plug-ins) | `claude mcp add cs2mapping -- python <repo>\tools\mcp_server.py` |
+
+Tests: `python -m unittest discover -s tools/tests` (fake CS2 folder; never runs resourcecompiler).
+
 ### Stage C step keys (run order, from `stage_c.run()`)
 
 `merge, io, wall, equip, launch, push, cmd, roundcfg, score, speed, gravity, dead, rendermode, renderamt, steam, fire, particles, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags, droppedio`,

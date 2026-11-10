@@ -15,7 +15,7 @@ LOCK = os.path.join(STATE, 'worker.lock')
 CLEANUP = os.path.join(LOGS, 'cleanup_list.md')
 
 PREP_STEPS = ['prep', 'deliver', 'import', 'root', 'stage_c', 'fixups', 'passes', 'profile', 'credit', 'audit']
-BUILD_STEPS = ['build', 'report', 'description']
+BUILD_STEPS = ['build', 'ingame', 'report', 'description']     # ingame does nothing without --ingame / --ingame-launch
 STEPS = PREP_STEPS + BUILD_STEPS
 
 # error/missing/unknown/io hold a map back from the build until someone clears them; the rest only go on the list

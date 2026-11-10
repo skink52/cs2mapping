@@ -274,3 +274,24 @@ Per project, in its repo (templates in [templates/](templates/)):
 | `docs/WORKSHOP_DESCRIPTION.txt` | no | the BBCode description ([workshop.md](workshop.md#description)) |
 
 Working with Claude in general: [../reference/ai-workflow.md](../reference/ai-workflow.md).
+
+## 9. The cs2-map-mcp toolset (10 Nov 2026, not the default yet)
+
+Everything [cs2-map-mcp](https://github.com/Rmgs123/cs2-map-mcp) (Rmgs123, MIT) does was ported fresh into this repo on 10 Nov 2026, as
+new files: shape and mesh builders (`create/primitives.py`, `meshedit.py`), batch map edits (`mapops.py`), layout / building / street / kit /
+gameplay / lighting / physics generators (`create/gen_*.py`), material, sound, effect, Blender and mechanics kits, FGD and gameplay validation
+(`tools/fgdcheck.py`, `mapsanity.py`, `visualcheck.py`), a compiler wrapper (`rcompile.py`), tiered backups (`mapbackup.py`), a release plan
+(`release.py`), the live-game tools in `autoport/` (console link, launch, playtests, screenshots, crash dumps) and an MCP server
+(`tools/mcp_server.py`) that offers all of it to an AI client. 166 offline tests pass (101 in `tools/tests`, 65 in `autoport/tests`).
+
+**It is not the default creation method yet**, because not all of it is there and none of it has run in CS2:
+- Not ported: Hammer prefab save, material / model previews (need Source 2 Viewer renders), its prebuilt drone / car / railgun models, photo
+  reference judging, wear / street life / dressing and the arcades / loggias / paving data, light rooms and shafts, soundscapes, lifts between
+  levels, route sampling in check_map, visual_scene, 5 of its 17 abilities, its clickable UI layouts. Simpler than theirs: vehicles and
+  turrets (scripted movement, no suspension or chase cameras), map templates, nav zones.
+- Live game: only the console connection was tried on the real game; map loading, screenshots and movement only against a fake CS2.
+- Never run in CS2: a `mapops` batch compiled and loaded, one mechanic of each kind played, one Blender template built, the `golden_hour`
+  light preset baked.
+
+When those pass, switch sections 2-6 of this guide to it. Until then the method above stays the default, and the new tools are used
+alongside it: `fgdcheck` / `mapsanity` / `visualcheck` before a build, `rcompile analyze` on a failed build log, `ingame_check` after it.

@@ -173,6 +173,20 @@ upside-down torches and the bodygroup fix. Round setup also sets any other `sv_a
 - A clone of this repo at `C:\source1\cs2mapping` for TTT maps (or set `CS2MAPPING`).
 - The rest of [docs/porting/setup.md](../docs/porting/setup.md#one-time-pc-setup). BSPSource runs from its own image in `C:\source1\bspsrc-windows` through [bspsrc.bat](bspsrc.bat), so it needs neither Java 21 nor `setup_bspsrc.sh`.
 
+## In-game check (cs2-map-mcp, 10 Nov 2026)
+
+`ingame_check.py <addon> [<map>]` loads a built map in a running CS2 and reads its console for `--seconds` (map script `echo` /
+`Instance.Msg` output included, which console.log lacks), sorts the problem lines into the kinds above and writes
+`logs\autoport\ingame\<addon>_ingame_<time>.md`. It talks to CS2 Workshop Tools over VConsole2 (TCP 29000; Steam > Launch CS2 Workshop
+Tools, i.e. `-tools`), or to any client started with `-netconport N` (`--netcon N`). If the console drops, the newest crash dump is read.
+Exit 0 clean, 1 holds, 2 crash or failed load, 3 no CS2 open. `--launch` starts Workshop Tools minimised and not focused, and stops it after.
+autoport runs it after each build with `--ingame` (an open CS2) or `--ingame-launch`; without either flag the `ingame` step does nothing.
+Only the console connection has been tried on the real game (10 Nov 2026); map loading, screenshots and movement were tested against a fake
+CS2 (`tests/fakecs2.py`). Record a baseline first so stock noise is ignored: `ingame_check.py stock de_dust2 --plain-map --record-baseline`.
+`vconsole.py` (`ping`, `send`, `tail`, `wait`), `livetest.py` (playtests, scenarios, route timings, physics probe, player marks) and
+`crashdump.py` also stand alone; `mcp_live.py` exposes all of it to `tools/mcp_server.py`. Learned from Rmgs123/cs2-map-mcp (MIT),
+written fresh. Tests: `python -m unittest discover -s autoport/tests`.
+
 ## Files
 
 | File | Job |
@@ -184,4 +198,11 @@ upside-down torches and the bodygroup fix. Round setup also sets any other `sv_a
 | `common.py` | Paths, the dated log, map state |
 | `watchdog.py`, `monitor.py` | Hang protection and the live window |
 | `pclocal.py`, `bspsrc.bat`, `run_autoport.bat` | Copying files to the PC, BSPSource's command line, the double-click launcher |
+| `vconsole.py` | VConsole2 client (CS2 console over TCP 29000): send commands, read output, wait for a line |
+| `cs2live.py` | The running CS2: find it, launch it minimised (only when asked), load a map, screenshots, reset, stop what it launched |
+| `livetest.py` | Bot playtests, scripted scenarios, route walking and timings, physics probe, player marks |
+| `crashdump.py` | Newest CS2 minidump and its essentials |
+| `ingame_check.py` | The in-game check (above); `run_for_autoport` is the autoport `ingame` step |
+| `mcp_live.py` | The live-game tools for `tools/mcp_server.py` (`MCP_TOOLS`) |
+| `tests/` | Unit tests against a fake CS2 console (`fakecs2.py`) |
 | `REVIEW.md` | Instructions for Claude when reviewing a held map |

@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "kit": "street_small",
+  "title": "Small street set (stock CS2 props; bounds measured from pak01 with create/s2/bounds_batch.mjs, 10 Nov 2026)",
+  "parts": [
+    {"key": "bench", "model": "models/props_urban/bench001.vmdl", "category": "street", "mount": "floor", "front": "-y",
+     "bounds": [[-38, -16, 0], [38, 15.1, 46]], "tags": ["bench", "wood", "seat"]},
+    {"key": "crate32", "model": "models/props/de_dust/hr_dust/dust_crates/dust_crate_style_01_32x32x32.vmdl", "category": "crate", "mount": "floor",
+     "front": "+x", "bounds": [[-16.5, -16, -0.1], [16.5, 16, 32.2]], "tags": ["crate", "wood", "cover", "stackable"]},
+    {"key": "barrel", "model": "models/props/de_dust/dust_rusty_barrel.vmdl", "category": "barrel", "mount": "floor", "front": "+x",
+     "bounds": [[-14.8, -14.8, 0], [14.8, 14.8, 45]], "tags": ["barrel", "metal"]},
+    {"key": "streetlight", "model": "models/props_urban/streetlight001.vmdl", "category": "light", "mount": "floor", "front": "+x",
+     "bounds": [[-62.4, -14, 0], [62, 14, 509.8]], "tags": ["light", "pole", "tall"]},
+    {"key": "trashcan", "model": "models/props_interiors/trashcan01.vmdl", "category": "street", "mount": "floor", "front": "+x",
+     "bounds": [[-12.4, -12.4, 0], [12.4, 12.4, 54.4]], "tags": ["trash", "small"]},
+    {"key": "awning67", "model": "models/props/de_dust/hr_dust/dust_awnings/dust_awning_01_67.vmdl", "category": "facade", "mount": "wall",
+     "front": "+y", "bounds": [[-37.7, 0, -29.6], [37, 13.7, 2.4]], "tags": ["awning", "cloth", "window"]},
+    {"key": "wall_lamp", "model": "models/cs_italy/italy_lamps/italy_wall_lamp_01.vmdl", "category": "light", "mount": "wall", "front": "+x",
+     "bounds": [[0, -6.8, -17.7], [17.6, 6.8, 18.5]], "tags": ["light", "lamp", "wall"]},
+    {"key": "planter", "model": "models/props_foliage/urban_balcony_planter01.vmdl", "category": "facade", "mount": "wall", "front": "+x",
+     "bounds": [[-3.5, -37.7, -1.2], [25.5, 37.3, 29.7]], "tags": ["plant", "window", "balcony"]}
+  ]
+}

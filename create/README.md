@@ -23,6 +23,21 @@ The guide that explains how these fit together: [docs/creation/guide.md](../docs
 |---|---|
 | `dmx.py` | Lossless binary DMX (encoding binary 9) reader/writer: `DMX.load(path)` → elements; `save` reproduces the bytes. |
 | `dmx9.py` | Binary DMX v9 reader/writer used by cs2-fighter, cs21.6 and trenchwarfare-cs2 (master copy; kept in step by `libsync.py`). |
+| `primitives.py` | Closed solids (box, wedge, cylinder, prism, stairs, arch, extrude, revolve, sweep), FGD-default entities, `connect()` I/O, `brush_entity()`. *(cs2-map-mcp port, 10 Nov 2026)* |
+| `meshedit.py` | Mesh editing on primitives Shapes: extrude / inset, bevel (convex shapes), subdivide, bend / twist / taper / noise, CSG cut, UVs and paint. *(cs2-map-mcp port, 10 Nov 2026)* |
+| `mapops.py` | Batch map edits from JSON (cs2-map-mcp's map_edit): all-or-nothing, dry run, backup before overwrite. *(cs2-map-mcp port, 10 Nov 2026)* |
+| `gen_layout.py` | Rooms and corridors from a plan: floors, ceilings, shared walls with door openings. *(cs2-map-mcp port, 10 Nov 2026)* |
+| `gen_buildings.py` | Buildings and street fronts: hollow shells, floors, window and door openings, roofs. *(cs2-map-mcp port, 10 Nov 2026)* |
+| `gen_world.py` | Outdoor builders: streets with kerbs, junctions, fences along a path, scattered props, banks. *(cs2-map-mcp port, 10 Nov 2026)* |
+| `gen_kits.py` | Kits of stock parts placed by their real bounds (`kits/street_small.json`). *(cs2-map-mcp port, 10 Nov 2026)* |
+| `gen_gameplay.py` | Competitive plans (defuse / hostage / wingman) with spawns, buyzones, sites and timings; game-mode pieces (surf / bhop / kz). *(cs2-map-mcp port, 10 Nov 2026)* |
+| `gen_light.py` | Lighting presets: sun, sky, fog, probes, cubemap, lightmap resolution in one call (7 presets). *(cs2-map-mcp port, 10 Nov 2026)* |
+| `gen_physics.py` | Doors, buttons, lifts, rotators, breakables and physics props with their keys and wiring. *(cs2-map-mcp port, 10 Nov 2026)* |
+| `fxkit.py` | Stock particles, rain / snow over an area, lightning. *(cs2-map-mcp port, 10 Nov 2026)* |
+| `matkit.py` | Materials: 9 patterns, photo to seamless PBR, colour variants, glass / emissive / water / decal / sign. *(cs2-map-mcp port, 10 Nov 2026)* |
+| `sndkit.py` | Synthesised effects, WAV import (resample, loop markers) and their sound events. *(cs2-map-mcp port, 10 Nov 2026)* |
+| `blenderkit.py` | Own props through headless Blender (8 templates or your own bpy script) to FBX + vmdl. Dry run tested only. *(cs2-map-mcp port, 10 Nov 2026)* |
+| `mechkit.py` | Mechanics in cs_script: bundles `mech/*.js` (core, weapons, abilities, controls, minigames, hide and seek, story, modes) with a JSON config and a themed HUD. *(cs2-map-mcp port, 10 Nov 2026)* |
 | `vmaplib.py` | Writes Hammer map nodes into a vmap: entities (`ent`), meshes, groups, vis groups. |
 | `vmesh.py` | `CMapMesh` writer that supports open meshes (boundary half-edges with face −1, as Valve's maps use). |
 | `check_mesh.py <vmap>...` | Validates every half-edge mesh (opposite/next chains, face loops, vertex and face-vertex counts). Run before handing a generated map over. |

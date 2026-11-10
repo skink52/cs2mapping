@@ -454,7 +454,15 @@ def description(m):
     if not author: m.note('review', 'Steam description says [ORIGINAL AUTHOR]: fill in the original mapper in %s (and the loading screen credit).' % path)
     m.note('review', 'Steam description written: %s. Check the title (%s) and add screenshots before publishing.' % (path, title))
 
-FUNCS = {'prep': prep, 'deliver': deliver, 'import': import_, 'root': root, 'stage_c': stage_c, 'fixups': fixups, 'passes': passes, 'profile': profile, 'credit': credit, 'audit': audit, 'build': build, 'report': report, 'description': description}
+def ingame(m):
+    """Opt-in in-game check after the build (ingame_check.py, learned from cs2-map-mcp, MIT): --ingame reads an open CS2 Workshop Tools
+    console (VConsole2, TCP 29000), --ingame-launch starts one minimised and stops it after. Errors, missing resources and I/O problems it
+    sees in the console (map script echo included, which console.log lacks) hold the map like any other issue."""
+    if not (getattr(m.opts, 'ingame', False) or getattr(m.opts, 'ingame_launch', False)): return
+    import ingame_check
+    ingame_check.run_for_autoport(m, seconds=20, launch=getattr(m.opts, 'ingame_launch', False))
+
+FUNCS = {'prep': prep, 'deliver': deliver, 'import': import_, 'root': root, 'stage_c': stage_c, 'fixups': fixups, 'passes': passes, 'profile': profile, 'credit': credit, 'audit': audit, 'build': build, 'ingame': ingame, 'report': report, 'description': description}
 
 # ------------------------------------------------------------------ the worker
 def run_steps(m, steps):
@@ -602,6 +610,8 @@ def main():
     ap.add_argument('--vis-budget', type=float, default=20, help='minutes vis may take before the build restarts with visfit_lean hints')
     ap.add_argument('--yes', action='store_true', help='no questions: skip the confirmation on an interactive launch')
     ap.add_argument('--dry-run', action='store_true', help='show the plan and stop')
+    ap.add_argument('--ingame', action='store_true', help='after each build, check the map in an open CS2 Workshop Tools console (ingame_check.py)')
+    ap.add_argument('--ingame-launch', action='store_true', help='like --ingame, but start CS2 Workshop Tools minimised for it and stop it after')
     ap.add_argument('--no-online', action='store_true', help='skip the Steam Workshop and GameBanana search')
     a = ap.parse_args(argv)
     if a.maps == ['serve']: return serve(a)
