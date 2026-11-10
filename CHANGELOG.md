@@ -3,6 +3,14 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-10: mg_pirates CS:GO water and underwater fog, ropes parented to the masts
+
+- **[port mg_pirates]** sea and 3D skybox sea in CS:GO's `liquids/inferno_water` colour and murkiness (`pirates_water_csgo.vmat`, cs2-slop-porting's
+  WATER_CONVERT values), an underwater `env_gradient_fog` limited to the water by a `fog_volume`, `env_player_visibility` 1 / 1. Ropes: the importer's
+  8 path_particle_ropes replaced by 16 cable_dynamic from the .vmf, parented to the masts so they sink with the ships. Backed up, not built.
+- **[tools]** `ropes`: parented ropes keep their parent (caps prop_dynamic); path_particle_ropes the importer made from the .vmf ropes are
+  removed instead of converted as well (they doubled every rope).
+
 ## 2026-11-09: five multigames maps from Briar's Dropbox, ported in parallel
 
 - **[ports]** mg_minecraft_multigames, mg_nature_multigames, mg_pokemon_adventure, mg_arcs_multigames, mg_color_multigames: BSPs from Briar's

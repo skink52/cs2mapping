@@ -211,6 +211,8 @@ waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`,
   `port_rope_*`). TO CHECK: the sag and end caps. The same step turns CS2 `path_particle_rope` paths (particle cables: no collision, flat lit) into one
   cable_dynamic each through the same nodes, material mapped the same way, the rope's own radius and each node's radius_scale kept, no caps, straight
   paths kept linear; the originals are removed. On an installed map: `python3 ropes.py <vmap in> <vmap out>` (de_nuketown, 6 cables).
+  Parented ropes keep their parent (cable_dynamic `parentname`; end caps become parented prop_dynamic), and path_particle_ropes the importer
+  made from the .vmf ropes (all nodes on rope origins) are removed and rebuilt from the .vmf, not converted as well (mg_pirates, 10 Nov 2026).
 - **env_laser / env_beam** (`beams`). CS2 can't spawn them. Each becomes a never-solid func_brush between its end points: LaserTarget for lasers,
   LightningStart/End for beams, matched case-insensitively. It is drawn as crossed double-sided quads with a self-illuminated laser material in the beam's
   colour. A mutual laser pair is drawn once. A CS:GO beam with no name starts on. TurnOn/TurnOff/Toggle become Enable/Disable/Toggle; StrikeOnce becomes

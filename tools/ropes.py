@@ -13,12 +13,16 @@ CS2 can't spawn the CS:GO rope entities and the importer drops them. Each rope s
     degree one a quarter of that, an 80 degree one 3%.
   - ropes (not electrical cables) get a grapplinghook_rope_end_01 prop at each free end, tinted 240 179 94, its axis along the rope pointing
     inward. The cap goes at the rope's end point, where it meets the surface; a cable that runs a little into terrain is left as it is.
+  - Valve's importer can turn the ropes into path_particle_rope paths (mg_pirates, 10 Nov 2026: one path per chain, one material for
+    the whole chain, a node missing): those lying on the .vmf ropes are removed and the ropes rebuilt from the .vmf, so none is doubled.
+  - parented ropes (mg_pirates' rigging on masts that ride a sinking func_tracktrain, 10 Nov 2026): the cable gets the CS:GO rope's
+    parentname when that entity is in the map, and its end caps are prop_dynamic with the same parent, so they move with it.
 Re-runnable: earlier port_rope_* cables and caps are replaced.
 
 CS2's own path_particle_rope (a CMapPath with path_node_generic children; a particle cable, no collision, flat lit) is rebuilt the same way
 (particle_ropes): one cable_dynamic through the same node positions, its RopeMaterial mapped as above (cable/cable -> cable.vmat), radius from
 its own radius key (already a CS2 cable radius; Width / 4 if only a width is given, else 0.5), each node's radius_scale kept, the same sag per
-segment (its slack key, else the default rule), the targetname kept. The original is removed. No end caps (de_nuketown, 3 Nov 2026).
+segment (its slack key, else the default rule), the targetname and parentname kept. The original is removed. No end caps (de_nuketown, 3 Nov 2026).
 Stage C / D `ropes` run it too, with or without a .vmf.
 
   python3 ropes.py <vmap in> <vmap out>                 path_particle_rope -> cable_dynamic in an installed map (Hammer closed, vmap backed up)
@@ -106,9 +110,23 @@ def cap_angles(inward):
     y = math.degrees(math.atan2(d[1], d[0])) if math.hypot(d[0], d[1]) > 1e-6 else 0.0
     return (p, y, 0.0)
 
+def imported_copies(m, rs, tol=2.0):
+    """path_particle_rope paths whose every node sits on a CS:GO rope's origin (within tol): Valve's importer's copies of the .vmf ropes"""
+    pts = np.array([pos(r) for r in rs])
+    out = []
+    for n, p in m.walk():
+        if m.type(n) != b'CMapPath' or m.P(n, 'classname') != 'path_particle_rope': continue
+        kids = [k for k in m.children(n) if m.type(k) == b'CMapPathNode']
+        if kids and all(np.min(np.linalg.norm(pts - np.array(m.origin(k)), axis=1)) <= tol for k in kids): out.append(n)
+    return out
+
 def run(m, c, vmfpath):
-    particle_ropes(m, c)
     rs = ropes_in(vmfpath)
+    if rs:      # the importer may have made path_particle_ropes of them (mg_pirates, 10 Nov 2026): rebuilt from the .vmf instead, not twice
+        dup = imported_copies(m, rs)
+        for n in dup: m.remove_node(n)
+        if dup: c.log.append('%d path_particle_rope the importer made from the CS:GO ropes removed (rebuilt from the .vmf below)' % len(dup))
+    particle_ropes(m, c)
     if not rs: return
     for n in list(m.children(m.world)):   # a rerun replaces what an earlier run made
         if m.type(n) in (b'CMapCable', b'CMapEntity') and (m.name(n) or '').startswith('port_rope_'): m.remove_node(n)
@@ -118,8 +136,11 @@ def run(m, c, vmfpath):
     ends = {}
     for r, t in segs:
         for e in (r, t): ends[e.get('origin')] = ends.get(e.get('origin'), 0) + 1
-    made = 0; caps = 0; odd = set(); sags = []
+    made = 0; caps = 0; odd = set(); sags = []; parented = 0
+    names = {(m.name(e) or '').lower() for e in m.entities()} - {''}
     for i, (r, t) in enumerate(segs):
+        par = r.get('parentname') or t.get('parentname') or ''
+        if par.lower() not in names: par = ''
         mat, is_rope, unknown = material(r.get('ropematerial'))
         if unknown: odd.add(r.get('ropematerial') or '(none)')
         a, b = pos(r), pos(t)
@@ -128,17 +149,20 @@ def run(m, c, vmfpath):
         dmx.set_(m.E[j], b'materialName', dmx.T_STR, mat.encode())
         dmx.set_(m.E[j], b'radius', dmx.T_FLOAT, max(0.25, float(r.get('width', '2') or 2) / 4))
         m.setp(j, 'targetname', 'port_rope_%d' % i)
+        if par: m.setp(j, 'parentname', par); parented += 1
         dmx.geta(m.E[m.world], b'children')[2].append(j); made += 1
         if not is_rope: continue
         for end, nd in ((a, nodes[0]), (b, nodes[-1])):    # the cap points along the handle leaving its end
             key = r.get('origin') if end is a else t.get('origin')
             if ends.get(key, 0) > 1: continue        # a joint in the middle of a chain, not a free end
             handle = np.array(m.g(nd, b'outTangent' if end is a else b'inTangent'))
-            m.new_entity('prop_static', end, {'targetname': 'port_rope_end_%d' % caps, 'model': END_MODEL, 'rendercolor': END_TINT, 'solid': '6'},
-                         angles=cap_angles(handle))
+            props = {'targetname': 'port_rope_end_%d' % caps, 'model': END_MODEL, 'rendercolor': END_TINT, 'solid': '6'}
+            if par: props['parentname'] = par
+            m.new_entity('prop_dynamic' if par else 'prop_static', end, props, angles=cap_angles(handle))
             caps += 1
     c.log.append('%d move_rope / keyframe_rope (CS2 drops them) -> %d cable_dynamic (rope_braid_1 for ropes, cable.vmat for cables, radius = Width / 4, '
-                 'Bezier sag from Slack or the default rule, up to %.0f u) + %d rope end caps' % (len(rs), made, max(sags or [0]), caps))
+                 'Bezier sag from Slack or the default rule, up to %.0f u) + %d rope end caps' % (len(rs), made, max(sags or [0]), caps)
+                 + ('; %d parented like the CS:GO rope (caps prop_dynamic)' % parented if parented else ''))
     c.todo.append('ropes rebuilt as cable_dynamic (%d): check the sag, and that each end cap sits where the rope meets a surface' % made)
     if odd: c.todo.append('rope materials with no CS2 match, drawn as rope_braid_1: %s' % ', '.join(sorted(odd)))
     if broken: c.todo.append('ropes whose NextKey target is missing, not rebuilt: %s' % ', '.join(sorted(map(str, broken))))
@@ -164,6 +188,7 @@ def particle_ropes(m, c=None):
         dmx.set_(m.E[j], b'materialName', dmx.T_STR, mat.encode())
         dmx.set_(m.E[j], b'radius', dmx.T_FLOAT, max(0.25, radius))
         m.setp(j, 'targetname', m.P(n, 'targetname') or 'port_rope_p%d' % i)
+        if m.P(n, 'parentname'): m.setp(j, 'parentname', m.P(n, 'parentname'))
         ch = dmx.geta(m.E[parent], b'children')[2]
         ch[ch.index(n)] = j; made += 1       # same parent and position in the tree as the path it replaces
     if c is not None:
