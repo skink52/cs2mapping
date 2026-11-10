@@ -1,0 +1,1668 @@
+{
+"nuke_sedan01": {
+"model": "models/props/de_nuke/hr_nuke/nuke_cars/nuke_sedan01.vmdl",
+"lo": [
+-117.2,
+-50.9,
+-0.0
+],
+"hi": [
+118.0,
+43.0,
+67.8
+],
+"tris": 4590
+},
+"nuke_sedan02": {
+"model": "models/props/de_nuke/hr_nuke/nuke_cars/nuke_sedan02.vmdl",
+"lo": [
+-117.1,
+-49.3,
+0.0
+],
+"hi": [
+110.9,
+49.3,
+71.0
+],
+"tris": 4608
+},
+"nuke_sedan01_low": {
+"model": "models/props/de_nuke/hr_nuke/nuke_cars/nuke_sedan01_low.vmdl",
+"lo": [
+-117.1,
+-46.9,
+-0.0
+],
+"hi": [
+118.0,
+46.9,
+67.8
+],
+"tris": 2014
+},
+"taxi_city": {
+"model": "models/props_vehicles/taxi_city.vmdl",
+"lo": [
+-44.2,
+-111.8,
+-0.2
+],
+"hi": [
+44.2,
+120.5,
+78.7
+],
+"tris": 8628
+},
+"taxi_city_glass": {
+"model": "models/props_vehicles/taxi_city_glass.vmdl",
+"lo": [
+-39.1,
+-107.6,
+26.4
+],
+"hi": [
+39.1,
+111.1,
+61.2
+],
+"tris": 338
+},
+"cara_82hatchback": {
+"model": "models/props_vehicles/cara_82hatchback.vmdl",
+"lo": [
+-84.4,
+-38.8,
+-0.1
+],
+"hi": [
+86.9,
+39.4,
+59.9
+],
+"tris": 6788
+},
+"cara_82hatchback_glass": {
+"model": "models/props_vehicles/cara_82hatchback_glass.vmdl",
+"lo": [
+-81.8,
+-37.0,
+18.7
+],
+"hi": [
+87.1,
+37.0,
+58.3
+],
+"tris": 440
+},
+"van": {
+"model": "models/props_vehicles/van.vmdl",
+"lo": [
+-48.9,
+-116.2,
+-0.8
+],
+"hi": [
+48.9,
+116.3,
+89.7
+],
+"tris": 4605
+},
+"van_glass": {
+"model": "models/props_vehicles/van_glass.vmdl",
+"lo": [
+-42.0,
+-109.2,
+59.4
+],
+"hi": [
+42.0,
+91.8,
+83.0
+],
+"tris": 162
+},
+"van001a": {
+"model": "models/props_vehicles/van001a.vmdl",
+"lo": [
+-127.5,
+-62.9,
+-34.3
+],
+"hi": [
+98.7,
+48.5,
+48.7
+],
+"tris": 3315
+},
+"bus01_2": {
+"model": "models/props_vehicles/bus01_2.vmdl",
+"lo": [
+-241.5,
+-57.4,
+-0.7
+],
+"hi": [
+242.8,
+61.0,
+140.3
+],
+"tris": 7145
+},
+"car004b": {
+"model": "models/props_vehicles/car004b.vmdl",
+"lo": [
+-122.6,
+-49.8,
+-22.9
+],
+"hi": [
+84.2,
+45.9,
+36.5
+],
+"tris": 2600
+},
+"semi_trailer": {
+"model": "models/props_vehicles/semi_trailer.vmdl",
+"lo": [
+-58.9,
+-267.6,
+0.1
+],
+"hi": [
+58.9,
+267.6,
+165.7
+],
+"tris": 3334
+},
+"semi_trailer_freestanding": {
+"model": "models/props_vehicles/semi_trailer_freestanding.vmdl",
+"lo": [
+-58.9,
+-267.6,
+-0.0
+],
+"hi": [
+58.9,
+267.6,
+165.7
+],
+"tris": 3868
+},
+"flatnose_truck_wrecked": {
+"model": "models/props_vehicles/flatnose_truck_wrecked.vmdl",
+"lo": [
+-163.5,
+-125.3,
+-77.5
+],
+"hi": [
+147.9,
+64.6,
+76.6
+],
+"tris": 9198
+},
+"flatnose_truck_generic_1": {
+"model": "models/de_overpass/vehicles/flatnose_truck/flatnose_truck_generic_1.vmdl",
+"lo": [
+-164.9,
+-61.1,
+-0.0
+],
+"hi": [
+110.8,
+61.1,
+136.9
+],
+"tris": 56386
+},
+"flatnose_truck_wrecked_1": {
+"model": "models/de_overpass/vehicles/flatnose_truck/flatnose_truck_wrecked_1.vmdl",
+"lo": [
+-164.2,
+-66.7,
+-0.3
+],
+"hi": [
+115.3,
+54.1,
+129.3
+],
+"tris": 56045
+},
+"flatnose_truck_bed_1": {
+"model": "models/de_overpass/vehicles/flatnose_truck_bed/flatnose_truck_bed_1.vmdl",
+"lo": [
+-297.2,
+-55.4,
+0.0
+],
+"hi": [
+245.8,
+55.4,
+120.7
+],
+"tris": 30962
+},
+"car_tarp_cover_1": {
+"model": "models/de_overpass/vehicles/car_tarp_cover/car_tarp_cover_1.vmdl",
+"lo": [
+-58.8,
+-102.7,
+0.0
+],
+"hi": [
+61.0,
+109.6,
+56.8
+],
+"tris": 2057
+},
+"dust_hatchback_body": {
+"model": "models/props/de_dust/hr_dust/dust_vehicles/dust_hatchback_body.vmdl",
+"lo": [
+-85.9,
+-43.1,
+7.3
+],
+"hi": [
+96.6,
+43.1,
+66.8
+],
+"tris": 5353
+},
+"dust_hatchback_glass": {
+"model": "models/props/de_dust/hr_dust/dust_vehicles/dust_hatchback_glass.vmdl",
+"lo": [
+-72.4,
+-35.9,
+44.4
+],
+"hi": [
+38.8,
+35.9,
+64.4
+],
+"tris": 146
+},
+"dust_hatchback_wheels": {
+"model": "models/props/de_dust/hr_dust/dust_vehicles/dust_hatchback_wheels.vmdl",
+"lo": [
+-72.5,
+-42.0,
+-0.0
+],
+"hi": [
+81.6,
+42.0,
+28.1
+],
+"tris": 4336
+},
+"dust_taxi_body": {
+"model": "models/props/de_dust/hr_dust/dust_vehicles/dust_taxi_body.vmdl",
+"lo": [
+-43.2,
+-103.5,
+10.2
+],
+"hi": [
+43.2,
+104.2,
+65.5
+],
+"tris": 10236
+},
+"dust_car_wreck_body": {
+"model": "models/props/de_dust/hr_dust/dust_vehicles/dust_car_wreck_body.vmdl",
+"lo": [
+-41.9,
+-94.6,
+-3.2
+],
+"hi": [
+36.2,
+87.4,
+59.6
+],
+"tris": 13270
+},
+"dust_flatbed_truck_body": {
+"model": "models/props/de_dust/hr_dust/dust_vehicles/dust_flatbed_truck_body.vmdl",
+"lo": [
+-56.8,
+-114.2,
+11.3
+],
+"hi": [
+56.8,
+111.5,
+109.9
+],
+"tris": 10240
+},
+"dust_limo_lowpoly": {
+"model": "models/props/de_dust/hr_dust/dust_vehicles/dust_limo_lowpoly.vmdl",
+"lo": [
+-43.2,
+-103.1,
+-0.0
+],
+"hi": [
+43.2,
+103.9,
+64.5
+],
+"tris": 2634
+},
+"apc_vehicle_1": {
+"model": "models/vehicles/apc/apc_vehicle_1.vmdl",
+"lo": [
+-115.9,
+-59.7,
+-1.5
+],
+"hi": [
+111.5,
+59.7,
+91.8
+],
+"tris": 52659
+},
+"street_light_01a": {
+"model": "models/de_overpass/lights/streetlight/street_light_01a.vmdl",
+"lo": [
+-50.0,
+-6.4,
+-20.9
+],
+"hi": [
+0.0,
+6.4,
+40.9
+],
+"tris": 3694
+},
+"street_light_02": {
+"model": "models/de_overpass/lights/streetlight/street_light_02.vmdl",
+"lo": [
+-50.3,
+-6.4,
+-14.8
+],
+"hi": [
+0.0,
+6.4,
+40.8
+],
+"tris": 1412
+},
+"street_light_03": {
+"model": "models/de_overpass/lights/streetlight/street_light_03.vmdl",
+"lo": [
+-14.0,
+-14.0,
+-0.0
+],
+"hi": [
+76.3,
+14.0,
+505.3
+],
+"tris": 1965
+},
+"nuke_light_pole_parking_lot": {
+"model": "models/props/de_nuke/hr_nuke/nuke_light_fixture/nuke_light_pole_parking_lot.vmdl",
+"lo": [
+-10.0,
+-60.5,
+-0.0
+],
+"hi": [
+10.0,
+60.5,
+581.1
+],
+"tris": 2022
+},
+"nuke_light_pole_parking_lot_02": {
+"model": "models/props/de_nuke/hr_nuke/nuke_light_fixture/nuke_light_pole_parking_lot_02.vmdl",
+"lo": [
+-10.0,
+-60.5,
+-0.0
+],
+"hi": [
+10.0,
+60.5,
+700.4
+],
+"tris": 2022
+},
+"floodlight_pole_1": {
+"model": "models/props/hr_massive/floodlight_pole_1/floodlight_pole_1.vmdl",
+"lo": [
+-51.8,
+-88.1,
+-0.0
+],
+"hi": [
+19.2,
+88.8,
+1011.2
+],
+"tris": 3145
+},
+"traffic": {
+"model": "models/props/de_vertigo/traffic.vmdl",
+"lo": [
+-961.1,
+-752.6,
+0.2
+],
+"hi": [
+966.4,
+397.8,
+15.6
+],
+"tris": 7228
+},
+"traffic_sign_german_01": {
+"model": "models/props/de_overpass/traffic_sign_german_01.vmdl",
+"lo": [
+-0.3,
+-12.0,
+-12.0
+],
+"hi": [
+0.3,
+12.0,
+12.0
+],
+"tris": 92
+},
+"traffic_sign_german_02": {
+"model": "models/props/de_overpass/traffic_sign_german_02.vmdl",
+"lo": [
+-0.3,
+-12.0,
+-12.0
+],
+"hi": [
+0.3,
+12.0,
+12.0
+],
+"tris": 92
+},
+"traffic_cone_1": {
+"model": "models/de_overpass/construction/traffic_cone_1.vmdl",
+"lo": [
+-8.3,
+-8.3,
+-0.0
+],
+"hi": [
+8.3,
+8.3,
+29.7
+],
+"tris": 800
+},
+"traffic_barrier001": {
+"model": "models/props_fortifications/traffic_barrier001.vmdl",
+"lo": [
+-10.8,
+-11.5,
+0.0
+],
+"hi": [
+10.8,
+12.0,
+46.0
+],
+"tris": 1164
+},
+"police_barrier001_128_reference": {
+"model": "models/props_fortifications/police_barrier001_128_reference.vmdl",
+"lo": [
+-12.5,
+-64.0,
+-0.0
+],
+"hi": [
+12.5,
+64.0,
+48.0
+],
+"tris": 1764
+},
+"nuke_concrete_barrier": {
+"model": "models/props/de_nuke/hr_nuke/nuke_concrete_barrier/nuke_concrete_barrier.vmdl",
+"lo": [
+-12.4,
+-64.0,
+-0.0
+],
+"hi": [
+12.4,
+66.5,
+40.3
+],
+"tris": 900
+},
+"guardrail512": {
+"model": "models/props_exteriors/guardrail512.vmdl",
+"lo": [
+-256.0,
+-3.6,
+-12.0
+],
+"hi": [
+256.0,
+8.8,
+27.0
+],
+"tris": 352
+},
+"construction_fence_1": {
+"model": "models/de_overpass/construction/fence/construction_fence_1.vmdl",
+"lo": [
+-2.6,
+-0.8,
+-0.0
+],
+"hi": [
+129.0,
+3.7,
+42.9
+],
+"tris": 846
+},
+"vending_machine": {
+"model": "models/cs_italy/italy_shops/vending_machine.vmdl",
+"lo": [
+0.0,
+-19.3,
+-32.4
+],
+"hi": [
+5.2,
+19.3,
+30.9
+],
+"tris": 722
+},
+"atm_01": {
+"model": "models/generic/atm_01/atm_01.vmdl",
+"lo": [
+-10.4,
+-10.0,
+0.0
+],
+"hi": [
+13.2,
+10.0,
+71.7
+],
+"tris": 3465
+},
+"overpass_mailbox": {
+"model": "models/de_overpass/overpass_mailbox/overpass_mailbox.vmdl",
+"lo": [
+-10.7,
+-14.0,
+0.0
+],
+"hi": [
+12.4,
+14.0,
+68.9
+],
+"tris": 736
+},
+"bollard_01_base": {
+"model": "models/generic/bollard_kit_01/bollard_01_base.vmdl",
+"lo": [
+-5.6,
+-5.6,
+-0.0
+],
+"hi": [
+5.6,
+5.6,
+47.3
+],
+"tris": 870
+},
+"bollard_02_base": {
+"model": "models/generic/bollard_kit_01/bollard_02_base.vmdl",
+"lo": [
+-6.1,
+-6.1,
+-0.0
+],
+"hi": [
+6.1,
+6.1,
+49.3
+],
+"tris": 670
+},
+"overpass_bus_station": {
+"model": "models/de_overpass/overpass_bus_station/overpass_bus_station.vmdl",
+"lo": [
+-33.5,
+-101.2,
+-0.0
+],
+"hi": [
+49.5,
+101.2,
+124.5
+],
+"tris": 1408
+},
+"overpass_bus_station_glass": {
+"model": "models/de_overpass/overpass_bus_station/overpass_bus_station_glass.vmdl",
+"lo": [
+-29.6,
+-96.2,
+113.0
+],
+"hi": [
+45.6,
+96.2,
+123.3
+],
+"tris": 144
+},
+"overpass_bus_station_seat": {
+"model": "models/de_overpass/overpass_bus_station/overpass_bus_station_seat.vmdl",
+"lo": [
+-24.0,
+-34.0,
+20.9
+],
+"hi": [
+-1.0,
+34.0,
+23.4
+],
+"tris": 88
+},
+"overpass_bus_station_sign": {
+"model": "models/de_overpass/overpass_bus_station/overpass_bus_station_sign.vmdl",
+"lo": [
+-5.9,
+-12.1,
+0.0
+],
+"hi": [
+5.9,
+12.1,
+120.1
+],
+"tris": 538
+},
+"park_bench_1": {
+"model": "models/de_overpass/park/park_bench/park_bench_1.vmdl",
+"lo": [
+-64.0,
+-38.0,
+-0.0
+],
+"hi": [
+64.0,
+38.0,
+32.3
+],
+"tris": 2662
+},
+"garbage_can": {
+"model": "models/de_overpass/park/garbage_can/garbage_can.vmdl",
+"lo": [
+-16.4,
+-16.4,
+-0.0
+],
+"hi": [
+16.4,
+16.4,
+44.3
+],
+"tris": 3668
+},
+"garbage_bin_01": {
+"model": "models/de_overpass/garbage/garbage_bin_01.vmdl",
+"lo": [
+-20.2,
+-14.9,
+-0.3
+],
+"hi": [
+12.1,
+14.9,
+50.4
+],
+"tris": 2551
+},
+"italy_dumpster_1": {
+"model": "models/cs_italy/props/dumpster/italy_dumpster_1.vmdl",
+"lo": [
+-19.8,
+-27.7,
+-0.1
+],
+"hi": [
+21.4,
+27.7,
+55.7
+],
+"tris": 1813
+},
+"overpass_bin_02": {
+"model": "models/de_overpass/overpass_bin/overpass_bin_02.vmdl",
+"lo": [
+-6.9,
+-11.9,
+17.8
+],
+"hi": [
+6.9,
+11.9,
+54.9
+],
+"tris": 1322
+},
+"garbage_bag_1": {
+"model": "models/de_overpass/garbage/garbage_bag_1.vmdl",
+"lo": [
+-18.7,
+-15.6,
+0.1
+],
+"hi": [
+18.0,
+16.0,
+26.3
+],
+"tris": 1360
+},
+"trash_01": {
+"model": "models/de_overpass/trash/trash_01.vmdl",
+"lo": [
+-1.9,
+-3.5,
+-0.0
+],
+"hi": [
+1.9,
+4.0,
+3.7
+],
+"tris": 60
+},
+"trash_03": {
+"model": "models/de_overpass/trash/trash_03.vmdl",
+"lo": [
+-2.7,
+-1.8,
+-0.0
+],
+"hi": [
+2.7,
+1.8,
+1.1
+],
+"tris": 32
+},
+"wood_pallet": {
+"model": "models/de_overpass/construction/wood_pallet/wood_pallet.vmdl",
+"lo": [
+-26.3,
+-31.2,
+-0.0
+],
+"hi": [
+28.1,
+31.1,
+7.1
+],
+"tris": 752
+},
+"bike_01": {
+"model": "models/de_overpass/overpass_bike/bike_01.vmdl",
+"lo": [
+-18.8,
+-47.8,
+0.0
+],
+"hi": [
+12.5,
+41.2,
+54.8
+],
+"tris": 8304
+},
+"bike_rack": {
+"model": "models/de_overpass/overpass_bike_rack/bike_rack.vmdl",
+"lo": [
+-12.5,
+-32.0,
+-0.0
+],
+"hi": [
+10.9,
+32.0,
+17.6
+],
+"tris": 2264
+},
+"italy_planter_large_1": {
+"model": "models/cs_italy/props/planter/italy_planter_large_1.vmdl",
+"lo": [
+-23.2,
+-32.5,
+-0.0
+],
+"hi": [
+15.8,
+29.1,
+30.4
+],
+"tris": 224
+},
+"italy_planter_large_2": {
+"model": "models/cs_italy/props/planter/italy_planter_large_2.vmdl",
+"lo": [
+-21.2,
+-21.2,
+-0.0
+],
+"hi": [
+21.2,
+21.2,
+21.8
+],
+"tris": 474
+},
+"patio_umbrella_open": {
+"model": "models/de_overpass/furniture/patio/patio_umbrella_open.vmdl",
+"lo": [
+-46.6,
+-46.6,
+-0.0
+],
+"hi": [
+46.6,
+46.6,
+114.3
+],
+"tris": 2098
+},
+"patio_table_01": {
+"model": "models/de_overpass/furniture/patio/patio_table_01.vmdl",
+"lo": [
+-20.7,
+-21.0,
+-0.2
+],
+"hi": [
+20.7,
+21.0,
+32.3
+],
+"tris": 632
+},
+"patio_chair_01": {
+"model": "models/de_overpass/furniture/patio/patio_chair_01.vmdl",
+"lo": [
+-14.2,
+-14.3,
+-0.0
+],
+"hi": [
+14.3,
+14.4,
+44.7
+],
+"tris": 592
+},
+"ac_unit_wall_mounted_01": {
+"model": "models/generic/ac_unit_wall_mounted_01/ac_unit_wall_mounted_01.vmdl",
+"lo": [
+-0.0,
+-18.9,
+0.0
+],
+"hi": [
+15.2,
+20.0,
+27.0
+],
+"tris": 288
+},
+"ac_unit_wall_mounted_02": {
+"model": "models/generic/ac_unit_wall_mounted_01/ac_unit_wall_mounted_02.vmdl",
+"lo": [
+0.0,
+-18.9,
+0.0
+],
+"hi": [
+15.4,
+20.0,
+27.0
+],
+"tris": 778
+},
+"acunit01": {
+"model": "models/props_rooftop/acunit01.vmdl",
+"lo": [
+-33.4,
+-68.1,
+-63.6
+],
+"hi": [
+28.0,
+68.1,
+63.9
+],
+"tris": 842
+},
+"acunit2": {
+"model": "models/props_rooftop/acunit2.vmdl",
+"lo": [
+-29.2,
+-16.4,
+-0.0
+],
+"hi": [
+37.9,
+16.3,
+46.4
+],
+"tris": 856
+},
+"acvent03": {
+"model": "models/props_rooftop/acvent03.vmdl",
+"lo": [
+-36.7,
+-37.7,
+0.0
+],
+"hi": [
+39.9,
+37.0,
+114.3
+],
+"tris": 260
+},
+"acvent04": {
+"model": "models/props_rooftop/acvent04.vmdl",
+"lo": [
+-32.6,
+-88.7,
+0.0
+],
+"hi": [
+32.4,
+71.2,
+85.2
+],
+"tris": 488
+},
+"antennakit01_antenna_01": {
+"model": "models/generic/antenna_kit_01/antennakit01_antenna_01.vmdl",
+"lo": [
+-0.4,
+-14.8,
+-21.6
+],
+"hi": [
+84.2,
+14.8,
+21.6
+],
+"tris": 366
+},
+"antennakit01_antenna_03": {
+"model": "models/generic/antenna_kit_01/antennakit01_antenna_03.vmdl",
+"lo": [
+-0.4,
+-47.6,
+-16.3
+],
+"hi": [
+9.6,
+47.6,
+16.3
+],
+"tris": 206
+},
+"antennakit01_dish_01": {
+"model": "models/generic/antenna_kit_01/antennakit01_dish_01.vmdl",
+"lo": [
+-1.0,
+-16.0,
+-9.6
+],
+"hi": [
+23.1,
+16.0,
+24.0
+],
+"tris": 941
+},
+"satellite_dish_1": {
+"model": "models/cs_italy/props/satellite_dish/satellite_dish_1.vmdl",
+"lo": [
+-0.0,
+-20.6,
+-28.3
+],
+"hi": [
+38.5,
+11.0,
+14.3
+],
+"tris": 2243
+},
+"industrial_vent_01": {
+"model": "models/de_overpass/industrial/industrial_vent/industrial_vent_01.vmdl",
+"lo": [
+-33.5,
+0.0,
+-37.0
+],
+"hi": [
+33.5,
+7.2,
+37.0
+],
+"tris": 792
+},
+"industrial_vent_02": {
+"model": "models/de_overpass/industrial/industrial_vent/industrial_vent_02.vmdl",
+"lo": [
+-32.5,
+0.0,
+-23.2
+],
+"hi": [
+32.5,
+4.5,
+23.2
+],
+"tris": 948
+},
+"hvac_fan_02": {
+"model": "models/props/de_vertigo/hvac_fan_02.vmdl",
+"lo": [
+-32.0,
+1.7,
+-142.9
+],
+"hi": [
+45.5,
+18.4,
+64.0
+],
+"tris": 672
+},
+"hvac_duct_cluster_01": {
+"model": "models/props/de_vertigo/hvac_duct_cluster_01.vmdl",
+"lo": [
+-27.3,
+-183.0,
+-39.2
+],
+"hi": [
+27.4,
+183.0,
+40.5
+],
+"tris": 1926
+},
+"overpass_generator": {
+"model": "models/de_overpass/overpass_generator/overpass_generator.vmdl",
+"lo": [
+-30.4,
+-53.8,
+-0.0
+],
+"hi": [
+30.5,
+91.7,
+74.0
+],
+"tris": 11254
+},
+"power_generator_1": {
+"model": "models/de_overpass/construction/power_generator/power_generator_1.vmdl",
+"lo": [
+-39.8,
+-29.5,
+-0.2
+],
+"hi": [
+29.1,
+29.4,
+51.3
+],
+"tris": 10222
+},
+"cable_spool": {
+"model": "models/de_overpass/cable_spool/mesh/cable_spool.vmdl",
+"lo": [
+-5.4,
+-11.1,
+2.9
+],
+"hi": [
+5.4,
+11.1,
+25.1
+],
+"tris": 2752
+},
+"constructioncrane01": {
+"model": "models/props/de_vertigo/constructioncrane01.vmdl",
+"lo": [
+-63.0,
+-63.0,
+-0.1
+],
+"hi": [
+63.0,
+63.0,
+2692.4
+],
+"tris": 956
+},
+"constructioncrane01_top": {
+"model": "models/props/de_vertigo/constructioncrane01_top.vmdl",
+"lo": [
+-607.2,
+-1001.5,
+1049.8
+],
+"hi": [
+548.6,
+1168.8,
+1932.7
+],
+"tris": 1062
+},
+"constructioncrane01_load": {
+"model": "models/props/de_vertigo/constructioncrane01_load.vmdl",
+"lo": [
+-265.0,
+-133.6,
+-135.7
+],
+"hi": [
+266.2,
+133.1,
+2688.7
+],
+"tris": 710
+},
+"vertigo_scaffolding_var": {
+"model": "models/de_vertigo/vertigo_scaffolding_var/vertigo_scaffolding_var.vmdl",
+"lo": [
+-1.4,
+-48.0,
+0.0
+],
+"hi": [
+1.4,
+48.0,
+96.2
+],
+"tris": 280
+},
+"cementmixer": {
+"model": "models/props/de_vertigo/cementmixer.vmdl",
+"lo": [
+-38.8,
+-73.5,
+-0.1
+],
+"hi": [
+39.8,
+45.6,
+99.3
+],
+"tris": 3115
+},
+"concretebags": {
+"model": "models/props/de_vertigo/concretebags.vmdl",
+"lo": [
+-24.5,
+-32.5,
+-0.0
+],
+"hi": [
+24.2,
+34.0,
+75.0
+],
+"tris": 1942
+},
+"fountain_large_01": {
+"model": "models/generic/fountain_large_01/fountain_large_01.vmdl",
+"lo": [
+-165.5,
+-165.5,
+-0.1
+],
+"hi": [
+165.5,
+165.5,
+208.2
+],
+"tris": 14594
+},
+"stone_statue_01": {
+"model": "models/generic/stone_statue_01/stone_statue_01.vmdl",
+"lo": [
+-9.3,
+-9.2,
+-0.0
+],
+"hi": [
+8.6,
+6.0,
+63.8
+],
+"tris": 2394
+},
+"portapotty_closed": {
+"model": "models/de_overpass/construction/portapotty/portapotty_closed.vmdl",
+"lo": [
+-24.9,
+-24.7,
+0.0
+],
+"hi": [
+26.2,
+24.7,
+103.1
+],
+"tris": 10953
+},
+"survival_phone_booth": {
+"model": "models/props/hr_massive/survival_phone_booth/survival_phone_booth.vmdl",
+"lo": [
+0.0,
+-14.8,
+-18.3
+],
+"hi": [
+17.0,
+14.8,
+18.3
+],
+"tris": 2091
+},
+"payphone_old_stand_01": {
+"model": "models/generic/payphone_old_01/payphone_old_stand_01.vmdl",
+"lo": [
+-1.9,
+-1.9,
+0.0
+],
+"hi": [
+1.9,
+1.9,
+41.9
+],
+"tris": 158
+},
+"tv_tower": {
+"model": "models/de_overpass/overpass_skybox/tv_tower.vmdl",
+"lo": [
+-31.6,
+-31.6,
+0.0
+],
+"hi": [
+31.6,
+31.6,
+562.5
+],
+"tris": 5046
+},
+"nuke_sign_rooftop": {
+"model": "models/props/de_nuke/hr_nuke/nuke_signs/nuke_sign_rooftop.vmdl",
+"lo": [
+-0.0,
+-31.0,
+-4.0
+],
+"hi": [
+1.0,
+31.0,
+4.0
+],
+"tris": 74
+},
+"italy_ad_01": {
+"model": "models/cs_italy/italy_ads/italy_ad_01.vmdl",
+"lo": [
+-0.0,
+-88.9,
+-119.7
+],
+"hi": [
+1.6,
+88.9,
+119.7
+],
+"tris": 116
+},
+"signage_generic_cctv_b": {
+"model": "models/de_overpass/signage/signage_generic/signage_generic_cctv_b.vmdl",
+"lo": [
+-5.3,
+-4.2,
+-0.0
+],
+"hi": [
+5.3,
+4.2,
+0.0
+],
+"tris": 10
+},
+"cargo_container_closed": {
+"model": "models/props/hr_massive/cargo_container/cargo_container_closed.vmdl",
+"lo": [
+-192.9,
+-64.6,
+-0.0
+],
+"hi": [
+192.9,
+64.6,
+128.5
+],
+"tris": 4457
+},
+"propane_tank_01_cluster_01": {
+"model": "models/props/de_dust/hr_dust/dust_propane_tanks/propane_tank_01_cluster_01.vmdl",
+"lo": [
+-11.6,
+-9.6,
+-0.0
+],
+"hi": [
+36.5,
+29.3,
+29.5
+],
+"tris": 6510
+},
+"generic_tree_large_1": {
+"model": "models/cs_italy/foliage/tree/generic_tree_large_1.vmdl",
+"lo": [
+-171.6,
+-197.0,
+-0.9
+],
+"hi": [
+168.1,
+185.5,
+487.3
+],
+"tris": 8519
+},
+"barrel_group_tintable_01": {
+"model": "models/props/de_vertigo/barrel_group_tintable_01.vmdl",
+"lo": [
+-29.2,
+-31.2,
+-0.0
+],
+"hi": [
+29.4,
+29.6,
+46.4
+],
+"tris": 1824
+},
+"sawhorse_1": {
+"model": "models/props/hr_massive/sawhorse_1/sawhorse_1.vmdl",
+"lo": [
+-31.3,
+-13.8,
+-23.2
+],
+"hi": [
+31.3,
+13.8,
+20.1
+],
+"tris": 1392
+},
+"overpass_ladder": {
+"model": "models/de_overpass/overpass_ladder/overpass_ladder.vmdl",
+"lo": [
+-20.7,
+-16.3,
+5.0
+],
+"hi": [
+0.0,
+16.3,
+278.6
+],
+"tris": 4884
+},
+"survival_security_cam": {
+"model": "models/props/hr_massive/survival_security_cam/survival_security_cam.vmdl",
+"lo": [
+-0.0,
+-3.8,
+-3.8
+],
+"hi": [
+16.3,
+5.6,
+9.5
+],
+"tris": 1675
+},
+"dust_light_pole_01": {
+"model": "models/props/de_dust/hr_dust/dust_light_pole/dust_light_pole_01.vmdl",
+"lo": [
+-11.3,
+-11.3,
+-0.0
+],
+"hi": [
+11.3,
+32.4,
+601.1
+],
+"tris": 2267
+},
+"electric_cables_1": {
+"model": "models/cs_italy/props/rubble/electric_cables_1.vmdl",
+"lo": [
+-19.6,
+-13.5,
+-27.8
+],
+"hi": [
+9.9,
+8.0,
+11.2
+],
+"tris": 720
+},
+"ch2_sign_busstation_01": {
+"model": "models/de_cache_s2/sign_busstation_01/ch2_sign_busstation_01.vmdl",
+"lo": [
+-70.0,
+-180.5,
+-33.3
+],
+"hi": [
+3.7,
+180.5,
+31.4
+],
+"tris": 1490
+},
+"ch2_bus_map_01": {
+"model": "models/de_cache_s2/bus_map_01/ch2_bus_map_01.vmdl",
+"lo": [
+-0.0,
+-101.0,
+-63.7
+],
+"hi": [
+2.9,
+88.9,
+66.1
+],
+"tris": 191
+},
+"patio_table_01_low": {
+"model": "models/de_overpass/furniture/patio/patio_table_01_low.vmdl",
+"lo": [
+-20.7,
+-20.7,
+-0.0
+],
+"hi": [
+20.7,
+20.7,
+32.3
+],
+"tris": 208
+},
+"patio_chair_01_low": {
+"model": "models/de_overpass/furniture/patio/patio_chair_01_low.vmdl",
+"lo": [
+-14.0,
+-14.3,
+-0.0
+],
+"hi": [
+14.0,
+13.8,
+44.7
+],
+"tris": 240
+},
+"trafficcone_clean": {
+"model": "models/props/de_vertigo/trafficcone_clean.vmdl",
+"lo": [
+-8.1,
+-8.2,
+-14.9
+],
+"hi": [
+8.1,
+8.2,
+14.9
+],
+"tris": 114
+},
+"traffic_cone": {
+"model": "models/props/hr_vertigo/vertigo_traffic_cone/traffic_cone.vmdl",
+"lo": [
+-8.0,
+-8.0,
+-0.0
+],
+"hi": [
+8.0,
+8.0,
+29.9
+],
+"tris": 288
+},
+"patio_umbrella_closed": {
+"model": "models/de_overpass/furniture/patio/patio_umbrella_closed.vmdl",
+"lo": [
+-16.4,
+-17.9,
+-0.0
+],
+"hi": [
+16.5,
+16.5,
+112.5
+],
+"tris": 1387
+},
+"dust_taxi_sign": {
+"model": "models/props/de_dust/hr_dust/dust_vehicles/dust_taxi_sign.vmdl",
+"lo": [
+-29.0,
+11.6,
+61.1
+],
+"hi": [
+-10.1,
+15.5,
+70.1
+],
+"tris": 298
+},
+"car_tire": {
+"model": "models/generic/trash/car_tire/car_tire.vmdl",
+"lo": [
+-5.1,
+-20.0,
+-20.0
+],
+"hi": [
+5.1,
+20.0,
+20.0
+],
+"tris": 768
+},
+"garbage_can_1": {
+"model": "models/de_overpass/garbage/garbage_can/garbage_can_1.vmdl",
+"lo": [
+-12.4,
+-14.7,
+0.0
+],
+"hi": [
+12.4,
+14.7,
+33.6
+],
+"tris": 1934
+},
+"italy_garbage_bin": {
+"model": "models/cs_italy/italy_garbage_bin/italy_garbage_bin.vmdl",
+"lo": [
+-16.1,
+-16.1,
+0.0
+],
+"hi": [
+16.1,
+16.1,
+45.2
+],
+"tris": 5240
+}
+}

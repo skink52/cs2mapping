@@ -1,7 +1,26 @@
 # Changelog
 
+- 2026-11-09 [monsoon] New project `projects/monsoon-cs2` (mg_monsoon, second battle map): design doc, layout module, terrain/karst/water/lobby generator stages 1-3, first procedural props (helicopters, artillery, base, village). Paused with a handover in NOTES.md. `create/build_all_props.py` accepts lazy (callable) specs. cs2port_w2..w5 moved to `C:\source1rchive\cs2port_workers_20261109`.
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
+
+## 2026-11-10: IRONFRAME third playtest (Sprawl)
+
+- [ironframe] Fourth playtest (evening): the HUD rebuilt under CS2's cap of 1024 panel ids per custom_hud_layout (it referenced 2 600; text is Labels with dialog variables now, 461 ids), legs and upper body joined at the waist joint with the leg twist limited to 75 deg, Bastion's torso block moved out of its legs model (`mdl2cs2.py --torso-to-upper`, `tools/hole_check.py`), team colours on the markers, booster particles parented at the engine transform. [create] the mock engine counts HUD panel ids (`panelids=N`).
+- [ironframe] HUD rebuilt under CS2's panel-id cap (found in the 19:50 playtest: `The maximum number of panel ids has been reached`, bars and weapons blank): dynamic text is one Label + dialog variable per text instead of a glyph panel with an id per character; 5 846 ids -> 461, budget in `tools/hud.py`, `test/hud_ids.cjs`, `panelids=950` in the mock runs. Not deployed, not seen in CS2.
+- [docs] cs2-gotchas / creation/hud.md / cs_script-notes: a `custom_hud_layout` keeps at most 1024 panel ids for good; how to count them with the mock; fonts a Label can use. `create/panorama.py` warns on the pixel-text helpers; `create/hud_check.py --label-font` draws Labels in a real font; `create/test/mock_point_script.mjs` `api.hudVar` / `api.hudIds`.
+- [ironframe] Evening playtest fixes, deployed to both addons, Sprawl rebuilt: jets, step height and eased steps, lofted missiles (they flew to the ceiling and hit nothing under ~5 000 u), unguided launch without a lock, no phantom heightfield ramps near structures, adaptive AI fill, higher camera with no look-up orbit, thin beam ladder, a precache check for every model the script can use (`tools/cache_check.py`; Sprawl had no aura or objective models loaded: the ERROR models), shoulder units seated, baked-in weapons stripped from 10 frames, HUD message queue, lock prompts, frags / streak / overdrive read-outs, controls and loadout cards, garage facing and rotate buttons. Details: `projects/ironframe-cs2/docs/STATUS.md`.
+- [docs] cs_script-notes: a FOLLOW_POSITION camera under the ground when looking up, top-surface heightfields, the collision sweep above the step height, a homing missile's turn circle.
+
+## 2026-11-10: PC disk cleanup (C: was full)
+
+- [pc] Freed space on C: (survey `docs/reference/disk_survey_2026-11-10.md`). Moved 11 folders, including `C:\cs2server`, to `E:\offload\`
+  with junctions left at the old paths (`docs/porting/setup.md` "Offloaded to E:").
+- [pc] `C:\source1\sound` is now a junction to the install's `csgo\sound`; it had been a byte-identical copy.
+- [pc] Deleted:
+  - the SteamCMD downloads of items already extracted
+  - old crash dumps
+  - 393 content-addon backups from before 8 Nov (`docs/reference/disk_cleanup_content_backups_2026-11-10.txt`)
 
 ## 2026-11-10: ba_jail_seaside watermelons
 
@@ -18,6 +37,15 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   opt-in with `--ingame` / `--ingame-launch`. 65 tests against a fake CS2; only the console link tried on the real game.
 - Not the default creation method yet: parts not ported and nothing run in CS2 ([docs/creation/guide.md](docs/creation/guide.md) section 9).
 
+## 2026-11-10: IRONFRAME playtest fixes (AI aim, stuck screens, kill credit, podium, garage slots, radar, neon icons)
+
+- **[ironframe]** AI aim model (reaction, lagging turn, perceived velocity, QB surprise, range / settle / motion error through the FCS; hard 93 -> 28 %
+  hit rate from a standing target to one that just quick boosted), frame ap mods retuned (normal 44-55 %, hard 43-55 %). Pawn revive for the garage /
+  spectator camera, round restart fallback, kill credit (pawn inflictor, score for AI-mech kills, no more kill-credit switch-off), podium with AI fill,
+  garage R / L slots in turn, prop contact launch cap. HUD radar top left; icons and cards anti-aliased neon. Mock flow test `tools/mock_flows.sh`.
+  Script + panorama deployed. slime-mg-gm `mech.cfg`: `mp_respawnwavetime_t/ct 0`.
+- **[create]** `mock_point_script.mjs`: `scenario=<file.mjs>` (scripted sequences with their own checks, writable cvars), `Pawn.Reset()` modelled.
+
 ## 2026-11-10: mg_pirates CS:GO water and underwater fog, ropes parented to the masts
 
 - **[port mg_pirates]** sea and 3D skybox sea in CS:GO's `liquids/inferno_water` colour and murkiness (`pirates_water_csgo.vmat`, cs2-slop-porting's
@@ -25,6 +53,30 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   8 path_particle_ropes replaced by 16 cable_dynamic from the .vmf, parented to the masts so they sink with the ships. Backed up, not built.
 - **[tools]** `ropes`: parented ropes keep their parent (caps prop_dynamic); path_particle_ropes the importer made from the .vmf ropes are
   removed instead of converted as well (they doubled every rope).
+
+## 2026-11-10: hard-surface mech materials, Tripo GLB frames
+
+- [create] `hardsurface_mat.py`: per-pixel roughness / metalness / AO / tint mask, mesh-edge paint wear, crevice grime and albedo-derived
+  normals for converted models; `mdl2cs2.py` runs it by default (`--plain-mat` off) and now reads rigged GLBs (`glbrig.py`: Mixamo -> ValveBiped
+  bones, quadric decimation with UV charts kept, `--decimate`, `--retint`). Hardpoints of bones without owned vertices fixed.
+- [ironframe] All 20 frames re-materialled (`tools/upgrade_materials.py`, before/after sheets `preview/materials/`), damage skins re-derived;
+  four Tripo frames (`tripo_scout`, `tripo_kestrel`, `tripo_warden`, `tripo_bastion`, status review, parts 21-24 pve until they get traits).
+- [docs] models.md "Hard-surface materials (mechs, vehicles, armour)".
+
+## 2026-11-09: IRONFRAME weighty walk cycles
+
+- [ironframe] create/mech_anim.py: IK gait (planted feet, hip sink/rise, toe roll, hip yaw/roll/sway) -> legs clips walk, walk_back, strafe_l/r, run, reworked hover/boost/air/land/qb; upper walk_sway/run_sway/land; models.json stride/steps/hip_drop. mdl2cs2 split: everything below a thigh follows the legs (White Glint knee armour 'seha'). tools/review_anim.py: per-clip GIFs.
+
+## 2026-11-09: IRONFRAME, a 64-player mech game with saved progression on the minigame server
+
+- **[ironframe] v0.1.0** new project `projects/ironframe-cs2`: Armored Core style third-person mech combat (boost, quick-boost, hover, four
+  hard-points, lock-on, stagger), modes Team Battle / Conquest / Skirmish / co-op Sortie with AI fill, a pure-JS core (sims, balance tables,
+  66 mechanics checks), a CS2 adapter on Dogfight's pawn-ride pattern, a generated Panorama HUD (274 panels), 79 synthesised sound events,
+  52 particle sources, 20 GMod Workshop mech frames converted with the new `create/mdl2cs2.py` (Source 1 MDL -> CS2 prop with bone-group
+  split, hit spheres, hard-points), 22 weapon props, and the Dunes arena (14000 u terrain, generated with vmapgen; compiled in 37 min).
+  Script 405 KB, tscheck OK, mock engine 64 players + churn 240 s clean at ~1 ms/tick. Server side: SlimeMG `IronFrame` module (mode `mech`,
+  mailbox payloads, DB tables, `!garage`), harness test 3/3. **NOT YET TESTED IN CS2**; Sprawl and Orbital generators written, not run.
+- **[create]** `create/mdl2cs2.py` (GMod/Source 1 models to CS2 props); row in `create/README.md`.
 
 ## 2026-11-09: five multigames maps from Briar's Dropbox, ported in parallel
 
@@ -95,6 +147,10 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   `freedm.js` was patched like the source and checked by syntax and by running its stat sender. Copied into the PC addons.
 - Needs Hammer rebuilds and Workshop updates: ttt_minecraft, ttt_skyscraper, mg_space_racer, mg_neon_racer, mg_depth_racer,
   mg_hellmatch. Gotcha and cs_script note added. slime-mg-gm's SlimeMG reads the echo lines (and still the plain commands).
+
+## 2026-11-08: mg_insomnia_course and mg_lego_course music without console spam
+
+- **[port mg_insomnia_course]** the 8 music soundevents were plain `csgo_music` (spams "Unable to acquire convar value: snd_musicvolume_rush…"); now Hellmatch's form with `volume_convar = "snd_menumusic_volume"`, compiled. **[port mg_lego_course]** the same fix.
 
 ## 2026-11-08: ba_jail_keimusho built without vis
 

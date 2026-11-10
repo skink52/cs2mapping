@@ -27,9 +27,10 @@ $OutRoot = Join-Path $env:LOCALAPPDATA 'Temp\valve\hammermapbuild\game'
 $Logs    = Join-Path $Port 'logs'
 $Ports   = Join-Path $Port 'existing_ports.txt'
 $Threads = [string][Math]::Max(1, [Environment]::ProcessorCount - 2)   # 10 on a 12-thread PC: ba_jail_keimusho final 49 min (70 min at 5)
+if ($env:BUILD_THREADS -match '^\d+$') { $Threads = $env:BUILD_THREADS }   # one-off override: $env:BUILD_THREADS = 11
 # maps built without -vis (full / final): their vis data culled things wrongly and the map runs fine with none
 #   ba_jail_keimusho (8 Nov 2026): player bodies vanished at some view angles around the cell block (weapons stayed); vis_enable 0 fixed it, FPS fine
-$NoVis   = @('ba_jail_keimusho')
+$NoVis   = @('ba_jail_keimusho', 'mg_ironframe_dunes')
 New-Item -ItemType Directory -Force -Path $Logs | Out-Null
 
 function Mark-Built([string]$name) {

@@ -68,8 +68,10 @@ Each original addon lives in [`projects/`](projects), with its full history (mer
 | Hellmatch CS2: Doom-style deathmatch from Freedoom's levels, 4 arenas × 16 players, entirely in cs_script (Freedoom content under [its own licence](projects/hellmatch-cs2/FREEDOOM_LICENSE.txt)) | [projects/hellmatch-cs2](projects/hellmatch-cs2) |
 | Space Racer (plus Neon and Depth themes): 32-car anti-grav racer with generated tracks | [projects/space-racer-cs2](projects/space-racer-cs2) |
 | mg_trenchwarfare: WW1 trenches with procedural props, mortars, biplanes and custom rifles | [projects/trenchwarfare-cs2](projects/trenchwarfare-cs2) |
+| [projects/monsoon-cs2](projects/monsoon-cs2/) | mg_monsoon: second battle map of the mg_trenchwarfare series (Vietnam valley, helicopters, howitzer and rocket batteries, Conquest). In progress, paused; resume from its NOTES.md. |
 | Puppet Brawl: 2.5D fighting game with mocap-based animation | [projects/cs2-fighter](projects/cs2-fighter) |
 | TTT for CS2: drop-in Trouble in Terrorist Town cs_script for any map | [projects/cs2mapTTT](projects/cs2mapTTT) |
 | CS 1.6 in CS2 (mg_cs16): 1.6 maps and rules in one CS2 map | [projects/cs21.6](projects/cs21.6) |
+| IRONFRAME (mg_ironframe_dunes / _sprawl / _orbital): 64-player Armored Core style mech combat, saved progression on the minigame server (SlimeMG IronFrame module), AI fill and co-op sorties | [projects/ironframe-cs2](projects/ironframe-cs2) |
 | Nanite Temple (mg_nanite_temple): 64-player roguelike, squads through randomised temple vaults into one showdown arena, CS2 gunplay and buy menu kept | [projects/cs2-roguelike](projects/cs2-roguelike) |
 | The ported maps | [ports/](ports/README.md) |

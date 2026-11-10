@@ -5,7 +5,7 @@
 | File | Goes to | What it does |
 |---|---|---|
 | `run_import.bat` | `C:\source1\cs2port\` | **Stage B.** For each line of `queue.txt` it renames `vpk.signatures` if Steam restored it, unpacks `assets\<addon>*.zip` into `<CS2>\csgo` without overwriting, runs `import_map_auto.py`, then `post_import_cleanup.py`, and logs to `logs\` |
-| `run_build.bat` + `build_maps.ps1` | `C:\source1\cs2port\` | **Stage D.** Command-line build of every map in `build_queue.txt`, one at a time: addon assets first, then `resourcecompiler` with Hammer's full-build arguments, then the outroot copy. Marks `existing_ports.txt` `[in progress, built]`. A line (or arguments) `final <addon> [map]` is a release build: 2048 lightmaps, VRAD quality 2 |
+| `run_build.bat` + `build_maps.ps1` | `C:\source1\cs2port\` | **Stage D.** Command-line build of every map in `build_queue.txt`, one at a time: addon assets first, then `resourcecompiler` with Hammer's full-build arguments, then the outroot copy. Marks `existing_ports.txt` `[in progress, built]`. A line (or arguments) `final <addon> [map]` is a release build: 2048 lightmaps, VRAD quality 2. Threads default to logical cores - 2; `$env:BUILD_THREADS = 11` overrides for that shell |
 | `run_build_one_example.bat` | `C:\source1\cs2port\` | Builds one addon without touching the queue (`run_build.bat <addon>`). Copy it and change the name |
 | `run_import_then_build.bat` | `C:\source1\cs2port\` | Unattended: `run_import.bat`, then waits for Claude to write `build_go.txt` after stage C, then `run_build.bat`. Logs to `logs\unattended.log` |
 | `make_import_map_auto.py` | `C:\source1\cs2port\` | Run once. Copies Valve's `import_map_community.py` to `import_map_auto.py` without the Enter/Esc prompt, so the import can run unattended |

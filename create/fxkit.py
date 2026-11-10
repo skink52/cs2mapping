@@ -1,11 +1,13 @@
 """Effects for original maps (vmaplib map open with vmapgen.open_map): stock particles, rain / snow over an area, lightning flashes.
 
   effect(kind, origin, name, start=True)            info_particle_system with a stock CS2 particle (EFFECTS) or any .vpcf path
-  precipitation(box, kind='rain', name, start=True)  func_precipitation over the box (toolsprecipitation mesh): CS2's own rain / snow
+  precipitation(box, kind='rain', name, start=True)  func_precipitation over the box (toolsprecipitation mesh). CS2's FGD marks the class
+                                                     @exclude (fgdcheck: excluded_class), so it may not exist in game: prefer weather_tiles
   weather_tiles(box, kind='rain', name, tile=1024)   a grid of rain / snow particles over the box, switched together by a relay
                                                      (FireUser1 starts, FireUser2 stops): for areas where func_precipitation looks thin
-  lightning(name, origin, interval=12, duration=0.25, thunder=None, start=True)
-                                                     logic_timer -> env_fade white flash (+ a thunder sound event); FireTimer flashes now
+  lightning(name, origin, interval=12, duration=0.25, thunder=None, start=True, alpha=180)
+                                                     logic_timer -> env_fade white flash (+ a thunder sound event); FireTimer flashes now;
+                                                     alpha 0-255 = flash strength (180 blinds a screen: ~50 for a game)
 Returns the entity nodes and the inputs that switch them. Particle names are CS2 stock files (checked against pak01 in the tests where CS2
 is installed); custom particles: tools/vpcf66.py, tools/steam.py, tools/firefx.py.
 
@@ -36,12 +38,14 @@ def effect(kind, origin, name, start=True, group=''):
 
 def precipitation(box, kind='rain', name='weather', start=True, group=''):
     if kind not in ('rain', 'snow', 'ash'): raise ValueError('kind: rain, snow or ash')
+    # CS2's FGD marks func_precipitation @exclude (tools/fgdcheck.py: excluded_class): Hammer hides it and it is unverified in game
     import vmaplib
     e = P.entity('func_precipitation', tuple((box[0][i] + box[1][i]) / 2 for i in range(3)), group=group, strict=False,
                  targetname=name, subclass_name='precipitation_%s' % kind, StartDisabled=int(not start))
     shape = P.box(box[0], box[1], PRECIP_MAT)
     e.attr('children')[2].append(vmaplib.mesh_node(vmaplib.polymesh(*shape), group=group, attach=False))
-    return {'nodes': [e], 'inputs': {'start': (name, 'Enable'), 'stop': (name, 'Disable')}}
+    return {'nodes': [e], 'inputs': {'start': (name, 'Enable'), 'stop': (name, 'Disable')},
+            'warning': 'func_precipitation is @exclude in the CS2 FGD (unverified in game): weather_tiles is the safe choice'}
 
 
 def weather_tiles(box, kind='rain', name='weather', tile=1024.0, start=True, group=''):
@@ -60,11 +64,11 @@ def weather_tiles(box, kind='rain', name='weather', tile=1024.0, start=True, gro
     return {'nodes': nodes, 'tiles': nx * ny, 'inputs': {'start': (name, 'FireUser1'), 'stop': (name, 'FireUser2')}}
 
 
-def lightning(name, origin, interval=12.0, duration=0.25, thunder=None, start=True, group=''):
+def lightning(name, origin, interval=12.0, duration=0.25, thunder=None, start=True, group='', alpha=180):
     flash = name + '_flash'
     timer = _ent('logic_timer', origin, group=group, targetname=name, StartDisabled=int(not start), RefireTime=interval, UseRandomTime=1,
                  LowerRandomBound=interval * 0.5, UpperRandomBound=interval * 1.5)
-    fade = _ent('env_fade', origin, group=group, targetname=flash, spawnflags=1, duration=duration, holdtime=0, renderamt=180,
+    fade = _ent('env_fade', origin, group=group, targetname=flash, spawnflags=1, duration=duration, holdtime=0, renderamt=int(alpha),
                 rendercolor='210 225 255')
     P.connect(timer, 'OnTimer', flash, 'Fade', check_output=False)
     nodes = [timer, fade]

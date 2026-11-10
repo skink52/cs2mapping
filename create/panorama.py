@@ -9,6 +9,12 @@ What is here:
   Hud.show_when(cls, root_cls, *states)    `cls` is hidden (opacity 0) unless the root panel has one of the states
   Hud.glyph_font(...) + gtext() / stext()  pixel-text rows: one image panel per character; the script sets each cell's
                                            glyph class (g65 = 'A') and the row's colour class (cW, cY...)
+                                           !! every gtext / char_line cell is a panel WITH AN ID, and CS2 keeps at most 1024 panel
+                                           ids per layout: past that panels stop updating ("The maximum number of panel ids has
+                                           been reached", IRONFRAME 10 Nov 2026). Count the cells (Hud.write prints the id total;
+                                           the mock: hud=<xml> panelids=950). For more than a few short rows use a Label with a
+                                           dialog variable instead: P(id, cls, None, tag='Label', extra='text="{s:v}"') = 1 id.
+                                           stext() (static text) has no ids and is free.
   Hud.char_line(prefix, n, cls)            a fixed row of n character panels <prefix>0..n-1 plus a <prefix>img slot for a
                                            whole-string picture (Hellmatch style)
   Hud.preload(map_name, slides)            never-shown panels that make CS2 compile the loading slides, radar and icon
@@ -209,7 +215,9 @@ class Hud:
             json.dump(sorted(set(re.findall(r'id="([^"]+)"', doc))), open(os.path.join(gen_dir, 'hud_ids.json'), 'w'))
             json.dump(dict(slots=self.text_slots, align=self.text_align, charset=self.charset),
                       open(os.path.join(gen_dir, 'hud_text.json'), 'w'))
-        print('hud %s: %d css rules, %d panel ids' % (name, len(self.css), len(re.findall(r'id="', doc))))
+        n_ids = len(re.findall(r'id="', doc))
+        print('hud %s: %d css rules, %d panel ids%s' % (name, len(self.css), n_ids, '' if n_ids <= 800 else
+              '  <-- CS2 stops updating panels past 1024 ids the script has named: use Labels for text (docs/creation/hud.md)'))
         return xp, cp
 
 

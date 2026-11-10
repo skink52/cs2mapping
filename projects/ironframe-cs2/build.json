@@ -1,0 +1,57 @@
+{
+  "name": "ironframe",
+  "coreDir": "src/core",
+  "adapterDir": "src/cs2",
+  "data": {
+    "PARTS": "data/parts.json",
+    "CAREER": "data/career.json",
+    "VERSION": "data/version.json",
+    "ARENA": "out/addon/_gen/arena.json",
+    "HUD": {
+      "path": "out/addon/_gen/hud.json",
+      "default": {}
+    },
+    "SOUNDS": {
+      "path": "out/addon/_gen/sounds.json",
+      "default": {}
+    },
+    "MODELS": {
+      "path": "out/addon/_gen/models.json",
+      "default": {}
+    },
+    "AURAS": {
+      "path": "out/addon/_gen/auras.json",
+      "default": {}
+    }
+  },
+  "imports": [
+    "Instance",
+    "CSPlayerPawn",
+    "CSPlayerController",
+    "CSInputs",
+    "CSMoveType",
+    "CustomCameraMode",
+    "CSDamageFlags",
+    "CSDamageTypes",
+    "CSRoundEndReason",
+    "PointTemplate",
+    "BaseModelEntity",
+    "CustomHudLayout",
+    "Entity"
+  ],
+  "exports": [
+    "PARTS",
+    "VERSION",
+    "IF_Game",
+    "IF_Progress",
+    "IF_DEFAULT_CFG",
+    "IF_Garage",
+    "IF_Ai",
+    "IF_Nav",
+    "CAREER",
+    "IF_Career",
+    "IF_DENY"
+  ],
+  "testOut": "build/core_test.cjs",
+  "out": "out/addon"
+}

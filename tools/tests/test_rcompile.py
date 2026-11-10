@@ -37,6 +37,10 @@ class Log(unittest.TestCase):
         self.assertFalse(any('ray tracing' in h for h in r['hints']))                  # a normal light bake is not a GPU problem
         self.assertFalse(r['crashed'])
 
+    def test_uncompiled_addon_material_hint(self):
+        r = R.analyze("RESOURCE COMPILE WARNING: Mesh 'meshset_0' referencing missing material 'materials/ifr/sprawl/win_cool.vmat'")
+        self.assertTrue(any('-fshallow' in h and 'rcompile.py asset' in h for h in r['hints']))
+
     def test_html_and_utf16(self):
         html_log = '<font color="#FF0000">Failed loading resource &quot;materials/a/b.vtex_c&quot;</font><br/>' \
                    '<font color="#FFFF00">ExtrudeReplaceHull failed to build new convex hull</font><br/>'

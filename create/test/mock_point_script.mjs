@@ -19,7 +19,7 @@ let ENTFILE = null;
 for (const a of args.slice(1)) { const i = a.indexOf('='); if (i < 0 && a.endsWith('.json')) ENTFILE = a; else kv.set(i < 0 ? a : a.slice(0, i), i < 0 ? '1' : a.slice(i + 1)); }
 const opt = (k, d) => (kv.has(k) ? kv.get(k) : d);
 const on = (k) => kv.has(k) && kv.get(k) !== '0';
-const KNOWN = 'players seconds seed round warm trace calls held churn silent norespawn warmup unassigned resetfirst hudwipe maskall autoents models hud css inputs noinputs fire chat';
+const KNOWN = 'players seconds seed round warm trace calls held churn silent norespawn warmup unassigned resetfirst hudwipe maskall autoents models hud css inputs noinputs fire chat scenario';
 for (const k of kv.keys()) if (!KNOWN.split(' ').includes(k)) console.log('warning: unknown option ' + k);
 
 const SCRIPT = path.resolve(args[0]);
@@ -31,6 +31,7 @@ const WARM = +opt('warm', Math.min(240, Math.floor(SECONDS / 4)));
 const TRACE = kv.has('trace') ? opt('trace') : null;
 const CALLS = on('calls'), HELD = on('held'), SILENT = on('silent'), HUDWIPE = on('hudwipe'), CHURN = on('churn') || SILENT || HUDWIPE;
 const NORESPAWN = on('norespawn'), WARMUP = on('warmup'), UNASSIGNED = on('unassigned'), RESETFIRST = on('resetfirst'), MASKALL = on('maskall'), AUTOENTS = on('autoents');
+const PANELIDS = +opt('panelids', 0);   // panelids=N: a PROBLEM when the script references more than N distinct HUD panel ids (CS2's cap, see README)
 const MODEL_ROOTS = kv.has('models') ? opt('models').split(',').map((d) => path.resolve(d)) : null;
 
 let time = 0, tick = 0;
@@ -75,7 +76,7 @@ const dflt = (k) => { const t = RET[k] || ''; if (/^number/.test(t)) return 0; i
 
 // ---------------------------------------------------------------- bookkeeping
 const stats = { calls: {}, unknownEntityCalls: {}, fired: {}, errors: [], notInApi: {}, problems: [], kills: 0, scriptDamage: 0, teamkills: 0, respawns: 0,
-  teamChanges: 0, roundEnds: {}, restarts: 0, spawned: 0, hudCalls: 0, hudDropped: 0, tpRuns: 0, tpNames: new Set(), tpAuto: 0, tpAutoNames: new Set(), invalidCalls: 0, models: new Set(),
+  teamChanges: 0, roundEnds: {}, restarts: 0, spawned: 0, mgstat: {}, hudCalls: 0, hudDropped: 0, tpRuns: 0, tpNames: new Set(), tpAuto: 0, tpAutoNames: new Set(), invalidCalls: 0, models: new Set(),
   churn: { join: 0, kick: 0, swap: 0, leave: 0 } };
 const count = (o, k) => { o[k] = (o[k] || 0) + 1; };
 const flagIt = (msg) => stats.problems.push(msg);
@@ -241,6 +242,8 @@ class Pawn extends ModelEnt {
   GetCustomCamera() { return this.cam || (this.cam = add(new Camera(this))); }
   TakeDamage(d) { chkDmg(d); stats.scriptDamage++; return hurt(this, d); }
   Kill() { if (this._alive) die(this); } Remove() { if (this._alive) die(this); }
+  // .d.ts: full health and ammo; a dead pawn comes back alive with the default loadout (as a respawn: OnPlayerReset fires)
+  Reset() { if (!this.ctl._ok || !this.ctl.connected || this.ctl._team < 2) return; if (!this._alive) { revive(this); stats.respawns++; fire('OnPlayerReset', { player: this }); } else { this._hp = 100; seeEnt(this); } }
 }
 class Controller extends Ent {
   constructor(slot, bot) { super('', 'cs_player_controller'); this.slot = slot; this.bot = bot; this.pawn = null; this.connected = true; this.kills = 0; this.deaths = 0; this.score = 0; this._money = 800; }
@@ -263,12 +266,15 @@ if (kv.has('hud')) {
   if (css) for (const m of css.matchAll(/(^|\})\s*([^{}@]+)\{/g)) for (const sel of m[2].split(',')) { const t = sel.trim(); if (/^\.[\w-]+$/.test(t)) lone.add(t.slice(1)); }
   HUD = { ids: new Set([...xml.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1])), css, classes: css ? new Set([...css.matchAll(/\.([A-Za-z_][\w-]*)/g)].map((m) => m[1])) : null, lone, used: new Map() };
 }
+const hudRef = new Set();     // distinct panel ids the script has referenced (CS2 caps these: 'The maximum number of panel ids has been reached')
 const hudState = new Map();   // 'slot|panel' -> Set of classes
+const hudVars = new Map();    // 'slot|panel.name' -> dialog variable text ('all|...' for everyone); scenarios read it with api.hudVar
 const loading = new Set();    // hudwipe: slots whose client drops HUD changes until they pick a team
 function hudPanel(panel, cls) {
   stats.hudCalls++;
   if (typeof panel !== 'string') throw new Error('HUD panel id must be a string: ' + panel);
   if (HUD && !HUD.ids.has(panel)) throw new Error('unknown HUD panel ' + panel);
+  hudRef.add(panel);
   if (cls !== undefined) { if (typeof cls !== 'string') throw new Error('HUD class must be a string: ' + cls); if (HUD) HUD.used.set(cls, (HUD.used.get(cls) || 0) + 1); }
 }
 const chkSlot = (s) => { if (!Number.isInteger(s) || s < 0 || s > 63) throw new Error('bad player slot ' + s); };
@@ -279,14 +285,17 @@ function hudCls(scope, panel, cls, has) {
   if (OBS) see('h ' + k, [...set].sort().join(' '));
 }
 function hudReset(prefix) { for (const k of [...hudState.keys()]) if (!prefix || k.startsWith(prefix)) { hudState.delete(k); if (OBS) see('h ' + k, undefined); }
+  for (const k of [...hudVars.keys()]) if (!prefix || k.startsWith(prefix)) hudVars.delete(k);
   if (OBS) for (const k of [...state.keys()]) if (k.startsWith('v ') && (!prefix || k.startsWith('v ' + prefix))) see(k, undefined); }
 class Hud extends Ent {
   SetHasClass(panel, cls, has) { hudPanel(panel, cls); hudCls('all', panel, cls, has === undefined ? false : !!has); }
   SetHasClassForPlayer(slot, panel, cls, has) { chkSlot(slot); hudPanel(panel, cls); if (HUDWIPE && loading.has(slot)) { stats.hudDropped++; return; } hudCls(slot, panel, cls, has === undefined ? undefined : !!has); }
-  SetDialogVariableString(panel, name, value) { hudPanel(panel); if (typeof value !== 'string') throw new Error('non-string dialog var ' + panel + '.' + name + ' = ' + value); if (OBS) see('v all|' + panel + '.' + name, value); }
+  SetDialogVariableString(panel, name, value) { hudPanel(panel); if (typeof value !== 'string') throw new Error('non-string dialog var ' + panel + '.' + name + ' = ' + value); hudVars.set('all|' + panel + '.' + name, value); if (OBS) see('v all|' + panel + '.' + name, value); }
   SetDialogVariableStringForPlayer(slot, panel, name, value) { chkSlot(slot); hudPanel(panel);
     if (value !== undefined && typeof value !== 'string') throw new Error('non-string dialog var ' + panel + '.' + name + ' = ' + value);
-    if (HUDWIPE && loading.has(slot)) { stats.hudDropped++; return; } if (OBS) see('v ' + slot + '|' + panel + '.' + name, value); }
+    if (HUDWIPE && loading.has(slot)) { stats.hudDropped++; return; }
+    if (value === undefined) hudVars.delete(slot + '|' + panel + '.' + name); else hudVars.set(slot + '|' + panel + '.' + name, value);
+    if (OBS) see('v ' + slot + '|' + panel + '.' + name, value); }
   SetInputCaptureEnabled(slot) { chkSlot(slot); } IsInputCaptureEnabled() { return false; }
   Reset() { hudReset(''); } ResetForPlayer(slot) { chkSlot(slot); hudReset(slot + '|'); }
 }
@@ -516,6 +525,7 @@ const Instance = new Proxy({
     for (const one of String(cmd).split(';')) {
       const [k, ...rest] = one.trim().split(/\s+/); if (!k) continue;
       count(stats.calls, 'ServerCommand ' + k); event('cmd ' + one.trim());
+      if (k === 'echo' && rest[0] === 'mgstat' && rest[2]) count(stats.mgstat, rest[2]);   // echo mgstat <slot> <stat> [n]: the stat names sent (printed at the end)
       const v = rest.join(' ').replace(/^"|"$/g, '');
       if (k === 'mp_restartgame') later(+v || 1, () => { roundOver = true; rounds = 0; restartRound(); });
       else if (k !== 'say' && rest.length) cvars[k] = v;
@@ -557,10 +567,34 @@ process.on('unhandledRejection', (e) => fail('async', e));
 try { await import(pathToFileURL(tmp).href); } catch (e) { console.log('script failed to load:', e.stack ? e.stack.split('\n').slice(0, 3).join(' | ') : e); process.exit(1); }
 finally { fs.rmSync(tmp, { force: true }); fs.rmSync(stubFile, { force: true }); }
 
+// ---------------------------------------------------------------- scenario=<module.mjs>: a scripted sequence with its own checks
+// The module's default export may have setup(api), tick(api) (every tick, after the random keys, before the think) and
+// check(api) -> [failure strings] (at the end; each one is a PROBLEM). README.md "Scenario files" lists the api.
+const manual = new Set();
+let SC = null;
+const api = {
+  get time() { return time; }, get tick() { return tick; }, players, IN, RR, MT, ENUMS, stats, hooks, inputs, manual,
+  cvar, cvars, flag: flagIt, log: (m) => console.log('[scenario] ' + m),
+  ctrl: (slot) => players[slot], pawn: (slot) => players[slot] && players[slot].pawn,
+  chat: (slot, text) => { const c = players[slot]; fire('OnPlayerChat', { player: c, text, team: c._team }); },
+  keys: (slot, mask) => { const p = players[slot] && players[slot].pawn; if (p) p.keys = mask; },
+  hud: (slot, panel) => new Set([...(hudState.get(slot + '|' + panel) || []), ...(hudState.get('all|' + panel) || [])]),
+  hudVar: (slot, panel, name = 'v') => { const k = slot + '|' + panel + '.' + name; return hudVars.has(k) ? hudVars.get(k) : hudVars.get('all|' + panel + '.' + name) || ''; },   // a Label's dialog variable as that player sees it
+  hudIds: () => hudRef.size,     // distinct panel ids referenced so far (CS2's cap is 1024 per layout)
+  fire: (name, ev) => fire(name, ev), input: (name, ev) => inputs[name] && safe('input ' + name, () => inputs[name](ev || {})),
+  endRound: (team, reason) => endRound(team, reason), get roundOver() { return roundOver; }, get rounds() { return rounds; },
+  connect: (slot, bot, team) => connect(slot, bot, team, false), disconnect: (c) => disconnect(c), teamChange: (c, t) => teamChange(c, t),
+  hurt: (victim, d) => hurt(victim, d),
+};
+if (kv.has('scenario')) {
+  try { SC = (await import(pathToFileURL(path.resolve(opt('scenario'))).href)).default; } catch (e) { console.log('scenario failed to load:', e.stack ? e.stack.split('\n').slice(0, 3).join(' | ') : e); process.exit(1); }
+}
+
 // ---------------------------------------------------------------- run
 fire('OnActivate');
 for (let i = 0; i < PLAYERS; i++) { const bot = i % 4 === 3; connect(i, bot, UNASSIGNED && !bot && i % 2 === 1 ? 0 : 2 + (i % 2), false); }
 fire('OnRoundStart');
+if (SC && SC.setup) safe('scenario setup', () => SC.setup(api));
 const inputNames = opt('inputs', '') ? opt('inputs').split(',') : null;
 const noInputs = new Set(opt('noinputs', '').split(',').filter(Boolean));
 const fireAt = opt('fire', '').split(',').filter(Boolean).map((x) => { const i = x.lastIndexOf('@'); return { n: i < 0 ? x : x.slice(0, i), at: i < 0 ? 0 : +x.slice(i + 1) }; });
@@ -585,6 +619,7 @@ function inputsTick() {
     if (!c || !c.connected || !c._ok) continue;
     const p = c.pawn; if (!p || !p._ok || !p._alive) continue;
     p.prev = p.keys;
+    if (manual.has(c.slot)) continue;        // scenario=: the scenario sets this player's keys
     if (HELD) { let k = p.keys; for (const [b, onP, offP] of HOLD) if (k & b ? Math.random() < offP : Math.random() < onP) k ^= b; p.keys = k; }
     else if (Math.random() < 0.3) p.keys = 1 << Math.floor(Math.random() * 11);
     if (Math.random() < 0.02) p._turn = (Math.random() - 0.5) * 6;
@@ -596,7 +631,7 @@ function inputsTick() {
 }
 function perSecond() {
   mapProps = world.filter((e) => e._ok && e._map && e instanceof ModelEnt);
-  const live = players.filter((c) => c && c._ok && c.connected && c.pawn && c.pawn._ok && c.pawn._alive);
+  const live = players.filter((c) => c && c._ok && c.connected && c.pawn && c.pawn._ok && c.pawn._alive && !manual.has(c.slot));
   const a = pick(live), b = pick(live);
   const names = (inputNames || Object.keys(inputs)).filter((n) => !noInputs.has(n));
   if (names.length && a) { const n = pick(names); if (inputs[n]) safe('input ' + n, () => inputs[n]({ caller: mapProps.length ? pick(mapProps) : undefined, activator: a.pawn })); }
@@ -645,6 +680,7 @@ for (tick = 0; tick < TICKS; tick++) {
     f.done = true;
     if (inputs[f.n]) safe('input ' + f.n, () => inputs[f.n]({ caller: undefined, activator: undefined })); else stats.errors.push('fire: the script has no input ' + f.n);
   }
+  if (SC && SC.tick) { try { SC.tick(api); } catch (e) { stats.errors.push('scenario tick: ' + (e && e.stack ? e.stack.split('\n').slice(0, 2).join(' | ') : e)); } }
   if (think && time >= nextThink - 1e-9) { nextThink = Infinity; safe('think', think); }
   for (let n = 0; afterQ.length && n < 64; n++) for (const cb of afterQ.splice(0)) safe('QueueAfterThinks', cb);
   if (tick % 64 === 0) perSecond();
@@ -672,6 +708,7 @@ if (Object.keys(stats.unknownEntityCalls).length) console.log('entity methods no
 if (stats.models.size) console.log(`models set (${stats.models.size}):`, [...stats.models].slice(0, 8).join(', ') + (stats.models.size > 8 ? ', ...' : ''));
 if (HUD) {
   const used = [...HUD.used.keys()], missing = HUD.classes ? used.filter((c) => !HUD.classes.has(c)) : [], lone = used.filter((c) => HUD.lone.has(c));
+  console.log(`HUD panel ids referenced: ${hudRef.size} of ${HUD.ids.size} in the layout`);
   console.log(`HUD: ${stats.hudCalls} calls, ${used.length} classes switched; not in the css: ${missing.join(' ') || 'none'}; with a lone css rule: ${lone.join(' ') || 'none'}${HUDWIPE ? '; changes dropped by loading clients ' + stats.hudDropped : ''}`);
   if (lone.length) flagIt('switched HUD classes with a css rule of their own (the panel takes that rule): ' + lone.join(' '));
 }
@@ -690,10 +727,15 @@ if (OBS) {
   if (TRACE !== '1') fs.writeFileSync(TRACE, text);
   console.log(`trace: ${traceOut.length} ticks with changes, hash ${h.toString(16).padStart(8, '0')}${TRACE !== '1' ? ' -> ' + TRACE : ''}`);
 }
+if (SC && SC.check) { let f = []; try { f = SC.check(api) || []; } catch (e) { f = ['scenario check threw: ' + (e && e.stack ? e.stack.split('\n').slice(0, 2).join(' | ') : e)]; }
+  console.log('scenario ' + path.basename(opt('scenario')) + ': ' + (f.length ? f.length + ' failed' : 'all checks passed'));
+  for (const x of f) flagIt('scenario: ' + x); }
 if (stats.tpRuns) flagIt(`props Teleported 3+ ticks in a row (CS2 doesn't draw them; use Move): ${stats.tpRuns} (${[...stats.tpNames].slice(0, 6).join(', ')})`);
 if (stats.tpAuto) console.log(`autoents names Teleported 3+ ticks in a row (a problem only if they are props; give entities.json to check): ${stats.tpAuto} (${[...stats.tpAutoNames].slice(0, 6).join(', ')})`);
+if (Object.keys(stats.mgstat).length) console.log('mgstat stats sent (' + Object.keys(stats.mgstat).length + ' names): ' + Object.entries(stats.mgstat).sort((x, y) => y[1] - x[1]).map(([k, n]) => k + ' x' + n).join(', '));
 if (stats.invalidCalls) console.log('calls on entities that had gone away:', stats.invalidCalls);
 if (Object.keys(stats.notInApi).length) stats.errors.push('Instance methods not in point_script.d.ts: ' + Object.keys(stats.notInApi).join(', '));
+if (PANELIDS && hudRef.size > PANELIDS) flagIt(`HUD: ${hudRef.size} distinct panel ids referenced, over panelids=${PANELIDS} (CS2: "The maximum number of panel ids has been reached": later panels never update)`);
 const probs = [...new Set(stats.problems)];
 if (probs.length) console.log('PROBLEMS (' + probs.length + '):\n  ' + probs.slice(0, 10).join('\n  '));
 if (stats.errors.length) { const u = [...new Set(stats.errors)]; console.log('ERRORS (' + stats.errors.length + ', ' + u.length + ' distinct):\n  ' + u.slice(0, 10).join('\n  ')); }

@@ -1,0 +1,63 @@
+{
+ "version": 1,
+ "notes": "IRONFRAME pilot customisation shared by the map script (build.json data CAREER) and the SlimeMG IronFrame module (a copy in configs/plugins/SlimeMG/ironframe/career.json). docs/SERVER_CONTRACT.md sections 8-10. Ids and codes are a MAP CONTRACT: add entries at the end, never renumber. alphabet: text code = index + 1 (0 ends a text); accents: id 0 = none (the paint's own look); camera: id 0 = the frame's standard distance; honours: ids 1..24 (the earned mask has 24 bits), kind title (a name on the pilot plate and the podium) or badge (a tag on the kill line); contract_stats: code = index + 1 (0 = a stat this map has no label for); modes: code = index + 1.",
+ "slots": 6,
+ "name_len": 10,
+ "callsign_len": 12,
+ "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -",
+ "accents": [
+  {"id": 1, "name": "Red", "tint": [235, 60, 55]},
+  {"id": 2, "name": "Orange", "tint": [255, 140, 40]},
+  {"id": 3, "name": "Gold", "tint": [245, 205, 80]},
+  {"id": 4, "name": "Lime", "tint": [150, 230, 70]},
+  {"id": 5, "name": "Emerald", "tint": [50, 200, 120]},
+  {"id": 6, "name": "Cyan", "tint": [40, 200, 255]},
+  {"id": 7, "name": "Blue", "tint": [70, 100, 240]},
+  {"id": 8, "name": "Violet", "tint": [160, 90, 235]},
+  {"id": 9, "name": "Magenta", "tint": [240, 70, 190]},
+  {"id": 10, "name": "Bone", "tint": [235, 225, 200]},
+  {"id": 11, "name": "Gunmetal", "tint": [95, 100, 110]},
+  {"id": 12, "name": "Black", "tint": [35, 35, 40]}
+ ],
+ "camera": [
+  {"id": 0, "name": "Standard", "mult": 1.0},
+  {"id": 1, "name": "Close", "mult": 0.8},
+  {"id": 2, "name": "Tight", "mult": 0.9},
+  {"id": 3, "name": "Wide", "mult": 1.15},
+  {"id": 4, "name": "Far", "mult": 1.3}
+ ],
+ "honours": [
+  {"id": 1, "kind": "title", "name": "Cadet", "stat": "mech_rounds", "goal": 1, "how": "Finish a round"},
+  {"id": 2, "kind": "title", "name": "Regular", "stat": "mech_rounds", "goal": 25, "how": "Finish 25 rounds"},
+  {"id": 3, "kind": "title", "name": "Veteran", "stat": "mech_rounds", "goal": 100, "how": "Finish 100 rounds"},
+  {"id": 4, "kind": "title", "name": "Ironclad", "stat": "mech_rounds", "goal": 500, "how": "Finish 500 rounds"},
+  {"id": 5, "kind": "title", "name": "Victor", "stat": "mech_wins", "goal": 10, "how": "Win 10 rounds"},
+  {"id": 6, "kind": "title", "name": "Champion", "stat": "mech_wins", "goal": 100, "how": "Win 100 rounds"},
+  {"id": 7, "kind": "title", "name": "Demolisher", "stat": "mech_damage", "goal": 1000, "how": "Deal 1 000 000 damage"},
+  {"id": 8, "kind": "title", "name": "Siege Engine", "stat": "mech_damage", "goal": 10000, "how": "Deal 10 000 000 damage"},
+  {"id": 9, "kind": "title", "name": "Vanguard", "stat": "mech_captures", "goal": 50, "how": "Capture 50 objectives"},
+  {"id": 10, "kind": "title", "name": "Wavebreaker", "stat": "mech_pve_kills", "goal": 250, "how": "Destroy 250 Sortie machines"},
+  {"id": 11, "kind": "title", "name": "Titan Slayer", "stat": "mech_boss_kills", "goal": 10, "how": "Destroy 10 Sortie bosses"},
+  {"id": 12, "kind": "title", "name": "Wingman", "stat": "mech_assists", "goal": 100, "how": "Get 100 assists"},
+  {"id": 13, "kind": "badge", "name": "Ace", "tag": "ACE", "stat": "best_round_kills", "goal": 10, "how": "10 kills in one round"},
+  {"id": 14, "kind": "badge", "name": "Rampage", "tag": "RMP", "stat": "best_streak", "goal": 8, "how": "An 8 kill streak"},
+  {"id": 15, "kind": "badge", "name": "Heavy Hitter", "tag": "HVY", "stat": "best_round_damage", "goal": 100000, "how": "100 000 damage in one round"},
+  {"id": 16, "kind": "badge", "name": "Survivor", "tag": "SRV", "stat": "best_life_s", "goal": 300, "how": "Stay alive for 5 minutes"},
+  {"id": 17, "kind": "badge", "name": "Ghost", "tag": "GST", "stat": "mech_msl_dodged", "goal": 100, "how": "Shake 100 missiles with a quick boost"},
+  {"id": 18, "kind": "badge", "name": "Breaker", "tag": "BRK", "stat": "mech_staggers", "goal": 100, "how": "Stagger 100 machines"},
+  {"id": 19, "kind": "badge", "name": "Overdriver", "tag": "OVR", "stat": "mech_overdrives", "goal": 25, "how": "Fire 25 overdrives"},
+  {"id": 20, "kind": "badge", "name": "Hunter", "tag": "HNT", "stat": "kills", "goal": 500, "how": "Destroy 500 pilots"}
+ ],
+ "contract_stats": [
+  {"stat": "mech_wins", "label": "WIN ROUNDS"},
+  {"stat": "kills", "label": "KILLS"},
+  {"stat": "mech_damage", "label": "DAMAGE (K)"},
+  {"stat": "mech_captures", "label": "CAPTURES"},
+  {"stat": "mech_pve_kills", "label": "SORTIE KILLS"},
+  {"stat": "mech_rounds", "label": "ROUNDS"},
+  {"stat": "mech_assists", "label": "ASSISTS"},
+  {"stat": "best_streak", "label": "KILL STREAK"},
+  {"stat": "mech_boss_kills", "label": "BOSS KILLS"}
+ ],
+ "modes": ["tb", "cq", "kh", "ctf", "sk", "so"]
+}

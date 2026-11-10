@@ -47,6 +47,34 @@ in Hammer, or with `resourcecompiler -i <file.vmdl>` (`run_build.bat "assets <ad
   The script places the part at body origin + hub rotated by the body's angles and spins it.
 - Record the source and licence in the vmdl comment and the addon's `CREDITS.md`.
 
+## Hard-surface materials (mechs, vehicles, armour)
+
+Learned on IRONFRAME's 20 GMod mech ports and 4 Tripo mechs (Nov 2026); tool: `create/hardsurface_mat.py`, run by `mdl2cs2.py` by default.
+
+- **Flat roughness + `g_flMetalness 0` reads as matte plastic.** The first conversions had one roughness value per material (0.8) and no metal: no
+  sheen, no wear, no cavities. Painted armour wants per-pixel roughness around **0.45-0.6** with grunge variation, bare / worn steel **0.25-0.35** with
+  metalness 1, crevices rougher. Use the source's own masks when there are any (phong exponent maps, normal-map-alpha or base-alpha env-map masks):
+  they are better than anything derived, but their absolute levels differ between packs, so stretch them to their own contrast and spread roughness
+  about +-0.15 around the paint value.
+- **What Valve's props use** (decompiled with `tools/vmatc.py`; feature list from `shaders_pc_dir.vpk` `csgo_complex_pc_50_features.vcs`): per-pixel
+  `TextureMetalness` + `F_METALNESS_TEXTURE`, `TextureRoughness`, `TextureAmbientOcclusion` with `g_flAmbientOcclusionDirectDiffuse/Specular "0.000"`
+  (AO darkens indirect light only, so put a little AO into the albedo as well), `F_TINT_MASK` + `TextureTintMask` (the dust car wreck): the model tint
+  (`g_flModelTintAmount` + a script's `SetColor`, our team paint) then only colours the paint, not bare-metal chips or lights. csgo_complex also has
+  `F_DETAIL_TEXTURE` (`TextureDetail`, `TextureDetailMask`, `g_flDetailBlendFactor`), `F_SELF_ILLUM`, `F_SECONDARY_UV`, `F_ANISOTROPIC_GLOSS`.
+- **Metal albedo is the reflectance colour**: a dark albedo with metalness 1 renders black. Worn steel ~sRGB 170-200 (darker on dark gunmetal parts).
+  Pure white paint (255) blows out under the CS2 sun and hides every detail: cap linear albedo at ~0.78 (soft knee, ~sRGB 230).
+- **Edge wear from the mesh, not the texture.** Convex feature edges (dihedral angle 18-55 degrees between welded faces) sampled into a KD-tree;
+  every texel's 3D point gets its distance to the nearest edge whose faces it belongs to (normal gate, so a plate behind an edge is not worn), chipped
+  by object-space noise, with a darker primer rim and a wider light band of worn paint. Concave edges and voxel AO (`create/bake.py`) give crevice
+  grime. Noise in object space is continuous across UV charts: Tripo atlases have ~6,000 tiny charts per mech, so any image-space filter there
+  smears across chart borders. Texture-space curvature from the normal map adds the painted-in panel lines and bevels.
+- **Re-used UVs** (AC4 packs map one texture 2-5 times; mirrored halves twice): average the mesh masks over every face that uses a texel, so only
+  what all copies agree on survives (last-writer-wins puts one part's edges in the middle of another's panel). Whole-tile UV offsets (v in 1..2)
+  are common in converted SMDs: subtract the integer part before deciding a material tiles.
+- Damage skins (`create/damage_tex.py`) copy the base vmat: re-derive them after a material upgrade so they carry the new maps.
+- Check under the same lights before and after: `projects/ironframe-cs2/tools/review_materials.py` is a small deferred PBR software renderer
+  (tangent-space normal maps, GGX, metalness, AO, a sky/ground environment for reflections). Note SMD v is bottom-up (row = 1 - v).
+
 ## Procedural props with baked textures
 
 mg_trenchwarfare's props (sandbags, revetments, duckboards, wire, shattered trees, a Minenwerfer, wrecked tank, hangar…) are all generated:
@@ -233,6 +261,13 @@ One invisible rig model plays every animation, and stock agents are **bone-merge
 ## Weapons
 
 Rigging new weapon models onto stock weapon skeletons and swapping them in through `weapons.vdata`: [custom-weapons.md](custom-weapons.md).
+
+Props held by a script-driven body (IRONFRAME mechs, Nov 2026): put each prop's model origin on its grip / mount base (re-pivot the SMDs before
+compiling), then place it per body from the mesh, not from bounds guesses: palm = posed centroid of the hand bone (or the source rig's hand
+centroid carried by the forearm group when the conversion merged them), shoulder units dropped onto a top-down height map of every pose.
+Check clearance offline with voxel depth fields (body and prop filled, distance-transformed; penetration = 2 x max min(depth in body, depth
+in prop) - 1 voxel) over idle / walk / aim poses: `projects/ironframe-cs2/tools/weapon_fit.py`. Bounds-based hard-points put AC hand guns
+70 u off the real wrists.
 
 ## Checking stock CS2 assets offline
 

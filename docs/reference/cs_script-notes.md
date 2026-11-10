@@ -60,6 +60,22 @@ tick late, but it can't miss a release. A missed release would leave a thruster 
   speedmod scaled the weapon's max speed. Pre-multiply by `1 / (1 - 5.2/64)`, because the player's own movement applies `sv_friction 5.2`
   to the velocity you set before it moves.
 - Gravity (trigger_gravity replacement): while airborne, add back `(1 - scale) * 800 * dt` of vertical velocity each tick.
+- **Clip brushes and script-moved things** (IRONFRAME, 10 Nov 2026 playtest: mechs walked through skink52's `toolsclip` boxes over props whose
+  collision he had removed). `Instance.TraceLine` / `TraceSphere` / `TraceBox` take no collision mask and pass through player clips; only
+  `Instance.TracePlayer({ start, end, player, isDucked })` traces "as a player would collide" (the pawn's hull, standing 32 x 32 x 72 with
+  `isDucked: false`, feet at the origin; the result has `startedInSolid`). The pawn only sets the hull and what it ignores, so a script that moves
+  pawn-less things (AI mechs, vehicles) can pass any live pawn, e.g. one parked in a booth. Treat a hit on another `CSPlayerPawn` as no hit (hidden rider
+  pawns), skip the check when no pawn exists, and stop calling it after it throws. A thing bigger than the hull: sweep the hull at a few heights above
+  the step height, a body radius ahead of the move, and treat the hit as a plane (push the new position back to the radius in front of it: that stops
+  and slides in one step); trace the hull down for clip tops to stand on. Budget: clips are not where line traces find anything, so IRONFRAME learns them
+  (a hull sweep along each mech's next 8 ticks of travel, once every 8 ticks; a hit a line trace doesn't share marks the cells) and runs the full check
+  only in marked cells: about one hull trace per mech per 8 ticks in the open, and a per-tick budget (64) above which slow mechs sweep every other
+  tick (worst case, every cell marked: 117 -> 64 hull traces a tick at 64 mechs on the mock engine) (`src/core/20_mech.js IF_clipStep`,
+  `src/cs2/90_main.js world.traceClip`).
+  **Unverified in game** (written from point_script.d.ts; the mock engine has TracePlayer as a plain trace).
+- **The sky is solid to traces.** A trace that reaches the skybox (toolsskybox shell) hits it, so script projectiles flying up "explode on the sky".
+  Measure the sky height at load (`TraceLine` straight up from just under the play ceiling at a few points), keep flying things under it, and make one
+  that reaches it vanish without an impact (IRONFRAME `IF_capZ` / `IF_atSky`; Dunes: sky 6 143 against a 5 000 play ceiling).
 
 ## Weapons
 
@@ -172,6 +188,11 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
 - After `TakeDamage`, check `victim.IsAlive()`; if the victim survived, log once that a scripted kill was blocked (plugin or damage settings)
   (Space Racer). Space Racer kills with `CSDamageTypes.VEHICLE` (killfeed icon unverified).
 - `Instance.OnPlayerKill` also fires for deaths the script didn't cause (admin slay, world): update the game's own state there too (Hellmatch).
+- **A killed pawn and the custom camera** (IRONFRAME, Nov 2026; mock-tested, unverified in CS2): while the pawn is dead the client shows CS2's
+  observer / death view, so a script camera (garage, spectating, death orbit) needs a live pawn. Revive it with `pawn.Reset()` (alive, default
+  loadout; hide and park it again) about 1.5 s after the scripted kill, when a menu opens, or when the player spectates. A server's
+  `mp_respawnwavetime_t/ct` (common: 10 s) otherwise keeps pawns dead past an 8 s respawn watchdog, which then switches real kills off for the
+  whole map: send `mp_respawnwavetime_t 0` / `_ct 0` with the respawn cvars.
 - Respawn watchdog: after a scripted kill in a respawn mode, wait for `OnPlayerReset`; if CS2 hasn't respawned a still-present player within 8 s,
   count a failure, and after several in a row (Hellmatch 3, Space Racer 2) stop using real kills and log "check mp_respawn_on_death_t/ct".
   Switching off after one failure was tripped by bot kicks. One-life modes can batch the CS2 kills until the round ends and apply them in order.
@@ -206,6 +227,12 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   `SetFollowConfig({ followEntity, cameraOffset, clipCameraOffset })` (chase cams). Restore with `SetMode(CustomCameraMode.DISABLED)` and the parent you
   stored with `cam.GetParent()` when taking it. Puppet Brawl also calls `pawn.SetEyeAngles(...)` on take and `Move`s the camera every tick; guard with
   `typeof pawn.GetCustomCamera === "function"`. Spectators and unassigned players have no pawn, so no custom camera (the HUD still shows).
+- **Where a FOLLOW_POSITION camera is** (for a crosshair ray): followed point = `followEntity` origin + `followOffset`; camera = that + `cameraOffset`
+  turned by the eye angles, x forward, y LEFT, z up. The up axis of that frame is right x forward (forward x right points down: IRONFRAME's first version
+  put its aim ray 2 x up under the real camera and every shot landed low). With `clipCameraOffset` the camera is pulled in toward the followed point in
+  front of walls: a line trace from the followed point to the camera reproduces it closely enough. To put shots under a third-person reticle, trace the
+  camera ray (from where it passes the player's own body, so the body and anything behind a pulled-in camera don't count) and fire from the muzzle at
+  that point; when it is barely in front of the muzzle, fire along the camera ray instead (IRONFRAME `IF_reticle`).
 - **FOV:** CS2's FOV 90 is horizontal at 4:3, so on 16:9 the real horizontal FOV is `2·atan(tan(45°)·(16/9)/(4/3))` ≈ 106.3°; framing distance =
   half-width / tan(hfov/2) (Puppet Brawl, Space Racer previews).
 - **Lag:** with `CONTROLLED_POSITION` mouse look is client-side, but movement and shots simulated by the script arrive one round trip late; a map
@@ -235,6 +262,11 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
 - `Instance.TraceLine({ ignoreEntity })` accepts an `Entity[]` (`point_script.d.ts`): mg_trenchwarfare's planes died on spawn until the ground trace ignored every aircraft.
 - Teleport targets: any point entity works (the script reads its origin); `info_teleport_destination` is handy because Hammer draws the player hull.
 - `Move` every tick for anything that moves (the client interpolates); `Teleport` only for the first placement and real jumps.
+- Parenting a pooled prop to a moving one: `child.SetParent(parent)` keeps the child's world offset from where the engine has the parent at that
+  moment. Put the child with `Teleport` at parent transform x local offset worked out from `parent.GetAbsOrigin()` / `GetAbsAngles()` (the
+  engine's numbers, not the position the script last asked for: the parent may be parked, pitched, or mid-drop), then `SetParent`. A prop given
+  back to the pool after riding a parent has a stale script-side position: `Teleport` it at its next use. (IRONFRAME `30_render.js
+  propParentLocal`, `test/weapon_mounts.cjs` against a fake engine that models parenting; unverified in game, Nov 2026.)
 - `entity.Glow(color)` / `Unglow()` outline props (unverified in game).
 - `point_worldtext` from script: `EntFireAtName({ name, input: "SetMessage", value })` (use " " for empty).
 - Sounds: pre-placed `point_soundevent`s; `EntFireAtTarget({ target: snd, input: "SetSourceEntity", value: "<entity name>" })`, then `StartSound`/`StopSound`.
@@ -247,6 +279,10 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   `SetPlaybackRate` (rounded, sent only on change; 0 during hitstop).
 
 ## HUD (custom_hud_layout)
+
+- **1024 panel ids per layout, for good.** The layout entity remembers every panel id a script has named (class or dialog-variable calls) in a
+  table of 1024; past it nothing new updates (`The maximum number of panel ids has been reached`). Text = one Label + dialog variable, not a
+  panel per character. Count with the mock (`panelids=950`). Details: [cs2-gotchas](cs2-gotchas.md#hud-radar-loading-screens-and-workshop).
 
 - Methods: `SetHasClass(panelId, cls, on)` for everyone, `SetHasClassForPlayer(slot, panelId, cls, on)`, `SetDialogVariableString[ForPlayer]`, `Reset()`, `ResetForPlayer(slot)`,
   `SetInputCaptureEnabled(slot, on)` with `Instance.OnCustomHudClicked(({ player, layout, buttonId }) => …)`.
@@ -334,3 +370,18 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
 - **`SetModelScale` to size a pooled prop to a thing of variable length** (Space Racer v0.7.0): a wall of light is one slab model (180 units
   long) scaled to its segment's length with `ent.SetModelScale(len / 180)` and placed once; a 0.4-2.0 range keeps the slab's height sane.
   Set it back to 1 before returning the prop to the pool, or the next user of that prop is scaled too.
+
+- **A FOLLOW_POSITION camera orbits with the eye pitch**, so looking up swings it down behind the followed point, into the ground, and
+  `clipCameraOffset` then parks it inside the player's own model. Past a few degrees of up-look, counter-rotate the offset you send so
+  only the view turns: with d = the excess up-look, `back' = back cos d - up sin d`, `up' = back sin d + up cos d` (resend every tick
+  while it changes). Keep `up` large enough that the model's head sits ~10 deg under the screen centre, or targets just below the
+  horizon hide behind it (IRONFRAME 90_main.js `personAfterTick`, 10 Nov 2026; maths checked offline, not yet seen in game).
+- **A heightfield measured from above is the TOP surface.** Blending it bilinearly makes a phantom ramp from every roof down to the
+  street and a solid block under every bridge deck; projectiles, sight lines and aim rays tested against it burst in mid-air beside
+  towers and under decks. Use it only away from structures and let a world trace decide near them (IRONFRAME `nav.heightOpen`).
+- **A scripted character's collision sweep must ride above its step height.** A body sphere a few units over the feet turns every kerb
+  into a wall; lift it by the step height, let a ground trace step the character up, and ease the step visually. After a wall contact
+  sweep every tick: skipping ticks for slow movers lets them creep into the wall, and a sweep that starts in solid returns fraction 0
+  for every direction (the character is pinned) unless you handle `startedInSolid` (IRONFRAME 20_mech.js, 10 Nov 2026).
+- **A homing missile cannot hit inside its own turn circle** (speed / turn rate in rad/s: 4 300 u/s at 120 deg/s is 2 050 u). A vertical
+  launch needs a slow, agile turn-over phase before it accelerates, or it circles over every near target (IRONFRAME 40_combat.js).

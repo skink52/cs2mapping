@@ -66,6 +66,9 @@ HINTS = [
     ('unrecognized parent', 'a parented entity was dropped by the compiler: check parentname values (fgdcheck.py reports key_target)'),
     ('Failed to create physics hulls', 'some meshes got no physics hull: look for missing collision in game'),
     ('RESOURCE COMPILE ERROR', 'an asset failed to compile: see errors; recompile it alone with "rcompile.py asset <file>" to read its own log'),
+    ('referencing missing material', 'a mesh uses a material with no compiled .vmat_c: map builds run with -fshallow and do not compile the '
+     "addon's new materials. Compile them first (\"rcompile.py asset <content>/materials/<dir>/*.vmat\"), then build the map again so the "
+     'light bake sees them'),
 ]
 GPU_KEYS = ('gpu hang', 'device_lost', 'ray tracing', 'raytracing', 'vk_error', 'no suitable gpu')
 GPU_HINT = 'baked light needs a GPU with hardware ray tracing and a current driver; without one use preset fast or nav'

@@ -38,6 +38,7 @@ Option order doesn't matter. A bare word is the same as `word=1`. An unknown opt
 | `trace=<file>` / `trace` | off | Writes what changed on screen each tick, plus an FNV hash (`trace` alone prints only the hash). See [Trace](#trace-did-a-refactor-change-anything). |
 | `calls` | off | Counts the script's engine calls: per tick, per method, and the hottest script lines (sampled). |
 | `warm=S` | seconds/4, max 240 | Timing percentiles skip the first S seconds (V8 compiling the script). |
+| `scenario=<file.mjs>` | none | A scripted sequence with its own checks (see [Scenario files](#scenario-files)). |
 | `autoents` | off | Any name the script looks up exists: a prop, or a template/HUD if the name contains `templ`/`tpl`/`hud`. Use it when there's no `entities.json`. It reaches more code but finds fewer real problems. |
 | `MOCK_VERBOSE=1` (env) | off | Prints the script's `Instance.Msg` lines. |
 
@@ -57,6 +58,17 @@ These are the multiplayer edge cases that have broken script games on real serve
 | `hudwipe` | Churn, and a joining client drops every HUD change sent before it picks a team. |
 | `maskall` | `IsInputPressed(A \| B)` means A and B both held. The default is either of them; CS2's real behaviour is unconfirmed (see cs_script-notes). |
 
+### Scenario files
+
+`scenario=<file.mjs>` loads a module whose default export may have `setup(api)` (after the first round start), `tick(api)` (every tick, after the
+random keys and before the think) and `check(api)` (at the end; returns failure strings, each one a PROBLEM). Players in `api.manual` (a Set of
+slots) get no random keys and are never picked for the random damage, chat or inputs. The api: `time`, `tick`, `players`, `ctrl(slot)`, `pawn(slot)`,
+`chat(slot, text)`, `keys(slot, mask)` (the held CSInputs), `hud(slot, panel)` (the Set of classes on), `fire(hook, ev)`, `input(name, ev)`,
+`endRound(team, reason)`, `roundOver`, `rounds`, `cvar(k)`, `cvars` (writable: e.g. a huge `mp_round_restart_delay` = CS2 never starts the next
+round), `connect`, `disconnect`, `teamChange`, `hurt`, `stats`, the enums `IN`, `RR`, `MT`, `ENUMS`, `flag(msg)`, `log(msg)`. Example:
+`projects/ironframe-cs2/test/mock_flows.mjs` (chat commands, garage keys, round end, podium text read back from glyph classes).
+`Pawn.Reset()` is modelled (a dead pawn comes back with OnPlayerReset).
+
 ### What it checks
 
 Always on (pure correctness):
@@ -72,6 +84,9 @@ Always on (pure correctness):
 With `hud=`:
 
 - An unknown panel id throws (any `SetHasClass*`/`SetDialogVariable*` call).
+- The run prints `HUD panel ids referenced: N of M in the layout`: the distinct ids the script named. CS2 keeps at most 1024 per layout and
+  never updates a panel past that (cs2-gotchas, HUD). `panelids=950` makes going over that number a PROBLEM. A scenario can read
+  `api.hudIds()` and a Label's text as a player sees it with `api.hudVar(slot, panelId, name = 'v')`.
 - A non-string dialog variable throws.
 - Switched classes missing from the css are listed.
 - A switched class with a lone css rule of its own (`.stOn { }` rather than `.Panel.stOn { }`) fails the run: the panel takes on that rule's layout.

@@ -1,0 +1,7 @@
+build/
+logs/
+out/
+__pycache__/
+*.pkl
+preview/
+backups/

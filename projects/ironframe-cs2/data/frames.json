@@ -1,0 +1,477 @@
+{
+ "notes": "status: review|approved|rejected (skink52 reviews every frame by hand, docs/FRAME_REVIEW.md); tools/frames.py writes only approved frames into models.json unless --all. Source models for the frames in parts.json (model key -> where it comes from and how to convert it). Workshop items are downloaded with SteamCMD (app 4000, anonymous), extracted with create/playermodels/gma.py, converted with create/mdl2cs2.py by tools/frames.py. 'mdl' paths are inside the extracted item; 'parts' lists extra .mdl files (weapons, back units) converted as weapon props. 'permission': 'asked' / 'granted' / 'none' (none = private servers only; the Workshop description lists every port and its author). 'height' is the class height the model is scaled to (parts.json classes). 'legs' is the bone-name regex that selects the legs prop (everything else is the upper body); null = hover-only frame, no split. Tripo frames (source 'tripo'): 'glb' is a rigged GLB from Tripo AI converted by create/glbrig.py through mdl2cs2 (Mixamo bones renamed to ValveBiped), 'decimate' = LOD0 triangle target, 'retint' = pull toward the roster palette (hardsurface_mat.py).",
+ "paths": {
+  "steamcmd": "C:/steamcmd/steamcmd.exe",
+  "work": "C:/source1/ironframe_work",
+  "out": "out/addon"
+ },
+ "frames": {
+  "ac4a_whiteglint": {
+   "status": "review",
+   "item": 3497937577,
+   "author": "Moon.",
+   "title": "Armored Core For Answer- White Glint",
+   "mdl": "models/**/whiteglint*.mdl",
+   "class": "medium",
+   "legs": "(?i)thigh|knee|foot|leg|lower body|hip|pelvis",
+   "permission": "none",
+   "size_mb": 282,
+   "strip": {
+    "bodygroups": {"left_arm_weapon": 1, "right_arm_weapon": 1, "left_back_weapon": 3, "right_back_weapon": 3},
+    "what": "both hand rifles and both back missile units (body groups set to their empty choice)"
+   }
+  },
+  "ac4a_hari": {
+   "status": "review",
+   "item": 3708564940,
+   "author": "Moon.",
+   "title": "Armored Core For Answer- Hari",
+   "mdl": "models/**/*.mdl",
+   "class": "light",
+   "legs": "(?i)thigh|knee|foot|leg|lower body|hip|pelvis",
+   "permission": "none",
+   "size_mb": 125,
+   "strip": {
+    "bodygroups": {"left_arm_weapon": 2, "right_arm_weapon": 2},
+    "what": "both hand rifles (body groups set to their empty choice)"
+   }
+  },
+  "ac4a_oldking": {
+   "status": "review",
+   "item": 3460036871,
+   "author": "Moon.",
+   "title": "Armored Core For Answer- Old King",
+   "mdl": "models/**/*.mdl",
+   "class": "light",
+   "legs": "(?i)thigh|knee|foot|leg|lower body|hip|pelvis",
+   "permission": "none",
+   "size_mb": 129,
+   "strip": {
+    "bodygroups": {"left_arm_weapon": 1, "right_arm_weapon": 1, "left_back_weapon": 2, "right_back_weapon": 3},
+    "what": "both hand weapons and both back units (body groups set to their empty choice)"
+   }
+  },
+  "ac4_berlioz": {
+   "status": "review",
+   "item": 3549564685,
+   "author": "Moon.",
+   "title": "Armored Core 4- Berlioz",
+   "mdl": "models/**/*.mdl",
+   "class": "medium",
+   "legs": "(?i)thigh|knee|foot|leg|lower body|hip|pelvis",
+   "permission": "none",
+   "size_mb": 146,
+   "strip": {
+    "bodygroups": {"left_arm_weapon": 1, "right_arm_weapon": 1, "right_back_weapon": 3, "left_shoulder_weapon": 2, "right_shoulder_weapon": 2},
+    "what": "both hand weapons, the right back cannon and both shoulder units (body groups set to their empty choice)"
+   }
+  },
+  "ac4a_noblesse": {
+   "status": "review",
+   "item": 3567052176,
+   "author": "Moon.",
+   "title": "Armored Core 4/For answer- Noblesse Oblige",
+   "mdl": "models/**/*.mdl",
+   "class": "heavy",
+   "legs": "(?i)thigh|knee|foot|leg|lower body|hip|pelvis",
+   "permission": "none",
+   "size_mb": 193,
+   "alt_item": 3708956431,
+   "alt_note": "the 53 MB 'Armored Core Model Pack Reupload' (Nakkitsunami) has Noblesse Oblige split into head/core/arm/leg/arm unit/back unit .mdl files plus White Glint parts and Aaliyah: use it first"
+  },
+  "ac4_normal": {
+   "status": "review",
+   "item": 3772907723,
+   "author": "Moon.",
+   "title": "Armored Core 4- Enemies and Normals",
+   "mdl": "models/**/*normal*.mdl",
+   "class": "medium",
+   "legs": "(?i)thigh|knee|foot|leg|lower body|hip|pelvis",
+   "permission": "none",
+   "size_mb": 212,
+   "pve": true,
+   "strip": {
+    "drop_bones": "^(l|r)_bwep$",
+    "what": "the two back missile racks (bones l_bwep / r_bwep); the gun arms stay: they are the arms"
+   },
+   "mount": {
+    "hand_r": "r_gun",
+    "hand_l": "l_gun",
+    "note": "no arms: the arm weapons sit on the built-in gun mounts (r_gun, l_gun)"
+   }
+  },
+  "ac4_002b": {
+   "status": "review",
+   "item": 3726109511,
+   "author": "Moon.",
+   "title": "Armored Core 4- 002-B",
+   "mdl": "models/**/*.mdl",
+   "class": "heavy",
+   "legs": "(?i)thigh|knee|foot|leg|lower body|hip|pelvis",
+   "permission": "none",
+   "size_mb": 90,
+   "pve": true,
+   "strip": {
+    "drop_parts": ["shields"],
+    "what": "the two shoulder shields (body part 'shields'); the rifle arm and the blade arm stay: they are the forearms"
+   },
+   "mount": {
+    "hand_r": "r_arm",
+    "hand_l": "l_arm02",
+    "note": "no hand bones: the forearm blocks (r_arm, l_arm02) hold the arm weapons (tools/weapon_fit.py)",
+    "unfit": {
+     "shield": "the forearms are a rifle and a blade (no hands): the shield has no clear spot at the forearm blocks and sits 66-119 u off them, clear of the body (PvE frame)"
+    }
+   }
+  },
+  "ac4_aretha": {
+   "status": "review",
+   "item": 3738530795,
+   "author": "Moon.",
+   "title": "Armored Core 4- 00-ARETHA",
+   "mdl": "models/**/*.mdl",
+   "class": "boss",
+   "legs": null,
+   "permission": "none",
+   "size_mb": 123,
+   "pve": true,
+   "mount": {
+    "unfit": {
+     "gatling": "left arm: the hand sits inside the built-in laser-cannon arm; the nearest clear spot is 72-124 u from the palm (weapon placed there, clear of the body, not held). Boss / PvE frame.",
+     "shotgun": "left arm: the hand sits inside the built-in laser-cannon arm; the nearest clear spot is 72-124 u from the palm (weapon placed there, clear of the body, not held). Boss / PvE frame.",
+     "grenade": "left arm: the hand sits inside the built-in laser-cannon arm; the nearest clear spot is 72-124 u from the palm (weapon placed there, clear of the body, not held). Boss / PvE frame.",
+     "handmsl": "left arm: the hand sits inside the built-in laser-cannon arm; the nearest clear spot is 72-124 u from the palm (weapon placed there, clear of the body, not held). Boss / PvE frame.",
+     "shield": "left arm: the hand sits inside the built-in laser-cannon arm; the nearest clear spot is 72-124 u from the palm (weapon placed there, clear of the body, not held). Boss / PvE frame.",
+     "pilebunker": "left arm: the hand sits inside the built-in laser-cannon arm; the nearest clear spot is 72-124 u from the palm (weapon placed there, clear of the body, not held). Boss / PvE frame.",
+     "sniper": "left arm: the hand sits inside the built-in laser-cannon arm; the nearest clear spot is 72-124 u from the palm (weapon placed there, clear of the body, not held). Boss / PvE frame.",
+     "burstrifle": "left arm: the hand sits inside the built-in laser-cannon arm; the nearest clear spot is 72-124 u from the palm (weapon placed there, clear of the body, not held). Boss / PvE frame.",
+     "flamer": "left arm: the hand sits inside the built-in laser-cannon arm; the nearest clear spot is 72-124 u from the palm (weapon placed there, clear of the body, not held). Boss / PvE frame.",
+     "eshotgun": "left arm: the hand sits inside the built-in laser-cannon arm; the nearest clear spot is 72-124 u from the palm (weapon placed there, clear of the body, not held). Boss / PvE frame."
+    },
+    "note": "left-hand weapons cannot be held: see unfit (tools/weapon_fit.py)"
+   }
+  },
+  "ac3_moa": {
+   "status": "review",
+   "item": 3034583350,
+   "author": "CLANKERt_",
+   "title": "MOA | Armored Core 3",
+   "mdl": "models/clankert/ac3/moa.mdl",
+   "class": "light",
+   "legs": null,
+   "permission": "none",
+   "size_mb": 0.5,
+   "pve": true,
+   "static": true
+  },
+  "tf_atlas": {
+   "status": "review",
+   "item": 1888120010,
+   "author": "Tech",
+   "title": "Titanfall Titan Playermodels",
+   "mdl": "models/**/*atlas*.mdl",
+   "class": "medium",
+   "legs": "(?i)ValveBiped\\.Bip01_(L|R)_(Thigh|Calf|Foot|Toe0)|Pelvis",
+   "permission": "none",
+   "size_mb": 66,
+   "valvebiped": true
+  },
+  "tf_stryder": {
+   "status": "review",
+   "item": 1888120010,
+   "author": "Tech",
+   "title": "Titanfall Titan Playermodels",
+   "mdl": "models/**/*stryder*.mdl",
+   "class": "light",
+   "legs": "(?i)ValveBiped\\.Bip01_(L|R)_(Thigh|Calf|Foot|Toe0)|Pelvis",
+   "permission": "none",
+   "size_mb": 66,
+   "valvebiped": true
+  },
+  "tf_ogre": {
+   "status": "review",
+   "item": 1888120010,
+   "author": "Tech",
+   "title": "Titanfall Titan Playermodels",
+   "mdl": "models/**/*ogre*.mdl",
+   "class": "heavy",
+   "legs": "(?i)ValveBiped\\.Bip01_(L|R)_(Thigh|Calf|Foot|Toe0)|Pelvis",
+   "permission": "none",
+   "size_mb": 66,
+   "valvebiped": true
+  },
+  "tf2_legion": {
+   "status": "review",
+   "item": 3309731444,
+   "author": "为了超级搞毛二哥",
+   "title": "Titanfall 2 LEGION&RONIN",
+   "mdl": "models/**/*legion*.mdl",
+   "class": "heavy",
+   "legs": "(?i)ValveBiped\\.Bip01_(L|R)_(Thigh|Calf|Foot|Toe0)|Pelvis",
+   "permission": "none",
+   "size_mb": 250
+  },
+  "tf2_ronin": {
+   "status": "review",
+   "item": 3309731444,
+   "author": "为了超级搞毛二哥",
+   "title": "Titanfall 2 LEGION&RONIN",
+   "mdl": "models/**/*ronin*.mdl",
+   "class": "light",
+   "legs": "(?i)ValveBiped\\.Bip01_(L|R)_(Thigh|Calf|Foot|Toe0)|Pelvis",
+   "permission": "none",
+   "size_mb": 250
+  },
+  "gundam_rx78": {
+   "status": "review",
+   "item": 1373340395,
+   "author": "blaze98",
+   "title": "RX-78-2 Gundam",
+   "mdl": "models/**/*rx78*.mdl",
+   "class": "medium",
+   "legs": "(?i)ValveBiped\\.Bip01_(L|R)_(Thigh|Calf|Foot|Toe0)|Pelvis",
+   "permission": "none",
+   "size_mb": 50,
+   "strip": {
+    "bodygroups": {"saber": 2},
+    "what": "the two beam sabres on the backpack (body group saber = empty)"
+   },
+   "valvebiped": true,
+   "note": "has human-sized and full-scale models; take the full-scale one and rescale"
+  },
+  "gundam_barbatos": {
+   "status": "review",
+   "item": 1385095698,
+   "author": "blaze98",
+   "title": "Gundam Barbatos",
+   "mdl": "models/**/*barbatos*.mdl",
+   "class": "heavy",
+   "legs": "(?i)ValveBiped\\.Bip01_(L|R)_(Thigh|Calf|Foot|Toe0)|Pelvis",
+   "permission": "none",
+   "size_mb": 22,
+   "valvebiped": true
+  },
+  "gundam_unicorn": {
+   "status": "review",
+   "item": 1918394594,
+   "author": "blaze98",
+   "title": "Unicorn Gundam",
+   "mdl": "models/**/*unicorn*.mdl",
+   "class": "medium",
+   "legs": "(?i)ValveBiped\\.Bip01_(L|R)_(Thigh|Calf|Foot|Toe0)|Pelvis",
+   "permission": "none",
+   "size_mb": 34,
+   "strip": {
+    "bodygroups": {"saber": 2},
+    "what": "the two beam sabres on the backpack (body group saber = empty)"
+   },
+   "valvebiped": true
+  },
+  "me3_atlas": {
+   "status": "review",
+   "item": 217432131,
+   "author": "Kali",
+   "title": "Atlas Mech (Mass Effect 3)",
+   "mdl": "models/mass_effect_3/atlas/atlas_mech.mdl",
+   "class": "heavy",
+   "legs": "(?i)hip|leg|calf|foot|toe|heel|pelvis",
+   "permission": "none",
+   "size_mb": 9,
+   "skins": 3
+  },
+  "me2_loki": {
+   "status": "review",
+   "item": 756915643,
+   "author": "bug crusher",
+   "title": "Loki Mech (Mass Effect 2) Playermodel",
+   "mdl": "models/mass effect 2/player/player/loki_mech.mdl",
+   "class": "light",
+   "legs": "(?i)ValveBiped\\.Bip01_(L|R)_(Thigh|Calf|Foot|Toe0)|Pelvis",
+   "permission": "none",
+   "size_mb": 2,
+   "pve": true,
+   "valvebiped": true
+  },
+  "fear3_mule": {
+   "status": "review",
+   "item": 181073425,
+   "author": "Srgt. Shotup",
+   "title": "FEAR 3 - Mech Mule",
+   "mdl": "models/fear3/mechmule.mdl",
+   "class": "heavy",
+   "legs": "(?i)leg|foot|pivot",
+   "permission": "none",
+   "size_mb": 2,
+   "strip": {
+    "drop_bones": "^gun$|^mortar_",
+    "what": "the roof gatling with its belt and ammo box (bone gun) and the two side mortars (mortar_l / mortar_r); the empty turret brackets stay"
+   }
+  },
+  "tripo_scout": {
+   "status": "review",
+   "item": null,
+   "source": "tripo",
+   "author": "Tripo AI (generated, skink52)",
+   "credit": "Tripo AI (generated, skink52)",
+   "legs": "(?i)thigh|calf|foot|toe|pelvis",
+   "permission": "granted",
+   "size_mb": null,
+   "retint": 0.4,
+   "title": "Tripo scout mech (desert camo)",
+   "glb": "C:/source1/ironframe_work/tripo/scout mech.glb",
+   "strip": {
+    "drop_boxes": ["0.22,-0.27,0.63,0.29,0.05,0.71"],
+    "what": "the gun barrel on the left forearm (its own piece of the one-skin mesh); the forearm housing with its feed hose, the blade under it and the sensor / missile head are fused with the body and stay"
+   },
+   "class": "light"
+  },
+  "tripo_kestrel": {
+   "status": "review",
+   "item": null,
+   "source": "tripo",
+   "author": "Tripo AI (generated, skink52)",
+   "credit": "Tripo AI (generated, skink52)",
+   "legs": "(?i)thigh|calf|foot|toe|pelvis",
+   "permission": "granted",
+   "size_mb": null,
+   "retint": 0.4,
+   "title": "Tripo light skirmisher \"Kestrel\" (small or medium 1)",
+   "glb": "C:/source1/ironframe_work/tripo/small or medium 1.glb",
+   "class": "light"
+  },
+  "tripo_warden": {
+   "status": "review",
+   "item": null,
+   "source": "tripo",
+   "author": "Tripo AI (generated, skink52)",
+   "credit": "Tripo AI (generated, skink52)",
+   "legs": "(?i)thigh|calf|foot|toe|pelvis",
+   "permission": "granted",
+   "size_mb": null,
+   "retint": 0.4,
+   "title": "Tripo medium all-rounder \"Warden\" (small or medium 2)",
+   "glb": "C:/source1/ironframe_work/tripo/small or medium 2.glb",
+   "class": "medium"
+  },
+  "tripo_bastion": {
+   "status": "review",
+   "item": null,
+   "source": "tripo",
+   "author": "Tripo AI (generated, skink52)",
+   "credit": "Tripo AI (generated, skink52)",
+   "legs": "(?i)thigh|calf|foot|toe|pelvis",
+   "permission": "granted",
+   "size_mb": null,
+   "retint": 0.4,
+   "title": "Tripo heavy \"Bastion\"",
+   "glb": "C:/source1/ironframe_work/tripo/heavy.glb", "torso_to_upper": true,
+   "decimate": 21000,
+   "class": "heavy"
+  }
+ },
+ "weapon_props": {
+  "notes": "Weapon models converted as props (tools/weapon_props.py SOURCES table): Titan packs, AC packs, XCOM MEC weapons, DOOM Atlan weapons, Mirror's Edge drones. 1848442600 (Metro flamethrower) is downloaded but unused.",
+  "items": [
+   268093486,
+   268097317,
+   268095616,
+   3309731444,
+   3708956431,
+   3460036871,
+   3497937577,
+   3549564685,
+   3772907723,
+   3738530795,
+   904418924,
+   1563865814,
+   3492397241
+  ],
+  "ac_pack_parts": "models/naki/ac4a/*gun*.mdl, *arm unit*.mdl, *back unit*.mdl, models/naki/ac4/*gun*.mdl",
+  "item_info": [
+   {
+    "id": 268093486,
+    "title": "Titanfall - Titan Weapon Model Pack (GMod, Part 1)",
+    "author": "Bitl",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=268093486"
+   },
+   {
+    "id": 268097317,
+    "title": "Titanfall - Titan Weapon Model Pack (GMod, Part 2)",
+    "author": "Bitl",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=268097317"
+   },
+   {
+    "id": 268095616,
+    "title": "Titanfall - Titan Weapon Model Pack (GMod, Part 3)",
+    "author": "Bitl",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=268095616"
+   },
+   {
+    "id": 3309731444,
+    "title": "Titanfall 2 LEGION&RONIN",
+    "author": "为了超级搞毛二哥",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3309731444"
+   },
+   {
+    "id": 3708956431,
+    "title": "Armored Core Model Pack Reupload",
+    "author": "Nakkitsunami kebab.fi",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3708956431"
+   },
+   {
+    "id": 3460036871,
+    "title": "Armored Core For Answer- Old King",
+    "author": "Moon.",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3460036871"
+   },
+   {
+    "id": 3497937577,
+    "title": "Armored Core For Answer- White Glint",
+    "author": "Moon.",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3497937577"
+   },
+   {
+    "id": 3549564685,
+    "title": "Armored Core 4- Berlioz",
+    "author": "Moon.",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3549564685"
+   },
+   {
+    "id": 3772907723,
+    "title": "Armored Core 4- Enemies and Normals",
+    "author": "Moon.",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3772907723"
+   },
+   {
+    "id": 3738530795,
+    "title": "Armored Core 4- 00-ARETHA",
+    "author": "Moon.",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3738530795"
+   },
+   {
+    "id": 904418924,
+    "title": "[BETA] MECs and Weapons (XCOM: Enemy Within)",
+    "author": "Helena",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=904418924"
+   },
+   {
+    "id": 1563865814,
+    "title": "Mirror's Edge Catalyst: Drones [PROP]",
+    "author": "spooky_ludexus_chr.mdl",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=1563865814"
+   },
+   {
+    "id": 3492397241,
+    "title": "DOOM The Dark Ages Titan Weapons (Props)",
+    "author": "Stefano (BackToGetCommissions)",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3492397241"
+   },
+   {
+    "id": 1848442600,
+    "title": "Metro 2033 Redux Flamethrower [Model]",
+    "author": "Карп",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=1848442600"
+   }
+  ]
+ }
+}

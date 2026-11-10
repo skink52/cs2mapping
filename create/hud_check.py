@@ -24,6 +24,9 @@ options:
   --picture-widths 1920,2333,1440
   --allow-outside CLS / --allow-nosize CLS / --allow-valign   relax a rule for panels with class CLS (repeatable)
   --glyph-class g%d   class pattern the "glyphs" state key sets on each character panel
+  --label-font "Family=file.ttf"   draw Labels whose font-family starts with Family in that font (repeatable); without it a bold sans
+                      stands in, so a Label preview shows the layout, not the look. Labels are drawn upper-cased when the css says so,
+                      with their text-shadow as a glow, and clipped to their own box like Panorama clips them.
 
 States JSON: {"state name": {"panelId": {"add": [classes], "remove": [classes], "text": "label text",
                                           "glyphs": "TEXT"}, "_extends": "other state", "_chat_top": 800}}
@@ -35,7 +38,7 @@ From space-racer-cs2/preview/hud_render.py (MIT), made project-neutral.
 """
 import os, re, sys, json, argparse
 import xml.etree.ElementTree as ET
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 H = 1080                                    # Panorama lays every screen out 1080 high
 SUPPORTED = ('Panel', 'Label', 'Image', 'Button')
@@ -45,6 +48,19 @@ FONT_CANDIDATES = ['/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.tt
                    '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
                    'C:/Windows/Fonts/arialbd.ttf', '/Library/Fonts/Arial Bold.ttf']
 _fonts = {}
+
+
+LABEL_FONTS = {}       # font-family (lower case) -> ttf path (--label-font)
+
+
+def label_font(family, size):
+    """the font for a Label: the --label-font file of the first family its css names, else the stand-in sans"""
+    first = (family or '').split(',')[0].strip().strip('"\'').lower()
+    path = LABEL_FONTS.get(first)
+    if not path: return font(size)
+    k = (path, size)
+    if k not in _fonts: _fonts[k] = ImageFont.truetype(path, size)
+    return _fonts[k]
 
 
 def font(size):
@@ -193,6 +209,9 @@ class Hud:
         self.rules = parse_css(open(css_path, encoding='utf-8').read())
         self.images = images or (os.path.join(pan, 'images') if pan else os.path.dirname(xml_path))
         self.byid = {}
+        # CS2's CustomHud validation rejects the whole layout for a Button with a hittest attribute (IRONFRAME, 9 Nov 2026)
+        for b in tree.iter('Button'):
+            if 'hittest' in b.attrib: self.problems.append('<Button id=%s> has a hittest attribute: CS2 rejects the whole layout ("disallowed attribute hittest")' % b.get('id', '?'))
         for n in self.root.walk():
             if n.tag not in SUPPORTED: self.problems.append('panel type <%s> is not supported by custom_hud_layout (%s)' % (n.tag, n.id or '?'))
             if n.id:
@@ -228,7 +247,7 @@ class Hud:
             if 'glyphs' in ch: self.glyphs(n, ch['glyphs'], ch.get('align', 'left'))
 
     def glyphs(self, n, text, align='left'):
-        cells = n.kids
+        cells = [c for c in n.kids if 'Sp' not in c.base]      # a leading spacer panel (proportional rows) is not a character cell
         t = text[:len(cells)]
         if align == 'center': t = ' ' * ((len(cells) - len(t)) // 2) + t
         elif align == 'right': t = t.rjust(len(cells))
@@ -237,12 +256,23 @@ class Hud:
         for k, cell in enumerate(cells):
             cell.cls = set(c for c in cell.cls if not rx.match(c))
             ch = t[k] if k < len(t) else ' '
-            if ch != ' ': cell.cls.add(pat % ord(ch.upper()))
+            if ch != ' ' or (self.opts.get('glyph_space') and t[:k].strip() and t[k:].strip()): cell.cls.add(pat % ord(ch.upper()))      # glyph_space: proportional type, inner spaces are cells with their own width
 
     # ------------------------------------------------ style + layout
     def style(self, node):
         st = {}
-        for r in sorted((r for r in self.rules if rule_matches(r, node)), key=lambda r: (r['spec'], r['order'])):
+        if not hasattr(self, '_ridx'):          # rules indexed by one class of their last compound: only those can match a node with that class
+            self._ridx, self._rnone = {}, []
+            freq = {}
+            for r in self.rules:
+                for c in r['parts'][-1][0]['cls']: freq[c] = freq.get(c, 0) + 1
+            for r in self.rules:
+                cl = r['parts'][-1][0]['cls']
+                if cl: self._ridx.setdefault(min(cl, key=lambda c: freq[c]), []).append(r)
+                else: self._rnone.append(r)
+        cand = list(self._rnone)
+        for c in node.cls: cand.extend(self._ridx.get(c, ()))
+        for r in sorted((r for r in cand if rule_matches(r, node)), key=lambda r: (r['spec'], r['order'])):
             st.update(r['props'])
         return st
 
@@ -361,13 +391,22 @@ class Hud:
                 bc = color(st['border'].split()[-1]) or (255, 255, 255, 255)
                 for t in range(int(bw)): d.rectangle([t, t, w - 1 - t, h - 1 - t], outline=bc)
             if k.tag == 'Label' and k.text:
-                f = font(int(pxv(st.get('font-size', '18px'), 0) or 18))
+                f = label_font(st.get('font-family'), int(pxv(st.get('font-size', '18px'), 0) or 18))
                 col = color(st.get('color', '#ffffff')) or (255, 255, 255, 255)
                 s = k.text.upper() if st.get('text-transform') == 'uppercase' else k.text
                 tx0 = bw
-                if st.get('text-align') == 'right': tx0 = w - bw - d.textlength(s, font=f) - 2
+                if st.get('text-align') == 'right': tx0 = w - bw - d.textlength(s, font=f)
                 elif st.get('text-align') == 'center': tx0 = (w - d.textlength(s, font=f)) / 2
-                d.text((tx0 + 2, bw + 2), s, font=f, fill=(0, 0, 0, 255))
+                sh = re.match(r'\s*(-?[\d.]+)px\s+(-?[\d.]+)px\s+([\d.]+)px(?:\s+([\d.]+))?\s+(#[0-9a-fA-F]{3,8})', st.get('text-shadow', ''))
+                if sh:
+                    ox, oy, blur, strength, scol = float(sh.group(1)), float(sh.group(2)), float(sh.group(3)), float(sh.group(4) or 1), color(sh.group(5)) or (0, 0, 0, 255)
+                    g = Image.new('RGBA', layer.size, (0, 0, 0, 0))
+                    ImageDraw.Draw(g).text((tx0 + ox, bw + oy), s, font=f, fill=scol)
+                    if blur > 0: g = g.filter(ImageFilter.GaussianBlur(blur / 2))
+                    for _ in range(max(1, int(round(strength)))): layer.alpha_composite(g)
+                    d = ImageDraw.Draw(layer)
+                else:
+                    d.text((tx0 + 2, bw + 2), s, font=f, fill=(0, 0, 0, 255))
                 d.text((tx0, bw), s, font=f, fill=col)
             if op < 1:
                 layer.putalpha(layer.getchannel('A').point(lambda v: int(v * op)))
@@ -449,7 +488,8 @@ def main(argv=None):
     ap.add_argument('--check-widths', default='1920,2333'); ap.add_argument('--picture-widths', default='1920,2333,1440')
     ap.add_argument('--allow-outside', action='append', default=[]); ap.add_argument('--allow-nosize', action='append', default=[])
     ap.add_argument('--allow-valign', action='store_true')
-    ap.add_argument('--glyph-class', default='g%d'); ap.add_argument('--screen-class', default='Screen')
+    ap.add_argument('--label-font', action='append', default=[], help='"Family=file.ttf": the font Labels of that font-family are drawn in')
+    ap.add_argument('--glyph-class', default='g%d'); ap.add_argument('--glyph-space', action='store_true'); ap.add_argument('--screen-class', default='Screen')
     a = ap.parse_args(argv)
     if a.addon:
         if not a.name: ap.error('--addon needs --name')
@@ -460,7 +500,11 @@ def main(argv=None):
         xml, css, images = a.layout, a.css, a.images
     else:
         ap.error('give a layout xml or --addon/--name')
-    hud = Hud(xml, css, images, dict(allow_outside=a.allow_outside, allow_nosize=a.allow_nosize, allow_valign=a.allow_valign,
+    for lf in a.label_font:
+        fam, _, path = lf.partition('=')
+        if os.path.exists(path): LABEL_FONTS[fam.strip().lower()] = path
+        else: print('hud_check: --label-font file not found, using the stand-in font: ' + path)
+    hud = Hud(xml, css, images, dict(allow_outside=a.allow_outside, allow_nosize=a.allow_nosize, allow_valign=a.allow_valign, glyph_space=a.glyph_space,
                                      glyph_class=a.glyph_class, screen_class=a.screen_class))
     states = json.load(open(a.states, encoding='utf-8')) if a.states else {'default': {}}
     cw = [int(v) for v in a.check_widths.split(',') if v]

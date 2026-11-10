@@ -293,5 +293,20 @@ gameplay / lighting / physics generators (`create/gen_*.py`), material, sound, e
 - Never run in CS2: a `mapops` batch compiled and loaded, one mechanic of each kind played, one Blender template built, the `golden_hour`
   light preset baked.
 
+**First real map: mg_ironframe_sprawl (10 Nov 2026, `projects/ironframe-cs2/docs/SPRAWL_NOTES.md` has the full log).** The city
+layer of the IRONFRAME arena is one `mapops` batch (~490 ops per arena copy, 16 s: mech-scale towers as `mesh_edit` shafts with
+`matkit` emissive window walls, ruins cut with `cut`, `street` / `junction`, neon sign materials, `fxkit` rain and lightning), on top
+of the project's own generator. Offline it worked after these fixes (tests in `tools/tests/test_toolset_sprawl.py`):
+- `mapops` shapes take `materials: {top, bottom, side}` (one material per shape made lit facades with concrete roofs impossible);
+- a `cut` that removes the whole shape now says so (it reported "faces wind inward");
+- `fxkit.lightning(alpha=)`: the fixed alpha 180 flash is a full white screen every ~12 s;
+- `fxkit.precipitation` writes `func_precipitation`, which CS2's FGD marks `@exclude`: the result carries a warning; use `weather_tiles`.
+Gaps left: `gen_buildings` is player scale only (a CSG cut per window, hollow interiors), `gen_world` streets default to dev textures,
+`fgdcheck` only finds addon assets when the map sits in CS2's addon folder, `fgdcheck` calls `env_volumetric_fog_controller` excluded
+although it works, no textured previews (the look is only judged after a compile). `mapsanity` and `visualcheck` were useful as they
+are (visualcheck found coplanar canopy / parapet / pilaster faces and props cut by kerbs). In-game: the map compiled (`rcompile` full, no vis, 6-7 min, 0 failed) and loaded; skink52 checked it by eye ("looks ok").
+`autoport/ingame_check.py` could not run on the real game: the console goes silent for minutes during a big map load and the
+check reports "console closed during the load" (crash) both for de_dust2 and Sprawl; `vconsole.py ping` / `send` work.
+
 When those pass, switch sections 2-6 of this guide to it. Until then the method above stays the default, and the new tools are used
 alongside it: `fgdcheck` / `mapsanity` / `visualcheck` before a build, `rcompile analyze` on a failed build log, `ingame_check` after it.

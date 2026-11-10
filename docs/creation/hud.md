@@ -78,6 +78,7 @@ pixel-text rows, `char_line`, `preload`, `hide_with_scoreboard`, `write` with it
   (`pop` / `pop2`) (Space Racer `popFx`). Space Racer also uses `scale3d` keyframes, `animation-iteration-count: infinite`, `background-repeat: repeat`
   with `background-size: 6px 6px` (scanlines), `text-transform`/`letter-spacing` on Labels; whether CS2 accepts all of them is unconfirmed (the HUD
   works without the animation if not).
+- **Lay out for 4:3 too** (1440 wide at 1080 high; many CS2 players run 4:3 stretched): panels pinned left, right and centre slide together as the screen narrows. IRONFRAME's garage (Nov 2026 playtest) had a right-pinned plate cover a centre-left one completely ("the section is blank") and an 880 px centre block over the right column. Give each column a fixed width so left + centre + right fit 1440, keep top-centre panels inside W/2 +- 280 (the kill feed starts at W - 430), and check with `hud_check.py --check-widths 1440,1920,2333`.
 - Children are clipped to their parent (minimap dots in an 8 px parent vanished): make the parent as big as the travel, or `overflow: noclip`.
 - Every display panel `hittest="false"`. Panel-id prefixes must not end in a digit (`x2` + "0" clashes with `x` + "20").
 - Label font as CS2's HUD: `font-family: Stratum2, "Stratum2 Bold", Arial`.
@@ -106,7 +107,22 @@ CS2's HUD draws over yours unless it's hidden with the pawn input `SetHUDVisibil
 
 ### Text
 
-- **Pixel text** (Space Racer): every character is a small image panel; the script switches its glyph class (`g65` = A) and the row's colour class (`cW`, `cY`),
+- **CS2 caps a layout at 1024 panel ids: count them.** Every id the script names in `SetHasClass*` / `SetDialogVariable*` takes a place in a
+  table of 1024 that never frees; past it the console says `The maximum number of panel ids has been reached, no more can be referenced` and
+  those panels are never updated again ([cs2-gotchas](../reference/cs2-gotchas.md#hud-radar-loading-screens-and-workshop)). Pixel text spends
+  one id per character cell, so a HUD with a few dozen text rows is over the cap (IRONFRAME: 5 846 ids, HUD dead in game, 10 Nov 2026; Space
+  Racer and Hellmatch use the same helpers and should be counted). Rules: one `<Label id=.. text="{s:v}">` per dynamic text
+  (`SetDialogVariableStringForPlayer`: 1 id, 1 call per changed text); no id on static art; one id per bar / marker / list row, restyled by
+  classes; a fixed window of row panels for long lists. Count with the mock (`hud=<layout.xml> panelids=950`: it prints
+  `HUD panel ids referenced: N of M in the layout` and fails over the number) and make the generator print the layout's id total and fail over a
+  budget. IRONFRAME after the rework: 461 ids for a fight HUD, an 8-row garage and five slates (`projects/ironframe-cs2/docs/HUD.md`).
+- **Label text** (IRONFRAME since 10 Nov 2026): fonts are those CS2's `game/csgo/panorama/fonts/fonts.conf` loads (Stratum2, `"Noto Sans"`,
+  `"Noto Serif"`, Noto Mono, Arial); the Noto `.ttf` files sit in that folder, so a generator can measure real advance widths (PIL
+  `ImageFont.getlength`) and bake them for script-side wrapping and fit tests. Style with `font-size`, `font-weight`, `text-transform`,
+  `letter-spacing`, `text-align`, `text-shadow: 0px 0px 6px 2.0 #rrggbbaa` (a glow), `white-space: nowrap`. Make the Label one line box tall
+  (ascent + descent of the font) and place it so the capitals sit where the design wants them. `hud_check.py --label-font "Family=file.ttf"`
+  draws Labels in the real font. (IRONFRAME's Label look is not confirmed in game yet.)
+- **Pixel text** (Space Racer): every character is a small image panel **with an id** (see the cap above: keep the total of cells small); the script switches its glyph class (`g65` = A) and the row's colour class (`cW`, `cY`),
   only for characters that changed; rows are `flow-children: right` with `margin-right: −size/10`. Glyph PNGs are 10×10 font pixels saved ×6 (60 px; raise if
   blurry), one per colour per character (`panorama.Hud.glyph_font`, `gtext`, `stext`).
 - **Whole-string images** (Hellmatch): frequent fixed strings (obituaries, mode names, VICTORY…) are pre-rendered as one image each and shown with one class

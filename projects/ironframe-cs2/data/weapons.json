@@ -1,0 +1,194 @@
+{
+ "autocannon": {
+  "source": "3738530795: models/ac4/ene/enemy_rayleonard_00_aretha_right_hand_weapon.mdl",
+  "status": "review",
+  "item": 3738530795,
+  "what": "AC4 00-ARETHA six-barrel gatling"
+ },
+ "bazooka": {
+  "source": "3708956431: models/naki/ac4/left gun.mdl",
+  "status": "review",
+  "item": 3708956431,
+  "what": "03-AALIYAH left gun"
+ },
+ "blade": {
+  "source": "3309731444: models/jijia/ronindao.mdl",
+  "status": "review",
+  "item": 3309731444,
+  "what": "Titanfall 2 Ronin broadsword"
+ },
+ "burstrifle": {
+  "source": "268093486: models/weapons/thr_40mm/w_thr_40mm.mdl",
+  "status": "review",
+  "item": 268093486,
+  "what": "Titan 40 mm tracker cannon"
+ },
+ "clusterart": {
+  "source": "3549564685: models/ac4/garage/ac_berlioz_supplice_right_back_weapon_deployed.mdl",
+  "status": "review",
+  "item": 3549564685,
+  "what": "AC4 Berlioz long back cannon"
+ },
+ "decoy": {
+  "source": "3497937577: models/ac4/garage/ac_abemarsh_whiteglint_right_back_weapon.mdl",
+  "status": "review",
+  "item": 3497937577,
+  "what": "AC For Answer White Glint back unit"
+ },
+ "dualmsl": {
+  "source": "3772907723: models/ac4/ene/enemy_ga_gam3_solarwind_shoulder_weapons.mdl",
+  "status": "review",
+  "item": 3772907723,
+  "what": "AC4 Solar Wind twin missile packs"
+ },
+ "eshotgun": {
+  "source": "268093486: models/weapons/titan_arc_rifle/w_titan_arc_rifle.mdl",
+  "status": "review",
+  "item": 268093486,
+  "what": "Titan arc rifle"
+ },
+ "flak": {
+  "source": "3460036871: models/ac4/garage/ac_oldking_lisa_left_back_weapon_deployed.mdl",
+  "status": "review",
+  "item": 3460036871,
+  "what": "AC For Answer Old King back autocannon"
+ },
+ "flamer": {
+  "source": "904418924: models/minic23/xcom/mec/mec_flamethrower.mdl",
+  "status": "review",
+  "item": 904418924,
+  "what": "XCOM MEC flamethrower"
+ },
+ "gatling": {
+  "source": "3309731444: models/jijia/jiatlein.mdl",
+  "status": "review",
+  "item": 3309731444,
+  "what": "Titanfall 2 Legion Predator cannon"
+ },
+ "grenade": {
+  "source": "268095616: models/weapons/titan_triple_threat/w_titan_triple_threat.mdl",
+  "status": "review",
+  "item": 268095616,
+  "what": "Titan Triple Threat grenade launcher"
+ },
+ "grenadecannon": {
+  "source": "3708956431: models/naki/ac4/aaliyah.mdl",
+  "status": "review",
+  "item": 3708956431,
+  "what": "03-AALIYAH back cannon"
+ },
+ "handmsl": {
+  "source": "268097317: models/weapons/titan_rocket_launcher/titan_rocket_launcher.mdl",
+  "status": "review",
+  "item": 268097317,
+  "what": "Titan quad rocket launcher"
+ },
+ "heavyblade": {
+  "source": "3492397241: models/doomthedarkages/weapons_titan/sword.mdl",
+  "status": "review",
+  "item": 3492397241,
+  "what": "DOOM Dark Ages Atlan sword (untextured grey in the source)"
+ },
+ "laser": {
+  "source": "3708956431: models/naki/ac4a/left gun.mdl",
+  "status": "review",
+  "item": 3708956431,
+  "what": "White Glint left-hand gun"
+ },
+ "lasercannon": {
+  "source": "904418924: models/minic23/xcom/mec/mec_railgun.mdl",
+  "status": "review",
+  "item": 904418924,
+  "what": "XCOM MEC rail gun"
+ },
+ "minelayer": {
+  "source": "904418924: models/minic23/xcom/mec/mec_minelauncher_mark3.mdl",
+  "status": "review",
+  "item": 904418924,
+  "what": "XCOM MEC mine launcher"
+ },
+ "multimsl": {
+  "source": "3460036871: models/ac4/garage/ac_oldking_lisa_right_back_weapon.mdl",
+  "status": "review",
+  "item": 3460036871,
+  "what": "AC For Answer Old King back missile container"
+ },
+ "orbitdrones": {
+  "source": "1563865814: models/kss/mirrorsedgecatalyst/ksec_drones/kss_mec_drone_hunter_x3.mdl",
+  "status": "review",
+  "item": 1563865814,
+  "what": "Mirror's Edge Catalyst hunter drone trio"
+ },
+ "pilebunker": {
+  "source": "3772907723: models/ac4/ene/enemy_algebra_seljq_left_hand_weapon.mdl",
+  "status": "review",
+  "item": 3772907723,
+  "what": "AC4 Seljuq twin pile bunker"
+ },
+ "plasma": {
+  "source": "904418924: models/minic23/xcom/mec/mec_particlebeam.mdl",
+  "status": "review",
+  "item": 904418924,
+  "what": "XCOM MEC particle beam"
+ },
+ "pulseshield": {
+  "source": "904418924: models/minic23/xcom/mec/mec_electropulse_mark3.mdl",
+  "status": "review",
+  "item": 904418924,
+  "what": "XCOM MEC electro-pulse emitter"
+ },
+ "rail": {
+  "source": "3708956431: models/naki/ac4/right gun.mdl",
+  "status": "review",
+  "item": 3708956431,
+  "what": "03-AALIYAH right gun (long rifle)"
+ },
+ "repair": {
+  "source": "904418924: models/minic23/xcom/mec/mec_medkit_mark2.mdl",
+  "status": "review",
+  "item": 904418924,
+  "what": "XCOM MEC medkit module"
+ },
+ "rifle": {
+  "source": "3708956431: models/naki/ac4a/right gun.mdl",
+  "status": "review",
+  "item": 3708956431,
+  "what": "White Glint rifle"
+ },
+ "shield": {
+  "source": "3492397241: models/doomthedarkages/weapons_titan/shield.mdl",
+  "status": "review",
+  "item": 3492397241,
+  "what": "DOOM Dark Ages Atlan shield (untextured grey in the source)"
+ },
+ "shotgun": {
+  "source": "268097317: models/weapons/titan_shotgun_wys_0404/w_titan_shotgun_wys0404.mdl",
+  "status": "review",
+  "item": 268097317,
+  "what": "Titan shotgun (WYS-0404)"
+ },
+ "smg": {
+  "source": "268095616: models/weapons/xotbr16/w_xotbr16.mdl",
+  "status": "review",
+  "item": 268095616,
+  "what": "Titan XO-16 chaingun (compact scale)"
+ },
+ "sniper": {
+  "source": "268095616: models/weapons/titan_sniper_rifle/w_titan_sniper_rifle.mdl",
+  "status": "review",
+  "item": 268095616,
+  "what": "Titan sniper rifle"
+ },
+ "vm12": {
+  "source": "3549564685: models/ac4/garage/ac_berlioz_supplice_shoulder_left_weapon.mdl",
+  "status": "review",
+  "item": 3549564685,
+  "what": "AC4 Berlioz shoulder missile launcher"
+ },
+ "vm6": {
+  "source": "3772907723: models/ac4/ene/enemy_ga_gam3_solarwind_left_shoulder_weapon.mdl",
+  "status": "review",
+  "item": 3772907723,
+  "what": "AC4 Solar Wind shoulder missile pack"
+ }
+}

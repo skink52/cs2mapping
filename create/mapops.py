@@ -9,6 +9,7 @@ objects and leaves everything else (your Hammer work) alone. Hammer must not hav
 
 Ops (op: fields):
   box / wedge / cylinder / prism / stairs / arch / revolve / sweep / extrude: the primitives.py arguments by name, + material
+      (+ materials: {top, bottom, side} per face by normal, e.g. a lit facade with a concrete roof)
   mesh_edit: {shape: <a primitive op>, edits: [{edit: extrude|inset|bevel|subdivide|twist|taper|bend|noise|smooth|move, ...args, faces: {normal: [0,0,1]}}],
               cut: [<primitive ops>], uv: {"fit": [1, 1]} | {"scale": 0.5, "rotate": 15}, paint: "x" | "y" | "z" (blend along an axis)}
   entity: {cls, origin, angles, keys}          connect: {from (targetname), output, target, input, param, delay}
@@ -36,13 +37,22 @@ SHAPES = {'box': P.box, 'wedge': P.wedge, 'cylinder': P.cylinder, 'prism': P.pri
           'revolve': P.revolve, 'sweep': P.sweep, 'extrude': P.extrude}
 
 
+def face_rule(mats):
+    """{"top": m, "bottom": m, "side": m} -> P.materials rule by face normal (|nz| > 0.7 counts as top / bottom); keys left out keep the shape's"""
+    unknown = set(mats) - {'top', 'bottom', 'side'}
+    if unknown: raise ValueError('materials takes top / bottom / side, not %s' % ', '.join(sorted(unknown)))
+    return lambda i, n: mats.get('top') if n[2] > 0.7 else mats.get('bottom') if n[2] < -0.7 else mats.get('side')
+
+
 def shape(spec):
     spec = dict(spec); kind = spec.pop('op', None) or spec.pop('shape')
     if kind not in SHAPES: raise ValueError('unknown shape %s (%s)' % (kind, ', '.join(SHAPES)))
     if 'material' in spec: spec['mat'] = spec.pop('material')
+    per_face = spec.pop('materials', None)
     if kind == 'sweep' and isinstance(spec.get('section'), dict):
         sec = spec['section']; spec['section'] = P.rect(*sec['rect']) if 'rect' in sec else P.circle(*sec['circle'])
-    return SHAPES[kind](**spec)
+    s = SHAPES[kind](**spec)
+    return P.materials(s, face_rule(per_face)) if per_face else s
 
 
 def _faces(s, sel):
@@ -59,6 +69,7 @@ def mesh_edit(op):
         elif kind in ('bevel', 'subdivide', 'twist', 'taper', 'bend', 'noise', 'smooth', 'mirror'): s = getattr(M, kind)(s, **e)
         else: raise ValueError('unknown edit ' + kind)
     for c in op.get('cut', []): s = M.subtract(s, shape(c))
+    if op.get('cut') and not s[1]: raise ValueError('the cuts removed the whole shape (nothing left to write)')
     for c in op.get('union', []): s = M.union(s, shape(c))
     uvs = None
     if op.get('uv'): uvs = {i: M.uv(**op['uv']) for i in range(len(s[1]))}

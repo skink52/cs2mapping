@@ -18,8 +18,10 @@ On the PC, Claude Code runs from `C:\source1` and reaches CS2, `C:\source2` and 
 | Space Racer, Neon Racer, Depth Racer, racing | `projects/space-racer-cs2/` (themes via `SPR_THEME`) | `projects/space-racer-cs2/README.md`, `docs/DESIGN.md` |
 | Puppet Brawl, fighter, fighting game | `projects/cs2-fighter/` | `projects/cs2-fighter/README.md` |
 | Trench warfare, WW1, mg_trenchwarfare, custom rifles | `projects/trenchwarfare-cs2/` | `projects/trenchwarfare-cs2/NOTES.md` |
+| Monsoon, mg_monsoon, valley map, helicopters + firebase, the second battle map | `projects/monsoon-cs2/` | `projects/monsoon-cs2/NOTES.md` (Resume here), `docs/DESIGN.md` |
 | CS 1.6, mg_cs16 | `projects/cs21.6/` | `projects/cs21.6/README.md` |
 | Roguelike, Nanite Temple, mg_nanite_temple, vaults/squads/showdown | `projects/cs2-roguelike/` | `projects/cs2-roguelike/docs/DESIGN.md`, `README.md` |
+| IRONFRAME, mech game, Armored Core style, mg_ironframe_* | `projects/ironframe-cs2/` | `projects/ironframe-cs2/docs/STATUS.md`, `docs/DESIGN.md` |
 | Porting, a CS:GO map name, mg_/jb_/ba_ ports | `ports/<map>/`, `tools/`, `scripts/` | `docs/porting/pipeline.md` |
 | Unattended ports, autoport, a port cleanup list | `autoport/` | `autoport/README.md`; `autoport/REVIEW.md` when reviewing held maps |
 | A new original addon | new `projects/<name>/` | `docs/creation/guide.md` |
