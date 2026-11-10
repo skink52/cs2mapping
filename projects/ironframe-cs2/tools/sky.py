@@ -181,7 +181,13 @@ MAKERS = {'dunes': make_dunes, 'sprawl': make_sprawl, 'orbital': make_orbital}
 
 
 def make(arena):
-    return Image.fromarray(MAKERS[arena]().astype(np.uint8))
+    """the painted sky, then the far scenery (tools/sky_vista.py, drawn at 8192 x 4096); saved IF_SKY_W wide (default 8192)"""
+    import sky_vista
+    a = sky_vista.apply(arena, MAKERS[arena]())
+    im = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
+    ow = int(os.environ.get('IF_SKY_W', '8192'))
+    if arena in sky_vista.VISTAS and im.width != ow: im = im.resize((ow, ow // 2), Image.LANCZOS)
+    return im
 
 
 def write(out, arena):

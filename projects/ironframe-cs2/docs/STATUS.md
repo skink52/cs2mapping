@@ -15,6 +15,49 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**11 Nov 2026, ~04:35 (04:01 continuation): list item 4 (M3, "3D skyboxes") done as far scenery painted into the sky panoramas; both maps
+rebuilt (Sprawl vpk 04:20, Dunes vpk 04:29, cache_check clean on both). Unseen in game.**
+- Why not a real 3D skybox (skink52, ~01:40: "investigate capacity for custom moondomes to accomplish sharing 3d skyboxes between
+  locations"): the arena copies are thousands of units apart and a 3D skybox is drawn from player position / 16, so it sits wrong
+  from every copy but one. Every copy already stands in its own moondome shell (csgo_moondome, `g_flCubeParallax 0` = at infinity)
+  with a toolsskybox shell inside for the sky light, so the far world goes INTO the panorama: same from every copy, no second map.
+- `tools/sky_vista.py` (new), called by `tools/sky.py make()`: drawn at 8192 x 4096 in a strip around the horizon, saved `IF_SKY_W`
+  wide (default 8192; the old skies were 4096). Sprawl: three depth layers of towers (lit windows in floor runs, tiers, masts,
+  crown lines, neon edges, LED panels, aviation lights), six supertalls with spires that fade into the overcast, elevated-road light
+  strings, the city's glow on the mist, a haze band and an opaque ground under the horizon. Dunes: three ranges of mesas with
+  flat-capped buttes (cliff + scree), dusk rim light, strata and gullies, two refineries (stacks, tanks, platforms with lights,
+  three flares each, smoke plumes) at yaw 205 and 318, lone derricks, a dust band.
+- Preview without the game: `python -I tools/sky_vista.py <sprawl|dunes> preview/sky` (strip quarters + pinhole views a player
+  would see). Judged there: two passes each (Sprawl: windows were a dot matrix and far towers lighter than their sky; Dunes: ranges
+  were 1-2 deg high and the refinery invisible).
+- Limits, by design: no parallax, no animation (blinking lights, flames = props / particles in the arena if wanted). The compiled
+  sky textures are block-compressed (6-9 MB): **look in game whether the window dots survive the compression** and whether the
+  8192 panorama shows sharper than the old one; if a sky shows as an error material, `IF_SKY_W=4096` and rebuild.
+- Panorama yaw 0 = +x is still unverified (docstring of tools/sky.py): the refineries' compass directions may be rotated.
+- List item 7 B ("hits that read") checked against the code: damage skins by AP band, damage smoke, death gibs and wreck, hit
+  marker, incoming-fire arrows all exist (src/cs2/46_damage.js, 90_main.js). Left of B: an in-game look, bigger muzzle flashes.
+- Next: 7 A (the mech as one machine), then 8 (D teammate markers first: skink52's friend-or-foe remark).
+
+**11 Nov ~01:25 (superseded by the 04:35 block): list item 4 (M3, 3D skyboxes) design notes.** Reminders set for 04:01 and 09:02 continue here.
+- Tool: `create/make_skybox.py` (terrain ring at 1/16, `--plain`, `--layout`), worked example projects/trenchwarfare-cs2/tools/make_map.py
+  line ~1018 (`skybox_reference` at the origin, targetMapName `maps/<map>_3dskybox.vmap`, fixupNames 1, worldGroupID skyboxWorldGroup0)
+  and its tools/make_skybox.py; guide.md line 147.
+- **The problem to design around**: the arena copies are offset from each other (tools/arenas/copies.py: read the real offsets first),
+  but there is ONE skybox, drawn from player position / 16. A pilot in a copy 8 000 u away sees the ring from 8 000 u off: near
+  skybox content would sit wrong (15 deg at 30 000 u). Domes per copy cannot work (they would overlap at 1/16).
+- **Design**: far layers only, 60 000-100 000 world units out (3 750-6 250 skybox units, inside the +-16 384 limit), so the offset
+  shifts them under 8 deg; bases sunk in a thick haze / glow band so no horizon line gives the offset away; centre the skybox on the
+  MEAN of the copies' offsets to halve the error. Sprawl: layered lit supertall silhouettes (emissive window cards, aviation lights,
+  a few far elevated roads as light strings, cloud-base glow). Dunes: far mesas and a ridge, refinery flares / derricks as small
+  emissive points, dust haze in the map's fog colour; Dunes main map only gets the `skybox_reference` by ADDITIVE patch with a backup.
+  Check each copy's sky shell material shows the 3D skybox (toolsskybox does). Make an offline preview from each copy's centre before
+  building; judge it critically. Then rebuild Sprawl (~13 min), Dunes map build (~35 min, `build_maps.ps1 mg_ironframe_dunes`).
+- Added to the list (noticed 11 Nov): (a) `cache_check --vpk` date warning on Sprawl after a script-only deploy: make deploy_sprawl.sh
+  skip copying an identical vmap; (b) diff the Sprawl nav grid before / after the detail pass; (c) two DenyTexts for codes 9 and 10 in
+  the default SlimeMG.json; (d) `hud_check`'s 13 problems under CS2's chat box.
+
+**Git, 11 Nov ~01:10**: both repos are on branch `ironframe-test`, pushed (cs2mapping e7f914c, slime-mg-gm e98a989; test commits, skink52 allowed them). STAY on that branch: the project is not on `main`, so `git checkout main` removes its tracked files from disk. preview/ and backups/ are git-ignored. Not merged, no PR.
+
 **11 Nov 2026, ~01:00 (main session): list item 5 (M2, Sprawl detail from references) done by an agent; Sprawl has the 00:15 script + HUD
 (compiled 00:54). Both addons are now on the same script.**
 - Full write-up: `out/handover_sprawl_detail.md`; gap table per area in docs/SPRAWL_NOTES.md "Detail pass"; references (20 images +
@@ -106,7 +149,7 @@ details of each item are in the paragraphs below; finish one, test, deploy, note
  1. DONE 23:20 (console read still open: needs Workshop Tools running). Leftovers 1-4: the bottom HUD off the pilot's mech; CS2's own HUD hidden; balance re-run; console read.
  2. DONE 23:20. S1: more stats to the server (map side, batched).
  3. DONE 23:20 (unseen in game). M1: Sprawl's elevated-road barriers at the joins.
- 4. M3: 3D skyboxes for Sprawl and Dunes.
+ 4. DONE 04:35 11 Nov (painted into the moondome panoramas; unseen in game). M3: 3D skyboxes for Sprawl and Dunes.
  5. DONE 01:00 11 Nov (unseen in game). M2: Sprawl detail pass from reference images, the central square first.
  6. DONE 00:15 11 Nov (unseen on a real server). S2 + S3: customisation that follows the pilot; server -> map information and match rules.
  7. A + B: the mech as one machine; hits and deaths that read.

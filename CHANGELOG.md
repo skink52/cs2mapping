@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-11 [ironframe] Far scenery painted into the arena sky panoramas (megacity skyline, mesas and refineries) instead of a 3D skybox: arena copies share one moondome sky at infinity (`tools/sky_vista.py`); gotcha added.
 - 2026-11-09 [monsoon] New project `projects/monsoon-cs2` (mg_monsoon, second battle map): design doc, layout module, terrain/karst/water/lobby generator stages 1-3, first procedural props (helicopters, artillery, base, village). Paused with a handover in NOTES.md. `create/build_all_props.py` accepts lazy (callable) specs. cs2port_w2..w5 moved to `C:\source1rchive\cs2port_workers_20261109`.
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
