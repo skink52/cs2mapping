@@ -30,6 +30,50 @@ intended keys changed, no entity was removed, no output doubled; `trigsplit` on 
 own-fan link and no `mesh_check` problem. Not yet built or tried in game. The ported maps themselves were not changed: to apply the
 new steps to one, `run_pass.py <addon> <root> rendermode,particles,soundscripts,doors`.
 
+## Water: CS:GO's look above and below the surface
+
+skink52, 10 Nov 2026: replicating CS:GO's water fog and underwater view is high value if it can be done. Read 10 Nov 2026 from the
+script (2026-11-08g, `WATER_*` settings and `_cs2_water_vmat_text`) and CS2's own FGDs. Nothing here is built or checked in game yet.
+
+**What CS:GO did** (Source 1 `Water` shader, keys from the map's .vmt): looking down, what is under the surface fades to `$fogcolor`
+over `$fogstart`..`$fogend` units of water and is tinted by `$refracttint`; with the eye under the surface the whole view gets that
+fog (linear, same colour and distances) and `$underwateroverlay` warps the screen; the surface is seen from below.
+
+**What we do now**: `water` (stage D, `watervol.py`) puts the meshes in func_water with stock `anubis_water_canal` (or `waterblend`'s
+decompiled stock water for 3D-skybox seas), dim lights under the surface, and an underwater post_processing_volume
+(`postprocess_filmic_underwater.vpost`, from ba_jail_seaside). That vpost is only a tonemap and bloom: no colour, no fog. So neither
+the per-map colour nor the underwater view is carried over.
+
+**What their script does** (`WATER_CONVERT`, on by default, author-tuned on piratewars and tomgreens, not checked by us):
+- One csgo_water_fancy material per CS:GO water material, at the same path: `g_vWaterFogColor` = `$fogcolor`,
+  `g_flWaterFogStrength` = 8 × 300 / `$fogend` (8 is their "variant B" for CS:GO's solid teal sea; 1 left piratewars a grey mirror),
+  `g_vWaterDecayColor` = `$refracttint` at strength 1, `g_flWaterFogShadowStrength` 0 and `g_flUnderwaterDarkening` 0 (Source 1's fog
+  was a flat colour, not lit), reflectance 0.02 with Fresnel exponent 5 (Source 1's mix), no caustics, foam or debris.
+- `F_RENDER_BACKFACES 1`: the surface is drawn from below, and things above it fade, as in CS:GO. Off, it is invisible from under the
+  water and everything above stays sharp.
+- CS2's wave textures (`materials/dev/water_substance_soft_normal` / `_height`, compiled only) decoded to TGAs in the addon
+  (`materials/water/cs2_waves_*.tga`), since a material can only take content files; without them the water has only player ripples.
+- `g_vMapUVMin/Max` set to ±16384 on water with no skybox blend. Their reading of the shader: csgo_water_fancy discards water pixels
+  outside Map UV Min/Max, and the default box is about -10272 -10199 .. 10241 10241, so water beyond it isn't drawn. Worth checking on
+  our big maps that use stock water (stock materials carry their own Map UV values).
+- The generated materials are recompiled every run: Hammer kept an older compile of a rewritten water vmat (tomgreens).
+- **Underwater view: not achieved.** Earlier versions put in a map-wide `env_gradient_fog` "underwater_fog" and an underwater screen
+  overlay; both were removed (the fog was map-wide, not limited to the water).
+
+**A lead they didn't use**: CS2's `csgo.fgd` keeps `fog_volume`, a brush entity with `FogName` ("The name of the fog entity associated
+with this volume"); Valve's comment there says only its PostProcessName and ColorCorrectionName had to be dropped. That is the piece
+that limits an `env_gradient_fog` to the water. Per water: an env_gradient_fog with `fogcolor` = `$fogcolor`, `fogstart` / `fogend`
+from the .vmt, `fogfalloffexponent` 1 (Source 1's fog was linear), `fogmaxopacity` 1, `heightfog` 0, a short `fadetime`; and a
+fog_volume over the func_water up to the surface naming it. To find out in game:
+- does fog_volume test the camera or the player's origin? (Our post_processing_volume tests the feet, hence its top 80 u under the surface.)
+- which fog applies outside every fog_volume, especially in maps that already have their own env_gradient_fog (`global( gradient_fog )`)?
+- does it fog the water surface itself seen from below, and does it stack with the material's own fog when looking down from above?
+- players: CS2 draws players through fog at 1.7× the distance and 0.6× the density (`env_player_visibility` defaults, for competitive
+  play), so players under water would stay clearer than the walls unless the map sets 1 / 1, which is map-wide.
+
+Test plan: one map with deep water and a CS:GO original to compare (mg_pirates, ttt_minecraft or ba_jail_seaside). Material per CS:GO
+water first (surface look from above and below), then the fog_volume, screenshots from the same spots in CS:GO and CS2.
+
 ## Worth doing next (not implemented)
 
 1. **math_counter → logic_case without a script** (`LOGIC_CASE_NUMERIC_FIX`): one logic_compare per case value (SetValueCompare,
@@ -48,9 +92,8 @@ new steps to one, `run_pass.py <addon> <root> rendermode,particles,soundscripts,
 4. **One cs_mdl_import run per folder** (`MDL_BATCH`): `-nop4 -game csgo -r -i <root> -o <addon> -l <list> -v` for all of a folder's
    models, then one-at-a-time retries for what it didn't write. Saves the ~5 s start-up per model in stage B. Our gotchas: `-l` avoids
    the `-r *.mdl` crash, but one checksum mismatch kills the whole run (hence their fallback). Needs testing under our watchdog.
-5. **Source 1 water → its own CS2 water material** (`WATER_CONVERT`): csgo_water_fancy per CS:GO water .vmt, fog colour from `$fogcolor`
-   / `$bottommaterial`, fog strength 8 at `$fogend` 300 (1 left piratewars a grey mirror), render backfaces on. We use stock
-   `anubis_water_canal` (or waterblend's decompiled stock water). A visual upgrade to tune in game.
+5. **Source 1 water → its own CS2 water material, and CS:GO's underwater view**: see [Water](#water-csgos-look-above-and-below-the-surface)
+   below (skink52: high value if it works, 10 Nov 2026).
 6. **Broken stock CS2 assets** (`CS2_CHECK_ASSET_REFS`): stock vmat_c whose textures are in no CS2 VPK, and stock vmdl_c using missing or
    stub materials, ported from CS:GO. Extends `vmap_refs.py`'s stub list (error-shader vmats only).
 7. **Fire damage by CS:GO's own model** (`hurt_zone.js` fire zones: damage from size / heat / damagescale, a growing box, no damage
@@ -82,6 +125,26 @@ new steps to one, `run_pass.py <addon> <root> rendermode,particles,soundscripts,
   `materials/tools/toolsskybox_occluder.vmat` (`SKY_OCCLUDER`; the material exists in csgo/pak01).
 - A func_water parented to a mover doesn't move (only its trigger_hurt rose: mg_hellz).
 - func_physbox pieces longer than ~448 u have no collision, nor do open physbox meshes (the author says the physbox changes are broken).
+
+## Smaller ideas worth knowing (10 Nov 2026 pass over their 322 settings; not compared with ours in detail)
+
+Most settings match something we already do (null parameters, dropped `!self` outputs, the water-surface probe volume, sound distance
+curves, sparks, steam, lasers, radar). These looked new or different:
+- **Models with bare material names** (`VMDL_REMAP_BARE_MATERIALS`): a mesh naming `fern01.vmat` with no folder, because cs_mdl_import
+  didn't apply the .mdl's `$cdmaterials`, gets a material remap to where the material was found, so the model compiles. We have nothing on
+  this; check stage B's failed models for it.
+- **Tool materials outside `materials/tools/`** (`TOOL_MATERIAL_PATH_FIX`): e.g. `materials/toolslightmapres.vmat`, which neither CS2 nor
+  the addon has, pointed at `materials/tools/<same name>`.
+- **Named or parented func_illusionary dropped by the importer** (`ILLUSIONARY_IO_FIX`, mg_hellz `mg7_illu`): rebuilt from the VMF as a
+  never-solid func_brush with its name, render settings and faces.
+- **Brush entity shadows** (`BRUSH_SYNC_MESH_SHADOWS`, `BRUSH_DISABLE_RECEIVING_SHADOWS`): the importer leaves the meshes at Cast Shadows
+  Enabled on entities set to No Shadows (Hammer writes both); and a shadow over part of a brush entity darkens all of it unless Disable
+  Receiving Shadows is set.
+- **Mirrored texture patches bake darker** (`MIRRORED_TEXTURE_ANY`, mg_tomgreens): faces whose texture is turned 180° in the VMF baked
+  visibly darker in CS2 (the normal map turned with it); they rotate the patch back.
+- **Equip target names** (`EQUIP_FIX_INPUTS`): outputs firing Use at a game_player_equip → TriggerForActivatedPlayer, with the target
+  respelled to the equip's exact case (their note: CS:GO matched names ignoring case). If CS2 matches entity names case-sensitively, that
+  is a gotcha well beyond equips: worth one test.
 
 ## Not taken
 
