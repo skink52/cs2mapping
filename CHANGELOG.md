@@ -3,6 +3,10 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-10: ba_jail_seaside watermelons
+
+- **[port ba_jail_seaside]** watermelons break: both stock `models/food/fruits/watermelon01a` props (and the map's asset reference) swapped to the imported CS:GO `models/props_junk/watermelon01` with its six chunk gibs, as on jb_mangaroons. Not yet rebuilt.
+
 ## 2026-11-10: cs2-map-mcp ported (validation, compiler, generators, live game, MCP server)
 
 - **[tools]** From Rmgs123/cs2-map-mcp (MIT), written fresh as new files: `fgdcat` / `fgdcheck` (vmap vs CS2's FGDs), `mapsanity`, `visualcheck`,

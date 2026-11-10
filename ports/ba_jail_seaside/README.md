@@ -11,6 +11,7 @@ Jailbreak map with cs_script additions: a knife dodgeball minigame (balls `Dball
 
 ## History
 
+- 2026-11-10: **watermelons break into gibs**: the 2 `prop_physics_multiplayer` watermelons moved from stock `models/food/fruits/watermelon01a.vmdl` (its break pieces point at `props_junk/watermelon01_chunk*`, which CS2 never shipped) to the imported CS:GO `models/props_junk/watermelon01.vmdl`, and `map_asset_references` updated to match. The model, its six chunks, `fruit_objects01` and their compiled files were already in this addon. Backup `maps/ba_jail_seaside.vmap.bak_watermelon_20261110`. Not yet rebuilt or checked in game.
 - 2026-11-09: **ranged music resumes when you come back** (disco1-3, inthenavy): CS2 stopped a non-looping sound for good once the listener was out of range. `voice_culling_threshold = -1.0` keeps it playing silently (`tools/rangedmusic.py`). vsndevts compiled, backup `soundevents_addon.vsndevts.bak_20261109`; not yet heard in game or uploaded.
 - 2026-10-25: radar re-rendered with textured floors (`radar.py` + `radartex.py`).
 - 2026-10-24: Radar (`radar.py`; the earlier RadGen one was never in the content folder). Loading screen already existed. Credits file rewritten with the `COMMUNITYMAPCREDITS:` header it was missing (hyphen). Assets compile with `run_build.bat "assets ba_jail_seaside"`.
