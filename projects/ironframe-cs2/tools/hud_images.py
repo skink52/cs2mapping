@@ -364,6 +364,16 @@ def diamond(size=56, col=WHITE, fill=False, w=3, ring_col=None):
     return _shrink(img, size)
 
 
+def ally_mark(size=40, col=(94, 224, 138, 255)):
+    """a teammate mark: a solid green triangle pointing down at the mech's head, dark rim so it reads on sand and on neon"""
+    img, d, s = _canvas(size)
+    c = size / 2
+    _poly(d, [(c - 15, 7), (c + 15, 7), (c, 34)], fill=(0, 0, 0, 200))
+    _poly(d, [(c - 10.5, 10), (c + 10.5, 10), (c, 29)], fill=col)
+    _poly(d, [(c - 4.5, 13), (c + 4.5, 13), (c, 21)], fill=(235, 255, 240, 255))
+    return _shrink(img, size)
+
+
 def chevron(size=64, angle=0, col=WHITE):
     """a chevron pointing up, rotated `angle` degrees clockwise (0 = up, 90 = right)"""
     img, d, s = _canvas(size)
@@ -456,7 +466,8 @@ def write(img_dir, parts, frames_dir=None):
     brackets(200, arm=16, w=2, col=(255, 194, 71, 255)).save(os.path.join(img_dir, 'lockbox_acq.png'))
     diamond(56, (255, 194, 71, 255)).save(os.path.join(img_dir, 'ml.png'))
     diamond(56, (255, 90, 70, 255), fill=True, ring_col=(255, 90, 70, 255)).save(os.path.join(img_dir, 'ml_done.png'))
-    n += 3
+    ally_mark().save(os.path.join(img_dir, 'ally.png'))
+    n += 4
     ring(240, 112, 3.5, ticks=12).save(os.path.join(img_dir, 'hardring.png'))
     ring(200, 92, 2.5, dashes=24, col=(120, 220, 255, 255)).save(os.path.join(img_dir, 'shield.png'))   # spawn protection (was 420 px)
     ring(120, 52, 3, dashes=8, col=(255, 90, 70, 255)).save(os.path.join(img_dir, 'stagger.png'))

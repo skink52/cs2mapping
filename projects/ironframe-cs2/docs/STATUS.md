@@ -15,6 +15,19 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**11 Nov 2026, ~05:00 (04:01 continuation): list item 8 D (teammate marks) done, tested, deployed to both addons. Unseen in game.**
+- Each pilot's HUD puts a green triangle (`ally.png`, tools/hud_images.py `ally_mark`) over the head of up to 8 living teammates that
+  are on screen and within 9 000 u, nearest first, dimmed past 4 500 u (`stFar`); a mark keeps its mech so marks do not swap.
+  Rule (90_main.js): nobody in Skirmish, every pilot and AI ally in Sortie, the own team elsewhere, same arena copy only. Driver
+  50_hud.js `ifrHudAllies` (every second tick per pilot), layout tools/hud.py `FR_N` (ids `ifr_fr<k>` + `x` / `y` on the lock
+  bracket's grid). 504 panel ids of 800. Preview: build/hud/hud_lock.png (two marks in the `lock` state).
+- Tests: `sh build/run_tests.sh` all pass (hud_driver has the marks' cases; hud_ids walks the 24 new ids).
+- Also: tools/arenas/deploy_sprawl.sh leaves an identical vmap alone (no more false "vpk built before the vmap" from cache_check).
+- In game, check: the triangle sits over the head (uses the same projection as the lock bracket, so if the bracket is right this
+  is); 8 marks with 0.1 s eased steps do not jitter when the pilot turns fast.
+- Next: 7 A (the mech as one machine: waist seam at 60 deg twist, foot slide, boost crouch / landing bend), then 8 C (starter presets,
+  training wave), E (audio mix), F (nav mesh, post-processing), S4, M4, M5 (hangar pilots / crew).
+
 **11 Nov 2026, ~04:35 (04:01 continuation): list item 4 (M3, "3D skyboxes") done as far scenery painted into the sky panoramas; both maps
 rebuilt (Sprawl vpk 04:20, Dunes vpk 04:29, cache_check clean on both). Unseen in game.**
 - Why not a real 3D skybox (skink52, ~01:40: "investigate capacity for custom moondomes to accomplish sharing 3d skyboxes between

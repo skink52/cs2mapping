@@ -354,6 +354,11 @@ function hudFeed(pe, now) {
     const df = dmgFrom.get(pe.slot); let threats = m.threats;
     if (df) { if (gameTime() > df.until) dmgFrom.delete(pe.slot); else threats = (m.threats || []).concat([{ kind: 'close', pos: df.pos }]); }
     if (typeof ifrHudLock === 'function') guard('hud lock', () => ifrHudLock(pe.slot, m.lock, threats, m.lock && m.lock.target >= 0 ? game.mechs.get(m.lock.target) : null, m));
+    // teammate marks: nobody in Skirmish, every pilot and AI ally in Sortie (the wave is team 0), the own team elsewhere; same arena copy only
+    if (half && typeof ifrHudAllies === 'function') guard('hud allies', () => {
+      const mt = game.matchFor(m.slot), mode = mt ? mt.mode : 'tb';
+      ifrHudAllies(pe.slot, m, game.mechs, (v) => mode !== 'sk' && game.matchFor(v.slot) === mt && (mode === 'so' ? v.team === TEAM_T || v.team === TEAM_CT : v.team === m.team));
+    });
   }
   if (((ifrTickNo + pe.slot) & 7) === 0 && typeof ifrHudRadar === 'function') {
     const me = m || null; const dots = [];

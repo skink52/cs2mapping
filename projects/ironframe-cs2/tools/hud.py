@@ -474,6 +474,16 @@ for i in range(ML_N):
     reg('ifr_ml%d' % i, ['stOn', 'stDone'], prio=1); reg('ifr_ml%dx' % i, LKX_CLS, prio=1); reg('ifr_ml%dy' % i, LKY_CLS, prio=1)
     mlp.append(P('ifr_ml%dx' % i, 'LkX ' + h.place(w=LW, h=LH, x=0, y=0), [P('ifr_ml%dy' % i, 'LkY ' + h.place(w=LW, h=LH, x=0, y=0), [
         P('ifr_ml%d' % i, 'MlM ' + h.place(w=56, h=56, x=LW / 2 - 28, y=150 - 28))])]))
+# teammate marks (11 Nov 2026; skink52: "it doesnt seem to show who is an enemy and who is friendly"): the prop markers over the mechs cannot
+# differ per viewer, so each pilot's HUD puts a green chevron over the heads of up to FR_N teammates on screen (50_hud.js ifrHudAllies).
+# One picture (hud_images.py ally_mark), 3 panel ids a mark; the triangle's tip is 0.25 mech heights over the head.
+FR_N = 8
+rule('.FrM', opacity='0', transition_property='opacity', transition_duration='0.15s'); rule('.FrM.stOn', opacity='0.95'); rule('.FrM.stFar', opacity='0.55')
+rule('.FrM', background_image=url('ally.png'), background_size='100% 100%', background_repeat='no-repeat')
+for i in range(FR_N):
+    reg('ifr_fr%d' % i, ['stOn', 'stFar'], prio=1); reg('ifr_fr%dx' % i, LKX_CLS, prio=1); reg('ifr_fr%dy' % i, LKY_CLS, prio=1)
+    mlp.append(P('ifr_fr%dx' % i, 'LkX ' + h.place(w=LW, h=LH, x=0, y=0), [P('ifr_fr%dy' % i, 'LkY ' + h.place(w=LW, h=LH, x=0, y=0), [
+        P('ifr_fr%d' % i, 'FrM ' + h.place(w=40, h=40, x=LW / 2 - 20, y=150 - 34))])]))
 lockroot = P(None, 'Fight LkRoot ' + h.place(w=LW, h=LH, center=True, y=RY + C - 150), mlp + [
     P('ifr_lkx', 'LkX ' + h.place(w=LW, h=LH, x=0, y=0), [P('ifr_lky', 'LkY ' + h.place(w=LW, h=LH, x=0, y=0), [lockp])])])
 ret.append(slbl('ASSIST', 'Assist', 80, 18, 'XS', 'Acc', 'left', id_='ifr_assist', x=C + 44, y=C - 9))
@@ -1094,7 +1104,7 @@ hud = {
     'short': SHORT, 'glyphs': {'prefix': 'g', 'spu': SPU, 'font': os.path.basename(F.FONT_PATH), 'trunc': [list(t) for t in TRUNC],
                 'label': F.LABEL_FAMILY, 'w': {sz: {str(c): F.LMETRICS[sz].adv[c] for c in F.LABEL_CHARS} for sz in F.SIZE_ORDER}}, 'garage': {'cats': CATS, 'rows': GROWS, 'tracks': GTRACKS, 'stats': GSKEYS, 'parts': [p['key'] for p in PARTS['parts']]},
     'cone_steps': 5, 'threat_dirs': 8,
-    'lockgrid': {'step': LKS, 'x': LKXN, 'y': LKYN, 'marks': ML_N}, 'line': {'rows': LINE_ROWS, 'slots': ['line'] + ['line%d' % k for k in range(2, LINE_ROWS + 1)]}, 'streak_pips': SPIP,
+    'lockgrid': {'step': LKS, 'x': LKXN, 'y': LKYN, 'marks': ML_N, 'allies': FR_N}, 'line': {'rows': LINE_ROWS, 'slots': ['line'] + ['line%d' % k for k in range(2, LINE_ROWS + 1)]}, 'streak_pips': SPIP,
 }
 os.makedirs(os.path.join(OUT, '_gen'), exist_ok=True)
 json.dump(hud, open(os.path.join(OUT, '_gen', 'hud.json'), 'w', encoding='utf-8'), indent=0, sort_keys=True)
@@ -1192,7 +1202,7 @@ STATES = {
     'fight_kh': fight_kh,
     'lock': merge(fight_common, A(ifr_lock='stHard3', ifr_lkx='stX%d' % (LKXN + 9), ifr_lky='stY%d' % (LKYN - 4), ifr_l_tap='stL8', ifr_l_lkp='stL12', ifr_th1='stLock', ifr_th5='stLaunch', ifr_th3='stClose', ifr_mwarn='stOn', ifr_assist='stOn',
                                   ifr_enbar='stStall', ifr_entag='stOn', ifr_stg='stStaggered', ifr_stgring='stOn', ifr_lag='stOn', ifr_shield='stOn',
-                                  ifr_ml0='stDone', ifr_ml0x='stX%d' % (LKXN + 14), ifr_ml0y='stY%d' % (LKYN + 2), ifr_ml1='stOn', ifr_ml1x='stX%d' % (LKXN - 5), ifr_ml1y='stY%d' % (LKYN - 6),
+                                  ifr_ml0='stDone', ifr_ml0x='stX%d' % (LKXN + 14), ifr_ml0y='stY%d' % (LKYN + 2), ifr_ml1='stOn', ifr_ml1x='stX%d' % (LKXN - 5), ifr_ml1y='stY%d' % (LKYN - 6), ifr_fr0='stOn', ifr_fr0x='stX%d' % (LKXN - 16), ifr_fr0y='stY%d' % (LKYN - 3), ifr_fr1='stFar', ifr_fr1x='stX%d' % (LKXN + 22), ifr_fr1y='stY%d' % (LKYN - 1),
                                   ifr_w2=['stLkOn'], ifr_load=[], ifr_ctrl=[]),
                   T(ifr_tname='NEXT_ONE', ifr_rng='2 450', ifr_lstate='LOCKED', ifr_w2s='LOCKED: FIRE')),
     'death': merge(A(ifr_root=['stOn', 'stDeath', 'stTeamT'], ifr_line=['stOn', 'stR1'], ifr_mtag='stMcq', ifr_ctrl='stOn'), T(ifr_killer='PILOT_SEVEN', ifr_kweapon='VM-6 VERTICAL MISSILES', ifr_kframe='WHITE GLINT', ifr_respawn='RESPAWN IN 6',

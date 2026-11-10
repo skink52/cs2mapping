@@ -721,6 +721,35 @@ function ifrHudGridTo(slot, s, id, p) {
   ifrHudOne(slot, s, id + 'x', id + 'x', 'stX' + (kx + g.x));
   ifrHudOne(slot, s, id + 'y', id + 'y', 'stY' + (ky + g.y));
 }
+/** teammate marks: a green chevron over the head of up to grid.allies living teammates that are on the pilot's screen and within
+ *  IFR_HUD_ALLY_RANGE (nearest first). A mark keeps its mech while that mech stays in the set, so marks do not swap places.
+ *  ally(v) is the adapter's rule (90_main.js: nobody in Skirmish, every pilot and AI ally in Sortie, the own team elsewhere). */
+const IFR_HUD_ALLY_RANGE = 9000, IFR_HUD_ALLY_FAR = 4500;
+function ifrHudAllies(slot, me, mechs, ally) {
+  if (!IFR_HUD_ON) return;
+  const g = IFR_HUD_LOCKGRID, n = g ? g.allies | 0 : 0; if (!n) return;
+  const s = ifrHudSlot(slot);
+  let own = s.memo.get('frOwn'); if (!own) { own = new Array(n).fill(-1); s.memo.set('frOwn', own); }
+  const found = [];
+  if (me && me.alive && me.slot === slot && mechs) for (const v of mechs.values()) {
+    if (!v || v === me || !v.alive || !v.pos || !ally(v)) continue;
+    const dx = v.pos.x - me.pos.x, dy = v.pos.y - me.pos.y, dz = v.pos.z - me.pos.z, d2 = dx * dx + dy * dy + dz * dz;
+    if (d2 > IFR_HUD_ALLY_RANGE * IFR_HUD_ALLY_RANGE) continue;
+    const h = v.height || 288;
+    const p = ifrHudProject(me, { pos: { x: v.pos.x, y: v.pos.y, z: v.pos.z + h * 0.7 }, height: h });     // 1.25 heights up: over the head
+    if (!p || Math.abs(p.x) > g.x * g.step || Math.abs(p.y) > g.y * g.step) continue;                  // off the screen or behind
+    found.push({ v, p, d2 });
+  }
+  found.sort((a, b) => a.d2 - b.d2); if (found.length > n) found.length = n;
+  const want = new Map(); for (const f of found) want.set(f.v.slot, f);
+  for (let i = 0; i < n; i++) if (own[i] >= 0 && !want.has(own[i])) { ifrHudOne(slot, s, 'ifr_fr' + i, 'fr' + i, ''); own[i] = -1; }
+  for (const f of found) {
+    let i = own.indexOf(f.v.slot);
+    if (i < 0) { i = own.indexOf(-1); if (i < 0) continue; own[i] = f.v.slot; }
+    ifrHudGridTo(slot, s, 'ifr_fr' + i, f.p);
+    ifrHudOne(slot, s, 'ifr_fr' + i, 'fr' + i, f.d2 > IFR_HUD_ALLY_FAR * IFR_HUD_ALLY_FAR ? 'stFar' : 'stOn');
+  }
+}
 /** lock = m.lock {target, stage (0 none, 1 soft, 2 hard), t (s in the stage)}; threats = m.threats [{kind: 'lock'|'launch'|'close',
  *  dir (0..7, 0 ahead, clockwise) | angle (deg, 0 ahead, clockwise) | pos {x,y,z} (needs `me`)}]; target = the locked IF_Mech or
  *  null; me = the viewer's IF_Mech (range, cone and threat directions need it; pass m as the 5th argument) */

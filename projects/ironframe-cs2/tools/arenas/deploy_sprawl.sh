@@ -35,7 +35,8 @@ if [ -z "$SPRAWL_NO_UI" ]; then   # SPRAWL_NO_UI=1: map + models only (the HUD l
   for d in panorama sounds soundevents resource; do [ -d "out/addon/$d" ] && cp -r "out/addon/$d" "$CONTENT/"; done
   for d in panorama resource; do [ -d "out/sprawl/addon/$d" ] && cp -r "out/sprawl/addon/$d" "$CONTENT/"; done
 fi
-cp out/sprawl/addon/maps/$MAP.vmap "$CONTENT/maps/$MAP.vmap"
+# an identical vmap is left alone: a fresh date on it makes cache_check --vpk say "vpk built before the vmap was written" (11 Nov 2026)
+cmp -s out/sprawl/addon/maps/$MAP.vmap "$CONTENT/maps/$MAP.vmap" || cp out/sprawl/addon/maps/$MAP.vmap "$CONTENT/maps/$MAP.vmap"
 [ -n "$SPRAWL_SCRIPT" ] && cp out/sprawl/addon/maps/scripts/*.js "$CONTENT/maps/scripts/"
 [ -d out/game ] && cp -r out/game/. "$GAME/" 2>/dev/null || true
 echo "deployed Sprawl to $CONTENT and $GAME"

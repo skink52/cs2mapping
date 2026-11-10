@@ -21,7 +21,7 @@ const ent = {
 const ctx = { HUD, PARTS, ARENA, CONFIG: { HUD: 'ifr_hud', HUD_BUDGET: 900 }, Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg: (m) => console.log('  (log) ' + m) }, console };
 vm.createContext(ctx);
 const src = fs.readFileSync(path.join(root, 'src/cs2/50_hud.js'), 'utf8');
-const api = vm.runInContext(src + '\n;({ ifrHudInit, ifrHudSet, ifrHudVar, ifrHudNum, ifrHudLadder, ifrHudLine, ifrHudReset, ifrHudOff, ifrHudTick, ifrHudStats, ifrHudPending, ifrHudScreen, ifrHudVitals, ifrHudWeapons, ifrHudLock, ifrHudRadar, ifrHudMode, ifrHudSlate, ifrHudGarage, ifrHudCapture, ifrHudFeed, ifrHudCard, ifrHudCardOn, ifrHudHint, ifrHudHinted, ifrHudCount, ifrHudLoadout, ifrHudProject, ifrHudWrapAll, ifrHudFitText, ifrHudFits, ifrHudCutList })', ctx);
+const api = vm.runInContext(src + '\n;({ ifrHudInit, ifrHudSet, ifrHudVar, ifrHudNum, ifrHudLadder, ifrHudLine, ifrHudReset, ifrHudOff, ifrHudTick, ifrHudStats, ifrHudPending, ifrHudScreen, ifrHudVitals, ifrHudWeapons, ifrHudLock, ifrHudRadar, ifrHudMode, ifrHudSlate, ifrHudGarage, ifrHudCapture, ifrHudFeed, ifrHudCard, ifrHudCardOn, ifrHudHint, ifrHudHinted, ifrHudCount, ifrHudLoadout, ifrHudProject, ifrHudAllies, ifrHudWrapAll, ifrHudFitText, ifrHudFits, ifrHudCutList })', ctx);
 const H = api;
 /** the text a slot's pixel row shows (cells' g<code> classes), trimmed */
 const text = (slot, name) => (shownVar.get(slot + '|' + HUD.text_slots[name].panel) || '').replace(/ /g, ' ').trim();
@@ -210,6 +210,16 @@ test('lock: acquiring -> soft -> locked on the bracket; the launcher row says wh
   tgt.pos = { x: 9900, y: 0, z: 0 }; draw(); assert.strictEqual(text(S, 'w2s'), 'OUT OF RANGE');
   tgt.pos = { x: 2450, y: 0, z: 0 }; me.weapons[2].cd = 4.2; draw(); assert.strictEqual(text(S, 'w2s'), 'READY IN 5 S');
   me.weapons[2].cd = 0; me.weapons[2].ammo = 0; draw(); assert.strictEqual(text(S, 'w2s'), 'NO AMMO');
+  // teammate marks: on-screen living allies only, nearest first, a mark keeps its mech, far ones dimmed, enemies and off-screen mechs none
+  { const A = (slot, team, x, y) => { const v = mech(slot, team, x); v.pos = { x, y, z: 0 }; v.height = 288; v.alive = true; return v; }; me.alive = true;
+    const a1 = A(5, 2, 2000, 0), a2 = A(6, 2, 6000, 800), foe = A(7, 3, 1500, 0), behind = A(8, 2, -3000, 0), far = A(9, 2, 20000, 0);
+    const all = new Map([[S, me], [5, a1], [6, a2], [7, foe], [8, behind], [9, far]]), ally = (v) => v.team === me.team;
+    H.ifrHudAllies(S, me, all, ally); H.ifrHudTick();
+    const on = (i) => has(S, 'ifr_fr' + i, 'stOn') || has(S, 'ifr_fr' + i, 'stFar');
+    assert.ok(has(S, 'ifr_fr0', 'stOn') && has(S, 'ifr_fr1', 'stFar') && !on(2), 'two allies marked, the far one dimmed');
+    assert.ok(has(S, 'ifr_fr0x', 'stX' + g.x), 'the near ally straight ahead: centred across');
+    a1.alive = false; H.ifrHudAllies(S, me, all, ally); H.ifrHudTick(); assert.ok(!on(0) && has(S, 'ifr_fr1', 'stFar'), 'a dead ally loses its mark, the other keeps its own');
+    a1.alive = true; H.ifrHudAllies(S, me, all, () => false); H.ifrHudTick(); assert.ok(!on(0) && !on(1), 'no allies (Skirmish): no marks'); }
   // multi-lock: hold to lock, release to fire, a diamond on each mech
   const ml = weapon(213, { mlock: [], mlDone: 0, mlHold: 0 }); me.weapons[3] = ml; ctx.game = { mechs: new Map([[2, Object.assign(tgt, { alive: true })]]) };
   draw(); assert.strictEqual(text(S, 'w3s'), 'HOLD TO LOCK');

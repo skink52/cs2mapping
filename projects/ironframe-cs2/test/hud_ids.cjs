@@ -36,7 +36,7 @@ const src = coreFns + '\n' + read('src/cs2/50_hud.js') + '\n' + read('src/cs2/60
 const people = new Map();
 Object.assign(base, require('./lib.cjs').careerGlobals(), { people, person: (s) => people.get(s), nameOf: () => 'WORLDMASTERS', ifrCmd() {}, sndTone() {}, reply() {}, log() {}, warnOnce() {}, TEAM_T: 2, TEAM_CT: 3 }); vm.createContext(base);
 for (let i = 0; i < 40; i++) {
-  try { vm.runInContext(src + '\n;this.__api = { ifrHudInit, ifrHudTick, ifrHudPending, ifrHudStats, ifrHudReset, ifrHudScreen, ifrHudTeam, ifrHudVitals, ifrHudWeapons, ifrHudLock, ifrHudRadar, ifrHudMode, ifrHudFeed, ifrHudHit, ifrHudSlate, ifrHudLine, ifrHudHint, ifrHudCard, ifrHudLoadout, ifrHudCapture, garageOpen, garageRows, garageDraw, garagePick, garageUpgradeAsk, garageClick, GARAGE_TABS, ifrHudPilot, ifrHudBoard, setBoard: (b) => { srvBoard = b; } };', base); break; }
+  try { vm.runInContext(src + '\n;this.__api = { ifrHudInit, ifrHudTick, ifrHudPending, ifrHudStats, ifrHudReset, ifrHudScreen, ifrHudTeam, ifrHudVitals, ifrHudWeapons, ifrHudLock, ifrHudAllies, ifrHudRadar, ifrHudMode, ifrHudFeed, ifrHudHit, ifrHudSlate, ifrHudLine, ifrHudHint, ifrHudCard, ifrHudLoadout, ifrHudCapture, garageOpen, garageRows, garageDraw, garagePick, garageUpgradeAsk, garageClick, GARAGE_TABS, ifrHudPilot, ifrHudBoard, setBoard: (b) => { srvBoard = b; } };', base); break; }
   catch (e) { const m = /(\w+) is not defined/.exec(e.message); if (!m) throw e; base[m[1]] = stub; vm.createContext(base); }
 }
 const A = base.__api; A.ifrHudInit();
@@ -70,6 +70,9 @@ for (const S of [1, 2]) {
       A.ifrHudVitals(S, me); A.ifrHudLock(S, lk, threats, lk.target >= 0 ? foe : null, me); A.ifrHudWeapons(S, me.weapons); flush();
     }
   }
+  // teammate marks: eight allies across the view, near and far, then none
+  { const al = new Map(); for (let k = 0; k < 8; k++) al.set(30 + k, { slot: 30 + k, alive: true, height: 288, pos: { x: foe.pos.x, y: (k - 3.5) * 150, z: foe.pos.z } });
+    const was = me.alive; me.alive = true; A.ifrHudAllies(S, me, al, () => true); flush(); A.ifrHudAllies(S, me, al, () => false); flush(); me.alive = was; }
   for (const k of ['hit', 'heavy', 'kill']) { A.ifrHudHit(S, k); flush(); A.ifrHudHit(S, k); flush(); }
   A.ifrHudFeed(S, { kill: 'PILOT_SEVEN', xp: 40, streak: 3, bounty: true, rookie: true }); flush(); A.ifrHudFeed(S, { kill: 'PILOT_EIGHT', xp: 80 }); flush();
   A.ifrHudLoadout(S, me, 5); A.ifrHudCard(S, 'controls', 5); flush();
