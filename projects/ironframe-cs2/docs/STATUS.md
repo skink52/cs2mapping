@@ -2,7 +2,7 @@
 
 ## To do (skink52, 9 Nov 2026 evening)
 - [ ] White dots above heads = the IFF markers, but the team tint isn't showing: make coloured marker models.
-- [ ] Nav mesh so CS2 bots can join (map has no func_nav_markup; log: 0 nav areas); the script now fills with real bots when it can (kills credited like Hellmatch).
+- [x] Nav mesh so CS2 bots can join (11 Nov: both maps have booth seeds and a 4-area nav file; unseen in game); the script now fills with real bots when it can (kills credited like Hellmatch).
 - [ ] Animation review sheet / video (animated GIF per clip).
 - [ ] Vis near the train tunnels: find a better hint layout or build without vis.
 - [ ] Hangar grime overlays (oil stains, concrete wall stains).
@@ -15,6 +15,34 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**11 Nov 2026, late morning (skink52's notes on the morning batch): all below is tested (17 suites, 64-player mock), deployed, and both maps are rebuilt (Dunes vpk 09:13, Sprawl vpk 09:25; cache_check clean, no failed resources in either build log). Unseen in game.**
+- **Overdrive keys** (skink52: "Space R + E for overdrive is hard to use - difficult to position when forced to hold space (which is
+  jump)"): now **R + E pressed together and held** (both shoulder buttons, within 8 ticks of each other; 45_features.js `featInput`,
+  `OD_CHORD`). A lock held on R with a shield raised on E later is not an overdrive; while the meter is full a lone fresh shoulder
+  press waits 0.12 s so the chord's first key does not fire. Space + R + E and `!od` still work. Every prompt changed (HUD
+  `READY: HOLD R+E TOGETHER`, hints, controls card, chat help).
+- **Crew shoulders** (skink52: "shoulders seem rolled forwards on pilot", then "they just look too narrow"): the arms-down poses
+  drop the arms less, open the chest, and a new `shift` in tools/hangar_crew.py moves each arm joint 1.5 u out and 0.6 u up, so
+  the shoulder line stays as wide as in the A pose (preview/crew/crew_sheet3.jpg). All six props re-exported.
+- **Nav mesh for real CS2 bots: it exists.** Both maps have the `func_nav_markup` seeds at the pawn booth (generator
+  common.py `booth`, Dunes tools/patch_nav_vis.py) and every full build makes the nav file: "Nav mesh loaded with 4 nav areas"
+  in both build logs. That is all a bot needs: bot pawns stand in the booth (`bot_stop 1`), the script flies their mechs. An
+  arena-wide nav flood was tried on 9 Nov (ARENA_NAV in patch_nav_vis.py) and the build ran over 3 hours: not wanted. The to-do
+  line at the top of this file was stale. **To see in game**: bots join within 20 s of a round start (else the console says
+  "no CS2 bots joined" and the script's own AI fills).
+- **M4, Dunes detail** (skink52: "start these"): `tools/patch_dunes_detail.py`, additive, vis group `ifr_dunes_detail`
+  (delete the group in Hammer to remove it all; a re-run replaces it). Per arena copy 423 stock props at 0.6 human scale,
+  solid 0, not lightmapped: container yards with stacks, trailers, generators, flood-light masts and fences (8 camps: by the
+  refinery, by the wreck, on the rims of plateaus A and C, inside both drop rims), supply columns of wrecked trucks and cars
+  with tyres / barrels / barriers on tracks inside both rims and where the canyon floor is free, power-line poles, flood-light
+  rings round the three plateaus, relay towers near the rims, 148 scatter spots (half-buried wrecks, tyre piles, lone
+  containers). It keeps clear of every prop skink52 placed (radius by that prop's scale: the rock fields, the canyon-floor
+  rocks), of structure cells, steep ground, objective centres and drop pads. Placement map: preview/dunes_detail_map.jpg
+  (yellow containers, green vehicles, pink masts, white small things, blue = skink52's props). Backup of the map before it:
+  backups/mg_ironframe_dunes.*.pre_detail.vmap. ~1.4 M LOD0 triangles a copy: **check the frame rate on Dunes**, and that
+  nothing floats or sinks (ground heights are the generator's: hand-sculpted terrain would differ).
+- Still open: audio mix, bigger muzzle flashes, the waist seam check, a real-server run of the S2 / S3 payloads.
+
 **11 Nov 2026, ~08:30 (morning batch; skink52: "pick up the remaining tasks now"): both maps rebuilt with everything below (Dunes vpk 08:10, Sprawl vpk 08:35; cache_check clean on both; script + HUD current on both). All unseen in game.**
 - **A, the mech as one machine** (30_render.js `rigWeight`): a standing turn is steps now (weight shift + a planted foot with its
   stomp every ~40 deg while the legs are dragged round), a crouch into a boost, a push off the ground at take-off, a roll into

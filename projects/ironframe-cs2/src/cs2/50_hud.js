@@ -581,7 +581,7 @@ function ifrHudVitals(slot, m) {
 }
 // every sentence the HUD itself says (test/hud_strings.cjs measures each one against its slot)
 const IFR_HUD_TXT = {
-  odFill: 'DEAL OR TAKE DAMAGE TO FILL', odReady: 'READY: HOLD SPACE + R + E', odAce: 'ACE: REFILLING BY ITSELF',
+  odFill: 'DEAL OR TAKE DAMAGE TO FILL', odReady: 'READY: HOLD R+E TOGETHER', odAce: 'ACE: REFILLING BY ITSELF',
   artyReady: 'READY: LOCK A TARGET', streakDone: 'ACE EARNED: TOP REWARD', streakDone2: 'A STREAK ENDS WHEN YOU DIE',
   wNoLock: 'NO LOCK: UNGUIDED', wLocked: 'LOCKED: FIRE', wRange: 'OUT OF RANGE', wHold: 'HOLD TO LOCK', wNoTarget: 'NO TARGET IN RING', wRelease: ' LOCKED: RELEASE', wNoAmmo: 'NO AMMO', wSalvo: 'FIRING',
   lAcq: 'ACQUIRING', lSoft: 'SOFT LOCK', lHard: 'LOCKED', loadFoot: 'DEAD: CTRL OR F OPENS THE GARAGE',

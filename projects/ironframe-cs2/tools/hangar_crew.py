@@ -22,7 +22,13 @@ import numpy as np
 WORK = os.environ.get('PM_WORK', r'C:\source1\playermodels')
 SCALE = 0.6
 X, Y, Z = np.array([1., 0, 0]), np.array([0, 1., 0]), np.array([0, 0, 1.])
-DOWN = {'arm_upper_L': [(X, -34)], 'arm_upper_R': [(X, 34)], 'arm_lower_L': [(Y, -14)], 'arm_lower_R': [(Y, -10)]}     # arms out of the A pose, at the sides
+# arms out of the A pose, at the sides. Turning only the upper arm down about the shoulder joint folds the deltoid into the chest: the
+# shoulders came out rolled forward and too narrow (skink52, 11 Nov 2026). So the arms drop less (they hang a little off the body,
+# as over a vest), the collar bones go back a touch, the chest opens, and 'shift' moves each arm (the joint and everything below
+# it) outward and up, which the skin between collar bone and arm stretches over: the shoulder line is as wide as in the A pose.
+DOWN = {'clavicle_L': [(Z, 5)], 'clavicle_R': [(Z, -5)], 'arm_upper_L': [(X, -23), (Y, 8)], 'arm_upper_R': [(X, 23), (Y, 8)],
+        'arm_lower_L': [(X, -6), (Y, -20)], 'arm_lower_R': [(X, 6), (Y, -16)], 'spine_3': [(Y, -5)],
+        'shift': {'arm_upper_L': (0.0, 1.5, 0.6), 'arm_upper_R': (0.0, -1.5, 0.6)}}
 POSES = {
     # looking up at the machine, weight on one leg
     'look_up': dict(DOWN, head_0=[(Y, -24), (Z, 8)], neck_0=[(Y, -10)], spine_2=[(Y, -5)], spine_1=[(Z, 6)], leg_upper_R=[(X, -5)], leg_upper_L=[(X, 4)]),
@@ -73,9 +79,16 @@ def posed(d, pose):
     import poses
     t = Skel(d)
     spec = {k: v for k, v in POSES[pose].items() if k == 'drop' or k in t.W}
-    miss = [k for k in POSES[pose] if k != 'drop' and k not in t.W]
+    miss = [k for k in POSES[pose] if k not in ('drop', 'shift') and k not in t.W]
     if miss: print('   pose %s: joints not on this skeleton: %s' % (pose, ', '.join(miss)))
     S = poses.pose_world(t, spec)
+    for j0, dv in (POSES[pose].get('shift') or {}).items():      # a joint and its subtree moved as one (model units, before SCALE)
+        if j0 not in t.W: continue
+        T = np.eye(4); T[:3, 3] = dv
+        for j in t.order:
+            a = j
+            while a is not None and a != j0: a = t.parent[a]
+            if a == j0: S[j] = T @ S[j]
     V, N = np.asarray(d['V'], float), np.asarray(d['N'], float)
     Q = poses.skin(V, d['weights'], S)
     M = np.zeros_like(N)

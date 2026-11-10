@@ -29,8 +29,8 @@ const HINTS = {
   death: 'DESTROYED. Ctrl or F now opens the garage: change weapons or frame. Space drops you straight back in',
   zone: 'CAPTURING: stay inside the ring. More pilots capture faster; an enemy inside contests it',
   crate: 'SUPPLY CRATE LANDED (the glinting box): walk into it for a repair, ammo, a boost or a full overdrive',
-  od: 'OVERDRIVE READY: hold SPACE + R + E (or !od). 1.2 s charge, then a blast: 2 500 damage and stagger within 600 u',
-  odAgain: 'OVERDRIVE READY: hold SPACE + R + E',
+  od: 'OVERDRIVE READY: press R + E together and hold (or !od). 1.2 s charge, then a blast: 2 500 damage and stagger within 600 u',
+  odAgain: 'OVERDRIVE READY: hold R + E together',
   arty: 'ARTILLERY: aim at an enemy at least 700 u away. Six shells fall on it by themselves as soon as you lock',
   heat: 'OVERHEATED: this weapon cools before it fires again. Fire in bursts and watch its bar',
   shieldUp: 'Your arm shield blocks from the front only while you hold its key, and drains EN',
@@ -119,10 +119,26 @@ function featHumansNear(pos, fn) {
   }
 }
 
-// the keys: JUMP + RELOAD + USE (both shoulder buttons) held; !od presses it for ~0.7 s. The core needs it held 0.6 s and a full meter.
+// the keys: both shoulder buttons (RELOAD + USE, R + E) pressed TOGETHER and held; !od presses it for ~0.7 s. The core needs it held
+// 0.6 s and a full meter. It used to need JUMP as well (11 Nov 2026, skink52: "difficult to position when forced to hold space
+// (which is jump)"); that still works. Together = both went down within OD_CHORD ticks of each other, so a missile lock held on R
+// with a shield raised on E later is not an overdrive. While the meter is full, a lone fresh shoulder press is held back for those
+// ticks (0.12 s) so that the first key of the chord does not fire its weapon.
+const OD_CHORD = 8;
 function featInput(pe, input) {
   traitInput(pe, input);
-  input.od = !!((input.jump && input.fire[2] && input.fire[3]) || (/** @type {any} */ (pe).odChat > ifrTickNo));
+  const st = /** @type {any} */ (pe).odc || ((/** @type {any} */ (pe)).odc = { p2: false, p3: false, d2: -99, d3: -99, chord: false });
+  const f2 = !!input.fire[2], f3 = !!input.fire[3];
+  if (f2 && !st.p2) st.d2 = ifrTickNo;
+  if (f3 && !st.p3) st.d3 = ifrTickNo;
+  st.p2 = f2; st.p3 = f3;
+  if (!(f2 && f3)) st.chord = false; else if (!st.chord && Math.abs(st.d2 - st.d3) <= OD_CHORD) st.chord = true;
+  const m = game ? game.mechs.get(pe.slot) : null, full = !!m && m.alive && m.overdrive >= 1 && !m.odPhase;
+  if (full && !st.chord) {
+    if (f2 && !f3 && ifrTickNo - st.d2 < OD_CHORD) input.fire[2] = false;
+    if (f3 && !f2 && ifrTickNo - st.d3 < OD_CHORD) input.fire[3] = false;
+  }
+  input.od = !!((full && st.chord) || (input.jump && f2 && f3) || (/** @type {any} */ (pe).odChat > ifrTickNo));
   guard('onboarding', () => onbInput(pe, input));
 }
 function featChatOd(slot) {

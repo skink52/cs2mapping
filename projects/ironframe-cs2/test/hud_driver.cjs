@@ -235,7 +235,7 @@ test('overdrive block, buff badges, pilot plate and streak meter', () => {
   draw(); assert.strictEqual(text(S, 'odp'), '60 %'); assert.strictEqual(text(S, 'odl'), 'DEAL OR TAKE DAMAGE TO FILL'); assert.ok(!has(S, 'ifr_odready', 'stOn'));
   assert.strictEqual(text(S, 'pk'), '4'); assert.strictEqual(text(S, 'pd'), '2'); assert.strictEqual(text(S, 'pa'), '3'); assert.strictEqual(text(S, 'pmy'), '212'); assert.strictEqual(text(S, 'pen'), '178');
   assert.strictEqual(text(S, 'stk'), '2'); assert.strictEqual(text(S, 'str'), 'NEXT: 3 KILLS = RADAR PING'); assert.strictEqual(text(S, 'str2'), 'ENEMIES ON RADAR FOR 10 S'); assert.ok(has(S, 'ifr_l_skp', 'stL2'));
-  me.overdrive = 1; draw(); assert.strictEqual(text(S, 'odl'), 'READY: HOLD SPACE + R + E'); assert.ok(has(S, 'ifr_odready', 'stOn'));
+  me.overdrive = 1; draw(); assert.strictEqual(text(S, 'odl'), 'READY: HOLD R+E TOGETHER'); assert.ok(has(S, 'ifr_odready', 'stOn'));
   me.odPhase = 1; me.odT = 0.8; draw(); assert.strictEqual(text(S, 'odl'), 'CHARGING: BLAST IN 0.8 S'); assert.ok(has(S, 'ifr_odready', 'stCharge') && has(S, 'ifr_odbar', 'stCharge') && !has(S, 'ifr_odready', 'stOn'));
   me.odPhase = 0; me.overdrive = 0; me.fkills = 5; me.artyReady = true; me.aceT = 0; me.radarT = 7.2; draw();
   assert.strictEqual(text(S, 'str'), 'NEXT: 8 KILLS = ACE'); assert.strictEqual(text(S, 'bfarty'), 'READY: LOCK A TARGET'); assert.strictEqual(text(S, 'bfradar'), '8 S: ENEMIES ON RADAR');

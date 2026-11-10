@@ -101,7 +101,7 @@ building waits while held, `wp.mslWait`, and launches guided when it is done; re
 - Pilot plate under the radar: YOUR TEAM / ENEMY (tickets in Conquest, your kills vs the leader in FFA), KILLS / DEATHS / ASSISTS. The mode
   box's scores sit on team-colour plates; yours is lit and underlined by the root's team class (no writes).
 - Streak meter: 8 pips with gold marks at 3 / 5 / 8, `NEXT: 3 KILLS = RADAR PING` + `ENEMIES ON RADAR FOR 10 S` (numbers from `IF_FEAT.streak`).
-- Overdrive block in the vitals: gauge, percentage, one line: `DEAL OR TAKE DAMAGE TO FILL` / `READY: HOLD SPACE + R + E` (the block pulses gold) /
+- Overdrive block in the vitals: gauge, percentage, one line: `DEAL OR TAKE DAMAGE TO FILL` / `READY: HOLD R+E TOGETHER` (the block pulses gold) /
   `CHARGING: BLAST IN 0.8 S` (cyan; the old code compared `odPhase` with `'charge'`, the core sets 1, so this never showed).
 - Buff badges say what they are and do: `DAMAGE +25 %` `12 S LEFT`, `ARTILLERY` `READY: LOCK A TARGET`, `ACE +20 % SPEED` `20 S: OVERDRIVE REFILLS`.
 - Earning anything says what it is, what it does and how to use it (gold line): STREAK_TEXT, CRATE_TEXT, HINTS.od in 45_features.js.

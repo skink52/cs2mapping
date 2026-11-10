@@ -7,7 +7,7 @@
 const HELP_LINES = [
   'WASD move, Shift boost, Ctrl quick boost, Space jump / hover. Mouse 1 / 2 fire the arms, R / E the shoulders',
   'Keep an enemy inside the ring to lock on; F switches target. Missiles track once the bracket is red',
-  'Gold bar full: hold Space + R + E for the overdrive blast. Dead: Ctrl or F opens the garage',
+  'Gold bar full: press R + E together and hold for the overdrive blast. Dead: Ctrl or F opens the garage',
   'Chat: !garage !loadout 1-6 !spec !back !afk !vote !mode !pilot !od',
 ];
 /** a message to one player on the HUD line (three rows; longer text continues on a second page). queue = after what is showing, in order.

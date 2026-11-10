@@ -363,7 +363,7 @@ for i, key in enumerate(WEAPONS):
     ]
     wboxes.append(P(pid, 'WBox ' + h.place(w=WBW - 4, h=WBH - 4, x=x, y=y), kids))
 # Overdrive: its own block under the QB row. A gold gauge, the percentage, and one line that always says what to do: how it fills,
-# READY: HOLD SPACE + R + E (the block pulses gold), CHARGING: BLAST IN 0.8 S (cyan). 10 Nov 2026 evening playtest: "no indication what overdrive does".
+# READY: HOLD R+E TOGETHER (the block pulses gold), CHARGING: BLAST IN 0.8 S (cyan). 10 Nov 2026 evening playtest: "no indication what overdrive does".
 raw("@keyframes 'ifrpulse' { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }")
 PULSE = dict(animation_name='ifrpulse', animation_duration='1.1s', animation_iteration_count='infinite', animation_timing_function='ease-in-out')
 _odw = F.METRICS['XS'].text_w('OVERDRIVE')
@@ -734,7 +734,7 @@ intro = P(None, 'Intro Plate ' + h.place(w=760, h=452, center=True, y=228), [
     lbl('iobj2', '', 740, 26, 'S', 'Text', 'center', x=9, y=228, maxlen=52),
     *[slbl(t_, '', 740, 22, 'XS', 'Dim', 'center', x=9, y=266 + i_ * 23) for i_, t_ in enumerate((
         'WASD MOVE   SHIFT BOOST   CTRL QUICK-BOOST', 'SPACE JUMP / HOVER   F NEXT TARGET', 'MOUSE 1 / 2 ARM WEAPONS   R / E SHOULDER WEAPONS',
-        'KEEP AN ENEMY IN THE RING TO LOCK ON', 'SPACE + R + E OVERDRIVE   !HELP SHOWS THE CONTROLS'))],
+        'KEEP AN ENEMY IN THE RING TO LOCK ON', 'HOLD R + E: OVERDRIVE   !HELP SHOWS THE CONTROLS'))],
     lbl('ihint', '', 740, 36, 'M', 'Warn', 'center', x=9, y=394, maxlen=40),
 ])
 death = P(None, 'Death Plate ' + h.place(w=600, h=264, center=True, y=300), [
@@ -1140,10 +1140,10 @@ fight_common = merge(
     T(ifr_bfdmg='12 S LEFT', ifr_bfshield='8 S LEFT', ifr_bface='20 S: OVERDRIVE REFILLS', ifr_bfradar='10 S: ENEMIES ON RADAR', ifr_bfarty='READY: LOCK A TARGET', ifr_ap='6 420', ifr_apmax='/ 9000', ifr_en='2 850',
       ifr_w0n='AR-22', ifr_w0a='24 / 300', ifr_w1n='SG-SCAT', ifr_w1a='0 / 72', ifr_w2n='VM-6', ifr_w2a='72', ifr_w2s='NO LOCK: UNGUIDED', ifr_w0s='', ifr_w1s='RELOAD 1.5 S',
       ifr_w3n='DC-CHAFF', ifr_w3a='2', ifr_mode='TDM', ifr_sub='TEAM DEATHMATCH   FIRST TO 60 KILLS', ifr_scoreT='42', ifr_scoreCT='38', ifr_clock='6:42', ifr_xpv='+40 XP',
-      ifr_odp='100 %', ifr_odl='READY: HOLD SPACE + R + E', ifr_pmy='42', ifr_pen='38', ifr_pk='12', ifr_pd='3', ifr_pa='4', ifr_stk='2', ifr_str='NEXT: 3 KILLS = RADAR PING', ifr_str2='ENEMIES ON RADAR FOR 10 S',
+      ifr_odp='100 %', ifr_odl='READY: HOLD R+E TOGETHER', ifr_pmy='42', ifr_pen='38', ifr_pk='12', ifr_pd='3', ifr_pa='4', ifr_stk='2', ifr_str='NEXT: 3 KILLS = RADAR PING', ifr_str2='ENEMIES ON RADAR FOR 10 S',
       ifr_lcf='WHITE GLINT', ifr_lc0n='AR-22', ifr_lc0r='MID RANGE', ifr_lc1n='SG-SCAT', ifr_lc1r='CLOSE RANGE', ifr_lc2n='VM-6', ifr_lc2r='LOCK-ON MISSILES', ifr_lc3n='DC-CHAFF', ifr_lc3r='BREAKS LOCKS',
       ifr_lct='SECOND WIND: PASSIVE', ifr_lct2='EN REGEN +40 % AFTER A QUICK BOOST',
-      ifr_rrange='6000', ifr_linea='OVERDRIVE READY: HOLD SPACE + R + E', ifr_lineb='A BLAST AROUND YOU: 2 500 DAMAGE', ifr_killv='DESTROYED   PILOT_SEVEN'))
+      ifr_rrange='6000', ifr_linea='OVERDRIVE READY: HOLD R + E TOGETHER', ifr_lineb='A BLAST AROUND YOU: 2 500 DAMAGE', ifr_killv='DESTROYED   PILOT_SEVEN'))
 # the objective HUD per mode: Conquest with B being taken by CT (capture strip on), CTF with the enemy flag carried, KOTH contested
 fight_cq = merge(fight_common,
     A(ifr_mtag=['stMcq'], ifr_obj='stOn', ifr_ob0=['stOn', 'stT'], ifr_ob1=['stOn', 'stCT'], ifr_ob2=['stOn', 'stCT'], ifr_obk0='stOwnT', ifr_obk1='stCap', ifr_obk2='stOwnCT',
