@@ -1139,6 +1139,10 @@ def convert(mdl_path, slug, roots, template, out, skin=0, choices=None, maxtex=2
     d = os.path.join(out, MODEL_DIR, slug); os.makedirs(d, exist_ok=True)
     sets, flipped = write_dmx(t.body, os.path.join(d, slug + '_body.dmx'), 'gmod_%s_body' % slug, V, N, UV, mats, sets, weights,
                               joints=t.W if mode in ('own', 'ownall') else None)
+    if os.environ.get('GMOD_STATIC_DUMP'):   # the skinned mesh and its skeleton as a pickle: a posed static prop is made from it (IRONFRAME tools/hangar_crew.py)
+        import pickle
+        pickle.dump(dict(slug=slug, V=V, N=N, UV=np.asarray(UV, float), mats=mats, sets=[np.asarray(f) for f in sets], weights=weights, texs=[texs[k] for k in names],
+                         W={j: t.W[j] for j in t.order}, parent={j: t.parent[j] for j in t.order}, order=list(t.order)), open(os.environ['GMOD_STATIC_DUMP'], 'wb'))
     # shared first-person arms, sleeves and preview pose: the template's
     sh = os.path.join(out, MODEL_DIR, 'shared'); os.makedirs(sh, exist_ok=True)
     for sfx, dst in (('_firstperson_arms.dmx', 'firstperson_arms.dmx'), ('_firstperson_sleeves.dmx', 'firstperson_sleeves.dmx'), ('_tools_preview.dmx', 'tools_preview.dmx')):

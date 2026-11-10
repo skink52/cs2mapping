@@ -366,7 +366,19 @@ function rigWeight(r, m) {
     if (half !== d.half) { d.half = half; rigFootfall(r, m, cls); }
     const s = d.phase * 2 - half;                        // 0..1 within a step: down right after the plant, up mid-step
     bob = -(IFR_W_STEP_AMP[cls] || 10) * Math.max(0, Math.cos(s * Math.PI)) * Math.min(1, sp / 300);
+  } else if (m.onGround && !m.boosting && Math.abs(turn) > 35) {
+    // turning on the spot (the legs dragged round by the torso limit, core leg_twist): it shifts its weight and plants a foot
+    // every ~40 degrees, so a standing turn is steps and not a turntable (11 Nov 2026, list item A)
+    d.phase += dt * Math.min(240, Math.abs(turn)) / 80;
+    const half = Math.floor(d.phase * 2);
+    if (half !== d.half) { d.half = half; rigFootfall(r, m, cls); }
+    bob = -(IFR_W_STEP_AMP[cls] || 10) * 0.6 * Math.max(0, Math.cos((d.phase * 2 - half) * Math.PI));
   } else d.half = Math.floor(d.phase * 2);
+  // body language at the start of a move: a crouch into the boost, a push off the ground at take-off (the spring brings it back)
+  const air = !m.onGround;
+  if (m.boosting && !d.wasBoost && !air) d.compV -= heavy ? 210 : 160;
+  if (air && d.wasAir === false && m.vel.z > 120) d.compV -= heavy ? 170 : 130;
+  d.wasBoost = !!m.boosting; d.wasAir = air;
   d.compV += (-d.comp * 90 - d.compV * 14) * dt; d.comp += d.compV * dt;   // landing compression: a damped spring
   d.fl *= Math.exp(-dt / 0.09); d.flRoll *= Math.exp(-dt / 0.09);
   return { pitch: d.lean + d.fl, roll: d.roll + d.flRoll, dz: bob + d.comp };
@@ -383,6 +395,8 @@ function rigFootfall(r, m, cls) {
     else if (dd < 1600) camKick(pe.slot, 0, -5 * strength * (1 - dd / 1600), 0);
   }
 }
+/** a quick boost throws the body: a roll into the dash (side +1 = left) and a dip; both decay by themselves */
+function rigDash(slot, side) { const r = rigs.get(slot); if (!r || !r.dyn) return; r.dyn.flRoll += -side * 7; r.dyn.compV -= 140; }
 function rigLand(slot, hard) { const r = rigs.get(slot); if (!r || !r.dyn) return; r.dyn.compV -= hard ? 520 : 220; }
 function rigFlinch(slot, impact, from) {
   const r = rigs.get(slot); if (!r || !r.dyn) return; const d = r.dyn;

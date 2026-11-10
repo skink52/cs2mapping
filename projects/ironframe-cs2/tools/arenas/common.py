@@ -350,7 +350,7 @@ def environment(ctx, A, dome_mat, sky_mat):
     ent('env_volumetric_fog_controller', (c[0] + 192, c[1], top), group=ctx.group, targetname='%s_vfog' % PREFIX, **vf)
     e0, e1 = env.get('exposure', (0.6, 1.8))
     ctx.clone('post_processing_volume', (c[0] + 256, c[1], top), master='1', minexposure=str(e0), maxexposure=str(e1), enableexposure='1', fadetime='1.0',
-              spawnflags='4097', postprocessing='postprocess/basic_linear_post.vpost')
+              spawnflags='4097', postprocessing=env.get('post', 'postprocess/basic_linear_post.vpost'))   # an arena's own look: tools/arenas/post.py
     # minimap corners
     (x0, y0, z0), (x1, y1, z1) = A['bounds']
     ent('cs_minimap_boundary', (x0, y0, z0), group=ctx.group); ent('cs_minimap_boundary', (x1, y1, z1), group=ctx.group)

@@ -24,6 +24,13 @@ if [ -z "$SPRAWL_SKIP_BUILD" ]; then step "vmap: generator + cache patch + preca
 step "deploy (content sync + vmap)"; sh tools/arenas/deploy_sprawl.sh
 step "compile what is out of date in the Sprawl addon, then check every model / particle the script can use"
 python -I tools/cache_check.py "$VMAP" --compile --also "materials/ifr/sprawl/*.vmat" --also "materials/ifr/sky/*sprawl*.vmat" --quiet --json out/cache_check_sprawl.json
+# what only the MAP uses (the hangar crew props that come with the imported hangar, the arena's own post-processing file): the map
+# compile does not build them (11 Nov 2026: "Failed loading resource models/ifr/crew/..._c"), and they are not script models, so
+# cache_check does not either
+step "map-only assets (crew, post-processing)"
+CONTENT_DIR="/c/source1/links/content_addons/$ADDON"
+EXTRA=$(ls "$CONTENT_DIR"/models/ifr/crew/*.vmdl "$CONTENT_DIR"/postprocess/ifr_sprawl.vpost 2>/dev/null || true)
+if [ -n "$EXTRA" ]; then python ../../tools/rcompile.py asset $EXTRA --log logs/sprawl_extra_rc.log | tail -n 3; fi
 if [ -n "$SPRAWL_NO_MAP" ]; then echo "SPRAWL_NO_MAP: assets clean, map not compiled"; exit 0; fi
 MAPCMD="python ../../tools/rcompile.py map \"$VMAP\" --preset full --novis --threads 11 --log logs/sprawl_rc.log"
 if [ -f "$VPK" ] && ! python -c "import sys; open(sys.argv[1], 'r+b').close()" "$VPK" 2>/dev/null; then

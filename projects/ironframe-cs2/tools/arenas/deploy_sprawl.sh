@@ -30,6 +30,8 @@ if [ ! -d "$CONTENT/postprocess" ]; then
   cp "$TPL/content/postprocess/xxx_mapname_xxx.vpost" "$CONTENT/postprocess/$MAP.vpost"
   cp -r "$TPL/content/soundevents" "$CONTENT/"
 fi
+# the arena's own bloom (tools/arenas/post.py), patched from the template's file at every deploy
+python -I tools/arenas/post.py "$TPL/content/postprocess/basic_linear_post.vpost" "$CONTENT/postprocess/ifr_sprawl.vpost" sprawl
 python -I tools/cache_check.py --addon $ADDON --sync-only      # materials, models, particles of out/addon, then out/sprawl/addon (which wins)
 if [ -z "$SPRAWL_NO_UI" ]; then   # SPRAWL_NO_UI=1: map + models only (the HUD layout belongs with the script build it was made for)
   for d in panorama sounds soundevents resource; do [ -d "out/addon/$d" ] && cp -r "out/addon/$d" "$CONTENT/"; done

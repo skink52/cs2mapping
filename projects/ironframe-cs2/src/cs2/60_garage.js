@@ -158,7 +158,20 @@ function garageRows(pe) {
     // FRAMES list, below the fold, where nobody found them (10 Nov 2026 evening). Array.sort is stable: everything else keeps its order.
     const fo = (p) => (p.kind === 'frame' ? GARAGE_CLASS_ORDER.indexOf(p.class) * 2 + (/^tripo_/.test(String(p.model || '')) ? 0 : 1) : 0);
     list.sort((a, b) => (tab.key === 'all' ? GARAGE_KIND_ORDER.indexOf(a.kind) - GARAGE_KIND_ORDER.indexOf(b.kind) : 0) || fo(a) - fo(b));
-    for (const p of list) rows.push(garagePartRow(pe, p));
+    const prows = list.map((p) => garagePartRow(pe, p));
+    // what a pilot can use now comes first (11 Nov 2026, "hard to jump into"): equipped and owned, then what can be bought (cheapest
+    // first), then what needs credits, then rank-locked parts by rank. Frames keep their class order. The cheapest part of each kind
+    // that can be bought is tagged NEXT BUY; an owned starter part with nothing else to say is tagged GOOD START.
+    const av = { equipped: 0, owned: 0, buy: 1, poor: 2, locked: 3 };
+    if (tab.key !== 'frm' && tab.key !== 'pnt') prows.sort((a, b) => (tab.key === 'all' ? GARAGE_KIND_ORDER.indexOf(a.part.kind) - GARAGE_KIND_ORDER.indexOf(b.part.kind) : 0)
+      || (a.part.kind === 'frame' ? 0 : (av[a.state] - av[b.state]) || (a.state === 'buy' || a.state === 'poor' ? a.part.cost - b.part.cost : a.state === 'locked' ? a.part.rank - b.part.rank : 0)));
+    const next = {};
+    for (const x of prows) {
+      const kd = x.part.kind;
+      if (x.state === 'buy' && kd !== 'paint' && !next[kd]) { next[kd] = 1; if (!x.r) x.r = 'NEXT BUY'; }
+      else if (x.state === 'owned' && !x.r && kd !== 'paint' && STARTER.owned.indexOf(x.part.id) >= 0) x.r = 'GOOD START';
+    }
+    for (const x of prows) rows.push(x);
   }
   g.rows = rows;
   if (g.row >= rows.length) g.row = Math.max(0, rows.length - 1);

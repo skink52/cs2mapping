@@ -15,6 +15,37 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**11 Nov 2026, ~08:30 (morning batch; skink52: "pick up the remaining tasks now"): both maps rebuilt with everything below (Dunes vpk 08:10, Sprawl vpk 08:35; cache_check clean on both; script + HUD current on both). All unseen in game.**
+- **A, the mech as one machine** (30_render.js `rigWeight`): a standing turn is steps now (weight shift + a planted foot with its
+  stomp every ~40 deg while the legs are dragged round), a crouch into a boost, a push off the ground at take-off, a roll into
+  a quick boost (`rigDash`, 40_fx.js `qb`). All on the existing landing spring, so they decay by themselves. Not done of A: the
+  waist seam check at 60 deg twist per frame (tools/review_frames.py) and a collar ring in mdl2cs2 if a seam shows: look in game first.
+- **C, jump-in, second half** (60_garage.js `garageRows`): part lists show what a pilot can use first (equipped / owned, then
+  buyable by price, then "need credits", then rank-locked by rank; frames keep their class order); the cheapest buyable part of
+  each kind is tagged `NEXT BUY`, an owned starter part `GOOD START`. The training wave was not built: the contextual first-time
+  hints (45_features.js HINTS: start, lock, stall, heat, stagger, overdrive, crate, mode goal ...) already cover that ground.
+- **F, post-processing**: Sprawl has its own bloom (`postprocess/ifr_sprawl.vpost`, made at deploy by tools/arenas/post.py from the
+  template's file: threshold 2.84 -> 2.1, strength 2.0 -> 2.3, widest blur slightly violet) so signs, screens, beams and thrusters
+  glow. Blind tuning: if it washes out, raise the threshold in post.py `LOOKS`. Dunes keeps the template look. Nav mesh for real
+  CS2 bots: not started.
+- **M5, hangar crew** (skink52: "pilot models in the hangar ... gmod pilot and worker models"): `tools/hangar_crew.py` runs three
+  converted GMod player models (Urban Assault Eclipse pilot and HMC worker, workshop 3772745299; mechanic, 734781319) through the
+  player-model converter, poses them (looking up at the machine, at ease, marshalling with both arms up, kneeling at a foot,
+  reading a slate) and writes six STATIC props `models/ifr/crew/*.vmdl` at 0.6 human scale with the models' own materials
+  (create/playermodels/gmod2cs2.py got the `GMOD_STATIC_DUMP` hook for it). `tools/patch_crew.py` puts three of them round every
+  garage bay (ring 215 u, on the camera's side, varied per bay): 36 props in vis group `ifr_crew_patch`, additive on Dunes' live
+  map (backup backups/mg_ironframe_dunes.20261111_080313.pre_crew.vmap); Sprawl gets them with the imported hangar. Previews:
+  preview/crew/crew_sheet.jpg, crew_sheet2.jpg. Third-party models: never in git (out/ and preview/ are ignored).
+  **Look in game**: nobody stands inside bay furniture or the turning mech (else change `RING` / `SPOTS` in patch_crew.py and
+  re-run it: the group is replaced), and the props are lit (probe-lit, `bakelighting 0`).
+- **Small items**: the arch legs in Sprawl's square are in the nav solids (sprawl.py `plaza`); the plugin answers deny codes 9 / 10
+  with its built-in texts when an older SlimeMG.json has only eight (Garage.cs `DenyBuiltin`); `tests/run.py --only ironframe` 3/3.
+- **S4** needs nothing new: the server's own `!stats` and `!top` already read the mech counters the map sends (docs/stats.md).
+- **B** left: bigger muzzle flashes (needs eyes on the game). **E, audio mix**: not touched; volumes cannot be judged offline.
+- Tests: `sh build/run_tests.sh` all pass, 64-player mock clean.
+- **Still open on the list**: M4 (Dunes detail, additive only), nav mesh, E, the waist seam check, hud_check's 6 "under CS2 chat"
+  notes at 1920, a real-server run of the S2 / S3 payloads.
+
 **11 Nov 2026, ~04:55 (04:01 continuation): list item 8 C, first half (quick starts) done, tested (all suites + 64-player mock), deployed
 to both addons 04:51. Unseen in game.**
 - A pilot's first garage of the session opens on the SORTIE tab with the cursor on the launch row (Space flies at once); under it

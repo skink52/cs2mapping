@@ -183,6 +183,11 @@ def highway(ctx, axis, at, cross=None):
 
 def plaza(ctx):
     h = PLAZA_H
+    # the broadcast arch's four legs (tools/arenas/sprawl_detail.py: solid bars out of the water at (+-700, +-700), leaning in): the AI's
+    # nav grid has to know them (11 Nov 2026: they were solid in the map only, so a bot could walk into one)
+    for sx, sy in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
+        cx, cy = 680.0 * sx, 680.0 * sy
+        SOLIDS.append((cx - 120, cy - 120, PLAZA_Z - 8, cx + 120, cy + 120, 460.0, False))
     # water sheet (depth 5) over the sunken plaza, a concrete dais in the middle for point B, broken pillars round the rim
     ctx.water((-h + 60, -h + 60, WATER_Z - 5, h - 60, h - 60, WATER_Z))
     ctx.box((-340, -340, PLAZA_Z - 10, 340, 340, 40.0), dict(top=M['concrete_floor'], side=M['concrete2'], bottom=M['concrete']))
@@ -267,7 +272,7 @@ def build(ctx):
                    ('Highway East-West', (0.0, 2400.0, HIGHWAY_Z + HW_T)), ('Highway North-South', (-2400.0, 0.0, HIGHWAY_Z + HW_T)),
                    ('West Avenue', (-4800.0, 0.0, 0.0)), ('East Avenue', (4800.0, 0.0, 0.0))],
         env=dict(sun_angles=(62.0, 300.0, 0.0), sun_color='110 125 170', sun_brightness=0.35, sky_color='40 36 60', sky_intensity=0.55, sun_fog=0.9,
-                 sky_tint='255 255 255', sky_brightness=1.0, exposure=(0.9, 2.6), ambient=(2600, '220 220 255'), sun_diameter=0.3,
+                 sky_tint='255 255 255', sky_brightness=1.0, exposure=(0.9, 2.6), post='postprocess/ifr_sprawl.vpost', ambient=(2600, '220 220 255'), sun_diameter=0.3,
                  fog=dict(cubemapfogstartdistance=300, cubemapfogenddistance=7000, cubemapfogheightstart=0.0, cubemapfogheightend=1800.0, cubemapfogmaxopacity=0.9, cubemapfogfalloffexponent=1.4),
                  vfog=dict(FogStrength=0.9, TintColor='120 110 150', NoiseStrength=0.7, DrawDistance=1400)),
         shell=(-HALF, -HALF, -1024.0, HALF, HALF, 6144.0), play=(-HALF, -HALF, -100.0, HALF, HALF, 5000.0), ground_probe_top=1200.0,
