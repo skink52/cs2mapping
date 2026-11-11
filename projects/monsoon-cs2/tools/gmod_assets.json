@@ -4,18 +4,18 @@
    "id": 1735519742,
    "title": "[LFS] Mi-8T Hip",
    "author": "merydian",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "license_note": "Models credited to the \"PR heli models\" reupload (Project Reality mod assets)",
+   "rip": "mod assets (Project Reality), reuploaded",
+   "status": "fetched, nothing taken",
    "items": []
   },
   {
    "id": 2165664559,
    "title": "[LFS] Vietnam Helicopter Pack #2",
    "author": "Gredwitch",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "license_note": "Author states he did not make the models, sounds or textures (Mi-8 looks like an Arma 2 / DayZ port, UH-1 a game port)",
+   "rip": "RIP: commercial game assets (Arma-family Mi-8, UH-1)",
+   "status": "converted",
    "items": [
     {
      "name": "hip",
@@ -91,9 +91,9 @@
    "id": 2125035846,
    "title": "[LFS] Vietnam Helicopter Pack",
    "author": "Gredwitch",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "license_note": "Author states he did not make the models, sounds or textures",
+   "rip": "RIP: commercial game assets",
+   "status": "converted",
    "items": [
     {
      "name": "hind",
@@ -117,9 +117,9 @@
    "id": 1671748726,
    "title": "[simfphys] Vietnam Vehicles Pack",
    "author": "Zackrovich",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "license_note": "Credits \"Black Ops Model Pack by Kali\" and \"Bad Company 2 Vietnam models by Moon\"",
+   "rip": "RIP: Call of Duty: Black Ops + Battlefield BC2 Vietnam",
+   "status": "converted",
    "items": [
     {
      "name": "m35",
@@ -136,10 +136,10 @@
   {
    "id": 3366544842,
    "title": "[LVS] M113 pack",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "Ryuunosuke",
+   "license_note": "LVS vehicle pack; model source not stated (War Thunder-style M113)",
+   "rip": "likely RIP (source game not stated)",
+   "status": "converted",
    "items": [
     {
      "name": "m113",
@@ -154,10 +154,10 @@
   {
    "id": 740797619,
    "title": "Bad Company 2 models: Vietnam pack",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "Moon.",
+   "license_note": "Ported from Battlefield: Bad Company 2 Vietnam (DICE / EA)",
+   "rip": "RIP: Battlefield Bad Company 2 Vietnam",
+   "status": "converted",
    "items": [
     {
      "name": "pbr",
@@ -257,28 +257,28 @@
   {
    "id": 3477505306,
    "title": "[LVS] - DShK 12,7MM",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "NetiPL",
+   "license_note": "LVS DShK; very high poly (134k) model, source not stated",
+   "rip": "unknown; not used",
+   "status": "fetched, nothing taken",
    "items": []
   },
   {
    "id": 942347951,
    "title": "Functional DSHK Machine Gun",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "Black Tea Za rebel1324",
+   "license_note": "Functional DShK entity; model source not stated",
+   "rip": "unknown; not used",
+   "status": "fetched, nothing taken",
    "items": []
   },
   {
    "id": 1978220591,
    "title": "Rising Storm Jungle Props",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "Hugh Tamlin (Piggo)",
+   "license_note": "Ported from Rising Storm (Tripwire) by Yukon/Piggo",
+   "rip": "RIP: Rising Storm / Red Orchestra 2",
+   "status": "converted",
    "items": [
     {
      "name": "rs_elephant_grass",
@@ -390,17 +390,18 @@
      "scale": 1.0,
      "yaw": 0,
      "role": "new",
-     "surface": "grass"
+     "surface": "grass",
+     "rejected": "leaf-litter cards, reads as paper scraps"
     }
    ]
   },
   {
    "id": 1920174934,
    "title": "Firebrand - Fortifications",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "Hugh Tamlin (Piggo)",
+   "license_note": "From the Source mod Firebrand (ESP), ported with credit",
+   "rip": "mod assets (Firebrand), credited port",
+   "status": "converted",
    "items": [
     {
      "name": "sandbag_fort",
@@ -423,34 +424,34 @@
   {
    "id": 422672588,
    "title": "Fortification Props Model Pack",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "Sal",
+   "license_note": "Day of Defeat: Source fortification props (Valve)",
+   "rip": "Valve assets (DoD:S); not used",
+   "status": "fetched, nothing taken",
    "items": []
   },
   {
    "id": 309931181,
    "title": "Blue_Skies's Vietnam War Weapons",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "LUKEY D FRESH",
+   "license_note": "SWEP pack; world models from mixed sources",
+   "rip": "unknown; not used",
+   "status": "fetched, nothing taken",
    "items": []
   },
   {
    "id": 1923196118,
    "title": "Vietnam War USAF Planes",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "huan.bb",
+   "license_note": "USAF plane props; source not stated (flight-sim style models)",
+   "rip": "likely RIP (source not stated)",
+   "status": "converted",
    "items": [
     {
      "name": "skyraider",
      "mdl": "models/stuffs/airplanes/a1j_skyraider.mdl",
      "length": 610,
-     "yaw": 0,
+     "yaw": -90,
      "role": "new"
     }
    ]
@@ -458,10 +459,10 @@
   {
    "id": 127682564,
    "title": "COD4 Vehicle props",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "Kally",
+   "license_note": "Ported from Call of Duty 4: Modern Warfare (Infinity Ward / Activision)",
+   "rip": "RIP: Call of Duty 4",
+   "status": "converted",
    "items": [
     {
      "name": "bm21",
@@ -501,9 +502,9 @@
    "id": 1391460275,
    "title": "Gredwitch's Emplacement Pack",
    "author": "Gredwitch",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "license_note": "Emplacement pack; models from many sources (Day of Infamy, Insurgency, Red Orchestra 2, War Thunder-style artillery), credits list on the Workshop page",
+   "rip": "RIP: mixed commercial games",
+   "status": "converted",
    "items": [
     {
      "name": "m101",
@@ -646,9 +647,9 @@
    "id": 933819302,
    "title": "Tent Army V2 by Neiremberg",
    "author": "Neiremberg",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "license_note": "Tent prop by Neiremberg; source model not stated",
+   "rip": "unknown (author-published prop)",
+   "status": "converted",
    "items": [
     {
      "name": "tent_gp",
@@ -663,37 +664,37 @@
   {
    "id": 2618422747,
    "title": "HD Oil Drum Remaster",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "frugbug",
+   "license_note": "Remastered HL2 oil drum",
+   "rip": "Valve-derived; not fetched",
+   "status": "candidate",
    "items": []
   },
   {
    "id": 1243825019,
    "title": "Military Cases PROPS",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "Kally",
+   "license_note": "Military cases; game port",
+   "rip": "likely RIP; not fetched",
+   "status": "candidate",
    "items": []
   },
   {
    "id": 3455190009,
    "title": "PRL MI-8 replaces combine dropship",
    "author": "GhostLynx",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "license_note": "Mi-8 from Workers & Resources: Soviet Republic (3Division), stated on the page",
+   "rip": "RIP: Workers & Resources; not fetched",
+   "status": "candidate",
    "items": []
   },
   {
    "id": 944539940,
    "title": "Wooden Tower [Props] By Neiremberg",
    "author": "Neiremberg",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "license_note": "Wooden defense / tower props by Neiremberg",
+   "rip": "unknown (author-published prop)",
+   "status": "converted",
    "items": [
     {
      "name": "wood_tower",
@@ -708,10 +709,10 @@
   {
    "id": 887209835,
    "title": "Helicopter Wreck Model",
-   "author": "?",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "author": "☣Quarantine☣",
+   "license_note": "Small burnt helicopter hulk prop; source not stated",
+   "rip": "unknown",
+   "status": "converted",
    "items": [
     {
      "name": "heli_wreck",
@@ -727,9 +728,356 @@
    "id": 939768444,
    "title": "Defensive Camp /Wooden Defense [Props] By Neiremberg",
    "author": "Neiremberg",
-   "license_note": "",
-   "rip": "",
-   "status": "fetched",
+   "license_note": "Palisade props by Neiremberg",
+   "rip": "unknown; not used",
+   "status": "fetched, nothing taken",
+   "items": []
+  },
+  {
+   "id": 3677941897,
+   "title": "Military Conflict: Vietnam - Boat and Emplacement Props",
+   "author": "GenericName",
+   "license_note": "Ported from Military Conflict: Vietnam (commercial Source-engine game)",
+   "rip": "RIP: Military Conflict: Vietnam",
+   "status": "converted",
+   "items": [
+    {
+     "name": "m114_howitzer",
+     "mdl": "models/props_vehicles/military_m114_howitzer.mdl",
+     "scale": 1.016,
+     "yaw": 0,
+     "role": "new (static 155 mm, battery dressing)",
+     "hulls": 2
+    },
+    {
+     "name": "m40_rr",
+     "mdl": "models/props_vehicles/m40_recoilless_rifle.mdl",
+     "scale": 1.016,
+     "yaw": 0,
+     "role": "new (106 mm recoilless rifle, bunker dressing)"
+    },
+    {
+     "name": "pbr_mcv",
+     "mdl": "models/props_vehicles/us_patrol_boat_river.mdl",
+     "scale": 1.016,
+     "yaw": 0,
+     "role": "pbr_wreck",
+     "hulls": 3
+    },
+    {
+     "name": "lssc_boat",
+     "mdl": "models/props_vehicles/light_seal_support_craft_dynamic.mdl",
+     "scale": 1.016,
+     "yaw": 0,
+     "role": "new (river boat at the bridge / village landing)",
+     "hulls": 2
+    }
+   ]
+  },
+  {
+   "id": 1432385076,
+   "title": "World of Tanks Asian Buildings Pack",
+   "author": "Professor Heavy",
+   "license_note": "Ported from World of Tanks (Wargaming); Chinese / Japanese buildings, low poly",
+   "rip": "RIP: World of Tanks; not used",
+   "status": "fetched, nothing taken",
+   "items": []
+  },
+  {
+   "id": 2152057074,
+   "title": "[LFS] MI-8",
+   "author": "DarkLord20172002",
+   "license_note": "332 MB Mi-8 pack (several variants); alternative T helicopter",
+   "rip": "likely RIP",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2946457417,
+   "title": "[LVS] MI-24 Pack",
+   "author": "DarkLord20172002",
+   "license_note": "Mi-24 variants",
+   "rip": "likely RIP",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 3225269297,
+   "title": "[LVS] UH-1H Huey",
+   "author": "Faris9696",
+   "license_note": "UH-1H slick, 87 MB",
+   "rip": "likely RIP",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 1891152773,
+   "title": "M113 APC [Simfphys Armed]",
+   "author": "Hank Hill",
+   "license_note": "M113 (ACAV), 173 MB",
+   "rip": "likely RIP",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2714325529,
+   "title": "[simfphys-gd] M113 & M163 Pack",
+   "author": "DarkLord20172002",
+   "license_note": "M113 / M163",
+   "rip": "likely RIP",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 207649675,
+   "title": "Black Ops M113 APC PROP",
+   "author": "Kally",
+   "license_note": "M113 prop from CoD: Black Ops",
+   "rip": "RIP: Call of Duty: Black Ops",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 3325498766,
+   "title": "[LVS] C-130 pack",
+   "author": "Ryuunosuke",
+   "license_note": "C-130 (closest to a C-123 hulk; none found)",
+   "rip": "likely RIP",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2939995792,
+   "title": "Spawnable Left 4 Dead Plane Crash",
+   "author": "ChimiChamo",
+   "license_note": "crashed airliner pieces",
+   "rip": "Valve assets (L4D)",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 3675338219,
+   "title": "Military Conflict: Vietnam - Ground Vehicle Props",
+   "author": "GenericName",
+   "license_note": "831 MB: M113, M35, M151, T-54, PT-76...",
+   "rip": "RIP: Military Conflict: Vietnam",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 3670689680,
+   "title": "Military Conflict: Vietnam - Air Vehicle Props",
+   "author": "GenericName",
+   "license_note": "546 MB: Hueys, Cobra, Chinook, Mi-8, crashed variants likely",
+   "rip": "RIP: Military Conflict: Vietnam",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 3687312379,
+   "title": "Military Conflict: Vietnam - Weapon Props",
+   "author": "GenericName",
+   "license_note": "479 MB: M16A1, M60, AK-47, RPD, RPG-7, M72 LAW world models",
+   "rip": "RIP: Military Conflict: Vietnam",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 3688404743,
+   "title": "Military Conflict: Vietnam - Character Models & Headwear",
+   "author": "GenericName",
+   "license_note": "1.4 GB: US / ARVN / NVA / VC soldiers",
+   "rip": "RIP: Military Conflict: Vietnam",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2563105503,
+   "title": "Yukon's Predator Ruins+Foliage Prop Pack",
+   "author": "Hugh Tamlin (Piggo)",
+   "license_note": "1.75 GB jungle ruins + foliage (stone ruin pieces; closest thing to temple parts found)",
+   "rip": "RIP (game port)",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 3509225954,
+   "title": "Yukon and Rusty's Call of Duty Military Props",
+   "author": "Yukon",
+   "license_note": "813 MB military base props (tents, towers, radios, crates)",
+   "rip": "RIP: Call of Duty",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 3001644625,
+   "title": "[Props] Military Models Part 1",
+   "author": "DarkLord20172002",
+   "license_note": "319 MB base props",
+   "rip": "likely RIP",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 3003120061,
+   "title": "[Props] Military Models Part 2",
+   "author": "DarkLord20172002",
+   "license_note": "690 MB base props",
+   "rip": "likely RIP",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2999806686,
+   "title": "Squad Deployables (props)",
+   "author": "robert",
+   "license_note": "sandbags, HESCO, bunkers, 131 MB",
+   "rip": "RIP: Squad",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 724953514,
+   "title": "Verdun Props",
+   "author": "The Devils Own",
+   "license_note": "sandbags, trench props",
+   "rip": "RIP: Verdun",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2843645033,
+   "title": "BM-21 [Gredwich Emplacement Base]",
+   "author": "spaceengieer",
+   "license_note": "BM-21 with separate launcher parts",
+   "rip": "likely RIP",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2471952707,
+   "title": "Call of Duty World At War Artillery Pack (Props)",
+   "author": "Stefano (BackToGetCommissions)",
+   "license_note": "WW2 artillery props",
+   "rip": "RIP: Call of Duty: World at War",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2926430936,
+   "title": "[ARC9] Rising Storm 2: Vietnam Weapons (WIP)",
+   "author": "DeadSnake",
+   "license_note": "M16A1, M60, AK, RPD, RPG-7, M72 view + world models, 284 MB",
+   "rip": "RIP: Rising Storm 2",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2377172653,
+   "title": "[TFA] Rising Storm 2: Vietnam Rifles 1",
+   "author": "Commzard",
+   "license_note": "M16A1, AKM, Type 56, SKS",
+   "rip": "RIP: Rising Storm 2",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2798978081,
+   "title": "[TFA][AT] Rising Storm 2 RPG-7",
+   "author": "NeoLin",
+   "license_note": "RPG-7",
+   "rip": "RIP: Rising Storm 2",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2607952352,
+   "title": "[TFA][AT] M72 LAW",
+   "author": "Haer",
+   "license_note": "M72 LAW",
+   "rip": "unknown",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 205952723,
+   "title": "M60 Machine Gun PROP",
+   "author": "Kally",
+   "license_note": "M60 prop",
+   "rip": "RIP (game port)",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 108432322,
+   "title": "Black Ops M16A1/M16A2 Pack",
+   "author": "Kally",
+   "license_note": "M16A1 props",
+   "rip": "RIP: Call of Duty: Black Ops",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 146299217,
+   "title": "Vietnam era US Soldiers",
+   "author": "TomeKK 2Shae",
+   "license_note": "US soldier player models / ragdolls",
+   "rip": "unknown (kitbash)",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 1915494812,
+   "title": "[VJ] Military SNPCs - US Vietnam Soldiers (NPCs & PMs)",
+   "author": "Mendes",
+   "license_note": "US Vietnam soldiers, PMs included",
+   "rip": "likely RIP",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2118087970,
+   "title": "Rising Storm 2 Vietnam GI Playermodels",
+   "author": "Fritz",
+   "license_note": "US GI player models, 666 MB",
+   "rip": "RIP: Rising Storm 2",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 2385459724,
+   "title": "Rising Storm 2 Vietcong Playermodel Pack",
+   "author": "Sleeping Sootman",
+   "license_note": "VC player models, 443 MB",
+   "rip": "RIP: Rising Storm 2",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 189078975,
+   "title": "COD BO NVA and Vietcong NPCs and Playermodels",
+   "author": "Professor Heavy",
+   "license_note": "NVA / VC player models",
+   "rip": "RIP: Call of Duty: Black Ops",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 129903045,
+   "title": "Vietnam Player Models",
+   "author": "Blue_Skies",
+   "license_note": "US / NVA player models, 8.7 MB",
+   "rip": "unknown",
+   "status": "candidate",
+   "items": []
+  },
+  {
+   "id": 1628727750,
+   "title": "Men of War: Vietnam Playermodels",
+   "author": "Archer",
+   "license_note": "US / NVA / VC player models",
+   "rip": "RIP: Men of War: Vietnam",
+   "status": "candidate",
    "items": []
   }
  ]

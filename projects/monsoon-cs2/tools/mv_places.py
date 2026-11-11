@@ -279,7 +279,8 @@ def tunnel_plan():
     portal_idx = [int(np.argmin(np.hypot(Pn[:, 0] - p[0], Pn[:, 1] - p[1]))) for p in L.TUNNEL_PORTALS]
     dp = _dijkstra(n, adj, [0.0 if i in portal_idx else 1e18 for i in range(n)])
     g = np.min([L.height(Pn[:, 0] + ox, Pn[:, 1] + oy) for ox, oy in ((0, 0), (40, 0), (-40, 0), (0, 40), (0, -40))], axis=0)
-    target = g - np.minimum(150.0, 8.0 + TUN_K * dp)
+    cap = np.where(np.array(gal) == len(L.TUNNEL_GALLERIES) - 1, 240.0, 150.0)      # the stub runs on down so the chamber keeps its roof
+    target = g - np.minimum(cap, 8.0 + TUN_K * dp)
     target = np.where(np.array(ext), g - 6.0, target)
     f = _dijkstra(n, adj, list(target), k=TUN_K)
     ch = np.array(L.TUNNEL_CHAMBER); f_ch = float(f[int(np.argmin(np.hypot(Pn[:, 0] - ch[0], Pn[:, 1] - ch[1])))])
@@ -453,6 +454,7 @@ def firebase():
         for t in range(-180, 401, 90): W.keep(*local(p[0], p[1], fb['pad_yaw'], -float(t), 0.0), 118.0, name='pad')      # the parked Apache, nose to tail
     for p in fb['guns']: W.keep(p[0], p[1], fb['pit_r'] - 12.0, name='pit')
     for p in fb['spawns']: W.keep(p[0], p[1], 26.0, name='spawn')
+    W.keep(fb['fuel'][0], fb['fuel'][1], 185.0, name='fuel'); W.keep(fb['tower'][0], fb['tower'][1], 135.0, name='tower')
     rx, ry = fb['rack']
     W.prop('arms_rack_ct', rx, ry, None, 90.0); W.sites['kit']['ct'] = (rx, ry, gz(rx, ry))
     # ---- bunkers on the wall ring, an M2 nest beside three of them
@@ -514,10 +516,12 @@ def firebase():
         W.bag_arc(g[0], g[1], fb['pit_r'], ea + 17.0, ea + 343.0, layers=2, seed_rng=rng)
         yaw = math.degrees(math.atan2(-g[1], -g[0]))           # laid on the middle of the valley
         W.sites['guns']['ct'].append((g[0], g[1], gz(*g), yaw))
-        for rr, da in [(66.0, s * a) for a in range(26, 171, 16) for s in (1, -1)] + [(150.0, s * a) for a in range(0, 181, 20) for s in (1, -1)]:
+        for rr, da in [(rr_, s * a) for rr_ in (66.0, 120.0, 180.0, 240.0) for a in range(26 if rr_ < 100 else 0, 181, 14) for s in (1, -1)]:
             rx, ry = L.pol(g, fb['pit_r'] + rr, ea + da)       # the rack station: the first clear spot outside the ring, nearest the entrance
             if W.prop('ammo_rack_105', rx, ry, None, ea + da + 90.0, check=True, pad=6.0) is not None: break
-        else: raise RuntimeError('no room for the ammo rack of gun %d' % (k + 1))
+        else:
+            print('WARNING no clear spot for the ammo rack of gun %d: placed at the entrance' % (k + 1)); da = 26.0
+            rx, ry = L.pol(g, fb['pit_r'] + 66.0, ea + da); W.prop('ammo_rack_105', rx, ry, None, ea + da + 90.0)
         W.sites['racks']['ct'].append((rx, ry, gz(rx, ry)))
         W.prop('ammo_rack_105', *L.pol(g, fb['pit_r'] + 66.0, ea - da), None, ea - da + 90.0, check=True, pad=6.0)
         for j in range(4):
@@ -838,15 +842,17 @@ def temple():
             if W.prop('naga_balustrade', c[0] + ex + ux * t, c[1] + ey + uy * t, zc, math.degrees(math.atan2(uy, ux)) + (0.0 if t > 0 else 180.0),
                       tag='platform', check=True) is not None: nb += 1
         for s in (-1, 1):                                                     # lions flanking the head of each outer stair, looking out
-            W.prop('guardian_statue', c[0] + ex * 0.84 + ux * s * 116.0, c[1] + ey * 0.84 + uy * s * 116.0, zc,
+            W.prop('guardian_statue', c[0] + ex * 0.84 + ux * s * 100.0, c[1] + ey * 0.84 + uy * s * 100.0, zc,
                    math.degrees(math.atan2(ey, ex)), tag='platform', check=True, pad=2.0)
     # ruin dressing: one fallen lintel in the west court, rubble piles at the foot of the platform outside
     W.prop('lintel_fallen', c[0] - 272.0, c[1] + 170.0, zc, 90.0 + rng.uniform(-8, 8), tag='platform', check=True, pad=2.0)
     for a in (20.0, 70.0, 110.0, 160.0, 200.0, 250.0, 290.0, 340.0):
         x, y = L.pol(c, 500.0 + rng.uniform(0, 40), a + rng.uniform(-8, 8))
+        if float(L.slope(x, y)) > 22.0 or gz(x, y) < L.WATER_Z + 30.0: continue
         W.prop(('fallen_blocks', 'lintel_fallen', 'fallen_blocks')[int(a) % 3], x, y, None, rng.uniform(0, 360), fit='min', check=True, pad=4.0)
     for _ in range(26):
         a = rng.uniform(0, 360); r = rng.uniform(500.0, 620.0); x, y = L.pol(c, r, a)
+        if gz(x, y) < L.WATER_Z + 20.0: continue
         m = (S.RUBBLE + S.ROCKS + S.ROCKS)[rng.randint(len(S.RUBBLE) + 2 * len(S.ROCKS))]
         lo, hi = W.B(m); sc = rng.uniform(1.0, 1.8)
         W.prop(None, x, y, gz(x, y) - lo[2] * sc * 0.55, rng.uniform(0, 360), stock=m, scale=sc, check=True, pad=4.0, tag='rock')
@@ -1053,10 +1059,10 @@ def jungle():
     m_ = near_play(X, Y) & L.in_play(X, Y)
     X, Y = X[m_], Y[m_]
     dens = np.maximum(L.jungle(X, Y), 0.25 * (1.0 - L.clearing(X, Y))); sl = L.slope(X, Y); Z = L.height(X, Y)
-    ok = (rng.uniform(size=X.shape) < dens * 0.85) & (sl < 34.0) & (Z > L.WATER_Z + 14.0) & ~L.in_paddies(X, Y)
+    ok = (rng.uniform(size=X.shape) < dens * 1.1) & (sl < 34.0) & (Z > L.WATER_Z + 14.0) & ~L.in_paddies(X, Y)
     under = S.TROPICAL_L * 3 + S.TROPICAL_M * 3 + S.PALMS_SMALL + S.YUCCA + S.TARO
     idx = np.nonzero(ok)[0]
-    if len(idx) > 1700: idx = rng.choice(idx, 1700, replace=False)
+    if len(idx) > 2100: idx = rng.choice(idx, 2100, replace=False)
     for i in idx:
         m = under[rng.randint(len(under))]
         if not W.free(float(X[i]), float(Y[i]), 10.0, float(Z[i])): continue
@@ -1070,7 +1076,7 @@ def jungle():
     m_ = ((rd < 420.0) | (nf < 950.0)) & L.in_play(X, Y)
     X, Y = X[m_], Y[m_]
     dens = L.jungle(X, Y) + 0.25 * (1.0 - L.clearing(X, Y)); sl = L.slope(X, Y); Z = L.height(X, Y)
-    ok = (rng.uniform(size=X.shape) < dens * 0.8) & (sl < 36.0) & (Z > L.WATER_Z + 10.0) & ~L.in_paddies(X, Y)
+    ok = (rng.uniform(size=X.shape) < dens * 1.1) & (sl < 36.0) & (Z > L.WATER_Z + 10.0) & ~L.in_paddies(X, Y)
     small = S.FERNS * 2 + S.TROPICAL_S + S.WEEDS
     idx = np.nonzero(ok)[0]
     if len(idx) > 1500: idx = rng.choice(idx, 1500, replace=False)
@@ -1079,7 +1085,7 @@ def jungle():
         if not W.free(float(X[i]), float(Y[i]), 8.0, float(Z[i])): continue
         W.prop(None, float(X[i]), float(Y[i]), float(Z[i]) - 1.5, rng.uniform(0, 360), stock=m, solid='0', reg=False, scale=rng.uniform(1.0, 1.7)); cnt['fern'] += 1
     # ---- elephant grass fields on the floodplain and terraces (cover from the air)
-    X, Y = grid(84.0, jit=0.48)
+    X, Y = grid(66.0, jit=0.48)
     m_ = L.in_play(X, Y) & (L.water_dist(X, Y) < 2900.0)
     X, Y = X[m_], Y[m_]
     g = L.grass(X, Y); sl = L.slope(X, Y); Z = L.height(X, Y); rd, hw = L.road_dist(X, Y)

@@ -144,3 +144,60 @@ Details, regenerate commands and the in-game checklist: [docs/HUD.md](docs/HUD.m
   left (that is the chat box).
 - layout.py changed under this work (bases re-laid out): the radar, board and slides were re-run at the end; re-run them after any later change.
 - Not done: nothing compiled with resourcecompiler; the horizon and heading-tape constructions have no in-game precedent in this repo.
+
+## World agent report (11 Nov)
+
+Offline only (generated, checked with `check_mesh.py`, `check_world.py`, top-down plots, the mock): nothing compiled or seen in CS2.
+
+**Files**: `tools/mv_places.py` (stage 4), `tools/mv_entities.py` (stage 5), `tools/mv_stock.py` (stock model table, measured bounds,
+fallbacks), `tools/check_world.py` (validation + `--plot out.png [x0,y0,x1,y1]`), edits in `layout.py`, `mv_terrain.py` (32-u tiles round
+the tunnel portals and the farm), `make_map.py` (entities.json / layout.json now go to `out/`). Build 7-8 min (terrain 105 s, places
+~150 s: `layout.height` per prop is the cost). `python check_world.py ../out/addon/maps/mg_monsoon.vmap` -> clean.
+
+**Layout changes (needed, real prop sizes)**: CT plateau 760 -> 1200 (foot 2250), T plateau 700 -> 1000 (foot 1800); `firebase()` and
+`camp()` laid out again (pads, pits, bunkers, FDC, tower, fuel, hooches, spawns; gate where road 0 crosses the wall); camp tunnel
+portal moved to the east edge (the old one sat on rocket pit 1), galleries + chamber follow; flag A moved 50 u onto a dike junction;
+flag B stands on the bridge deck (`BRIDGE_DECK_Z` 56, `flag_z()`), its spawns at both bridge heads; temple DShK moved to the east side
+of the courtyard; `FLATS` (farm terrace); craters and gully 0 kept off the plateaus. `export()` adds `terrain` (128-u height grid),
+`mountinfo` / `mounts` (from `out/mounts.json`, written by mv_entities), `tunnels`, `bridge`.
+
+**What exists** (5743 prop_static, 123 models; 1620 optional props skipped by the placer):
+- Firebase: 3-layer sandbag perimeter (57 u) with a player clip above, open at the gate and two sally gaps (blast wall inside each),
+  6 dug-in bunkers (terrain cut out under their floors), 3 M2 nests on the wall, 3 howitzer pits (2-layer rings r 232, racks + shells
+  outside the entrance), FDC bunker + plot table, ammo point, 3 PSP pads (scale 0.72), TOC tent + 2 masts, tower with an invisible
+  ladder volume, quad-50 ring, fuel bladder + drums, culvert guard post, signs, latrines, water trailer.
+- T camp: 3 Hip stands under scaled camo nets, 4 rocket pits and 2 DShK pits in swept earth berms (world geometry), FDC hut + table,
+  5 hooches, ammo stacks, 3 cook fires (particles), propaganda boards, punji patches beside the approaches.
+- Tunnels: one closed 16-u grid mesh (1060 cells), floor ~150 under the ground, 25-degree ramps in open cuts at the 3 portals
+  (110 terrain cells removed, a 6-u step at each mouth), chamber with caches, arches where the roof starts, 13 unshadowed lamps,
+  probe volume, Low hint.
+- Flags: A dike junction + farm terrace (3 hooches, pens, well, cart, fence), sunken sampan in the oxbow; B two truss spans, pier,
+  concrete abutments + 200-u earth ramps (world geometry, 12 degrees), checkpoint north, French bunker + neutral M2 south; C school,
+  6 hooches, well, shrine, stalls, fences, palms, fires; D two stone terraces + 6 stairs (world geometry), tower, gate, DShK, nagas,
+  lions, rubble, banyans; E C-123 fuselage / wing / engine (fire, smoke), 69 rubber trees in rows, pallets, parachutes.
+- Waterfall (water_wall sheets, 8 noise-deformed boulders with rock/moss paint, foam particles, clip), marsh (330 reeds, 30 dead
+  trees, PBR, sampan), sniper nests on the 3 landable karst tops, clip cylinders round all 8 towers, wrecks / logs along the roads,
+  crater stones. Jungle: 977 banyans, 50 palms, 8 bamboo, 1310 understorey, 807 ferns, 1338 elephant grass, 178 rice clumps.
+- Weather (fxkit): 7 rain particle systems (flags + bases, `mv_rain_N`), `mv_lightning` timer + faint env_fade.
+- Entities: every CONTRACT name (401 checked) + `mv_flag_snd_<a..e>`; 8 mounts (3 M2 + quad-50 CT, 2 DShK T, bridge M2 and temple
+  DShK neutral); 15 WALKABLESEED seeds, 85 NONAV boxes (steep, karst, deep river except fords at the bridge / A / marsh, outside the band).
+- create/ tools used: primitives (box, wedge, stairs, sweep, cylinder, arch), meshedit (subdivide, noise), fxkit (weather_tiles,
+  lightning). Not used: gen_buildings (the buildings are props), gen_world, gen_kits, matkit (stock materials sufficed), gen_light
+  (it writes a whole sun / sky preset; the combined probe volumes already bake cubemaps), no painted detail heightmap.
+
+**Known weak spots / for the Hammer pass**
+- guard_tower: its hull platform top is z 300 under a roof hull at 350 (50 u headroom: a player cannot get in), and the platform
+  sandbag rows stick out radially (bounds +-166). The ladder volume reaches 314. Needs a props fix (platform hull 260..266, rows turned).
+- Bunkers are solid hull boxes: nobody enters; the M2s are on tripods in nests beside them. khmer_tower chamber / C-123 interior /
+  French bunker rely on the props' hulls.
+- truck_wreck is 135 wide on a 160 deck, so it stands beside the south ramp, not on the bridge. No bicycles (stock bike is loose
+  parts). No path behind the waterfall, no gallery through the temple knoll, no roof access in the village, village has 6 of 9 hooches
+  (road and spawn keep-outs), camp has no sampans.
+- Double-sided sheets to look at in Hammer: flag_pole flags, camo_net (scaled 1.6 x 1.6 x 1.6), parachute_silk, gp_tent, vine_curtain.
+- Props on slopes use the lowest ground under their footprint (uphill side buried); 893 props are listed as deliberately off the
+  ground (stacked bags, platform / deck / karst / tunnel props, sunk trees) in `out/world_sites.json`.
+- Valley-floor woodland is thin by design of `layout.jungle()` (a 30 % fill was added); only trunks are in the placer, crowns overlap.
+- Unverified in engine: func_nav_markup NONAV boxes (key `navProperty_NavGen NONAV`), the ladder material volume, rain particle
+  cost, lightning env_fade (alpha 26, also seen in the lobby and tunnels), terrain holes under bunkers.
+- `mv_cache_*` holds 4 models (wrecks, rocket, shell): add uniform model paths to `out/cache_models.json` (a list) when they exist.
+- `layout.mountinfo` is an object keyed "1".."8" (the script indexes it by mount number); the same entries are the list `mounts`.

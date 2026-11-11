@@ -6,7 +6,7 @@ usage (always with -I: the downloads are untrusted data and nothing in them is e
   python -I tools/gmod_assets.py convert [--only name,name] [--force] catalog items -> out/addon/models/mv/ext/<name>/ (+ materials/models/mv/ext/<name>/)
   python -I tools/gmod_assets.py view    [--only name,name]             out/gmod/view/<name>.png: the written model from 4 sides (front-left, rear-right, side, top)
   python -I tools/gmod_assets.py report                         out/gmod_models.json from the per-model reports
-  python -I tools/gmod_assets.py prune   [--gma]                delete extracted files no catalog item uses (--gma: the archives too)
+  python -I tools/gmod_assets.py prune   [--gma]                delete extracts of addons with no items, unused model files, rejected outputs (--gma: archives too)
 
 Catalog (tools/gmod_assets.json): {"addons": [{id, title, author, license_note, rip, status, roots: [other ids whose materials it needs],
   items: [{name, mdl (path inside the addon; several sharing a skeleton joined by commas), role (the procedural prop it replaces, or "new"),
@@ -92,6 +92,7 @@ def cmd_fetch(only):
         if only and wid not in only: continue
         if ad.get('status') == 'candidate' and not only: continue          # listed for the record, not downloaded
         if os.path.isdir(xdir(wid)): log('  %s: extracted already' % wid); continue
+        if not ad.get('items') and not only: continue                       # nothing converted from it: fetched only when named with --only
         arch = download(wid)
         if not arch: log('  %s: DOWNLOAD FAILED' % wid); continue
         try: extract(wid, arch)
@@ -415,26 +416,40 @@ def cmd_view(only):
 
 # ---------------------------------------------------------------- prune
 def cmd_prune(gma_too):
-    """keeps the catalog items' .mdl/.vvd/.vtx/.phy files; everything else extracted goes (the converted textures live in out/addon)"""
+    """frees disk: addons with no catalog items lose their whole extract; the others keep their materials (a re-convert still works) and
+    the model files catalog items name, nothing else. Lua read as text, SteamCMD's folder and rejected items' outputs go too.
+    --gma: also any archive still lying there (fetch moves on without them once x/ exists)"""
     freed = 0
     cat = catalog()
+    for ad in cat['addons']:
+        for it in ad.get('items', []):
+            if not it.get('rejected'): continue
+            for d in (os.path.join(ADDON, SUB, it['name']), os.path.join(ADDON, MATSUB, it['name'])):
+                if os.path.isdir(d): freed += du(d); shutil.rmtree(d, ignore_errors=True)
     for d in sorted(glob.glob(os.path.join(GM, '*'))):
         wid = os.path.basename(d)
         if not wid.isdigit(): continue
         ad = next((a for a in cat['addons'] if str(a['id']) == wid), None)
-        keep = set()
-        for it in (ad or {}).get('items', []):
-            for m in it['mdl'].split(','): keep.add(os.path.splitext(m.lower())[0])
+        items = [it for it in (ad or {}).get('items', []) if not it.get('rejected')]
         x = os.path.join(d, 'x')
-        for r, _, fs in os.walk(x):
-            for f in fs:
-                p = os.path.join(r, f); rel = os.path.relpath(p, x).replace('\\', '/').lower()
-                stem = re.sub(r'\.(dx80|dx90|sw)$', '', os.path.splitext(rel)[0])
-                if stem in keep: continue
-                freed += os.path.getsize(p); os.remove(p)
+        lt = os.path.join(d, 'lua_txt')
+        if os.path.isdir(lt): freed += du(lt); shutil.rmtree(lt, ignore_errors=True)
+        if not items:
+            if os.path.isdir(x): freed += du(x); shutil.rmtree(x, ignore_errors=True)
+        else:
+            keep = set()
+            for it in items:
+                for m in it['mdl'].split(',') + [m for pt in it.get('parts', []) for m in pt['mdl'].split(',')]:
+                    keep.add(os.path.splitext(m.lower())[0])
+            for r, _, fs in os.walk(os.path.join(x, 'models')):
+                for f in fs:
+                    pth = os.path.join(r, f); rel = os.path.relpath(pth, x).replace('\\', '/').lower()
+                    stem = re.sub(r'\.(dx80|dx90|sw)$', '', os.path.splitext(rel)[0])
+                    if stem in keep: continue
+                    freed += os.path.getsize(pth); os.remove(pth)
         if gma_too:
             for f in glob.glob(os.path.join(d, '*.gma')) + glob.glob(os.path.join(d, '*.bin')): freed += os.path.getsize(f); os.remove(f)
-    shutil.rmtree(DL, ignore_errors=True)
+    if os.path.isdir(DL): shutil.rmtree(DL, ignore_errors=True)
     log('prune: %.0f MB freed; out/gmod is now %.0f MB' % (freed / 1e6, du(GM) / 1e6))
 
 
