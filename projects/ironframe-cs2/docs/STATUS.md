@@ -15,6 +15,13 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**11 Nov 2026, 11:52: Dunes on the local test server (C:\cs2server, port 27015).** `python -I tools/server_copy.py copy mg_ironframe_dunes`
+copies the map .vpk and the addon's compiled files under the server's game\csgo (5 390 files, 1.36 GB; manifest
+logs/server_copy_mg_ironframe_dunes.txt; `remove` takes exactly those off again). Re-run `copy` after every deploy, or the server keeps
+the old script and HUD. Seen in the server console after `changelevel`: the script in server mode, **three CS2 bots joined** (so the nav
+mesh does bring bots on Dunes), no script errors. Expected noise: world_visibility.vvis_c missing (no-vis build), lightmap textures
+(a dedicated server draws nothing).
+
 **11 Nov 2026, afternoon (skink52: "The !help menu has a lot of text get cut off. Still no kill credits in game for killing bots"): all 18 suites pass; mock: 3 AI mech kills = 3 real kills, bots alive after, no team kill penalty; script + HUD compiled in both addons 11:04 / 11:07 (no map rebuild needed). Note: a Sprawl deploy with SPRAWL_NO_MAP=1 does not compile the script and HUD: run sh tools/compile_ui.sh mg_ironframe_sprawl after it. Unseen in game.**
 - **!help**: it was the controls card plus four long sentences paged through the message line (Labels, 3.5 s a page while the next
   waited; the Label font's in-game width has never been seen, and a row wrapped to the last pixel is cut at both ends if CS2 draws
