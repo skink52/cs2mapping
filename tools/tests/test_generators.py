@@ -103,6 +103,7 @@ vmapgen.finish(d, OUT, group='t')
 
 
 class Written(unittest.TestCase):
+    @unittest.skipUnless(__import__('fgdcat').fgd_paths(), 'CS2 not installed (the map build reads its FGDs)')
     def test_map(self):
         root = tempfile.mkdtemp(prefix='cs2mcp_gen_')
         try:

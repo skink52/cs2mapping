@@ -171,6 +171,9 @@ configuration file, is in [docs/reference/engineering-notes.md](../reference/eng
 
 ### Troubleshooting
 
+Start with `python cs2mapping.py doctor` in the clone: it lists what is missing, each path and where its value came from, and whether the
+PC copy of the tools matches the clone.
+
 | Symptom | Cause and fix |
 |---|---|
 | The importer fails straight away | `game\bin\win64\vpk.signatures` is back after a Steam update. `run_import.bat` renames it each run; run the import through it. |

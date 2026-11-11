@@ -61,6 +61,7 @@ vmapgen.finish(d, OUT, group='t')
 
 
 class Lightning(unittest.TestCase):
+    @unittest.skipUnless(__import__('fgdcat').fgd_paths(), 'CS2 not installed (the map build reads its FGDs)')
     def test_flash_strength(self):
         tmp = tempfile.mkdtemp(prefix='cs2mcp_sprawl_')
         out = F.make_map(os.path.join(tmp, 'fx.vmap'), LIGHTNING)

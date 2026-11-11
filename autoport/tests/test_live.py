@@ -245,7 +245,8 @@ class GameTests(unittest.TestCase):
         m = livetest.marks_harvest(lines)[0]
         self.assertEqual((m['eye'], m['map'], m['note']), ([1.0, 2.0, 66.0], 'mg_test', 'door here does not open'))
         self.fake.binds['F9'] = '+jump'
-        self.assertIn('bound to', livetest.marks_install(self.g, 'F9'))
+        with mock.patch.object(livetest, 'marks_cfg_path', return_value=os.path.join(TMP, 'autoport_mark.cfg')):   # never the real install's cfg
+            self.assertIn('bound to', livetest.marks_install(self.g, 'F9'))
 
     def test_script_reload(self):
         self.fake.map = 'mg_test'

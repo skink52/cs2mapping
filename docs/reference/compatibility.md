@@ -32,6 +32,9 @@ The GitHub Actions workflow ([`.github/workflows/ci.yml`](../../.github/workflow
 | Unit tests (Linux) | Unit tested, informational | `tools/tests`; a failure does not block, the tools are Windows tools |
 | Map scripts | Simulated | every `ports/*/scripts/*.js` in the mock engine, the TTT script's suite, the mg_trenchwarfare type-check |
 
+CI has no CS2 install, so the tests that read CS2's own entity definitions (FGD files) are skipped there: 10 of the 125 `tools` tests
+and 1 of the 69 `autoport` tests. They run in full on a PC with CS2 (`python cs2mapping.py test`).
+
 Nothing in CI is Compiled, Hammer verified, In-game verified or Playtested. Those levels come from the PC and from people, and are
 recorded per map in `ports/<addon>/README.md` and per project in its status file.
 

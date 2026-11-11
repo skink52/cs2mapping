@@ -79,7 +79,13 @@ Decisions, with reasons:
   autoport's watchdog adds `124` hung and `125` over the time limit. New tools should use the same.
 - **Tests** are `unittest`, run with `python -m unittest discover -s <area>/tests`. No test framework dependency.
 
-### Proposed: one `cs2mapping` command
+### `cs2mapping.py` (started 11 Nov 2026)
+
+`python cs2mapping.py doctor [--json]`, `check` and `test` exist at the repo root: `doctor` reports Python, Node, the packages of each
+requirements group, every path and whether it came from an environment variable or the default, Valve's tools and content, and whether
+the PC copy of `tools/` and `autoport/` matches the clone. It reads only. The rest of the table below is still a proposal.
+
+### Proposed: the rest of one `cs2mapping` command
 
 Worth doing as a thin front door, not as a rewrite: a single `cs2mapping.py` at the repo root that only dispatches to the existing
 scripts, so every current command line keeps working.
@@ -115,7 +121,7 @@ Highest value first.
 
 1. **Run CI once on GitHub and fix what only shows there** (the Linux job, Node 22 against scripts last run on a newer Node).
 2. **Record the CS2 build** in each port README when a map is built, and in the compatibility table.
-3. **`cs2mapping doctor`** and the settings file (above), starting with the Python side.
+3. **The settings file** (above), starting with the Python side; `doctor` already reports where each path comes from.
 4. **Backups for the remaining in-place writers** ([file-safety.md](file-safety.md#what-still-writes-without-a-backup-or-a-preview)):
    `matnames`, `vmdlfix`, `gibfix`, and a temp-file write in `vmapedit.Map.save`.
 5. **`level` and `manual_check_required` fields** in the JSON that `stage_c`, `rcompile` and `mapsanity` write.

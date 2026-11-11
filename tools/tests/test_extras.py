@@ -68,6 +68,7 @@ vmapgen.finish(d, OUT, group='t')
 
 
 class LightPhysics(unittest.TestCase):
+    @unittest.skipUnless(__import__('fgdcat').fgd_paths(), 'CS2 not installed (the map build reads its FGDs)')
     def test_entities(self):
         root = tempfile.mkdtemp(prefix='cs2mcp_lp_')
         try:

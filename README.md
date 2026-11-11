@@ -48,6 +48,7 @@ Everything skink52 and Claude have worked out about **making Counter-Strike 2 ma
 | [docs/reference/compatibility.md](docs/reference/compatibility.md) | What "tested" means here (unit tested, simulated, compiled, in-game verified, playtested), what CI covers, the versions last run with |
 | [docs/reference/file-safety.md](docs/reference/file-safety.md) | What each tool overwrites or deletes, its backups, dry runs, and how to roll back |
 | [docs/reference/engineering-notes.md](docs/reference/engineering-notes.md) | Path settings and environment variables, dependencies, and the proposals for one settings file, one command and releases |
+| [`cs2mapping.py`](cs2mapping.py) | `python cs2mapping.py doctor`: is this PC set up (Python, packages, paths, Valve's tools, PC copy against the clone)? `check` and `test` run what CI runs |
 | [`requirements/`](requirements) / [`ci/`](ci/README.md) | pip lists per area (porting, creation, models) with the versions last run with; the repo checks CI runs |
 | [CHANGELOG.md](CHANGELOG.md) | Dated history, newest first |
 

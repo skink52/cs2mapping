@@ -88,6 +88,7 @@ vmapgen.finish(d, OUT, group='t')
 
 
 class Effects(Tmp):
+    @unittest.skipUnless(__import__('fgdcat').fgd_paths(), 'CS2 not installed (the map build reads its FGDs)')
     def test_fx_entities(self):
         out = F.make_map(os.path.join(self.tmp, 'fx.vmap'), FX_BUILD)
         import vmapedit as V, collections

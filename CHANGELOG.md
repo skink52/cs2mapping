@@ -31,6 +31,8 @@ From an outside review of the repo. Unit tested and simulated only; nothing here
   `prep.py`, `stage_c.py`, `mapcheck.py`.
 - **[scripts]** `build_maps.ps1` skips queue lines whose addon or map name is a path. **[create]** `gmod_publish.py` checks the pack slug
   before deleting its folder. `requirements/`: pip lists per area with the versions last run with.
+- **[repo]** `cs2mapping.py doctor | check | test` at the repo root: a read-only setup report (programs, packages, paths and where each
+  came from, Valve's tools, PC copy against the clone) and the CI checks and unit tests in one command. Disk survey records git-ignored.
 
 ## 2026-11-10: IRONFRAME third playtest (Sprawl)
 
