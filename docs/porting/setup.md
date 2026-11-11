@@ -46,7 +46,8 @@ C:\source1\
         tools\                 this repo's tools/ (vmap_refs.py loads dmx.py and kv2.py from here); README.md = the tool index
         cs2_port_pipeline.md   docs/porting/pipeline.md
     pak01_dir.vpk              CS:GO's VPK directory (staged into the workspace for the missing-material pass)
-    gameinfo.txt, sound\, expressions\   CS:GO files from the original importer setup (left in place)
+    gameinfo.txt, expressions\   CS:GO files from the original importer setup (left in place)
+    sound\                     junction to <CS2>\csgo\sound (10 Nov 2026: was a byte-identical copy; rmdir only, never delete through it)
     tools\                     mappacker\, crowbar\, source2converter\, disk_report\
     archive\                   old manual import kit, screenshots, Blender/Crowbar leftovers, old vpks (unused by any pipeline)
 C:\source2\                   original addons (creation)
@@ -65,6 +66,31 @@ C:\source2\                   original addons (creation)
     game\csgo\import_scripts\      Valve's importer + post_import_cleanup.py, vmap_refs.py, modelsfromrefs.py
     game\bin\win64\                resourcecompiler.exe, cs_mdl_import.exe (and vpk.signatures, see below)
 ```
+
+### Offloaded to E: (10 Nov 2026, C: was full)
+
+These folders now live in `E:\offload\` (a slow 5400-rpm HDD) with a **junction left at the old path**, so every script and doc path
+still works. Never delete through a junction: remove the link with `rmdir <old path>` (not `rd /s`, `Remove-Item -Recurse` or an
+Explorer delete), then move the folder back to undo. Survey and reasons: `docs/reference/disk_survey_2026-11-10.md`.
+
+| Old path (junction) | Now on E: |
+|---|---|
+| `C:\source1\playermodels\extract` (earlier) | `E:\offload\playermodels_extract` |
+| `C:\source1\playermodels\basegame`, `preview` | `E:\offload\playermodels_basegame`, `playermodels_preview` |
+| `C:\source1\hats\extract` | `E:\offload\hats_extract` |
+| `C:\source1\gmod_ports` | `E:\offload\gmod_ports` |
+| `C:\source1\bspsrc-windows\mg maps\ported`, `bsp's` | `E:\offload\bspsrc_mg_maps_ported`, `bspsrc_bsps` |
+| `<CS2>\content\csgo_addons\prefabs+backups` | `E:\offload\prefabs+backups` (new .vmap backups land on E:) |
+| `C:\source2\archive` | `E:\offload\source2_archive` |
+| `C:\VTF\VTFInput` | `E:\offload\VTFInput` |
+| `C:\cs2server` (slime-mg test server) | `E:\offload\cs2server` (slower server starts and test runs) |
+| `%USERPROFILE%\Videos` | `E:\offload\Videos` |
+
+Plain moves (no junction): `E:\offload\ironframe_backups\` (IRONFRAME .vmap backups of 9 Nov) and `E:\offload\source1_sound_extra\`
+(skink52's Pokemon music zip). Deleted the same day: the SteamCMD GMod downloads of catalog items that are already extracted
+(`fetch.py` downloads again; move `appworkshop_4000.acf` aside first), the SteamCMD CS2 Workshop downloads, crash dumps older than a
+week, and 393 content-addon backups older than 8 Nov (list: `docs/reference/disk_cleanup_content_backups_2026-11-10.txt`; the newest
+map backup in each addon was kept).
 
 ## Claude Code on the PC (one folder)
 

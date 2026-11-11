@@ -16,6 +16,7 @@
 - 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `spawnKill` switches on (60 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 55 s in. Needs a build.
 - 2026-11-03: **music** (`coursemusic.py`): the map had none. Eight songs shuffled from round start, the next when one ends: ba_jail_skylight's four (skink52's favourites) and Nightcall (Kavinsky), Fate Don't Know You (Desi Valentine), jb_lightsout's disco3, jb_seaside's disco3. Each is named after the map it came from (`sounds/port_music/`), since several maps call different songs disco1-3.
 - 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 4 and moved 0 faces that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
+- 2026-11-08: **music heard everywhere without console spam** (skink52: "like hellmatch"): the 8 `port_music.*` events had been changed by hand (4 Nov) to plain `csgo_music`, which spams "CSosOperatorConvar … Unable to acquire convar value: snd_musicvolume_rush…". Now Hellmatch's form: `csgo_music` + `volume_convar = "snd_menumusic_volume"` + `vsnd_files` (follows the Main Menu Music slider; silent if it is at 0). `soundevents_addon.vsndevts` compiled; backup `.bak_hellmusic_20261108`. Needs a VPK/Workshop update; not checked in game.
 
 ## What the cleanup did
 
