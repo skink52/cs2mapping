@@ -19,8 +19,11 @@ python mv_hud.py ../out/addon                      # art + xml + css + out/hud.j
 `mv_hud.py` exits 1 if the layout breaks the HUD contract, names a picture that does not exist, or fails `hud_check.py`.
 The gate by hand: `python hud_check.py --addon ../out/addon --name mg_monsoon --states ../out/hud_states.json --out ../out/hud/hud`.
 Then `node tools/build_script.mjs && node test/mock.mjs 32 300` (the mock reads the xml / css and `out/hud.json`).
+Since `out/hud.json` lists the additions, the plain mock run fails: `test/mock.mjs` throws on any addition id unless `hudnew=1`
+(its HUDNEW flag ignores the baked `HUDDATA.ids`), the script's HUD gives up after 20 throws, and the objective / flight checks fail.
+`node test/mock.mjs 32 300 hudnew=1` passes (12 Nov 2026). The mock needs HUDNEW set when the baked ids already hold every addition.
 
-Outputs: `out/addon/panorama/{layout,styles}/custom_game/mg_monsoon.*`, `panorama/images/custom_game/mv/*.png` (100 pictures),
+Outputs: `out/addon/panorama/{layout,styles}/custom_game/mg_monsoon.*`, `panorama/images/custom_game/mv/*.png` (304 pictures, most of them bar / tape / horizon frames),
 `panorama/images/overheadmaps/mg_monsoon_radar_psd.png + .vtex`, `panorama/images/map_icons/...`, `sounds/mv/*.wav`,
 `soundevents/soundevents_addon.vsndevts`, `maps/mg_monsoon_3dskybox.vmap`, `out/game/resource/overviews/mg_monsoon.txt` (game side),
 and the reports `out/hud.json`, `out/hud_states.json`, `out/hud/*.png`, `out/sounds_report.json`, `out/radar_region.json`,
@@ -28,45 +31,57 @@ and the reports `out/hud.json`, `out/hud_states.json`, `out/hud/*.png`, `out/sou
 
 ## HUD
 
-103 panel ids, exactly the table in [SCRIPT.md](SCRIPT.md#hud-contract) (ids, classes, swap groups, step counts); static art has no
-id. `out/hud.json` carries `board_steps` 160, `board_ext` 6400 (what the script reads), the step counts of every swap group and the id list.
+107 panel ids: the table in [SCRIPT.md](SCRIPT.md#hud-contract) plus its "HUD additions (pass 1)" table (`mv_feed_1..3`, `mv_gun_ammo`);
+`mv_hud.py` reads both and fails on a missing id or a class with no css rule. Static art has no id. `out/hud.json` carries `board_steps`
+160, `board_ext` 6400 (what the script reads), the step counts of every swap group and the id list `ids`: the script's `hudHas()`
+switches the feed and the belt read-out on because the additions are in it.
 Look: dark olive glass plates with a cream keyline and corner ticks (the same plates as the loading slides), Stratum2 for live
 text, baked Bahnschrift stencil lettering for titles, green phosphor for instruments, amber for the player's own things,
 sand = PAVN (T), blue = US (CT).
 
 | Panel | Where (1080 high) | What |
 |---|---|---|
-| `mv_obj` | top centre, y 72, 560 wide (inside W/2 +-280, under CS2's team counter) | tickets + bars, five flag badges, clock. Each `mv_flag_x` is a transparent 560 x 204 panel holding its badge in the bar and a **capture ring** under the bar that shows only with `here` (letter, 10-step arc in the capturing team's colour, flag name, CONTESTED tag) |
+| `mv_obj` | top centre, y 72, 560 wide (inside W/2 +-280, under CS2's team counter) | tickets + bars, five flag badges, the clock on its own tab under the bar (y 142-166, clear of the badges and the `here` caret). Each `mv_flag_x` is a transparent 560 x 224 panel holding its badge in the bar and a **capture ring** under the tab (y 176) that shows only with `here` (letter, 10-step arc in the capturing team's colour, flag name, CONTESTED tag) |
+| `mv_feed_1..3` | right 24, y 198 / 226 / 254, 460 x 26 (under CS2's kill feed, which ends ~y 190) | event feed, newest on top: right-aligned 18 px Label on a dark band that fades out to the left, a 4 px tone tick at the right end; `feed_good` green, `feed_bad` red-orange, none = cream |
 | `mv_brief` | centre, y 216, 640 x 372 | briefing card: role, 3 lines, deploy point strip, countdown line |
-| `mv_info` | right, y 236, 380 x 330 | role / help card |
+| `mv_info` | right 20, y 290, 360 x 330 | role / help card, under the feed; 360 wide so it clears the briefing card on 4:3 (1440: brief 400-1040, card 1060-1420) |
 | `mv_banner` | centre, y 300 | title + subtitle between two amber rules |
-| `mv_hold` / `mv_prompt` / `mv_toast` | centre, y 562 / 612 / 680 | hold-USE bar (21 steps), `[E]` prompt, toast (SPLASH and the like) |
-| `mv_status` | left, y 336 (under CS2's radar, clear of the chat) | role + 3 lines. SCRIPT.md's hint says bottom left; that is CS2's chat box, so it sits under the radar as mg_trenchwarfare's did |
-| `mv_gun` | right, y 888 | gun name, 10-segment heat bar, OVERHEAT overlay with `hot` |
-| `mv_fly` | full screen container | heading tape top centre (y 190), info line y 758, dash bottom centre (716 x 200 at y 792: airframe bar, RTB lamp, rocket counter, airspeed, horizon, radar altimeter, vertical speed), crew list right (y 600). `seat_gunner` / `seat_rider` hide airspeed, vertical speed and the rocket counter |
-| `mv_board` | centre + 70 px, y 120, 900 x 772 | 640 px map (4 px per reticle step), state lamps STANDBY / LAYING / LAID / DISABLED, gun, shell, range, grid, legend, controls, footer with next action, mission and stats |
+| `mv_hold` / `mv_prompt` / `mv_toast` | centre, y 556 / 612 / 680 | hold-USE bar (21 steps; ends y 598, above the 4:3 chat box), `[E]` prompt, toast (SPLASH and the like) |
+| `mv_status` | left, y 336, 360 x 136 (under CS2's radar, clear of the chat) | role (20 px, fits "INFANTRY  /  MACHINE GUNNER") + 3 lines. SCRIPT.md's hint says bottom left; that is CS2's chat box, so it sits under the radar as mg_trenchwarfare's did |
+| `mv_gun` | right, y 880, 300 x 104 | gun name, belt read-out `mv_gun_ammo` ("BELT 87" / "RELOADING 3 s") under it, 10-segment heat bar; `hot` shows a red wash and an OVERHEAT tag beside the belt line (drawn under the text) |
+| `mv_fly` | full screen container | heading tape top centre (y 190), info line y 758, dash bottom centre (716 x 200 at y 792: airframe bar, RTB lamp, rocket counter, airspeed, horizon, radar altimeter, vertical speed), crew list right (y 640). `seat_gunner` / `seat_rider` hide airspeed, vertical speed and the rocket counter; their wells then show a riveted NOT FITTED cover plate instead of an empty hole |
+| `mv_board` | centre + 70 px, y 196, 900 x 772 | under the objective bar and its clock tab, and below CS2's kill feed at every width. 640 px map (4 px per reticle step), state lamps STANDBY / LAYING / LAID / DISABLED, gun, shell, range, grid, legend, controls, footer with next action, mission and stats |
 
-How the moving parts work (all class-driven transforms or picture swaps, no class-driven sizes or margins):
-- **Bars** (tickets, hold, heat, airframe): a fixed clipping track with a full-length fill picture inside, slid by `translatex`.
-- **Flag capture fill**: the same, vertically, inside the badge; owner and capturing team swap pictures.
+How the moving parts work (picture swaps and rotations only, no class-driven sizes or margins). Since HUD pass 2 nothing relies on
+`overflow: clip`, a child wider than its parent or `scale3d` except the board map's marker clip: every stepped read-out is one picture
+per step, so the panel never leaves its box and `hud_check.py` draws exactly what Panorama should.
+- **Bars** (tickets `tk_t_N` / `tk_ct_N`, hold `hold_N`, heat `heat_N`, airframe `hp_N`): one picture per step, the full bar cut to N / steps
+  of its width (`frames()`); T's ticket bar is lit from the left, CT's from the right, so both drain towards the flags. Unset = full bar (empty for hold / heat).
+- **Flag capture fill**: `flagcap_<t|ct>_N`, the badge filling from the bottom, picked by `.Flag.capt_x.capN`; owner ring by `own_x`.
 - **Needles**: `.Rot.a0..a71` = `rotateZ(N x 5deg)`. Airspeed 0 at the top, 100 km/h at 300 degrees (CONFIG.HUDCFG.ASI_MAX_KMH); altimeter one
   turn per 100 m; the vertical-speed needle picture points to 9 o'clock at `a0`, so clockwise = climb and `a45..a71` = sinking.
-- **Horizon**: square clipping window > `mv_ai_roll` (rotates, no clip) > `mv_ai_pitch` (`translatey`, 6.8 px per step = 2 degrees,
-  `pit10` level, `pit20` = nose up = horizon down) > the card at a fixed `scale3d(2.6)`. The bezel picture carries the dash's own
-  pixels outside its ring, so the square window's corners never show.
-- **Heading tape**: a 1164 px tape in a 300 px flow-right clipping window, `h0..h71` = `translatex(-N x 12px)`; heading 0 under the caret at `h0`.
+- **Horizon**: `mv_ai_roll` (`rotateZ`) holds `mv_ai_pitch`, which swaps 21 round pictures `ai_0..ai_20` (horizon 6.8 px per step = 2 degrees,
+  `pit10` level, `pit20` = nose up = horizon down; pitch ladder every 5 degrees, numbered at 10 / 20), and the bank pointer. The pictures are
+  discs, transparent outside the window, so the roll never shows a corner; the bezel (fixed bank scale and aircraft symbol) sits on top.
+- **Heading tape**: `mv_hdg` is the 300 x 36 window itself and swaps 72 window pictures `tape_0..tape_71` (heading N x 5 under the caret).
 - **Board markers**: `.MCol.x0..x159` / `.MSq.y0..y159`, every marker a 64 px square with its art centred; `mv_cep` is a child of
   `mv_locky` and swaps one of nine ring pictures (radius (N + 1) x 3 px = 60 world units each). `sel` swaps the mission / flash picture.
 - Blinks (`bleed`, `contest`, RTB, OVERHEAT) are one quoted `@keyframes "mvblink"`; the HUD reads the same without it.
 
 States drawn by the gate (`out/hud_states.json` -> `out/hud/hud_<state>.png`, also at 2333 and 1440 wide): `lobby`, `infantry`,
-`capture`, `contested`, `fly_pilot`, `fly_gunner`, `mounted_hot`, `board`. `hud_check.py` does not model clipping, rotation or
-scale: in its pictures bar fills and the tape hang out of their windows and needles do not turn. `out/hud/fly_preview*.png`
-(drawn by `mv_hud.py`) is the instrument cluster as Panorama should show it.
+`capture`, `contested`, `fly_pilot`, `fly_gunner`, `mounted_hot`, `board` (the feed and belt lines appear in `lobby`, `infantry`,
+`fly_gunner`, `mounted_hot`). `hud_check.py` does not rotate, so needles and the horizon's roll stand still in its pictures;
+`out/hud/fly_preview.png`, `fly_preview_2.png` (pilot) and `fly_preview_gunner.png` (drawn by `mv_hud.py`) are the instrument cluster
+with the rotations applied. Pass 1's pictures are kept in `out/hud/before/` for comparison.
 
-Not in the HUD because the contract has no id for it: a gunner ammo count (heat only), and a per-team board picture.
-`render_board.py` writes `board_t.png` / `board_ct.png` (enemy base at the top) but the layout uses the north-up `board.png`,
-because the contract positions markers north-up for both teams. Using them needs a class on `mv_board` and mirrored steps in the script.
+Checked at 1920 and 2333 (the gate, clean) and at 1440 (4:3, `--check-widths 1440,1920,2333`): at 4:3 only CS2's chat box *while someone
+types* (x 0-576, y 600-1010) is left, under the prompt, the toast, the dash and the board: the centre column there is x 576-1010 (434 px),
+narrower than those panels, so they stay where they are. Also looked at over a bright-sky / dark-jungle picture (plates and the feed band
+keep every text readable).
+
+Not in the HUD: a per-team board picture. `render_board.py` writes `board_t.png` / `board_ct.png` (enemy base at the top) but the layout
+uses the north-up `board.png`, because the contract positions markers north-up for both teams. Using them needs a class on `mv_board`
+and mirrored steps in the script.
 
 ## Sounds (`tools/sounds.py`)
 
@@ -107,8 +122,8 @@ The loops are built from noise that is periodic over the file and whole numbers 
 ## To look at in CS2 first
 
 1. Compile the layout and css with `resourcecompiler` and check for "compiled" (a failed layout is ignored silently).
-2. The horizon (rotation + `scale3d` + nested no-clip panels inside a clipping window) and the heading tape (a flow-right child
-   wider than its parent): the two constructions with no earlier in-game example in this repo.
-3. `overflow: clip` on the bar tracks and the board map; `@keyframes "mvblink"`.
+2. The horizon's roll: a rotated panel whose picture is a disc (mg_trenchwarfare's dials rotate the same way); `padding-right` on the
+   feed Labels (`hud_check.py` ignores padding, so in its pictures the text touches the tone tick).
+3. `overflow: clip` on the board map (markers at the edge); `@keyframes "mvblink"`.
 4. Banyans at 1/16 scale in the skybox (no vista LOD exists for them: watch the frame time looking at the valley sides).
 5. Sound levels against stock weapons, and whether the flat stingers are too loud for players far from the action.

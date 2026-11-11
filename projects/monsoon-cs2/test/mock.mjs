@@ -32,7 +32,7 @@ const argv = process.argv.slice(2), posArgs = argv.filter((a) => !a.includes('='
 const N = +(posArgs[0] || 32), SECONDS = +(posArgs[1] || 600);
 const SCEN = opt.scenario || '', BAL = opt.mode === 'balance', JSONONLY = opt.json === '1';
 const LOWPOP = N < 16 && opt.humans === undefined;
-const HUDNEW = opt.hudnew === '1' || SCEN === 'edge';
+let HUDNEW = opt.hudnew === '1' || SCEN === 'edge';     // also turned on below when out/hud.json already lists every addition
 const FEATURES = !BAL && !SCEN && N >= 16;
 let seed = +(opt.seed || 7); Math.random = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
 const L = JSON.parse(fs.readFileSync(path.join(root, 'out/layout.json'), 'utf8'));
@@ -68,6 +68,10 @@ const contract = new Map();
   read(/HUD-ADDITIONS-BEGIN[^\n]*\n([\s\S]*?)<!-- HUD-ADDITIONS-END/, true);
 }
 const ADDED_IDS = [...contract].filter(([, c]) => c.added).map(([id]) => id);
+try {                                            // the generated HUD already carries the additions: the script uses them, so the mock must accept them
+  const hj = JSON.parse(fs.readFileSync(new URL('../out/hud.json', import.meta.url), 'utf8'));
+  if (ADDED_IDS.length && Array.isArray(hj.ids) && ADDED_IDS.every((id) => hj.ids.includes(id))) HUDNEW = true;
+} catch (e) { /* no out/hud.json yet */ }
 const xmlPath = path.join(root, 'out/addon/panorama/layout/custom_game/mg_monsoon.xml'), cssPath = path.join(root, 'out/addon/panorama/styles/custom_game/mg_monsoon.css');
 const xmlIds = fs.existsSync(xmlPath) ? new Set([...fs.readFileSync(xmlPath, 'utf8').matchAll(/id="([^"]+)"/g)].map((m) => m[1])) : null;
 const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : null;
