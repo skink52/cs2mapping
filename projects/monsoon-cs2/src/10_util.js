@@ -130,19 +130,25 @@ function keys(pawn) {               // one key per call: masked calls are unconf
   return k;
 }
 function eyeOf(pawn) { try { const e = pawn.GetEyeAngles(); if (e && Number.isFinite(e.pitch) && Number.isFinite(e.yaw)) return e; } catch (err) {} return { pitch: 0, yaw: 0, roll: 0 }; }
+// what is dealing script damage right now ("" = CS2's own weapons): OnPlayerKill books the kill under it (stats.killsBy)
+let dmgSrc = "";
 // a real kill from the script (killfeed, score): let through the damage guard by p.scripted
-function scriptKill(victim, attackerPawn) {
+function scriptKill(victim, attackerPawn, src) {
   const vp = players.get(slotOfPawn(victim));
+  const was = dmgSrc; dmgSrc = src || was || "crash";
   if (vp) vp.scripted = true;
   try {
     victim.TakeDamage({ damage: 1000, damageTypes: CSDamageTypes.BLAST, damageFlags: CSDamageFlags.FORCE_DEATH | CSDamageFlags.IGNORE_ARMOR,
                         attacker: attackerPawn || undefined, inflictor: attackerPawn || undefined });
   } catch (e) {}
   if (vp) vp.scripted = false;
+  dmgSrc = was;
 }
-function hurt(victim, damage, attackerPawn, types) {
+function hurt(victim, damage, attackerPawn, types, src) {
   if (!(damage >= 1)) return;
+  const was = dmgSrc; if (src) dmgSrc = src;
   try { victim.TakeDamage({ damage, damageTypes: types || CSDamageTypes.BULLET, attacker: attackerPawn || undefined, inflictor: attackerPawn || undefined }); } catch (e) {}
+  dmgSrc = was;
 }
 
 // ------------------------------------------------------------------ HUD (per-player cache, only changes are sent)
@@ -155,45 +161,75 @@ function hud() {
   if (!hudEnt) entCache.delete(CONFIG.HUD);
   return hudEnt;
 }
+// ids added after the HUD was generated ("HUD additions" in docs/SCRIPT.md) are only used when out/hud.json lists them
+const HUD_IDS = Array.isArray(HUDDATA.ids) ? new Set(HUDDATA.ids) : null;
+function hudHas(id) { return !!HUD_IDS && HUD_IDS.has(id); }
+let hudCalls = 0;
+// the cache is one record per panel id ({ t: text, c: { class: on }, s: { group: class } }): a lookup builds no key string, which was
+// the largest single cost of the script at 64 players (a no-op hClass ran about a thousand times a tick)
+function hudRec(p, id) { let r = p.hud.get(id); if (!r) { r = { t: undefined, c: Object.create(null), s: Object.create(null) }; p.hud.set(id, r); } return r; }
 function hText(p, id, text) {
+  if (p.bot) return;
   text = String(text === undefined || text === null ? "" : text);
-  const k = id + "$";
-  if (p.hud.get(k) === text) return;
+  const r = hudRec(p, id);
+  if (r.t === text) return;
   const h = hud(); if (!h) return;
-  try { h.SetDialogVariableStringForPlayer(p.slot, id, "v", text); } catch (e) { hudFails++; return; }
-  p.hud.set(k, text);
+  try { h.SetDialogVariableStringForPlayer(p.slot, id, "v", text); hudCalls++; } catch (e) { hudFails++; return; }
+  r.t = text;
 }
 function hClass(p, id, cls, on) {
+  if (p.bot) return;
   on = !!on;
-  const k = id + "#" + cls;
-  const old = p.hud.get(k);
+  const r = hudRec(p, id), old = r.c[cls];
   if (old === on || (old === undefined && !on)) return;
   const h = hud(); if (!h) return;
-  try { h.SetHasClassForPlayer(p.slot, id, cls, on); } catch (e) { hudFails++; return; }
-  p.hud.set(k, on);
+  try { h.SetHasClassForPlayer(p.slot, id, cls, on); hudCalls++; } catch (e) { hudFails++; return; }
+  r.c[cls] = on;
 }
 function hSwap(p, id, group, cls) {   // one class per group (marker positions, needles)
-  const k = id + "@" + group;
-  const old = p.hud.get(k);
+  if (p.bot) return;
+  const r = hudRec(p, id), old = r.s[group];
   if (old === cls) return;
   const h = hud(); if (!h) return;
   try {
-    if (old) h.SetHasClassForPlayer(p.slot, id, old, false);
-    if (cls) h.SetHasClassForPlayer(p.slot, id, cls, true);
+    if (old) { h.SetHasClassForPlayer(p.slot, id, old, false); hudCalls++; }
+    if (cls) { h.SetHasClassForPlayer(p.slot, id, cls, true); hudCalls++; }
   } catch (e) { hudFails++; return; }
-  p.hud.set(k, cls);
+  r.s[group] = cls;
 }
-function hudReset(p) { const h = hud(); if (h) { try { h.ResetForPlayer(p.slot); } catch (e) {} } p.hud.clear(); }
-function toast(p, text, secs) { if (!p) return; hText(p, "mv_toast_text", text); p.toastUntil = TNOW + (secs || 3); }
+function hudReset(p) { const h = hud(); if (h && !p.bot) { try { h.ResetForPlayer(p.slot); } catch (e) {} } p.hud.clear(); }
+function toast(p, text, secs) { if (!p || p.bot) return; hText(p, "mv_toast_text", text); p.toastUntil = TNOW + (secs || 3); }
+// the event feed (flag taken, helicopter down, gun silenced): the newest line on top, each for FEED.TIME seconds.
+// team = who reads it (0 = everyone); tone "good" / "bad" / "" as that reader sees it. Without the feed panels (HUD additions,
+// docs/SCRIPT.md) the lines marked fallback go to the toast instead and the rest are dropped.
+const feedLines = [];
+function feed(team, text, tone, fallback) {
+  stats.feed++;
+  if (!hudHas("mv_feed_1")) { if (fallback) { for (const p of players.values()) if (!p.bot && (!team || p.team === team)) toast(p, text, 4); } return; }
+  feedLines.unshift({ team, text, tone: tone || "", until: TNOW + CONFIG.FEED.TIME });
+  if (feedLines.length > 12) feedLines.length = 12;
+}
+function drawFeed(p) {
+  if (!hudHas("mv_feed_1")) return;
+  let n = 0;
+  for (const f of feedLines) {
+    if (n >= CONFIG.FEED.LINES) break;
+    if (TNOW >= f.until || (f.team && f.team !== p.team)) continue;
+    n++;
+    hText(p, "mv_feed_" + n, f.text); hSwap(p, "mv_feed_" + n, "tone", f.tone ? "feed_" + f.tone : ""); hClass(p, "mv_feed_" + n, "show", true);
+  }
+  for (n++; n <= CONFIG.FEED.LINES; n++) hClass(p, "mv_feed_" + n, "show", false);
+}
 function toastSlot(slot, text, secs) { const p = players.get(slot); if (p) toast(p, text, secs); }
 function toastTeam(team, text, secs) { for (const p of players.values()) if (p.team === team && !p.bot) toast(p, text, secs); }
 function info(p, title, lines, foot, secs) {
+  if (p.bot) return;
   hText(p, "mv_info_title", title);
   for (let k = 0; k < 5; k++) hText(p, "mv_info_l" + (k + 1), lines[k] || "");
   hText(p, "mv_info_foot", foot || "");
   p.infoUntil = TNOW + (secs || 10);
 }
-function banner(p, title, sub, secs) { hText(p, "mv_banner_title", title); hText(p, "mv_banner_sub", sub); p.bannerUntil = TNOW + (secs || 5); }
+function banner(p, title, sub, secs) { if (p.bot) return; hText(p, "mv_banner_title", title); hText(p, "mv_banner_sub", sub); p.bannerUntil = TNOW + (secs || 5); }
 
 // ------------------------------------------------------------------ world queries
 let hitIgnore = [];                              // every helicopter, rotor and wreck prop: world traces look through them
@@ -258,18 +294,21 @@ function tickTracers(dt) {
 }
 // smoke screens (WP shells): hitscan and observation are blocked through them
 const smokes = [];
-function smokeBlocks(a, b) {
-  if (!smokes.length) return false;
-  const d = vsub(b, a), L = vlen(d); if (L < 1) return false;
+function smokeBlocks(a, b) { return smokeAt(a, b) >= 0; }
+// distance from a at which the line a -> b enters a smoke screen, or -1
+function smokeAt(a, b) {
+  if (!smokes.length) return -1;
+  const d = vsub(b, a), L = vlen(d); if (L < 1) return -1;
   const dir = vscale(d, 1 / L);
-  for (const s of smokes) if (raySphere(a, dir, L, s.pos, CONFIG.ARTY.SMOKE_RADIUS) >= 0) return true;
-  return false;
+  let best = -1;
+  for (const s of smokes) { const t = raySphere(a, dir, L, s.pos, CONFIG.ARTY.SMOKE_RADIUS); if (t >= 0 && (best < 0 || t < best)) best = t; }
+  return best;
 }
 function tickSmokes() {
   for (let i = smokes.length - 1; i >= 0; i--) if (TNOW >= smokes[i].until) { fire("mv_smoke_fx_" + smokes[i].i, "Stop"); smokes.splice(i, 1); }
 }
-// one hitscan round: world / player trace, helicopter spheres, smoke. Returns the distance it travelled.
-function hitscan(start, dir, range, shooterPawn, team, dmgInf, dmgHeli, ignore) {
+// one hitscan round: world / player trace, helicopter spheres, smoke. Returns the distance it travelled. src = the stats source name.
+function hitscan(start, dir, range, shooterPawn, team, dmgInf, dmgHeli, ignore, src) {
   const end = vadd(start, dir, range);
   let tr; try { tr = Instance.TraceLine({ start, end, ignoreEntity: ignore, traceHitboxes: true }); } catch (e) { tr = undefined; }
   let d = tr && tr.didHit ? tr.fraction * range : range;
@@ -279,13 +318,14 @@ function hitscan(start, dir, range, shooterPawn, team, dmgInf, dmgHeli, ignore) 
     const hd = raySphere(start, dir, d, heliCentre(h), CONFIG.HELI.HIT_RADIUS);
     if (hd >= 0 && hd < d) { d = hd; heli = h; }
   }
-  if (smokeBlocks(start, vadd(start, dir, d))) return Math.min(d, 600);
-  if (heli) { damageHeli(heli, dmgHeli, slotOfPawn(shooterPawn)); return d; }
+  const sd = smokeAt(start, vadd(start, dir, d));
+  if (sd >= 0) { stats.smokeBlocked++; return Math.max(60, sd + 40); }       // the round is lost in the smoke: nothing behind it is hit
+  if (heli) { damageHeli(heli, dmgHeli, slotOfPawn(shooterPawn), src); return d; }
   if (tr && tr.didHit && tr.hitEntity) {
     const h2 = heliOfEntity(tr.hitEntity);
-    if (h2) { if (h2.team !== team) damageHeli(h2, dmgHeli, slotOfPawn(shooterPawn)); return d; }
+    if (h2) { if (h2.team !== team) damageHeli(h2, dmgHeli, slotOfPawn(shooterPawn), src); return d; }
     const hp = toPawn(tr.hitEntity);
-    if (hp && hp.IsAlive() && hp.GetTeamNumber() !== team) hurt(hp, dmgInf, shooterPawn, CSDamageTypes.BULLET);
+    if (hp && hp.IsAlive() && hp.GetTeamNumber() !== team) hurt(hp, dmgInf, shooterPawn, CSDamageTypes.BULLET, src);
   }
   return d;
 }

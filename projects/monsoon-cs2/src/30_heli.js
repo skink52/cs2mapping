@@ -66,12 +66,13 @@ function loadHelis() {
                   rotor: M.ANIMATED ? undefined : need("mv_rotor_" + tag), tail: M.ANIMATED ? undefined : need("mv_tail_" + tag), hubOff: M.HUB, tailOff: M.TAIL,
                   wreck: need("mv_wreck_" + tag), owner: -1, yieldTo: -1,
                   state: "parked", landed: true, pos: v3(padPos.x, padPos.y, padPos.z), vel: v3(0, 0, 0), yaw, pitch: 0, roll: 0,
-                  hp: H.HEALTH, rockets: M.ROCKETS, rearmAcc: 0, rocketAt: 0, podI: 0,
+                  hp: M.HEALTH || H.HEALTH, maxHp: M.HEALTH || H.HEALTH, rockets: M.ROCKETS, rearmAcc: 0, rocketAt: 0, podI: 0,
                   seats: M.SEATS.map((s) => ({ kind: s.kind, off: s.off, slot: -1 })),
-                  gun: { heat: 0, locked: false, next: 0, shots: 0 },
+                  gun: gunFresh(),
                   rotorSpeed: 0, spin: 0, anim: "", engine: false, engineSet: false, smoking: false, dust: false,
                   angSent: undefined, rotSent: undefined, tailSent: undefined, B: angleBasis({ pitch: 0, yaw, roll: 0 }),
-                  lastHitBy: -1, lastHitAt: -99, rotorHitAt: 0, padT: 0, crashT: 0, respawnAt: 0, wreckUntil: 0, wreckOut: false,
+                  lastHitBy: -1, lastHitAt: -99, lastSrc: "", rotorHitAt: 0, padT: 0, crashT: 0, respawnAt: 0, wreckUntil: 0, wreckOut: false,
+                  guardUntil: 0, idleT: 0, firstFlightAt: 0, overWater: false, soft: false,
                   tick: n * 3 + team, gz: padPos.z, alt: 0, speed: 0, inp: null, ai: null, warn: "", flights: 0 };
       if (e) {
         // how high the model's origin sits over the pad as placed, and where the Hip's rotor props are on it
@@ -213,14 +214,13 @@ function enterHeli(p, pawn, h, idx) {
     if (s.slot >= 0) return false;
   }
   unseat(p, pawn, "seat");
-  s.slot = p.slot; p.heli = h; p.seat = idx;
-  try { pawn.DestroyWeapons(); } catch (e) {}
-  give(pawn, "weapon_knife", false);
+  s.slot = p.slot; p.heli = h; p.seat = idx; h.idleT = 0;
+  stow(pawn);
   freeze(p, pawn, true); hidePawn(p, pawn, true);
   try { pawn.Teleport({ position: seatPos(h, idx), velocity: v3(0, 0, 0) }); } catch (e) {}
   try { pawn.SetEyeAngles({ pitch: s.kind === "gunner" ? 10 : 0, yaw: h.yaw + (s.kind === "gunner" ? h.M.GUN.yaw : 0), roll: 0 }); } catch (e) {}
   setSeatCamera(p, pawn, h);
-  if (!p.bot) toast(p, s.kind === "pilot" ? h.M.label + ": you have the controls" : s.kind === "gunner" ? h.M.GUN.name + " - MOUSE1 fires, E leaves" : "Aboard - E leaves (fast-rope below " + Math.round(CONFIG.HELI.ROPE_ALT * 0.0254) + " m)", 4);
+  if (!p.bot) toast(p, s.kind === "pilot" ? h.M.label + ": you have the controls" : s.kind === "gunner" ? h.M.GUN.name + ": MOUSE1 fires, R reloads, E gets out" : "Aboard. E gets out (rope below " + Math.round(CONFIG.HELI.ROPE_ALT * 0.0254) + " m)", 4);
   return true;
 }
 function leaveHeli(p, pawn, why) {
@@ -243,16 +243,18 @@ function leaveHeli(p, pawn, why) {
     if (h.landed || h.alt < H.BOARD_ALT) {
       const out = local(h.pos, h.B, ex);
       pawn.Teleport({ position: v3(out.x, out.y, groundZ(out.x, out.y, h.pos.z + 120) + 6), velocity: v3(0, 0, 0) });
-    } else if (h.alt < H.ROPE_ALT && h.speed < H.ROPE_SPEED) {
+    } else if (h.alt < H.ROPE_ALT && h.speed < H.ROPE_SPEED && h.state !== "crashing") {      // no rope from a helicopter that is spinning in
       p.ropeUntil = TNOW + H.ROPE_SAFE; p.noFallUntil = TNOW + H.ROPE_SAFE + 1;
       pawn.Teleport({ position: v3(sp.x, sp.y, sp.z - H.ROPE_DROP), velocity: v3(0, 0, -H.ROPE_FALL) });
+      stats.ropes++;
       if (!p.bot) toast(p, "Fast-roping", 2);
     } else {
       pawn.Teleport({ position: v3(sp.x, sp.y, sp.z - H.ROPE_DROP), velocity: v3(h.vel.x, h.vel.y, h.vel.z) });
-      if (!p.bot) toast(p, "Too high or too fast for the rope - you jumped", 3);
+      stats.jumps++;
+      if (!p.bot) toast(p, "Too high or too fast for the rope: you jumped", 3);
     }
   } catch (e) {}
-  if (why !== "role") equip(p, pawn);
+  if (why !== "role") equip(p, pawn, false);
 }
 // a fast-roping player: fall speed capped until the ground or the timer
 function tickRope(p, pawn) {
@@ -279,18 +281,30 @@ function boardable(p, pos) {
 }
 
 // ------------------------------------------------------------------ guns shared by door guns, the chin gun and emplaced guns
+// st = { heat, locked, next, shots, ammo, reloadAt }. Heat locks the gun at 1 until it cools to 0.25; a belt (G.belt rounds) runs
+// out and is changed in G.reload seconds (by itself when empty, or early with RELOAD: gunReload).
 function gunTick(st, G, firing, dt) {
   if (st.locked && st.heat <= 0.25) st.locked = false;
+  if (G.belt) {
+    if (st.ammo === undefined) st.ammo = G.belt;
+    if (st.reloadAt) { if (TNOW >= st.reloadAt) { st.reloadAt = 0; st.ammo = G.belt; } else firing = false; }
+  }
   const can = firing && !st.locked;
   if (can) { st.heat = Math.min(1, st.heat + dt / G.overheat); if (st.heat >= 1) st.locked = true; }
   else st.heat = Math.max(0, st.heat - dt / G.cool);
-  if (can && TNOW >= st.next) { st.next = TNOW + G.interval; st.shots++; return true; }
+  if (can && TNOW >= st.next) {
+    st.next = TNOW + G.interval; st.shots++;
+    if (G.belt && --st.ammo <= 0) { st.ammo = 0; st.reloadAt = TNOW + G.reload; stats.beltReloads++; }
+    return true;
+  }
   return false;
 }
-function gunRound(st, G, muzzle, dir, pawn, team, snd, range, spread) {
+function gunReload(st, G) { if (G.belt && !st.reloadAt && st.ammo !== undefined && st.ammo < G.belt) { st.reloadAt = TNOW + G.reload; stats.beltReloads++; } }
+function gunFresh() { return { heat: 0, locked: false, next: 0, shots: 0, ammo: undefined, reloadAt: 0 }; }
+function gunRound(st, G, muzzle, dir, pawn, team, snd, range, spread, src) {
   const s = spread === undefined ? G.spread : spread;
   const d = vnorm(v3(dir.x + gauss() * s, dir.y + gauss() * s, dir.z + gauss() * s));
-  const dist = hitscan(muzzle, d, range, pawn, team, G.damage, G.heli, hitIgnore);
+  const dist = hitscan(muzzle, d, range, pawn, team, G.damage, G.heli, hitIgnore, src);
   if (st.shots % CONFIG.HELI.TRACER_EVERY === 0) tracer(muzzle, d, Math.max(60, dist));
   if (st.shots % CONFIG.HELI.SOUND_EVERY === 0) fire(snd, "StartSound");
   stats.gunShots++;
@@ -300,7 +314,7 @@ function tickHeliGun(h, pawn, team, eye, firing, dt, spread) {
   const G = h.M.GUN;
   const aim = clampAim(eye, h.yaw + G.yaw, G.cone, G.up, G.down);
   if (gunTick(h.gun, G, firing && h.state !== "crashing", dt)) {
-    gunRound(h.gun, G, local(heliOrigin(h), h.B, G.muzzle), dirOf(aim), pawn, team, "mv_heli_" + (h.gun.shots % 4 < 2 ? "gun_" : "gun2_") + h.tag, G.range, spread);
+    gunRound(h.gun, G, local(heliOrigin(h), h.B, G.muzzle), dirOf(aim), pawn, team, "mv_heli_" + (h.gun.shots % 4 < 2 ? "gun_" : "gun2_") + h.tag, G.range, spread, "heligun");
   }
 }
 
@@ -311,7 +325,7 @@ function launchRocket(o) {
   const e = need("mv_rocket_" + i);
   for (let k = rockets.length - 1; k >= 0; k--) if (rockets[k].ent && rockets[k].ent === e) rockets[k].ent = undefined;
   rockets.push({ pos: o.pos, vel: o.vel, team: o.team, slot: o.slot, grav: o.grav, blast: o.blast, damage: o.damage, heli: o.heli, until: TNOW + o.life,
-                 gunRadius: o.gunRadius || 0, ent: e, i, first: true });
+                 gunRadius: o.gunRadius || 0, ent: e, i, first: true, src: o.src || "helirocket" });
   stats.rockets++;
 }
 function tickRockets(dt) {
@@ -341,9 +355,9 @@ function tickRockets(dt) {
       const at = vadd(r.pos, dir, hitAt);
       if (r.ent) parkEnt(r.ent, r.i);
       rockets.splice(i, 1);
-      if (heli) damageHeli(heli, r.heli, r.slot);
+      if (heli) { damageHeli(heli, r.heli, r.slot, r.src); stats.rocketHeliHits++; }
       blast({ pos: at, radius: r.blast, damage: r.damage, team: r.team, slot: r.slot, loader: -1, fo: -1, heliRadius: heli ? 0 : r.blast * 0.6, heliDamage: r.heli * 0.5,
-              gunRadius: r.gunRadius, skipHeli: heli });
+              gunRadius: r.gunRadius, skipHeli: heli, src: r.src });
       continue;
     }
     r.pos = np;
@@ -365,7 +379,7 @@ function fireRockets(h, pawn, aimDir, spread) {
     const s = spread || 0.008;
     const d0 = dirOf({ pitch, yaw, roll: 0 }), d = vnorm(v3(d0.x + gauss() * s, d0.y + gauss() * s, d0.z + gauss() * s));
     launchRocket({ pos: vadd(local(org, h.B, M.PODS[pair + k]), d, 30), vel: vadd(vscale(d, R.SPEED), h.vel, 0.5), team: h.team, slot: h.seats[0].slot, grav: R.GRAVITY,
-                   blast: R.BLAST, damage: R.DAMAGE, heli: R.HELI, life: R.LIFE, gunRadius: R.GUN_DISABLE });
+                   blast: R.BLAST, damage: R.DAMAGE, heli: R.HELI, life: R.LIFE, gunRadius: R.GUN_DISABLE, src: "helirocket" });
   }
   fire("mv_heli_rkt_" + h.tag, "StartSound");
   return true;
@@ -382,13 +396,17 @@ function pilotAim(p, h, eye) {
 }
 
 // ------------------------------------------------------------------ damage, crash, wreck, respawn
-function damageHeli(h, dmg, attackerSlot) {
+// src = what did it, for the stats ("rifle", "mg", "at", "heligun", "helirocket", "arty", "mount"; no attacker = "crash")
+function damageHeli(h, dmg, attackerSlot, src) {
   if (!h || !h.ent || h.state === "dead" || h.state === "crashing" || !(dmg > 0)) return;
   if (attackerSlot >= 0) {
     const q = players.get(attackerSlot);
     if (q && q.team === h.team) return;
-    h.lastHitBy = attackerSlot; h.lastHitAt = TNOW;
+    if (TNOW < h.guardUntil) { stats.heliGuard++; return; }      // a helicopter just rolled out on its pad: no kills before anyone can reach it
+    h.lastHitBy = attackerSlot; h.lastHitAt = TNOW; h.lastSrc = src || "rifle";
   }
+  const k = attackerSlot >= 0 ? src || "rifle" : "crash";
+  stats.heliDmgBy[k] = (stats.heliDmgBy[k] || 0) + dmg;
   h.hp -= dmg; stats.heliDamage += dmg;
   if (h.hp <= 0) { h.hp = 0; startCrash(h); return; }
   if (h.hp < CONFIG.HELI.SMOKE_HP) setSmoke(h, true);
@@ -401,14 +419,18 @@ function startCrash(h) {
 }
 function explodeHeli(h) {
   const H = CONFIG.HELI;
-  const killerSlot = h.lastHitBy >= 0 && TNOW - h.lastHitAt < H.CRASH_CREDIT ? h.lastHitBy : -1;
-  const killer = pawnOf(killerSlot);
+  let killerSlot = h.lastHitBy >= 0 && TNOW - h.lastHitAt < H.CRASH_CREDIT ? h.lastHitBy : -1;
+  const kq = players.get(killerSlot);
+  if (!kq || kq.team !== otherTeam(h.team)) killerSlot = -1;          // the slot changed hands or sides since the hit
+  const killer = creditOf(killerSlot, otherTeam(h.team)), src = killerSlot >= 0 ? h.lastSrc || "rifle" : "crash";
+  stats.heliLostBy[src] = (stats.heliLostBy[src] || 0) + 1; stats.heliLostTeam[h.team]++;
+  if (h.firstFlightAt) { if (stats.heliLives.length < 400) stats.heliLives.push(Math.round(TNOW - h.firstFlightAt)); h.firstFlightAt = 0; }
   const pos = v3(h.pos.x, h.pos.y, h.pos.z + 20);
   const victims = [];
   for (const s of h.seats) {
     if (s.slot < 0) continue;
     const q = players.get(s.slot), pw = pawnOf(s.slot);
-    if (q) { leaveHeli(q, pw, "crash"); if (pw) victims.push(pw); }
+    if (q) { leaveHeli(q, pw, "crash"); if (pw) victims.push([q, pw]); }
     s.slot = -1;
   }
   h.state = "dead"; h.landed = true; h.respawnAt = TNOW + H.RESPAWN; h.wreckUntil = TNOW + H.WRECK_TIME; h.vel = v3(0, 0, 0);
@@ -421,15 +443,30 @@ function explodeHeli(h) {
   if (sm) { try { sm.Teleport({ position: v3(h.pos.x, h.pos.y, h.pos.z + 40) }); } catch (e) {} }
   h.smoking = false; setSmoke(h, true);
   parkEnt(h.ent, 20 + h.n + h.team * 4); parkEnt(h.rotor, 30 + h.n); parkEnt(h.tail, 40 + h.n);
-  for (const pw of victims) { let a = false; try { a = pw.IsAlive(); } catch (e) {} if (a) scriptKill(pw, killer); }
-  blast({ pos, radius: H.CRASH_BLAST, damage: H.CRASH_BLAST_DAMAGE, team: otherTeam(h.team), slot: killerSlot, loader: -1, fo: -1, heliRadius: 0, heliDamage: 0, gunRadius: 0, quiet: true });
-  if (killerSlot >= 0) { const q = players.get(killerSlot); if (q) { q.merit++; toast(q, "Helicopter destroyed!", 3); } }
+  for (const [q, pw] of victims) {
+    let a = false; try { a = pw.IsAlive(); } catch (e) {}
+    if (a) scriptKill(pw, killer, src);
+    a = false; try { a = pw.IsAlive(); } catch (e) {}
+    if (a) {                                       // the kill was refused (another plugin, god mode): never leave him frozen in the air
+      freeze(q, pw, false);
+      try { pw.Teleport({ position: v3(h.pos.x, h.pos.y, groundZ(h.pos.x, h.pos.y, h.pos.z + 120) + 6), velocity: v3(0, 0, 0) }); } catch (e) {}
+      equip(q, pw, false); stats.crashSurvivors++;
+    }
+  }
+  blast({ pos, radius: H.CRASH_BLAST, damage: H.CRASH_BLAST_DAMAGE, team: otherTeam(h.team), slot: killerSlot, loader: -1, fo: -1, heliRadius: 0, heliDamage: 0, gunRadius: 0, quiet: true, src });
+  if (H.LOSS_TICKETS) loseTicket(h.team, H.LOSS_TICKETS);
+  if (killerSlot >= 0) {
+    kq.merit++; toast(kq, "Helicopter destroyed!", 3);
+    feed(otherTeam(h.team), nameOf(killerSlot) + " shot down a " + h.M.label, "good", false);
+    feed(h.team, "We lost a " + h.M.label + " to " + nameOf(killerSlot), "bad", false);
+  } else feed(h.team, "Our " + h.M.label + " crashed", "bad", false);
 }
 function respawnHeli(h) {
   const H = CONFIG.HELI;
-  h.state = "parked"; h.landed = true; h.hp = H.HEALTH; h.rockets = h.M.ROCKETS; h.rearmAcc = 0;
+  h.state = "parked"; h.landed = true; h.hp = h.maxHp; h.rockets = h.M.ROCKETS; h.rearmAcc = 0;
   h.pos = v3(h.pad.pos.x, h.pad.pos.y, h.pad.pos.z); h.vel = v3(0, 0, 0); h.yaw = h.pad.yaw; h.pitch = 0; h.roll = 0; h.spin = 0;
-  h.lastHitBy = -1; h.padT = 0; h.gun.heat = 0; h.gun.locked = false; h.alt = 0; h.speed = 0;
+  h.lastHitBy = -1; h.padT = 0; h.gun = gunFresh(); h.alt = 0; h.speed = 0;
+  h.guardUntil = TNOW + H.SPAWN_GUARD; h.idleT = 0; h.firstFlightAt = 0; h.overWater = false;
   setSmoke(h, false);
   placeHeli(h, true);
   setAnim(h, true);
@@ -437,9 +474,17 @@ function respawnHeli(h) {
 }
 function hideWreck(h) {
   if (!h.wreckOut) return;
-  h.wreckOut = false;
+  h.wreckOut = false; stats.wrecksCleared++;
   parkEnt(h.wreck, 50 + h.n + h.team * 4);
   setSmoke(h, false);
+}
+// an empty, ownerless helicopter standing in the field goes back to its pad as it is (the pad then repairs and re-arms it)
+function recallHeli(h) {
+  h.pos = v3(h.pad.pos.x, h.pad.pos.y, h.pad.pos.z); h.vel = v3(0, 0, 0); h.yaw = h.pad.yaw; h.pitch = 0; h.roll = 0;
+  h.idleT = 0; h.padT = 0; h.rotorSpeed = 0; h.alt = 0; h.speed = 0;
+  setEngine(h, false); setDust(h, false);
+  placeHeli(h, true); setAnim(h, true);
+  stats.recalls++;
 }
 
 // ------------------------------------------------------------------ flight (DESIGN 3.2)
@@ -477,15 +522,21 @@ function tickHeli(h, dt) {
   if (h.landed) {
     h.alt = 0; h.speed = 0;
     if (inp.coll > 0.1 && h.rotorSpeed > 0.9) {
-      h.landed = false; h.state = "flying"; h.vel = v3(0, 0, 60); h.padT = 0; h.flights++; stats.flights++;
+      h.landed = false; h.state = "flying"; h.vel = v3(0, 0, 60); h.padT = 0; h.idleT = 0; h.flights++; stats.flights++;
+      if (!h.firstFlightAt) h.firstFlightAt = TNOW;
     } else {
       // on the own pad: repair and re-arm
       if (dist2(h.pos, h.pad.pos) < H.PAD_RADIUS) {
         h.padT += dt;
-        if (h.padT >= H.REPAIR_TIME && h.hp < H.HEALTH) { h.hp = H.HEALTH; setSmoke(h, false); for (const s of h.seats) if (s.slot >= 0) toastSlot(s.slot, "Repaired", 2); }
-        if (h.rockets < h.M.ROCKETS) { h.rearmAcc += h.M.ROCKETS * dt / H.REARM_TIME; if (h.rearmAcc >= 2) { h.rearmAcc -= 2; h.rockets = Math.min(h.M.ROCKETS, h.rockets + 2); } }
-        h.warn = h.hp < H.HEALTH ? "PAD: REPAIR " + Math.max(0, H.REPAIR_TIME - h.padT).toFixed(0) + " s" : h.rockets < h.M.ROCKETS ? "PAD: RE-ARMING" : "";
-      } else if (inp.coll > 0.1) h.warn = "ROTOR " + Math.round(h.rotorSpeed * 100) + " %";
+        if (h.padT >= H.REPAIR_TIME && h.hp < h.maxHp) { h.hp = h.maxHp; stats.padRepairs++; setSmoke(h, false); for (const s of h.seats) if (s.slot >= 0) toastSlot(s.slot, "Repaired", 2); }
+        if (h.rockets < h.M.ROCKETS) { h.rearmAcc += h.M.ROCKETS * dt / (h.M.REARM_TIME || H.REARM_TIME); if (h.rearmAcc >= 2) { h.rearmAcc -= 2; h.rockets = Math.min(h.M.ROCKETS, h.rockets + 2); stats.padRearms++; } }
+        h.warn = h.hp < h.maxHp ? "PAD: REPAIR " + Math.max(0, H.REPAIR_TIME - h.padT).toFixed(0) + " s" : h.rockets < h.M.ROCKETS ? "PAD: RE-ARMING " + h.rockets + "/" + h.M.ROCKETS : "";
+        h.idleT = 0;
+      } else {
+        if (inp.coll > 0.1) h.warn = "ROTOR " + Math.round(h.rotorSpeed * 100) + " %";
+        // left in the field with nobody aboard and no pilot assigned (the pilot quit, changed role or went AFK): the ground crew fetch it
+        if (h.owner < 0 && crewCount(h) === 0) { h.idleT += dt; if (h.idleT >= H.ABANDON) { recallHeli(h); return; } } else h.idleT = 0;
+      }
       if (h.rotorSpeed > 0 && (h.rotor || h.tail)) placeHeli(h, false);
       setDust(h, false);
       return;
@@ -501,7 +552,8 @@ function tickHeli(h, dt) {
   if (bw.w > 0) {
     if (bw.kind === "z") { vsT = Math.min(vsT, -H.VS_MAX * bw.w); h.warn = "CEILING"; }
     else { const d = Math.hypot(h.pos.x, h.pos.y) || 1; tx += (-h.pos.x / d * H.BOUNDS.HOME_SPEED - tx) * bw.w; ty += (-h.pos.y / d * H.BOUNDS.HOME_SPEED - ty) * bw.w; h.warn = "LEAVING THE VALLEY - TURNING BACK"; }
-  }
+    if (!h.soft) { h.soft = true; stats.softWall++; }
+  } else h.soft = false;
   const ax = (tx - h.vel.x) * H.ACCEL, ay = (ty - h.vel.y) * H.ACCEL, k = Math.min(1, H.ACCEL * dt);
   h.vel.x += (tx - h.vel.x) * k; h.vel.y += (ty - h.vel.y) * k;
   h.vel.z += (vsT - h.vel.z) * Math.min(1, dt / (inp.coll !== 0 || bw.kind === "z" ? H.VS_EASE : H.VS_SETTLE));
@@ -513,6 +565,8 @@ function tickHeli(h, dt) {
   h.roll += clampN(rT - h.roll, -H.TILT_RATE * dt, H.TILT_RATE * dt);
   // ground under the skids; ground effect
   h.gz = groundZ(h.pos.x, h.pos.y, h.pos.z + 150);
+  h.overWater = h.gz < WATER_Z;                      // the river: the surface is the floor, and there is no landing on it
+  if (h.overWater) h.gz = WATER_Z;
   h.alt = Math.max(0, h.pos.z - h.gz);
   if (h.alt < H.GE_ALT && h.vel.z < -H.GE_VS) h.vel.z = -H.GE_VS;
   const speed = vlen(h.vel);
@@ -549,6 +603,7 @@ function tickHeli(h, dt) {
   // touchdown
   if (np.z <= h.gz && h.vel.z <= 0) {
     const tilt = Math.max(Math.abs(h.pitch), Math.abs(h.roll));
+    if (h.overWater) { h.pos = v3(np.x, np.y, h.gz); h.hp = 0; stats.ditched++; for (const s of h.seats) if (s.slot >= 0) toastSlot(s.slot, "DITCHED IN THE RIVER", 3); explodeHeli(h); return; }
     if (tilt < H.LAND_TILT && speed < H.LAND_SPEED) {
       h.pos = v3(np.x, np.y, h.gz); h.vel = v3(0, 0, 0); h.pitch = 0; h.roll = 0; h.landed = true; h.state = "parked"; h.alt = 0; h.speed = 0; h.padT = 0;
       placeHeli(h, false); placeRiders(h, false); setDust(h, false);
@@ -556,7 +611,8 @@ function tickHeli(h, dt) {
       return;
     }
     const dmg = H.CRASH_BASE + speed / H.CRASH_DIV;
-    if (dmg > H.CRASH_KILL) { h.pos = v3(np.x, np.y, h.gz); h.hp = 0; explodeHeli(h); return; }
+    if (dmg > H.CRASH_KILL) { h.pos = v3(np.x, np.y, h.gz); h.hp = 0; stats.crashLandings++; explodeHeli(h); return; }
+    stats.hardLandings++;
     damageHeli(h, dmg, -1);
     if (h.state !== "flying") { if (h.state === "crashing") { h.pos = v3(np.x, np.y, h.gz); explodeHeli(h); } return; }
     np.z = h.gz + 2; h.vel = v3(h.vel.x * 0.4, h.vel.y * 0.4, 90); h.warn = "HARD LANDING";
@@ -582,7 +638,7 @@ function tickCrash(h, dt) {
   h.vel.x *= 1 - 0.4 * dt; h.vel.y *= 1 - 0.4 * dt;
   h.roll = clampN(h.roll + 25 * dt, -40, 40); h.pitch = clampN(h.pitch + 12 * dt, -30, 30);
   const np = vadd(h.pos, h.vel, dt);
-  h.gz = groundZ(h.pos.x, h.pos.y, h.pos.z + 150);
+  h.gz = Math.max(WATER_Z, groundZ(h.pos.x, h.pos.y, h.pos.z + 150));
   h.alt = Math.max(0, h.pos.z - h.gz); h.speed = Math.hypot(h.vel.x, h.vel.y);
   let wall = false;
   if (h.speed > 60) {
@@ -604,16 +660,19 @@ function tickSeat(p, pawn, dt, pressed, held) {
   const eye = eyeOf(pawn);
   if (s.kind === "pilot") {
     const fireKey = (held & CSInputs.ATTACK) !== 0;
-    h.inp = { fwd: ((held & CSInputs.FORWARD) ? 1 : 0) - ((held & CSInputs.BACK) ? 1 : 0), side: ((held & CSInputs.RIGHT) ? 1 : 0) - ((held & CSInputs.LEFT) ? 1 : 0),
+    if (!p.afk) h.inp = { fwd: ((held & CSInputs.FORWARD) ? 1 : 0) - ((held & CSInputs.BACK) ? 1 : 0), side: ((held & CSInputs.RIGHT) ? 1 : 0) - ((held & CSInputs.LEFT) ? 1 : 0),
               coll: ((held & CSInputs.JUMP) ? 1 : 0) - ((held & CSInputs.DUCK) ? 1 : 0), yaw: eye.yaw, fire: fireKey,
               aim: fireKey && h.M.ROCKETS && !h.landed ? pilotAim(p, h, eye) : null, spread: 0 };
+    // an AFK pilot (no key, no look for AFK.TIME): the stick is let go so it does not fly on with the last keys held. It settles and
+    // lets down; over the river it creeps to the bank first (a landing on water is a ditching). tickAfk takes him out once it is down.
+    else h.inp = { fwd: h.overWater ? 0.4 : 0, side: 0, coll: h.overWater ? 0 : -0.5, yaw: Math.atan2(h.pad.pos.y - h.pos.y, h.pad.pos.x - h.pos.x) / D2R, fire: false, aim: null, spread: 0 };
     easeCamera(p, h, dt);
     if (pressed & CSInputs.USE) {
       if (h.landed) { leaveHeli(p, pawn, ""); return; }
-      toast(p, "Land first (SPACE up, CTRL down)", 2);
+      toast(p, "Land first: CTRL takes you down", 2);
     }
   } else {
-    if (s.kind === "gunner") tickHeliGun(h, pawn, p.team, eye, (held & CSInputs.ATTACK) !== 0, dt);
+    if (s.kind === "gunner") { if (pressed & CSInputs.RELOAD) gunReload(h.gun, h.M.GUN); tickHeliGun(h, pawn, p.team, eye, (held & CSInputs.ATTACK) !== 0, dt); }
     if (pressed & CSInputs.USE) { leaveHeli(p, pawn, ""); return; }
   }
   drawFlight(p, h, s);

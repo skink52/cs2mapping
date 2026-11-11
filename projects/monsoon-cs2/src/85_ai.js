@@ -27,11 +27,11 @@ function aiGunSpot(team) {
     if (gi < 0 || h.seats[gi].slot >= 0 || taken((g) => g.heli === h)) continue;
     return { heli: h, mount: null, tgt: null, since: 0, next: 0 };
   }
-  for (const m of mounts) {
-    if (m.team !== team || m.user >= 0 || taken((g) => g.mount === m)) continue;
-    return { heli: null, mount: m, tgt: null, since: 0, next: 0 };
-  }
-  return null;
+  // emplaced guns: one at a flag we hold (the front) before the ones at the base
+  const ours = (m) => { if (m.team === team) return 1; if (m.team) return 0; let f = null, bd = 1200; for (const q of flags) { const d = dist2(q.pos, m.pos); if (d < bd) { bd = d; f = q; } } return f && f.owner === team ? 2 : 0; };
+  let best = null, bs = 0;
+  for (const m of mounts) { if (m.user >= 0 || taken((g) => g.mount === m)) continue; const s = ours(m); if (s > bs) { bs = s; best = m; } }
+  return best ? { heli: null, mount: best, tgt: null, since: 0, next: 0 } : null;
 }
 function tickDirector() {
   const A = CONFIG.AI;
@@ -77,7 +77,7 @@ function tickDirector() {
     // a human waiting for a helicopter the AI was flying
     for (const q of players.values()) {
       if (q.team !== team || q.bot || q.waitRole !== "air" || q.role === "air") continue;
-      if (helis[team].some((h) => h.ent && h.owner < 0 && h.yieldTo < 0)) { q.waitRole = ""; toast(q, "A helicopter is free for you", 4); requestRole(q, "air"); }
+      if (helis[team].some((h) => h.ent && h.owner < 0 && h.yieldTo < 0)) { q.waitRole = ""; requestRole(q, "air", true); if (q.role === "air") toast(q, "A helicopter is free: it is yours", 4); }
     }
   }
 }
@@ -131,14 +131,33 @@ function neededFlag(team) {
 }
 function botSpawnChoice(p, team) {
   const need = neededFlag(team); if (!need) return "base";
-  if (need.owner === team) return need.id;
+  if (flagOpen(need, team)) return need.id;
   const base = LAYOUT[tagOf(team)].centre;
   let sel = "base", bd = Math.hypot(need.pos.x - base[0], need.pos.y - base[1]);
-  for (const f of flags) { if (f.owner !== team) continue; const d = dist2(f.pos, need.pos); if (d < bd) { bd = d; sel = f.id; } }
+  for (const f of flags) { if (!flagOpen(f, team)) continue; const d = dist2(f.pos, need.pos); if (d < bd) { bd = d; sel = f.id; } }
   return sel;
+}
+// the bot AT man: CS2's bot brain would only use the Zeus as a Zeus, so the script fires the launcher for him, at helicopters only
+function botAT(p, pawn, pos) {
+  const A = CONFIG.AI, K = CONFIG.AT;
+  if (p.kit !== "at" || p.role !== "infantry" || TNOW < p.atReadyAt) return;
+  p.atReadyAt = TNOW + A.AT_EVERY;                          // look again in a second
+  const from = v3(pos.x, pos.y, pos.z + 60);
+  let best = null, bd = A.AT_RANGE;
+  for (const h of helis[otherTeam(p.team)]) { if (h.state !== "flying" || !h.ent) continue; const d = dist3(from, heliCentre(h)); if (d < bd) { bd = d; best = h; } }
+  if (!best) return;
+  const t = bd / K.SPEED, c = heliCentre(best), aim = v3(c.x + best.vel.x * t, c.y + best.vel.y * t, c.z + best.vel.z * t + 0.5 * K.GRAVITY * t * t);
+  let tr; try { tr = Instance.TraceLine({ start: from, end: c, ignoreEntity: hitIgnore, ignorePlayers: true }); } catch (e) {}
+  if ((tr && tr.didHit && tr.fraction < 0.97) || smokeBlocks(from, c)) return;
+  const d0 = vnorm(vsub(aim, from)), s = A.AT_SPREAD, dir = vnorm(v3(d0.x + gauss() * s, d0.y + gauss() * s, d0.z + gauss() * s));
+  p.atReadyAt = TNOW + K.RELOAD;
+  launchRocket({ pos: vadd(from, dir, 40), vel: vscale(dir, K.SPEED), team: p.team, slot: p.slot, grav: K.GRAVITY, blast: K.BLAST, damage: K.DAMAGE,
+                 heli: K.HELI, life: K.LIFE, gunRadius: K.GUN_DISABLE, src: "at" });
+  stats.botRockets++;
 }
 function tickBot(p, pawn, pos) {
   const A = CONFIG.AI;
+  if (!p.aiRole && p.kit === "at") botAT(p, pawn, pos);
   if (p.aiRole || TNOW < p.leashAt) return;
   p.leashAt = TNOW + A.LEASH_CHECK;
   if (!p.leashPos || dist2(pos, p.leashPos) > A.LEASH_MOVE) { p.leashPos = pos; p.leashMoved = TNOW; }
@@ -196,7 +215,7 @@ function tickAISeat(p, pawn, dt) {
 function tickAIMount(p, pawn, dt) {
   const m = mounts[p.mount], C = CONFIG.MOUNT;
   if (!m || m.user !== p.slot || !p.aiGun) { leaveMount(p, pawn); return; }
-  const a = aiGunner(p.aiGun, m.pos, m.yaw0, C.CONE, C.UP, C.DOWN, p.team);
+  const a = aiGunner(p.aiGun, m.pos, m.yaw0, m.cone, C.UP, C.DOWN, p.team);
   mountAim(m, a.eye, a.firing, pawn, p.team, dt, CONFIG.AI.GUN_SPREAD);
   if (a.firing) stats.aiGunTicks++;
 }
@@ -238,11 +257,11 @@ function aiPilotThink(h, ai) {
       const to = h.yieldTo; h.yieldTo = -1;
       if (bot) aiRelease(bot, true);
       const hq = players.get(to);
-      if (hq && !hq.bot && hq.team === h.team && h.owner < 0) { hq.waitRole = ""; toast(hq, "Your helicopter is on the pad", 4); requestRole(hq, "air"); }
+      if (hq && !hq.bot && hq.team === h.team && h.owner < 0) { hq.waitRole = ""; requestRole(hq, "air", true); if (hq.role === "air") toast(hq, "Your helicopter is on the pad", 4); }
       return;
     }
     if (padD > H.PAD_RADIUS) { ai.state = "takeoff"; return; }           // put down away from home: go again
-    if (h.hp >= H.HEALTH && h.rockets >= h.M.ROCKETS && TNOW - ai.since > A.PAD_HOLD) ai.state = "takeoff";
+    if (h.hp >= h.maxHp && h.rockets >= h.M.ROCKETS && TNOW - ai.since > A.PAD_HOLD) ai.state = "takeoff";
     return;
   }
   if (ai.state === "takeoff") {
@@ -352,7 +371,8 @@ function tickAICrew(g) {
   const A = CONFIG.AI, ai = g.ai;
   if (!ai || TNOW < ai.at || gunDisabled(g)) return;
   let botSlot = -1;
-  for (const s of g.crew) { const q = players.get(s); if (!q) continue; if (!q.bot) return; if (q.aiRole === "crew") botSlot = s; }   // a human on the gun runs it
+  for (const s of g.crew) { const q = players.get(s); if (!q) continue; if (!q.bot) { g.extraSigma = 0; return; } if (q.aiRole === "crew") botSlot = s; }   // a human on the gun runs it, with his own aim
+  g.extraSigma = A.CREW_EXTRA_SIGMA;
   const r = botSlot >= 0 ? rosterAt[botSlot] : null;
   if (!r || !r.alive || !r.p.deployed) { ai.at = TNOW + 1; return; }
   if (ai.state === "idle") {

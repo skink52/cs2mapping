@@ -30,8 +30,8 @@ function loadMounts() {
     const B = angleBasis({ pitch: 0, yaw: ang.yaw, roll: 0 });
     need("mv_mount_snd_" + n);
     mounts.push({ n, name: "mv_mount_" + n, ent: e, pos, yaw0: ang.yaw, seat: seat || { pos: local(pos, B, [-50, 0, -30]), ang: { pitch: 0, yaw: ang.yaw, roll: 0 } },
-                  kind: inf.kind, K: CONFIG.MOUNT.KINDS[inf.kind], muzzle: mountMuzzle(inf.kind), team: inf.team, user: -1, st: { heat: 0, locked: false, next: 0, shots: 0 },
-                  aimYaw: ang.yaw, aimPitch: 0, sentYaw: ang.yaw, sentPitch: 0 });
+                  kind: inf.kind, K: CONFIG.MOUNT.KINDS[inf.kind], muzzle: mountMuzzle(inf.kind), team: inf.team, user: -1, st: gunFresh(),
+                  aimYaw: ang.yaw, aimPitch: 0, sentYaw: ang.yaw, sentPitch: 0, cone: inf.team ? CONFIG.MOUNT.CONE : CONFIG.MOUNT.CONE_ANY });
   }
 }
 function mountNear(p, pos) {
@@ -54,6 +54,7 @@ function takeMount(p, pawn, m) {
   if (m.user >= 0) { const q = players.get(m.user); if (q) aiRelease(q, true); if (m.user >= 0) return false; }
   unseat(p, pawn, "seat");
   m.user = p.slot; p.mount = mounts.indexOf(m);
+  stow(pawn);
   freeze(p, pawn, true);
   try { pawn.Teleport({ position: v3(m.seat.pos.x, m.seat.pos.y, m.seat.pos.z + 2), velocity: v3(0, 0, 0) }); pawn.SetEyeAngles({ pitch: 0, yaw: m.yaw0, roll: 0 }); } catch (e) {}
   let cam; try { cam = typeof pawn.GetCustomCamera === "function" ? pawn.GetCustomCamera() : undefined; } catch (e) {}
@@ -65,7 +66,7 @@ function takeMount(p, pawn, m) {
       p.cam = cam; p.camKind = "mount";
     } catch (e) {}
   }
-  if (!p.bot) toast(p, m.K.name + " - MOUSE1 fires, E leaves", 3);
+  if (!p.bot) toast(p, m.K.name + ": MOUSE1 fires, R reloads, E lets go", 3);
   stats.mountUses++;
   return true;
 }
@@ -75,13 +76,13 @@ function leaveMount(p, pawn) {
   p.mount = -1;
   restoreCamera(p);
   let alive = false; try { alive = !!pawn && pawn.IsAlive(); } catch (e) {}
-  if (alive) freeze(p, pawn, false);
+  if (alive) { freeze(p, pawn, false); equip(p, pawn, false); }
   hClass(p, "mv_gun", "show", false);
 }
 // aim (clamped to the cone around the gun's rest direction), move the gun part, fire
 function mountAim(m, eye, firing, pawn, team, dt, spread) {
   const C = CONFIG.MOUNT;
-  const aim = clampAim(eye, m.yaw0, C.CONE, C.UP, C.DOWN);
+  const aim = clampAim(eye, m.yaw0, m.cone, C.UP, C.DOWN);
   m.aimYaw = aim.yaw; m.aimPitch = aim.pitch;
   if (Math.abs(aim.yaw - m.sentYaw) > 0.25 || Math.abs(aim.pitch - m.sentPitch) > 0.25) {
     m.sentYaw = aim.yaw; m.sentPitch = aim.pitch;
@@ -89,13 +90,14 @@ function mountAim(m, eye, firing, pawn, team, dt, spread) {
   }
   if (gunTick(m.st, m.K, firing, dt)) {
     const dir = dirOf(aim);
-    gunRound(m.st, m.K, vadd(m.pos, dir, m.muzzle), dir, pawn, team, "mv_mount_snd_" + m.n, C.RANGE, spread);
+    gunRound(m.st, m.K, vadd(m.pos, dir, m.muzzle), dir, pawn, team, "mv_mount_snd_" + m.n, C.RANGE, spread, "mount");
   }
 }
 function tickMount(p, pawn, dt, pressed, held) {
   const m = mounts[p.mount];
   if (!m || m.user !== p.slot) { leaveMount(p, pawn); return; }
+  if (pressed & CSInputs.RELOAD) gunReload(m.st, m.K);
   mountAim(m, eyeOf(pawn), (held & CSInputs.ATTACK) !== 0, pawn, p.team, dt);
   if (pressed & CSInputs.USE) { leaveMount(p, pawn); return; }
-  drawGun(p, m.K.name, m.st);
+  drawGun(p, m.K.name, m.st, m.K);
 }

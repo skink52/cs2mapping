@@ -2,21 +2,26 @@
 const NEEDLE = (deg) => "a" + (((Math.round(deg / 5) % 72) + 72) % 72);
 function roleCard(p, role) {
   const team = p.team === T || p.team === CT ? p.team : CT;
-  if (role === "infantry") return info(p, "INFANTRY", ["Take and hold the five flags: stand near the pole.", "Kits at the arms rack or a held flag's crate: E, or !rifle !mg !at.",
-    "Hold USE on open ground far away: fire mission for the battery.", "E on a friendly helicopter to ride; E again to rope down.", "E behind a heavy machine gun to man it."],
-    "You deploy as infantry. !spawn a-e or base picks where.");
-  if (role === "artillery") return info(p, team === T ? "ROCKET BATTERY" : "HOWITZER BATTERY", ["Two to a gun. Rounds from the rack (E), load at the gun (E).",
-    "E at the plotting board: WASD moves the reticle (SHIFT fine).", "R cycles fire missions, MOUSE1 locks, SPACE fires when LAID.",
-    team === T ? "Load up to 4 rockets: they go as a salvo." : "MOUSE2 at the rack: HE, WP smoke, Beehive (direct fire).", "A hit near an enemy gun silences it; hold E to repair yours."],
-    "You'll join a gun crew when a seat is free.");
-  if (role === "air") return info(p, "AIRCREW", ["SPACE climbs, CTRL descends; hands off holds the altitude.", "The mouse turns the nose, WASD tilts the way you want to go.",
-    "Land level and slower than 3 m/s. E gets out when landed.", "MOUSE1 fires rocket pairs (gunships). The pad repairs and re-arms.", "Riders board with E while you sit or hover low."],
-    "You'll get a helicopter when a pad has one free.");
+  if (role === "infantry") return info(p, "INFANTRY", ["Take the five flags: stand by the pole. Hold 3 to bleed their tickets.", "Kits: E at an arms rack or a held flag's crate, or !rifle !mg !at.",
+    "Hold E on far open ground: fire mission for your battery.", "E at a friendly helicopter to ride. E again ropes you down.", "E behind a heavy machine gun to man it."],
+    "!spawn a-e, base or heli picks where you deploy.");
+  if (role === "artillery") return info(p, team === T ? "ROCKET BATTERY" : "HOWITZER BATTERY", ["Two to a gun. E at the rack takes a round, E at the gun loads it.",
+    "E at the plotting board. WASD moves the reticle, SHIFT slows it.", "R steps through fire missions. MOUSE1 locks. SPACE fires when LAID.",
+    team === T ? "Load up to 4 rockets: they go as one salvo." : "MOUSE2 at the rack: HE, WP smoke, Beehive (close defence).", "A hit near an enemy gun knocks it out. Hold E on yours to repair."],
+    "You join a gun crew when a seat is free.");
+  if (role === "air") return info(p, "AIRCREW", ["SPACE climbs, CTRL descends. Hands off holds the height.", "The mouse turns the nose. WASD moves the way you push.",
+    "Land level and slow (under 3 m/s). E gets out on the ground.", "MOUSE1 fires rocket pairs (gunships). Your pad repairs and re-arms.", "Riders board with E while you sit or hover low."],
+    "You get a helicopter when a pad has one free.");
 }
-function drawGun(p, name, st) {
+// G = the gun's config (belt, reload). The belt read-out has its own label when the HUD has one (mv_gun_ammo, "HUD additions");
+// until then it rides on the name line, in steps of 5 rounds so the text is not re-sent for every shot.
+function drawGun(p, name, st, G) {
   hClass(p, "mv_gun", "show", true);
   hClass(p, "mv_gun", "hot", st.locked);
-  hText(p, "mv_gun_name", name);
+  let ammo = "";
+  if (G && G.belt) ammo = st.reloadAt ? "RELOADING " + Math.max(1, Math.ceil(st.reloadAt - TNOW)) + " s" : "BELT " + (st.ammo === undefined ? G.belt : st.ammo);
+  if (hudHas("mv_gun_ammo")) { hText(p, "mv_gun_name", name); if ((tickNo + p.slot) % 4 === 0 || st.reloadAt) hText(p, "mv_gun_ammo", ammo); }
+  else hText(p, "mv_gun_name", ammo ? name + "   " + (st.reloadAt ? ammo : "BELT " + Math.ceil((st.ammo === undefined ? G.belt : st.ammo) / 5) * 5) : name);
   hSwap(p, "mv_gun_heat", "heat", "ht" + clampN(Math.round(st.heat * 10), 0, 10));
 }
 function drawObjective(p) {
@@ -45,7 +50,7 @@ function drawFlight(p, h, seat) {
   hClass(p, "mv_fly", "show", true);
   hClass(p, "mv_status", "show", false);
   hSwap(p, "mv_fly", "seat", "seat_" + seat.kind);
-  if (seat.kind === "gunner") drawGun(p, h.M.GUN.name, h.gun); else hClass(p, "mv_gun", "show", false);
+  if (seat.kind === "gunner") drawGun(p, h.M.GUN.name, h.gun, h.M.GUN); else hClass(p, "mv_gun", "show", false);
   const phase = h.tick + p.slot;
   if (phase % 2 === 0) {
     const kmh = Math.hypot(h.speed, h.vel.z) * 0.0254 * 3.6, altm = h.alt * 0.0254, vs = h.vel.z * 0.0254;
@@ -61,7 +66,7 @@ function drawFlight(p, h, seat) {
   hText(p, "mv_hdg_txt", ("00" + (Math.round(hdg) % 360)).slice(-3));
   hText(p, "mv_alt_txt", String(Math.round(h.alt * 0.0254)));
   hText(p, "mv_spd_txt", String(Math.round(h.speed * 0.0254 * 3.6)));
-  hSwap(p, "mv_heli_hp", "hp", "hp" + clampN(Math.round(h.hp / H.HEALTH * 20), 0, 20));
+  hSwap(p, "mv_heli_hp", "hp", "hp" + clampN(Math.round(h.hp / h.maxHp * 20), 0, 20));
   hClass(p, "mv_rtb", "on", h.hp < H.SMOKE_HP);
   hText(p, "mv_rkt_txt", h.M.ROCKETS ? (h.rockets < 2 ? "RE-ARM" : "RKT " + h.rockets) : "");
   for (let i = 0; i < 6; i++) {
@@ -119,10 +124,10 @@ function drawStatus(p, team) {
   if (p.role === "infantry") {
     const K = CONFIG.KITS[p.kit] || CONFIG.KITS.rifle;
     hText(p, "mv_st_role", "INFANTRY - " + K.label);
-    hText(p, "mv_st_l1", K.name[team] + (p.kit === "at" && TNOW < p.atReadyAt ? "  (reloading " + Math.ceil(p.atReadyAt - TNOW) + " s)" : ""));
+    hText(p, "mv_st_l1", K.name[team] + (p.kit === "at" && TNOW < p.atReadyAt ? "  (reloading " + Math.ceil(p.atReadyAt - TNOW) + " s)" : "") + (p.kitNext ? "  (next: " + CONFIG.KITS[p.kitNext].label + ")" : ""));
     const m = missions[team].find((q) => q.owner === p.slot);
-    hText(p, "mv_st_l2", m ? "Fire mission " + gridRef(m.x, m.y) + (m.shot ? "  SHOT" : "  waiting") + "  " + Math.max(0, Math.ceil(m.until - TNOW)) + " s" : "Hold USE on far ground: fire mission");
-    hText(p, "mv_st_l3", "Kills " + p.kills + "   Merit " + p.merit);
+    hText(p, "mv_st_l2", m ? "Fire mission " + gridRef(m.x, m.y) + (m.shot ? "  SHOT" : "  waiting") + "  " + Math.max(0, Math.ceil(m.until - TNOW)) + " s" : "Hold E on far ground: fire mission");
+    hText(p, "mv_st_l3", TNOW < p.protectUntil ? "Deploy cover " + Math.ceil(p.protectUntil - TNOW) + " s" : "Kills " + p.kills + "   Merit " + p.merit);
   } else if (p.role === "artillery") {
     const g = guns[team][p.crew];
     hText(p, "mv_st_role", (team === T ? "ROCKET BATTERY" : "HOWITZER BATTERY") + (g ? " - GUN " + (g.k + 1) : ""));
@@ -134,7 +139,7 @@ function drawStatus(p, team) {
     const h = ownHeli(p);
     hText(p, "mv_st_role", "AIRCREW" + (h ? " - " + h.M.label + " " + h.n : ""));
     hText(p, "mv_st_l1", h ? (h.state === "dead" ? "New helicopter in " + Math.max(0, Math.ceil(h.respawnAt - TNOW)) + " s" : "Your helicopter is " + (h.landed ? "on the ground" : "airborne")) : "No helicopter");
-    hText(p, "mv_st_l2", h && h.state !== "dead" ? "Airframe " + Math.round(h.hp) + " %" + (h.M.ROCKETS ? "   Rockets " + h.rockets : "") : "");
+    hText(p, "mv_st_l2", h && h.state !== "dead" ? "Airframe " + Math.round(100 * h.hp / h.maxHp) + " %" + (h.M.ROCKETS ? "   Rockets " + h.rockets : "") : "");
     hText(p, "mv_st_l3", "Kills " + p.kills);
   }
 }
@@ -151,8 +156,10 @@ function drawBrief(p, team) {
   let lines;
   if (p.role === "artillery") { const g = guns[team][p.crew]; lines = ["Gun " + (g ? g.k + 1 : "?") + " of " + guns[team].length + ". Answer the fire missions on the board.", "Rounds from the rack, load at the gun, plot, fire.", "Enemy shells can silence your gun: hold E to repair."]; }
   else if (p.role === "air") { const h = ownHeli(p); lines = [(h ? h.M.label + " on pad " + h.n : "Helicopter") + ". Carry the infantry, support the flags.", "SPACE up, CTRL down, mouse turns, WASD tilts.", "The pad repairs and re-arms. Riders board with E."]; }
-  else lines = [CONFIG.KITS[p.kit].name[team] + ". Hold 3 of the 5 flags to bleed their tickets.", "Hold USE on far ground to call the battery. E boards a helicopter.", "Kits: !rifle !mg !at, or E at an arms rack / flag crate."];
+  else lines = [CONFIG.KITS[p.kit].name[team] + ". Hold 3 of the 5 flags to bleed their tickets.", "Hold E on far ground to call the battery. E boards a helicopter.", "Kits: !rifle !mg !at, or E at an arms rack or flag crate."];
   hText(p, "mv_brief_l1", lines[0]); hText(p, "mv_brief_l2", lines[1]); hText(p, "mv_brief_l3", lines[2]);
-  hText(p, "mv_brief_spawn", p.role === "infantry" ? "DEPLOY: " + spawnLabel(p.spawnSel) + "   [R] next" : p.role === "air" ? "DEPLOY: HELIPAD" : "DEPLOY: BATTERY");
-  hText(p, "mv_brief_count", "Moving out in " + Math.max(0, p.deployAt - TNOW).toFixed(0) + " s   (chat: !infantry  !artillery  !air  !roles)");
+  const open = p.role === "infantry" && spawnChoices(p).includes(p.spawnSel);
+  hText(p, "mv_brief_spawn", p.role === "infantry" ? "DEPLOY: " + (open ? spawnLabel(p.spawnSel) : "BASE  (" + (p.spawnSel === "heli" ? "no helicopter waiting" : spawnLabel(p.spawnSel) + ((flagById(p.spawnSel) || {}).owner === p.team ? " is under attack" : " is not ours")) + ")") + "   [R] next"
+                                                   : p.role === "air" ? "DEPLOY: HELIPAD" : "DEPLOY: BATTERY");
+  hText(p, "mv_brief_count", "Moving out in " + Math.max(0, p.deployAt - TNOW).toFixed(0) + " s    chat: !infantry  !artillery  !air  !roles");
 }

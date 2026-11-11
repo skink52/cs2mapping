@@ -10,7 +10,8 @@ function P(slot) {
           heli: null, seat: -1, cam: null, camParent: undefined, camKind: "", camBack: 0, camSentBack: 0, camSentAt: -99, hidden: false, moveNone: false,
           mount: -1, crew: -1, board: false, u: 0.5, v: 0.5, msnSel: -1, carrying: "", carryEnt: -1, shellSel: 0,
           holdT: 0, holdKind: "", holdShow: false, atReadyAt: 0, atGiveAt: 0, ropeUntil: 0, noFallUntil: 0,
-          uniformAt: 0, uniformDone: false, noUniform: false, stockModel: "",
+          uniformAt: 0, uniformDone: false, noUniform: false, stockModel: "", kitNext: "", protectUntil: 0, sane: false,
+          afk: false, afkAt: 0, afkEye: 0, afkPos: null, afkCheck: 0, statusAt: 0,
           fired: 0, hits: 0, missions: 0, here: "",
           // bots
           aiRole: "", aiGun: null, leashAt: 0, leashPos: null, leashMoved: 0, lastCombat: -99, deployedAt: 0 };
@@ -19,7 +20,8 @@ function P(slot) {
   return p;
 }
 function teamCount(team, pred) { let n = 0; for (const q of players.values()) if (q.team === team && (!pred || pred(q))) n++; return n; }
-function humansOn(team) { return teamCount(team, (q) => !q.bot); }
+function humansOn(team) { return teamCount(team, (q) => !q.bot && !q.afk); }     // AFK humans do not keep the AI out of the seats
+function atBase(p, pos) { const c = LAYOUT[tagOf(p.team)].centre; return !!pos && Math.hypot(pos.x - c[0], pos.y - c[1]) < CONFIG.BASE_RADIUS; }
 
 // ------------------------------------------------------------------ roles
 function crewOpen(team, human) {
@@ -74,7 +76,8 @@ function takeHeli(p, team) {
   const list = (helis[team] || []).filter((h) => h.ent);
   let h = list.find((x) => x.owner === p.slot);
   if (h) return "ok";
-  h = list.find((x) => x.owner < 0 && x.state !== "dead" && x.yieldTo < 0) || list.find((x) => x.owner < 0 && x.yieldTo < 0);
+  const open = list.filter((x) => x.owner < 0 && x.yieldTo < 0);          // an armed one that is standing on its pad first
+  h = open.find((x) => x.state !== "dead" && x.M.ROCKETS > 0) || open.find((x) => x.state !== "dead") || open[0];
   if (h) { h.owner = p.slot; return "ok"; }
   if (p.bot) return "";
   for (const x of list) {
@@ -98,14 +101,12 @@ function setRole(p, role, team) {
 function chooseRole(p, team) {
   const R = CONFIG.ROLES;
   if (p.bot) { if (!p.aiRole && p.role !== "infantry") setRole(p, "infantry", team); else if (!p.role) setRole(p, "infantry", team); return; }
-  if (p.role === "air" && ownHeli(p)) return;
-  if (p.role === "artillery" && p.crew >= 0 && p.pref !== "infantry" && p.pref !== "air") {
-    if (!p.pref && Math.random() < R.ROTATE_CHANCE) setRole(p, "infantry", team);
-    return;
-  }
-  if (p.pref === "air" && airOpen(team, true)) { const r = takeHeli(p, team); if (r === "ok") { setRole(p, "air", team); return; } if (r === "wait") p.waitRole = "air"; }
-  if (p.pref === "artillery" && crewOpen(team, true)) { setRole(p, "artillery", team); if (p.role === "artillery") return; }
   if (p.pref === "infantry") { setRole(p, "infantry", team); return; }
+  const keepAir = p.role === "air" && !!ownHeli(p), keepArty = p.role === "artillery" && p.crew >= 0;
+  if (p.pref === "air" && !keepAir && airOpen(team, true)) { const r = takeHeli(p, team); if (r === "ok") { setRole(p, "air", team); return; } if (r === "wait") p.waitRole = "air"; }
+  if (p.pref === "artillery" && !keepArty && crewOpen(team, true)) { setRole(p, "artillery", team); if (p.role === "artillery") return; }
+  if (keepAir) return;
+  if (keepArty) { if (!p.pref && Math.random() < R.ROTATE_CHANCE) setRole(p, "infantry", team); return; }
   if (!p.pref) {
     if (airOpen(team, false) && Math.random() < R.AIR_CHANCE + R.AIR_MERIT * Math.min(R.AIR_MERIT_MAX, p.merit) + (p.flown === 0 ? R.AIR_FIRST : 0)) {
       setRole(p, "air", team); if (p.role === "air") { p.merit = 0; return; }
@@ -114,21 +115,29 @@ function chooseRole(p, team) {
   }
   setRole(p, "infantry", team);
 }
-// chat role request: switch now if the role is open, otherwise it is kept as the preference for the next respawn
-function requestRole(p, role) {
+// chat role request: switch now if the role is open and the player is in the briefing room or at the base; out in the field it is
+// kept as the preference for the next deploy (a role request is not a way out of a fight or a ride home). force = the AI just
+// brought a helicopter home for this player.
+function requestRole(p, role, force) {
   const team = p.team;
   if (team !== T && team !== CT) return;
-  if (p.role === role && (role !== "air" || ownHeli(p))) return;
+  if (p.role === role && (role !== "air" || ownHeli(p))) { toast(p, "You are " + ROLE_NAME[role].toLowerCase() + " already", 2); return; }
+  const pawn0 = pawnOf(p.slot);
+  let up = false; try { up = !!pawn0 && pawn0.IsAlive(); } catch (e) {}
+  if (!force && up && p.deployed && !((!p.heli || p.heli.landed) && atBase(p, pawn0.GetAbsOrigin()))) {
+    stats.roleDeferred++;
+    toast(p, ROLE_NAME[role] + " at your next deploy (roles change at the base)", 4); return;
+  }
   if (role === "air") {
     const r = takeHeli(p, team);
     if (r === "wait") { p.waitRole = "air"; toast(p, "The AI pilot is bringing a helicopter home for you", 5); return; }
     if (r !== "ok") { toast(p, "All helicopters have pilots - you're next in line", 4); return; }
   }
   if (role === "artillery" && !crewOpen(team, true)) { toast(p, "The battery is fully crewed - you're next in line", 4); return; }
-  const pawn = pawnOf(p.slot);
+  const pawn = pawn0;
   unseat(p, pawn, "role");
   setRole(p, role, team);
-  if (pawn && pawn.IsAlive() && p.deployed) deploy(p, pawn);
+  if (up && p.deployed) deploy(p, pawn);
 }
 // out of every seat (helicopter, emplaced gun, board); the pawn walks again
 function unseat(p, pawn, why) {
@@ -146,16 +155,28 @@ function kitLimit(team, kit) {
   if (K.share) return Math.max(1, Math.floor(n * K.share));
   return 99;
 }
+function kitFree(p, kit) { return teamCount(p.team, (q) => q !== p && q.kit === kit && q.role === "infantry" && !q.afk) < kitLimit(p.team, kit); }
 function kitAllowed(p, kit, atFlag) {
   const K = CONFIG.KITS[kit]; if (!K) return false;
   if (K.flagOnly && !atFlag) return false;
   if (p.kit === kit) return true;
-  return teamCount(p.team, (q) => q !== p && q.kit === kit && q.role === "infantry") < kitLimit(p.team, kit);
+  return kitFree(p, kit);
+}
+// the kit asked for in the field (p.kitNext) is issued at the next deploy; a limited kit someone else took meanwhile becomes a rifle
+function settleKit(p) {
+  // bots: one in four carries the MG, one in four is the AT man (he keeps his rifle; the script fires his launcher at helicopters: tickBot)
+  if (p.bot && CONFIG.BOT_KITS && p.role === "infantry" && !p.aiRole && p.kit === "rifle") {
+    const w = ["rifle", "mg", "rifle", "at"][(p.slot >> 1) % 4];
+    if (w === "mg" && kitFree(p, w)) p.kit = w;
+    if (w === "at" && kitFree(p, w) && teamCount(p.team, (q) => q.bot && q !== p && q.kit === "at") < CONFIG.AI.AT_BOTS) p.kit = w;
+  }
+  if (p.kitNext) { if (kitAllowed(p, p.kitNext, false)) p.kit = p.kitNext; p.kitNext = ""; }
+  if (!CONFIG.KITS[p.kit] || (p.kit !== "rifle" && p.role === "infantry" && !kitFree(p, p.kit))) { p.kit = "rifle"; stats.kitDenied++; }
 }
 function setKit(p, pawn, kit, atFlag) {
-  if (!kitAllowed(p, kit, atFlag)) { toast(p, CONFIG.KITS[kit] ? CONFIG.KITS[kit].label + ": none left on the rack" : "No such kit", 3); return false; }
-  p.kit = kit;
-  if (pawn && pawn.IsAlive() && p.deployed && p.role === "infantry" && !p.heli && p.mount < 0) equip(p, pawn);
+  if (!kitAllowed(p, kit, atFlag)) { stats.kitDenied++; toast(p, CONFIG.KITS[kit] ? CONFIG.KITS[kit].label + ": all issued (" + kitLimit(p.team, kit) + " per team)" : "No such kit", 3); return false; }
+  p.kit = kit; p.kitNext = "";
+  if (pawn && pawn.IsAlive() && p.deployed && p.role === "infantry" && !p.heli && p.mount < 0 && !p.board) equip(p, pawn, true);
   toast(p, CONFIG.KITS[kit].label + " - " + CONFIG.KITS[kit].name[p.team], 3);
   return true;
 }
@@ -165,18 +186,25 @@ function nextKit(p, atFlag) {
   return "";
 }
 function give(pawn, cls, deployIt) { try { if (!pawn.FindWeapon(cls)) pawn.GiveNamedItem(cls, !!deployIt); } catch (e) {} }
-function equip(p, pawn) {
+// fresh = a new issue (deploy, kit change at a rack): armour and a loaded launcher. Otherwise the weapons come back as they were
+// (leaving a seat does not reload the AT launcher or mend armour).
+function equip(p, pawn, fresh) {
   try { pawn.DestroyWeapons(); } catch (e) {}
   const team = pawn.GetTeamNumber();
   give(pawn, "weapon_knife", false);
-  give(pawn, CONFIG.PISTOL[team] || "weapon_p250", p.role === "air");
+  let kit = p.role === "infantry" ? (CONFIG.KITS[p.kit] ? p.kit : "rifle") : "rifle";
+  if (fresh && kit === "at") p.atReadyAt = TNOW + (p.bot ? CONFIG.AI.AT_FIRST : 0);
+  if (p.bot && kit === "at") kit = "rifle";
+  const atWait = p.role !== "air" && kit === "at" && TNOW < p.atReadyAt;
+  give(pawn, CONFIG.PISTOL[team] || "weapon_p250", p.role === "air" || atWait);
   if (p.role !== "air") {
-    const kit = p.role === "infantry" ? (CONFIG.KITS[p.kit] ? p.kit : "rifle") : "rifle";
-    give(pawn, CONFIG.KITS[kit].weapon[team], true);
-    if (kit === "at") { p.atReadyAt = TNOW; p.atGiveAt = 0; }
+    if (atWait) p.atGiveAt = p.atReadyAt;
+    else { give(pawn, CONFIG.KITS[kit].weapon[team], true); if (kit === "at") p.atGiveAt = 0; }
   }
-  try { pawn.SetArmor(CONFIG.INF_ARMOR); pawn.SetHasHelmet(CONFIG.INF_HELMET); } catch (e) {}
+  if (fresh) { try { pawn.SetArmor(CONFIG.INF_ARMOR); pawn.SetHasHelmet(CONFIG.INF_HELMET); } catch (e) {} }
 }
+// a seat that reads MOUSE1 (helicopter, emplaced gun, plotting board): the pawn's own weapons are put away so they do not fire too
+function stow(pawn) { try { pawn.DestroyWeapons(); } catch (e) {} give(pawn, "weapon_knife", false); }
 // the AT kit: the Zeus is only the trigger. OnGunFire (or ATTACK with it in hand) launches the scripted rocket; the Zeus is re-given after RELOAD.
 function fireAT(p, pawn) {
   const A = CONFIG.AT;
@@ -186,7 +214,7 @@ function fireAT(p, pawn) {
   let from; try { from = pawn.GetEyePosition(); } catch (e) {}
   if (!finiteV(from)) { const o = pawn.GetAbsOrigin(); from = v3(o.x, o.y, o.z + 60); }
   launchRocket({ pos: vadd(from, dir, 40), vel: vscale(dir, A.SPEED), team: p.team, slot: p.slot, grav: A.GRAVITY, blast: A.BLAST, damage: A.DAMAGE,
-                 heli: A.HELI, life: A.LIFE, gunRadius: A.GUN_DISABLE, ignore: pawn });
+                 heli: A.HELI, life: A.LIFE, gunRadius: A.GUN_DISABLE, ignore: pawn, src: "at" });
   toast(p, CONFIG.KITS.at.name[p.team] + " away - reloading " + A.RELOAD + " s", 2.5);
   return true;
 }
@@ -224,6 +252,15 @@ function uniform(p, pawn, team) {
     const m = list[p.slot % list.length];
     if (cur !== m) pawn.SetModel(m);
   } catch (e) { log("uniform: " + e); }
+}
+// a pawn this script has not seen before (new player, a slot that changed hands, the script reloaded in the tools): make sure nothing
+// an earlier script state did to it is left (shrunk, frozen, a seat camera)
+function sanitise(p, pawn) {
+  p.sane = true;
+  if (p.heli || p.mount >= 0 || p.board) return;
+  try { pawn.SetModelScale(1); pawn.SetMoveType(CSMoveType.WALK); } catch (e) {}
+  try { const cam = typeof pawn.GetCustomCamera === "function" ? pawn.GetCustomCamera() : undefined; if (cam) cam.SetMode(CustomCameraMode.DISABLED); } catch (e) {}
+  p.hidden = false; p.moveNone = false;
 }
 // a seated pawn rides inside the model: shrink it rather than touching its render mode (mg_trenchwarfare)
 function hidePawn(p, pawn, hide) {
@@ -269,10 +306,13 @@ function leastCrowded(list, team) {
   if (best) best.used++;
   return best;
 }
+// a flag is a deploy point for its owner while no enemy stands inside its circle (reinforcements do not appear on top of an attack:
+// that froze every capture and no flag ever changed hands twice in the simulations)
+function flagOpen(f, team) { return !!f && f.owner === team && !(f.n[otherTeam(team)] > 0) && !!points && points.flagspawn[f.id].length > 0; }
 // deploy choices for the lobby prompt: base, every held flag, and a waiting transport
 function spawnChoices(p) {
   const out = ["base"];
-  for (const f of flags) if (f.owner === p.team) out.push(f.id);
+  for (const f of flags) if (flagOpen(f, p.team)) out.push(f.id);
   if ((helis[p.team] || []).some((h) => h.state === "parked" && h.ent && freeSeat(h, false) >= 0 && h.seats[0].slot >= 0)) out.push("heli");
   return out;
 }
@@ -284,7 +324,8 @@ function spawnLabel(sel) {
 function spawnPoint(p, team) {
   const sel = p.bot ? botSpawnChoice(p, team) : p.spawnSel;
   const f = flagById(sel);
-  if (f && f.owner === team && points.flagspawn[f.id].length) return leastCrowded(points.flagspawn[f.id], team);
+  if (flagOpen(f, team)) { if (!p.bot) stats.flagSpawns++; return leastCrowded(points.flagspawn[f.id], team); }
+  if (f && f.owner === team && !p.bot) toast(p, f.id.toUpperCase() + " " + f.name + " is under attack: deploying at the base", 4);
   return leastCrowded(points.spawn[team], team);
 }
 function place(pawn, dest, lift) {
@@ -298,28 +339,30 @@ function deploy(p, pawn) {
   const team = pawn.GetTeamNumber();
   unseat(p, pawn, "deploy");
   freeze(p, pawn, false); hidePawn(p, pawn, false);
-  equip(p, pawn);
+  settleKit(p);
+  equip(p, pawn, true);
   p.deployed = true; p.deployedAt = TNOW; p.first = false; p.leashAt = TNOW; p.leashPos = null; p.leashMoved = TNOW;
+  p.protectUntil = TNOW + CONFIG.SPAWN_PROTECT; p.afkAt = TNOW; p.afkPos = null;
   let sub = "";
   if (p.bot && p.aiRole) { place(pawn, leastCrowded(points.spawn[team], team)); aiDeploy(p, pawn); return; }
   if (p.role === "artillery" && p.crew >= 0) {
     const g = guns[team][p.crew];
     place(pawn, g.seat || leastCrowded(points.spawn[team], team));
-    sub = "Gun " + (g.k + 1) + ": rounds from the rack (E), load at the " + (team === T ? "rail" : "breech") + " (E), plot at the board (E).";
+    sub = "Gun " + (g.k + 1) + ": take a round at the rack, load it at the " + (team === T ? "rail" : "breech") + ", aim at the board. All with E.";
   } else if (p.role === "air") {
     const h = ownHeli(p);
     if (!h) { setRole(p, "infantry", team); deploy(p, pawn); return; }
     const B = angleBasis({ pitch: 0, yaw: h.pad.yaw, roll: 0 });
     place(pawn, { pos: local(h.pad.pos, B, [0, 190, 0]), ang: { pitch: 0, yaw: h.pad.yaw, roll: 0 } }, 8);
     if (h.state === "parked") enterHeli(p, pawn, h, 0);
-    sub = h.state === "dead" ? "Your helicopter is being replaced - wait at the pad." : "SPACE up, CTRL down, mouse turns the nose, WASD tilts. E to leave when landed.";
+    sub = h.state === "dead" ? "Your helicopter is being replaced - wait at the pad." : "SPACE up, CTRL down, mouse turns, WASD moves. E gets out when landed.";
   } else {
     if (!p.bot && p.spawnSel === "heli") {
       const h = (helis[team] || []).find((x) => x.state === "parked" && x.ent && freeSeat(x, false) >= 0 && x.seats[0].slot >= 0);
-      if (h) { place(pawn, { pos: h.pad.pos, ang: { pitch: 0, yaw: h.pad.yaw, roll: 0 } }, 8); enterHeli(p, pawn, h, freeSeat(h, false)); }
+      if (h) { place(pawn, { pos: h.pad.pos, ang: { pitch: 0, yaw: h.pad.yaw, roll: 0 } }, 8); if (enterHeli(p, pawn, h, freeSeat(h, false))) stats.spawnAboard++; }
       else place(pawn, leastCrowded(points.spawn[team], team));
     } else place(pawn, spawnPoint(p, team));
-    sub = CONFIG.KITS[p.kit].name[team] + ". Take flags, hold USE on open ground to call a fire mission, E on a helicopter to ride.";
+    sub = CONFIG.KITS[p.kit].name[team] + ". Take flags. Hold E on far ground to call artillery. E at a helicopter to ride.";
   }
   if (!p.bot) banner(p, ROLE_NAME[p.role] + (p.role === "infantry" ? " - " + CONFIG.KITS[p.kit].label : ""), sub, 6);
 }

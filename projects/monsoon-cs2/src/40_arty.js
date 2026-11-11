@@ -26,7 +26,7 @@ function loadGuns() {
       guns[team].push({ team, k, tag, pos, ent: car, tube, round, rack: posOf("mv_rack_" + tag), seat: poseOf("mv_boardseat_" + tag), tubeOff,
                         yaw: yaw0, pitch: 0, yaw0, target: null, mission: -1, lay: "idle", fromYaw: yaw0, fromPitch: 0, toYaw: yaw0, toPitch: 0, layStart: 0, layEnd: 0,
                         loaded: [], loader: -1, aimer: -1, crew: [], disabledUntil: 0, puffAt: 0, recoilAt: -99, cooldown: 0, salvo: 0, salvoAt: 0, salvoBy: -1,
-                        impacts: [], ai: null, sentYaw: NaN, sentPitch: NaN, sentRec: NaN, roundShown: false, extraSigma: 0 });
+                        impacts: [], ai: null, sentYaw: NaN, sentPitch: NaN, sentRec: NaN, roundShown: false, extraSigma: 0, graceUntil: 0 });
     }
   }
   shells.length = 0;
@@ -67,12 +67,13 @@ function sigmaOf(g, range) { const S = CONFIG.ARTY.SIGMA[g.team]; return S[0] + 
 // why the gun cannot fire now ("" = it can)
 function fireBlock(g) {
   const A = CONFIG.ARTY;
-  if (gunDisabled(g)) return "Gun disabled - hold E on it to repair";
-  if (!g.loaded.length) return g.team === T ? "Rail empty - fetch a rocket" : "Breech empty - fetch a round";
-  if (!g.target) return "Lock a target on the board first";
-  if (g.lay !== "laid") return "Laying...";
-  if (g.salvo > 0 || TNOW < g.cooldown) return "Wait...";
-  if (g.loaded[g.loaded.length - 1] === "beehive" && g.target.range > A.BEEHIVE.RANGE) return "Beehive is direct fire: target beyond " + A.BEEHIVE.RANGE + " u";
+  if (gunDisabled(g)) return "Gun disabled: hold E on it to repair";
+  if (!g.loaded.length) return g.team === T ? "Rail empty: fetch a rocket" : "Breech empty: fetch a round";
+  if (!g.target) return "No target: lock one on the board";
+  if (g.lay !== "laid") return "Laying " + Math.max(0, g.layEnd - TNOW).toFixed(1) + " s";
+  if (g.salvo > 0) return "Salvo away";
+  if (TNOW < g.cooldown) return "Crew resetting " + Math.max(0, g.cooldown - TNOW).toFixed(1) + " s";
+  if (g.loaded[g.loaded.length - 1] === "beehive" && g.target.range > A.BEEHIVE.RANGE) return "Beehive is direct fire: target within " + Math.round(A.BEEHIVE.RANGE * 0.0254) + " m only";
   return "";
 }
 function fireGun(g, firerSlot) {
@@ -107,8 +108,12 @@ function fireRound(g, type, firerSlot) {
   for (const s of g.crew) toastSlot(s, "Shot out! Splash in " + (t - TNOW).toFixed(1) + " s", 2.5);
 }
 function fireBeehive(g, firerSlot) {
-  const B = CONFIG.ARTY.BEEHIVE, firer = creditOf(firerSlot);
-  const dir = dirOf({ pitch: 0, yaw: g.yaw, roll: 0 }), muzzle = vadd(v3(g.pos.x, g.pos.y, g.pos.z + 50), dir, 70), cosC = Math.cos(B.CONE * 0.5 * D2R);
+  const B = CONFIG.ARTY.BEEHIVE, firer = creditOf(firerSlot, g.team);
+  // direct fire AT the locked point (men coming up the slope are below the gun: a level cone went over their heads)
+  const m0 = v3(g.pos.x, g.pos.y, g.pos.z + 50), tg = g.target;
+  const dir = tg && Number.isFinite(tg.z) && dist2(tg, g.pos) > 60 ? vnorm(vsub(v3(tg.x, tg.y, tg.z + 40), m0)) : dirOf({ pitch: 0, yaw: g.yaw, roll: 0 });
+  const muzzle = vadd(m0, dir, 70), cosC = Math.cos(B.CONE * 0.5 * D2R);
+  stats.beehiveShots++;
   for (let k = 0; k < 5; k++) { const s = B.CONE * 0.5 * D2R * 0.6; tracer(muzzle, vnorm(v3(dir.x + gauss() * s, dir.y + gauss() * s, dir.z + gauss() * s * 0.3)), B.RANGE); }
   for (const r of roster) {
     if (!r.alive || r.team === g.team || r.seated || !r.p.deployed) continue;
@@ -116,13 +121,13 @@ function fireBeehive(g, firerSlot) {
     if (d > B.RANGE || d < 1 || vdot(v, dir) / d < cosC) continue;
     let tr; try { tr = Instance.TraceLine({ start: muzzle, end: chest, ignoreEntity: hitIgnore, ignorePlayers: true }); } catch (e) {}
     if (tr && tr.didHit && tr.fraction < 0.98) continue;
-    hurt(r.pawn, B.DAMAGE, firer, CSDamageTypes.BULLET);
+    hurt(r.pawn, B.DAMAGE, firer, CSDamageTypes.BULLET, "arty");
     stats.beehive++;
   }
   for (const h of allHelis) {
     if (h.team === g.team || h.state === "dead") continue;
     const v = vsub(heliCentre(h), muzzle), d = vlen(v);
-    if (d <= B.RANGE && d > 1 && vdot(v, dir) / d >= cosC) damageHeli(h, B.HELI, firerSlot);
+    if (d <= B.RANGE && d > 1 && vdot(v, dir) / d >= cosC) damageHeli(h, B.HELI, firerSlot, "arty");
   }
 }
 function tickGun(g, dt) {
@@ -130,7 +135,7 @@ function tickGun(g, dt) {
   if (gunDisabled(g)) {
     if (TNOW >= g.puffAt) { g.puffAt = TNOW + A.DISABLE_PUFF; puff(v3(g.pos.x, g.pos.y, g.pos.z + 30)); }
   } else {
-    if (g.disabledUntil) { g.disabledUntil = 0; for (const s of g.crew) toastSlot(s, "Gun " + (g.k + 1) + " is back in action", 3); }
+    if (g.disabledUntil) { g.disabledUntil = 0; g.graceUntil = TNOW + A.REPAIR_GRACE; for (const s of g.crew) toastSlot(s, "Gun " + (g.k + 1) + " is back in action", 3); }
     if (g.lay === "laying") {
       const f = clampN((TNOW - g.layStart) / Math.max(0.01, g.layEnd - g.layStart), 0, 1), e = f * f * (3 - 2 * f);
       g.yaw = g.fromYaw + (g.toYaw - g.fromYaw) * e; g.pitch = g.fromPitch + (g.toPitch - g.fromPitch) * e;
@@ -145,13 +150,20 @@ function tickGun(g, dt) {
   const rec = r >= 1 || r < 0 ? 0 : A.RECOIL * (r < 0.12 ? r / 0.12 : 1 - (r - 0.12) / 0.88);
   placeGun(g, rec, false);
 }
-function disableGun(g, bySlot) {
+function disableGun(g, bySlot, src) {
   const A = CONFIG.ARTY;
-  if (!gunDisabled(g)) { stats.gunsDisabled++; const q = players.get(bySlot); if (q) { q.merit++; toast(q, "Enemy gun knocked out", 3); } }
+  if (TNOW < g.graceUntil) return;                // just repaired: the crew gets a chance to shoot back
+  if (gunDisabled(g)) return;                     // already out: more hits do not add time
+  stats.gunsDisabled++; stats.gunsDisabledBy[src || "arty"] = (stats.gunsDisabledBy[src || "arty"] || 0) + 1;
+  const q = players.get(bySlot);
+  if (q && q.team !== g.team) { q.merit++; toast(q, "Enemy gun knocked out", 3); }
+  const what = g.team === T ? "rocket launcher " : "howitzer ";
+  feed(g.team, "Our " + what + (g.k + 1) + " is knocked out", "bad", false);
+  feed(otherTeam(g.team), "Enemy " + what + "knocked out", "good", false);
   g.disabledUntil = TNOW + A.DISABLE_TIME; g.puffAt = TNOW; g.salvo = 0;
   if (g.lay === "laying") { g.lay = "idle"; g.target = null; }
   if (g.aimer >= 0) { const q = players.get(g.aimer); if (q && q.board) leaveBoard(q, pawnOf(q.slot)); }
-  for (const s of g.crew) toastSlot(s, "GUN " + (g.k + 1) + " DISABLED - hold E on it to repair", 4);
+  for (const s of g.crew) toastSlot(s, "GUN " + (g.k + 1) + " KNOCKED OUT: hold E on it to repair", 4);
 }
 
 // ------------------------------------------------------------------ shells in flight, impacts, blast damage
@@ -187,15 +199,21 @@ function impactShell(sh) {
     for (let k = smokes.length - 1; k >= 0; k--) if (smokes[k].i === i) smokes.splice(k, 1);
     if (e) { try { e.Teleport({ position: pos }); } catch (err) {} fire("mv_smoke_fx_" + i, "Stop"); fire("mv_smoke_fx_" + i, "Start", undefined, 0.02); }
     smokes.push({ pos: v3(sh.x, sh.y, z + 70), until: TNOW + A.SMOKE_TIME, i });
+    stats.smokes++;
     puff(pos);
     return;
   }
   const hits = blast({ pos, radius: A.HE_RADIUS, damage: A.HE_DAMAGE, team: sh.team, slot: sh.firer, loader: sh.loader, fo: sh.fo, cover: A.COVER,
-                       heliRadius: A.HELI_RADIUS, heliDamage: A.HELI_DAMAGE, gunRadius: A.DISABLE_RADIUS });
-  if (hits) { const fp = players.get(sh.firer); if (fp) fp.hits += hits; }
+                       heliRadius: A.HELI_RADIUS, heliDamage: A.HELI_DAMAGE, gunRadius: A.DISABLE_RADIUS, src: "arty" });
+  stats.shellHits += hits;
+  if (sh.mission >= 0) { stats.missionShells++; stats.missionHits += hits; }
+  if (hits) { const fp = players.get(sh.firer); if (fp && fp.team === sh.team) fp.hits += hits; }
 }
-function creditOf(slot) {             // the attacker entity for a scripted hit: the live pawn, else the controller (dead firers keep their kills)
+// the attacker entity for a scripted hit: the live pawn, else the controller (dead firers keep their kills). team = the side the
+// shot was fired for: a slot that changed hands or sides since gets no credit (and deals no team kill): the hit is the world's.
+function creditOf(slot, team) {
   if (slot === undefined || slot < 0) return undefined;
+  if (team) { const q = players.get(slot); if (!q || q.team !== team) return undefined; }
   const c = Instance.GetPlayerController(slot); if (!c) return undefined;
   const pw = live(c.GetPlayerPawn());
   let alive = false; try { alive = !!pw && pw.IsAlive(); } catch (e) {}
@@ -205,10 +223,10 @@ function creditOf(slot) {             // the attacker entity for a scripted hit:
 function blast(o) {
   const A = CONFIG.ARTY;
   if (!o.quiet) effects(o.pos, false);
-  const firer = creditOf(o.slot);
+  const firer = creditOf(o.slot, o.team), src = o.src || "arty";
   const helpers = [];
-  if (o.loader >= 0 && o.loader !== o.slot) helpers.push(creditOf(o.loader));
-  if (o.fo >= 0 && o.fo !== o.slot && o.fo !== o.loader) helpers.push(creditOf(o.fo));
+  if (o.loader >= 0 && o.loader !== o.slot) helpers.push(creditOf(o.loader, o.team));
+  if (o.fo >= 0 && o.fo !== o.slot && o.fo !== o.loader) helpers.push(creditOf(o.fo, o.team));
   let hits = 0;
   for (const r of roster) {
     if (!r.alive || r.seated || !r.p.deployed) continue;
@@ -227,17 +245,17 @@ function blast(o) {
       if (!hp) continue;
       let health = 100; try { health = r.pawn.GetHealth(); } catch (e) {}
       const share = Math.floor(Math.min(Math.max(A.SHARE_MIN, dmg * A.SHARE_FRAC), health - 1, dmg - 1));
-      if (share >= 1) { hurt(r.pawn, share, hp, CSDamageTypes.BLAST); dmg -= share; }
+      if (share >= 1) { hurt(r.pawn, share, hp, CSDamageTypes.BLAST, src); dmg -= share; }
     }
     let alive = false; try { alive = r.pawn.IsAlive(); } catch (e) {}
-    if (alive) hurt(r.pawn, dmg, firer, CSDamageTypes.BLAST);
+    if (alive) hurt(r.pawn, dmg, firer, CSDamageTypes.BLAST, src);
   }
   if (o.heliRadius > 0) for (const h of allHelis) {
     if (h.team === o.team || h.state === "dead" || h === o.skipHeli) continue;
-    if (dist3(heliCentre(h), o.pos) < o.heliRadius) damageHeli(h, o.heliDamage, o.slot);
+    if (dist3(heliCentre(h), o.pos) < o.heliRadius) damageHeli(h, o.heliDamage, o.slot, src);
   }
   if (o.gunRadius > 0) for (const g of guns[otherTeam(o.team)] || []) {
-    if (dist2(g.pos, o.pos) < o.gunRadius && Math.abs(g.pos.z - o.pos.z) < 300) disableGun(g, o.slot);
+    if (dist2(g.pos, o.pos) < o.gunRadius && Math.abs(g.pos.z - o.pos.z) < 300) disableGun(g, o.slot, src);
   }
   return hits;
 }
@@ -259,7 +277,7 @@ function callMission(p, pos) {
   list.push(m);
   const e = need(markerName(m)); if (e) { try { e.Teleport({ position: v3(pos.x, pos.y, pos.z + 3), angles: { pitch: 0, yaw: 0, roll: 0 } }); } catch (err) {} }
   stats.missions++;
-  toast(p, "FIRE MISSION sent: grid " + gridRef(pos.x, pos.y), 4);
+  toast(p, "Fire mission sent: grid " + gridRef(pos.x, pos.y), 4);
   for (const q of players.values()) if (q.team === p.team && q.role === "artillery" && q !== p) toast(q, "FIRE MISSION from " + nameOf(p.slot) + ": grid " + gridRef(pos.x, pos.y), 5);
   return true;
 }
@@ -268,7 +286,7 @@ function tickMissions() {
     const list = missions[team];
     for (let i = list.length - 1; i >= 0; i--) if (TNOW >= list[i].until) dropMission(team, i);
     const fl = flashes[team];
-    for (let i = fl.length - 1; i >= 0; i--) if (TNOW >= fl[i].until) fl.splice(i, 1);
+    for (let i = fl.length - 1; i >= 0; i--) { if (TNOW >= fl[i].until) fl.splice(i, 1); else if (!fl[i].seen && TNOW >= fl[i].from) { fl[i].seen = true; stats.flashes++; } }
   }
 }
 // an enemy died near a mark that was just shelled: the observer gets the credit (merit raises the chance of an air slot)
@@ -276,7 +294,7 @@ function missionAssist(victimTeam, pos) {
   const M = CONFIG.ARTY.MISSION;
   for (const m of missions[otherTeam(victimTeam)] || []) {
     if (TNOW - m.splashAt > M.ASSIST_TIME || dist2(m, pos) > M.ASSIST_RADIUS) continue;
-    const q = players.get(m.owner); if (q) { q.merit++; toast(q, "Fire mission assist", 3); }
+    const q = players.get(m.owner); if (q && q.team === m.team) { q.merit++; stats.foAssists++; toast(q, "Fire mission assist +1 merit", 3); }
   }
 }
 // hold USE on open ground: returns the prompt while holding
@@ -291,12 +309,12 @@ function tickObserver(p, pawn, dt, held) {
   let from; try { from = pawn.GetEyePosition(); } catch (e) {}
   if (!finiteV(from)) { const o = pawn.GetAbsOrigin(); from = v3(o.x, o.y, o.z + 60); }
   let tr; try { tr = Instance.TraceLine({ start: from, end: vadd(from, dir, M.MAX_DIST), ignoreEntity: hitIgnore, ignorePlayers: true }); } catch (e) {}
-  if (!tr || !tr.didHit) { toast(p, "No ground there to mark", 2); return ""; }
+  if (!tr || !tr.didHit) { toast(p, "Fire mission: aim at the ground", 2); return ""; }
   const d = tr.fraction * M.MAX_DIST;
-  if (d < M.MIN_DIST) { toast(p, "Too close: mark ground beyond " + Math.round(M.MIN_DIST * 0.0254) + " m", 2.5); return ""; }
-  if (tr.normal && tr.normal.z < 0.5) { toast(p, "Mark open ground, not a wall", 2); return ""; }
-  if (!inBand(tr.end, 0)) { toast(p, "Outside the valley", 2); return ""; }
-  if (smokeBlocks(from, tr.end)) { toast(p, "Can't observe through the smoke", 2.5); return ""; }
+  if (d < M.MIN_DIST) { toast(p, "Fire mission: too close, mark ground beyond " + Math.round(M.MIN_DIST * 0.0254) + " m", 2.5); return ""; }
+  if (tr.normal && tr.normal.z < 0.5) { toast(p, "Fire mission: mark open ground, not a wall", 2); return ""; }
+  if (!inBand(tr.end, 0)) { toast(p, "Fire mission: that is outside the valley", 2); return ""; }
+  if (smokeBlocks(from, tr.end)) { stats.smokeBlocked++; toast(p, "Fire mission: you can't see through the smoke", 2.5); return ""; }
   callMission(p, tr.end);
   return "";
 }
@@ -315,6 +333,7 @@ function enterBoard(p, pawn) {
   if (g.aimer >= 0 && g.aimer !== p.slot && players.get(g.aimer) && players.get(g.aimer).board) { toast(p, "Your crewmate has the board", 2); return; }
   dropCarryCheck(p);
   g.aimer = p.slot; p.board = true; p.msnSel = -1;
+  stow(pawn);
   freeze(p, pawn, true);
   try { pawn.Teleport({ velocity: v3(0, 0, 0) }); } catch (e) {}
   const s = g.target ? worldToBoard(g.target.x, g.target.y) : worldToBoard(g.pos.x * 0.3, g.pos.y * 0.3);
@@ -325,7 +344,7 @@ function leaveBoard(p, pawn) {
   const g = guns[p.team] && guns[p.team][p.crew];
   if (g && g.aimer === p.slot) g.aimer = -1;
   let alive = false; try { alive = !!pawn && pawn.IsAlive(); } catch (e) {}
-  if (alive) freeze(p, pawn, false);
+  if (alive) { freeze(p, pawn, false); equip(p, pawn, false); }
   hClass(p, "mv_board", "show", false);
 }
 function tickBoard(p, pawn, dt, pressed, held) {
@@ -347,7 +366,8 @@ function tickBoard(p, pawn, dt, pressed, held) {
   if ((pressed & CSInputs.JUMP) || ((pressed & CSInputs.ATTACK) && onTarget && g.lay === "laid")) {
     const why = fireBlock(g);
     if (why) toast(p, why, 2); else fireGun(g, p.slot);
-  } else if (pressed & CSInputs.ATTACK) {
+  } else if ((pressed & CSInputs.ATTACK) && g.salvo > 0) toast(p, "Salvo away: lock again when it is out", 2);
+  else if (pressed & CSInputs.ATTACK) {
     let near = null, nd = CONFIG.ARTY.MISSION.LOCK_RADIUS;
     for (const m of missions[p.team]) { const d = dist2(m, w); if (d < nd) { nd = d; near = m; } }
     const tp = near ? { x: near.x, y: near.y, z: near.z } : { x: w.x, y: w.y, z: groundZ(w.x, w.y) };
@@ -395,7 +415,7 @@ function tickBattery(p, pawn, pos, dt, pressed, held) {
       return "REPAIRING GUN " + (g.k + 1);
     }
     if (p.holdKind === "repair") { p.holdKind = ""; p.holdT = 0; }
-    return "[hold E] Repair gun " + (g.k + 1) + "  (" + Math.ceil(g.disabledUntil - TNOW) + " s)";
+    return "[hold E] Repair gun " + (g.k + 1) + "  (back by itself in " + Math.ceil(g.disabledUntil - TNOW) + " s)";
   }
   if (p.holdKind === "repair") { p.holdKind = ""; p.holdT = 0; }
   if (p.role !== "artillery" || p.crew < 0) return "";
@@ -407,7 +427,7 @@ function tickBattery(p, pawn, pos, dt, pressed, held) {
   if (dRack < CONFIG.STATION_RADIUS && dRack <= dGun) {
     if (types.length > 1 && (pressed & CSInputs.ATTACK2)) { p.shellSel = (p.shellSel + 1) % types.length; if (p.carrying) takeRound(p, types[p.shellSel]); }
     const type = types[p.shellSel % types.length];
-    if (p.carrying) return "Carrying " + A.SHELL_NAME[p.carrying] + " - load it at the gun" + (types.length > 1 ? "   [MOUSE2] swap type" : "");
+    if (p.carrying) return "Carrying " + A.SHELL_NAME[p.carrying] + ": load it at the gun" + (types.length > 1 ? "   [MOUSE2] swap type" : "");
     if (g.loaded.length >= maxLoad) return team === T ? "The rail rack is full (" + maxLoad + ")" : "The gun is already loaded";
     if (use) { takeRound(p, type); toast(p, A.SHELL_NAME[type] + " in hand", 1.5); return ""; }
     return "[E] Take " + A.SHELL_NAME[type] + (types.length > 1 ? "   [MOUSE2] next type" : "");
@@ -423,7 +443,7 @@ function tickBattery(p, pawn, pos, dt, pressed, held) {
       return "[E] Load " + A.SHELL_NAME[p.carrying];
     }
     const why = fireBlock(g);
-    if (!why) { if (use || (pressed & CSInputs.JUMP)) { fireGun(g, p.slot); return ""; } return "[E] / [SPACE] FIRE"; }
+    if (!why) { if (use || (pressed & CSInputs.JUMP)) { fireGun(g, p.slot); return ""; } return "[E] or [SPACE] FIRE"; }
     return why;
   }
   if (Math.min(dSeat, dBoard) < CONFIG.STATION_RADIUS + 20) {

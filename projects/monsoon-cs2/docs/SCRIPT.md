@@ -177,7 +177,7 @@ Needles and cards use `a0..a71` = rotation in 5 degree steps clockwise (`aN` = N
 | mv_b_stats | text | | "ROUNDS 12  HITS 3  MISSIONS 2" |
 <!-- HUD-CONTRACT-END -->
 
-Total: 103 panel ids (CS2 limit 1024 per layout).
+Total: 103 panel ids (CS2 limit 1024 per layout), 107 with the additions at the end of this file.
 
 Layout hints (not checked by the mock): `mv_obj` top centre under CS2's round timer; `mv_fly` bottom centre; `mv_gun`
 bottom right; `mv_status` bottom left above CS2's health; `mv_board` centred, about 70 % of the screen height, read-outs
@@ -237,34 +237,56 @@ Things worth knowing:
 | `MOUNT` | emplaced gun kinds, cone, heat |
 | `POOL` | pool sizes: must match the map |
 | `BOTS_ON`, `BOT_QUOTA*`, `AI` | bots on/off and quota (`bot_quota_mode fill`), `MIN_HUMANS_FOR_ROLES`, how many AI pilots / gunners / crews, their reaction times and spread, leash times |
-| `CVARS` | server settings sent on activate |
+| `SPAWN_PROTECT`, `BASE_RADIUS`, `AFK`, `FEED` | deploy cover (ends with the first shot); where a role change is immediate; AFK time; event-feed lines |
+| `CVARS` | server settings sent on activate (all on Valve's Workshop command allow list, checked against pak01 on 12 Nov 2026) |
 
-Departures from DESIGN, on purpose: cyclic `ACCEL` 0.7 (design 0.45); rockets re-arm progressively over `REARM_TIME`;
-a flag flips straight to the capturing team; nobody aboard a helicopter takes pawn damage (the airframe does); the pilot
-can only leave when landed; no pilot ATTACK2 gun (the Apache has a gunner seat); the Hip slick has one door gunner (CONTRACT).
+Departures from DESIGN, on purpose (reconsidered in review pass 1 with `test/sim_balance.mjs`, docs/REVIEW_SCRIPT_1.md):
+cyclic `ACCEL` 0.7 (design 0.45: at 0.45 the median airframe life fell from 63 to 41 s in bot matches and more helicopters were
+lost); rockets re-arm progressively over `REARM_TIME` (per model); a flag flips straight to the capturing team
+(`CONQUEST.NEUTRAL_FIRST` true = via neutral: it made the side that wins the race to B hold it longer, T 90 % in bot matches);
+nobody aboard a helicopter takes pawn damage (the airframe does: riders cannot be picked off a hull the script can't trace
+into); the pilot can only leave when landed; no pilot ATTACK2 gun (the Apache has a gunner seat); the Hip slick has one door
+gunner (CONTRACT); tickets 500 and bleed 1 per 6 s per flag over 2 (DESIGN 400 / 3 s: 8 min rounds); the Mi-8s are tougher than the
+Apache (170 / 160 / 100) because they carry the riders and land at flags; a flag with an enemy in its circle is not a deploy
+point; the AT rocket does 45 to a helicopter (DESIGN 60).
 
 ## Tests
 
 ```
 node tools/build_script.mjs
-node test/mock.mjs 32 600      # 22 humans in every role + 10 infantry bots
+node test/mock.mjs 32 600      # 22 humans in every role + 10 infantry bots, every set piece, coverage table (a feature at 0 fails)
 node test/mock.mjs 4 600       # 4 humans, "!bots 14": AI pilot / gunner / crew must act and yield seats
-tsc -p test/tsconfig.json
-python create/test/api.py --strict --check projects/monsoon-cs2/out/addon/maps/scripts/mg_monsoon.js   (from cs2mapping)
-sh create/test/tscheck.sh projects/monsoon-cs2/out/addon/maps/scripts/mg_monsoon.js
+node test/mock.mjs 64 600 humans=32                       # full server: 32 humans + 32 bots
+node test/mock.mjs 32 300 scenario=churn|restart|edge|reload
+node test/mock.mjs 32 300 scenario=edge piece="shot down"  # one bug class alone (piece= matches set-piece names)
+node test/sim_balance.mjs 60 32                             # many seeded rounds, real CONFIG: balance report (1.5-5 min)
+node --cpu-prof test/mock.mjs 64 300 humans=32             # hot spots
+npx tsc -p test/tsconfig.json
+python create/test/api.py --strict --check <full path>/out/addon/maps/scripts/mg_monsoon.js   (from cs2mapping)
+sh create/test/tscheck.sh <same path>
 ```
+Scenarios: `churn` (disconnects, slots changing hands, team switches, spectating, suicides, from every seat), `restart` (rounds
+ending while helicopters fly; CS2 restarts and the script's own restart alternate), `edge` (helicopter shot down with every seat
+taken, pilot disconnects mid-air, deaths at the board / on a gun / with a round in hand, contested flag, capture cap, ticket
+underflow; runs with the HUD additions), `reload` (the tools reload the script twice: tickets, clock, flag owners, preferences
+and counters carry over). Set pieces of the default run: kits and limits, marksman, Beehive, smoke vs gunners and observers, AT vs
+helicopter, counter-battery and repair, fire missions and flashes on the board, flight envelope (soft / hard / crash landings,
+soft wall, ceiling, wreck, pad repair / re-arm), spawn modes (flag, aboard, deploy cover), fast-rope, helicopter gun, belt reload,
+AFK gunner, AFK pilot in the air, late join, two E on one seat, role change deferred in the field.
 Mock switches: `MOCK_NORESTART=1` (CS2 never starts a new round: exercises the FireWinCondition and self-restart path),
-`MOCK_TICKETS`, `MOCK_ROUND`, `MOCK_LOG=1`, `DEBUGFLY=<slot>`. The mock uses `out/entities.json` and the real HUD xml/css
-when they exist; today it synthesises the entities from layout.json and checks the HUD against the contract above.
-The mock runs with 150 tickets and 8 s captures so rounds end inside the run.
+`MOCK_TICKETS`, `MOCK_ROUND`, `MOCK_LOG=1`, `DEBUGFLY=<slot>`, `hudnew=1`, `seed=`, `cfg.<path>=<json>`, `move.<flag>=dx,dy`,
+`spawnflip.<flag>=1`. The mock uses `out/entities.json` and the real HUD xml/css when they exist (otherwise it synthesises the
+entities from layout.json) and checks the HUD against the contract above. Default runs use 40 tickets (restart: 5) and 8 s captures
+so rounds end inside the run; `mode=balance` (sim_balance) uses the real CONFIG.
 
 ## Simulated vs NOT YET TESTED IN CS2
 
-Simulated (mock engine, 11 Nov 2026): role and spawn flow, kits, captures, tickets, round end and both restart paths,
-human and AI flight (take-off, patrol, rocket runs, pad landings, repair), boarding, fast-rope, door / chin / emplaced
-guns, the battery loop for both sides, fire missions, counter-battery, the bot leash, seat hand-over from AI to humans,
-slot reuse, HUD ids. `tsc` and `api.py --strict` clean. Not exercised by the mock drivers: Beehive, the marksman kit,
-gun repair by a human, more than one fire mission or two flashes on the board at once.
+Simulated (mock engine, 12 Nov 2026, review pass 1): role and spawn flow, kits and limits, marksman, captures, tickets, round end
+and both restart paths, script reload, human and AI flight (take-off, patrol, rocket runs, pad landings, repair, re-arm), the
+flight envelope, boarding, fast-rope, door / chin / emplaced guns with belts, Beehive, smoke, AT rockets, the battery loop for
+both sides, fire missions (four at once), flashes, counter-battery and repair, the bot leash and bot AT men, seat hand-over from AI
+to humans, AFK, late join, slot reuse, team switches, HUD ids. `tsc`, `tscheck` and `api.py --strict` clean. Every feature's count
+is in the coverage table of `node test/mock.mjs 32 600`.
 
 Not yet tested in CS2 (every item is an assumption):
 - `GameRules.TerminateRound` with `mp_ignore_round_win_conditions`, and whether `AddTeamScore` shows on the scoreboard.
@@ -277,4 +299,31 @@ Not yet tested in CS2 (every item is an assumption):
 - The assist rule behind the loader / observer damage share (inherited from mg_trenchwarfare, unverified there too).
 - Flight feel, and AI altitude over the real terrain: layout.json has no height samples, so `approxGround` guesses from the
   bases and the karst list, backed by a look-ahead trace; a `LAYOUT.terrain = { x0, y0, cell, nx, ny, z[] }` grid is used if exported.
-- Script time on a server: the mock measured about 0.1 ms/tick at 32 players, its own traces included.
+- Script time on a server: the mock measured 0.09-0.11 ms/tick average, max 5.8-7.4 ms, at 64 players (32 humans + 32 bots), its
+  own trace stand-ins included. The per-minute `perf:` console line reports the real figure.
+- Balance: `test/sim_balance.mjs` runs the script's own vehicles, guns and AI against a rate model of the infantry fight; T/CT
+  fairness in bot-only matches is decided by who reaches flag B first (geometry), see docs/REVIEW_SCRIPT_1.md.
+
+## HUD additions (pass 1)
+
+Ids the script would like and the generated HUD (`tools/mv_hud.py`, `out/hud.json` `ids`) does not have yet. **The script only uses
+an id below when `out/hud.json` lists it** (`hudHas()` in `10_util.js`); until then the same information goes through panels the
+HUD already has (noted per row). The mock fails if the script touches one of these without `hud.json` listing it; `hudnew=1`
+(and `scenario=edge`) adds them to the baked `HUDDATA.ids` so the code that uses them runs. For the HUD generator to pick up:
+
+<!-- HUD-ADDITIONS-BEGIN (machine-read by test/mock.mjs, same columns) -->
+| id | kind | classes | meaning |
+|---|---|---|---|
+| mv_feed_1 | text | | event feed, newest line: "We took B BRIDGE", "p12 shot down a Mi-8", "Our howitzer 2 is knocked out", "C VILLAGE is under attack", "We are down to 50 tickets". Without it: flag lines go to `mv_toast`, the rest is not shown |
+| mv_feed_1 | class | show | the line is visible (each line lives `CONFIG.FEED.TIME` = 6 s) |
+| mv_feed_1 | swap | feed_good, feed_bad | colour: good / bad news for this player's side (none = neutral) |
+| mv_feed_2 | text | | feed line 2 |
+| mv_feed_2 | class | show | |
+| mv_feed_2 | swap | feed_good, feed_bad | |
+| mv_feed_3 | text | | feed line 3 (oldest) |
+| mv_feed_3 | class | show | |
+| mv_feed_3 | swap | feed_good, feed_bad | |
+| mv_gun_ammo | text | | belt read-out in the `mv_gun` box: "BELT 87" / "RELOADING 3 s". Without it the read-out rides on `mv_gun_name` ("M2 .50 CAL   BELT 90", in steps of 5) |
+<!-- HUD-ADDITIONS-END -->
+
+Layout hints: `mv_feed_1..3` stacked top right under CS2's kill feed, right-aligned, small caps; `mv_gun_ammo` under `mv_gun_name`.
