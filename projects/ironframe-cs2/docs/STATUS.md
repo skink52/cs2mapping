@@ -34,8 +34,11 @@
      this. Cost: those bots' deaths column counts the stand-in deaths, and the killfeed names the bot, not `AI-7`.
   - No CS2 bot in the game: score only, as before, and the console says so once. **`!bots` in chat shows it**: "CS2 bots N of Q.
     AI kills: R real, S score only". If N is 0 the bots are not joining (the console then also says "no CS2 bots joined").
-  - Not possible without a pawn: a killfeed line with the AI mech's own name. With the server plugin the kills column could be
-    set directly (not built).
+  - Not possible without a pawn: a killfeed line with the AI mech's own name.
+  - **Killfeed on a server** (skink52, 11 Nov: "We can have server side obfuscate bot kills, and only show human->human kills"):
+    the SlimeMG IronFrame module now sends only pilot-against-pilot `player_death` lines to clients (`KillfeedHumansOnly`, default
+    true; slime-mg-gm docs/ironframe.md "Killfeed"). Stand-in kills and deaths to AI mechs still count (kills column, contracts,
+    stats) but show no line. Stand-alone (no plugin) the feed still names the stand-in bot. Not seen with a client yet.
 
 **11 Nov 2026, midday (skink52's notes after looking at Sprawl): all 18 suites pass, both maps rebuilt 10:26 (Dunes) / 10:39 (Sprawl), no deleted entities, no failed resources, cache checks clean; Sprawl has 44 destructible cars an arena, Dunes 47. Unseen in game.**
 - **Sprawl ramps** (skink52: "where the ramps to the top level meet the ground make no sense - they ramp down halfway into the roads
