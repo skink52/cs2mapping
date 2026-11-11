@@ -18,7 +18,8 @@ Tools (read-only unless marked WRITES):
   stage_pass            WRITES <root>/out: run_pass.py (stage C steps), stage_d.py (stage D passes) or stage_c.py on a port root (job)
   build_map             WRITES the game addon: rcompile.py map with a preset (job; dry_run shows the command)
   compile_assets        WRITES the game addon: rcompile.py asset on content files (job)
-  job_status            state, exit code, log tail and parsed result of a job; cancel=true stops it
+  job_status            state, exit code, log tail and parsed result of a job
+  job_cancel            STOPS a running job (kills its process; partial output may be left behind)
   map_backups           WRITES the backup store: tiered compressed copies (mapbackup.py): list, save, restore, pin, scan
   visual_check          visualcheck.py: floating props, props in walls / each other, z-fighting, open meshes
   release_plan          release.py dry run: the files a one-map release addon needs, missing / stale compiled files, PUBLISH.md
@@ -114,8 +115,10 @@ TOOLS = {}
 
 # Tools that can replace or delete something that already exists (a map, a script, compiled or generated files, a backup): for these
 # destructiveHint is true. A writer not listed only adds (prop_note keeps its own notes file). Everything else is read-only.
+# Stopping a job counts: a compile or a map edit killed half way leaves partial output behind, so job_cancel is destructive, and so is
+# job_status, which still takes cancel=true for older clients (a hint describes the most a tool can do, not its usual call).
 DESTRUCTIVE = {'stage_pass', 'build_map', 'compile_assets', 'map_backups', 'material_create', 'sound_create', 'model_build', 'mechanics_build',
-               'map_edit', 'script_write'}
+               'map_edit', 'script_write', 'job_status', 'job_cancel'}
 
 
 def tool(name, description, props=None, required=(), writes=False):
@@ -299,17 +302,39 @@ def t_compile(paths, force=False, wait=60):
     return start_job('compile', 'compile %d asset(s)' % len(paths), argv, HERE, wait, parse, 1800)
 
 
-@tool('job_status', 'State of a job (running / done / failed), exit code, log tail and parsed result. cancel=true stops it. No job: all jobs.',
+def _cancel(j):
+    """kill a running job's process -> True when one was killed. The job's own output (a half-built .vpk in the compiler's temp folder,
+    a map edit's .part file) may be left behind; nothing already in place is removed."""
+    if j.proc and j.ended is None:
+        j.proc.kill(); j.lines.append('[job] cancelled'); return True
+    return False
+
+
+@tool('job_status', 'State of a job (running / done / failed), exit code, log tail and parsed result. No job: all jobs. Reading is all it '
+      'does unless cancel=true, which stops the job like job_cancel (kept for older clients; prefer job_cancel).',
       {'job': S('job id'), 'wait': N('seconds to wait for it to finish (default 0)'), 'tail': N('log lines (default 20)'),
-       'cancel': B('stop the job')})
+       'cancel': B('stop the job (deprecated: use job_cancel)')}, writes=True)
 def t_job(job=None, wait=0, tail=20, cancel=False):
     if not job: return {'jobs': [j.state(0) for j in JOBS.values()]}
     j = JOBS.get(job)
     if j is None: raise ValueError('no job %r' % job)
-    if cancel and j.proc and j.ended is None:
-        j.proc.kill(); j.lines.append('[job] cancelled')
+    if cancel: _cancel(j)
     j.thread.join(max(0.0, float(wait or 0)))
     return j.state(int(tail if tail is not None else 20))
+
+
+@tool('job_cancel', 'Stop a running job (a build, an asset compile, a map edit) by killing its process. What it had already written stays; '
+      'a build stopped half way leaves partial output in the compiler\'s temp folder and the addon as it was. Returns the job state '
+      'and whether anything was stopped.',
+      {'job': S('job id'), 'wait': N('seconds to wait for the process to end (default 5)'), 'tail': N('log lines (default 20)')}, ['job'],
+      writes=True)
+def t_job_cancel(job, wait=5, tail=20):
+    j = JOBS.get(job)
+    if j is None: raise ValueError('no job %r' % job)
+    stopped = _cancel(j)
+    j.thread.join(max(0.0, float(wait if wait is not None else 5)))
+    out = j.state(int(tail if tail is not None else 20)); out['cancelled'] = stopped
+    return out
 
 
 # ------------------------------------------------------------------------------------------------ round 2: backups, visuals, release, assets,

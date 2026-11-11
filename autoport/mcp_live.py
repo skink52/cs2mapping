@@ -205,9 +205,10 @@ def script_reload(targetname, cs_script, keyvalues=None, port=vconsole.PORT, net
 
 # What each tool can do to files and to the running game, for the MCP annotations. READ_ONLY: only reads the console, dumps or state.
 # DESTRUCTIVE: can replace or delete files (probe_script and player_marks write into the addon / CS2 cfg and remove them again), or can do
-# anything at all (game_command, and game_wait's `send`, run any console command). The rest change the running game or add a file (a screenshot), nothing more.
+# anything at all (game_command, and game_wait's `send`, run any console command), or end a running program (game_stop kills the CS2 that
+# game_launch started: whatever that session had not saved is gone). The rest change the running game or add a file (a screenshot), nothing more.
 READ_ONLY = {'game_status', 'game_tail', 'game_crash_report', 'physics_probe'}
-DESTRUCTIVE = {'game_command', 'game_wait', 'probe_script', 'player_marks'}
+DESTRUCTIVE = {'game_command', 'game_wait', 'game_stop', 'probe_script', 'player_marks'}
 
 
 def _tool(name, fn, description, props=None, required=(), conn=True):

@@ -5,6 +5,26 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-11: third review pass (junctions, job cancellation), and the first run on a real addon
+
+- **[autoport]** `pclocal.py root` checks what it builds on: the addon name must be a plain name, the addon folder must be a real folder,
+  and `<root>\content\<addon>` must be a junction to exactly that addon. It is read back after `mklink`; a plain folder, a broken link
+  or a junction to anywhere else stops the run with what to remove (it is never replaced for you). The embedded zips are unpacked file by
+  file: a name that climbs out with `..`, an absolute name, or a path through a link is refused.
+- **[tools]** `safepath.py` tells the root from what is below it. The root may be a junction (the working root's layout); a link *below*
+  the root is refused by `plan_copy`, `plan_pairs` and `write_atomic(root=)`, checked again just before each write (a link planted after
+  planning), and `rollback` will not restore or delete through one. `links_below`, `link_target`, `check_no_nested_links`.
+  `allow_links=True` (deliver: `PCLOCAL_ALLOW_LINKS=1`) is the way out for a PC whose delivery folders are themselves behind junctions.
+  Rollback also removes the empty folders its run had created.
+- **[mcp]** New `job_cancel` tool. Stopping a job kills a compile or a map edit half way, so `job_cancel`, `job_status` (which still takes
+  `cancel=true` for older clients) and `game_stop` are no longer advertised as read-only or harmless.
+- **[tests]** `tools/tests/test_links.py` (real junctions: links below a root, a link swapped in after planning, rollback through a link,
+  job cancellation on a real child process), `autoport/tests/test_pclocal.py` `Root` (wrong, broken and plain-folder junctions, bad names,
+  a zip that climbs out).
+- **[port mg_minecraft_multigames]** used as the tester for the new delivery path on real folders: stage A, `deliver --dry-run`, `deliver
+  --force`, `rollback` (all 50 destinations back to their earlier hashes), `deliver` again, then a full autoport run. The addon folders
+  from 9 Nov were moved aside first, not deleted.
+
 ## 2026-11-11: second review pass (delivery, dry runs, atomic writes, MCP hints)
 
 Unit tested and simulated only; nothing here was run against CS2 or a real addon. GitHub Actions has now run green on `main`

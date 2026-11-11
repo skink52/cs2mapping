@@ -95,12 +95,14 @@ class Stdio(unittest.TestCase):
                   'map_edit', 'script_write'):
             if n in tools: self.assertEqual(hint(n), (False, True), n)
         if 'prop_note' in tools: self.assertEqual(hint('prop_note'), (False, False))
+        for n in ('job_status', 'job_cancel'):                      # stopping a job can leave partial output: never advertised as read-only
+            self.assertEqual(hint(n), (False, True), n)
         for n in ('guide', 'list_maps', 'map_info', 'entity_info', 'validate_map', 'check_map_problems', 'sanity_check', 'analyze_build_log',
-                  'job_status', 'visual_check', 'release_plan', 'prop_search', 'script_api', 'asset_search', 'catalog_info', 'status'):
+                  'visual_check', 'release_plan', 'prop_search', 'script_api', 'asset_search', 'catalog_info', 'status'):
             if n in tools: self.assertEqual(hint(n), (True, False), n)
         for n in ('game_status', 'game_tail', 'game_crash_report'):
             if n in tools: self.assertEqual(hint(n), (True, False), n)
-        for n in ('game_command', 'game_wait', 'probe_script', 'player_marks'):
+        for n in ('game_command', 'game_wait', 'game_stop', 'probe_script', 'player_marks'):
             if n in tools: self.assertEqual(hint(n), (False, True), n)
         for n in ('game_launch', 'game_screenshot', 'game_load_map', 'playtest'):
             if n in tools: self.assertEqual(hint(n), (False, False), n)

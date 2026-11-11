@@ -5,6 +5,9 @@
   addon_name(name)            -> name, or ValueError: a single folder name (no separators, "..", drive, reserved Windows name)
   inside(root, path)          -> True when path is root or below it, compared as written (see "Junctions" below)
   is_link(path)               -> True for a symlink or an NTFS junction
+  link_target(path)           -> where a symlink / junction points (absolute), or None when it is not a link
+  links_below(root, path)     -> the links on the way from root down to path (root itself not counted)
+  check_no_nested_links(root, path)  -> ValueError when path goes through a link below root
   sha256_file(path)           -> hex digest
   write_atomic(path, data, backup=None)  -> write bytes through a temp file; untouched when the bytes are the same; optional checked backup
   plan_copy(src, dst)         -> [{rel, op: create|modify|same, src, dst, size, old_size}] for copying the tree src over dst
@@ -15,8 +18,11 @@
 
 Junctions: the pipeline's working root holds content\\<addon> as a junction to the real addon, which may be on another drive, so
 `inside` compares the paths as written (normalised, case-insensitive on Windows) and never resolves links. A path that leaves its
-root through ".." is outside; a path that passes through a junction is inside, because that is where the tool was told to work.
-`plan_copy` does not descend into links in the *source* tree (a link there would copy something the tool did not make).
+root through ".." is outside; the root itself may be a junction, because that is where the tool was told to work.
+A link *below* the root is different: nobody named it, and writing through it lands somewhere the tool was never pointed at (a
+junction planted inside an addon, a `materials` folder linked to another addon). So `plan_copy`, `plan_pairs` and `write_atomic`
+refuse a destination that passes through a link below its root (`links_below`), unless the caller says allow_links=True, and
+`rollback` refuses to restore or delete through one. `plan_copy` also does not descend into links in the *source* tree.
 
 Stdlib only; Python 3.9+. Nothing here is specific to one PC.
 """
@@ -73,6 +79,48 @@ def is_link(path):
     return bool(getattr(st, 'st_file_attributes', 0) & getattr(stat, 'FILE_ATTRIBUTE_REPARSE_POINT', 0x400))
 
 
+def link_target(path):
+    """absolute target of a symlink or junction, or None when path is not a link (or cannot be read)"""
+    if not is_link(path):
+        return None
+    try:
+        t = os.readlink(path)
+    except (OSError, ValueError):
+        try:
+            t = os.path.realpath(path)
+        except OSError:
+            return None
+    if t.startswith('\\\\?\\'):                      # Windows hands junction targets back with the long-path prefix
+        t = t[4:]
+    if not os.path.isabs(t):
+        t = os.path.join(os.path.dirname(os.path.abspath(path)), t)
+    return os.path.normpath(t)
+
+
+def links_below(root, path):
+    """Every link on the way from root down to path, root itself not counted (it may be a junction on purpose). The path does
+    not have to exist: components that are missing cannot be links. ValueError when path is not inside root."""
+    if not inside(root, path):
+        raise ValueError('%s is not inside %s' % (path, root))
+    r = os.path.normpath(os.path.abspath(root)); p = os.path.normpath(os.path.abspath(path))
+    rel = os.path.relpath(p, r)
+    found, cur = [], r
+    if rel in ('.', ''):
+        return found
+    for part in rel.split(os.sep):
+        cur = os.path.join(cur, part)
+        if is_link(cur):
+            found.append(cur)
+    return found
+
+
+def check_no_nested_links(root, path):
+    hit = links_below(root, path)
+    if hit:
+        raise ValueError('%s goes through a link below %s: %s -> %s (remove the link with rmdir, or work in the real folder)'
+                         % (path, root, hit[0], link_target(hit[0])))
+
+
 def sha256_file(path, chunk=1 << 20):
     h = hashlib.sha256()
     with open(path, 'rb') as f:
@@ -81,16 +129,21 @@ def sha256_file(path, chunk=1 << 20):
     return h.hexdigest()
 
 
-def write_atomic(path, data, backup=None, stamp=None):
+def write_atomic(path, data, backup=None, stamp=None, root=None):
     """Replace path with data (bytes) without ever leaving a half-written file under its name.
 
     -> {'op': 'same' | 'create' | 'modify', 'path', 'backup': path or None}. When the file already holds exactly these bytes it is
     not touched (its modification time stays, so nothing downstream recompiles). Otherwise the bytes go to <path>.part, are read
     back and compared, and replace the file in one step. backup='sibling' first copies an existing file to <path>.bak_<stamp>;
     backup=<folder> copies it there as <name>.bak_<stamp>; the copy is checked (sha256) before the original is replaced.
+    A path that is itself a link is refused; with root=<folder> so is a path that passes through a link below that folder.
     """
     if not isinstance(data, (bytes, bytearray)):
         raise TypeError('write_atomic takes bytes')
+    if is_link(path):
+        raise ValueError('%s is a link; not writing through it' % path)
+    if root is not None:
+        check_no_nested_links(root, path)                 # root=<addon folder>: refuse a path that leaves it through a link
     out = {'op': 'create', 'path': path, 'backup': None}
     if os.path.isdir(path):
         raise IsADirectoryError(path)
@@ -132,8 +185,9 @@ def _same(a, b):
     return os.path.getsize(a) == os.path.getsize(b) and sha256_file(a) == sha256_file(b)
 
 
-def plan_copy(src_root, dst_root):
-    """What copying the tree src_root over dst_root would do. Reads only. Links inside src_root are not followed."""
+def plan_copy(src_root, dst_root, allow_links=False):
+    """What copying the tree src_root over dst_root would do. Reads only. Links inside src_root are not followed, and a
+    destination that passes through a link below dst_root is a ValueError (dst_root itself may be a junction)."""
     plan = []
     if not os.path.isdir(src_root):
         return plan
@@ -147,6 +201,8 @@ def plan_copy(src_root, dst_root):
             dst = os.path.join(dst_root, rel)
             if not inside(dst_root, dst):
                 raise ValueError('%s would be written outside %s' % (rel, dst_root))
+            if not allow_links:
+                check_no_nested_links(dst_root, dst)
             size = os.path.getsize(src)
             if not os.path.exists(dst):
                 op, old = 'create', None
@@ -159,12 +215,13 @@ def plan_copy(src_root, dst_root):
     return plan
 
 
-def plan_pairs(pairs, allowed_roots):
+def plan_pairs(pairs, allowed_roots, allow_links=False):
     """The same kind of plan for explicit (source file, destination file) pairs, e.g. prep.py's manifest.json. Reads only.
 
     Every destination must be an absolute path inside one of allowed_roots (as written; see `inside`) and every source must be
     an existing file that is not a link: otherwise ValueError / FileNotFoundError before anything is planned, so a bad manifest
-    changes nothing. Two pairs naming the same destination are an error.
+    changes nothing. Two pairs naming the same destination are an error, and so is a destination that passes through a link
+    below its allowed root (the root itself may be a junction).
     """
     plan, seen = [], set()
     for pair in pairs:
@@ -178,6 +235,8 @@ def plan_pairs(pairs, allowed_roots):
             raise ValueError('destination is outside the allowed folders (%s): %s' % (', '.join(allowed_roots), dst))
         if not os.path.isfile(src) or is_link(src):
             raise FileNotFoundError('source file is missing (or is a link): %s' % src)
+        if not allow_links:
+            check_no_nested_links(root, dst)
         key = _norm(dst)
         if key in seen:
             raise ValueError('two files would be written to %s' % dst)
@@ -210,7 +269,7 @@ def summarise(plan):
     return out
 
 
-def apply_plan(plan, backup_dir, manifest_path, dry_run=False, label='', stamp=None, backup_path=None):
+def apply_plan(plan, backup_dir, manifest_path, dry_run=False, label='', stamp=None, backup_path=None, roots=None):
     """Copy every create/modify entry of the plan, safely.
 
     Before a file is overwritten its current bytes are copied to backup_dir/<n>/<rel> and the copy is checked (size and
@@ -218,9 +277,11 @@ def apply_plan(plan, backup_dir, manifest_path, dry_run=False, label='', stamp=N
     or None lets a tool put some backups elsewhere (e.g. <map>.vmap.bak_<stamp> next to a map). The manifest (JSON, written
     after every file so a crash leaves a usable record) lists each file's before/after sha256 and its backup, which is what
     rollback() reads. dry_run changes nothing and writes nothing; the returned dict is what would be done.
+    roots: the folders the plan was made for (recorded in the manifest); each destination is checked again, just before it is
+    written, for a link that appeared below its root since the plan was made, and rollback checks the same before undoing.
     """
     stamp = stamp or datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    man = {'label': label, 'stamp': stamp, 'dry_run': bool(dry_run), 'complete': False, 'backup_dir': backup_dir,
+    man = {'label': label, 'stamp': stamp, 'dry_run': bool(dry_run), 'complete': False, 'backup_dir': backup_dir, 'roots': list(roots or []),
            'summary': summarise(plan), 'files': [], 'dirs_created': []}
     todo = [p for p in plan if p['op'] != 'same']
     if dry_run:
@@ -254,6 +315,10 @@ def apply_plan(plan, backup_dir, manifest_path, dry_run=False, label='', stamp=N
             if os.path.getsize(bak) != p['old_size'] or sha256_file(bak) != rec['before']:
                 raise OSError('backup of %s did not verify; nothing was overwritten' % p['dst'])
             rec['backup'] = bak
+        for r in roots or []:
+            if inside(r, p['dst']):
+                check_no_nested_links(r, p['dst'])         # a link planted between planning and writing
+                break
         d = os.path.dirname(p['dst']); new_dirs = []
         while d and not os.path.isdir(d):                  # folders this run has to make: rollback removes them again if they end up empty
             new_dirs.append(d); d = os.path.dirname(d)
@@ -291,6 +356,11 @@ def rollback(manifest, dry_run=False):
         dst = rec['dst']
         if rec.get('after') is None:
             out['skipped'].append({'dst': dst, 'why': 'the manifest has no record of what was written (dry run?)'})
+            continue
+        roots = [r for r in manifest.get('roots') or [] if inside(r, dst)]
+        nested = links_below(roots[0], dst) if roots else []     # manifests written before roots were recorded: only dst itself is checked
+        if is_link(dst) or nested:
+            out['skipped'].append({'dst': dst, 'why': 'it is, or is reached through, a link that was not there for the run: %s' % (nested[0] if nested else dst)})
             continue
         if not os.path.exists(dst):
             if rec['op'] == 'create':

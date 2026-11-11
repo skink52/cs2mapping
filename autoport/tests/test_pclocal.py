@@ -195,5 +195,99 @@ class Deliver(unittest.TestCase):
         self.assertFalse(os.path.exists(self.vmf))
 
 
+class Root(unittest.TestCase):
+    """root: the working root's content/<addon> junction is made, read back, and never trusted when it is something else"""
+    def setUp(self):
+        import zipfile
+        self.tmp = tempfile.mkdtemp(prefix='pclocal_')
+        self.cs2 = os.path.join(self.tmp, 'Program Files (x86)', 'cs2'); self.s1 = os.path.join(self.tmp, 'source1'); self.root = os.path.join(self.tmp, 'work')
+        self._old = (pclocal.CS2, pclocal.S1); pclocal.CS2, pclocal.S1 = self.cs2, self.s1
+        self.real = os.path.join(self.cs2, 'content', 'csgo_addons', 'mg_test'); self.other = os.path.join(self.cs2, 'content', 'csgo_addons', 'mg_other')
+        put(os.path.join(self.real, 'maps', 'mg_test.vmap'), b'map'); put(os.path.join(self.other, 'maps', 'mg_other.vmap'), b'another map')
+        put(os.path.join(self.cs2, 'game', 'csgo', 'pak01_dir.vpk'), b'cs2 vpk'); put(os.path.join(self.s1, 'pak01_dir.vpk'), b'csgo vpk')
+        put(os.path.join(self.s1, 'maps', 'mg_test.vmf'), b'vmf')
+        with zipfile.ZipFile(os.path.join(self.s1, 'maps', 'mg_test_embedded.zip'), 'w') as z:
+            z.writestr('materials/a b.vmt', 'x'); z.writestr('sound/s.wav', 'y')
+        self.link = os.path.join(self.root, 'content', 'mg_test')
+
+    def tearDown(self):
+        pclocal.CS2, pclocal.S1 = self._old
+        for dp, dns, _ in os.walk(self.tmp):
+            for d in list(dns):
+                q = os.path.join(dp, d)
+                if pclocal.safepath.is_link(q):
+                    os.rmdir(q) if os.name == 'nt' else os.unlink(q)
+                    dns.remove(d)
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def build(self, addon='mg_test'):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf): pclocal.root(addon, self.root)
+        return buf.getvalue()
+
+    def refused(self, addon='mg_test'):
+        with self.assertRaises((SystemExit, ValueError)) as cm: pclocal.root(addon, self.root)
+        return str(cm.exception)
+
+    def can_link(self):
+        probe = os.path.join(self.tmp, 'probe')
+        try: pclocal.make_junction(probe, self.real)
+        except Exception: self.skipTest('cannot make a junction / symlink here')
+        os.rmdir(probe) if os.name == 'nt' else os.unlink(probe)
+
+    def test_builds_and_verifies(self):
+        self.can_link()
+        text = self.build()
+        self.assertIn('ready for mg_test', text)
+        self.assertTrue(pclocal.safepath.is_link(self.link)); self.assertTrue(os.path.samefile(self.link, self.real))
+        self.assertIsNone(pclocal.check_junction(self.link, self.real))
+        self.assertEqual(get(os.path.join(self.link, 'maps', 'mg_test.vmap')), b'map')
+        self.assertEqual(get(os.path.join(self.root, 'embedded', 'mg_test', 'materials', 'a_b.vmt')), b'x')     # the underscore copy
+        self.build()                                                                                          # a second run is fine
+        self.assertTrue(os.path.samefile(self.link, self.real))
+
+    def test_a_plain_folder_in_its_place_is_refused_not_replaced(self):
+        put(os.path.join(self.link, 'maps', 'stale.vmap'), b'a stale copy someone left')
+        self.assertIn('real folder', self.refused())
+        self.assertEqual(get(os.path.join(self.link, 'maps', 'stale.vmap')), b'a stale copy someone left')       # untouched
+        self.assertFalse(os.path.exists(os.path.join(self.root, 'vpk')))                                      # stopped before copying anything
+
+    def test_a_junction_to_another_addon_is_refused(self):
+        self.can_link()
+        os.makedirs(os.path.dirname(self.link)); pclocal.make_junction(self.link, self.other)
+        msg = self.refused()
+        self.assertIn('points at', msg); self.assertIn('rmdir', msg)
+        self.assertTrue(os.path.samefile(self.link, self.other))                                             # left for a person to remove
+        self.assertEqual(get(os.path.join(self.other, 'maps', 'mg_other.vmap')), b'another map')
+
+    def test_a_broken_junction_is_refused(self):
+        self.can_link()
+        gone = os.path.join(self.tmp, 'gone'); os.makedirs(gone)
+        os.makedirs(os.path.dirname(self.link)); pclocal.make_junction(self.link, gone); os.rmdir(gone)
+        self.assertIn('broken', self.refused())
+
+    def test_bad_names_and_missing_addon(self):
+        for name in ('..', 'a/b', '..\\mg_other', ''):
+            self.refused(name)
+        self.assertIn('no addon content', self.refused('mg_missing'))
+        self.assertFalse(os.path.exists(os.path.join(self.root, 'content', 'mg_missing')))
+
+    def test_zip_that_climbs_out_is_refused(self):
+        import zipfile
+        self.can_link()
+        with zipfile.ZipFile(os.path.join(self.s1, 'maps', 'mg_test_embedded.2.zip'), 'w') as z:
+            z.writestr('../../escaped.txt', 'out'); z.writestr('ok.txt', 'in')
+        self.assertIn('leaves its folder', self.refused())
+        self.assertFalse(os.path.exists(os.path.join(self.root, 'escaped.txt')))
+        self.assertFalse(os.path.exists(os.path.join(self.tmp, 'escaped.txt')))
+
+    def test_apply_refuses_a_link_inside_the_addon(self):
+        self.can_link()
+        pclocal.make_junction(os.path.join(self.real, 'materials'), os.path.join(self.other, 'maps'))
+        put(os.path.join(self.root, 'out', 'mg_test', 'materials', 'mg_other.vmap'), b'OVERWRITTEN')
+        with self.assertRaises(ValueError): pclocal.apply('mg_test', self.root)
+        self.assertEqual(get(os.path.join(self.other, 'maps', 'mg_other.vmap')), b'another map')
+
+
 if __name__ == '__main__':
     unittest.main()
