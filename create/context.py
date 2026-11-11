@@ -89,7 +89,8 @@ def snapshot(root, lines=40):
         with open(os.path.join(root, 'context.json'), encoding='utf-8') as f: conf = json.load(f)
     except (OSError, ValueError):
         pass
-    rel = os.path.relpath(root, REPO).replace('\\', '/')
+    try: rel = os.path.relpath(root, REPO).replace('\\', '/')
+    except ValueError: rel = root.replace('\\', '/')            # a project folder on another drive than the repo
     snap = {'project': os.path.basename(root), 'path': rel, 'notes': conf.get('notes', '')}
 
     status = next((s for s in ([conf['status']] if conf.get('status') else []) + list(STATUS_NAMES) if os.path.isfile(os.path.join(root, s))), None)
