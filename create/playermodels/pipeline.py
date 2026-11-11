@@ -28,7 +28,7 @@ def compile_vmdl(rc, path, log_path):
     t = time.time()
     r = subprocess.run([rc, '-i', path, '-nop4'], capture_output=True, text=True, errors='replace')
     open(log_path, 'w', encoding='utf-8').write(r.stdout + r.stderr)
-    bad = [l.strip() for l in (r.stdout + r.stderr).splitlines() if re.search(r'(?i)^\s*(error|warning)|error:|failed to|cannot ', l) and ' 0 failed' not in l]
+    bad = [l.strip() for l in (r.stdout + r.stderr).splitlines() if re.search(r'(?i)^\s*(error|warning)\b|\berror:|failed to|cannot ', l) and ' 0 failed' not in l]
     ok = ' 1 compiled, 0 failed' in r.stdout
     return {'ok': ok, 'seconds': round(time.time() - t, 1), 'problems': bad[:20], 'log': log_path}
 

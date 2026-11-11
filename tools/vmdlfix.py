@@ -1,6 +1,8 @@
 """Fixes the CS2 model compiler insists on, for the .vmdl files cs_mdl_import writes from CS:GO models.
 
-  python vmdlfix.py <addon content folder or .vmdl> [...]
+  python vmdlfix.py <addon content folder or .vmdl> [...] [--no-backup]
+
+A changed file is first copied to <file>.bak_<stamp> beside it (checked), then replaced through a temp file; --no-backup skips the copy.
 
 - Bodygroup choices with no name: cs_mdl_import leaves them empty, and resourcecompiler then refuses the whole model ("Invalid empty body group
   choice name in bodygroup 'X'. Non-empty choice names are required."), so every prop using it is missing in game (ttt_island17: the 23
@@ -39,11 +41,14 @@ def files(args):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2: sys.exit(__doc__)
+    import safepath
+    nobak = '--no-backup' in sys.argv; args = [a for a in sys.argv[1:] if a != '--no-backup']
     total = 0
-    for p in files(sys.argv[1:]):
+    for p in files(args):
         text = open(p, encoding='utf-8', errors='surrogateescape').read()
         new, n = name_choices(text)
         if n:
-            open(p, 'w', encoding='utf-8', errors='surrogateescape', newline='').write(new); total += n
+            r = safepath.write_atomic(p, new.encode('utf-8', errors='surrogateescape'), backup=None if nobak else 'sibling'); total += n
+            if r['backup']: print('  backup: ' + r['backup'])
             print('%s: named %d bodygroup choices' % (p, n))
     print('vmdlfix: %d bodygroup choices named' % total)

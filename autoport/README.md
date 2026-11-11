@@ -200,7 +200,7 @@ written fresh. Tests: `python -m unittest discover -s autoport/tests`.
 | `review.py` | The `review` commands |
 | `common.py` | Paths, the dated log, map state |
 | `watchdog.py`, `monitor.py` | Hang protection and the live window |
-| `pclocal.py`, `bspsrc.bat`, `run_autoport.bat` | Copying files to the PC, BSPSource's command line, the double-click launcher. `pclocal.py apply <addon> [--dry-run]` backs up and checks every file before overwriting it and records the run; `pclocal.py rollback <addon> [--dry-run]` undoes it ([file-safety.md](../docs/reference/file-safety.md)) |
+| `pclocal.py`, `bspsrc.bat`, `run_autoport.bat` | Copying files to the PC, BSPSource's command line, the double-click launcher. `pclocal.py deliver <manifest> [--force] [--dry-run]` refuses destinations outside the CS2 install and the Source 1 workspace, checks every copy against its source and records the run; `pclocal.py apply <addon> [--dry-run]` backs up and checks every file before overwriting it and records the run; `pclocal.py rollback <addon> [--dry-run]` undoes it ([file-safety.md](../docs/reference/file-safety.md)) |
 | `vconsole.py` | VConsole2 client (CS2 console over TCP 29000): send commands, read output, wait for a line |
 | `cs2live.py` | The running CS2: find it, launch it minimised (only when asked), load a map, screenshots, reset, stop what it launched |
 | `livetest.py` | Bot playtests, scripted scenarios, route walking and timings, physics probe, player marks |

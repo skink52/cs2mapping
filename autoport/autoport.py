@@ -620,6 +620,8 @@ def main():
     ap.add_argument('--no-online', action='store_true', help='skip the Steam Workshop and GameBanana search')
     a = ap.parse_args(argv)
     if a.maps == ['serve']: return serve(a)
+    if a.dry_run:                                   # a dry run writes nothing, not even lines in the dated log
+        globals()['log'] = launch.log = lambda *x, **k: None
     interactive = not a.maps
     names_in = launch.read_map_list() if interactive else a.maps
     names = dict(i.split('=', 1) for i in names_in if '=' in i and not os.path.exists(i))

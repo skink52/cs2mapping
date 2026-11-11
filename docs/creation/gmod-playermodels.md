@@ -173,7 +173,7 @@ skeleton, `proportions` = the model's, subtracted and played as a `predelta auto
 (`C:\VTF\VTFEdit\VTFCmd.exe`), lua registers the model and stock c_arms. Output: `C:\source1\gmod_ports\` (`src/<slug>/` QC and
 SMDs, `addons/<slug>/` the addon, `preview/`). Compiling needs Garry's Mod's own `bin/studiomdl.exe` (not in the PC's tools; the
 anonymous GMod dedicated server can't be fetched per depot).
-First compiles (8 Nov 2026, Cody and May, GMod's own studiomdl from `D:\SteamLibrary\steamapps\common\GarrysModin`): clean,
+First compiles (8 Nov 2026, Cody and May, GMod's own studiomdl from `D:\SteamLibrary\steamapps\common\GarrysMod\bin`): clean,
 about 1 min each. GMod's studiomdl takes SMD coordinates as they are (no 90 degree turn: a turn written into the SMD came out in
 the MDL), so the SMDs are in the stock MDL's own frame. Over 60k vertices (Source's limit is 65536 per model) the mesh is split by
 material into body parts `body`, `body2` (Cody 62.6k, May 70k). Textures: DXT1 unless alpha-tested (VTFCmd's `-alphaformat`

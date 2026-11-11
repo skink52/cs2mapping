@@ -167,7 +167,10 @@ if __name__ == '__main__':
             if dropped: print('%s: %d break pieces dropped, their models exist nowhere: %s' % (vp, len(dropped), ', '.join(dropped)))
         t, gibs = add_generic(t)
         if gibs or dropped:
-            open(vp, 'w', encoding='utf-8', newline='').write(t.replace('\n', '\r\n') if crlf else t); refs += gibs
+            import safepath
+            bk = safepath.write_atomic(vp, (t.replace('\n', '\r\n') if crlf else t).encode('utf-8'), backup='sibling')   # <file>.bak_<stamp> beside it
+            if bk['backup']: print('  backup: ' + bk['backup'])
+            refs += gibs
             if gibs: print('generic gibs added to', vp, '(%d)' % len(gibs))
         else: print('no generic gibs for', vp, '(has gibs already, or no Metal/Wooden/Glass propdata base)')
     if csgo:

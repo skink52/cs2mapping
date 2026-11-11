@@ -203,12 +203,20 @@ def script_reload(targetname, cs_script, keyvalues=None, port=vconsole.PORT, net
         return {'console': livetest.script_reload(g, targetname, cs_script, keyvalues or {})}
 
 
+# What each tool can do to files and to the running game, for the MCP annotations. READ_ONLY: only reads the console, dumps or state.
+# DESTRUCTIVE: can replace or delete files (probe_script and player_marks write into the addon / CS2 cfg and remove them again), or can do
+# anything at all (game_command, and game_wait's `send`, run any console command). The rest change the running game or add a file (a screenshot), nothing more.
+READ_ONLY = {'game_status', 'game_tail', 'game_crash_report', 'physics_probe'}
+DESTRUCTIVE = {'game_command', 'game_wait', 'probe_script', 'player_marks'}
+
+
 def _tool(name, fn, description, props=None, required=(), conn=True):
     p = dict(props or {})
     if conn:
         p.update(CONN)
     return {'name': name, 'description': description, 'fn': fn,
-            'inputSchema': {'type': 'object', 'properties': p, 'required': list(required), 'additionalProperties': False}}
+            'inputSchema': {'type': 'object', 'properties': p, 'required': list(required), 'additionalProperties': False},
+            'annotations': {'readOnlyHint': name in READ_ONLY, 'destructiveHint': name in DESTRUCTIVE, 'openWorldHint': False}}
 
 
 S, I, N, B = ({'type': 'string'}, {'type': 'integer'}, {'type': 'number'}, {'type': 'boolean'})

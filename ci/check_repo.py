@@ -9,6 +9,8 @@ Checks (all of them when none is named):
   json      every tracked .json parses
   hygiene   no tracked build output (__pycache__, .pyc, node_modules, .part / .tmp files), no file over 20 MB
   private   no user-profile path (C:\\Users\\<name>, /home/<name>, 8.3 short names) in tracked text: the repo rule is "no personal details"
+  control   no control characters in tracked text (anything below space except tab, LF, CR; and DEL). They are almost always a
+            Windows path whose backslash was eaten: backslash-a became a bell, backslash-b a backspace
   licence   the root and every projects/<name>/ carry both licence files with the standard notice, and no README says the repo's own
             code is MIT (it has been PolyForm Noncommercial 1.0.0 since 30 Oct 2026; "(MIT)" for third-party work is fine)
   docs      the stage C step list and the stage D pass list in docs/porting/pipeline.md and tools/README.md match tools/stage_c.py
@@ -129,6 +131,24 @@ def check_private(files):
     return n, probs, ''
 
 
+CONTROL = re.compile(rb'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
+
+
+def check_control(files):
+    probs, n = [], 0
+    for f in files:
+        if Path(f).suffix.lower() not in TEXT_EXT:
+            continue
+        n += 1
+        data = (ROOT / f).read_bytes()
+        m = CONTROL.search(data)
+        if m:
+            line = data.count(b'\n', 0, m.start()) + 1
+            around = CONTROL.sub(b'?', data[max(0, m.start() - 24):m.start() + 12]).decode('utf-8', 'replace').replace('\n', ' ')
+            probs.append('%s:%d: control character 0x%02x near "%s"' % (f, line, data[m.start()], around))
+    return n, probs, ''
+
+
 def check_licence(files):
     probs = []
     fs = set(files)
@@ -194,7 +214,7 @@ def check_docs(files):
 
 
 CHECKS = {'python': check_python, 'node': check_node, 'json': check_json, 'hygiene': check_hygiene, 'private': check_private,
-          'licence': check_licence, 'docs': check_docs}
+          'control': check_control, 'licence': check_licence, 'docs': check_docs}
 
 
 def main(argv=None) -> int:

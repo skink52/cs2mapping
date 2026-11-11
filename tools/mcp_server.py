@@ -112,12 +112,18 @@ def start_job(kind, title, argv, cwd, wait=20, parse=None, timeout=None):
 TOOLS = {}
 
 
+# Tools that can replace or delete something that already exists (a map, a script, compiled or generated files, a backup): for these
+# destructiveHint is true. A writer not listed only adds (prop_note keeps its own notes file). Everything else is read-only.
+DESTRUCTIVE = {'stage_pass', 'build_map', 'compile_assets', 'map_backups', 'material_create', 'sound_create', 'model_build', 'mechanics_build',
+               'map_edit', 'script_write'}
+
+
 def tool(name, description, props=None, required=(), writes=False):
     def deco(fn):
         schema = {'type': 'object', 'properties': props or {}, 'additionalProperties': False}
         if required: schema['required'] = list(required)
         TOOLS[name] = {'name': name, 'description': description, 'inputSchema': schema, 'fn': fn,
-                       'annotations': {'readOnlyHint': not writes, 'destructiveHint': False, 'openWorldHint': False}}
+                       'annotations': {'readOnlyHint': not writes, 'destructiveHint': bool(writes and name in DESTRUCTIVE), 'openWorldHint': False}}
         return fn
     return deco
 
@@ -410,13 +416,15 @@ def t_sound(content, name, preset=None, file=None, seconds=2.0, loop=False, even
 
 
 @tool('model_build', 'A prop through headless Blender (create/blenderkit.py): template (crate, barrel, pallet, table, lamp, pipe, sandbags, fence), '
-      'a bpy script or an import (.obj .fbx .glb .blend) -> FBX + collision + .vmdl. dry_run (default true) writes the script and vmdl only.',
+      'a bpy script or an import (.obj .fbx .glb .blend) -> FBX + collision + .vmdl. dry_run (default true) writes nothing and returns the script, the vmdl text and the files it would '
+      'write; dry_run false with blender false writes the script and vmdl only; dry_run false runs Blender.',
       {'content': S('addon content folder'), 'name': S('model name'), 'template': S('template'), 'size': A('[W, D, H]', {'type': 'number'}),
-       'script': S('bpy script path'), 'import_file': S('model file'), 'material': S('vmat path'), 'dry_run': B('do not start Blender (default true)')},
+       'script': S('bpy script path'), 'import_file': S('model file'), 'material': S('vmat path'), 'dry_run': B('write nothing (default true)'), 'blender': B('start Blender when not a dry run (default true)')},
       ['content', 'name'], writes=True)
-def t_model(content, name, template=None, size=None, script=None, import_file=None, material='materials/dev/reflectivity_50.vmat', dry_run=True):
+def t_model(content, name, template=None, size=None, script=None, import_file=None, material='materials/dev/reflectivity_50.vmat', dry_run=True, blender=True):
     bk = _create('blenderkit')
-    return bk.build(content, name, template, tuple(size) if size else None, script, import_file, material, dry_run=dry_run is not False)
+    return bk.build(content, name, template, tuple(size) if size else None, script, import_file, material, dry_run=dry_run is not False,
+                    no_blender=blender is False)
 
 
 @tool('mechanics_build', 'cs_script mechanics (create/mechkit.py): bundle abilities / minigames / controls / weapons / hideseek / story / mode '
@@ -558,7 +566,7 @@ def load_plugins(folder=None):
                 if t['name'] in TOOLS: log('plugin tool %s from %s clashes, skipped' % (t['name'], p)); continue
                 schema = t.get('inputSchema') or {'type': 'object', 'properties': {}}
                 TOOLS[t['name']] = {'name': t['name'], 'description': t.get('description', ''), 'inputSchema': schema, 'fn': t['fn'],
-                                    'annotations': t.get('annotations', {'openWorldHint': True})}
+                                    'annotations': t.get('annotations') or {'readOnlyHint': False, 'destructiveHint': True, 'openWorldHint': True}}   # a plugin that says nothing is assumed able to change things
                 added.append(t['name'])
         except Exception as ex:
             log('plugin %s not loaded: %s' % (p, ex))

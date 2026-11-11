@@ -164,7 +164,18 @@ class Map:
     def dumps(s):
         out = dmx.dumps(s.doc); dmx.loads(out); return out
     def save(s, path):
-        out = s.dumps(); os.makedirs(os.path.dirname(path), exist_ok=True); open(path, 'wb').write(out); return len(out)
+        """Write the map. Atomic: the bytes go to <path>.part and replace the file in one step, so a crash mid-write never leaves a
+        truncated map; a file that already holds exactly these bytes is not rewritten. No backup is taken here: a caller that saves
+        over a map someone edits backs it up first (mapbackup.py, or pclocal.py apply)."""
+        out = s.dumps(); os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+        if os.path.isfile(path) and os.path.getsize(path) == len(out):
+            with open(path, 'rb') as f:
+                if f.read() == out: return len(out)
+        tmp = path + '.part'
+        with open(tmp, 'wb') as f:
+            f.write(out); f.flush(); os.fsync(f.fileno())
+        os.replace(tmp, path)
+        return len(out)
 
 # ---------- math ----------
 def rot_matrix(ang):

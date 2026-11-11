@@ -1,9 +1,10 @@
 """Run the pipeline in a local workspace on the PC instead of the cloud one (Claude Code on the PC).
 
-  python pclocal.py deliver <manifest.json> [...] [--force]   copy prep.py's (staged, PC path) pairs to the PC paths
+  python pclocal.py deliver <manifest.json> [...] [--force] [--dry-run]   copy prep.py's (staged, PC path) pairs to the PC paths
   python pclocal.py root <addon> [<root>]                     build the stage C working root for an addon
   python pclocal.py apply <addon> [<root>] [--dry-run]        copy stage C's output back to the addon (only changed files, each backed up first)
-  python pclocal.py rollback <addon> [<root>] [--dry-run]     undo the newest apply of that addon from its manifest (or: rollback <manifest.json>)
+  python pclocal.py rollback <addon> [<root>] [--dry-run]     undo the newest apply of that addon from its manifest (or: rollback <manifest.json>,
+                                                              which is also how a deliver is undone: rollback <root>\\out\\deliver_<stamp>.json)
 
 apply backs up every file it overwrites before touching it and checks the copy (size and sha256): a .vmap as <map>.vmap.bak_<stamp> next to
 it (as before), anything else under <root>\\apply_backups\\<addon>\\<stamp>\\. It records the run in <root>\\out\\<addon>_apply_<stamp>.json (each
@@ -23,16 +24,44 @@ CS2 = os.environ.get('CS2_ROOT') or r'C:\Program Files (x86)\Steam\steamapps\com
 S1 = os.environ.get('CS2MAP_SOURCE1') or r'C:\source1'
 DEFAULT_ROOT = os.path.join(S1, 'cs2port', 'work')
 
-def deliver(manifests, force):
-    pairs = [p for m in manifests for p in json.load(open(m))]
-    clash = [pc for staged, pc in pairs if os.path.exists(pc) and not filecmp.cmp(staged, pc, shallow=False)]
-    if clash and not force:
+def deliver(manifests, force, dry_run=False, root=None):
+    """Copy prep.py's (staged, PC path) pairs. Nothing is copied unless every pair is valid: each destination must be inside the CS2
+    install or the Source 1 workspace (CS2_ROOT / CS2MAP_SOURCE1), each source must exist. Files that already exist and differ stop
+    the run unless force; with force each is backed up (checked by sha256) under <root>\\deliver_backups\\<stamp>\\ first. Every copy
+    goes through a temp file and is checked against the source's sha256. The run is recorded in <root>\\out\\deliver_<stamp>.json,
+    which `pclocal.py rollback <that file>` undoes. -> the manifest dict"""
+    root = root or DEFAULT_ROOT
+    pairs = []
+    for m in manifests:
+        try:
+            with open(m, encoding='utf-8') as f: got = json.load(f)
+        except (OSError, ValueError) as ex: sys.exit('nothing copied: cannot read manifest %s (%s)' % (m, ex))
+        if not isinstance(got, list): sys.exit('nothing copied: %s is not a list of [staged, PC path] pairs' % m)
+        pairs += got
+    try: plan = safepath.plan_pairs(pairs, [CS2, S1])
+    except (ValueError, OSError) as ex: sys.exit('nothing copied: %s' % ex)
+    clash = [p['dst'] for p in plan if p['op'] == 'modify']
+    if clash and not force and not dry_run:
         sys.exit('nothing copied: these already exist and differ (--force to overwrite):\n  ' + '\n  '.join(clash))
-    for staged, pc in pairs:
-        os.makedirs(os.path.dirname(pc), exist_ok=True)
-        shutil.copyfile(staged, pc)
-        if os.path.getsize(pc) != os.path.getsize(staged): sys.exit('size mismatch after copying ' + pc)
-    print('%d files delivered' % len(pairs))
+    stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S'); n = 1
+    manifest = os.path.join(root, 'out', 'deliver_%s.json' % stamp)
+    while os.path.exists(manifest):
+        n += 1; manifest = os.path.join(root, 'out', 'deliver_%s_%d.json' % (stamp, n))
+    if not any(p['op'] != 'same' for p in plan): manifest = None
+    try:
+        man = safepath.apply_plan(plan, os.path.join(root, 'deliver_backups', stamp + ('_%d' % n if n > 1 else '')), manifest,
+                                  dry_run=dry_run, label='pclocal deliver', stamp=stamp)
+    except OSError as ex:
+        sys.exit('delivery stopped: %s%s' % (ex, ('\n  undo what was copied: python pclocal.py rollback "%s"' % manifest) if manifest and os.path.exists(manifest) else ''))
+    sm = man['summary']
+    if dry_run:
+        print('DRY RUN, nothing changed. deliver would create %d and overwrite %d files (%d already identical): %.1f MB to write, %.1f MB of backups%s'
+              % (sm['create'], sm['modify'], sm['same'], sm['bytes_written'] / 1e6, sm['bytes_backed_up'] / 1e6,
+                 '' if force or not clash else '\n  %d existing files differ: the real run stops unless --force' % len(clash)))
+        for f in man['files']: print('  %-6s %s' % (f['op'], f['dst']))
+    else:
+        print('%d files delivered' % len(pairs))
+    return man
 
 def copy_if_changed(src, dst):
     if os.path.exists(dst) and os.path.getsize(src) == os.path.getsize(dst) and os.path.getmtime(src) <= os.path.getmtime(dst): return
@@ -110,7 +139,7 @@ if __name__ == '__main__':
     args = sys.argv[1:]; force = '--force' in args; dry = '--dry-run' in args; args = [a for a in args if a not in ('--force', '--dry-run')]
     if len(args) < 2: sys.exit(__doc__)
     cmd = args[0]
-    if cmd == 'deliver': deliver(args[1:], force)
+    if cmd == 'deliver': deliver(args[1:], force, dry_run=dry)
     elif cmd == 'root': root(args[1], args[2] if len(args) > 2 else DEFAULT_ROOT)
     elif cmd == 'apply': apply(args[1], args[2] if len(args) > 2 else DEFAULT_ROOT, dry_run=dry)
     elif cmd == 'rollback': rollback(args[1], args[2] if len(args) > 2 else DEFAULT_ROOT, dry_run=dry)

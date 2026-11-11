@@ -1,9 +1,32 @@
 # Changelog
 
 - 2026-11-11 [ironframe] Far scenery painted into the arena sky panoramas (megacity skyline, mesas and refineries) instead of a 3D skybox: arena copies share one moondome sky at infinity (`tools/sky_vista.py`); gotcha added.
-- 2026-11-09 [monsoon] New project `projects/monsoon-cs2` (mg_monsoon, second battle map): design doc, layout module, terrain/karst/water/lobby generator stages 1-3, first procedural props (helicopters, artillery, base, village). Paused with a handover in NOTES.md. `create/build_all_props.py` accepts lazy (callable) specs. cs2port_w2..w5 moved to `C:\source1rchive\cs2port_workers_20261109`.
+- 2026-11-09 [monsoon] New project `projects/monsoon-cs2` (mg_monsoon, second battle map): design doc, layout module, terrain/karst/water/lobby generator stages 1-3, first procedural props (helicopters, artillery, base, village). Paused with a handover in NOTES.md. `create/build_all_props.py` accepts lazy (callable) specs. cs2port_w2..w5 moved to `C:\source1\archive\cs2port_workers_20261109`.
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
+
+## 2026-11-11: second review pass (delivery, dry runs, atomic writes, MCP hints)
+
+Unit tested and simulated only; nothing here was run against CS2 or a real addon. GitHub Actions has now run green on `main`
+(repo checks, Windows and Linux unit tests, map scripts) after two fixes its first run asked for.
+
+- **[autoport]** `pclocal.py deliver` goes through `tools/safepath.py`: every destination must be inside the CS2 install or the Source 1
+  workspace, every source must exist, and a bad manifest copies nothing. Each copy goes through a temp file and is checked against the
+  source's sha256; with `--force` an existing file is backed up (checked) first. New `--dry-run`. The run is recorded in
+  `<root>\out\deliver_<stamp>.json`, which `pclocal.py rollback <that file>` undoes. Manifest format and command line unchanged.
+- **[dry runs]** A dry run now writes nothing anywhere. `create/blenderkit.py --dry-run` used to write the script and the vmdl: that is
+  now `--no-blender`, and `--dry-run` returns the texts and the files it would write (MCP `model_build`: `dry_run` writes nothing, new
+  `blender` flag). `create/mapops.py` dry runs no longer write a `mechanics` op's script and HUD files. `autoport.py --dry-run` no longer
+  writes lines to the dated log. `create/hats/pack.py` has `--dry-run` and will not prune through a link.
+- **[tools]** `vmapedit.Map.save` writes through a temp file and leaves a map with the same bytes untouched. `matnames.py` saves the map
+  with `mapbackup` (kind `before-matnames`) before renaming anything. `vmdlfix.py` and `gibfix.py` copy a file to `<file>.bak_<stamp>`
+  beside it (checked) before replacing it. `safepath.write_atomic`, `plan_pairs`; `apply_plan` checks each copy against its source.
+- **[mcp]** `destructiveHint` is true for the tools that can replace or delete what exists (maps, scripts, compiled and generated files,
+  backups, any console command) and false for the readers; a plugin tool that declares nothing is assumed able to change things.
+- **[ci]** `check_repo.py control`: no control characters in tracked text. It found three: two Windows paths in docs whose backslash had
+  been eaten, and a regex in `create/playermodels/pipeline.py` whose two word boundaries had become backspaces, so its error filter
+  missed lines it was written to catch. Actions updated to the Node 24 versions. The unused `projects/hellmatch-cs2/preview/package.json`
+  stub is removed.
 
 ## 2026-11-11: repo review (docs, CI, file safety)
 
@@ -21,7 +44,7 @@ From an outside review of the repo. Unit tested and simulated only; nothing here
   the proposals for one settings file, a `cs2mapping` command and dated release tags: proposed, not built).
 - **[ci]** `.github/workflows/ci.yml`: repo checks, the `tools/` and `autoport/` unit tests on Windows (Linux informational), every ported
   map's script in the mock engine, the TTT suite, the mg_trenchwarfare type-check. `ci/check_repo.py`, `ci/check_links.py`,
-  `ci/mock_ports.sh`. Not yet run on GitHub.
+  `ci/mock_ports.sh`. (First run on GitHub the same day; see the entry above.)
 - **[tools]** `safepath.py`: name and containment checks (junction-aware), copy plans, verified backups, change manifests, rollback.
   `mapbackup.py` reads each copy back after writing it, checks the sha256 before a restore, and has `verify`. `prep.py` refuses an addon
   name that is a path and will not clear a work folder that is a link. `mcp_server.py` `script_write` refuses path-like names.

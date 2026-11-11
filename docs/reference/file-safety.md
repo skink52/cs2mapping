@@ -21,6 +21,9 @@ before it overwrites, how to preview a change, and how to undo one. Audit of 11 
 | Kept by | What | Where | Checked | Undo |
 |---|---|---|---|---|
 | `tools/mapbackup.py` | A `.vmap`, compressed, with its sha256; optional snapshots of the addon's other source files, stored once per content | `--store`, else `CS2MAP_BACKUPS`, else `<cs2port>\map_backups` | read back and unpacked after every save, and again before a restore; `mapbackup.py verify` checks the whole store | `mapbackup.py restore <map> <stamp or latest>` (the map it replaces is saved first, kind `before-restore`) |
+| `autoport/pclocal.py deliver --force` | every existing file it replaces when copying stage A's output to the PC paths | `<root>\deliver_backups\<stamp>\` | size and sha256 before the overwrite; each copy against its source after | `pclocal.py rollback <root>\out\deliver_<stamp>.json` |
+| `tools/matnames.py` | the map, through `mapbackup`, before it renames a material in it (kind `before-matnames`) | the `mapbackup` store | by `mapbackup` | `mapbackup.py restore` |
+| `tools/vmdlfix.py`, `tools/gibfix.py` | each `.vmdl` they change | `<file>.bak_<stamp>` beside it | sha256 before the replace | copy it back by hand |
 | `autoport/pclocal.py apply` | every file it overwrites when copying stage C's output into the addon | a `.vmap` as `<map>.vmap.bak_<stamp>` next to it; other files under `<root>\apply_backups\<addon>\<stamp>\` | size and sha256 before the overwrite | `pclocal.py rollback <addon>` |
 | `autoport/autoport.py` (stage C step) | the importer's untouched map as `<map>.vmap.imported`; and, before a rerun puts that copy back over a map that has changed since, the changed map | next to the map; the changed map goes to the `mapbackup` store, kind `before-rerun` | by `mapbackup` | `mapbackup.py restore` |
 | `autoport/polish.py` | the map before a polish pass | `<map>.vmap.bak_polish_<stamp>` next to it | no | copy it back by hand |
@@ -32,7 +35,7 @@ before anything risky. The `.bak_*` files next to maps are never trimmed by a to
 
 ## Change records
 
-`pclocal.py apply` writes `<root>\out\<addon>_apply_<stamp>.json` after every file it copies, so even an interrupted run leaves a
+`pclocal.py apply` (and `deliver`, as `deliver_<stamp>.json`) writes `<root>\out\<addon>_apply_<stamp>.json` after every file it copies, so even an interrupted run leaves a
 usable record: for each file the operation (`create` or `modify`), its sha256 before and after, and where its backup is.
 `rollback` reads that record. It puts overwritten files back and removes created ones **only while a file still has the bytes the run
 wrote**; a file edited since (in Hammer, by a later pass) is left alone and listed, because undoing it would lose that edit.
@@ -45,8 +48,11 @@ log, `polish_<time>.md`, the `mapbackup` store's own JSON.
 | Tool | How | Shows |
 |---|---|---|
 | `autoport/pclocal.py apply <addon> --dry-run` | changes nothing, writes nothing | files that would be created and overwritten, folders touched, bytes to write and to back up |
+| `autoport/pclocal.py deliver <manifest> --dry-run` | changes nothing, writes nothing | files that would be created and overwritten, and whether the real run would stop for `--force` |
 | `autoport/pclocal.py rollback <addon> --dry-run` | | what would be restored, removed and left alone |
-| `autoport/autoport.py --dry-run` | | the plan for each map, then stops |
+| `create/blenderkit.py --dry-run` | writes nothing (`--no-blender` writes the script and vmdl without starting Blender) | the script and vmdl text, the files it would write and overwrite |
+| `create/hats/pack.py --prune --dry-run` | | the hat folders it would delete and the zip it would write |
+| `autoport/autoport.py --dry-run` | writes nothing, not even log lines | the plan for each map, then stops |
 | `tools/mapbackup.py trim --dry-run` | | the copies it would delete |
 | `tools/rcompile.py map --dry-run` | | the compiler command line |
 | `tools/release.py` | dry by default; `--apply` copies | what would be published, missing and stale files |
@@ -56,20 +62,16 @@ log, `polish_<time>.md`, the `mapbackup` store's own JSON.
 
 ## What still writes without a backup or a preview
 
-Known gaps, most important first. None was changed in the 11 Nov 2026 pass because each needs a decision about where its backups
-should go or a test against real addons.
+Known gaps, most important first, after the two 11 Nov 2026 passes. Each needs a real import or build to test.
 
 | Tool | What it does | Why it matters |
 |---|---|---|
 | `scripts/build_maps.ps1` | copies built files over `game\csgo_addons\<addon>\` (size checked, not hashed); no dry run | compiled output only, rebuilt by building again. It now refuses addon or map names that are paths. |
 | `scripts/run_import.bat`, `run_fixrefs.bat` | rename `game\bin\win64\vpk.signatures`, copy scripts into `game\csgo\import_scripts`, unpack assets into `csgo\` with `tar -k` (keeps existing files) | writes inside the CS2 install; Steam restores `vpk.signatures` on update |
-| `tools/matnames.py`, `vmdlfix.py`, `gibfix.py` | rewrite a `.vmap` or `.vmdl` in the addon in place | no backup of their own: run `mapbackup.py save` first, or use them through autoport, whose stage C output goes through `pclocal apply` |
-| `tools/vmapedit.py` `Map.save` | plain write to the path given, no temp file | a crash mid-write can truncate the map; every caller that saves in place should back up first |
+| `tools/vmapedit.py` `Map.save` | atomic now (temp file, then replace; unchanged bytes are not rewritten), but takes no backup | a caller that saves over a map someone edits must back it up first; `stage_c`, `stage_d` and `run_pass` write to `<root>/out`, not in place |
 | `autoport/polish.py`, `autoport/profiles.py` | write non-map files (scripts, HUD css) into the addon with no backup | small text files, regenerated by rerunning |
-| `create/hats/pack.py --prune`, `create/playermodels/cleanup.py`, `create/clean_stale.py`, `create/loading.py`, `create/mech_anim.py` | delete generated folders or files under the addon or the work folder | targets come from a catalog or config; `cleanup.py` and `clean_stale.py` have `--dry-run`, `pack.py --prune` does not |
-| `create/blenderkit.py --dry-run` | still writes its script and the `.vmdl` | "dry run" there only skips Blender |
-| `create/mapops.py` | `mechanics` ops call the builder before the `dry_run` check | a dry run may still write generated files (not confirmed) |
-| MCP server (`tools/mcp_server.py`) | every tool is advertised with `destructiveHint: false`, including the ones that write | a client cannot tell readers from writers. `script_write` now refuses names that are paths. |
+| `create/hats/pack.py --prune`, `create/playermodels/cleanup.py`, `create/clean_stale.py`, `create/loading.py`, `create/mech_anim.py` | delete generated folders or files under the addon or the work folder | targets come from a catalog or config; the first three have `--dry-run`; none keeps a copy (the files are regenerated by rerunning the converter) |
+| MCP server (`tools/mcp_server.py`, `autoport/mcp_live.py`) | the writers overwrite generated files with no backup (`map_edit` in place does back up) | the hints now say which tools can replace or delete (`destructiveHint`), which only add, and which only read; `script_write` refuses names that are paths |
 
 ## Using the safe copy in a new tool
 
@@ -79,11 +81,13 @@ should go or a test against real addons.
 import safepath
 addon = safepath.addon_name(addon)                      # ValueError unless it is one plain folder name
 plan = safepath.plan_copy(out_dir, addon_dir)           # reads only: create / modify / same per file
+plan = safepath.plan_pairs(pairs, [allowed_root, ...])  # or explicit (source, destination) pairs, each inside an allowed folder
 man = safepath.apply_plan(plan, backup_dir, manifest_json, dry_run=args.dry_run)
 ...
 safepath.rollback(manifest_json)                        # or dry_run=True to see what it would do
+safepath.write_atomic(path, data, backup='sibling')     # one file: temp file then replace; same bytes = untouched
 ```
 
 Tests: `tools/tests/test_safepath.py` (names, containment, junctions, interrupted runs, damaged backups),
-`autoport/tests/test_pclocal.py`, `tools/tests/test_mapbackup.py`. They use real files in temp folders, including a real NTFS junction
+`autoport/tests/test_pclocal.py`, `tools/tests/test_mapbackup.py`, `tools/tests/test_dryrun.py` (the file tree before and after each dry run). They use real files in temp folders, including a real NTFS junction
 on Windows; none touches a CS2 install.

@@ -64,8 +64,8 @@ What the audit found:
   previews); `matplotlib` (one mg_trenchwarfare script). Blender's `bpy` is needed only by the two scripts that run inside Blender.
 - Node: no third-party packages except `playwright` in two cs2-fighter preview scripts. No lockfile is needed. TypeScript is a global
   install for type-checks (`npm i -g typescript`; 7.0.2 was used).
-- `projects/hellmatch-cs2/preview/package.json` is an empty `npm init` stub (no dependencies, a failing `test` script). Harmless; remove
-  it or give it a real test command.
+- `projects/hellmatch-cs2/preview/package.json` was an empty `npm init` stub (no dependencies, a failing `test` script, an "ISC" licence
+  line that was never true); removed 11 Nov 2026. The repo now has no `package.json`.
 - Nothing was upgraded. No lower version bounds are stated because none were tested.
 
 ## Development workflow
@@ -119,12 +119,12 @@ There are no tags or releases today; `main` is the only published state and the 
 
 Highest value first.
 
-1. **Run CI once on GitHub and fix what only shows there** (the Linux job, Node 22 against scripts last run on a newer Node).
+1. ~~Run CI once on GitHub~~ Done 11 Nov 2026: green on all four jobs after two fixes.
 2. **Record the CS2 build** in each port README when a map is built, and in the compatibility table.
 3. **The settings file** (above), starting with the Python side; `doctor` already reports where each path comes from.
-4. **Backups for the remaining in-place writers** ([file-safety.md](file-safety.md#what-still-writes-without-a-backup-or-a-preview)):
-   `matnames`, `vmdlfix`, `gibfix`, and a temp-file write in `vmapedit.Map.save`.
+4. ~~Backups for `matnames`, `vmdlfix`, `gibfix`; atomic `vmapedit.Map.save`~~ Done 11 Nov 2026. Left: `polish.py` and `profiles.py`
+   ([file-safety.md](file-safety.md#what-still-writes-without-a-backup-or-a-preview)).
 5. **`level` and `manual_check_required` fields** in the JSON that `stage_c`, `rcompile` and `mapsanity` write.
-6. **Correct the MCP tools' `destructiveHint`** for the ones that write.
-7. **Dry run for `build_maps.ps1`** (`-WhatIf`) and `create/hats/pack.py --prune`.
+6. ~~Correct the MCP tools' `destructiveHint`~~ Done 11 Nov 2026.
+7. **Dry run for `build_maps.ps1`** (`-WhatIf`). (`create/hats/pack.py --dry-run` exists now.)
 8. Decide whether the 27 MB of tracked music and reference `.vmap` files under `projects/` that `.gitignore` now excludes should stay.

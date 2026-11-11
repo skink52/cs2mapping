@@ -89,6 +89,22 @@ class Stdio(unittest.TestCase):
         self.assertEqual(tools['validate_map']['inputSchema']['required'], ['vmap'])
         self.assertTrue(tools['validate_map']['annotations']['readOnlyHint'])
         self.assertFalse(tools['build_map']['annotations']['readOnlyHint'])
+        # the hints must tell a client which tools can replace or delete what exists, which only add, and which only read
+        hint = lambda n: (tools[n]['annotations']['readOnlyHint'], tools[n]['annotations']['destructiveHint'])
+        for n in ('stage_pass', 'build_map', 'compile_assets', 'map_backups', 'material_create', 'sound_create', 'model_build', 'mechanics_build',
+                  'map_edit', 'script_write'):
+            if n in tools: self.assertEqual(hint(n), (False, True), n)
+        if 'prop_note' in tools: self.assertEqual(hint('prop_note'), (False, False))
+        for n in ('guide', 'list_maps', 'map_info', 'entity_info', 'validate_map', 'check_map_problems', 'sanity_check', 'analyze_build_log',
+                  'job_status', 'visual_check', 'release_plan', 'prop_search', 'script_api', 'asset_search', 'catalog_info', 'status'):
+            if n in tools: self.assertEqual(hint(n), (True, False), n)
+        for n in ('game_status', 'game_tail', 'game_crash_report'):
+            if n in tools: self.assertEqual(hint(n), (True, False), n)
+        for n in ('game_command', 'game_wait', 'probe_script', 'player_marks'):
+            if n in tools: self.assertEqual(hint(n), (False, True), n)
+        for n in ('game_launch', 'game_screenshot', 'game_load_map', 'playtest'):
+            if n in tools: self.assertEqual(hint(n), (False, False), n)
+        self.assertTrue(all(set(t['annotations']) >= {'readOnlyHint', 'destructiveHint'} for t in tools.values()), 'every tool carries both hints')
         self.assertTrue(all('fn' not in t for t in tools.values()))
 
     def test_03_entity_info_and_validate(self):

@@ -86,7 +86,9 @@ class Round2(unittest.TestCase):
         s = self.call('sound_create', content=self.content, name='zap1', preset='zap', seconds=0.3, event='test.zap')
         self.assertEqual(s['vsnd'], 'sounds/gen/zap1.vsnd'); self.assertEqual(s['event']['events_in_block'], ['test.zap'])
         b = self.call('model_build', content=self.content, name='box1', template='crate')
-        self.assertTrue(b['dry_run']); self.assertTrue(os.path.exists(b['vmdl']))
+        self.assertTrue(b['dry_run']); self.assertFalse(os.path.exists(b['vmdl']))          # the default is a dry run: nothing written
+        b = self.call('model_build', content=self.content, name='box1', template='crate', dry_run=False, blender=False)
+        self.assertFalse(b['dry_run']); self.assertTrue(os.path.exists(b['vmdl']))
         n = self.call('prop_note', model='models/x.vmdl', category='crate', tags=['wood'])
         self.assertEqual(json.load(open(self.atlas))['models/x.vmdl']['tags'], ['wood'])
 

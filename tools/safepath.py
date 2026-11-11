@@ -6,7 +6,9 @@
   inside(root, path)          -> True when path is root or below it, compared as written (see "Junctions" below)
   is_link(path)               -> True for a symlink or an NTFS junction
   sha256_file(path)           -> hex digest
+  write_atomic(path, data, backup=None)  -> write bytes through a temp file; untouched when the bytes are the same; optional checked backup
   plan_copy(src, dst)         -> [{rel, op: create|modify|same, src, dst, size, old_size}] for copying the tree src over dst
+  plan_pairs(pairs, roots)    -> the same for explicit (source, destination) pairs, each destination inside one of roots
   apply_plan(plan, backup_dir, manifest, dry_run=False, keep=...)
                               -> the manifest dict; backs up every file it is about to overwrite, checks the backup, then copies
   rollback(manifest)          -> puts overwritten files back and removes created ones that have not changed since
@@ -79,6 +81,53 @@ def sha256_file(path, chunk=1 << 20):
     return h.hexdigest()
 
 
+def write_atomic(path, data, backup=None, stamp=None):
+    """Replace path with data (bytes) without ever leaving a half-written file under its name.
+
+    -> {'op': 'same' | 'create' | 'modify', 'path', 'backup': path or None}. When the file already holds exactly these bytes it is
+    not touched (its modification time stays, so nothing downstream recompiles). Otherwise the bytes go to <path>.part, are read
+    back and compared, and replace the file in one step. backup='sibling' first copies an existing file to <path>.bak_<stamp>;
+    backup=<folder> copies it there as <name>.bak_<stamp>; the copy is checked (sha256) before the original is replaced.
+    """
+    if not isinstance(data, (bytes, bytearray)):
+        raise TypeError('write_atomic takes bytes')
+    out = {'op': 'create', 'path': path, 'backup': None}
+    if os.path.isdir(path):
+        raise IsADirectoryError(path)
+    if os.path.exists(path):
+        with open(path, 'rb') as f:
+            old = f.read()
+        if old == bytes(data):
+            out['op'] = 'same'
+            return out
+        out['op'] = 'modify'
+        if backup:
+            stamp = stamp or datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+            bak = (path if backup == 'sibling' else os.path.join(backup, os.path.basename(path))) + '.bak_' + stamp
+            n = 1
+            while os.path.exists(bak):
+                n += 1; bak = bak.rsplit('.bak_', 1)[0] + '.bak_%s_%d' % (stamp, n)
+            os.makedirs(os.path.dirname(os.path.abspath(bak)), exist_ok=True)
+            shutil.copy2(path, bak)
+            if sha256_file(bak) != hashlib.sha256(old).hexdigest():
+                raise OSError('backup of %s did not verify; it was not changed' % path)
+            out['backup'] = bak
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    tmp = path + '.part'
+    with open(tmp, 'wb') as f:
+        f.write(data)
+        f.flush()
+        os.fsync(f.fileno())
+    with open(tmp, 'rb') as f:
+        ok = f.read() == bytes(data)
+    if not ok:
+        try: os.remove(tmp)
+        except OSError: pass
+        raise OSError('%s did not read back as written; %s was left as it was' % (tmp, path))
+    os.replace(tmp, path)
+    return out
+
+
 def _same(a, b):
     return os.path.getsize(a) == os.path.getsize(b) and sha256_file(a) == sha256_file(b)
 
@@ -107,6 +156,42 @@ def plan_copy(src_root, dst_root):
                 old = os.path.getsize(dst)
                 op = 'same' if _same(src, dst) else 'modify'
             plan.append({'rel': rel.replace('\\', '/'), 'op': op, 'src': src, 'dst': dst, 'size': size, 'old_size': old})
+    return plan
+
+
+def plan_pairs(pairs, allowed_roots):
+    """The same kind of plan for explicit (source file, destination file) pairs, e.g. prep.py's manifest.json. Reads only.
+
+    Every destination must be an absolute path inside one of allowed_roots (as written; see `inside`) and every source must be
+    an existing file that is not a link: otherwise ValueError / FileNotFoundError before anything is planned, so a bad manifest
+    changes nothing. Two pairs naming the same destination are an error.
+    """
+    plan, seen = [], set()
+    for pair in pairs:
+        if not isinstance(pair, (list, tuple)) or len(pair) != 2 or not all(isinstance(x, str) and x for x in pair):
+            raise ValueError('not a [source, destination] pair: %r' % (pair,))
+        src, dst = pair
+        if not os.path.isabs(dst):
+            raise ValueError('destination is not an absolute path: %s' % dst)
+        root = next((r for r in allowed_roots if inside(r, dst) and _norm(r) != _norm(dst)), None)
+        if root is None:
+            raise ValueError('destination is outside the allowed folders (%s): %s' % (', '.join(allowed_roots), dst))
+        if not os.path.isfile(src) or is_link(src):
+            raise FileNotFoundError('source file is missing (or is a link): %s' % src)
+        key = _norm(dst)
+        if key in seen:
+            raise ValueError('two files would be written to %s' % dst)
+        seen.add(key)
+        if os.path.isdir(dst):
+            raise ValueError('%s is a folder; a file would be written there' % dst)
+        size = os.path.getsize(src)
+        if not os.path.exists(dst):
+            op, old = 'create', None
+        else:
+            old = os.path.getsize(dst)
+            op = 'same' if _same(src, dst) else 'modify'
+        rel = os.path.relpath(os.path.abspath(dst), root).replace('\\', '/')
+        plan.append({'rel': rel, 'op': op, 'src': src, 'dst': os.path.abspath(dst), 'size': size, 'old_size': old})
     return plan
 
 
@@ -171,8 +256,13 @@ def apply_plan(plan, backup_dir, manifest_path, dry_run=False, label='', stamp=N
             rec['backup'] = bak
         os.makedirs(os.path.dirname(p['dst']), exist_ok=True)
         tmp = p['dst'] + '.part'
+        want = sha256_file(p['src'])
         shutil.copyfile(p['src'], tmp)
         rec['after'] = sha256_file(tmp)
+        if rec['after'] != want or os.path.getsize(tmp) != p['size']:   # the copy on disk is not the source: leave the old file in place
+            try: os.remove(tmp)
+            except OSError: pass
+            raise OSError('copy of %s did not verify (sha256 / size); %s was left as it was' % (p['src'], p['dst']))
         os.replace(tmp, p['dst'])
         man['files'].append(rec)
         record()

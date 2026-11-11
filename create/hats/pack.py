@@ -1,6 +1,6 @@
 """The hat collection to hand to a server manager: every kept hat, compiled and as source, with its list and pictures.
 
-usage: python3 -I pack.py <catalog.json> [--prune] [--no-zip]
+usage: python3 -I pack.py <catalog.json> [--prune] [--no-zip] [--dry-run]   (--dry-run: list what --prune would delete and the zip it would write; change nothing)
 
 --prune   deletes the dropped hats (catalog `chosen: false`) from the gmod_hats addon, both halves (content: vmdl/dmx/vmat/png,
           game: compiled), so the addon holds exactly the kept ones. Only folders named after catalog hat ids are touched.
@@ -37,17 +37,26 @@ def main():
     kept = [h['id'] for h in cat['hats'] if h.get('chosen', True)]
     dropped = {h['id'] for h in cat['hats'] if h.get('chosen', True) is False}
     sides = {'content': out, 'game': game}
+    dry = '--dry-run' in sys.argv
     if '--prune' in sys.argv:
         n = 0
         for side, root in sides.items():
             for sub in (os.path.join(root, 'models', 'hats'), os.path.join(root, 'materials', 'models', 'hats')):
                 if not os.path.isdir(sub): continue
                 for d in os.listdir(sub):
-                    if d in dropped: shutil.rmtree(os.path.join(sub, d)); n += 1
-        print('pruned %d dropped-hat folders' % n)
+                    if d not in dropped: continue
+                    n += 1
+                    if dry: print('would delete ' + os.path.join(sub, d))
+                    elif os.path.islink(os.path.join(sub, d)) or getattr(os.path, 'isjunction', lambda p: False)(os.path.join(sub, d)):
+                        sys.exit('%s is a link: not deleting through it' % os.path.join(sub, d))
+                    else: shutil.rmtree(os.path.join(sub, d))
+        print('%s %d dropped-hat folders' % ('would prune' if dry else 'pruned', n))
     missing = [i for i in kept if not os.path.exists(os.path.join(game, 'models', 'hats', i, i + '.vmdl_c'))]
     if missing: sys.exit('not compiled: %s (hat2cs2.py --compile --only ...)' % ','.join(missing))
     if '--no-zip' in sys.argv: return
+    if dry:
+        print('DRY RUN, nothing changed. Would write %s with %d hats' % (os.path.join(p['work'], 'dist', 'gmod_hats_collection_%s.zip' % time.strftime('%Y%m%d')), len(kept)))
+        return
     dist = os.path.join(p['work'], 'dist'); os.makedirs(dist, exist_ok=True)
     zp = os.path.join(dist, 'gmod_hats_collection_%s.zip' % time.strftime('%Y%m%d'))
     with zipfile.ZipFile(zp, 'w', zipfile.ZIP_DEFLATED) as z:

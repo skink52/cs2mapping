@@ -184,5 +184,59 @@ class Copies(unittest.TestCase):
         self.assertEqual(get(os.path.join(real, 'maps', 'm.vmap')), b'old map, hand edited')
 
 
+class AtomicWrites(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix='safepath_'); self.p = os.path.join(self.tmp, 'models', 'a.vmdl')
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_create_same_modify(self):
+        self.assertEqual(S.write_atomic(self.p, b'one')['op'], 'create')
+        t = os.stat(self.p).st_mtime_ns
+        r = S.write_atomic(self.p, b'one', backup='sibling')
+        self.assertEqual((r['op'], r['backup'], os.stat(self.p).st_mtime_ns), ('same', None, t))     # identical bytes: not rewritten, no backup
+        r = S.write_atomic(self.p, b'two', backup='sibling', stamp='S')
+        self.assertEqual(r['op'], 'modify'); self.assertEqual(get(r['backup']), b'one'); self.assertEqual(get(self.p), b'two')
+        self.assertTrue(r['backup'].endswith('a.vmdl.bak_S'))
+        r2 = S.write_atomic(self.p, b'three', backup='sibling', stamp='S')                             # same stamp: the first backup is kept
+        self.assertNotEqual(r2['backup'], r['backup']); self.assertEqual(get(r['backup']), b'one')
+        r3 = S.write_atomic(self.p, b'four', backup=os.path.join(self.tmp, 'baks'), stamp='S')
+        self.assertEqual(os.path.dirname(r3['backup']), os.path.join(self.tmp, 'baks'))
+        self.assertEqual(sorted(f for f in os.listdir(os.path.dirname(self.p)) if f.endswith('.part')), [])
+
+    def test_failed_write_leaves_the_old_file(self):
+        S.write_atomic(self.p, b'good')
+        real = os.replace
+        def boom(a, b): raise OSError('disk full')
+        S.os.replace = boom
+        try:
+            with self.assertRaises(OSError): S.write_atomic(self.p, b'new bytes')
+        finally: S.os.replace = real
+        self.assertEqual(get(self.p), b'good')
+        with self.assertRaises(TypeError): S.write_atomic(self.p, 'text')
+        with self.assertRaises(IsADirectoryError): S.write_atomic(os.path.dirname(self.p), b'x')
+
+    def test_vmapedit_save_and_the_vmdl_tools(self):
+        import subprocess as sp
+        tools = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # vmdlfix: a bodygroup choice with no name gets one; the original is kept beside it; a second run changes nothing
+        vm = os.path.join(self.tmp, 'm', 'bars.vmdl')
+        import vmdlfix
+        src = '\n'.join(['{', ' _class = "BodyGroup"', ' name = "bars"', ' children =', ' [', '  {', '   _class = "BodyGroupChoice"',
+                         '   meshes = [ "a" ]', '  },', ' ]', '}', ''])
+        self.assertEqual(vmdlfix.name_choices(src)[1], 1)
+        put(vm, src.encode())
+        r = sp.run([sys.executable, os.path.join(tools, 'vmdlfix.py'), vm], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        baks = [f for f in os.listdir(os.path.dirname(vm)) if '.bak_' in f]
+        self.assertEqual(len(baks), 1); self.assertEqual(get(os.path.join(os.path.dirname(vm), baks[0])), src.encode())
+        self.assertNotEqual(get(vm), src.encode())
+        t = os.stat(vm).st_mtime_ns
+        sp.run([sys.executable, os.path.join(tools, 'vmdlfix.py'), vm], capture_output=True, text=True)
+        self.assertEqual(os.stat(vm).st_mtime_ns, t)
+        self.assertEqual(len([f for f in os.listdir(os.path.dirname(vm)) if '.bak_' in f]), 1)
+
+
 if __name__ == '__main__':
     unittest.main()

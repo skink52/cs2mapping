@@ -96,10 +96,12 @@ def hud_files(config, name='mech'):
     return {'panorama/layout/custom_game/%s.xml' % name: xml, 'panorama/styles/custom_game/%s.css' % name: css}
 
 
-def build(config, content, name='mech'):
+def build(config, content, name='mech', write=True):
+    """-> the content-relative files of the mechanic; write=False only lists them (a dry run)"""
     out = {'maps/scripts/%s.js' % name: bundle(config, name)}
     out.update(hud_files(config, name))
     for rel, text in out.items():
+        if not write: continue
         p = os.path.join(content, *rel.split('/')); os.makedirs(os.path.dirname(p), exist_ok=True)
         with open(p, 'w', encoding='utf-8', newline='\n') as f: f.write(text)
     return sorted(out)

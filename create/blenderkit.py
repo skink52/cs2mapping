@@ -1,10 +1,11 @@
 """Own props through headless Blender: a template or your own bpy script (or an .obj / .fbx / .glb / .blend import) -> FBX render mesh +
-convex collision FBX -> ModelDoc .vmdl in the addon. Blender is only started when you run it; --dry-run writes the script and vmdl only.
+convex collision FBX -> ModelDoc .vmdl in the addon. Blender is only started when you run it; --no-blender writes the script and vmdl only;
+--dry-run writes nothing at all and prints what would be written.
 
   python blenderkit.py <addon content> <name> --template crate|barrel|pallet|table|lamp|pipe|sandbags|fence [--size W,D,H] [--material materials/...vmat]
   python blenderkit.py <addon content> <name> --script my_shape.py      (a bpy script that builds objects; objects named *_col are collision)
   python blenderkit.py <addon content> <name> --import model.glb        (scaled so 1 unit = 1 inch; base at z = 0, front +X)
-  common: [--blender PATH] [--dry-run] [--prefix props] [--surface wood]
+  common: [--blender PATH] [--no-blender] [--dry-run] [--prefix props] [--surface wood]
 
 Blender: --blender, env BLENDER, or blender.exe under Steam\\steamapps\\common\\Blender or Program Files\\Blender Foundation\\Blender*
 (exact folders only). It runs with --background --factory-startup, no window. Output: <content>/models/<prefix>/<name>/<name>.fbx,
@@ -136,14 +137,23 @@ def vmdl(rel_dir, name, materials=(), surface='default', mass=None):
 
 
 def build(content, name, template=None, size=None, user_script=None, imported=None, material='materials/dev/reflectivity_50.vmat',
-          prefix='props', surface='default', blender=None, dry_run=False, height=None, timeout=600):
+          prefix='props', surface='default', blender=None, dry_run=False, height=None, timeout=600, no_blender=False):
+    """dry_run: nothing is created or written (not even the folder); the result lists would_write and carries the script text.
+    no_blender: the script and the vmdl are written, Blender is not started (what dry_run meant before 11 Nov 2026)."""
     rel_dir = 'models/%s/%s' % (prefix, name)
-    out = os.path.join(content, *rel_dir.split('/')); os.makedirs(out, exist_ok=True)
+    out = os.path.join(content, *rel_dir.split('/'))
     spath = os.path.join(out, name + '_build.py')
-    with open(spath, 'w', encoding='utf-8') as f: f.write(script(name, out, template, size, user_script, imported, material, height))
+    text = script(name, out, template, size, user_script, imported, material, height)
     res = {'script': spath, 'vmdl': os.path.join(out, name + '.vmdl'), 'model': rel_dir + '/' + name + '.vmdl'}
     mats = [material]
-    if not dry_run:
+    if dry_run:
+        res.update(dry_run=True, script_text=text, vmdl_text=vmdl(rel_dir, name, mats, surface),
+                   would_write=[spath, res['vmdl']] + ([] if no_blender else [os.path.join(out, name + '.fbx'), os.path.join(out, name + '.json')]),
+                   would_overwrite=[p for p in (spath, res['vmdl']) if os.path.exists(p)])
+        return res
+    os.makedirs(out, exist_ok=True)
+    with open(spath, 'w', encoding='utf-8') as f: f.write(text)
+    if not no_blender:
         exe = blender or find_blender()
         if not exe: raise FileNotFoundError('Blender not found: pass --blender or set BLENDER')
         r = subprocess.run([exe, '--background', '--factory-startup', '--python', spath], capture_output=True, text=True, timeout=timeout,
@@ -156,7 +166,7 @@ def build(content, name, template=None, size=None, user_script=None, imported=No
         except (OSError, ValueError):
             pass
     with open(res['vmdl'], 'w', encoding='utf-8') as f: f.write(vmdl(rel_dir, name, mats, surface))
-    res['dry_run'] = dry_run
+    res['dry_run'] = False; res['blender_run'] = not no_blender
     return res
 
 
@@ -166,11 +176,12 @@ def main(argv=None):
     ap.add_argument('--script'); ap.add_argument('--import', dest='imported'); ap.add_argument('--height', type=float)
     ap.add_argument('--material', default='materials/dev/reflectivity_50.vmat'); ap.add_argument('--prefix', default='props')
     ap.add_argument('--surface', default='default'); ap.add_argument('--blender'); ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--no-blender', action='store_true')
     a = ap.parse_args(argv)
     size = tuple(float(v) for v in a.size.split(',')) if a.size else None
     try:
         print(json.dumps(build(a.content, a.name, a.template, size, a.script, a.imported, a.material, a.prefix, a.surface, a.blender,
-                               a.dry_run, a.height), indent=1))
+                               a.dry_run, a.height, no_blender=a.no_blender), indent=1))
     except (OSError, ValueError, subprocess.SubprocessError) as ex:
         print('blenderkit: %s' % ex, file=sys.stderr); return 2
     return 0

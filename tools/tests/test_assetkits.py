@@ -118,7 +118,12 @@ class Blender(Tmp):
             ast.parse(blenderkit.script('x', self.tmp, imported='a' + ext, height=72))
         user = os.path.join(self.tmp, 'u.py'); F.write(user, "box('a', 0, 0, 0, 8, 8, 8)\n")
         ast.parse(blenderkit.script('x', self.tmp, user_script=user))
-        r = blenderkit.build(self.tmp, 'crate1', template='crate', size=(40, 40, 40), dry_run=True)
+        before = sorted(os.path.join(dp, f) for dp, ds, fs in os.walk(self.tmp) for f in fs + ds)
+        d = blenderkit.build(self.tmp, 'crate1', template='crate', size=(40, 40, 40), dry_run=True)
+        self.assertEqual(sorted(os.path.join(dp, f) for dp, ds, fs in os.walk(self.tmp) for f in fs + ds), before)   # a dry run writes nothing
+        self.assertTrue(d['dry_run']); self.assertIn(d['vmdl'], d['would_write']); self.assertIn('PhysicsHullFile', d['vmdl_text'])
+        r = blenderkit.build(self.tmp, 'crate1', template='crate', size=(40, 40, 40), no_blender=True)
+        self.assertEqual(blenderkit.build(self.tmp, 'crate1', template='crate', size=(40, 40, 40), dry_run=True)['would_overwrite'], [r['script'], r['vmdl']])
         self.assertEqual(r['model'], 'models/props/crate1/crate1.vmdl')
         v = open(r['vmdl']).read()
         self.assertIn('filename = "models/props/crate1/crate1.fbx"', v); self.assertIn('PhysicsHullFile', v)

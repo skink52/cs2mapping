@@ -157,7 +157,7 @@ def run(job):
                 getattr(gen_physics, what)(group=group, **args); res = what
             elif kind == 'mechanics':
                 name = op.get('name', 'mech')
-                files = mechkit.build(op['config'], content, name); mechkit.place(op['config'], name, op.get('origin', (0, 0, 0)), group)
+                files = mechkit.build(op['config'], content, name, write=not job.get('dry_run')); mechkit.place(op['config'], name, op.get('origin', (0, 0, 0)), group)
                 res = {'files': files}
             else:
                 raise ValueError('unknown op %r' % kind)
