@@ -221,7 +221,7 @@ def apply_plan(plan, backup_dir, manifest_path, dry_run=False, label='', stamp=N
     """
     stamp = stamp or datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     man = {'label': label, 'stamp': stamp, 'dry_run': bool(dry_run), 'complete': False, 'backup_dir': backup_dir,
-           'summary': summarise(plan), 'files': []}
+           'summary': summarise(plan), 'files': [], 'dirs_created': []}
     todo = [p for p in plan if p['op'] != 'same']
     if dry_run:
         man['files'] = [{'rel': p['rel'], 'op': p['op'], 'dst': p['dst'], 'size': p['size'], 'old_size': p['old_size']} for p in todo]
@@ -254,7 +254,11 @@ def apply_plan(plan, backup_dir, manifest_path, dry_run=False, label='', stamp=N
             if os.path.getsize(bak) != p['old_size'] or sha256_file(bak) != rec['before']:
                 raise OSError('backup of %s did not verify; nothing was overwritten' % p['dst'])
             rec['backup'] = bak
+        d = os.path.dirname(p['dst']); new_dirs = []
+        while d and not os.path.isdir(d):                  # folders this run has to make: rollback removes them again if they end up empty
+            new_dirs.append(d); d = os.path.dirname(d)
         os.makedirs(os.path.dirname(p['dst']), exist_ok=True)
+        man['dirs_created'] += [x for x in reversed(new_dirs) if x not in man['dirs_created']]
         tmp = p['dst'] + '.part'
         want = sha256_file(p['src'])
         shutil.copyfile(p['src'], tmp)
@@ -276,7 +280,8 @@ def rollback(manifest, dry_run=False):
 
     A modified file gets its backup back; a created file is removed. Either happens only while the file still has the
     bytes the run wrote ("after"): a file edited since is left alone and reported, because undoing it would lose that edit.
-    -> {'restored': [...], 'removed': [...], 'skipped': [{'dst', 'why'}]}
+    Folders the run had to create are removed again when they are left empty (never a folder that existed before, never a link).
+    -> {'restored': [...], 'removed': [...], 'skipped': [{'dst', 'why'}], 'dirs_removed': [...]}
     """
     if isinstance(manifest, str):
         with open(manifest, encoding='utf-8') as f:
@@ -313,4 +318,13 @@ def rollback(manifest, dry_run=False):
                 shutil.copyfile(bak, tmp)
                 os.replace(tmp, dst)
             out['restored'].append(dst)
+    out['dirs_removed'] = []
+    for d in sorted(manifest.get('dirs_created', []), key=len, reverse=True):      # deepest first; only folders the run made, only if empty
+        try:
+            if os.path.isdir(d) and not is_link(d) and not os.listdir(d):
+                if not dry_run:
+                    os.rmdir(d)
+                out['dirs_removed'].append(d)
+        except OSError:
+            pass
     return out

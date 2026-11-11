@@ -130,6 +130,16 @@ class Copies(unittest.TestCase):
         self.assertEqual((len(out['restored']), len(out['removed']), out['skipped']), (1, 1, []))
         self.assertEqual(self.tree(self.dst), before)
 
+    def test_rollback_removes_only_the_empty_folders_the_run_made(self):
+        put(os.path.join(self.src, 'new', 'deep', 'x.vmat'), b'x'); put(os.path.join(self.src, 'new', 'y.vmat'), b'y')
+        man = S.apply_plan(S.plan_copy(self.src, self.dst), self.bak, self.man)
+        self.assertEqual(len(man['dirs_created']), 2)
+        put(os.path.join(self.dst, 'new', 'mine.txt'), b'made by hand after the run')
+        out = S.rollback(self.man)
+        self.assertEqual(out['dirs_removed'], [os.path.join(self.dst, 'new', 'deep')])     # 'new' still holds a file: kept
+        self.assertTrue(os.path.isdir(os.path.join(self.dst, 'materials')))                # existed before the run: never removed
+        self.assertEqual(sorted(os.listdir(os.path.join(self.dst, 'new'))), ['mine.txt'])
+
     def test_rollback_leaves_a_file_edited_since(self):
         S.apply_plan(S.plan_copy(self.src, self.dst), self.bak, self.man)
         put(os.path.join(self.dst, 'maps', 'm.vmap'), b'edited in Hammer after the apply')
