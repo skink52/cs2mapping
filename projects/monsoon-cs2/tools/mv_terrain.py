@@ -1,10 +1,11 @@
 """mg_monsoon world geometry: terrain tiles (vmapgen.Terrain), karst towers, water sheets, sky shell, player-space lightmap shells.
 Everything here writes Hammer meshes through vmesh/vmaplib into vmaplib.new_children under the given vis group.
 """
-import math
+import math, os
 import numpy as np
 import vmaplib, vmesh, vmapgen as G
 import layout as L
+import terrain_img as TI
 from noise import fbm, smoothstep
 
 # Valve blend materials (A = layer at weight 0, B = layer at weight 1)
@@ -27,6 +28,8 @@ def tile_res(cx, cy):
     if near < 1150 or L.in_paddies(np.array([cx]), np.array([cy]))[0]: return 32
     if min(math.hypot(cx - px, cy - py) for px, py in L.TUNNEL_PORTALS) < 1000 or math.hypot(cx - L.FARM[0], cy - L.FARM[1]) < 700: return 32   # portal cuts are 32-u cells
     if abs(cx) <= L.MAP_X + 256 and abs(cy) <= L.MAP_Y + 256 and abs(cy - float(L.river_y(cx))) < 3300: return 64
+    d = L.detail(*np.meshgrid(cx + np.linspace(-224, 224, 8), cy + np.linspace(-224, 224, 8)))      # eroded relief: ravines need 64-u cells
+    if np.abs(d).max() > 10.0: return 64
     return 128
 
 
@@ -39,10 +42,33 @@ def karst_cut(CX, CY, r):
     return cut
 
 
+_IMG = {}
+
+
+def img(name):
+    """a 0..1 image from tools/data as a Field (rock, mud, grass, cavity, trees, undergrowth); None if make_detail.py has not run"""
+    if name not in _IMG:
+        base = L.detail_field()
+        d = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+        f = os.path.join(d, ('density_%s.png' if name in ('trees', 'undergrowth') else 'splat_%s.png') % name)
+        _IMG[name] = base.like(TI.load_mask(f, base)) if base is not None and os.path.isfile(f) else None
+    return _IMG[name]
+
+
+def img_at(name, x, y, default=1.0):
+    """the image value at world points (default where make_detail.py has not run)"""
+    f = img(name)
+    return f(x, y) if f is not None else np.full(np.shape(x), float(default))
+
+
 def paint(X, Y, Z):
     cell = float(X[1, 0] - X[0, 0]) if X.shape[0] > 1 else 32.0
     sl = L.grid_slope(Z, cell)
     w, tint = L.paint_weight(X, Y, Z, sl)
+    if img('mud') is not None:
+        free = np.abs(L.detail(X, Y)) > 0.5                       # only where the erosion worked: designed ground keeps its paint
+        w = np.where(free, np.clip(w - 0.8 * img('mud')(X, Y) - 0.6 * img('rock')(X, Y), 0, 1), w)
+        tint = np.where(free, np.clip(tint * (1.12 - 0.24 * img('cavity')(X, Y)), 0.55, 1.0), tint)
     pa = np.zeros(X.shape + (4,)); pa[..., 0] = w; pa[..., 2] = 0.35
     ti = np.ones(X.shape + (4,)); ti[..., 0] = ti[..., 1] = ti[..., 2] = tint
     return pa, ti

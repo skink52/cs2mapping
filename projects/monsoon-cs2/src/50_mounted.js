@@ -18,6 +18,10 @@ function mountInfo(n, pos) {
   if (!kind) kind = team === CT ? "m2" : "dshk";
   return { kind, team };
 }
+function mountMuzzle(kind) {
+  const g = LAYOUT.models && LAYOUT.models[kind];
+  return g && Number.isFinite(g.muzzle) && g.muzzle > 0 ? g.muzzle : CONFIG.MOUNT.MUZZLE;
+}
 function loadMounts() {
   mounts.length = 0;
   for (let n = 1; n <= CONFIG.MOUNT.MAX; n++) {
@@ -26,7 +30,7 @@ function loadMounts() {
     const B = angleBasis({ pitch: 0, yaw: ang.yaw, roll: 0 });
     need("mv_mount_snd_" + n);
     mounts.push({ n, name: "mv_mount_" + n, ent: e, pos, yaw0: ang.yaw, seat: seat || { pos: local(pos, B, [-50, 0, -30]), ang: { pitch: 0, yaw: ang.yaw, roll: 0 } },
-                  kind: inf.kind, K: CONFIG.MOUNT.KINDS[inf.kind], team: inf.team, user: -1, st: { heat: 0, locked: false, next: 0, shots: 0 },
+                  kind: inf.kind, K: CONFIG.MOUNT.KINDS[inf.kind], muzzle: mountMuzzle(inf.kind), team: inf.team, user: -1, st: { heat: 0, locked: false, next: 0, shots: 0 },
                   aimYaw: ang.yaw, aimPitch: 0, sentYaw: ang.yaw, sentPitch: 0 });
   }
 }
@@ -85,7 +89,7 @@ function mountAim(m, eye, firing, pawn, team, dt, spread) {
   }
   if (gunTick(m.st, m.K, firing, dt)) {
     const dir = dirOf(aim);
-    gunRound(m.st, m.K, vadd(m.pos, dir, C.MUZZLE), dir, pawn, team, "mv_mount_snd_" + m.n, C.RANGE, spread);
+    gunRound(m.st, m.K, vadd(m.pos, dir, m.muzzle), dir, pawn, team, "mv_mount_snd_" + m.n, C.RANGE, spread);
   }
 }
 function tickMount(p, pawn, dt, pressed, held) {

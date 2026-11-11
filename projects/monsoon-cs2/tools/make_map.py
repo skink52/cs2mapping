@@ -65,7 +65,7 @@ def main(src, out_vmap, out_addon, prev=None):
           enableexposure='1', fadetime='1.0', spawnflags='4097')
     # light probes: the valley (64), the bases (48), far slopes (108), the lobby (48); tunnels/bunkers come with the places
     clone('env_combined_light_probe_volume', (0, 0, 300), box_mins='-6500 -3400 -200', box_maxs='6500 3400 1200', voxel_size='64.0', targetname='valley_probe')
-    for name, c, r, z0, z1 in (('ct_probe', L.CT_BASE, 1100, L.CT_Z - 420, L.CT_Z + 700), ('t_probe', L.T_BASE, 1000, L.T_Z - 300, L.T_Z + 900)):
+    for name, c, r, z0, z1 in (('ct_probe', L.CT_BASE, 1100, L.CT_Z - 420, L.CT_Z + 700), ('t_probe', L.T_BASE, L.T_PLATEAU_R + 50, L.T_Z - 300, L.T_Z + 900)):
         clone('env_combined_light_probe_volume', (c[0], c[1], (z0 + z1) / 2), box_mins='%g %g %g' % (-r, -r, -(z1 - z0) / 2), box_maxs='%g %g %g' % (r, r, (z1 - z0) / 2),
               voxel_size='48.0', targetname=name, indoor_outdoor_level='1')
     for k, (x0, y0, x1, y1) in enumerate(((-7200, 3400, 7200, 6200), (-7200, -6200, 7200, -3400), (-7200, -3400, -6500, 3400), (6500, -3400, 7200, 3400))):

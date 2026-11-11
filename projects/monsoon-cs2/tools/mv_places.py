@@ -20,6 +20,8 @@ from vmaplib import ent
 import layout as L
 import mv_terrain as TER
 import mv_stock as S
+import mv_models as M
+import terrain_img as TI
 from noise import fbm, smoothstep
 
 _CREATE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'create'))
@@ -40,7 +42,7 @@ FIRE = 'particles/burning_fx/env_fire_small.vpcf'
 SMOKE_DARK = 'particles/burning_fx/barrel_burning_engine_smoke_dark.vpcf'
 SMOKESTACK = 'particles/ambient_fx/ambient_smokestack.vpcf'
 PROBED_KEYS = ('foliage', 'palm', 'weeds', 'grass', 'rice_clump', 'reeds', 'bamboo_clump', 'rubber_tree', 'dead_tree', 'vine', 'root', 'camo_net',
-               'parachute', 'sandbag')
+               'parachute', 'sandbag', 'ext/rs_')
 
 W = None
 
@@ -67,7 +69,7 @@ class World:
         table, self.built = S.bounds_table(pj)
         self.B = placer.Bounds(props_json=pj, out=out, prefix='mv', table=table)
         self.PL = placer.Placer(bounds=self.B)
-        self.count = {}; self.skipped = {}; self.exc = []; self.missing = set()
+        self.count = {}; self.skipped = {}; self.exc = []; self.missing = set(); self.big_skips = []
         self.sites = dict(kit={}, flagpole={}, mounts=[], racks=dict(ct=[], t=[]), board={}, guns=dict(ct=[], t=[]), pads=dict(ct=[], t=[]),
                           tunnels=[], surfaces=[], fires=[], nonav=[], seeds=[])
 
@@ -102,9 +104,13 @@ class World:
             f = dict(c=(x, y), h=(trunk * sc[0] + pad, trunk * sc[0] + pad), a=0.0, z=(z, z + hi[2] * sc[2]), model=model)
         else:
             f = self.PL.footprint(model, x, y, z, yaw, sc, pad)
-        if check and self.PL.hits(f):
+        hit = self.PL.hits(f) if check else None
+        if hit is not None:
             self.skipped[model] = self.skipped.get(model, 0) + 1
+            if max(f['h']) > 95.0 and trunk is None and not kw.get('_quiet'):       # a building or vehicle that did not fit: say what was in the way
+                self.big_skips.append('%s at (%.0f, %.0f) blocked by %s at (%.0f, %.0f)' % (model.split('/')[-1][:-5], x, y, hit['model'].split('/')[-1][:-5], hit['c'][0], hit['c'][1]))
             return None
+        kw.pop('_quiet', None)
         if reg:
             if pad:
                 f = dict(f); f['h'] = (f['h'][0] - pad, f['h'][1] - pad)
@@ -116,6 +122,46 @@ class World:
         if stock is None and name not in self.built: self.missing.add(name)
         if tag: self.exc.append([model, round(x, 1), round(y, 1), round(z, 1), tag])
         return e
+
+    def sprop(self, logical, x, y, z=None, yaw=0.0, **kw):
+        """a piece of dressing from the model table (mv_models.STATIC): the converted model when it is in the addon, else our prop,
+        else nothing. Returns the entity or None."""
+        model = M.static(logical)
+        if model is None: return None
+        return self.prop(None, x, y, z, yaw, stock=model, **kw)
+
+    def park(self, logical, x, y, yaw, search=260.0, step=40.0, max_slope=6.0, within=None, **kw):
+        """a parked vehicle at (x, y) or the nearest spot within `search` where it touches nothing (keep-outs included) and the ground
+        is level; -> (x, y) or None"""
+        n = int(search / step)
+        spots = sorted(((i * step, j * step) for i in range(-n, n + 1) for j in range(-n, n + 1) if math.hypot(i, j) * step <= search), key=lambda q: q[0] * q[0] + q[1] * q[1])
+        for dx, dy in spots:
+            px, py = x + dx, y + dy
+            if float(L.slope(px, py)) > max_slope or (within is not None and math.hypot(px - within[0], py - within[1]) > within[2]): continue
+            if self.sprop(logical, px, py, None, yaw, fit='min', check=True, pad=10.0, _quiet=True, **kw) is not None: return (px, py)
+        self.big_skips.append('%s: no free level spot within %.0f of (%.0f, %.0f)' % (logical, search, x, y))
+        return None
+
+    def mount(self, kind, team, x, y, yaw, z=None, cover=True, tag=None):
+        """an emplaced gun: the stand (static), the script's gun part on its pintle (W.sites), the gunner's spot behind it and a
+        sandbag horseshoe in front (the converted sandbag_cover, else a one-course arc of ours)"""
+        g = M.pick(kind); zz = gz(x, y) if z is None else z
+        self.prop(None, x, y, zz, yaw, stock=g['stand'], tag=tag)
+        px, py = local(x, y, yaw, g['pintle'][0], g['pintle'][1]); seat = local(x, y, yaw, -g['seat_back'], 0.0)
+        self.sites['mounts'].append(dict(kind=kind, team=team, pos=(px, py, zz + g['pintle'][2]), yaw=yaw, seat=seat))
+        self.keep(seat[0], seat[1], 24.0, z=zz, name='seat')
+        if cover:
+            cm = M.static('sandbag_cover')
+            if cm is not None and g['variant'] == 'ext':
+                cx, cy = local(x, y, yaw, 12.0, 0.0)
+                self.prop(None, cx, cy, zz, yaw + 90.0, stock=cm, tag=tag)
+            else:
+                self.bag_arc(x, y, g['cover_r'], yaw - 78, yaw + 78, layers=1, model='sandbag_low', z=z)
+        return g
+
+    def trunk_clip(self, x, y, z, r, h=110.0):
+        """player clip round the trunk of a tree whose own hull is one convex blob (placed non-solid)"""
+        self.clip(P.cylinder((x, y), r, z - 8.0, z + h, sides=6, mat=TER.CLIP))
 
     def keep(self, x, y, r, z=None, h=260.0, name='zone'):
         """keep-out disc (a square footprint) for optional dressing and trees: pads, pits, spawns, paths"""
@@ -466,10 +512,7 @@ def firebase():
         if big:
             na = a + (13.5 if abs((a + 13.5 - fb['gate_angle'] + 180) % 360 - 180) > 14.0 else -13.5); nx_, ny_ = L.pol(c, wr - 6.0, na)
             gaps.append((na, 3.6, 'nest'))
-            W.prop('m3_tripod', nx_, ny_, None, na)
-            W.sites['mounts'].append(dict(kind='m2', team='ct', pos=(nx_, ny_, gz(nx_, ny_) + 30.0), yaw=na, seat=L.pol(c, wr - 62.0, na)))
-            W.bag_arc(nx_, ny_, 52.0, na - 78, na + 78, layers=1, model='sandbag_low')
-            W.keep(*L.pol(c, wr - 62.0, na), 24.0, name='seat')
+            W.mount('m2', 'ct', nx_, ny_, na)
             for k_ in range(2): W.prop('ammo_can', *L.pol((nx_, ny_), 30.0, na + 150 + 60 * k_), None, rng.uniform(0, 360), check=True)
     # ---- the perimeter: three layers of sandbags with a player clip above, open at the gate and two sally gaps
     gaps.sort()
@@ -504,7 +547,8 @@ def firebase():
     # ---- gate: the firebase sign, guard post, sandbag stubs
     ga = fb['gate_angle']
     W.prop('fsb_sign', *L.pol(c, wr + 60.0, ga + 7.2), None, ga)
-    W.prop('culvert_bunker', *L.pol(c, wr - 170.0, ga - 10.5), None, ga + 90.0, check=True)
+    for da_ in (10.5, 14.0, 18.0, 22.0):
+        if W.prop('culvert_bunker', *L.pol(c, wr - 170.0, ga - da_), None, ga + 90.0, check=True, _quiet=da_ < 22.0) is not None: break
     for s in (-1, 1):
         p = L.pol(c, wr - 30.0, ga + s * 6.6); q = L.pol(c, wr - 110.0, ga + s * 7.0)
         W.bag_line(p, q, layers=2)
@@ -584,9 +628,17 @@ def firebase():
         clutter(rng, [('drum_od', 1), ('ammo_crate', 1), ('rucksack', 1), ('jerry_can', 1), ('drum_rust', 1)], *L.pol(c, 940.0, a), 10.0, 90.0)
     clutter(rng, [('ammo_crate', 3), ('rucksack', 4), ('ammo_can', 4), ('radio_prc25', 1)], rx, ry, 150.0, 260.0)
     W.particle(*L.pol(c, 1000.0, 228.0), z + 40.0, SMOKESTACK)        # the burn barrel behind the latrine
+    # ---- radios at the TOC and the FDC, vehicles parked beside the track (converted models; skipped when not in the addon)
+    tx, ty = fb['toc']
+    if M.is_ext(M.static('comm_station')):
+        W.park('comm_station', *local(tx, ty, fb['toc_yaw'], 250.0, 70.0), fb['toc_yaw'] + 180.0, search=160.0, step=20.0)
+        W.park('comm_station', *local(fx, fy, fyaw, 60.0, 112.0), fyaw + 90.0, search=160.0, step=20.0)
+    n_v = 0
+    for nm, dx, dy, yw in (('jeep_us', 180.0, 300.0, 30.0), ('jeep_us', 180.0, 240.0, 30.0)):          # the M113 has no room inside the wire: it stands at the bridge and on the roads
+        if M.is_ext(M.static(nm) or '') and W.park(nm, c[0] + dx, c[1] + dy, yw, search=1000.0, within=(c[0], c[1], wr - 130.0)) is not None: n_v += 1
     W.sites['seeds'] += [(c[0], c[1]), fb['rack']]
     G.lmres_box((c[0] - 200, c[1] - 200, z, c[0] + 200, c[1] + 200, z + 160), W.group)
-    print('firebase: %d wall runs, %d mounts' % (nb, len(W.sites['mounts'])))
+    print('firebase: %d wall runs, %d mounts, %d parked vehicles' % (nb, len(W.sites['mounts']), n_v))
 
 
 # ================================================================ T camp
@@ -598,57 +650,74 @@ def camp():
     for p in cp['spawns']: W.keep(p[0], p[1], 26.0, name='spawn')
     rx, ry = cp['rack']
     W.prop('arms_rack_t', rx, ry, None, 0.0); W.sites['kit']['t'] = (rx, ry, gz(rx, ry))
-    # ---- helicopter stands under camouflage nets (the nets are scaled to clear a Hip and its rotor)
-    lo, hi = W.B(S.mv('heli_hip')); nlo, nhi = W.B(S.mv('camo_net'))
+    # ---- helicopter stands: bare swept earth (no net over a pad: nothing may stand under the rotor disc), drums and cans beside them
+    hip = M.pick('hip'); rr = hip['rotor_r']; hlen = hip['length']
     for k, p in enumerate(cp['pads']):
-        mx, my = local(p[0], p[1], cp['pad_yaw'], (lo[0] + hi[0]) / 2, 0.0)
-        sx = 1040.0 / (nhi[0] - nlo[0]); sy = 760.0 / (nhi[1] - nlo[1]); sz = 236.0 / nhi[2]
-        W.prop('camo_net', mx, my, None, cp['pad_yaw'], scale=(sx, sy, sz), reg=False)
         W.sites['pads']['t'].append((p[0], p[1], gz(*p) + 1.0))
-        for dx in np.arange(lo[0] + 60, hi[0], 130.0): W.keep(*local(p[0], p[1], cp['pad_yaw'], dx, 0.0), 120.0, name='pad')
-        W.keep(*local(p[0], p[1], cp['pad_yaw'], -30.0, 0.0), 400.0, name='pad')        # nothing tall under the rotor disc
-        clutter(rng, [('drum_rust', 2), ('jerry_can', 2), ('rocket_crate', 1)], *local(p[0], p[1], cp['pad_yaw'], 120.0, 300.0), 10.0, 80.0)
-    # ---- rocket pits: earth berm open toward the camp centre, crates at the entrance
-    for k, g in enumerate(cp['rockets']):
-        ea = math.degrees(math.atan2(c[1] - g[1], c[0] - g[0]))
-        W.keep(g[0], g[1], cp['pit_r'] - 14.0, name='pit')
-        W.berm_arc(g[0], g[1], cp['pit_r'] + 26.0, ea + 32.0, ea + 328.0)
-        yaw = math.degrees(math.atan2(-g[1], -g[0]))
-        W.sites['guns']['t'].append((g[0], g[1], gz(*g), yaw))
-        rx, ry = L.pol(g, cp['pit_r'] + 66.0, ea + 44.0)
-        W.stack('rocket_crate', rx, ry, ea + 100.0, 2, check=False)
-        W.sites['racks']['t'].append((rx, ry, gz(rx, ry)))
-        W.prop('rocket_crate', *L.pol(g, cp['pit_r'] + 70.0, ea - 44.0), None, ea + rng.uniform(40, 80), check=True)
-    # ---- AA pits: DShK mount in a small berm
-    for k, a in enumerate(cp['aa']):
-        ea = math.degrees(math.atan2(c[1] - a[1], c[0] - a[0])); yaw = ea + 180.0
-        W.berm_arc(a[0], a[1], 112.0, ea + 36.0, ea + 324.0, base=48.0, top=16.0, h=30.0)
-        W.prop('dshk_mount', a[0], a[1], None, yaw)
-        W.sites['mounts'].append(dict(kind='dshk', team='t', pos=(a[0], a[1], gz(*a) + 58.0), yaw=yaw, seat=local(a[0], a[1], yaw, -86.0, 0.0)))
-        W.keep(a[0], a[1], 84.0, name='pit')
-        clutter(rng, [('ammo_can', 2), ('ammo_crate', 1)], a[0], a[1], 120.0, 170.0)
-    # ---- the FDC hut with the plotting table, hooches, the arms rack
+        for dx in np.arange(-hlen * 0.7 + 60.0, hlen * 0.3 + 1.0, 110.0): W.keep(*local(p[0], p[1], cp['pad_yaw'], dx, 0.0), 120.0, name='pad')
+        hx, hy = local(p[0], p[1], cp['pad_yaw'], hip['hub'][0], hip['hub'][1])
+        W.keep(hx, hy, rr * 0.72, name='pad')                                         # nothing at all under the rotor disc (a square of its inscribed size)
+        for a in range(0, 360, 30): W.keep(*L.pol((hx, hy), rr * 0.86, a), rr * 0.2, name='pad')
+        clutter(rng, [('drum_rust', 2), ('jerry_can', 2), ('rocket_crate', 1)], *local(p[0], p[1], cp['pad_yaw'], 120.0, rr + 90.0), 10.0, 80.0)
+    # ---- keep-outs of everything fixed first (pits, AA pits, the trail south), then the FDC hut, so optional dressing sees them all
+    W.keep_path(L.ROADS[6][1][:2], 44.0, name='road')
+    for g in cp['rockets']: W.keep(g[0], g[1], cp['pit_r'] + 30.0, name='pit')
+    for a in cp['aa']: W.keep(a[0], a[1], 116.0, name='pit')
     fx, fy = cp['fdc']; fyaw = cp['fdc_yaw']
     W.prop('camp_hut', fx, fy, None, fyaw)
     tx, ty = local(fx, fy, fyaw, -40.0, 0.0)
     W.prop('plot_table_t', tx, ty, None, fyaw + 90.0, reg=False)
     W.sites['board']['t'] = dict(pos=(tx, ty, gz(tx, ty)), yaw=fyaw, seats=[local(fx, fy, fyaw, 196.0 + 46.0 * (j // 4), -90.0 + 60.0 * (j % 4)) for j in range(8)])
     for s_ in W.sites['board']['t']['seats']: W.keep(s_[0], s_[1], 22.0, name='seat')
+    # ---- rocket pits: earth berm open toward the camp centre, the rocket crates (rack station) outside the entrance
+    for k, g in enumerate(cp['rockets']):
+        ea = math.degrees(math.atan2(c[1] - g[1], c[0] - g[0]))
+        W.berm_arc(g[0], g[1], cp['pit_r'] + 26.0, ea + 32.0, ea + 328.0)
+        yaw = math.degrees(math.atan2(-g[1], -g[0]))
+        W.sites['guns']['t'].append((g[0], g[1], gz(*g), yaw))
+        for rr_, da in [(rr0, sgn * a_) for rr0 in (96.0, 130.0, 170.0, 210.0) for a_ in (0.0, 25.0, 50.0, 75.0, 100.0) for sgn in (1, -1)]:      # the first clear spot at the entrance
+            rx, ry = L.pol(g, cp['pit_r'] + rr_, ea + da)
+            if W.stack('rocket_crate', rx, ry, ea + da + 90.0, 2, check=True) > 0: break
+        else:
+            print('WARNING no clear spot for the rocket crates of pit %d' % (k + 1)); rx, ry = L.pol(g, cp['pit_r'] + 96.0, ea)
+        W.sites['racks']['t'].append((rx, ry, gz(rx, ry)))
+        W.prop('rocket_crate', *L.pol(g, cp['pit_r'] + 100.0, ea - da - 40.0), None, ea + rng.uniform(40, 80), check=True)
+    # ---- AA pits: DShK on its stand in a small berm
+    for k, a in enumerate(cp['aa']):
+        ea = math.degrees(math.atan2(c[1] - a[1], c[0] - a[0])); yaw = ea + 180.0
+        W.berm_arc(a[0], a[1], 112.0, ea + 36.0, ea + 324.0, base=48.0, top=16.0, h=30.0)
+        W.mount('dshk', 't', a[0], a[1], yaw, cover=False)
+    # ---- hooches on the north-west side
+    nh = 0
     for k, (hx, hy, hyaw) in enumerate(cp['hooches']):
         nm = ('hooch_a', 'hooch_c', 'hooch_b')[k % 3]
         if W.prop(nm, hx, hy, None, hyaw, fit='min', check=True, pad=4.0) is None: continue
+        nh += 1
         dx, dy = local(hx, hy, hyaw, 225.0, 0.0)
         clutter(rng, [('rice_basket', 2), ('water_jar', 1), ('rucksack', 1), ('ammo_crate', 1)], dx, dy, 10.0, 80.0)
-    # ---- ammo point, cook fires, propaganda, caches
+    for a in cp['aa']: clutter(rng, [('ammo_can', 2), ('ammo_crate', 1)], a[0], a[1], 140.0, 190.0)
+    # ---- ammo point: rocket crates, PAVN ammunition cases; the radio by the FDC hut; cook fires; parked vehicles
     ax, ay = cp['ammo']
     for (dx, dy, n) in ((0, 0, 3), (60, -30, 2), (-50, 40, 2), (20, 70, 1)): W.stack('rocket_crate', ax + dx, ay + dy, rng.uniform(0, 180), n, jitter=rng)
-    clutter(rng, [('ammo_crate', 4), ('ammo_can', 3), ('rice_basket', 2)], ax, ay, 60.0, 130.0)
-    for (dx, dy) in ((-20, 270), (420, 300), (-430, 560)):
-        x, y = c[0] + dx, c[1] + dy
+    case = M.static('ammo_case_nva')
+    for (dx, dy, n) in ((-120, -60, 3), (-150, 20, 2), (110, 60, 2), (130, -80, 3)):
+        lo_, hi_ = W.B(case); yw = rng.uniform(0, 180)
+        for q in range(n):
+            if W.prop(None, ax + dx, ay + dy, gz(ax + dx, ay + dy) + q * (hi_[2] - 0.5), yw + rng.uniform(-5, 5), stock=case, check=q == 0, pad=1.0,
+                      tag='stack' if q else None) is None: break
+    W.sprop('ammo_case_nva_open', ax + 40.0, ay - 110.0, None, rng.uniform(0, 360), check=True, pad=2.0)
+    W.sprop('ammo_case_nva_open', ax - 60.0, ay + 120.0, None, rng.uniform(0, 360), check=True, pad=2.0)
+    if M.is_ext(M.static('comm_station')): W.park('comm_station', *local(fx, fy, fyaw, 30.0, 150.0), fyaw + 180.0, search=160.0, step=20.0)
+    clutter(rng, [('ammo_crate', 3), ('ammo_can', 3), ('rice_basket', 2)], ax, ay, 60.0, 190.0)
+    for (x, y) in cp['fires']:
         if W.prop('cook_fire', x, y, None, rng.uniform(0, 360), check=True, pad=6.0) is None: continue
         W.particle(x, y, gz(x, y) + 10.0, FIRE); W.sites['fires'].append((x, y, gz(x, y) + 10.0))
         clutter(rng, [('rice_basket', 2), ('water_jar', 2), ('log_fallen', 1)], x, y, 60.0, 130.0)
-    for (dx, dy, yaw) in ((150, -30, 80.0), (-300, 330, 20.0), (700, -80, 170.0)):
+    n_v = 0
+    for nm, dx, dy, yw in (('bm21', 760.0, 60.0, 187.0), ('truck_nva', 900.0, -230.0, 172.0), ('jeep_nva', -560.0, 60.0, 20.0), ('jeep_nva', 260.0, -140.0, 172.0),
+                           ('zpu4', -450.0, -700.0, 250.0)):
+        if M.is_ext(M.static(nm) or '') and W.park(nm, c[0] + dx, c[1] + dy, yw, search=700.0, within=(c[0], c[1], L.T_PLATEAU_R - 220.0)) is not None: n_v += 1
+    for (dx, dy, yaw) in ((170, 70, 80.0), (-620, 300, 20.0), (780, 70, 170.0)):
         W.prop('propaganda_board', c[0] + dx, c[1] + dy, None, yaw, check=True, pad=4.0)
     for a in (100.0, 200.0, 260.0, 330.0):
         clutter(rng, [('drum_rust', 1), ('rocket_crate', 1), ('rucksack', 2), ('rice_basket', 1), ('bamboo_fence', 1)], *L.pol(c, 520.0, a), 20.0, 120.0)
@@ -663,7 +732,7 @@ def camp():
                 if math.hypot(q[0] - c[0], q[1] - c[1]) < L.T_PLATEAU_R - 60.0 or float(L.slope(q[0], q[1])) > 18.0: continue
                 if W.prop('punji_stakes', q[0], q[1], None, rng.uniform(0, 360), check=True, pad=10.0, solid='0') is not None: n += 1
     W.sites['seeds'] += [(c[0], c[1]), cp['rack']]
-    print('camp: %d punji patches' % n)
+    print('camp: %d hooches, %d punji patches, %d parked vehicles' % (nh, n, n_v))
 
 
 # ================================================================ flags
@@ -739,17 +808,15 @@ def bridge():
     W.prop('bridge_pier', bx, by, dz + lo[2], 90.0, tag='bridge')            # its origin is the bearing seat under the span ends
     flag_site('b', bx + 50.0, by, dz, crate=(bx - 34.0, by - 130.0, dz), crate_yaw=90.0, yaw=90.0)
     # the burnt truck is 135 wide and the deck 160: on the span it would close the bridge, so it sits run off the road at the south ramp
-    tx_, ty_ = bx + 210.0, by - half - ramp + 40.0
-    if W.prop('truck_wreck', tx_, ty_, None, 62.0, fit='min', check=True, pad=4.0) is not None: W.particle(tx_, ty_, gz(tx_, ty_) + 70.0, SMOKE_DARK)
     # south head: the French bunker and the neutral M2; north head: the shot-up checkpoint
     name, kind, (mx, my), myaw = L.mounted_guns()[0]
     W.prop('french_bunker', bx - 300.0, by - half - 150.0, None, 90.0, fit='min')
-    W.prop('m3_tripod', mx, my, None, myaw)
-    W.bag_arc(mx, my, 56.0, myaw - 80, myaw + 80, layers=1, model='sandbag_low')
-    W.sites['mounts'].append(dict(kind='m2', team='any', pos=(mx, my, gz(mx, my) + 30.0), yaw=myaw, seat=local(mx, my, myaw, -58.0, 0.0)))
-    W.keep(*local(mx, my, myaw, -58.0, 0.0), 24.0, name='seat')
+    W.mount('m2', 'any', mx, my, myaw)
+    # the burnt truck: run off the road south of the ramp (too wide for the deck), clear of the gun pit and the spawns
+    tp_ = W.park('truck_us', bx + 330.0, by - half - ramp - 220.0, 62.0, search=320.0, max_slope=10.0)
+    if tp_ is not None: W.particle(tp_[0], tp_[1], gz(*tp_) + 70.0, SMOKE_DARK)
     W.prop('checkpoint', bx, by + half + ramp + 150.0, None, 90.0, fit='min')
-    W.prop('m113_hulk', bx - 300.0, by + half + 250.0, None, 35.0, fit='min', check=True)
+    W.sprop('apc', bx - 300.0, by + half + 250.0, None, 35.0, fit='min', check=True)
     W.prop('mines_sign', bx + 130.0, by + half + ramp + 240.0, None, 0.0, check=True)
     for s in (-1, 1):
         clutter(rng, [('drum_rust', 2), ('ammo_crate', 2), ('log_fallen', 1), ('rice_basket', 1)], bx + s * 220.0, by + s * (half + ramp), 20.0, 150.0)
@@ -794,6 +861,20 @@ def village():
     for a in (40.0, 170.0, 280.0):
         x, y = L.pol(c, 200.0, a)
         if W.prop('cook_fire', x, y, None, rng.uniform(0, 360), check=True, pad=6.0) is not None: W.particle(x, y, gz(x, y) + 10.0, FIRE)
+    # ---- hedge banks and bamboo thickets round the outside of the terrace (converted foliage; walk-through), wherever one fits
+    nx_ = 0
+    for logical, want, a0 in (('hedge', 5, 6.0), ('bamboo_thicket', 8, 0.0)):
+        model = M.static(logical); got = 0
+        if not M.is_ext(model): continue
+        for a in np.arange(a0, 360.0 + a0, 12.0):
+            if got >= want: break
+            for rr_ in (690.0, 730.0, 770.0):
+                x, y = L.pol(c, rr_, a)
+                rd_, hw_ = L.road_dist(np.array([x]), np.array([y]))
+                if rd_[0] < hw_[0] + 100.0 or float(L.slope(x, y)) > 22.0: continue
+                if W.prop(None, x, y, None, a + (0.0 if logical == 'hedge' else rng.uniform(0, 360)), stock=model, solid='0', fit='min', check=True, pad=30.0,
+                          _quiet=True) is not None: got += 1; break
+        nx_ += got
     for a in np.arange(0.0, 360.0, 13.0):                         # broken fence ring at the edge of the terrace
         if rng.uniform() < 0.45: continue
         x, y = L.pol(c, 610.0 + rng.uniform(-14, 14), a)
@@ -803,7 +884,7 @@ def village():
         x, y = L.pol(c, rng.uniform(250, 600), a + rng.uniform(-12, 12)); m = S.PALMS[rng.randint(len(S.PALMS))]
         W.prop(None, x, y, gz(x, y) - 4.0, rng.uniform(0, 360), stock=m, trunk=S.TRUNK[m], check=True, pad=30.0, scale=rng.uniform(0.9, 1.15))
     W.sites['seeds'] += [c]
-    print('village: %d hooches' % nh)
+    print('village: %d hooches, %d hedges / thickets' % (nh, nx_))
 
 
 def temple():
@@ -829,10 +910,7 @@ def temple():
     W.prop('khmer_gate', c[0], c[1] - 290.0, zc, -90.0, tag='platform')
     flag_site('d', c[0] - 150.0, c[1] - 180.0, zc, crate=(c[0] - 262.0, c[1] - 150.0, zc), crate_yaw=40.0)
     name, kind, (mx, my), myaw = L.mounted_guns()[1]
-    W.prop('dshk_mount', mx, my, zc, myaw, tag='platform')
-    W.bag_arc(mx, my, 76.0, myaw - 70, myaw + 70, layers=1, model='sandbag_low', z=zc)
-    W.sites['mounts'].append(dict(kind='dshk', team='any', pos=(mx, my, zc + 58.0), yaw=myaw, seat=local(mx, my, myaw, -86.0, 0.0)))
-    W.keep(*local(mx, my, myaw, -86.0, 0.0), 24.0, z=zc, name='seat')
+    W.mount('dshk', 'any', mx, my, myaw, z=zc, tag='platform')
     # balustrades along the courtyard edge (gaps at the stairs), guardians at the stairs
     nlo, nhi = W.B(S.mv('naga_balustrade')); bl = nhi[0] - nlo[0]
     nb = 0
@@ -876,7 +954,8 @@ def crash_site():
     # the C-123: fuselage north of the road, a wing torn off behind it, an engine further along the slide, burning
     fx, fy, fyaw = c[0] + 480.0, c[1] + 390.0, 18.0
     W.prop('c123_fuselage', fx, fy, None, fyaw, fit='min')
-    W.prop('c123_wing', *local(fx, fy, fyaw, -160.0, 330.0), None, fyaw + 64.0, fit='min', check=True)
+    for wy_ in (500.0, 560.0, 620.0, 680.0):         # the fuselage's bounds include its wing stubs (150 a side)
+        if float(L.slope(*local(fx, fy, fyaw, -160.0, wy_))) < 16.0 and W.prop('c123_wing', *local(fx, fy, fyaw, -160.0, wy_), None, fyaw + 64.0, fit='min', check=True, _quiet=wy_ < 680.0) is not None: break
     ex, ey = local(fx, fy, fyaw, 470.0, -150.0)
     if W.prop('c123_engine', ex, ey, None, fyaw + 30.0, fit='min', check=True) is not None:
         W.particle(ex, ey, gz(ex, ey) + 30.0, FIRE); W.particle(ex, ey, gz(ex, ey) + 60.0, SMOKE_DARK)
@@ -930,8 +1009,14 @@ def waterfall():
 def marsh():
     rng = np.random.RandomState(4122)
     x = 5450.0; y = float(L.river_y(x)) + 150.0
-    W.prop('pbr_wreck', x, y, gz(x, y) - 2.0, 200.0)             # its origin is the river bed; the model already lists
-    W.particle(x, y, L.WATER_Z + 60.0, SMOKESTACK)
+    pm = M.static('pbr')
+    if M.is_ext(pm):      # the intact PBR floats in the channel, nosed toward the south bank
+        x = 5560.0; y = float(L.river_y(x)) - 40.0
+        W.prop(None, x, y, L.WATER_Z - M.PBR_DRAFT, 172.0, stock=pm, tag='water')
+        W.keep(x, y, 150.0, z=L.WATER_Z - 30.0, name='boat')
+    else:
+        W.prop('pbr_wreck', x, y, gz(x, y) - 2.0, 200.0)             # its origin is the river bed; the model already lists
+        W.particle(x, y, L.WATER_Z + 60.0, SMOKESTACK)
     W.prop('sampan', 5180.0, float(L.river_y(5180.0)) - 190.0, L.WATER_Z - 8.0, 70.0, tag='water')
     n = 0
     for _ in range(900):
@@ -947,7 +1032,20 @@ def marsh():
     for _ in range(8):
         px = rng.uniform(L.MARSH_X0, L.MAP_X - 200.0); py = float(L.river_y(px)) + rng.uniform(-600, 600)
         if abs(gz(px, py) - L.WATER_Z) < 16.0: W.prop('fish_trap', px, py, max(gz(px, py), L.WATER_Z - 6.0), rng.uniform(0, 360), check=True)
-    print('marsh: %d reeds, %d dead trees' % (n, nd))
+    nm_ = 0
+    for logical, cnt, sc0, sc1, zlo, zhi in (('mangrove', 26, 0.8, 1.15, -16.0, 14.0), ('palm_nypa', 46, 0.9, 1.4, -6.0, 30.0)):
+        model = M.static(logical)
+        if not M.is_ext(model): continue
+        k = 0
+        for _ in range(cnt * 14):
+            if k >= cnt: break
+            px = rng.uniform(L.MARSH_X0 - 300.0, L.MAP_X - 120.0); py = float(L.river_y(px)) + rng.uniform(-1000, 1000); g = gz(px, py)
+            if not (L.WATER_Z + zlo < g < L.WATER_Z + zhi): continue
+            tr = M.TRUNK.get(model)
+            if W.prop(None, px, py, g - 3.0, rng.uniform(0, 360), stock=model, solid='0', scale=rng.uniform(sc0, sc1), trunk=tr, check=tr is not None, pad=20.0,
+                      reg=tr is not None) is not None: k += 1
+        nm_ += k
+    print('marsh: %d reeds, %d dead trees, %d mangroves / nypa palms' % (n, nd, nm_))
 
 
 def karst_dressing():
@@ -977,12 +1075,21 @@ def roads_and_craters():
         W.keep_path(pts, hw + 6.0, step=hw * 1.4, name='road')
         if k in (0, 1) and len(pts) > 2: W.sites['seeds'].append(pts[len(pts) // 2])
     # wrecks and signs beside the roads
-    for (nm, k, t, off, yaw) in (('truck_wreck', 0, 0.42, 120.0, 30.0), ('m113_hulk', 0, 0.78, -130.0, 100.0), ('truck_wreck', 1, 0.62, 125.0, 200.0),
-                                 ('ox_cart', 1, 0.2, -110.0, 80.0), ('m113_hulk', 2, 0.55, 110.0, 310.0)):
+    for (nm, k, t, off, yaw) in (('truck_us', 0, 0.42, 120.0, 30.0), ('apc', 0, 0.78, -130.0, 100.0), ('truck_nva', 1, 0.62, 125.0, 200.0),
+                                 ('ox_cart', 1, 0.2, -110.0, 80.0), ('apc', 2, 0.55, 110.0, 310.0), ('t54', 1, 0.12, 150.0, None)):
         Pp = np.array(L.ROADS[k][1], float); seg = np.linalg.norm(np.diff(Pp, axis=0), axis=1); cum = np.concatenate([[0], np.cumsum(seg)])
-        s = t * cum[-1]; i = min(int(np.searchsorted(cum, s) - 1), len(seg) - 1); u = (Pp[i + 1] - Pp[i]) / seg[i]
-        q = Pp[i] + u * (s - cum[i]) + np.array([-u[1], u[0]]) * off
-        if float(L.slope(q[0], q[1])) < 14.0: W.prop(nm, q[0], q[1], None, yaw, fit='min', check=True, pad=6.0)
+        if nm in M.STATIC:         # the converted vehicles are bigger than the hulks they replace: stand clear of the road by their own size
+            lo_, hi_ = W.B(M.static(nm)); off = math.copysign(max(abs(off), L.ROADS[k][0] + 30.0 + math.hypot(hi_[0] - lo_[0], hi_[1] - lo_[1]) / 2), off)
+        for t_ in (t, t + 0.03, t - 0.03, t + 0.06, t - 0.06, t + 0.09, t - 0.09):       # slide along the road until the spot is level and free
+            s_ = t_ * cum[-1]; i = max(0, min(int(np.searchsorted(cum, s_) - 1), len(seg) - 1)); u = (Pp[i + 1] - Pp[i]) / seg[i]
+            q = Pp[i] + u * (s_ - cum[i]) + np.array([-u[1], u[0]]) * off
+            yw = math.degrees(math.atan2(u[1], u[0])) + 168.0 if yaw is None else yaw      # the knocked-out tank, slewed off the road, still pointing down it
+            if float(L.slope(q[0], q[1])) >= 12.0: continue
+            e = W.sprop(nm, q[0], q[1], None, yw, fit='min', check=True, pad=6.0, _quiet=True) if nm in M.STATIC else W.prop(nm, q[0], q[1], None, yw, fit='min', check=True, pad=6.0, _quiet=True)
+            if e is None: continue
+            if nm == 't54': W.particle(q[0], q[1], gz(q[0], q[1]) + 110.0, SMOKE_DARK)
+            break
+        else: print('  road wreck %s on road %d: no level free spot' % (nm, k))
     for k, (hw, pts) in enumerate(L.ROADS):
         Pp = np.array(pts, float); seg = np.linalg.norm(np.diff(Pp, axis=0), axis=1)
         for a, b, d in zip(Pp[:-1], Pp[1:], seg):
@@ -1009,7 +1116,14 @@ def roads_and_craters():
 # ================================================================ the jungle
 def jungle():
     rng = np.random.RandomState(4131)
-    cnt = dict(canopy=0, under=0, fern=0, grass=0, rice=0, palm=0, bamboo=0)
+    cnt = dict(canopy=0, under=0, fern=0, grass=0, rice=0, palm=0, bamboo=0, small_tree=0, ravine=0)
+    # what the eroded ground suggests (tools/data images, docs/IMAGE_TERRAIN.md): fewer trees in stream beds and on rock, more beside the
+    # streams, undergrowth where it is damp. The design (clearings, groves, farms) stays in layout.jungle / layout.grass; these multiply it.
+    i_tree = lambda x, y: (0.35 + 0.65 * TER.img_at('trees', x, y)) * 1.3
+    i_under = lambda x, y: 0.4 + 1.5 * TER.img_at('undergrowth', x, y, 0.4)
+    i_grass = lambda x, y: 0.5 + 0.75 * TER.img_at('grass', x, y, 0.67)
+    X_ = {k: M.static(k) for k in ('bamboo', 'palm_jungle', 'palm_coconut', 'tree_small', 'palm_nypa', 'taro', 'ferns', 'bush', 'grass_tall', 'grass_low')}
+    X_ = {k: v for k, v in X_.items() if M.is_ext(v)}                # the converted Rising Storm foliage that is in the addon
     XE, YE = L.MAP_X + 380.0, L.MAP_Y + 380.0
 
     def grid(step, jit=0.42):
@@ -1024,7 +1138,7 @@ def jungle():
 
     # ---- canopy trees: banyans, tiered: dense where people fight, thinner on the far slopes and beyond the edge
     X, Y = grid(200.0)
-    dens = L.jungle(X, Y); sl = L.slope(X, Y); Z = L.height(X, Y)
+    dens = np.clip(L.jungle(X, Y) * i_tree(X, Y), 0, 1); sl = L.slope(X, Y); Z = L.height(X, Y)
     rd, hw = L.road_dist(X, Y)
     inside = L.in_play(X, Y)
     fill = 0.30 * (1.0 - L.clearing(X, Y)) * (fbm(X / 700.0, Y / 700.0, 7.7, 2, seed=36) * 0.5 + 0.75)
@@ -1047,26 +1161,50 @@ def jungle():
             if L.in_paddies(np.array([px]), np.array([py]))[0] or gz(px, py) < L.WATER_Z + 20.0 or float(L.slope(px, py)) > 18.0: continue
             r_, h_ = L.road_dist(np.array([px]), np.array([py]))
             if r_[0] < h_[0] + 50.0: continue
-            m = S.PALMS[rng.randint(len(S.PALMS))]
-            if W.prop(None, px, py, gz(px, py) - 4.0, rng.uniform(0, 360), stock=m, trunk=S.TRUNK[m], check=True, pad=24.0, scale=rng.uniform(0.85, 1.2)) is not None: cnt['palm'] += 1
+            xp = [X_[k] for k in ('palm_coconut', 'palm_jungle') if k in X_]
+            if xp and rng.uniform() < 0.45:
+                m = xp[rng.randint(len(xp))]; sc = rng.uniform(1.0, 1.35)
+                if W.prop(None, px, py, gz(px, py) - 4.0, rng.uniform(0, 360), stock=m, trunk=M.TRUNK[m], check=True, pad=24.0, scale=sc, solid='0') is not None:
+                    W.trunk_clip(px, py, gz(px, py), M.TRUNK[m] * sc); cnt['palm'] += 1
+            else:
+                m = S.PALMS[rng.randint(len(S.PALMS))]
+                if W.prop(None, px, py, gz(px, py) - 4.0, rng.uniform(0, 360), stock=m, trunk=S.TRUNK[m], check=True, pad=24.0, scale=rng.uniform(0.85, 1.2)) is not None: cnt['palm'] += 1
             if rng.uniform() < 0.35:
                 bx_, by_ = px + rng.uniform(-150, 150), py + s * rng.uniform(40, 160)
                 if gz(bx_, by_) > L.WATER_Z + 20.0 and float(L.slope(bx_, by_)) < 16.0 and float(L.clearing(np.array([bx_]), np.array([by_]))[0]) < 0.9:
-                    if W.prop('bamboo_clump', bx_, by_, gz(bx_, by_) - 3.0, rng.uniform(0, 360), trunk=S.TRUNK_MV['bamboo_clump'], check=True, pad=20.0,
-                              scale=rng.uniform(0.85, 1.2)) is not None: cnt['bamboo'] += 1
+                    if 'bamboo' in X_ and rng.uniform() < 0.6:     # a grove you walk through: the canes are thin, the model is not solid
+                        if W.prop(None, bx_, by_, gz(bx_, by_) - 3.0, rng.uniform(0, 360), stock=X_['bamboo'], trunk=M.TRUNK[X_['bamboo']], check=True, pad=20.0,
+                                  scale=rng.uniform(0.9, 1.25), solid='0') is not None: cnt['bamboo'] += 1
+                    elif W.prop('bamboo_clump', bx_, by_, gz(bx_, by_) - 3.0, rng.uniform(0, 360), trunk=S.TRUNK_MV['bamboo_clump'], check=True, pad=20.0,
+                                scale=rng.uniform(0.85, 1.2)) is not None: cnt['bamboo'] += 1
+    # ---- bamboo groves on the floodplain and the terraces (the converted grove is the best foliage piece: walk-through canes)
+    if 'bamboo' in X_:
+        for _ in range(260):
+            if cnt['bamboo'] >= 46: break
+            bx_ = rng.uniform(-L.MAP_X + 300.0, L.MARSH_X0); by_ = float(L.river_y(bx_)) + rng.choice([-1, 1]) * rng.uniform(L.BANK_W + 120.0, 2300.0)
+            if not L.in_play(bx_, by_) or L.in_paddies(np.array([bx_]), np.array([by_]))[0] or float(L.slope(bx_, by_)) > 14.0: continue
+            if float(L.clearing(np.array([bx_]), np.array([by_]))[0]) > 0.5 or gz(bx_, by_) < L.WATER_Z + 24.0: continue
+            if W.prop(None, bx_, by_, gz(bx_, by_) - 3.0, rng.uniform(0, 360), stock=X_['bamboo'], trunk=M.TRUNK[X_['bamboo']], check=True, pad=30.0,
+                      scale=rng.uniform(0.9, 1.3), solid='0') is not None: cnt['bamboo'] += 1
     # ---- understorey: tall tropical plants, small palms, yucca and taro under the canopy (walk-through, no collision)
     X, Y = grid(150.0)
     m_ = near_play(X, Y) & L.in_play(X, Y)
     X, Y = X[m_], Y[m_]
-    dens = np.maximum(L.jungle(X, Y), 0.25 * (1.0 - L.clearing(X, Y))); sl = L.slope(X, Y); Z = L.height(X, Y)
+    dens = np.maximum(L.jungle(X, Y), 0.25 * (1.0 - L.clearing(X, Y))) * i_under(X, Y); sl = L.slope(X, Y); Z = L.height(X, Y)
     ok = (rng.uniform(size=X.shape) < dens * 1.1) & (sl < 34.0) & (Z > L.WATER_Z + 14.0) & ~L.in_paddies(X, Y)
-    under = S.TROPICAL_L * 3 + S.TROPICAL_M * 3 + S.PALMS_SMALL + S.YUCCA + S.TARO
+    under = S.TROPICAL_L * 3 + S.TROPICAL_M * 3 + S.PALMS_SMALL + S.YUCCA + S.TARO + [X_[k] for k in ('bush', 'bush', 'palm_nypa', 'taro') if k in X_]
     idx = np.nonzero(ok)[0]
     if len(idx) > 2100: idx = rng.choice(idx, 2100, replace=False)
     for i in idx:
         m = under[rng.randint(len(under))]
         if not W.free(float(X[i]), float(Y[i]), 10.0, float(Z[i])): continue
-        W.prop(None, float(X[i]), float(Y[i]), float(Z[i]) - 3.0, rng.uniform(0, 360), stock=m, solid='0', reg=False, scale=rng.uniform(0.9, 1.5)); cnt['under'] += 1
+        if 'tree_small' in X_ and cnt['small_tree'] < 160 and float(sl[i]) < 20.0 and rng.uniform() < 0.1:      # a slim tree: non-solid model, clipped trunk
+            m = X_['tree_small']; sc = rng.uniform(1.0, 1.5)
+            if W.prop(None, float(X[i]), float(Y[i]), float(Z[i]) - 4.0, rng.uniform(0, 360), stock=m, trunk=M.TRUNK[m], check=True, pad=16.0, scale=sc, solid='0') is not None:
+                W.trunk_clip(float(X[i]), float(Y[i]), float(Z[i]), M.TRUNK[m] * sc); cnt['small_tree'] += 1
+            continue
+        W.prop(None, float(X[i]), float(Y[i]), float(Z[i]) - 3.0, rng.uniform(0, 360), stock=m, solid='0', reg=False,
+               scale=rng.uniform(0.9, 1.3) if M.is_ext(m) else rng.uniform(0.9, 1.5)); cnt['under'] += 1
     # ---- ferns and small plants: only near where people walk (roads, flags, bases)
     X, Y = grid(105.0)
     rd, hw = L.road_dist(X, Y)
@@ -1075,25 +1213,41 @@ def jungle():
     nf = np.minimum(nf, np.minimum(np.hypot(X - L.CT_BASE[0], Y - L.CT_BASE[1]) - 900.0, np.hypot(X - L.T_BASE[0], Y - L.T_BASE[1]) - 300.0))
     m_ = ((rd < 420.0) | (nf < 950.0)) & L.in_play(X, Y)
     X, Y = X[m_], Y[m_]
-    dens = L.jungle(X, Y) + 0.25 * (1.0 - L.clearing(X, Y)); sl = L.slope(X, Y); Z = L.height(X, Y)
+    dens = (L.jungle(X, Y) + 0.25 * (1.0 - L.clearing(X, Y))) * i_under(X, Y); sl = L.slope(X, Y); Z = L.height(X, Y)
     ok = (rng.uniform(size=X.shape) < dens * 1.1) & (sl < 36.0) & (Z > L.WATER_Z + 10.0) & ~L.in_paddies(X, Y)
-    small = S.FERNS * 2 + S.TROPICAL_S + S.WEEDS
+    small = S.FERNS * 2 + S.TROPICAL_S + S.WEEDS + [X_[k] for k in ('ferns', 'ferns', 'grass_low') if k in X_]
     idx = np.nonzero(ok)[0]
     if len(idx) > 1500: idx = rng.choice(idx, 1500, replace=False)
     for i in idx:
         m = small[rng.randint(len(small))]
         if not W.free(float(X[i]), float(Y[i]), 8.0, float(Z[i])): continue
-        W.prop(None, float(X[i]), float(Y[i]), float(Z[i]) - 1.5, rng.uniform(0, 360), stock=m, solid='0', reg=False, scale=rng.uniform(1.0, 1.7)); cnt['fern'] += 1
+        W.prop(None, float(X[i]), float(Y[i]), float(Z[i]) - 1.5, rng.uniform(0, 360), stock=m, solid='0', reg=False,
+               scale=rng.uniform(0.8, 1.1) if M.is_ext(m) else rng.uniform(1.0, 1.7)); cnt['fern'] += 1
+    # ---- ferns and bushes along the eroded ravines: points straight from the undergrowth image (the same every run)
+    F = TER.img('undergrowth')
+    if F is not None and ('ferns' in X_ or 'bush' in X_):
+        FX_, FY_ = F.XY
+        damp = F.Z * L.in_play(FX_, FY_) * (np.abs(L.detail(FX_, FY_)) > 6.0) * (L.water_dist(FX_, FY_) < 3300.0)
+        rav = [X_[k] for k in ('ferns', 'ferns', 'bush') if k in X_]
+        for (x, y) in TI.scatter_density(F.like(damp), spacing=110.0, seed=7, limit=700):
+            if float(L.slope(x, y)) > 36.0 or gz(x, y) < L.WATER_Z + 10.0 or not W.free(x, y, 10.0): continue
+            m = rav[rng.randint(len(rav))]
+            W.prop(None, float(x), float(y), gz(x, y) - 2.5, rng.uniform(0, 360), stock=m, solid='0', reg=False, scale=rng.uniform(0.8, 1.15)); cnt['ravine'] += 1
     # ---- elephant grass fields on the floodplain and terraces (cover from the air)
     X, Y = grid(66.0, jit=0.48)
     m_ = L.in_play(X, Y) & (L.water_dist(X, Y) < 2900.0)
     X, Y = X[m_], Y[m_]
-    g = L.grass(X, Y); sl = L.slope(X, Y); Z = L.height(X, Y); rd, hw = L.road_dist(X, Y)
+    g = np.clip(L.grass(X, Y) * i_grass(X, Y), 0, 1); sl = L.slope(X, Y); Z = L.height(X, Y); rd, hw = L.road_dist(X, Y)
     ok = (g > 0.12) & (rng.uniform(size=X.shape) < np.minimum(1.0, g * 1.7)) & (sl < 20.0) & (Z > L.WATER_Z + 14.0) & (rd > hw + 26.0)
     idx = np.nonzero(ok)[0]
     if len(idx) > 2300: idx = rng.choice(idx, 2300, replace=False)
     for i in idx:
         if not W.free(float(X[i]), float(Y[i]), 20.0, float(Z[i])): continue
+        if 'grass_tall' in X_ and rng.uniform() < 0.3:        # the converted patch is 48 u high: 2 - 2.5 x makes it elephant grass
+            hs = rng.uniform(2.0, 2.5)
+            W.prop(None, float(X[i]), float(Y[i]), float(Z[i]) - 4.0, rng.uniform(0, 360), stock=X_['grass_tall'], solid='0', reg=False,
+                   scale=(rng.uniform(1.0, 1.3),) * 2 + (hs,)); cnt['grass'] += 1
+            continue
         W.prop('elephant_grass_' + 'abc'[rng.randint(3)], float(X[i]), float(Y[i]), float(Z[i]) - 2.0, rng.uniform(0, 360), solid='0', reg=False,
                scale=(rng.uniform(0.9, 1.3),) * 2 + (rng.uniform(0.9, 1.25),)); cnt['grass'] += 1
     # ---- rice in the paddy cells (in the water, off the dikes)
@@ -1125,7 +1279,7 @@ def weather():
 def build(d, group, out, T, karst, clone):
     global W
     W = World(d, group, out, T, karst, clone)
-    roads_keep_first = False
+    M.ensure_dyn(out)                                # the prop_dynamic twin of the converted crash hulk
     tunnels()
     firebase()
     camp()
@@ -1136,6 +1290,7 @@ def build(d, group, out, T, karst, clone):
     cnt = jungle()
     weather()
     n = sum(W.count.values())
+    for b in W.big_skips: print('  did not fit: ' + b)
     print('places: %d prop_static (%d models), %d skipped for overlap, %d exceptions; props not built yet: %s' % (
         n, len(W.count), sum(W.skipped.values()), len(W.exc), ', '.join(sorted(W.missing)) or 'none'))
     return W

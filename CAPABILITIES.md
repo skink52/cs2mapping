@@ -102,6 +102,7 @@ map logic before it goes on the Workshop. Multi-game and scripted maps need the 
 
 **Maps built by the tools**
 - Write a whole map (rooms, terrain, trenches, tracks, lobbies, spawns, lights, sky shells, visibility hints, all the entities the script needs) straight into your
+- Terrain from pictures: a greyscale height picture becomes ground, and the ground can be weathered the way rain does it (stream gullies, scree, terraces, rock breaking through on steep slopes) while flags, bases, roads and water stay exactly as designed; the same pass gives pictures of where rock, mud and grass go and where trees and undergrowth grow, plus before / after relief pictures to judge it by. Facade photos can be straightened and measured (floors, windows, colours), and a photo can be laid beside a game screenshot. *(unit tested; not yet compiled into a map)*
   Hammer map, keeping your own edits; or apply small changes to your latest save without regenerating anything else.
 - 3D skyboxes (distant terrain and forests), several different skies in one map, lightmap resolution and light probe setup.
 - Check every generated mesh for errors and render previews before you open it.

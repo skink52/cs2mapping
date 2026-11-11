@@ -2,7 +2,15 @@
 
 Models taken from the GMod Workshop where they beat the procedural props of DESIGN.md 4.1. Catalog: `tools/gmod_assets.json`;
 tool: `tools/gmod_assets.py`; machine-readable result: `out/gmod_models.json` (`{name: {model, bounds, tris, replaces, credit,
-pivot, attach, ...}}`). Nothing here is wired into the map yet.
+pivot, attach, ...}}`). **Wired into the map on 12 Nov 2026 through `tools/mv_models.py`** (one table: logical name -> converted
+model or procedural fallback, pivots, seats; exported to `layout.json` `models` for the script). In use: `hip_slick`, `hip_upper`,
+`hip_rotor`, `hip_tail`, `m101` + `m101_gun`, `m2_tripod` + `m2_gun`, `dshk_tripod` + `dshk_gun`, `heli_wreck` (as the prop_dynamic
+twin `heli_wreck_dyn.vmdl` that `mv_models.ensure_dyn()` writes), `m113`, `m35`, `ural`, `pbr`, `m151`, `gaz69`, `bm21`, `zpu4`, `t54`,
+`comm_station`, `nva_ammo_case`, `nva_ammo_case_open`, `sandbag_cover`, and the `rs_*` foliage except the rejected two. Not used
+(reasons in `mv_models.UNUSED`): `hind`, `huey`, `lssc_boat`, `pbr_mcv`, `m114_howitzer`, `m40_rr`, `m60_gun`, `mortar_m1`,
+`rocket_grad`, `skyraider`, `tent_gp` (our `gp_tent` kept), `wood_tower` (our `guard_tower` kept), `sandbag_fort` (one convex hull:
+its roofed inside would be an invisible solid), `w_*`. Seat, door-gun, pod and hub numbers of the Mi-8 were measured from the
+converted SMDs and are in `mv_models.HELIS`.
 
 **How far this was checked:** converted and looked at in a software render of the written SMDs and vmats (`out/gmod/view/<name>.png`,
 contact sheets `out/gmod/view/_sheet1..3.png`). Not compiled with resourcecompiler, not seen in Hammer or in game.

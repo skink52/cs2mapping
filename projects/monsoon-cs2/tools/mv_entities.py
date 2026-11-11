@@ -13,19 +13,15 @@ import vmaplib, vmesh, vmapgen as G
 from vmaplib import ent, polymesh, box_faces
 import layout as L
 import mv_stock as S
+import mv_models as M
 import mv_places as PL
 
 BOOM = 'particles/explosions_fx/explosion_basic.vpcf'
 DIRT_FX = 'particles/ambient_fx/impact_dirt.vpcf'
 DUST = 'particles/ambient_fx/copter_land_loop_1_dust_low.vpcf'
 FX = lambda n: 'models/mv/fx/mv_%s/mv_%s.vmdl' % (n, n)
-TRUNNION_Z = 44.0            # p_arty.TRUNNION
-RAIL_TRUNNION_Z = 46.0       # p_arty.RAIL_TRUNNION
-HIP_MAST = (-30.0, 0.0, 212.0 * 0.82)                      # p_heli.HIP_MAST / HIP_ROTOR_Z
-HIP_TAIL = (-660.0 * 0.82, 16.0, 196.0 * 0.82)             # p_heli.HIP_TAIL_ROTOR
-MOUNT_GUN = dict(m2='m2_gun', dshk='dshk_gun', quad50='quad50_gun')
 # models the script may SetModel to (uniforms): add paths to out/cache_models.json (a list) when the player models are copied in
-CACHE_DEFAULT = [S.mv('wreck_hip'), S.mv('wreck_huey'), S.mv('rocket_122'), S.mv('shell_105')]
+CACHE_DEFAULT = [S.mv('rocket_122'), S.mv('shell_105')]            # + the crash hulks (mv_models.static('wreck_*'))
 
 
 def nav_markup(box, prop='NONAV', name='', group=''):
@@ -109,29 +105,34 @@ def build(d, group, out, T, clone):
         for k, (px, py, pz) in enumerate(S_['pads'][tg]):
             i = k + 1
             E('info_target', (px, py, pz), (0, yaw, 0), targetname='mv_pad_%s_%d' % (tg, i))
+            wreck = M.static('wreck_' + tg); wyaw = 90.0 if M.is_ext(wreck) else 0.0
             if tg == 'ct':
                 dyn('mv_heli_ct_%d' % i, S.APACHE['model'], (px, py, pz), yaw + nose, solid='6', DefaultAnim=apache.get('default_anim', 'idle'))
-                dyn('mv_wreck_ct_%d' % i, S.mv('wreck_huey'), (-600.0 + 300.0 * k, 600.0, L.PARK_Z), 0.0, solid='6')
+                dyn('mv_wreck_ct_%d' % i, wreck, (-600.0 + 700.0 * k, 600.0, L.PARK_Z), wyaw, solid='6')
             else:
-                dyn('mv_heli_t_%d' % i, S.mv('heli_hip_gun' if i == 3 else 'heli_hip'), (px, py, pz), yaw, solid='6')
-                mx, my = PL.local(px, py, yaw, HIP_MAST[0], HIP_MAST[1])
-                dyn('mv_rotor_t_%d' % i, S.mv('rotor_hip'), (mx, my, pz + HIP_MAST[2]), yaw + 25.0 * k)
-                tx, ty = PL.local(px, py, yaw, HIP_TAIL[0], HIP_TAIL[1])
-                dyn('mv_tail_t_%d' % i, S.mv('tailrotor_hip'), (tx, ty, pz + HIP_TAIL[2]), yaw)
-                dyn('mv_wreck_t_%d' % i, S.mv('wreck_hip'), (-600.0 + 300.0 * k, 1000.0, L.PARK_Z), 0.0, solid='6')
+                h = M.pick(M.HELI_ON_PAD['t'][k])                 # body + the two rotor props on their hubs (model table)
+                dyn('mv_heli_t_%d' % i, h['body'], (px, py, pz), yaw, solid='6')
+                mx, my = PL.local(px, py, yaw, h['hub'][0], h['hub'][1])
+                dyn('mv_rotor_t_%d' % i, h['rotor'], (mx, my, pz + h['hub'][2]), yaw + 25.0 * k)
+                tx, ty = PL.local(px, py, yaw, h['tail_hub'][0], h['tail_hub'][1])
+                dyn('mv_tail_t_%d' % i, h['tail'], (tx, ty, pz + h['tail_hub'][2]), yaw)
+                dyn('mv_wreck_t_%d' % i, wreck, (-600.0 + 700.0 * k, 1400.0, L.PARK_Z), wyaw, solid='6')
             for nm, ev in (('eng', 'mv.heli_rotor'), ('gun', 'mv.heli_gun'), ('gun2', 'mv.heli_gun'), ('rkt', 'mv.rocket_launch')):
                 snd('mv_heli_%s_%s_%d' % (nm, tg, i), (px, py, pz + 120.0), ev)
             fx('mv_heli_smoke_%s_%d' % (tg, i), (px, py, pz + 150.0), PL.SMOKE_DARK)
             fx('mv_heli_dust_%s_%d' % (tg, i), (px, py, pz + 4.0), DUST)
     # ---------------------------------------------------------------- batteries: carriage, elevating part, racks, board
-    for tg, carriage, tube, tz, ev in (('ct', 'howitzer_m102', 'howitzer_m102_gun', TRUNNION_Z, 'mv.howitzer_fire'), ('t', 'rocket_tripod', 'rocket_rail', RAIL_TRUNNION_Z, 'mv.rocket_fire')):
+    for tg, kind, ev in (('ct', 'howitzer', 'mv.howitzer_fire'), ('t', 'rocket', 'mv.rocket_fire')):
+        g = M.pick(kind); tr = g['trunnion']; rest = g['rest_pitch']
         for k, (gx, gy, gz_, yaw) in enumerate(S_['guns'][tg]):
             i = k + 1
-            dyn('mv_gun_%s_%d' % (tg, i), S.mv(carriage), (gx, gy, gz_), yaw, solid='6')
-            dyn('mv_tube_%s_%d' % (tg, i), S.mv(tube), (gx, gy, gz_ + tz), yaw, pitch=-20.0 if tg == 't' else -8.0)
-            if tg == 't': dyn('mv_round_t_%d' % i, S.mv('rocket_122'), (gx, gy, gz_ + tz + 8.0), yaw, pitch=-20.0)
+            dyn('mv_gun_%s_%d' % (tg, i), g['carriage'], (gx, gy, gz_), yaw, solid='6')
+            tx, ty = PL.local(gx, gy, yaw, tr[0], tr[1])
+            dyn('mv_tube_%s_%d' % (tg, i), g['tube'], (tx, ty, gz_ + tr[2]), yaw, pitch=rest)
+            if 'round' in g: dyn('mv_round_t_%d' % i, g['round'], (tx, ty, gz_ + tr[2] + g['round_up']), yaw, pitch=rest)
             snd('mv_gun_snd_%s_%d' % (tg, i), (gx, gy, gz_ + 60.0), ev)
-            fx('mv_gun_fx_%s_%d' % (tg, i), (gx + 120.0 * math.cos(math.radians(yaw)), gy + 120.0 * math.sin(math.radians(yaw)), gz_ + 70.0), DIRT_FX)
+            mz = tr[0] + g['muzzle']
+            fx('mv_gun_fx_%s_%d' % (tg, i), (gx + mz * math.cos(math.radians(yaw)), gy + mz * math.sin(math.radians(yaw)), gz_ + tr[2] + 14.0), DIRT_FX)
             rx, ry, rz = S_['racks'][tg][k]
             E('info_target', (rx, ry, rz + 30.0), targetname='mv_rack_%s_%d' % (tg, i))
         b = S_['board'][tg]
@@ -142,7 +143,7 @@ def build(d, group, out, T, clone):
     # ---------------------------------------------------------------- mounted guns
     for k, m in enumerate(S_['mounts']):
         i = k + 1; x, y, z = m['pos']
-        dyn('mv_mount_%d' % i, S.mv(MOUNT_GUN[m['kind']]), (x, y, z), m['yaw'])
+        dyn('mv_mount_%d' % i, M.pick(m['kind'])['gun'], (x, y, z), m['yaw'])
         tele('mv_mountseat_%d' % i, m['seat'][0], m['seat'][1], m['yaw'])
         snd('mv_mount_snd_%d' % i, (x, y, z + 10.0), 'mv.mount_gun')
         E('info_target', (x, y, z + 20.0), (0, m['yaw'], 0), targetname='mv_mountinfo_%d' % i, message='%s:%s' % (m['kind'], m['team']))
@@ -162,9 +163,9 @@ def build(d, group, out, T, clone):
     for k in range(12): dyn('mv_pip_%d' % (k + 1), FX('gunpip'), (-700.0 + 150.0 * k, -900.0, pz))
     for k in range(12): dyn('mv_shell_%d' % (k + 1), S.mv('shell_105'), (-700.0 + 60.0 * k, -1100.0, pz))
     cj = os.path.join(os.path.dirname(os.path.abspath(out)), 'cache_models.json')
-    cache = list(CACHE_DEFAULT) + (json.load(open(cj)) if os.path.exists(cj) else [])
+    cache = [M.static('wreck_t'), M.static('wreck_ct')] + list(CACHE_DEFAULT) + (json.load(open(cj)) if os.path.exists(cj) else [])
     for k, m in enumerate(dict.fromkeys(cache)):
-        dyn('mv_cache_' + os.path.splitext(os.path.basename(m))[0].lower(), m, (-700.0 + 120.0 * (k % 12), -1500.0 - 120.0 * (k // 12), pz))
+        dyn('mv_cache_%d' % (k + 1), m, (-700.0 + 120.0 * (k % 12), -1500.0 - 120.0 * (k // 12), pz))
     snd('mv_ambience', (0.0, 0.0, L.LOBBY_Z + 200.0), 'mv.amb.valley', start='1')
     for k, (x, y, z) in enumerate(S_['tunnels']):
         n['info_teleport_destination'] = n.get('info_teleport_destination', 0) + 1

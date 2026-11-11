@@ -143,7 +143,7 @@ function synthesise() {
   for (let i = 1; i <= 6; i++) add('mv_smoke_fx_' + i, 'info_particle_system', 0, 0, PARK_Z);
   for (let i = 1; i <= 12; i++) add('mv_shell_' + i, 'prop_dynamic', 0, 0, PARK_Z);
   for (let i = 1; i <= 3; i++) add('mv_tunnel_' + i, 'info_teleport_destination', -3000 + i * 700, 2000 - i * 500, ground(-3000 + i * 700, 2000 - i * 500));
-  const U = ['models/mv/players/nva_soldier/nva_soldier.vmdl', 'models/mv/players/soldier2_woodland/soldier2_woodland.vmdl'];
+  const U = ['models/player/gmod/nva_soldier/nva_soldier.vmdl', 'models/player/gmod/soldier2_woodland/soldier2_woodland.vmdl'];
   U.forEach((m, i) => out.push({ name: 'mv_cache_' + (i + 1), cls: 'prop_dynamic', origin: [0, 64 * i, PARK_Z], angles: [0, 0, 0], model: m }));
   return out;
 }

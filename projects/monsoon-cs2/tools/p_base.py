@@ -194,6 +194,24 @@ def conex(lod=0, seed=66):
     return m, dict(sten=STEN)
 
 
+TOWER_H, TOWER_S, TOWER_COURSES = 260, 70, 4
+TOWER_BAGS = [(TOWER_S - 2, 0, 2 * TOWER_S + 4, 90), (0, TOWER_S - 2, 2 * TOWER_S - 30, 0), (0, -(TOWER_S - 2), 2 * TOWER_S - 30, 0),
+              (-(TOWER_S - 2), 51, 44, 90), (-(TOWER_S - 2), -51, 44, 90)]
+
+
+def tower_hulls(bag_h=24.0):
+    """platform slab (a player stands on z 266 under the roof at 350: 84 u headroom), the parapet rows, the roof sheet, the four legs"""
+    H, s_ = TOWER_H, TOWER_S
+    hl = [MG.pts_box(-s_ - 10, -s_ - 10, H, s_ + 10, s_ + 10, H + 6), MG.pts_box(-s_ - 16, -s_ - 16, H + 90, s_ + 16, s_ + 16, H + 93)]
+    for (cx, cy, ln, yaw) in TOWER_BAGS:
+        hx, hy = (11.0, ln / 2) if yaw == 90 else (ln / 2, 11.0)
+        hl.append(MG.pts_box(cx - hx, cy - hy, H + 6, cx + hx, cy + hy, H + 6 + bag_h))
+    for (sx, sy) in ((-1, -1), (-1, 1), (1, -1), (1, 1)):
+        x0, x1 = sorted((sx * (s_ - 6), sx * (s_ * 1.25 + 6))); y0, y1 = sorted((sy * (s_ - 6), sy * (s_ * 1.25 + 6)))
+        hl.append(MG.pts_box(x0, y0, 0, x1, y1, H))
+    return hl
+
+
 def guard_tower(lod=0, seed=67):
     """timber watch tower: four legs, cross braces, a sandbagged platform with a PSP roof, ladder on -x (toolsinvisibleladder in the map)"""
     p = geo.frame(seed=seed)
@@ -208,8 +226,12 @@ def guard_tower(lod=0, seed=67):
         for sx in (-1, 1):
             m.add(MG.cyl((sx * s_ * (1.25 - z / H * 0.25), -s_ * (1.25 - z / H * 0.25), z), (sx * s_ * (1.25 - z / H * 0.25), s_ * (1.25 - z / H * 0.25), z), 2.6, 'wood_dark', p, sides=6))
     m.add(MG.box(-s_ - 10, -s_ - 10, H, s_ + 10, s_ + 10, H + 6, 'wood', p))                 # platform
-    for k in range(4):
-        sb, hh = sandbag_row(2 * s_ + 20, 2, lod, seed + k, yaw=90 * k); sb.transform(None, ((s_ + 10) * (1 if k == 0 else -1 if k == 2 else 0), (s_ + 10) * (1 if k == 1 else -1 if k == 3 else 0), H + 6)); m.add(sb)
+    # sandbag parapet ON the platform edge, each row along its side (12 Nov: the rows used to stick out radially); the ladder side (-x)
+    # is two short rows with a 48-u gap to step through. TOWER_BAGS lists (row centre x, y, length, yaw) for the hulls in specs().
+    for k, (cx, cy, ln, yaw) in enumerate(TOWER_BAGS):
+        sb, hh = sandbag_row(ln, TOWER_COURSES, lod, seed + k, yaw=yaw)
+        lo_, hi_ = sb.V.min(0), sb.V.max(0)
+        sb.transform(None, (cx - (lo_[0] + hi_[0]) / 2, cy - (lo_[1] + hi_[1]) / 2, H + 6 - lo_[2])); m.add(sb)
     for (sx, sy) in ((-1, -1), (-1, 1), (1, -1), (1, 1)):
         m.add(MG.cyl((sx * s_, sy * s_, H + 6), (sx * s_, sy * s_, H + 90), 3.0, 'wood_dark', p, sides=6))
     m.add(MG.box(-s_ - 16, -s_ - 16, H + 90, s_ + 16, s_ + 16, H + 93, 'psp', p))
@@ -484,7 +506,7 @@ def specs():
         'psp_pad': lambda: _two(psp_pad, 2048, hulls=[MG.pts_box(-300, -300, 0, 300, 300, 1.6), MG.pts_box(276, 276, 0, 284, 284, 130)], metal=True),
         'gp_tent': lambda: _two(gp_tent, 2048, hulls=[MG.pts_box(-160, -100, 0, 160, 100, 60), MG.pts_box(-160, -60, 60, 160, 60, 150)]),
         'conex': lambda: _two(conex, 1024, metal=True),
-        'guard_tower': lambda: _two(guard_tower, 2048, hulls=[MG.pts_box(-80, -80, 260, 80, 80, 300), MG.pts_box(-88, -88, 0, -84, 88, 8), MG.pts_box(84, -88, 0, 88, 88, 8), MG.pts_box(-88, -88, 0, 88, -84, 8), MG.pts_box(-88, 84, 0, 88, 88, 8), MG.pts_box(-86, -86, 350, 86, 86, 354)]),
+        'guard_tower': lambda: _two(guard_tower, 2048, hulls=tower_hulls()),
         'fuel_bladder': lambda: _two(fuel_bladder, 1024, hulls=[MG.pts_box(-75, -55, 0, 75, 55, 34), MG.pts_box(-100, -84, 0, 100, 84, 12)]),
         'drum_od': lambda: _two(drum, 512, metal=True, mat='od'),
         'drum_rust': lambda: _two(drum, 512, metal=True, mat='rust', seed=70),

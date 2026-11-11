@@ -55,7 +55,10 @@ _MASTER = {}
 
 def master():
     """Z, jungle, grass, paint weight of the [-EXT, EXT] square (row 0 = north), cached by layout.py's content"""
-    key = hashlib.md5(open(os.path.join(HERE, 'layout.py'), 'rb').read()).hexdigest()[:12]
+    h = hashlib.md5(open(os.path.join(HERE, 'layout.py'), 'rb').read())
+    dp = os.path.join(HERE, 'data', 'detail.png')                 # the eroded detail layer is part of the ground (docs/IMAGE_TERRAIN.md)
+    if os.path.exists(dp): h.update(open(dp, 'rb').read())
+    key = h.hexdigest()[:12]
     p = os.path.join(CACHE, 'terrain_%d_%s.npz' % (MASTER_N, key))
     if not os.path.exists(p) and os.environ.get('MV_RADAR_STALE') and os.path.isdir(CACHE):      # iterate on the look without waiting for a re-raster
         old = sorted(f for f in os.listdir(CACHE) if f.startswith('terrain_%d_' % MASTER_N))

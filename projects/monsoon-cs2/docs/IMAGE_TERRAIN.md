@@ -1,8 +1,13 @@
 # mg_monsoon: terrain detail from images
 
-Status: **run on a height export, looked at as hillshades; not applied to the map, not compiled.** The generic part is
+Status: **applied to the generator on 12 Nov 2026 (sections 1-3 are in `tools/`: `make_detail.py`, `layout.height = height_base +
+detail`, 64-unit tiles where the layer exceeds 10 units, paint and foliage density from the images); the map is generated and
+passes `check_mesh.py` / `check_world.py`; not compiled, not seen in Hammer or in game.** The generic part is
 `create/terrain_img.py` ([guide section 10](../../../docs/creation/guide.md#10-image-driven-terrain-11-nov-2026-unit-tested-not-yet-compiled-into-a-map));
-this file is the monsoon glue. Nothing in `tools/` was changed by this work: sections 2 and 3 are listings to apply.
+this file is the monsoon glue. The listings below are what was applied; the code in `tools/` is the reference now
+(`make_detail.py` writes into `tools/data/`; `mv_places.jungle()` multiplies tree / undergrowth / grass density by the images and
+adds a fern layer along the ravines from `density_undergrowth.png`). Rerun `python tools/make_detail.py` after any layout change
+that moves designed ground, then rebuild the map, radar, board and slides.
 
 What it does: exports `layout.height(x, y)` over x +-7168, y +-6144 as a 16-bit image (32-unit cells, 449 x 385), cuts a stream
 network into the valley sides (6 gully passes + droplet erosion + scree + rock outcrops), and returns the difference as a

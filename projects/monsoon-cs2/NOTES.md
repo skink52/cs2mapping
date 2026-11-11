@@ -2,67 +2,91 @@
 
 Read this first when resuming. Newest state at the top. Design: [docs/DESIGN.md](docs/DESIGN.md).
 
-## Resume here (paused 9 Nov 2026, ~03:40 ACDT, usage budget ran out)
+## Resume here (12 Nov 2026, after the integration pass)
 
-**What exists and works (verified offline only, nothing has been in CS2 yet):**
-- `tools/layout.py`: the whole valley as functions (river, terraces, bases, karst, paddies, roads, gullies, oxbow, craters, flags,
-  POIs, masks for jungle/grass/clearings/paint, `export()` -> `out/layout.json`). `tools/preview_layout.py out.png [cell]` draws it.
-- `tools/mv_terrain.py` + `tools/make_map.py` stage 1-3: terrain tiles (672 tiles, 52k quads, vertex-painted Ancient mud/grass blend),
-  8 karst towers (fluted pillars, rock/moss blend), river / upper river / marsh / oxbow / paddy water sheets, sky shell, edge clips,
-  lightmap shells, environment (sun, sky, fog, probes, soundscape, 3D skybox reference, hints), lobby + banner + 64 spawns +
-  script/HUD/params entities. Output `out/addon/maps/mg_monsoon.vmap` (48 MB), `check_mesh.py`: 0 bad meshes.
-  Run: `cd tools && python make_map.py ../out/template.vmap ../out/addon/maps/mg_monsoon.vmap ../out/addon`
-  (`out/template.vmap` = a copy of `content\csgo_addons\addon_template\maps\xxx_mapname_xxx.vmap`; 55 s).
-  `mv_places.py` (stage 4) and `mv_entities.py` (stage 5) are stubs: no dressing, no gameplay entities yet.
-- Props (`MV_OUT=<abs path to out/addon> python build_all_props.py <names>`; list = toolkit.json modules; specs are lazy callables):
-  - `p_heli.py`: heli_huey, heli_huey_gun, heli_hip, heli_hip_gun, rotor_huey, rotor_hip, tailrotor_huey, tailrotor_hip, wreck_huey,
-    wreck_hip: built and reviewed (turntables in `preview/`). **User decision: reuse the CC-BY Apache instead of the procedural Huey
-    for the US side** (`C:\source2\projects\apache\cs2_apache`: vmdl, 5 LODs, rotor bones with idle/spin_slow/spin anims, 2 hulls,
-    3 materials; credit text in its CREDITS.txt). Reason the Huey was made: the design is 1968 and a procedural model is original IP;
-    not a dire reason, so: Apache for the CT helicopters (SetAnimation spin / spin_slow instead of the split rotor props; its origin
-    is on the ground under the mast, ~710 u long, rotor ~605 u; use `import_scale` ~0.8 in the vmdl if it dwarfs the pads), keep
-    the procedural Hip for T unless a CC-BY Mi-8/Mi-24 GLB turns up (then `glb2cs2_multi.py`). Drop heli_huey* from toolkit/props.
-  - `p_arty.py`: howitzer_m102 + howitzer_m102_gun (elevating part, origin = trunnion), rocket_tripod + rocket_rail + rocket_122,
-    shell_105, ammo_rack_105, rocket_crate, plot_table, plot_table_t: built, not yet reviewed in turntables.
-  - `p_guns.py`: m2_gun, m3_tripod, dshk_gun, dshk_mount, quad50_mount, quad50_gun, m60_gun, pk_gun: meshes smoke-tested, NOT built.
-  - `p_base.py`: 27 props (bunkers, fdc_bunker, psp_pad, gp_tent, conex, guard_tower, fuel_bladder, drums, water_trailer, latrine,
-    antenna_mast, cans, crates, radio, jerry can, rucksack, arms racks, signs, culvert_bunker, cot): a background build was running
-    when we stopped (25 of 27 written, `out/logs/build_base.log`; `ammo_crate` failed with `KeyError: 'st'`: its decal image dict is
-    returned by `ammo_crate()` but `arms_rack` calls it and drops the dict -> give `_two` the images or inline the decal; same
-    pattern to check in `arms_rack_*`). Re-run `build_all_props.py ammo_crate arms_rack_ct arms_rack_t` after the fix.
-  - `p_village.py`: 23 props written; hooch_a/b/c smoke-tested; the rest untested (a seed-overflow bug in `bamboo_pole` was fixed
-    last thing, re-run the smoke test: `python -c "import p_village; [f() for f in p_village.specs().values()]"`).
-  - `p_jungle.py`, `p_wreck.py`, `p_bridge.py`, `p_temple.py`: empty stubs (`specs()` returns {}). Design lists what they hold.
-- `mv_shaders.py` (aircraft paint, glass, rubber, aluminium, interior, tarp, concrete, thatch, bamboo, PSP with alpha holes, foliage
-  cards), `mv_geo.py` (lofts through rounded sections, hull-following panels, cylinders, plates, decal text/star images).
-- `create/build_all_props.py` master now accepts callable (lazy) specs; pushed to monsoon-cs2 and trenchwarfare-cs2 copies.
-- `out/vpk_index/cs2_index.pkl`: pickled index of `game\csgo\pak01_dir.vpk` (tools/vpkdir.py). Map VPKs hold only compiled world
-  nodes; all shared props/materials are in pak01 (Aztec banyans/ferns, Anubis palms, 80 hr_ancient blend materials).
+**State in one line:** the whole addon is generated and passes every offline check; **nothing has been compiled, opened in Hammer
+or run in CS2**. Every "works" below means generated / simulated (words of `docs/reference/compatibility.md`). Nothing is committed
+or deployed (`tools/deploy_monsoon.py` is a dry run; do not `--apply` without being asked).
 
-**Not started:** places (stage 4: firebase, camp, flags, village, temple, crash site, bridge, paddies dressing, jungle scatter,
-tunnels, nav seeds/NONAV markup), script entities (stage 5), the cs_script (`src/`), HUD, sounds, radar, FDC board render,
-3D skybox map, mock + tsc tests, docs (README_ADDON, TESTING, CREDITS, compliance), player-model copies, weapons.
+**What exists** (all under `out/`, gitignored; `out/addon` is the content tree):
+- Map `out/addon/maps/mg_monsoon.vmap` (63.5 MB, 6965 entities, 1090 meshes): terrain 672 tiles / 68k quads with the **image detail
+  layer** (ravines down both valley sides; `layout.height = height_base + detail`, images in `tools/data/`, `docs/IMAGE_TERRAIN.md`),
+  8 karst towers, water, lobby, firebase, camp, tunnels, 5 flags, village, temple, crash site, bridge, marsh, jungle
+  (6307 prop_static, 146 models), 130 script prop_dynamic, nav markup (15 seeds, 94 NONAV boxes), rain, lightning.
+- 3D skybox map `mg_monsoon_3dskybox.vmap` (11 Nov, not rebuilt: it uses `layout.ground_low`, which this pass did not change).
+- Script `out/addon/maps/scripts/mg_monsoon.js` (3034 lines, VERSION mv-0.2), HUD xml / css / 100 pictures, radar, board, 3 loading
+  slides, 41 sounds, 4 fx models (`models/mv/fx/mv_{tracer,mission_ring,gunpip,rocket}`), 117 procedural props, the Apache, 53
+  converted GMod models (`models/mv/ext`), 4 GMod player models (`models/player/gmod/{nva_soldier,vietcong_soldier,soldier2_woodland,us}`
+  + `shared`), `out/cache_models.json`.
 
-**Bots (user requirement, 9 Nov):** low-pop play needs AI. Plan recorded in DESIGN.md section 3.5 to be written: CS2 bots as
-infantry on a nav confined with `func_nav_markup` NONAV volumes (the FGD has WALKABLESEED / NONAV / NONAVNONSOLID / NONAVSPACE and
-`func_nav_blocker`) over jungle slopes and karst, seeds at bases/flags/roads; script-driven AI for the vehicle roles (bot pilots fly
-patrol/strafe routes, bot door gunners shoot, bot crews auto-lay and fire at marks), bots drawn into roles when a team has fewer than
-N humans; mg_trenchwarfare's FPS drop with a 44k-area nav is the risk, hence the NONAV confinement.
+**What changed on 12 Nov (integration pass)**
+- **Model table `tools/mv_models.py`**: logical name -> converted model (when its .vmdl is in the addon) or procedural fallback
+  (`MV_NO_EXT=1` forces the fallbacks, e.g. for a Steam Workshop build: the conversions are game rips, `docs/ASSETS.md`). Used by
+  `mv_places.py` (`W.sprop`, `W.park`, `W.mount`), `mv_entities.py` and `layout.export()` (`models` block of `out/layout.json`).
+  The script takes seats, exits, pods, hubs, gun muzzle / camera, trunnions, mount muzzle length, pad list and the hulk's yaw from
+  `LAYOUT.models` (`heliModel`, `heliKind`, `wreckYaw`, `mountMuzzle`); CONFIG holds the same numbers as defaults.
+  In use: Mi-8 `hip_slick` x2 + `hip_upper` gunship with `hip_rotor` / `hip_tail` on their hubs, `m101` + `m101_gun`, `m2_tripod` +
+  `m2_gun`, `dshk_tripod` + `dshk_gun`, `heli_wreck_dyn` (crash hulk, both sides; `mv_models.ensure_dyn()` writes the prop_dynamic
+  twin), `sandbag_cover` at the M2 / DShK nests, `m113` (bridge, two roads), `m35` (bridge, road 0), `ural`, `bm21`, `zpu4`, `gaz69` x2
+  (camp), `m151` x2 (firebase), `t54` (road north of the bridge, smoking), `pbr` (afloat at the marsh), `comm_station` (CT TOC),
+  `nva_ammo_case*` (camp ammo point), `rs_*` foliage (46 bamboo groves, ~100 slim trees and ~20 palms with trunk clips, bushes,
+  ferns, taro, nypa, 70 mangroves / nypa at the marsh, tall grass, 586 ferns / bushes along the ravines, 1 hedge bank and 4 bamboo thickets
+  at the village).
+  **Converted models not used** (files left in `out/addon`; reasons in `mv_models.UNUSED`): hind, huey, lssc_boat, m114_howitzer,
+  m40_rr, m60_gun, mortar_m1, pbr_mcv, rocket_grad, sandbag_fort (one convex hull: its inside would be an invisible solid),
+  skyraider, tent_gp (our gp_tent kept), wood_tower (our guard_tower kept), w_ak47, w_m14, w_m60, w_m79, w_rpg7.
+  Procedural props the map no longer uses while the conversions are present: heli_hip, heli_hip_gun, rotor_hip, tailrotor_hip,
+  wreck_hip, wreck_huey, howitzer_m102(+_gun), m3_tripod, m2_gun, dshk_mount, dshk_gun, truck_wreck, m113_hulk, pbr_wreck.
+- **Camp re-laid out** (`layout.camp()`): the Mi-8's rotor disc is 836 across, so `T_PLATEAU_R` 1000 -> 1250 (`T_FOOT_R` 2050),
+  pads at 870+ between masts with wheels on flat ground, no camouflage nets over pads, battery in the middle, hooches north-west,
+  gully 1 now starts below the plateau. `make_detail.py` was rerun for it.
+- **Guard tower**: parapet rows lie along the platform edges (four courses, a gap at the ladder), hulls = platform slab 260..266,
+  parapet, roof 350..353, four legs: 84 u of headroom. Rebuilt + `lod_decimate.py`.
+- **Uniforms**: `CONFIG.UNIFORMS` = the four GMod models; cache props are `mv_cache_1..7` (the map used to name them by model,
+  which the script never found).
+- **`check_world.py` check 7**: every entity model must exist (ours as a .vmdl under `out/addon`, stock as `<path>_c` in the pak01
+  index); it also lists unused conversions. `W.big_skips` prints every large optional prop that did not fit and what blocked it.
+- `create/terrain_img.py` is a libsync copy in `tools/`; `libsync.py push` also refreshed `hud_check.py`, `lod_decimate.py`,
+  `panorama.py`, `test/mock_point_script.mjs` here and `lod_decimate.py` in trenchwarfare-cs2 from their masters.
 
-**Other decisions this session:** project name mg_monsoon, prefix mv, vis groups mv_gen/mv_user, 40 u per metre, river water z -30,
+**Checks, all green on 12 Nov** (run from `tools/` unless a path says otherwise)
+```
+python make_detail.py                                   # 27 s; "max |detail| there: 0.000000" in the protected masks
+python make_map.py ../out/template.vmap ../out/addon/maps/mg_monsoon.vmap ../out/addon     # 4.5-5 min, under the watchdog
+python check_mesh.py ../out/addon/maps/mg_monsoon.vmap  # 1090 meshes 0 bad
+python check_world.py ../out/addon/maps/mg_monsoon.vmap [--plot out.png [x0,y0,x1,y1]]     # RESULT: clean (7 checks)
+python make_radar.py ../out/addon ../out/game ; python render_board.py ../out/addon ; python mv_hud.py ../out/addon
+python hud_check.py --addon ../out/addon --name mg_monsoon --states ../out/hud_states.json --out ../out/hud/hud   # 0 problems
+node tools/build_script.mjs ; node test/mock.mjs 32 600 ; node test/mock.mjs 4 600 ; npx tsc -p test/tsconfig.json   # PASS, PASS, 0 errors
+python create/test/api.py --strict --check projects/monsoon-cs2/out/addon/maps/scripts/mg_monsoon.js   # from cs2mapping: 0 problems
+python create/libsync.py check ; python ci/check_repo.py ; python ci/check_links.py --anchors --baseline ci/known_broken_links.txt
+```
+Order after a layout change: `make_detail.py` (if designed ground moved) -> `make_map.py` -> checks -> radar, board -> script build
+(it bakes `out/layout.json`) -> mock. Props: `MV_OUT=<abs out/addon> python build_all_props.py <names>` then `lod_decimate.py`.
+
+**Known open points**
+- Never compiled: SMD material names ending `.vmat`, multi-hull physics of the conversions, the prop_dynamic twin of `heli_wreck`,
+  terrain holes, nav markup, the blend paint in the ravine beds, ravine depth at player scale (cuts up to 49 u).
+- Mi-8 seat, door-gun and pod positions are measured from the SMDs but not seen with a player in them; the door gunner sits at
+  the left door (x 119), the pilot in the left seat. The hulk is a small burnt light helicopter, used for both sides.
+- The converted foliage and trees are placed non-solid (their hull is one convex blob); slim trees and palms get a 6-sided player
+  clip round the trunk (bullets pass). `m35` has no wheels (stripped hulk). The M113s are intact, not wrecks.
+- Did not fit and is missing: firebase culvert guard post, 3 antenna masts, water trailer, an M113 inside the wire, the radios at
+  the two FDCs (only the CT TOC has one); `ox_cart` on road 1. The firebase interior is full: pads, pits and keep-outs cover it.
+- T pad 2: the tail boom overhangs lower ground (wheels are level). Hooches on the north-west side sit on the karst skirt (sunk
+  uphill, listed as `slope`).
+- Older open points still stand: bunkers are solid, no bicycles, gunner ammo read-out absent by contract, double-sided sheets to
+  look at in Hammer (flags, parachute_silk, gp_tent, vine_curtain; camo_net is no longer used).
+- `tools/_dry.py` was never tracked and nothing imports it; `git status` shows no deleted file.
+
+**Next steps:** 1 compile under the watchdog when the PC is free (build flow: `docs/BUILD.md`, `tools/build_monsoon.md`, deploy
+dry run first); 2 Hammer pass over the list above; 3 in-game checklist (`docs/TESTING_MONSOON.md`), starting with helicopter seats
+and the rotor / tail props, the M101 tube on its trunnion, the mounted guns behind their sandbags; 4 weapons (`w_*`), statuary.
+
+**Decisions that still hold:** project name mg_monsoon, prefix mv, vis groups mv_gen / mv_user, 40 u per metre, river water z -30,
 CT firebase SE on a z 620 plateau, T camp NW at z 300 under karst, 5 flags (Paddies, Bridge, Village, Temple, Crash Site), Conquest
-tickets. Shared tool files are libsync copies (`python create/libsync.py check`).
-
-**Where things are on the PC:** repo `C:\source1\cs2mapping\projects\monsoon-cs2` (this folder); outputs in `out/` (gitignored):
-`out/addon` (content tree), `out/props.json`, `out/logs`, `out/entities.json`, `out/layout.json`, `preview/` turntables. Nothing
-copied to `content\csgo_addons` yet. The cs2port worker folders that cluttered `C:\source1` were moved to
-`C:\source1\archive\cs2port_workers_20261109\` (cs2port_w2..w5, untouched otherwise).
-
-**Next steps in order:** 1 fix ammo_crate/arms_rack decal dict, finish p_base + p_village builds, review turntables; 2 swap the CT
-helicopter to the Apache, remove heli_huey*; 3 p_jungle (grass/rice/bamboo cards), p_bridge, p_temple, p_wreck; 4 mv_places.py
-(start with the firebase and one flag, check with vmap_preview.py); 5 mv_entities.py + the script skeleton from mg_trenchwarfare's
-(roles, spawn flow, HUD cache, pools), then heli flight (DESIGN 3.2), artillery (3.3), conquest (3.4); 6 mock/tsc; 7 compile
-under the watchdog when the PC is free (mg_trenchwarfare's build_maps.ps1 flow), in-game TESTING checklist.
+tickets, bots as infantry with script AI for vehicle roles (DESIGN 3.5), the CC-BY Apache for CT. Shared tool files are libsync
+copies. Outputs live in `out/` (gitignored); turntables in `preview/`.
 
 ## Session 1 (9 Nov 2026): research, design, generator stage 1-3, first props
 

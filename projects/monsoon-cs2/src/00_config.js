@@ -2,7 +2,7 @@
 // battery, five flags, tickets. cs_script only, no plugins. Rules: docs/DESIGN.md 3; names: docs/CONTRACT.md; HUD ids: docs/SCRIPT.md.
 // Every tunable is in CONFIG. Units: Hammer units (40 u = 1 m), seconds, degrees.
 
-const VERSION = "mv-0.1 (11 Nov 2026)";
+const VERSION = "mv-0.2 (12 Nov 2026)";
 
 const CONFIG = {
   HUD: "mv_hud", PARAMS: "mv_params",
@@ -32,11 +32,12 @@ const CONFIG = {
   // rifle rounds on a helicopter, by weapon class (OnBulletImpact); anything else = DEFAULT
   BULLET_VS_HELI: { DEFAULT: 1.5, weapon_m249: 4, weapon_negev: 4, weapon_g3sg1: 2.5, weapon_scar20: 2.5 },
 
-  // ---- uniforms: applied only when a cache prop mv_cache_1..16 holds that model (so a missing model is never set)
+  // ---- uniforms: applied only when a cache prop mv_cache_1..16 holds that model (so a missing model is never set).
+  // The four converted GMod player models (create/playermodels), copied into the addon at their own paths.
   UNIFORMS_ON: true, UNIFORM_DELAY: 0.25, CACHE_PROPS: 16,
   UNIFORMS: {
-    2: ["models/mv/players/nva_soldier/nva_soldier.vmdl", "models/mv/players/vietcong_soldier/vietcong_soldier.vmdl"],
-    3: ["models/mv/players/soldier2_woodland/soldier2_woodland.vmdl", "models/mv/players/us/us.vmdl"],
+    2: ["models/player/gmod/nva_soldier/nva_soldier.vmdl", "models/player/gmod/vietcong_soldier/vietcong_soldier.vmdl"],
+    3: ["models/player/gmod/soldier2_woodland/soldier2_woodland.vmdl", "models/player/gmod/us/us.vmdl"],
   },
 
   // ---- conquest (DESIGN 3.4)
@@ -72,8 +73,11 @@ const CONFIG = {
     AUTOLAND_VS: -200,                                      // a helicopter left without a pilot in the air settles at this rate
     DUST_ALT: 220,
   },
+  // The numbers below are DEFAULTS. The map generator exports the models it was built with as LAYOUT.models (tools/mv_models.py:
+  // nose yaw, rotor radius, hub, seats, exits, pods, gun muzzle / camera per helicopter) and heliModel() overwrites these with them,
+  // so a model swap is a change in mv_models.py only. Defaults here = the converted Mi-8 (measured from its SMDs, 12 Nov 2026).
   HELI_MODELS: {
-    // CC-BY Apache (tools/apache_setup.py -> out/apache.json; the same numbers are read from LAYOUT.apache / HUDDATA.apache when present)
+    // CC-BY Apache (tools/apache_setup.py -> out/apache.json -> LAYOUT.models.apache)
     apache: {
       label: "AH-64", NOSE_YAW: -90, ROTOR_R: 303, ROTOR_Z: 156, ANIMATED: true, ANIM_INPUT: "SetAnimation",
       ANIMS: { off: "idle", slow: "spin_slow", full: "spin" },
@@ -84,26 +88,28 @@ const CONFIG = {
       GUN: { name: "M230 30 MM", muzzle: [153, 0, 27.2], cam: [118, 0, 74], yaw: 0, cone: 110, up: 15, down: 60,
              interval: 0.1, damage: 34, heli: 6, range: 5200, spread: 0.012, overheat: 6, cool: 4 },
     },
-    // procedural Mi-8 (tools/p_heli.py: nose +x, origin under the mast, HIP_K 0.82). Rotor / tail hubs are measured from the map props.
+    // Mi-8 slick: pilot left seat, PK in the open left door, four riders on the cabin floor (floor z 30, cockpit floor z 40)
     hip: {
-      label: "Mi-8", NOSE_YAW: 0, ROTOR_R: 344, ROTOR_Z: 174, ANIMATED: false, HUB: [-30, 0, 174], TAIL: [-541, 16, 161],
-      SEATS: [{ kind: "pilot", off: [215, 22, 52] }, { kind: "gunner", off: [128, 34, 46] },
-              { kind: "rider", off: [40, 22, 46] }, { kind: "rider", off: [40, -22, 46] }, { kind: "rider", off: [-40, 22, 46] }, { kind: "rider", off: [-40, -22, 46] }],
-      EXIT: [[128, 130, 0], [60, 130, 0], [190, 130, 0], [0, 130, 0], [-60, 130, 0], [-120, 130, 0]],
+      label: "Mi-8", NOSE_YAW: 0, ROTOR_R: 418, ROTOR_Z: 149.5, ANIMATED: false, HUB: [0, 0, 149.46], TAIL: [-513.2, 22.21, 157.27],
+      SEATS: [{ kind: "pilot", off: [176, 22, 56] }, { kind: "gunner", off: [119, 30, 46] },
+              { kind: "rider", off: [62, 22, 46] }, { kind: "rider", off: [62, -22, 46] }, { kind: "rider", off: [4, 22, 46] }, { kind: "rider", off: [4, -22, 46] }],
+      EXIT: [[119, 140, 0], [60, 140, 0], [180, 140, 0], [0, 140, 0], [-110, 140, 0], [-170, 140, 0]],
       ROCKETS: 0, PODS: [],
-      GUN: { name: "PK DOOR GUN", muzzle: [128, 62, 80], cam: [128, 40, 96], yaw: 90, cone: 60, up: 25, down: 60,
+      GUN: { name: "PK DOOR GUN", muzzle: [119.5, 74, 61.5], cam: [119, 44, 78], yaw: 90, cone: 60, up: 25, down: 60,
              interval: 0.09, damage: 25, heli: 4, range: 4800, spread: 0.014, overheat: 8, cool: 4 },
     },
+    // Mi-8 gunship: six UB-16 pods on outriggers (fired in left / right pairs), the same door gun, two riders
     hip_gun: {
-      label: "Mi-8TV", NOSE_YAW: 0, ROTOR_R: 344, ROTOR_Z: 174, ANIMATED: false, HUB: [-30, 0, 174], TAIL: [-541, 16, 161],
-      SEATS: [{ kind: "pilot", off: [215, 22, 52] }, { kind: "gunner", off: [128, 34, 46] },
-              { kind: "rider", off: [40, 22, 46] }, { kind: "rider", off: [40, -22, 46] }],
-      EXIT: [[128, 130, 0], [60, 130, 0], [190, 130, 0], [0, 130, 0]],
-      ROCKETS: 28, PODS: [[74, 95, 80], [74, -95, 80], [74, 125, 80], [74, -125, 80]],
-      GUN: { name: "PK DOOR GUN", muzzle: [128, 62, 80], cam: [128, 40, 96], yaw: 90, cone: 60, up: 25, down: 60,
+      label: "Mi-8TV", NOSE_YAW: 0, ROTOR_R: 418, ROTOR_Z: 149.5, ANIMATED: false, HUB: [0, 0, 149.46], TAIL: [-513.2, 22.21, 157.27],
+      SEATS: [{ kind: "pilot", off: [176, 22, 56] }, { kind: "gunner", off: [119, 30, 46] },
+              { kind: "rider", off: [62, 22, 46] }, { kind: "rider", off: [62, -22, 46] }],
+      EXIT: [[119, 175, 0], [180, 175, 0], [60, 175, 0], [0, 175, 0]],
+      ROCKETS: 28, PODS: [[57, 104, 35], [57, -104, 35], [57, 124, 35], [57, -124, 35], [57, 83, 35], [57, -83, 35]],
+      GUN: { name: "PK DOOR GUN", muzzle: [119.5, 74, 61.5], cam: [119, 44, 78], yaw: 90, cone: 60, up: 25, down: 60,
              interval: 0.09, damage: 25, heli: 4, range: 4800, spread: 0.014, overheat: 8, cool: 4 },
     },
   },
+  WRECK_YAW: 0,                           // added to the nose yaw when the crash hulk is put down (LAYOUT.models.wreck.yaw overrides)
   HELI_KINDS: { 2: ["hip", "hip", "hip_gun"], 3: ["apache", "apache", "apache"] },
 
   // ---- artillery (DESIGN 3.3)
@@ -130,7 +136,8 @@ const CONFIG = {
   // ---- emplaced guns (mv_mount_N). kind:team comes from LAYOUT.mountinfo (build copies the mv_mountinfo_N message keys;
   // a script cannot read keyvalues) or, without it, from where the gun stands (see mountInfo()).
   MOUNT: {
-    USE_RADIUS: 70, CONE: 30, UP: 35, DOWN: 20, RANGE: 5200, BASE_RADIUS: 1500, CAM: { back: 64, up: 22 }, MUZZLE: 40,
+    USE_RADIUS: 70, CONE: 30, UP: 35, DOWN: 20, RANGE: 5200, BASE_RADIUS: 1500, CAM: { back: 64, up: 22 },
+    MUZZLE: 40,                          // pintle to muzzle; LAYOUT.models[kind].muzzle (the model the map uses) overrides it per kind
     KINDS: {
       m2:     { name: "M2 .50 CAL", interval: 0.11, damage: 40, heli: 7, spread: 0.010, overheat: 6, cool: 4 },
       dshk:   { name: "DShK 12.7",  interval: 0.10, damage: 40, heli: 7, spread: 0.011, overheat: 6, cool: 4 },

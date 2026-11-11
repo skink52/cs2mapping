@@ -4,24 +4,52 @@
 const helis = { 2: [], 3: [] };
 let allHelis = [];
 const heliByName = new Map();
+const isV3 = (q) => Array.isArray(q) && q.length === 3 && q.every(Number.isFinite);
+// model numbers: CONFIG.HELI_MODELS holds the defaults; LAYOUT.models[kind] (written by tools/mv_models.py from the models the map was
+// built with) overwrites nose yaw, rotor, hubs, seats, exits, pods and the gun's muzzle / camera. Older data (LAYOUT.apache /
+// HUDDATA.apache = out/apache.json) is still read for the Apache when the models block is missing.
 function heliModel(kind) {
   const M = CONFIG.HELI_MODELS[kind];
-  if (kind !== "apache") return M;
-  // out/apache.json reaches the script only through LAYOUT.apache / HUDDATA.apache; CONFIG holds the same numbers as defaults
-  const A = LAYOUT.apache || HUDDATA.apache;
-  if (!A || M._merged) return M;
+  if (!M || M._merged) return M;
   M._merged = true;
+  const D = LAYOUT.models && LAYOUT.models[kind];
   try {
+    if (D) {
+      if (Number.isFinite(D.nose_yaw)) M.NOSE_YAW = D.nose_yaw;
+      if (Number.isFinite(D.rotor_r)) M.ROTOR_R = D.rotor_r;
+      if (isV3(D.hub)) { M.ROTOR_Z = D.hub[2]; if (!M.ANIMATED) M.HUB = D.hub; }
+      if (isV3(D.tail_hub) && !M.ANIMATED) M.TAIL = D.tail_hub;
+      if (Array.isArray(D.seats) && D.seats.length && D.seats.every((q) => q && typeof q.kind === "string" && isV3(q.off)) && D.seats[0].kind === "pilot")
+        M.SEATS = D.seats.map((q) => ({ kind: q.kind, off: q.off }));
+      if (Array.isArray(D.exits) && D.exits.length && D.exits.every(isV3)) M.EXIT = D.exits;
+      if (Array.isArray(D.pods) && D.pods.every(isV3) && (D.pods.length >= 2 || !M.ROCKETS)) M.PODS = D.pods;
+      if (D.gun) {
+        if (isV3(D.gun.muzzle)) M.GUN.muzzle = D.gun.muzzle;
+        if (isV3(D.gun.cam)) M.GUN.cam = D.gun.cam;
+        for (const k of ["yaw", "cone", "up", "down"]) if (Number.isFinite(D.gun[k])) M.GUN[k] = D.gun[k];
+      }
+      return M;
+    }
+    if (kind !== "apache") return M;
+    const A = LAYOUT.apache || HUDDATA.apache;
+    if (!A) return M;
     if (Number.isFinite(A.nose_yaw)) M.NOSE_YAW = A.nose_yaw;
     if (Number.isFinite(A.rotor_radius)) M.ROTOR_R = A.rotor_radius;
     if (A.rotor_hub && Number.isFinite(A.rotor_hub[2])) M.ROTOR_Z = A.rotor_hub[2];
     const S = A.seats || {}, names = ["pilot_fwd", "gunner_fwd", "wing_left_fwd", "wing_right_fwd"];
-    names.forEach((n, i) => { if (Array.isArray(S[n]) && S[n].length === 3 && S[n].every(Number.isFinite)) M.SEATS[i].off = S[n]; });
-    if (A.gun && Array.isArray(A.gun.muzzle_fwd)) M.GUN.muzzle = A.gun.muzzle_fwd;
-    if (Array.isArray(A.rocket_pods)) { const pods = A.rocket_pods.map((q) => q.muzzle_fwd).filter((q) => Array.isArray(q) && q.length === 3); if (pods.length >= 2) M.PODS = pods; }
-  } catch (e) { log("apache data ignored: " + e); }
+    names.forEach((n, i) => { if (isV3(S[n])) M.SEATS[i].off = S[n]; });
+    if (A.gun && isV3(A.gun.muzzle_fwd)) M.GUN.muzzle = A.gun.muzzle_fwd;
+    if (Array.isArray(A.rocket_pods)) { const pods = A.rocket_pods.map((q) => q.muzzle_fwd).filter(isV3); if (pods.length >= 2) M.PODS = pods; }
+  } catch (e) { log("model data ignored for " + kind + ": " + e); }
   return M;
 }
+// which model sits on which pad: LAYOUT.models.pads ({t: [...], ct: [...]}) when every name is a known model, else CONFIG.HELI_KINDS
+function heliKind(team, n) {
+  const P = LAYOUT.models && LAYOUT.models.pads && LAYOUT.models.pads[tagOf(team)];
+  const k = Array.isArray(P) ? P[n - 1] : undefined;
+  return k && CONFIG.HELI_MODELS[k] ? k : CONFIG.HELI_KINDS[team][n - 1];
+}
+function wreckYaw() { const w = LAYOUT.models && LAYOUT.models.wreck; return w && Number.isFinite(w.yaw) ? w.yaw : CONFIG.WRECK_YAW; }
 function loadHelis() {
   const H = CONFIG.HELI;
   helis[T] = []; helis[CT] = []; allHelis = []; heliByName.clear();
@@ -30,7 +58,7 @@ function loadHelis() {
     for (let n = 1; n <= H.COUNT; n++) {
       const tag = tagOf(team) + "_" + n, name = "mv_heli_" + tag;
       const e = need(name), padE = need("mv_pad_" + tag);
-      const kind = CONFIG.HELI_KINDS[team][n - 1], M = heliModel(kind);
+      const kind = heliKind(team, n), M = heliModel(kind);
       const lay = LAYOUT[tagOf(team)];
       const padPos = padE ? padE.GetAbsOrigin() : (e ? e.GetAbsOrigin() : v3(lay.pads[n - 1][0], lay.pads[n - 1][1], lay.z));
       const yaw = Number.isFinite(lay.pad_yaw) ? lay.pad_yaw : 0;
@@ -388,7 +416,7 @@ function explodeHeli(h) {
   setEngine(h, false); setDust(h, false); setAnim(h, false);
   stats.heliLost++;
   effects(pos, false);
-  if (h.wreck) { try { h.wreck.Teleport({ position: v3(h.pos.x, h.pos.y, h.pos.z), angles: { pitch: 0, yaw: h.yaw, roll: 0 } }); h.wreckOut = true; } catch (e) {} }
+  if (h.wreck) { try { h.wreck.Teleport({ position: v3(h.pos.x, h.pos.y, h.pos.z), angles: { pitch: 0, yaw: h.yaw + wreckYaw(), roll: 0 } }); h.wreckOut = true; } catch (e) {} }
   const sm = ent("mv_heli_smoke_" + h.tag);
   if (sm) { try { sm.Teleport({ position: v3(h.pos.x, h.pos.y, h.pos.z + 40) }); } catch (e) {} }
   h.smoking = false; setSmoke(h, true);

@@ -6,6 +6,7 @@ TRUNK: collision radius of tree trunks (their canopies overlap freely); used for
 The bicycle (models/vehicles/bicycle_01) is a kit of loose parts (frame, wheels, handlebar) with no assembled model: not used.
 """
 import os, json
+import mv_models as M
 
 AZ = 'models/props/de_aztec/hr_aztec/aztec_foliage/'
 AW = 'models/props/de_aztec/hr_aztec/aztec_walls/'
@@ -274,6 +275,7 @@ def bounds_table(props_json):
     for props props.json does not have yet"""
     built = json.load(open(props_json)) if props_json and os.path.exists(props_json) else {}
     t = dict(STOCK)
+    t.update(M.bounds_table())                     # converted GMod models (tools/mv_models.py)
     for n, b in FALLBACK.items():
         if n not in built: t[mv(n)] = b
     ap = os.path.join(os.path.dirname(os.path.abspath(props_json)), 'apache.json') if props_json else ''

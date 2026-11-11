@@ -19,7 +19,8 @@ function loadGuns() {
       const car = need("mv_gun_" + tag), tube = need("mv_tube_" + tag), round = team === T ? need("mv_round_t_" + (k + 1)) : undefined;
       const pos = car ? car.GetAbsOrigin() : v3(lay.guns[k] ? lay.guns[k][0] : lay.centre[0], lay.guns[k] ? lay.guns[k][1] : lay.centre[1], lay.z);
       const yaw0 = car ? car.GetAbsAngles().yaw : Math.atan2(-pos.y, -pos.x) * R2D;
-      let tubeOff = [0, 0, 40];
+      const gm = LAYOUT.models && LAYOUT.models[team === T ? "rocket" : "howitzer"];      // the map's gun model (tools/mv_models.py)
+      let tubeOff = gm && Array.isArray(gm.trunnion) && gm.trunnion.length === 3 && gm.trunnion.every(Number.isFinite) ? gm.trunnion : [0, 0, 40];
       if (tube) { const o = toLocal(pos, angleBasis({ pitch: 0, yaw: yaw0, roll: 0 }), tube.GetAbsOrigin()); if (Math.hypot(o[0], o[1], o[2]) < 300) tubeOff = o; }
       need("mv_gun_snd_" + tag); need("mv_gun_fx_" + tag);
       guns[team].push({ team, k, tag, pos, ent: car, tube, round, rack: posOf("mv_rack_" + tag), seat: poseOf("mv_boardseat_" + tag), tubeOff,

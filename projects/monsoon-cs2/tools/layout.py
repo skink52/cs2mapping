@@ -31,7 +31,7 @@ MARSH_X0 = 5000.0        # east of this the floodplain dips into marsh pools
 CT_BASE = (3900.0, -2900.0)       # firebase hill centre
 CT_PLATEAU_R, CT_FOOT_R, CT_Z = 1200.0, 2250.0, 620.0   # 11 Nov: was 760/1750, too small for 3 pads + 3 gun pits + the bunker ring
 T_BASE = (-3900.0, 2900.0)        # camp saddle centre
-T_PLATEAU_R, T_FOOT_R, T_Z = 1000.0, 1800.0, 300.0      # 11 Nov: was 700/1500 (three Hips need 700 u between masts)
+T_PLATEAU_R, T_FOOT_R, T_Z = 1250.0, 2050.0, 300.0      # 12 Nov: was 1000/1800; the converted Mi-8's rotor disc is 836 across: three stands need 870 between masts and room left for the camp
 TEMPLE = (2600.0, 900.0); TEMPLE_R, TEMPLE_FOOT, TEMPLE_H = 420.0, 820.0, 160.0
 VILLAGE = (-300.0, 2400.0); VILLAGE_R, VILLAGE_FOOT, VILLAGE_Z = 650.0, 1000.0, 120.0
 CRASH = (300.0, -2400.0); CRASH_R, CRASH_FOOT, CRASH_Z = 600.0, 950.0, 110.0
@@ -117,7 +117,7 @@ CRATERS = [c for c in CRATERS if math.hypot(c[0] - CT_BASE[0], c[1] - CT_BASE[1]
 
 # tributary gullies (dry-season creek beds, monsoon mud): (half width, depth, [(x, y)...]) carved into the ground, mud paint
 GULLIES = [(42.0, 22.0, [(3080.0, -1700.0), (2900.0, -1500.0), (2500.0, -900.0), (2100.0, float(river_y(2100.0)) - 300.0)]),
-           (38.0, 20.0, [(-4200.0, 2100.0), (-3700.0, 1500.0), (-3300.0, 900.0), (-3100.0, float(river_y(-3100.0)) + 300.0)]),
+           (38.0, 20.0, [(-3950.0, 1800.0), (-3700.0, 1500.0), (-3300.0, 900.0), (-3100.0, float(river_y(-3100.0)) + 300.0)]),
            (30.0, 16.0, [(1900.0, 3300.0), (1500.0, 2500.0), (1100.0, 1700.0), (900.0, float(river_y(900.0)) + 300.0)]),
            (30.0, 16.0, [(-1200.0, -3600.0), (-900.0, -2900.0), (-1500.0, -2300.0), (-1700.0, float(river_y(-1700.0)) - 300.0)])]
 # an oxbow lake (old meander) on the south floodplain between A and E: crescent of points, water at WATER_Z
@@ -289,9 +289,36 @@ def carved(x, y, roads=True):
     return h
 
 
-def height(x, y):
-    """final ground height"""
+_DETAIL = None
+
+
+def detail_field():
+    """the Field from tools/data/detail.png (docs/IMAGE_TERRAIN.md), or None if make_detail.py has not run"""
+    global _DETAIL
+    if _DETAIL is None:
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'detail.png')
+        if os.path.isfile(p):
+            import terrain_img
+            _DETAIL = terrain_img.Field.load(p)
+        else:
+            _DETAIL = False
+    return _DETAIL or None
+
+
+def detail(x, y):
+    """eroded relief added to the designed ground; exactly 0 on flags, bases, roads, paddies and water"""
+    f = detail_field()
+    return f(x, y) if f is not None else np.zeros(np.shape(x))
+
+
+def height_base(x, y):
+    """the designed ground (what make_detail.py erodes; never includes the detail layer)"""
     return carved(x, y, roads=True)
+
+
+def height(x, y):
+    """final ground height = the designed ground + the eroded detail layer"""
+    return height_base(x, y) + detail(x, y)
 
 
 def ground_low(x, y):
@@ -461,19 +488,22 @@ def firebase():
 
 
 def camp():
-    """T camp plan. 11 Nov: laid out again: the three Hips (870 long, 690 rotor) sit 700 apart on the west / south side under nets,
-    rocket pits east (firing down the valley), hooches north, the tunnel portal on the east edge."""
+    """T camp plan. 12 Nov: laid out again for the converted Mi-8 (741 long, rotor disc 836 across: masts at least 870 apart, wheels on
+    flat ground, nothing tall under a disc): pads west / south / north-east, the rocket battery in the middle firing down the valley,
+    hooches on the north-west side under the karst, the tunnel portal on the east edge. No nets over the pads (a helicopter cannot
+    lift through one); one net covers the ammunition point."""
     c = T_BASE
     return dict(
         centre=c, z=T_Z,
         fdc=(c[0] - 110.0, c[1] + 170.0), fdc_yaw=-30.0,
-        rockets=[pol(c, 430.0, a) for a in (22.0, 58.0, -34.0)] + [(c[0] - 120.0, c[1] - 280.0)], pit_r=105.0,
-        ammo=(c[0] + 190.0, c[1] + 130.0),
-        aa=[(c[0] + 250.0, c[1] + 600.0), (c[0] + 720.0, c[1] - 360.0)],
-        pads=[(c[0] - 700.0, c[1] + 100.0), (c[0] - 620.0, c[1] - 600.0), (c[0] + 100.0, c[1] - 880.0)],
-        pad_yaw=0.0, net_scale=(1.75, 1.6, 1.5),
-        hooches=[(c[0] - 40.0, c[1] + 500.0, -90.0), (c[0] + 610.0, c[1] + 440.0, 200.0), (c[0] - 380.0, c[1] + 720.0, -70.0),
-                 (c[0] + 730.0, c[1] + 140.0, 180.0), (c[0] - 120.0, c[1] + 830.0, -90.0)],
+        rockets=[(c[0] + 400.0, c[1] + 200.0), (c[0] + 150.0, c[1] + 300.0), (c[0] - 430.0, c[1] + 150.0), (c[0] - 120.0, c[1] - 280.0)], pit_r=105.0,
+        ammo=(c[0] - 330.0, c[1] - 60.0),
+        aa=[(c[0] + 200.0, c[1] + 900.0), (c[0] + 820.0, c[1] - 420.0)],
+        pads=[(c[0] - 950.0, c[1] - 350.0), (c[0] + 150.0, c[1] - 950.0), (c[0] + 800.0, c[1] + 620.0)],
+        pad_yaw=0.0,
+        hooches=[(c[0] - 90.0, c[1] + 600.0, -90.0), (c[0] - 600.0, c[1] + 600.0, -30.0), (c[0] - 380.0, c[1] + 820.0, -70.0),
+                 (c[0] - 120.0, c[1] + 920.0, -90.0), (c[0] - 800.0, c[1] + 280.0, 10.0)],
+        fires=[(c[0] - 200.0, c[1] + 330.0), (c[0] - 250.0, c[1] + 640.0), (c[0] + 40.0, c[1] + 680.0)],
         tunnel=TUNNEL_PORTALS[0],
         rack=(c[0] + 80.0, c[1] - 80.0),
         spawns=ring((c[0] + 80.0, c[1] - 80.0), 115.0, 16, start=0.7))
@@ -541,6 +571,9 @@ def export(path):
         ms = json.load(open(mj))
         data['mountinfo'] = {str(m['n']): m for m in ms}
         data['mounts'] = ms
+    # the models the map is built with (tools/mv_models.py): seats, hubs, trunnions, pintles for the script
+    import mv_models
+    data['models'] = mv_models.export(out=os.path.dirname(os.path.abspath(path)))
     json.dump(data, open(path, 'w'), indent=1)
     return data
 

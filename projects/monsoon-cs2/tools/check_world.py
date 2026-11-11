@@ -9,6 +9,8 @@ usage: check_world.py <map.vmap> [--plot out.png [x0,y0,x1,y1]]
 4 spawn / seat points: 80 u of clear headroom, standing on a surface, not inside a prop footprint
 5 every flag reachable in principle: slope along the straight line from the nearest road stays under 40 degrees
 6 counts per class
+7 every entity model exists: models/mv, models/vehicles, models/player as a .vmdl under out/addon; stock models as <path>_c in
+  out/vpk_index/cs2_index.pkl
 --plot draws a top-down picture (terrain shade, roads, prop footprints, spawns) of the whole map or a box, to look at.
 Exit code 1 when a check fails.
 """
@@ -19,13 +21,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dmx, vmapgen as G, placer
 import layout as L
 import mv_stock as S
+import mv_models as M
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'out')
 # model pairs that touch by design (stacked rows, things standing on / inside another prop)
 OK_PAIR = [('sandbag', 'sandbag'), ('truss_span', ''), ('psp_pad', ''), ('camo_net', ''), ('fdc_bunker', 'plot_table'), ('camp_hut', 'plot_table_t'),
            ('m3_tripod', 'sandbag'), ('dshk_mount', 'sandbag'), ('quad50_mount', 'sandbag'), ('rocket_crate', 'rocket_crate'), ('ammo_crate', 'ammo_crate'),
            ('roots', ''), ('bridge_pier', ''), ('m2_gun', ''), ('dshk_gun', ''), ('quad50_gun', ''), ('howitzer_m102', 'howitzer_m102_gun'),
-           ('rocket_tripod', 'rocket_rail'), ('rocket_122', ''), ('rotor_hip', 'rotor_hip'), ('heli_hip', 'rotor_hip'), ('heli_hip', 'tailrotor_hip'), ('heli_hip_gun', 'rotor_hip'),
+           ('rocket_tripod', 'rocket_rail'), ('rocket_122', ''), ('rotor_hip', 'rotor_hip'), ('hip_rotor', ''), ('hip_tail', ''), ('m101', 'm101_gun'),
+           ('m2_tripod', 'sandbag'), ('dshk_tripod', 'sandbag'), ('nva_ammo_case', 'nva_ammo_case'), ('camo_net', ''), ('heli_hip', 'rotor_hip'), ('heli_hip', 'tailrotor_hip'), ('heli_hip_gun', 'rotor_hip'),
            ('heli_hip_gun', 'tailrotor_hip'), ('flag_pole', 'sandbag'), ('khmer_tower', 'stone_stairs')]
 
 
@@ -118,7 +122,7 @@ def main(path, plot=None, box=None):
         if not r['model'].endswith('.vmdl') or r['cls'] not in ('prop_static', 'prop_dynamic') or r['o'][2] < L.LOBBY_Z + 1000: continue
         if r['solid'] == '0' and r['cls'] == 'prop_static': continue
         m = r['model']; nm_ = m.split('/')[-1][:-5]
-        tr = S.TRUNK.get(m, S.TRUNK_MV.get(nm_, 344.0 if nm_ == 'rotor_hip' else None))       # trunks and the rotor disc are round
+        tr = S.TRUNK.get(m, S.TRUNK_MV.get(nm_, M.TRUNK.get(m, 344.0 if nm_ == 'rotor_hip' else 418.0 if nm_ == 'hip_rotor' else None)))   # trunks and the rotor disc are round
         if tr is not None:
             lo, hi = PLc.bounds(m)
             f = dict(c=(r['o'][0], r['o'][1]), h=(tr * r['s'][0], tr * r['s'][0]), a=0.0, z=(r['o'][2], r['o'][2] + hi[2] * r['s'][2]), model=m)
@@ -173,6 +177,30 @@ def main(path, plot=None, box=None):
         worst[l] = float(np.degrees(np.arctan(np.abs(np.diff(zz)) / step)).max()) if n > 1 else 0.0
     print('5 flags: steepest slope from the nearest road: ' + ', '.join('%s %.0f deg' % (l.upper(), v) for l, v in worst.items()))
     if max(worst.values()) >= 40.0: fails.append('flags')
+    # ---- 7 every model an entity names exists: ours as a .vmdl under out/addon, stock ones as <path>_c in the pak01 index
+    idx_p = os.path.join(OUT, 'vpk_index', 'cs2_index.pkl'); stock_idx = None
+    if os.path.exists(idx_p):
+        import pickle
+        stock_idx = pickle.load(open(idx_p, 'rb'))
+    OWN = ('models/mv/', 'models/vehicles/', 'models/player/')
+    missing = Counter(); n_own = n_stock = 0; seen_m = set()
+    for r in rows:
+        m = r['model']
+        if not m or not m.endswith('.vmdl'): continue
+        if m.startswith(OWN):
+            ok_ = os.path.isfile(os.path.join(OUT, 'addon', m.replace('/', os.sep)))
+            n_own += m not in seen_m
+        elif stock_idx is not None:
+            ok_ = (m + '_c') in stock_idx
+            n_stock += m not in seen_m
+        else: ok_ = True
+        seen_m.add(m)
+        if not ok_: missing[m] += 1
+    print('7 models: %d of ours (.vmdl under out/addon), %d stock (%s); %d missing' % (n_own, n_stock, 'pak01 index' if stock_idx is not None else 'NO INDEX: not checked', len(missing)))
+    for m, c_ in missing.most_common(20): print('    %4d x %s' % (c_, m))
+    if missing: fails.append('models')
+    unused = M.unused_ext(seen_m, os.path.join(OUT, 'addon'))
+    if unused: print('  converted models not used by the map: ' + ', '.join(f for f, _ in unused))
     # ---- 6 counts
     cc = Counter(r['cls'] for r in rows)
     print('6 classes: ' + ', '.join('%s %d' % kv for kv in cc.most_common()))

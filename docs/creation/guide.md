@@ -310,3 +310,34 @@ check reports "console closed during the load" (crash) both for de_dust2 and Spr
 
 When those pass, switch sections 2-6 of this guide to it. Until then the method above stays the default, and the new tools are used
 alongside it: `fgdcheck` / `mapsanity` / `visualcheck` before a build, `rcompile analyze` on a failed build log, `ingame_check` after it.
+
+## 10. Image-driven terrain (11 Nov 2026, unit tested, not yet compiled into a map)
+
+`create/terrain_img.py` treats the ground as a picture: a `Field` is a height grid with bounds and a cell size, saved as a 16-bit PNG
+(+ a `.json` with bounds and scale) and callable as `f(X, Y)`, so it plugs straight into `vmapgen.Terrain` as the height function or as
+a layer added to one. Row 0 of the PNG is the lowest y (cs2-map-mcp's convention); the hillshade previews are north up.
+
+- **Picture to ground.** `Field.load(png, bounds=, height_range=[lo, hi])` reads any 8 / 16-bit greyscale heightmap (a DEM crop, a
+  painted sketch) and resizes it to the grid; `apply_ops` adds cs2-map-mcp's ops (hill, valley, ridge, plateau, noise, flatten along a
+  path) and `level` (flatten where a painted mask image is white). `Terrain(lambda X, Y: f(X, Y), ...)` builds it.
+- **Ground to picture and back.** `python create/terrain_img.py export tools/layout.py:height --bounds=x0,y0,x1,y1 --cell 32 --out height.png`,
+  then `detail height.png --protect protect.png --out dir`: stream gullies cut where water gathers (several passes, so they join into a
+  network), droplet erosion for the fine relief, scree relaxation, optional terraces, rock outcrops on steep ground. The result is
+  `detail.png`, the difference to ADD to the height function. Use a cell no finer than the terrain mesh's finest cell.
+- **Protect what gameplay needs flat.** Build a hard mask with `discs` (flags, bases), `along` (roads), `below` (water line), save it
+  with `save8`; `feather` grows it by two cells and fades the detail in over the next few. Inside the mask the layer is exactly 0, also
+  between grid points and after the PNG round trip (the 16-bit scale puts 0 on a level); `report.json` states the largest change there.
+- **Paint and foliage from the shape.** The same pass writes `splat_rock / mud / grass / cavity.png` and `density_trees /
+  undergrowth.png`; sample them in the terrain's `paint(X, Y, Z)` callback and multiply them into the project's own tree density.
+  `scatter_density(field, spacing, seed)` gives repeatable points for a placer.
+- **Look before using it.** Open `hillshade_before.png` and `hillshade_after.png` side by side. What went wrong while tuning on
+  mg_monsoon: droplets alone lower everything and leave protected areas standing as mesas (only their fine relief is kept now), an even
+  slope gives parallel rills unless the routing gets a little noise (`gully_wander`), and many drops landing in one pass dig pocks
+  (hollows that were not there before are silted up). Recipe keys are in `RECIPE`; a worked example is
+  `projects/monsoon-cs2/docs/IMAGE_TERRAIN.md`.
+
+`create/refimg.py` is the reference-photo side of cs2-map-mcp: `facade` straightens a photo by four corners and suggests floors,
+window columns, a palette and a bare-wall crop (feed the crop to `matkit.py image`); `compare` / `pairs` put a photo beside a game
+frame; `plan` draws a height Field under a grid with an aerial picture blended in. All of it is a suggestion to judge by eye.
+cs2-map-mcp has no image-to-layout generator: its "from photos to a map" is an AI agent reading photos, an outline and elevation data
+and calling the builders, with these tools as its aids.

@@ -137,6 +137,9 @@
    "hellmatch-cs2": "tools/synth.py",
    "space-racer-cs2": "tools/synth.py"
   },
+  "create/terrain_img.py": {
+   "monsoon-cs2": "tools/terrain_img.py"
+  },
   "create/test/mock_point_script.mjs": {
    "monsoon-cs2": "test/mock_point_script.mjs"
   },

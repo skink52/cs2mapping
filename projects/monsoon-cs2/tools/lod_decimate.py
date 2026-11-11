@@ -52,15 +52,16 @@ def mesh_charts(P, N, UV):
     return charts(np.concatenate([P, N, UV], 2)).max() + 1
 
 
-def weld_pos(A, fm):
+def weld_pos(A, fm, cl=None):
     """per-corner rows -> shared positions per material (UV and normal seams ignored: corners keep their own normal, UVs are
     re-projected). Materials never merge, so decal quads keep their offset from the surface under them (no z-fighting)."""
     C = A.reshape(-1, 8); M = np.repeat(fm, 3)
+    if cl is not None: M = M * 1000 + np.asarray(cl).reshape(-1)       # corner labels (e.g. skin bone): never welded or clustered across labels
     _, first, inv = np.unique(np.concatenate([np.round(C[:, :3], 3), M[:, None]], 1), axis=0, return_index=True, return_inverse=True)
     return C[first, :3], inv.ravel().reshape(-1, 3), M[first]
 
 
-def cluster(P, F, A, fm, cell, VM, CH):
+def cluster(P, F, A, fm, cell, VM, CH, ret_labels=False):
     """P: welded positions, F: faces into P, A: original per-corner rows [nf,3,8], fm: face material, VM: vertex material,
     CH: LOD0 chart per corner [nf,3] (faces welded by position + normal + UV)"""
     q = np.floor((P - P.min(0)) / cell).astype(np.int64)
@@ -99,6 +100,9 @@ def cluster(P, F, A, fm, cell, VM, CH):
     ok = (fn * out_N.sum(1)).sum(1) > 1e-9                       # drop faces that flipped or collapsed
     idx, out_P, out_N, out_UV = idx[ok], out_P[ok], out_N[ok], out_UV[ok]
     out_N, out_UV = share_corners(NF[idx], CH[idx], out_N, out_UV, np.linalg.norm(fn[ok], axis=1))
+    if ret_labels:
+        vm_c = np.zeros(nc, np.int64); vm_c[cid] = VM
+        return out_P, out_N, out_UV, fm[idx], NP, (vm_c[NF[idx]] % 1000)
     return out_P, out_N, out_UV, fm[idx], NP
 
 

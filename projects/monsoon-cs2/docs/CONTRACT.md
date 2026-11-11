@@ -23,24 +23,24 @@ Teams: T = 2, CT = 3. Coordinates/POIs come from `tools/layout.py` (`out/layout.
 | `mv_flagpole_<a..e>` | prop_dynamic `flag_pole` | Skin 0 neutral, 1 T, 2 CT (script fires `Skin`) |
 | `mv_flag_snd_<a..e>` | point_soundevent `mv.capture` at the pole | script fires `StartSound` on capture |
 | `mv_kit_<tg>` and `mv_kit_<a..e>` | info_target at each arms rack / flag supply crate | kit station (E within 80 u) |
-| `mv_heli_<tg>_1..3` | prop_dynamic (`model_archetype ""`) | CT: Apache x3. T: 1,2 = `heli_hip`, 3 = `heli_hip_gun` |
-| `mv_rotor_t_1..3`, `mv_tail_t_1..3` | prop_dynamic `rotor_hip`, `tailrotor_hip` | T only (the Apache animates its own rotors) |
+| `mv_heli_<tg>_1..3` | prop_dynamic (`model_archetype ""`) | CT: Apache x3. T: 1,2 = Mi-8 slick, 3 = Mi-8 gunship (models from `tools/mv_models.py`: converted `ext/hip_slick`, `ext/hip/hip_upper`; procedural `heli_hip`, `heli_hip_gun` when the conversions are absent) |
+| `mv_rotor_t_1..3`, `mv_tail_t_1..3` | prop_dynamic `ext/hip/hip_rotor`, `ext/hip/hip_tail` (fallback `rotor_hip`, `tailrotor_hip`) | T only (the Apache animates its own rotors); placed on the hubs from the model table |
 | `mv_pad_<tg>_1..3` | info_target | pad centre on the ground (park pose: pad yaw from layout) |
 | `mv_heli_eng_<tg>_N`, `mv_heli_gun_<tg>_N`, `mv_heli_gun2_<tg>_N`, `mv_heli_rkt_<tg>_N` | point_soundevent | `mv.heli_rotor` loop, `mv.heli_gun`, `mv.rocket_launch` |
 | `mv_heli_smoke_<tg>_N`, `mv_heli_dust_<tg>_N` | info_particle_system | damage smoke (parented by script Move), ground dust |
-| `mv_wreck_<tg>_1..3` | prop_dynamic `wreck_hip` (T) / `wreck_huey` (CT stand-in hulk) | parked at PARK_Z until a crash |
-| `mv_gun_<tg>_1..K` | prop_dynamic carriage: CT `howitzer_m102` K=3, T `rocket_tripod` K=4 | yawed by script |
-| `mv_tube_<tg>_1..K` | prop_dynamic elevating part: `howitzer_m102_gun` / `rocket_rail` | origin = trunnion |
+| `mv_wreck_<tg>_1..3` | prop_dynamic `ext/heli_wreck/heli_wreck_dyn` for both sides (fallback `wreck_hip` / `wreck_huey`) | parked at PARK_Z until a crash; put down at nose yaw + `models.wreck.yaw` |
+| `mv_gun_<tg>_1..K` | prop_dynamic carriage: CT `ext/m101` (fallback `howitzer_m102`) K=3, T `rocket_tripod` K=4 | yawed by script |
+| `mv_tube_<tg>_1..K` | prop_dynamic elevating part: `ext/m101_gun` (fallback `howitzer_m102_gun`) / `rocket_rail` | origin = trunnion (`models.howitzer.trunnion` / `models.rocket.trunnion` on the carriage) |
 | `mv_round_t_1..K` | prop_dynamic `rocket_122` | shown on the rail when loaded, flies as the projectile |
 | `mv_rack_<tg>_1..K` | info_target | ammo pick-up station per gun |
 | `mv_board_<tg>` | info_target at the plotting table | sit point; `mv_boardseat_<tg>_1..K` info_teleport_destination |
 | `mv_gun_snd_<tg>_N`, `mv_gun_fx_<tg>_N` | point_soundevent `mv.howitzer_fire` / `mv.rocket_fire`, info_particle_system | |
-| `mv_mount_1..M` | prop_dynamic gun part (`m2_gun`, `dshk_gun`, `quad50_gun`) | pivot = pintle; + `mv_mountseat_N` info_teleport_destination behind it, `mv_mount_snd_N` |
+| `mv_mount_1..M` | prop_dynamic gun part (`ext/m2_gun`, `ext/dshk_gun`, `quad50_gun`; stands `ext/m2_tripod`, `ext/dshk_tripod`, `quad50_mount` are prop_static) | pivot = pintle; + `mv_mountseat_N` info_teleport_destination behind it, `mv_mount_snd_N` |
 | `mv_mountinfo_N` | info_target | key `message` = `"<kind>:<team>"` kind m2/dshk/quad50, team t/ct/any |
 | pools `mv_boom_fx_1..16`, `mv_dirt_fx_1..16`, `mv_boom_snd_1..16`, `mv_whistle_snd_1..16`, `mv_shake_1..16` | particles / soundevents / env_shake | impacts |
 | `mv_tracer_1..24`, `mv_rocket_1..16`, `mv_marker_1..10`, `mv_smoke_fx_1..6`, `mv_pip_<slot 0..63>` not used: `mv_pip_1..12` | prop_dynamic fx models / particle | parked at PARK_Z |
 | `mv_shell_1..12` | prop_dynamic `shell_105` | visible falling shell / carried round |
-| `mv_cache_*` | prop_dynamic | one per model the script SetModels (uniforms) |
+| `mv_cache_1..N` (N <= 16) | prop_dynamic | one per model the script SetModels: the crash hulks, rocket, shell, then the paths in `out/cache_models.json` (the four uniforms `models/player/gmod/{nva_soldier,vietcong_soldier,soldier2_woodland,us}`); the script reads each prop's model name |
 | `mv_ambience` | point_soundevent `mv.amb.valley` startOnSpawn | |
 | `mv_tunnel_<1..3>` | info_teleport_destination | tunnel portals (bot leash targets) |
 | `mv_nav_*` | func_nav_markup | WALKABLESEED at bases/flags/roads (`mv_nav_seed_N`), NONAV over slopes, karst, deep river (`mv_nav_no_N`) |
@@ -48,12 +48,21 @@ Teams: T = 2, CT = 3. Coordinates/POIs come from `tools/layout.py` (`out/layout.
 
 layout.json (from `layout.export`, written by make_map to `out/layout.json`) also carries: `terrain` = `{x0, y0, cell, nx, ny, z[]}` (128-u ground
 heights, `z[j * nx + i]` at `(x0 + i * cell, y0 + j * cell)`), `mountinfo` = `{"N": {n, kind, team, x, y, z, yaw}}` matching `mv_mount_N`
-(the same entries as the list `mounts`), `tunnels`, `bridge` (`deck_z`: flag B stands on the deck).
+(the same entries as the list `mounts`), `tunnels`, `bridge` (`deck_z`: flag B stands on the deck), and `models` (from
+`tools/mv_models.py`, the one table that says which model stands for what): `hip`, `hip_gun`, `apache` = `{variant, model, nose_yaw,
+rotor_r, hub, tail_hub?, seats[{kind, off}], exits[], pods[], gun{muzzle, cam, yaw, cone, up, down}}` in the nose frame; `howitzer`,
+`rocket` = `{trunnion, muzzle, rest_pitch}`; `m2`, `dshk`, `quad50` = `{pintle, muzzle, seat_back}`; `wreck` = `{t, ct, yaw}`;
+`pads` = `{t: [model name per pad], ct: [...]}`. The script overwrites its CONFIG defaults with these.
+
+## Models
+`tools/mv_models.py` picks, per logical name, the converted GMod Workshop model under `models/mv/ext/` when its `.vmdl` is in the addon
+and our procedural prop otherwise (`MV_NO_EXT=1` forces the procedural set, e.g. for a Steam Workshop build: docs/ASSETS.md, licence).
+`check_world.py` check 7 fails when any entity names a model that is neither under `out/addon` nor in the pak01 index.
 
 ## Seats
 - Apache: pilot (flies, rockets ATTACK), gunner (chin 30 mm, own aim), 2 wing riders (hang on the stub wings).
 - Hip slick: pilot, 1 door gunner (PK, left door), 4 riders. Hip gunship: pilot (rockets), 1 door gunner, 2 riders.
-- Seat offsets live in the script CONFIG (model space), not in the map.
+- Seat offsets come from `layout.json` `models` (model space, nose frame); the script CONFIG holds the same numbers as defaults.
 
 ## Roles and chat
 `!infantry` `!artillery` `!air` `!rifle` `!mg` `!at` `!roles` `!swap` `!spawn <a-e|base>` `!pos` `!uniform` `!bots <n>`.
