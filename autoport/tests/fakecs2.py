@@ -50,7 +50,9 @@ class FakeCS2:
         self.cvars = {'mp_freezetime': '15', 'game_type': '0', 'game_mode': '0', 'bot_quota': '0', 'sv_airaccelerate': '12'}
         self.maps = {}                     # name -> lines printed while it loads
         self.after_load = []               # lines printed a little after the in-game state
-        self.crash_after_load = False
+        self.crash_after_load = False      # die on the first command after a map load (deterministic, no timer)
+        self.crash_pending = False
+        self.on_crash = None               # called just before the connection drops (a test writes its crash dump here)
         self.invalid_maps = set()
         self.probe = False
         self.entities = {}
@@ -133,6 +135,9 @@ class FakeCS2:
 
     def crash(self):
         """The game dies: the console connection drops."""
+        if self.on_crash:
+            try: self.on_crash()
+            finally: self.on_crash = None
         c = self.conn
         self.conn = None
         if c:
@@ -159,6 +164,10 @@ class FakeCS2:
         return [c for _, c in self.received]
 
     def handle(self, c):
+        if self.crash_pending:             # the game dies on the first command after the map reached the in-game state
+            self.crash_pending = False
+            self.crash()
+            return
         word, _, rest = c.partition(' ')
         if word in self.delayed:
             d, lines = self.delayed[word]
@@ -200,11 +209,12 @@ class FakeCS2:
             self.later(0.4, 'ChangeGameUIState: CSGO_GAME_UI_STATE_LOADINGSCREEN -> CSGO_GAME_UI_STATE_INGAME')
             self.map = name
 
+            if self.crash_after_load:      # not on a timer: whether the client's next command beat the timer made the tests a race
+                self.crash_pending = True
+                return
+
             def after():
                 self.say(*self.after_load)
-                if self.crash_after_load:
-                    time.sleep(0.1)
-                    self.crash()
             threading.Timer(0.6, after).start()
         elif word in self.cvars:
             if rest.strip():

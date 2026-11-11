@@ -15,6 +15,10 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   (`OnModifyPlayerDamage`). **Simulated only**: strict typings check, type-check (no new error) and the stand-in engine (same inputs fired,
   same commands, no errors, before and after). Nothing was compiled or loaded in CS2, and the scripts in the addon folders on the PC were
   not touched. Needs CS2 from 22 Oct 2026 or later.
+- **[port mg_minecraft_multigames]** Re-ported with the new generators and loaded in CS2 (build 10955): the script imports `Entities`,
+  `Console`, `GameRules` without error and `Console.ServerCommand` works in game. The round-end calls were not exercised (no round ended).
+- **[autoport]** Two fake-console crash tests raced a timer against the client (failed on CI, passed on the PC): the fake game now dies on
+  the first command after the load, and the crash dump is written before the console drops.
 - **[create]** `test/api.py`: DEPRECATED is told apart from INVALID and comes with the current spelling; `--json`; `--examples`; quoted
   globs; reads JavaScript held in `.py` generators; `test/api_allow.txt` lists deprecated calls kept on purpose, each with a reason
   (the live-test probe, whose console output was checked in game with `Instance.Msg`; the original addons under `projects/`).

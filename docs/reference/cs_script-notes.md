@@ -104,6 +104,12 @@ or a deliberate copy). What the typings cannot tell us, and so is assumed until 
 `FindEntityByName(n)` returned when several share a name; `Console.Log` prints where `Instance.Msg` printed (the live-test probe in
 `autoport/livetest.py` parses that output, so it stays on `Instance.Msg` until checked in game); `ent.FireInput` on an entity variable that is
 `undefined` throws a TypeError in the script where `EntFireAtTarget({ target: undefined })` was the engine's to reject.
+**First in-game check (11 Nov 2026, CS2 build 10955, mg_minecraft_multigames re-ported with the new generators, one player, tools mode).**
+The script loaded with `import { Instance, Console, Entities, GameRules, ... }` and no script error in the console, and its
+`Console.ServerCommand` calls ran: the map's `say @[Map] ...` lines appeared in chat and its `sm_cvar` lines reached the command filter
+(`WORKSHOP COMMAND: sm_cvar does not exist, ignoring`). So the three new globals import, and `Console.ServerCommand` is **in-game verified**.
+The log stops before a round ended, so `Entities.FireInput` and `GameRules.SetRoundRemainingTime` (the round-end section) were not seen to run;
+`Console.Log`, `Entities.FindByName`, `ent.FireInput` and `Entities.ConnectOutput` are not used by this map. Those stay simulated.
 Deprecated calls kept on purpose are listed with reasons in `create/test/api_allow.txt` (the probe; the original addons under `projects/`,
 whose own stand-in engines do not all model the new globals yet). CI fails on a deprecated call that is not in that file.
 

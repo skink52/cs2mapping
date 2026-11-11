@@ -106,8 +106,7 @@ class Check(unittest.TestCase):
         with mock.patch.object(IC.crashdump, 'GAME_BIN', dumps):
             threading_dump = lambda: minidump(os.path.join(dumps, 'cs2_2026_1110_1_0_crash.mdmp'), code=0xC0000005, module='server.dll')
             self.fake.after_load = []
-            import threading
-            threading.Timer(0.5, threading_dump).start()
+            self.fake.on_crash = threading_dump             # the dump exists before the console drops, as with a real crash
             r = self.check(seconds=3)
         self.assertEqual(r['exit'], 2)
         self.assertTrue(r['crashed'])
