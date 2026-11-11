@@ -15,13 +15,13 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
 
 ## 2026-11-10: PC disk cleanup (C: was full)
 
-- [pc] Freed space on C: (survey `docs/reference/disk_survey_2026-11-10.md`). Moved 11 folders, including `C:\cs2server`, to `E:\offload\`
-  with junctions left at the old paths (`docs/porting/setup.md` "Offloaded to E:").
+- [pc] Freed space on C: on skink52's PC (the survey is a local record on that PC, not in this repo). Moved 11 folders, including `C:\cs2server`, to `E:\offload\`
+  with junctions left at the old paths (`docs/porting/setup.md` "Offloaded to E:"). This is one PC's layout; another PC can be laid out differently.
 - [pc] `C:\source1\sound` is now a junction to the install's `csgo\sound`; it had been a byte-identical copy.
 - [pc] Deleted:
   - the SteamCMD downloads of items already extracted
   - old crash dumps
-  - 393 content-addon backups from before 8 Nov (`docs/reference/disk_cleanup_content_backups_2026-11-10.txt`)
+  - 393 content-addon backups from before 8 Nov (the list is a local record on that PC, not in this repo)
 
 ## 2026-11-10: ba_jail_seaside watermelons
 

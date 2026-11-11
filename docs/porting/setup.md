@@ -21,6 +21,11 @@ folders but can't start programs there.
 
 `<CS2>` is `C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive`.
 
+**These paths are skink52's PC, not a requirement.** Every `C:\...` and `E:\...` path on this page (and `<CS2>` above) is how one
+PC is laid out. Another PC can use different drives and folder names: the batch files and scripts in `scripts/` and `autoport/`
+name these paths near the top, so change them there to match your own layout. What has to hold is the relationship between the
+folders (which repo file sits next to which Valve tool), not the drive letters.
+
 ## PC folders
 
 Laid out by `scripts/reorg_pc.ps1` (30 Oct 2026; `C:\source2\reorg_undo.ps1` reverses it). Put new things where they belong here.
@@ -69,9 +74,12 @@ C:\source2\                   original addons (creation)
 
 ### Offloaded to E: (10 Nov 2026, C: was full)
 
+**Specific to skink52's PC; nothing here is needed on another PC.** It records where folders went when one machine ran out of space,
+so sessions on that machine know which paths are junctions. A PC with room on one drive keeps everything at the paths above.
+
 These folders now live in `E:\offload\` (a slow 5400-rpm HDD) with a **junction left at the old path**, so every script and doc path
 still works. Never delete through a junction: remove the link with `rmdir <old path>` (not `rd /s`, `Remove-Item -Recurse` or an
-Explorer delete), then move the folder back to undo. Survey and reasons: `docs/reference/disk_survey_2026-11-10.md`.
+Explorer delete), then move the folder back to undo. The disk survey behind these moves is a local record kept on that PC, not in this repo.
 
 | Old path (junction) | Now on E: |
 |---|---|
@@ -89,7 +97,7 @@ Explorer delete), then move the folder back to undo. Survey and reasons: `docs/r
 Plain moves (no junction): `E:\offload\ironframe_backups\` (IRONFRAME .vmap backups of 9 Nov) and `E:\offload\source1_sound_extra\`
 (skink52's Pokemon music zip). Deleted the same day: the SteamCMD GMod downloads of catalog items that are already extracted
 (`fetch.py` downloads again; move `appworkshop_4000.acf` aside first), the SteamCMD CS2 Workshop downloads, crash dumps older than a
-week, and 393 content-addon backups older than 8 Nov (list: `docs/reference/disk_cleanup_content_backups_2026-11-10.txt`; the newest
+week, and 393 content-addon backups older than 8 Nov (the list is a local record on that PC, not in this repo; the newest
 map backup in each addon was kept).
 
 ## Claude Code on the PC (one folder)
