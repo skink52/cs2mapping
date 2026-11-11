@@ -346,6 +346,12 @@ function handleEvent(ev) {
 // ---------------------------------------------------------------- HUD feed (humans in a mech or watching)
 function hudFeed(pe, now) {
   if (!pe.human) return;
+  // CS2's own HUD (12 Nov 2026): the only thing CS2 lets a server hide is all of it, chat box included (the plugin sets it, SERVER_CONTRACT 12).
+  // Hidden while the pilot is in a live mech; back when dead, in the garage, watching or in the intro. Said again every 5 s (a respawn resets it).
+  if (serverMode) {
+    const own = game.mechs.get(pe.slot), hide = pe.status === 'mech' && !!own && own.alive && !(pe.garage && pe.garage.open), P = /** @type {any} */ (pe);
+    if (P.cs2Hud !== hide || now - (P.cs2HudAt || 0) > 5) { P.cs2Hud = hide; P.cs2HudAt = now; srvSend(pe.slot, 'hud', [hide ? 1 : 0]); }
+  }
   const m = game.mechs.get(pe.status === 'spec' ? pe.specTarget : pe.slot);
   const half = ((ifrTickNo + pe.slot) & 1) === 0;
   if (m && (pe.status === 'mech' || pe.status === 'spec')) {

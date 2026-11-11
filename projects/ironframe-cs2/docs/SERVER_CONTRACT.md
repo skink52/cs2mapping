@@ -292,3 +292,10 @@ arguments. A `!` line reaches both sides, so the map drops the second of the sam
 Plugin side: `css_help` / `css_commands` also send `help`; `css_garage` sends `garage` instead of opening the plugin's chat garage while the
 map's script is there; `css_back css_od css_cam css_hints css_bots css_controls css_keys css_ironframe css_mech` are forwarders. A map
 without these inputs ignores them.
+
+## 12. CS2's own HUD (added 12 Nov 2026)
+
+`echo ifr_srv <slot> hud <1|0>`: 1 = this pilot is in a live mech, 0 = not (dead, garage, intro, watching). Sent on a change and again every
+5 s. The plugin (`IronFrame.HideHudInMech`, default on) sets or clears bit 4 of the pawn's `m_iHideHUD`; no reply. CS2 honours that one bit
+only (seen in game, every bit tried): it hides the score bar, the health number and the chat box together, so while it is set the map
+shows plain chat lines on its own message line. Stand-alone (no plugin) nothing is hidden.

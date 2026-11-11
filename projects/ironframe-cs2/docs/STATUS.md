@@ -15,6 +15,20 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**12 Nov 2026, 04:30: build 30 (18 suites PASS, mock PASS, both addons deployed, plugin harness 3/3, test server on Dunes).**
+- **CS2's own HUD**: skink52's recording of `slime_ifr_test hidehud` (every single bit, 2 s each): only bit 4 does anything and it hides
+  everything, the chat box included. No supported way removes the score bar, the health number or the bottom icon one by one (the
+  pilot's pawn already has no weapons). So: hidden while the pilot is in a live mech, back when dead / garage / intro / watching
+  (`ifr_srv <slot> hud 1|0`, SERVER_CONTRACT 12; plugin `HideHudInMech`); plain chat lines go to the message line of pilots whose HUD
+  is hidden. **Not seen in game**: the hide and return, the chat relay, whether chat can be typed blind.
+- **Sortie**: no capture strip under the beacon chip any more ("BEACON CONTESTED" stayed up and repeated the chip). The A and C
+  skink52 asked about are the map's Conquest letter masts (map props), the HUD shows only the B chip.
+- **World sounds on the dedicated server: still silent, cause unknown.** skink52 heard none of `!snd 1-4`. server.dll and client.dll
+  both name `soundevents/soundevents_addon.vsndevts`; the file and the 99 `sounds/ifr` files are on the server; no sound error in the
+  server console. **Next: skink52's CLIENT console after `!snd 1`** (asked). It works on a listen server from Hammer, so a Workshop
+  mount may simply work: the loose-file test server is the odd one.
+- Waiting on skink52: half-rate simulation for more than ~40 mechs (yes / no).
+
 **11 Nov 2026, night: build 29 (18 suites PASS, mock PASS, both addons deployed, plugin harness 3/3, test server on Dunes 22:19). Waiting on skink52 for three answers.**
 - **World sounds are still silent on the dedicated server** (only the single-client tones: hit, kill). The plugin's precache did not
   fix it; the server console has no sound error. Chat `!snd 1` .. `!snd 4` (src/cs2/40_fx.js sndTest) plays one explosion four ways

@@ -49,7 +49,12 @@ function onChat(player, text) {
   const pe = person(slot); if (!pe) return;
   let t = String(text || '').trim().toLowerCase();
   if (t.startsWith('/')) t = '!' + t.slice(1);
-  if (!t.startsWith('!')) return;
+  if (!t.startsWith('!')) {
+    // a plain chat line: pilots whose CS2 HUD (and chat box) is hidden while they fly get it on the message line (90_main.js hudFeed)
+    const said = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 90);
+    if (said) for (const q of people.values()) if (q.human && /** @type {any} */ (q).cs2Hud) reply(q.slot, nameOf(slot) + ': ' + said, 6, true, 1);
+    return;
+  }
   const parts = t.split(/\s+/), word = parts[0], arg = parts[1], rest = t.slice(word.length).trim();
   { const was = chatLast.get(slot), now = gameTime(); if (was && was.word === word && now - was.at < CHAT_SAME && now >= was.at) return; chatLast.set(slot, { word, at: now }); }
   dlog('chat command ' + t + ' from slot ' + slot);

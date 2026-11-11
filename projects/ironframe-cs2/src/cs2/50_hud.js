@@ -1001,7 +1001,9 @@ function ifrHudMode(slot, match, myTeam) {
       used[k] = true;
       const letter = String(p.id || 'ABC'[i] || '?');
       ifrHudChip(slot, k, true, letter, st.owner, st.active, p.contested ? -1 : st.lean, p.contested ? 1 : st.prog, st.word);
-      if (!st.active) return;
+      // Sortie has one objective and its chip says who holds it: no strip under it (11 Nov 2026, skink52: "BEACON CONTESTED" stayed on
+      // screen and repeats the chip right above it)
+      if (!st.active || mode === 'so') return;
       const name = mode === 'kh' ? 'HILL ' + letter : mode === 'so' ? 'BEACON' : letter;
       let text, team = st.lean, frac = st.prog;
       if (p.contested) { text = name + ' CONTESTED'; team = -1; frac = 1; }
