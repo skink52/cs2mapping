@@ -15,6 +15,24 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**11 Nov 2026, night: build 29 (18 suites PASS, mock PASS, both addons deployed, plugin harness 3/3, test server on Dunes 22:19). Waiting on skink52 for three answers.**
+- **World sounds are still silent on the dedicated server** (only the single-client tones: hit, kill). The plugin's precache did not
+  fix it; the server console has no sound error. Chat `!snd 1` .. `!snd 4` (src/cs2/40_fx.js sndTest) plays one explosion four ways
+  (1 normal: source = the mech, StartSound; 2 source + StartSoundOnSingleClient; 3 the sound entity moved onto the mech, StartSound;
+  4 moved + single client). **Ask which numbers are heard**, then move every world sound to a way that works.
+- **"BEACON CONTESTED" with no enemy near**: the Sortie ring had no height and counted any team 0 mech. Now only wave enemies (npc)
+  within 1200 u of the beacon's height. Not reproduced: the likely cause, not a confirmed one.
+- **Hard landing plants the mech** (fall faster than `land_fall_speed`): no walking and the slide is braked for the landing lag; a
+  quick boost breaks out (it was blocked during the lag before). mechanics 169 PASS. Not played.
+- **CS2's own HUD**: the script API cannot hide it. Plugin console `slime_ifr_test hidehud <bits>` sets m_iHideHUD on every pilot
+  live (4 all, 8 health, 64 status, 128 chat, 4096 radar: Source 1 names, which ones CS2 honours is unknown). **Try them with
+  skink52 on the server**, then set `IronFrame.HideHud` / `HideHudBits`.
+- **Script time by stage, 64 mechs** (avg ms a tick): move 4.2, render 3.2-3.4, AI 2.5-2.7, lock 0.9-1.0, separate 0.8, players in
+  0.7, weapons + bullets + missiles 1.3. **39 mechs: 9.4-12 ms.** In-game benchmark: the script engine is about 5 x slower than Node
+  (3 M arithmetic 278 ms against 58), a line trace 21 us, sphere 16, hull 17, a Teleport 3. Nothing cut yet: traces are already
+  staggered and small tweaks buy 10-20 %. The real fix for more than ~40 mechs is half-rate simulation (alternate halves at 32 Hz):
+  **asked skink52, not started.** A real 64-player round has no AI (fill is 16 mechs under 22 humans); 64 HUDs are unmeasured.
+
 **11 Nov 2026, evening: second round of skink52's play (Dunes, from Hammer, local listen server). Build 25 + the timing test: 18 suites PASS, mock PASS, both addons deployed (Sprawl without the timing test), plugin harness 3/3, test server on Dunes.**
 - **No deprecated script calls left.** The 7 `Instance.*` calls (Msg, ServerCommand, FindEntityByName, FindEntitiesByName,
   EntFireAtTarget, EntFireAtName, IsWarmupPeriod) are `Console.Log`, `Console.ServerCommand`, `Entities.FindByName`, `ent.FireInput`,

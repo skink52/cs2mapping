@@ -123,6 +123,7 @@ function onChat(player, text) {
       reply(slot, 'Rank ' + pe.pilot.rank + ', ' + pe.pilot.xp + ' XP, ' + pe.pilot.credits + ' credits, ' + pe.pilot.owned.size + ' parts', 6); break;
     }
     case '!od': case '!overdrive': featChatOd(slot); break;
+    case '!snd': sndTest(slot, parseInt(String(text).split(/\s+/)[1], 10) || 1); break;      // which way of starting a world sound is heard on this server (40_fx.js)
     case '!mode': { const mt = game.matchFor(slot), nm = (typeof IFR_HUD_MODE_NAMES === 'object' && IFR_HUD_MODE_NAMES[mt.mode]) || mt.mode || '?';
       reply(slot, nm + ' (arena ' + (game.arenaIndexOf(slot) + 1) + ' of ' + game.list.filter((a) => a.active).length + '): T ' + ((mt.scores || {})[2] | 0) + ', CT ' + ((mt.scores || {})[3] | 0), 5); } break;
     case '!perf': reply(slot, perfText || 'no figures yet', 6); break;

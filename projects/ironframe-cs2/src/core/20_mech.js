@@ -366,7 +366,11 @@ function IF_mechStep(game, m, dt) {
   // ---- speed multiplier
   let speedMul = 1;
   if (staggered) speedMul = MV.stagger_speed;
-  if (lagged) speedMul *= 0.5;
+  // A hard landing plants the mech for the landing animation (11 Nov 2026, skink52: it slid sideways through it at half speed): no walking
+  // and the slide is braked. Only a fall faster than MV.land_fall_speed sets landLag, a small hop does not. A quick boost breaks out.
+  const planted = lagged && m.onGround && m.qbTime <= 0;
+  if (planted) { speedMul = 0; const kb = Math.max(0, 1 - 14 * dt); m.vel.x *= kb; m.vel.y *= kb; }
+  else if (lagged) speedMul *= 0.5;
   if (m.featSpeed != null) speedMul *= m.featSpeed;   // 0 = rooted (Bastion siege mode)
   // ---- boost
   const canBoost = !staggered && !lagged && !braced && m.enStalled <= 0 && m.en > 0 && m.dropT <= 0;
@@ -392,8 +396,9 @@ function IF_mechStep(game, m, dt) {
     chain = c <= Math.cos((MV.qb_chain_angle || 60) * IF_D2R);
   }
   const qbCost = m.qbCost * (chain ? (MV.qb_chain_cost || 1) : 1);
-  if (qbPress && (m.qbCd <= 0 || chain) && (!staggered || qbOut) && !lagged && !braced && !lunging && m.dropT <= 0 && m.canSpend(qbCost) && (m.onGround || m.legs.qb_air)) {
+  if (qbPress && (m.qbCd <= 0 || chain) && (!staggered || qbOut) && !braced && !lunging && m.dropT <= 0 && m.canSpend(qbCost) && (m.onGround || m.legs.qb_air)) {
     if (qbOut) { m.staggered = 0; m.stagger = 0; m.staggerEndT = game.time; speedMul = 1; }
+    if (lagged) { m.landLag = 0; speedMul = 1; }      // the dodge is the way out of a landing
     let dx = wx, dy = wy;
     if (wl < 0.1) { dx = -fx; dy = -fy; }
     else { dx /= wl; dy /= wl; }

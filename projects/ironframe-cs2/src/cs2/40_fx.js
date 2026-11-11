@@ -251,6 +251,19 @@ function sndLoopStop(key, owner) {
   const e = list[idx]; if (!live(e)) return;
   guard('loop stop ' + key, () => ifrFire(e, 'StopSound'));
 }
+// !snd 1-4 (11 Nov 2026): world sounds are silent on a dedicated server while tones are heard. The same explosion sound, four ways:
+//   1 the normal way (source = the pilot's mech, StartSound)      2 source = the mech, StartSoundOnSingleClient
+//   3 no source: the sound entity moved onto the mech, StartSound  4 the entity moved onto the mech, StartSoundOnSingleClient
+function sndTest(slot, n) {
+  const e = sndEnt('boom_large'), r = rigs.get(slot), prop = r && r.upper, m = game.mechs.get(slot);
+  if (!e || Array.isArray(e) || !m) { reply(slot, 'sound test: no boom_large entity or no mech'); return; }
+  guard('snd test', () => {
+    if (n === 1 || n === 2) { if (!prop || !live(prop.ent)) { reply(slot, 'sound test: no mech model'); return; } ifrFire(e, 'SetSourceEntity', prop.name); }
+    else { ifrFire(e, 'SetSourceEntity', ''); /** @type {any} */ (e).Teleport({ position: v3(m.pos.x, m.pos.y, m.pos.z + 150) }); }
+    if (n === 1 || n === 3) ifrFire(e, 'StartSound'); else ifrFire(e, 'StartSoundOnSingleClient', slot);
+    reply(slot, 'SOUND TEST ' + n + ': an explosion at your mech. Heard it?', 5);
+  });
+}
 // a tone only one player hears
 function sndTone(slot, key) {
   const pe = person(slot); if (!pe || !pe.human) return;

@@ -452,7 +452,7 @@ function frame(dt, now) {
   perfMark('players in');
   if (phase === 'running' || phase === 'podium') {
     guard('core tick', () => game.tick(dt, now));
-    perfMark('core');
+    perfMark('core rest');
     const evs = game.events;
     for (let i = 0; i < evs.length; i++) guard('event ' + evs[i].t, () => handleEvent(evs[i]));
     evs.length = 0;
@@ -560,6 +560,7 @@ function perfDeepTick(ms, now) {
     perfSlowBy[top] = (perfSlowBy[top] || 0) + 1;
   }
   if (now < perfDeepAt) return;
+  if (!perfBenchDone) { perfBenchDone = true; guard('perf bench', perfBench); }
   const n = Math.max(1, perfDeepN);
   const secs = Object.keys(perfSecs).sort((a, b) => perfSecs[b] - perfSecs[a]).map((k) => k + ' ' + (perfSecs[k] / n).toFixed(2)).join(', ');
   const by = Object.keys(perfSlowBy).sort((a, b) => perfSlowBy[b] - perfSlowBy[a]).map((k) => k + ' x' + perfSlowBy[k]).join(', ');
@@ -575,10 +576,36 @@ function perfDeepTick(ms, now) {
   for (const k in perfSlowBy) delete perfSlowBy[k];
   perfDeepAt = now + 20;
 }
+// what one unit of each kind of work costs in this engine (once, at the first report): plain arithmetic, small objects and closures,
+// a line / sphere / hull trace, one Teleport. Node on the same PC (cold): 58 / 10 / 18 ms. Measured in CS2 11 Nov 2026: 278 / 42 / 74 ms,
+// line trace 21 us, sphere 16, hull 17, teleport 3: the script engine is about 5 x slower than Node, a trace costs as much as ~200 plain operations.
+let perfBenchDone = false;
+function perfBench() {
+  let t = clockMs(), x = 0;
+  for (let i = 0; i < 3000000; i++) x += Math.sqrt(i * 1.0001) * 0.5 - (x > 1e6 ? x * 0.5 : 0);
+  const js = clockMs() - t; t = clockMs();
+  let y = 0; for (let i = 0; i < 300000; i++) { const o = { x: i, y: i + 1, z: i + 2 }; y += o.x + o.z; }
+  const obj = clockMs() - t; t = clockMs();
+  let z = 0; for (let i = 0; i < 300000; i++) { const f = () => i + 1; z += f(); }
+  const clo = clockMs() - t;
+  let m0 = null; for (const m of game.mechs.values()) if (m.alive) { m0 = m; break; }
+  let line = -1, sph = -1, clip = -1, tp = -1;
+  if (m0) {
+    const a = v3(m0.pos.x, m0.pos.y, m0.pos.z + 150), b = v3(m0.pos.x + 2000, m0.pos.y + 500, m0.pos.z + 100);
+    t = clockMs(); for (let i = 0; i < 3000; i++) world.traceLine(a, b); line = (clockMs() - t) / 3;
+    t = clockMs(); for (let i = 0; i < 1000; i++) world.traceSphere(a, b, 60); sph = clockMs() - t;
+    t = clockMs(); for (let i = 0; i < 1000; i++) world.traceClip(a, b, m0.slot); clip = clockMs() - t;
+  }
+  const pp = pfx.spark && pfx.spark.find((q) => !q.busy && live(q.ent));
+  if (pp) { t = clockMs(); for (let i = 0; i < 2000; i++) pp.ent.Teleport({ position: HIDE_POS }); tp = (clockMs() - t) / 2; }
+  log('perf bench: 3 M arithmetic ' + js + ' ms, 300 k objects ' + obj + ' ms, 300 k closures ' + clo + ' ms; microseconds each: line trace ' + line.toFixed(1) + ', sphere trace ' + sph.toFixed(1) +
+    ', hull trace ' + clip.toFixed(1) + ', teleport ' + tp.toFixed(1) + ' (' + (x + y + z > 0 ? 'ok' : '?') + ')');
+}
 function perfSet(n) {
   if (!game) return;
   perfDeep = n > 0; perfForce = n > 0 ? 'tb' : '';
   for (const a of game.list) {
+    /** @type {any} */ (a.g).perfHook = n > 0 ? (/** @type {string} */ name) => perfMark('core ' + name) : undefined;      // the stages of the core tick (80_game.js)
     const A = /** @type {any} */ (a.g.cfg.ai);
     if (n > 0) { if (!A.perfKeep) A.perfKeep = [A.fillTotal, A.floor]; A.fillTotal = n; A.floor = 999; }
     else if (A.perfKeep) { A.fillTotal = A.perfKeep[0]; A.floor = A.perfKeep[1]; A.perfKeep = null; }

@@ -376,8 +376,12 @@ class IF_Game {
     const L = this.alive; L.length = 0;
     for (const m of this.mechs.values()) if (m.alive) L.push(m);
     this.stats.ticks++; this.stats.mechTicks += L.length;
+    // (perfHook: the adapter's timing test names the stage that just ended; undefined in normal play)
+    const pf = /** @type {any} */ (this).perfHook;
+    if (pf) pf('spawn');
     // AI fills inputs (it reads last tick's threats)
     for (let k = 0; k < L.length; k++) { const m = L[k]; if (!m.human && m.ai) IF_Ai.step(this, m, dt); }
+    if (pf) pf('ai');
     // movement
     for (let k = 0; k < L.length; k++) {
       const m = L[k];
@@ -385,17 +389,24 @@ class IF_Game {
       m.threats.length = 0; m.lockedBy = 0;
       if (playing) m.sum.survive += dt;
     }
+    if (pf) pf('move');
     /** @type {any} */ (this).featPre(L, dt);
     IF_separate(this, L, L.length, dt);
     this.grid.build(L, L.length);
+    if (pf) pf('separate');
     // locks and weapons
     const se = this.cfg.lock.seekEvery;
     for (let k = 0; k < L.length; k++) { const m = L[k]; if (m.alive) IF_lockStep(this, m, dt, ((this.tickN + m.slot) % se) === 0); }
+    if (pf) pf('lock');
     for (let k = 0; k < L.length; k++) { const m = L[k]; if (m.alive) IF_weaponsStep(this, m, dt); }
+    if (pf) pf('weapons');
     IF_bulletsStep(this, dt);
+    if (pf) pf('bullets');
     IF_missilesStep(this, dt);
+    if (pf) pf('missiles');
     IF_propsStep(this, L, dt);
     IF_fxStep(this, dt);
+    if (pf) pf('props+fx');
     // out of the world (Orbital falls): dead
     const zmin = this.arena.bounds.min[2] - 1500;
     for (let k = 0; k < L.length; k++) { const m = L[k]; if (m.alive && m.pos.z < zmin) IF_mechDie(this, m, -1, 'fall'); }
@@ -511,8 +522,10 @@ class IF_Game {
     if (p) {
       let pl = 0, en = 0;
       for (const m of this.alive) {
-        if (m.dropT > 0 || Math.hypot(m.pos.x - p.pos.x, m.pos.y - p.pos.y) > p.radius) continue;
-        if (m.team === 0) en++; else pl++;
+        // (11 Nov 2026, skink52: "beacon contested stays on screen even when no enemies around": the ring had no height, so a mech far
+        // above or under the beacon counted, and so did anything on team 0 that is not a wave enemy)
+        if (m.dropT > 0 || Math.hypot(m.pos.x - p.pos.x, m.pos.y - p.pos.y) > p.radius || Math.abs(m.pos.z - p.pos.z) > 1200) continue;
+        if (m.team === 0) { if (m.npc) en++; } else pl++;
       }
       p.contested = pl > 0 && en > 0;
       if (en && !pl) { M.beaconLoss += dt; p.value = IF_clamp(p.value + dt / this.cfg.cq.captureTime, -1, 1); }
