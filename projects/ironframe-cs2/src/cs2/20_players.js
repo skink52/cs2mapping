@@ -275,9 +275,9 @@ function standInFor(kp, now) {
   for (const pe of people.values()) {
     if (pe.human || !(pe.team === TEAM_T || pe.team === TEAM_CT)) continue;
     const pawn = live(pe.pawn); if (!pawn) continue;
-    if (!pawn.IsAlive() && (typeof pawn.Reset !== 'function' || now - (pe.standAt || 0) < 0.3)) continue;
+    if (!pawn.IsAlive() && (typeof pawn.Reset !== 'function' || now - (/** @type {any} */ (pe).standAt || 0) < 0.3)) continue;
     const m = game.mechs.get(pe.slot);
-    const rank = (m && m.alive ? 0 : 4) + (pe.team !== kp.team ? 2 : 0) + Math.min(0.99, (now - (pe.standAt || -1e9)) / 600);
+    const rank = (m && m.alive ? 0 : 4) + (pe.team !== kp.team ? 2 : 0) + Math.min(0.99, (now - (/** @type {any} */ (pe).standAt || -1e9)) / 600);
     if (rank > bestRank) { best = pe; bestRank = rank; }
   }
   return best;
@@ -300,7 +300,7 @@ function npcKill(k, now) {
       } finally { damageDepth--; allowDamage.delete(sp.slot); }
       done = !pawn.IsAlive();
     });
-    sp.standAt = now;
+    /** @type {any} */ (sp).standAt = now;
     if (done) standRevive.push({ slot: sp.slot, at: now + CONFIG.STANDIN_BACK });
     else warnOnce('standin', 'a stand-in kill did not kill the bot pawn (a plugin or damage filter?): CS2 score instead');
   }

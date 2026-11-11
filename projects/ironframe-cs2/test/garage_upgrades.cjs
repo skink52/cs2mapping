@@ -132,14 +132,16 @@ function newGameWith(draft, pilot) { const g = newGame(12); g.addPlayer(0, { tea
   ok(pe.pilot && pe.pilot.credits === 90000 && pe.pilot.rank === 12, 'server: the mailbox pilot arrived (rank 12, 90 000 CR)');
   A.garageOpen(pe, '');
   const k = pe.garage.tracks.findIndex((t) => t.idx === 0);
+  // 11 Nov 2026 (skink52): a free starter part used to upgrade free while a bought part paid for the same track
+  ok(byId.get(frameId).cost === 0 && pe.garage.tracks[k].cost === 600 && pe.garage.tracks[k].c === '600 CR', 'server: a free starter frame\'s first upgrade is 600 CR (caps.upgrade_floor_cost), not FREE', pe.garage.tracks[k].c);
   A.garageClick(pe, 'ifr_ur' + k); A.garageClick(pe, 'ifr_gcy');
   ok(sent.some((l) => l === 'echo ifr_srv 1 upg ' + frameId), 'server: CONFIRM sends "ifr_srv 1 upg 4" (sent: ' + sent.join(' | ') + ')');
   ok(pe.garage.pending, 'server: the garage waits for the answer');
-  deliver(payload([[frameId, 1]], 90000 - 1350));      // the plugin bought it: level 1, credits down
+  deliver(payload([[frameId, 1]], 90000 - 600));      // the plugin bought it: level 1, credits down
   ok(!pe.garage.pending && A.garageLevel(pe, frameId) === 1, 'server: the answer shows MK I in the garage');
   A.garageSave(pe, true);
   ok(sent.some((l) => l.startsWith('echo ifr_srv 1 save 1 4,101')), 'server: SORTIE saves the loadout first');
-  deliver(payload([[frameId, 1]], 90000 - 1350));      // the save answer
+  deliver(payload([[frameId, 1]], 90000 - 600));      // the save answer
   ok(!pe.garage.open, 'server: the save answer launches the sortie');
   const m = spawned(g, slot);
   const frame = byId.get(frameId), cls = PARTS.classes[frame.class];

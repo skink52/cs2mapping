@@ -357,3 +357,6 @@ the original addons are in [../creation/](../creation/); cs_script API details a
   from 70.6 to 49.3 min.
 - Hammer while CS2 is running: a second instance with `cs2.exe -addon <name> -tools -steam -retail -insecure -noassetbrowser -vulkan` (≈2× RAM/VRAM;
   don't build while both have the addon mounted; untested).
+
+- **Custom HUD text built from one panel per letter is wider at small windows** (IRONFRAME, 11 Nov 2026, seen in game): Panorama scales a 1080-high layout to the window and rounds every panel to whole pixels, so a row of glyph panels grows by a fraction of a pixel per letter (5-10 % on a 30-letter row at a small window) and letters that no longer fit a flow row are not drawn. Give such rows 15 % slack, or bake fixed text into one picture.
+- **A map's custom sound events are silent on a server that does not mount the addon** (IRONFRAME, 11 Nov 2026; fix not heard yet): `soundevents/soundevents_addon.vsndevts` loads by itself only for a mounted (Workshop) addon. With the files copied loose under `game/csgo`, sounds started on an entity never play (single-client starts still do). A server plugin can add the file in `OnServerPrecacheResources`.

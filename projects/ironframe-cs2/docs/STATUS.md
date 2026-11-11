@@ -15,6 +15,43 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**11 Nov 2026, noon: skink52 played Dunes on the local test server (joined through Hammer). Then four changes from that session, build 23: 18 suites PASS, mock PASS, both addons deployed, plugin harness 3/3, test server restarted on Dunes 12:55.**
+- **SEEN IN GAME, good:** AI mech kills count on the scoreboard (the stand-ins; console: "AI mech kills are credited as real CS2 kills
+  through CS2 bot stand-ins"), the killfeed hides them (plugin `KillfeedHumansOnly`), CS2 bots join on Dunes (4 of them), destructible
+  props bind ("94 of 94 entries have their ifr_car entity").
+- **!help cards were clipped in game** (screenshot: every row one to three letters short, the key column running into the text). Cause:
+  a static label is a row of glyph panels sized for 1080 high; CS2 scales the HUD to the window and rounds each panel to whole pixels,
+  so at a smaller window every letter is a fraction wider, a 30-letter row several letters wider, and what does not fit the row is not
+  drawn. Fix: both cards are ONE baked picture each (tools/hud.py `bake_card`, `card_ctrl.png` / `card_help.png`, drawn at twice the
+  size): nothing to re-flow. Every other static row (`slbl`) is 14 % + 6 px wider than its letters. Not seen in game yet.
+  **This also means all static HUD text is slightly wide at small windows**: right-aligned and centred static labels sit a few px off.
+- **World sounds silent on the server** (skink52: "sounds for being hit play in game, but other sounds dont (shooting etc)"). Tones
+  (`StartSoundOnSingleClient`) played; everything started on an entity did not. Likely cause: the addon's sound events file is loaded
+  by CS2 only for a mounted addon; the test server has the files loose under game\csgo (tools/server_copy.py), so the server never
+  knew the events. Fix in the plugin: IronFrame `Precache` adds `soundevents/soundevents_addon.vsndevts` to the server's resource
+  manifest on `mg_ironframe_*` maps (slime-mg-gm docs/ironframe.md "Sounds on a server"). **Not heard yet.** If still silent: the next
+  suspect is the sound's source entity (the null-model anchor props) not being sent to clients.
+- **`/help` and `/garage` did nothing for the map** (skink52: "/help works to bring up the server help, but it doesn't bring up the
+  ironframe help"). CounterStrikeSharp keeps a `/` chat line to itself, so the script never saw it. Now the plugin passes its own
+  commands on: `RunScriptInput ifr_cmd_<name>` on `ifr_script` with the pawn as activator (help, garage, back, od, cam, hints, bots, mode;
+  SERVER_CONTRACT.md section 11). `/garage` and `!garage` open the map's hangar garage on a mech map (the plugin's chat garage is the
+  fallback without the script); a `!` line reaches the map twice (chat and input), the second is dropped (same word within 0.8 s).
+  Mock: help by chat and by input both checked. Not tried in game yet.
+- **Starter parts' upgrades cost credits** (skink52 saw FREE next to priced upgrades in the garage; every part has the same track, so a
+  starter got for nothing what a bought part pays 4.5 x its price for). `caps.upgrade_floor_cost` 2000 in parts.json (the cheapest paid
+  part): a free part's steps are 600, 1200, 1800, 2400, 3000. Core `IF_upgradeCost` and plugin `Catalog.UpgradeCost` use the same floor,
+  so the garage shows what the server charges; the operator's `UpgradeFloorCost` is 0 = the catalogue's. Levels already taken stay.
+  Stand-alone (no plugin) upgrades are still free. Tests: garage_upgrades (600 CR on the starter frame), plugin harness (`upg 101`
+  denied with 250 credits).
+- **Ammo, healing, overdrive, artillery** (skink52: "the most annoying part of gameplay is running out of ammo - there's nothing you
+  can do about it, and there's also no way to heal"; "no artillery fire seemed to reach my lock"). docs/FEATURES.md has the numbers.
+  Overdrive is a FIELD REFIT on light and medium frames (+45 % AP, EN and all ammo full) and a bigger blast on heavies (3 200 within
+  1 200 u, +40 % EN); every kill salvages 25 % ammo and 8 % AP; a weapon rested 6 s rebuilds its reserve (full in 120 s), so nobody is
+  left dry. Artillery used to fire the instant it was earned at whatever was locked, at the spot the target had already left: it now
+  arms after 1.5 s, each shell aims 0.9 s before landing at where the target will be, with a falling streak, and says so when the
+  target is too close. Unit tested (features: 62 checks); **balance not re-measured** (bots refit and salvage too: re-run
+  test/balance.cjs and watch round length), nothing of it played yet.
+
 **11 Nov 2026, 11:52: Dunes on the local test server (C:\cs2server, port 27015).** `python -I tools/server_copy.py copy mg_ironframe_dunes`
 copies the map .vpk and the addon's compiled files under the server's game\csgo (5 390 files, 1.36 GB; manifest
 logs/server_copy_mg_ironframe_dunes.txt; `remove` takes exactly those off again). Re-run `copy` after every deploy, or the server keeps

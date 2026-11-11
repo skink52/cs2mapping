@@ -55,6 +55,12 @@ at(57.5, 'stand-in kills: before', () => { state.npc = { k0: api.ctrl(ME).kills,
 for (const t of [58, 59, 60]) at(t, 'an AI mech destroyed by ME', () => { api.input('ifr_test_npckill', {}); });
 at(62, 'stand-in kills: after', () => { if (!state.npc) return; state.npc.k1 = api.ctrl(ME).kills; state.npc.d1 = botsOf().reduce((n, c) => n + c.deaths, 0);
   state.npc.alive = botsOf().length > 0 && botsOf().every((c) => c.pawn && c.pawn.IsAlive()); });
+// commands from the server plugin (ifr_cmd_<name>, the pawn as the activator): at 60.5 s ME is piloting; !help by chat AND by the input
+// in the same tick must leave the help card up (one command, not two: the second would put it away)
+at(60.5, 'help by chat and by the plugin', () => { api.chat(ME, '!help'); api.input('ifr_cmd_help', { activator: api.pawn(ME) }); });
+at(61.5, 'the help card is up', () => { state.helpUp = api.hud(ME, 'ifr_help').has('stOn') && api.hud(ME, 'ifr_ctrl').has('stOn'); });
+at(62.5, 'help by the plugin alone: away again', () => { api.input('ifr_cmd_help', { activator: api.pawn(ME) }); });
+at(63.2, 'the help card is away', () => { state.helpAway = !api.hud(ME, 'ifr_help').has('stOn'); });
 export default {
   setup(a) {
     api = a; api.manual.add(ME);
@@ -160,6 +166,8 @@ export default {
       if (a.stats.teamkills) fails.push('team kill penalties: ' + a.stats.teamkills);
       if (a.cvar('mp_teammates_are_enemies') !== '1') fails.push('mp_teammates_are_enemies is ' + a.cvar('mp_teammates_are_enemies'));
     } else fails.push('stand-in kills: the check never ran');
+    if (state.helpUp !== true) fails.push('server commands: !help by chat and ifr_cmd_help together did not leave the help cards up');
+    if (state.helpAway !== true) fails.push('server commands: ifr_cmd_help alone did not put the help cards away');
     // kill credit: real CS2 kills between pawns, and score for the script AI's kills
     const ctl = a.players.filter(Boolean);
     const kills = ctl.reduce((n, c) => n + c.kills, 0), score = ctl.filter((c) => !c.bot).reduce((n, c) => n + c.score, 0);

@@ -208,7 +208,7 @@ out.push('', '## Anti-stomp: a fully upgraded loadout against stock', '');
     const p = P.parts.find((x) => x.key === k); if (!p) continue;
     const full = track(p); out.push(`| ${p.name} | ${p.cost} | ${full} | ${Math.ceil(full / med)} | ${(full / perDay).toFixed(1)} |`);
   }
-  out.push('', 'Starter parts (price 0) upgrade free unless the server sets `IronFrame.UpgradeFloorCost`. The power on top is small by design (AP +5 %, DPS +3 % at MK V); a frame at MK V also wears its aura in the accent colour.');
+  out.push('', `Starter parts (price 0) upgrade as if they cost ${P.caps.upgrade_floor_cost || 0} (\`caps.upgrade_floor_cost\`, the cheapest paid part; 11 Nov 2026: they were free, and every part has the same track): a full track is ${track({ cost: 0 })} credits, ${Math.ceil(track({ cost: 0 }) / med)} rounds. The power on top is small by design (AP +5 %, DPS +3 % at MK V); a frame at MK V also wears its aura in the accent colour.`);
 }
 // ---------------------------------------------------------------------------------------------------------- findings
 famRows.sort((a, b) => b.wr - a.wr);

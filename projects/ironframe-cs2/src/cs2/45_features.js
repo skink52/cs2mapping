@@ -10,7 +10,7 @@
 // ===================================================================================================================
 const featTimers = [];        // {at, fn}
 const featState = new Map();  // slot -> {full: bool}
-const CRATE_TEXT = { repair: 'REPAIR: +40 % AP now', ammo: 'AMMO REFILLED on every weapon', damage: 'DAMAGE +25 % for 15 s', shield: 'SHIELD: -40 % damage taken for 15 s', overdrive: 'OVERDRIVE FULL: hold SPACE + R + E' };
+const CRATE_TEXT = { repair: 'REPAIR: +40 % AP now', ammo: 'AMMO REFILLED on every weapon', damage: 'DAMAGE +25 % for 15 s', shield: 'SHIELD: -40 % damage taken for 15 s', overdrive: 'OVERDRIVE FULL: hold R + E' };
 
 // ---------------------------------------------------------------- onboarding (10 Nov 2026 evening playtest: "not much is easy to understand or jump
 // straight into"): the controls card at the first spawns and death screens (and on !help, or after holding Tab), the loadout card at every spawn,
@@ -29,15 +29,16 @@ const HINTS = {
   death: 'DESTROYED. Ctrl or F now opens the garage: change weapons or frame. Space drops you straight back in',
   zone: 'CAPTURING: stay inside the ring. More pilots capture faster; an enemy inside contests it',
   crate: 'SUPPLY CRATE LANDED (the glinting box): walk into it for a repair, ammo, a boost or a full overdrive',
-  od: 'OVERDRIVE READY: press R + E together and hold (or !od). 1.2 s charge, then a blast: 2 500 damage and stagger within 600 u',
+  od: 'OVERDRIVE READY: press R + E together and hold (or !od). 1.2 s charge, then a blast: 3 200 damage within 1 200 u, +40 % EN',
+  odRefit: 'OVERDRIVE READY: press R + E together and hold (or !od). 1.2 s charge, then a FIELD REFIT: +45 % AP, full EN, every weapon reloaded',
   odAgain: 'OVERDRIVE READY: hold R + E together',
-  arty: 'ARTILLERY: aim at an enemy at least 700 u away. Six shells fall on it by themselves as soon as you lock',
+  arty: 'ARTILLERY: keep an enemy at least 700 u away in your ring. Six shells follow it by themselves',
   heat: 'OVERHEATED: this weapon cools before it fires again. Fire in bursts and watch its bar',
   shieldUp: 'Your arm shield blocks from the front only while you hold its key, and drains EN',
 };
 const STREAK_TEXT = {
   radar: ' KILL STREAK: RADAR PING. Every enemy within 6 000 u shows on your radar for 10 s',
-  arty: ' KILL STREAK: ARTILLERY READY. Lock an enemy 700 u or more away and six shells fall on it',
+  arty: ' KILL STREAK: ARTILLERY READY. Keep an enemy 700 u or more away in your ring: six shells chase it',
   ace: ' KILL STREAK: ACE! +20 % speed and your overdrive refills by itself for 20 s',
 };
 // the event being handled: 80_chat.js reply() reads it to rank a message (news about other pilots never interrupts a prompt for this one)
@@ -183,7 +184,7 @@ function featTick() {
       const m = game.mechs.get(pe.slot); if (!m) continue;
       let st = featState.get(pe.slot); if (!st) { st = { full: false }; featState.set(pe.slot, st); }
       const full = m.alive && m.overdrive >= 1 && !m.odPhase;
-      if (full && !st.full) { if (!onbHint(pe.slot, 'od', 9)) reply(pe.slot, HINTS.odAgain, 5, false, 2); sndTone(pe.slot, 'ui_capture'); }
+      if (full && !st.full) { if (!onbHint(pe.slot, game.odKind && game.odKind(m) === 'refit' ? 'odRefit' : 'od', 9)) reply(pe.slot, HINTS.odAgain, 5, false, 2); sndTone(pe.slot, 'ui_capture'); }
       st.full = full;
     }
   }
@@ -200,11 +201,19 @@ function featEvent(ev) {
       if (ev.phase === 'charge') {
         pfxBurst('spark', c, 1.2); sndAt('boom_small', ev.pos, true);
         for (let k = 1; k <= 3; k++) featTimers.push({ at: gameTime() + 0.35 * k, fn: () => { const m = game.mechs.get(ev.slot); if (m && m.alive) pfxBurst('spark', v3(m.pos.x, m.pos.y, m.pos.z + 100 + 40 * k), 0.5); } });
-        camKick(ev.slot, 10, 6, 0); reply(ev.slot, 'OVERDRIVE CHARGING: the blast comes in 1.2 s, stay close to them', 2);
+        camKick(ev.slot, 10, 6, 0); if (ev.kind === 'refit') reply(ev.slot, 'FIELD REFIT IN 1.2 S: you are slow until it is done, get behind something', 2);
+        else reply(ev.slot, 'OVERDRIVE CHARGING: the blast comes in 1.2 s, stay close to them', 2);
+      } else if (ev.phase === 'refit') {
+        // light / medium frames: no blast, the mech is repaired and rearmed (86_features.js featRefit)
+        for (let k = 0; k < 4; k++) pfxBurst('spark', v3(c.x, c.y, c.z - 60 + 70 * k), 0.8);
+        sndAt('capture_done', ev.pos, true); sndTone(ev.slot, 'ui_capture'); camKick(ev.slot, 14, -8, 0);
+        reply(ev.slot, 'FIELD REFIT: ' + (ev.heal > 0 ? '+' + ev.heal + ' AP, ' : '') + 'EN full, every weapon reloaded', 4, false, 2);
       } else {
-        for (const d of [[0, 0], [260, 0], [-260, 0], [0, 260], [0, -260]]) pfxBurst('gboom', v3(c.x + d[0], c.y + d[1], c.z), 3);
+        const br = Math.max(260, (ev.radius || 600) * 0.43);       // the fireballs fill the blast: 260 u out for 600, 520 u for a heavy frame's 1 200
+        for (const d of [[0, 0], [br, 0], [-br, 0], [0, br], [0, -br]]) pfxBurst('gboom', v3(c.x + d[0], c.y + d[1], c.z), 3);
+        if (br > 400) for (const d of [[br, br], [-br, br], [br, -br], [-br, -br]]) pfxBurst('gboom', v3(c.x + d[0] * 0.7, c.y + d[1] * 0.7, c.z), 3);
         pfxBurst('spark', c, 1.0); sndAt('boom_large', ev.pos, true);
-        explodeShake(ev.pos, 1400); camKick(ev.slot, 120, -60, 0);
+        explodeShake(ev.pos, Math.max(1400, (ev.radius || 600) * 2.3)); camKick(ev.slot, 120, -60, 0);
         featHumansNear(ev.pos, (pe) => { if (pe.slot !== ev.slot) reply(pe.slot, nameOf(ev.slot) + ' used OVERDRIVE', 2); });
       }
       break;
@@ -228,16 +237,21 @@ function featEvent(ev) {
       else if (ev.kind === 'ace') {
         reply(s, ev.streak + STREAK_TEXT.ace, 8); sndTone(s, 'ui_capture');
         for (const pe of people.values()) if (pe.human && pe.slot !== s && game.sameArena(pe.slot, s)) reply(pe.slot, nameOf(s) + ' is an ACE', 4);
+      } else if (ev.kind === 'arty_close') {
+        reply(s, 'ARTILLERY HOLDS FIRE: that target is closer than 700 u. Lock one further away', 4, false, 2);
       } else if (ev.kind === 'arty_fire') {
-        reply(s, 'ARTILLERY INBOUND', 3);
+        reply(s, 'ARTILLERY FIRING' + (ev.target >= 0 ? ' ON ' + nameOf(ev.target) : '') + ': six shells follow it', 4, false, 2); sndTone(s, 'ui_capture');
         if (ev.pos) featHumansNear(ev.pos, (pe) => { if (pe.slot !== s) reply(pe.slot, 'INCOMING ARTILLERY', 3); });
       }
       break;
     }
+    case 'salvage': reply(ev.slot, 'SALVAGE: +25 % ammo' + (ev.heal > 0 ? ', +' + ev.heal + ' AP' : ''), 3, false, 0); break;
     case 'shell': {
       if (!ev.pos) break;
-      const at = gameTime() + Math.max(0, (ev.delay || 1) - 0.5), p = ev.pos;
-      featTimers.push({ at, fn: () => pfxBurst('spark', v3(p.x, p.y, p.z + 900), 0.4) });
+      // the shell is seen coming: a mark on the ground when it commits (0.9 s ahead), then a streak falling onto it
+      const p = ev.pos, land = gameTime() + Math.max(0, ev.delay || 0);
+      pfxBurst('spark', v3(p.x, p.y, p.z + 20), 0.5);
+      for (let k = 0; k < 4; k++) featTimers.push({ at: Math.max(gameTime(), land - 0.48 + 0.12 * k), fn: () => pfxBurst('spark', v3(p.x, p.y, p.z + 1400 - 380 * k), 0.9) });
       break;
     }
     default: break;

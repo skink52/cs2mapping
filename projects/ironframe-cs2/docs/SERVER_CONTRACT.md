@@ -176,7 +176,7 @@ deny code for the same input; `test/contract.cjs` and `tests/run.py --only ironf
 - **XP -> rank**: `step(n) = floor(rank_base + rank_mult * n^rank_pow)` is the XP from rank n to n+1; `xpFor(r) = sum(step(n), n = 1..r-1)`
   (`xpFor(1) = 0, xpFor(2) = 780, xpFor(3) = 1889, xpFor(4) = 3424, xpFor(10) = 25386, xpFor(50) = 1270507`); `rankFor(xp)` = the largest
   r <= 50 with `xpFor(r) <= xp`. The plugin owns rank; the map shows the payload's rank and may show "XP to next" from the formula.
-- **Upgrade cost** `floor(cost x caps.upgrade_cost_pct / 100) x (level + 1)` (integer maths, pct 30 in parts.json; core `IF_upgradeCost`, plugin `Catalog.UpgradeCost`); a free starter part upgrades free unless the server sets `IronFrame.UpgradeFloorCost`.
+- **Upgrade cost** `floor(cost x caps.upgrade_cost_pct / 100) x (level + 1)` (integer maths, pct 30 in parts.json; core `IF_upgradeCost`, plugin `Catalog.UpgradeCost`); since 11 Nov 2026 `cost` here is `max(cost, caps.upgrade_floor_cost)` (2000 in parts.json: a free starter part's steps are 600, 1200, 1800, 2400, 3000; they were free before, and levels a pilot already has stay). The server's `IronFrame.UpgradeFloorCost` is 0 = the catalogue's floor; any other value is charged by the server while the map's garage still shows the catalogue's price, so leave it 0.
 - **Payload details**: `owned` = hex of `sum(2^id)` (lower case, no leading zeros, `0` for none; read with BigInt); `upgrades` ascending
   by id; `flags` 1 daily available, 2 rookie (rank < 10), 4 staff. Origin fallback: paged (entity 0 = page, pages, kind; three ints per
   entity, 0..8191; pilot ints `[rank, active, flags, xp lo13, xp hi13, credits lo13, credits hi13, n, (id, lvl) x n, L1[9], L2[9], L3[9]]`,
@@ -283,3 +283,12 @@ up to five rows, best first; `NAME` is the callsign, else the player's name clea
 `ifr_server` and no activator (one input a page). The pilot's own place is `place` of the profile (§8). The map shows the rows beside
 the podium (with `YOU  # place`), in the garage's PILOT tab and on `!top`; stand-alone they are hidden.
 
+## 11. Chat commands passed on by the plugin (added 11 Nov 2026)
+
+CounterStrikeSharp takes every chat line that starts with `/` for itself and hides it: the map's own chat hook never sees `/help` or
+`/garage`. The plugin passes these on: `RunScriptInput ifr_cmd_<name>` on `ifr_script`, **the player's pawn as the activator**, no payload.
+Names: `help garage back od cam hints bots mode` (80_chat.js `CHAT_FROM_SERVER`); the map runs its own `!<name>` for that player, without
+arguments. A `!` line reaches both sides, so the map drops the second of the same command from one player within 0.8 s.
+Plugin side: `css_help` / `css_commands` also send `help`; `css_garage` sends `garage` instead of opening the plugin's chat garage while the
+map's script is there; `css_back css_od css_cam css_hints css_bots css_controls css_keys css_ironframe css_mech` are forwarders. A map
+without these inputs ignores them.

@@ -718,6 +718,7 @@ function IF_cannonPenalty(m) { return m.cannonMoveAcc >= 1 ? 0 : (m.speed > 150 
 
 function IF_weaponsStep(game, m, dt) {
   const inp = m.input, fireOk = game.combatOn && m.dropT <= 0 && m.alive;
+  const SUP = game.feat && !game.feat.off ? game.feat.supply : null;
   let braced = false;
   for (let hp = 0; hp < 4; hp++) {
     const wp = m.weapons[hp], w = wp.w;
@@ -726,6 +727,19 @@ function IF_weaponsStep(game, m, dt) {
     wp.wasFire = pressed; wp.firing = false;
     if (wp.cd > 0) wp.cd -= dt;
     if (wp.reloading) { wp.reloadT -= dt; if (wp.reloadT <= 0) { const take = Math.min(wp.magSize, wp.ammo); wp.mag = take; wp.ammo -= take; wp.reloading = false; } }
+    // a rested weapon rebuilds its reserve (86_features.js "Supply"): not fired for restT s -> empty to full in fabTime s. A floor: no pilot is left dry.
+    if (SUP && SUP.fabTime > 0 && w.ammo !== undefined) {
+      const tot = wp.ammo + wp.mag, cap = w.ammo - wp.magSize;
+      if (tot < wp.fabTot) wp.restT = 0; else wp.restT = (wp.restT || 0) + dt;
+      wp.fabTot = tot;
+      if (wp.restT >= SUP.restT && wp.ammo < cap) {
+        wp.fab = (wp.fab || 0) + w.ammo / SUP.fabTime * dt;
+        if (wp.fab >= 1) {
+          const n = Math.floor(wp.fab); wp.fab -= n; wp.ammo = Math.min(cap, wp.ammo + n); wp.fabTot = wp.ammo + wp.mag;
+          if (wp.magSize && wp.mag <= 0 && !wp.reloading) { wp.reloading = true; wp.reloadT = w.reload || 2; }
+        }
+      } else if (wp.ammo >= cap) wp.fab = 0;
+    }
     if (wp.charges !== undefined && w.charges && wp.charges < w.charges + (wp.bonusCharges || 0)) {
       wp.chargeCd -= dt;
       if (wp.chargeCd <= 0) { wp.charges++; wp.chargeCd = w.cd || 15; }

@@ -15,7 +15,7 @@ from the top and the left / centre / right, opacity for show and hide, transform
 the top panel, every class the script switches starts with "st" and has no rule of its own, hittest off.
 Class budget (per player): see docs/HUD.md "Budget".
 """
-import os, sys, re, json
+import os, sys, re, json, math
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.normpath(os.path.join(HERE, '..', '..', '..', 'create')))
@@ -181,7 +181,9 @@ def slbl(text, cls, w, hh, size='S', color='Text', align='left', id_=None, **pl)
     hh = max(hh, M.cap + 4)
     ox = 0 if align == 'left' else (w - rw) if align == 'right' else (w - rw) // 2
     kids = [P(None, 'G g%d' % ord(ch if 33 <= ord(ch) < 127 and not 97 <= ord(ch) <= 122 else '?') if ch != ' ' else 'G g32') for ch in t]
-    rp, ny = row_pl(rw, hh, M, ox)
+    # the row is wider than its letters (11 Nov 2026): CS2 rounds each glyph panel to whole pixels at the window's scale, a row can come out
+    # 5-10 % wider than at 1080 high, and a letter that does not fit the row is not drawn
+    rp, ny = row_pl(rw + int(math.ceil(rw * 0.14)) + 6, hh, M, ox)
     row = P(None, row_cls(gs, color, '%s %s' % (rp, ny)), kids)
     return P(id_, ('Sl %s %s' % (cls, h.place(w=w, h=hh, **pl))).replace('  ', ' ').strip(), [row])
 
@@ -695,32 +697,58 @@ rule('.CardHd', background_color='#12202cf0')
 CTRL_ROWS = [('W A S D', 'MOVE'), ('SHIFT', 'BOOST (HOLD IT)'), ('CTRL', 'QUICK BOOST: DODGE'), ('SPACE', 'JUMP, HOLD TO HOVER'), ('MOUSE 1 / 2', 'ARM WEAPONS'),
              ('R / E', 'SHOULDER WEAPONS'), ('AIM', 'RING ON ENEMY = LOCK'), ('F', 'NEXT TARGET'), ('HOLD F', 'FRAME SKILL (IF ANY)'), ('HOLD R + E', 'OVERDRIVE (GOLD BAR)'),
              ('DEAD: CTRL', 'GARAGE: NEW LOADOUT'), ('CHAT', '!HELP  !GARAGE  !VOTE')]
-CPITCH = 20
-CKW = max(F.METRICS['XS'].text_w(k_) for k_, _ in CTRL_ROWS) + 12
-CAW = max(F.METRICS['XS'].text_w(a_) for _, a_ in CTRL_ROWS) + 8
-CCW = 10 + CKW + CAW + 10
-CTRL_Y = PILOT_Y        # over the pilot plate and the streak meter while it shows: nothing of ours under y 600 on the left (CS2's chat box)
-ck = [P(None, 'CardHd ' + h.place(w=CCW, h=24, x=0, y=0)), slbl('CONTROLS', '', 200, 20, 'XS', 'Acc', x=10, y=2), slbl('!HELP SHOWS THIS', '', 200, 20, 'XS', 'Dim', 'right', x=CCW - 210, y=2)]
-for i_, (k_, a_) in enumerate(CTRL_ROWS):
-    ck.append(slbl(k_, '', CKW, 20, 'XS', 'Gold', x=10, y=27 + i_ * CPITCH)); ck.append(slbl(a_, '', CAW, 20, 'XS', 'Text', x=10 + CKW, y=27 + i_ * CPITCH))
-reg('ifr_ctrl', ['stOn'], prio=3)
-# 11 Nov 2026 (skink52: "The !help menu has a lot of text get cut off"): !help was this card plus four long sentences paged through the message line
-# (Labels in a font whose in-game width is unverified, 3.5 s a page). Now everything !help says is static neon type on a second card beside the
-# controls: no Label, no wrapping, no paging, so nothing can be cut. Both cards stay up 25 s; the bottom edge stays above CS2's chat box (y 600).
-HELP_TIPS = ['MISSILES TRACK ONCE THE BRACKET IS RED', 'GOLD BAR FULL: HOLD R + E = OVERDRIVE', 'DEAD: CTRL OR F OPENS THE GARAGE', 'HOLD TAB, THEN LET GO: THIS HELP']
+# 11 Nov 2026 (skink52's screenshot of !help in game): every row of both cards was cut one to three letters short and the key column ran
+# into the text column. A static label is a row of glyph panels, each as wide as its letter at 1080 high; CS2 scales the HUD to the window
+# and rounds every panel to whole pixels, so on a smaller window each letter comes out a fraction wider, a row of 30 letters several
+# letters wider, and what no longer fits the row is not drawn. The cards are now ONE picture each (bake_card: the same neon glyphs, drawn
+# at twice the size): the text cannot re-flow at any window size. Every other static row got slack (slbl).
+HELP_TIPS = ['MISSILES TRACK ONCE THE BRACKET IS RED', 'GOLD BAR: HOLD R + E = REFIT OR BLAST', 'KILLS AND RESTED GUNS GIVE AMMO BACK', 'HOLD TAB, THEN LET GO: THIS HELP']
 HELP_CMDS = [('!GARAGE', 'CHANGE YOUR MECH'), ('!LOADOUT 1-6', 'USE A SAVED LOADOUT'), ('!SPEC  !BACK', 'WATCH / RETURN'), ('!VOTE', 'VOTE ON THE NEXT MODE'),
              ('!MODE', 'THIS MODE AND SCORE'), ('!PILOT', 'RANK, XP, CREDITS'), ('!CAM', 'CAMERA DISTANCE')]
-HKW = max(F.METRICS['XS'].text_w(k_) for k_, _ in HELP_CMDS) + 12
-HCW = 10 + max(max(F.METRICS['XS'].text_w(t_) for t_ in HELP_TIPS), HKW + max(F.METRICS['XS'].text_w(a_) for _, a_ in HELP_CMDS)) + 14
-hk_ = [P(None, 'CardHd ' + h.place(w=HCW, h=24, x=0, y=0)), slbl('HOW TO FIGHT', '', 200, 20, 'XS', 'Acc', x=10, y=2)]
-for i_, t_ in enumerate(HELP_TIPS): hk_.append(slbl(t_, '', HCW - 20, 20, 'XS', 'Text', x=10, y=27 + i_ * CPITCH))
-_hy = 27 + len(HELP_TIPS) * CPITCH + 2
-hk_ += [P(None, 'CardHd ' + h.place(w=HCW, h=22, x=0, y=_hy)), slbl('CHAT COMMANDS', '', 200, 20, 'XS', 'Acc', x=10, y=_hy + 1)]
-for i_, (k_, a_) in enumerate(HELP_CMDS):
-    hk_.append(slbl(k_, '', HKW, 20, 'XS', 'Gold', x=10, y=_hy + 25 + i_ * CPITCH)); hk_.append(slbl(a_, '', HCW - HKW - 20, 20, 'XS', 'Text', x=10 + HKW, y=_hy + 25 + i_ * CPITCH))
-HELP_H = _hy + 25 + len(HELP_CMDS) * CPITCH + 4
-reg('ifr_help', ['stOn'], prio=3)
+CPITCH = 20
+_CM = F.master('c28'); _CK = F.SIZES['XS'] / float(_CM.cap)          # the XS glyph master and its scale to layout px
+def card_w(t): return int(math.ceil(sum(_CM.adv.get(ord(ch), _CM.adv[63]) for ch in t.upper()) * _CK))
+def bake_card(name, w, hgt, items):
+    """items: [(text, x, y, colour key, align, box w)] in layout px (y = top of a 20 px row) -> IMG_DIR/<name>.png at twice the size"""
+    from PIL import Image as _I
+    Z = int(round(1 / _CK))
+    im = _I.new('RGBA', (w * Z, hgt * Z), (0, 0, 0, 0))
+    for text, x, y, col, align, bw in items:
+        t = text.upper(); tw = sum(_CM.adv.get(ord(ch), _CM.adv[63]) for ch in t)
+        cx = x * Z + (0 if align == 'left' else bw * Z - tw)
+        top = y * Z + int(round((20 * Z - _CM.cap) / 2 - (_CM.base - _CM.cap)))
+        rgb = tuple(int(PAL[col][i:i + 2], 16) for i in (1, 3, 5))
+        for ch in t:
+            c = ord(ch) if ord(ch) in _CM.adv else 63
+            if c != 32:
+                g = _CM.render(c, rgb); px, py = int(cx - _CM.pad), top
+                x0, y0 = max(0, px), max(0, py); x1, y1 = min(im.width, px + g.width), min(im.height, py + g.height)
+                if x1 > x0 and y1 > y0:
+                    reg_ = im.crop((x0, y0, x1, y1)); reg_.alpha_composite(g.crop((x0 - px, y0 - py, x1 - px, y1 - py))); im.paste(reg_, (x0, y0))
+            cx += _CM.adv[c]
+    os.makedirs(IMG_DIR, exist_ok=True)
+    im.save(os.path.join(IMG_DIR, name + '.png'))
+CKW = max(card_w(k_) for k_, _ in CTRL_ROWS) + 16
+CAW = max(card_w(a_) for _, a_ in CTRL_ROWS) + 10
+CCW = 10 + CKW + CAW + 10
+CTRL_Y = PILOT_Y        # over the pilot plate and the streak meter while it shows: nothing of ours under y 600 on the left (CS2's chat box)
 CTRL_H = 27 + len(CTRL_ROWS) * CPITCH + 4
+_ci = [('CONTROLS', 10, 2, 'Acc', 'left', 0), ('!HELP SHOWS THIS', CCW - 210, 2, 'Dim', 'right', 200)]
+for i_, (k_, a_) in enumerate(CTRL_ROWS): _ci += [(k_, 10, 27 + i_ * CPITCH, 'Gold', 'left', 0), (a_, 10 + CKW, 27 + i_ * CPITCH, 'Text', 'left', 0)]
+bake_card('card_ctrl', CCW, CTRL_H, _ci)
+rule('.CardCtrl', background_image=url('card_ctrl.png')); rule('.CardHelp', background_image=url('card_help.png'))
+ck = [P(None, 'CardHd ' + h.place(w=CCW, h=24, x=0, y=0)), P(None, 'Img CardCtrl ' + h.place(w=CCW, h=CTRL_H, x=0, y=0))]
+reg('ifr_ctrl', ['stOn'], prio=3)
+HKW = max(card_w(k_) for k_, _ in HELP_CMDS) + 16
+HCW = 10 + max(max(card_w(t_) for t_ in HELP_TIPS), HKW + max(card_w(a_) for _, a_ in HELP_CMDS)) + 14
+_hy = 27 + len(HELP_TIPS) * CPITCH + 2
+HELP_H = _hy + 25 + len(HELP_CMDS) * CPITCH + 4
+_hi = [('HOW TO FIGHT', 10, 2, 'Acc', 'left', 0), ('CHAT COMMANDS', 10, _hy + 1, 'Acc', 'left', 0)]
+for i_, t_ in enumerate(HELP_TIPS): _hi.append((t_, 10, 27 + i_ * CPITCH, 'Text', 'left', 0))
+for i_, (k_, a_) in enumerate(HELP_CMDS): _hi += [(k_, 10, _hy + 25 + i_ * CPITCH, 'Gold', 'left', 0), (a_, 10 + HKW, _hy + 25 + i_ * CPITCH, 'Text', 'left', 0)]
+bake_card('card_help', HCW, HELP_H, _hi)
+hk_ = [P(None, 'CardHd ' + h.place(w=HCW, h=24, x=0, y=0)), P(None, 'CardHd ' + h.place(w=HCW, h=22, x=0, y=_hy)), P(None, 'Img CardHelp ' + h.place(w=HCW, h=HELP_H, x=0, y=0))]
+reg('ifr_help', ['stOn'], prio=3)
 ctrl = P(None, 'Common ' + h.place(w=CCW + 4, h=CTRL_H + 4, x=LCX, y=CTRL_Y), [P('ifr_ctrl', 'Card ' + h.place(w=CCW, h=CTRL_H, x=0, y=0), ck)])
 assert CTRL_Y + max(CTRL_H, HELP_H) + 4 <= 600, 'the help cards reach into the chat box: %d' % (CTRL_Y + max(CTRL_H, HELP_H) + 4)
 helpc = P(None, 'Common ' + h.place(w=HCW + 4, h=HELP_H + 4, x=LCX + CCW + 10, y=CTRL_Y), [P('ifr_help', 'Card ' + h.place(w=HCW, h=HELP_H, x=0, y=0), hk_)])
@@ -1158,7 +1186,7 @@ fight_common = merge(
     T(ifr_bfdmg='12 S LEFT', ifr_bfshield='8 S LEFT', ifr_bface='20 S: OVERDRIVE REFILLS', ifr_bfradar='10 S: ENEMIES ON RADAR', ifr_bfarty='READY: LOCK A TARGET', ifr_ap='6 420', ifr_apmax='/ 9000', ifr_en='2 850',
       ifr_w0n='AR-22', ifr_w0a='24 / 300', ifr_w1n='SG-SCAT', ifr_w1a='0 / 72', ifr_w2n='VM-6', ifr_w2a='72', ifr_w2s='NO LOCK: UNGUIDED', ifr_w0s='', ifr_w1s='RELOAD 1.5 S',
       ifr_w3n='DC-CHAFF', ifr_w3a='2', ifr_mode='TDM', ifr_sub='TEAM DEATHMATCH   FIRST TO 60 KILLS', ifr_scoreT='42', ifr_scoreCT='38', ifr_clock='6:42', ifr_xpv='+40 XP',
-      ifr_odp='100 %', ifr_odl='READY: HOLD R+E TOGETHER', ifr_pmy='42', ifr_pen='38', ifr_pk='12', ifr_pd='3', ifr_pa='4', ifr_stk='2', ifr_str='NEXT: 3 KILLS = RADAR PING', ifr_str2='ENEMIES ON RADAR FOR 10 S',
+      ifr_odp='100 %', ifr_odl='READY: HOLD R+E = REFIT', ifr_pmy='42', ifr_pen='38', ifr_pk='12', ifr_pd='3', ifr_pa='4', ifr_stk='2', ifr_str='NEXT: 3 KILLS = RADAR PING', ifr_str2='ENEMIES ON RADAR FOR 10 S',
       ifr_lcf='WHITE GLINT', ifr_lc0n='AR-22', ifr_lc0r='MID RANGE', ifr_lc1n='SG-SCAT', ifr_lc1r='CLOSE RANGE', ifr_lc2n='VM-6', ifr_lc2r='LOCK-ON MISSILES', ifr_lc3n='DC-CHAFF', ifr_lc3r='BREAKS LOCKS',
       ifr_lct='SECOND WIND: PASSIVE', ifr_lct2='EN REGEN +40 % AFTER A QUICK BOOST',
       ifr_rrange='6000', ifr_linea='OVERDRIVE READY: HOLD R + E TOGETHER', ifr_lineb='A BLAST AROUND YOU: 2 500 DAMAGE', ifr_killv='DESTROYED   PILOT_SEVEN'))

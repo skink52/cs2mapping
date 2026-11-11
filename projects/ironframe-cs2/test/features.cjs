@@ -42,10 +42,12 @@ function dmgEvents(g, victim) { return g.events.filter((e) => e.t === 'damage' &
 
 
 const lo = '4,101,0,0,0,301,401,501,601';
+const loH = '8,101,0,0,0,301,401,501,601';      // the heavy starter frame
 // ---- overdrive: meter fills from damage, hold triggers charge then blast
 {
-  const g = setup([{ x: 0, lo }, { x: 400, lo }, { x: 450, y: 100, team: 3, lo }]);
+  const g = setup([{ x: 0, lo: loH }, { x: 400, lo }, { x: 450, y: 100, team: 3, lo }]);      // a heavy frame: the blast (light / medium refit, below)
   const a = g.mechs.get(0), b = g.mechs.get(1), c = g.mechs.get(2);
+  ok(a.cls.key === 'heavy' && g.odKind(a) === 'blast' && g.odKind(b) === 'refit', 'a heavy frame blasts, a medium frame refits');
   ok(a.overdrive === 0, 'meter starts empty');
   b.team = 3;
   L.IF_applyDamage(g, b, 0, b.apMax * 0.6, 0, null, 'x', null);   // a deals 60 % of a bar -> 0.3
@@ -58,23 +60,75 @@ const lo = '4,101,0,0,0,301,401,501,601';
   ok(g.events.some((e) => e.t === 'overdrive' && e.phase === 'charge' && e.slot === 0), 'charge event');
   ok(near(a.featSpeed, 0.4, 0.001), 'self slow during the charge');
   const ap0 = [b.ap, c.ap]; b.protect = c.protect = 0;
-  run(g, 1.3, () => { a.input.od = false; });
+  run(g, 1.3, () => { a.input.od = false; if (a.odPhase === 1) { a.en = 0; a.enStalled = 0; } });
   ok(a.odPhase === 0 && a.overdrive === 0, 'blast resets the meter');
-  ok(g.events.some((e) => e.t === 'overdrive' && e.phase === 'blast'), 'blast event');
-  ok(ap0[0] - b.ap > 1400 && ap0[0] - b.ap <= 2500 * 1.01, 'near target loses ~2500 falloff damage', ap0[0] - b.ap);
+  ok(g.events.some((e) => e.t === 'overdrive' && e.phase === 'blast' && e.kind === 'blast' && e.radius === 1200), 'blast event (heavy: 1200 u)');
+  ok(ap0[0] - b.ap > 1800 && ap0[0] - b.ap <= 3200 * 1.01, 'near target loses ~3200 falloff damage (heavy)', ap0[0] - b.ap);
+  ok(a.en >= a.enMax * 0.39, 'the heavy blast gives 40 % EN back', a.en / a.enMax);
   ok(b.staggered > 0 || b.stagger >= b.staggerMax, 'target staggered');
   ok(b.vel.x > 300 || b.pos.x > 400, 'target knocked back', b.vel.x + '/' + b.pos.x);
 }
-// ---- bots fire it on 3+ enemies / staggered and low
+// ---- light / medium frames: the overdrive is a field refit (11 Nov 2026): AP, EN and ammo, no blast
 {
-  const g = setup([{ x: 0, lo }, { x: 300, team: 3, lo }, { x: 0, y: 300, team: 3, lo }, { x: -300, team: 3, lo }]);
+  const g = setup([{ x: 0, lo: '4,101,0,208,0,301,401,501,601' }, { x: 400, team: 3, lo }]);
+  const a = g.mechs.get(0), b = g.mechs.get(1), w = a.weapons[0], mend = a.weapons[2];
+  a.ap = Math.round(a.apMax * 0.3); w.mag = 0; w.ammo = 0; mend.charges = 0; mend.chargeCd = 99; b.protect = 0;
+  const bap = b.ap;
+  a.overdrive = 1; a.input.od = true;
+  run(g, 0.7); ok(a.odPhase === 1 && g.events.some((e) => e.t === 'overdrive' && e.phase === 'charge' && e.kind === 'refit'), 'medium frame: the charge says refit');
+  run(g, 1.3, () => { a.input.od = false; if (a.odPhase === 1) { a.en = 0; a.ap = Math.round(a.apMax * 0.3); } });
+  const ev = g.events.find((e) => e.t === 'overdrive' && e.phase === 'refit');
+  ok(!!ev && ev.heal === Math.round(a.apMax * 0.45) && a.overdrive === 0 && a.odPhase === 0, 'refit event with the AP given, meter spent', JSON.stringify(ev));
+  ok(near(a.ap, a.apMax * 0.75, 2), 'refit: +45 % AP (30 % -> 75 %)', a.ap / a.apMax);
+  ok(a.en >= a.enMax * 0.95, 'refit: EN full', a.en / a.enMax);
+  ok(w.mag === w.magSize && w.ammo === w.w.ammo - w.magSize && !w.reloading, 'refit: the empty rifle is full again', w.mag + '+' + w.ammo);
+  ok(mend.charges === mend.w.charges, 'refit: ability charges are back', mend.charges);
+  ok(b.ap === bap && !g.events.some((e) => e.t === 'explode' && e.kind === 'overdrive'), 'refit: no blast, the enemy next to it is unhurt');
+  a.ap = a.apMax - 100; a.overdrive = 1; a.input.od = true; g.events.length = 0; run(g, 2.2, (k) => { if (k > 50) a.input.od = false; });
+  const ev2 = g.events.find((e) => e.t === 'overdrive' && e.phase === 'refit'); ok(!!ev2 && ev2.heal <= 100 && a.ap === a.apMax, 'refit never goes over the AP bar', JSON.stringify(ev2));
+}
+// ---- supply: a kill gives ammo and armour back; a rested weapon rebuilds ammo
+{
+  const g = setup([{ x: 0, lo }, { x: 3000, team: 3, lo }]);
+  const a = g.mechs.get(0), v = g.mechs.get(1), w = a.weapons[0];
+  a.ap = Math.round(a.apMax * 0.5); w.ammo = 0; const mag0 = w.mag;
+  v.ap = 1; v.protect = 0; L.IF_applyDamage(g, v, 0, 100, 0, null, 'x', null);
+  const sv = g.events.find((e) => e.t === 'salvage');
+  ok(!!sv && sv.slot === 0 && sv.heal === Math.round(a.apMax * 0.08), 'kill: salvage event with the AP given', JSON.stringify(sv));
+  ok(w.ammo === Math.round(w.w.ammo * 0.25) && w.mag === mag0, 'kill: +25 % of a weapon\'s ammo into the reserve', w.ammo);
+  ok(near(a.ap, a.apMax * 0.58, 2), 'kill: +8 % AP', a.ap / a.apMax);
+  w.ammo = w.w.ammo - w.magSize; a.ap = a.apMax; g.events.length = 0;
+  v.alive = true; v.ap = 1; L.IF_applyDamage(g, v, 0, 100, 0, null, 'x', null);
+  ok(!g.events.some((e) => e.t === 'salvage') && w.ammo === w.w.ammo - w.magSize, 'kill at full ammo and AP: nothing to salvage, never over the cap');
+  // rested weapon: nothing for 6 s, then empty to full in 120 s; firing stops it
+  const g2 = setup([{ x: 0, lo }, { x: 3000, team: 3, lo }]);
+  const a2 = g2.mechs.get(0), w2 = a2.weapons[0];
+  w2.mag = 0; w2.ammo = 0; run(g2, 5.5);
+  ok(w2.mag + w2.ammo === 0, 'a dry weapon stays dry for the first 6 s');
+  run(g2, 12.5);
+  const tot = w2.mag + w2.ammo; ok(tot >= 28 && tot <= 32, 'then it rebuilds: 12 s at 300 / 120 s = 30 rounds', tot);
+  ok(w2.mag > 0 && !w2.reloading, 'and the first rounds are loaded by themselves (it can fire again)', w2.mag);
+  a2.input.yaw = 90; a2.input.fire[0] = true; run(g2, 3); a2.input.fire[0] = false;
+  const left = w2.mag + w2.ammo; ok(left < tot, 'firing spends it and stops the rebuild', left);
+  run(g2, 5); ok(w2.mag + w2.ammo === left, 'no rebuild in the 6 s after the last shot', (w2.mag + w2.ammo) + ' vs ' + left);
+  w2.mag = w2.magSize; w2.ammo = w2.w.ammo - w2.magSize; run(g2, 10); ok(w2.ammo === w2.w.ammo - w2.magSize, 'a full weapon stays at its cap');
+  const g3 = setup([{ x: 0, lo }, { x: 3000, team: 3, lo }], { cfg: { feat: { supply: { fabTime: 0, killAmmo: 0, killAp: 0 } } } });
+  const w3 = g3.mechs.get(0).weapons[0]; w3.mag = 0; w3.ammo = 0; run(g3, 20); ok(w3.mag + w3.ammo === 0, 'cfg.feat.supply can switch it off');
+}
+// ---- bots: a heavy blasts on 3+ enemies / staggered and low; a light or medium refits when hurt or dry
+{
+  const g = setup([{ x: 0, lo: loH }, { x: 300, team: 3, lo }, { x: 0, y: 300, team: 3, lo }, { x: -300, team: 3, lo }]);
   const a = g.mechs.get(0); a.human = false; a.overdrive = 1;
-  run(g, 0.5); ok(a.odPhase === 1, 'bot charges with 3 enemies inside 600');
-  const g2 = setup([{ x: 0, lo }, { x: 300, team: 3, lo }]);
+  run(g, 0.5); ok(a.odPhase === 1, 'heavy bot charges with 3 enemies inside the blast');
+  const g2 = setup([{ x: 0, lo: loH }, { x: 300, team: 3, lo }]);
   const b = g2.mechs.get(0); b.human = false; b.overdrive = 1; run(g2, 0.5);
-  ok(b.odPhase === 0, 'bot waits with one enemy');
+  ok(b.odPhase === 0, 'heavy bot waits with one enemy');
   b.staggered = 1; b.ap = b.apMax * 0.2; run(g2, 0.5);
-  ok(b.odPhase === 1, 'bot charges when staggered and low');
+  ok(b.odPhase === 1, 'heavy bot charges when staggered and low');
+  const g3 = setup([{ x: 0, lo }, { x: 3000, team: 3, lo }]);
+  const m = g3.mechs.get(0); m.human = false; m.overdrive = 1; run(g3, 0.5);
+  ok(m.odPhase === 0, 'medium bot keeps a full overdrive while it is healthy and armed');
+  m.ap = m.apMax * 0.4; run(g3, 0.5); ok(m.odPhase === 1, 'medium bot refits under half AP');
 }
 // ---- crates
 {
@@ -116,11 +170,24 @@ const lo = '4,101,0,0,0,301,401,501,601';
   const st = g.events.filter((e) => e.t === 'streak').map((e) => e.kind + e.streak);
   ok(st.join() === 'radar3,arty5,ace8', 'streak rewards at 3, 5, 8 and none beyond', st.join());
   ok(a.radarT > 9 && a.aceT > 19 && a.artyReady, 'states set');
-  // arty: fires at the lock target
-  a.lock.target = 1; v.alive = true; v.ap = v.apMax; g.events.length = 0; run(g, 0.1);
-  ok(!a.artyReady && g.events.filter((e) => e.t === 'shell').length === 6, 'artillery queues 6 shells');
-  const ap = v.ap; run(g, 5);
-  ok(g.events.filter((e) => e.t === 'explode' && e.kind === 'artillery').length === 6, 'six artillery explosions over 4 s');
+  // arty: armed 1.5 s after the reward, then fires at the lock target; every shell follows the target (11 Nov 2026)
+  const lockIt = () => { a.lock.target = 1; };
+  v.alive = true; v.ap = v.apMax; v.protect = 0; g.events.length = 0; run(g, 0.5, lockIt);
+  ok(a.artyReady && g.shells.length === 0, 'artillery does not fire in the first 1.5 s (the reward text is still being read)');
+  run(g, 1.2, lockIt);
+  const fire = g.events.find((e) => e.t === 'streak' && e.kind === 'arty_fire');
+  ok(!a.artyReady && !!fire && fire.target === 1 && g.shells.length + g.events.filter((e) => e.t === 'explode' && e.kind === 'artillery').length === 6, 'then six shells are on their way to the locked mech');
+  v.pos.x = 5000; v.pos.y = 1500; v.vel.x = v.vel.y = 0;            // the target leaves: the shells still in the air go with it
+  g.events.length = 0; run(g, 5, () => { v.pos.x = 5000; v.pos.y = 1500; v.vel.x = v.vel.y = 0; });
+  const booms = g.events.filter((e) => e.t === 'explode' && e.kind === 'artillery'), marks = g.events.filter((e) => e.t === 'shell');
+  const off = booms.map((e) => Math.round(Math.hypot(e.pos.x - 5000, e.pos.y - 1500)));
+  ok(booms.length === 6 && marks.length === 5 && g.shells.length === 0, 'all six land; the first had picked its spot already (0.9 s before landing), five pick theirs now', booms.length + '/' + marks.length);
+  ok(off[0] > 1500 && off.slice(1).every((d) => d <= 285), 'the committed shell lands where the target was, the other five within 280 u of where it went', off.join());
+  ok(v.ap < v.apMax, 'and the target is hurt', v.ap);
+  // a target closer than 700 u: no fire, and the pilot is told (once per 5 s)
+  const gc = setup([{ x: 0, lo }, { x: 400, team: 3, lo }]); const ac = gc.mechs.get(0);
+  ac.artyReady = true; run(gc, 6.5, () => { ac.lock.target = 1; });
+  ok(ac.artyReady && gc.shells.length === 0 && gc.events.filter((e) => e.t === 'streak' && e.kind === 'arty_close').length === 2, 'too close: holds fire and says so', gc.events.filter((e) => e.t === 'streak').length);
   ok(a.featSpeed > 1.19, 'ACE speed +20 %');
 }
 // rookie stomp earns no progress

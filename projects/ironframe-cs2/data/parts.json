@@ -4,6 +4,7 @@
   "caps": {
     "levels": 5,
     "upgrade_cost_pct": 30,
+    "upgrade_floor_cost": 2000,
     "ap_pct": 5,
     "dps_pct": 3,
     "mobility_pct": 3,

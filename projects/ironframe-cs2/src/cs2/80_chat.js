@@ -9,7 +9,7 @@ const HELP_SECS = 25;
 const HELP_LINES = [
   'WASD move, Shift boost, Ctrl quick boost, Space jump / hover. Mouse 1 / 2 fire the arms, R / E the shoulders',
   'Keep an enemy inside the ring to lock on; F switches target. Missiles track once the bracket is red',
-  'Gold bar full: press R + E together and hold for the overdrive blast. Dead: Ctrl or F opens the garage',
+  'Gold bar full: hold R + E. Light and medium frames refit (AP, EN, ammo), heavy frames blast. Kills and rested weapons give ammo back',
   'Chat: !garage !loadout 1-6 !spec !back !afk !vote !mode !pilot !od',
 ];
 /** a message to one player on the HUD line (three rows; longer text continues on a second page). queue = after what is showing, in order.
@@ -32,6 +32,17 @@ function replyPrio(slot) {
 }
 // the answer to a customisation command: what changed, or why not
 function chatCustom(pe, code, ok) { reply(pe.slot, code ? (DENY_TEXT[code] || 'denied') : ok, 5); }
+// Commands the server plugin passes on (11 Nov 2026, skink52: "/help works to bring up the server help, but it doesn't bring up the ironframe
+// help ... /garage support would be good too"): CounterStrikeSharp takes every chat line that starts with / for itself and hides it, so
+// the map never sees it. The plugin answers with RunScriptInput ifr_cmd_<name>, the player's pawn as the activator (SERVER_CONTRACT 11).
+// A `!` line reaches both the plugin and the map: the second of the same command from one player within CHAT_SAME s is dropped.
+const CHAT_FROM_SERVER = ['help', 'garage', 'back', 'od', 'cam', 'hints', 'bots', 'mode'], CHAT_SAME = 0.8;
+const chatLast = new Map();      // slot -> { word, at }
+function onServerCommand(name, ev) {
+  const slot = slotOfEntity(ev && ev.activator); if (slot === undefined) return;
+  const pe = person(slot), c = pe ? live(pe.ctrl) : undefined; if (!c || !pe.human) return;
+  onChat(c, '!' + name);
+}
 function onChat(player, text) {
   if (!CONFIG.CHAT_COMMANDS || !player) return;
   let slot; try { slot = player.GetPlayerSlot(); } catch (err) { return; }
@@ -40,6 +51,7 @@ function onChat(player, text) {
   if (t.startsWith('/')) t = '!' + t.slice(1);
   if (!t.startsWith('!')) return;
   const parts = t.split(/\s+/), word = parts[0], arg = parts[1], rest = t.slice(word.length).trim();
+  { const was = chatLast.get(slot), now = gameTime(); if (was && was.word === word && now - was.at < CHAT_SAME && now >= was.at) return; chatLast.set(slot, { word, at: now }); }
   dlog('chat command ' + t + ' from slot ' + slot);
   switch (word) {
     case '!help': case '!ironframe': case '!if': case '!controls': case '!keys':

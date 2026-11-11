@@ -8,6 +8,15 @@ Core: `src/core/86_features.js` (numbers in `IF_FEAT`, override with `cfg.feat`,
 - Events: `overdrive {slot, phase, pos}`, `crate {phase: drop|land|take, pos, slot, kind}`, `streak {slot, kind: radar|arty|ace|arty_fire, streak}`, `shell {pos, delay, slot}`.
 - Crate model: `python -I tools/fx.py --crate-only` (models/ifr/fx/crate/crate.vmdl, `models.json#fx.crate`).
 
+**Since 11 Nov 2026 (skink52's playtest: "the most annoying part of gameplay is running out of ammo - there's nothing you can do about it, and there's also no way to heal"; "no artillery fire seemed to reach my lock"). Unit tested (test/features.cjs), not played yet.**
+- **Overdrive depends on the frame class** (`IF_FEAT.od.refit` / `.heavy`, `game.odKind(m)`). Same gold bar, same hold (R + E, 0.6 s) and 1.2 s slowed charge, then:
+  - **light and medium: FIELD REFIT** (`featRefit`): +45 % of max AP, EN full (a stall ends), every weapon's magazine and reserve full, ability charges back. No blast. Event `{t:'overdrive', phase:'refit', heal}`. A bot refits under 50 % AP or under 15 % ammo.
+  - **heavy: ASSAULT ARMOR** (`featBlast`): the blast, now 3 200 damage within 1 200 u (was 2 500 / 600; 1 280 at the edge), and +40 % EN. A boss keeps 2 500 / 600. Bots as before (3 enemies in reach, or staggered and low).
+  - HUD line under the gauge: `READY: HOLD R+E = REFIT` / `= BLAST`, `CHARGING: REFIT IN 0.8 S`. The first-time hint says what this frame's overdrive does.
+- **Salvage** (`IF_FEAT.supply.killAmmo` 0.25, `killAp` 0.08): every kill gives the killer 25 % of each weapon's full ammo (into the reserve, never over the cap) and 8 % AP. Event `{t:'salvage', slot, heal}`; the HUD line says it only when the line is free.
+- **A rested weapon rebuilds ammo** (`supply.restT` 6 s, `fabTime` 120 s; `IF_weaponsStep`): a weapon that has not fired for 6 s refills its reserve at full / 120 s (rifle 2.5 rounds/s); an empty magazine reloads by itself as soon as there is a round. This is the floor: a pilot is never left with nothing to fire. `cfg.feat.supply` switches any of the three off.
+- **Artillery follows its target.** It used to fire the instant the 5th kill landed at whatever was locked, all six shells at the spot the target stood on 1-4 s earlier, shown by one small spark each. Now: armed 1.5 s after the reward (`artyArm`); each shell picks its landing spot 0.9 s before it lands, at the target's position + velocity x 0.54 s, 280 u spread (was 450, fixed at the call); a mark on the ground and a falling streak for each; `ARTILLERY FIRING ON <name>` to the caller; a locked target closer than 700 u gets `ARTILLERY HOLDS FIRE` (event `arty_close`, every 5 s) instead of silence. A dead target: the shells still in the air land where they last aimed.
+
 ## Frame traits (src/core/87_traits.js, src/cs2/46_traits.js)
 
 Every player frame has a stat profile (`mods` in data/parts.json; keys ap walk boost qb load stagger melee regen cannon_move_acc, plus the new

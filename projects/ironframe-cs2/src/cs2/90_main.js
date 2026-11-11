@@ -531,5 +531,6 @@ Instance.OnScriptInput('ifr_test_npckill', () => guard('test npckill', () => {
   if (!CONFIG.DEBUG) return;
   for (const pe of people.values()) if (pe.human && pe.status === 'mech') { queueKill({ victim: 9999, killer: pe.slot, weapon: 'test' }); return; }
 }));
+for (const name of CHAT_FROM_SERVER) Instance.OnScriptInput('ifr_cmd_' + name, (ev) => guard('ifr_cmd', () => onServerCommand(name, ev)));
 Instance.OnScriptInput('mgstat_on', () => guard('stats', () => { if (!statsOn) log('server stats on'); statsOn = true; }));
 Instance.OnScriptInput('mgstat_off', () => guard('stats', () => { statsOn = false; }));

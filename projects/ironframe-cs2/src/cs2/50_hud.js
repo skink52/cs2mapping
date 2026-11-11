@@ -552,7 +552,8 @@ function ifrHudVitals(slot, m) {
   if (IFR_HUD_TEXT.odl) {
     ifrHudSet(slot, 'ifr_odready', 'stCharge', charging);
     const pct = charging ? 100 : Math.floor(od * 20) * 5;     // 5 % steps: the text changes 20 times a fill, not every tick
-    const odText = charging ? 'CHARGING: BLAST IN ' + Math.max(0, Number(m.odT) || 0).toFixed(1) + ' S' : ready ? IFR_HUD_TXT.odReady : m.aceT > 0 ? IFR_HUD_TXT.odAce : IFR_HUD_TXT.odFill;
+    const refit = !!(m.cls && (m.cls.key === 'light' || m.cls.key === 'medium'));      // 86_features.js odKind: these frames refit, the others blast
+    const odText = charging ? 'CHARGING: ' + (refit ? 'REFIT' : 'BLAST') + ' IN ' + Math.max(0, Number(m.odT) || 0).toFixed(1) + ' S' : ready ? (refit ? IFR_HUD_TXT.odReadyRefit : IFR_HUD_TXT.odReady) : m.aceT > 0 ? IFR_HUD_TXT.odAce : IFR_HUD_TXT.odFill;
     if (s.memo.get('odp') !== pct) { s.memo.set('odp', pct); ifrHudVar(slot, 'odp', pct + ' %'); }
     if (s.memo.get('odl') !== odText) { s.memo.set('odl', odText); ifrHudVar(slot, 'odl', odText); }
   }
@@ -585,7 +586,7 @@ function ifrHudVitals(slot, m) {
 }
 // every sentence the HUD itself says (test/hud_strings.cjs measures each one against its slot)
 const IFR_HUD_TXT = {
-  odFill: 'DEAL OR TAKE DAMAGE TO FILL', odReady: 'READY: HOLD R+E TOGETHER', odAce: 'ACE: REFILLING BY ITSELF',
+  odFill: 'DEAL OR TAKE DAMAGE TO FILL', odReady: 'READY: HOLD R+E = BLAST', odReadyRefit: 'READY: HOLD R+E = REFIT', odAce: 'ACE: REFILLING BY ITSELF',
   artyReady: 'READY: LOCK A TARGET', streakDone: 'ACE EARNED: TOP REWARD', streakDone2: 'A STREAK ENDS WHEN YOU DIE',
   wNoLock: 'NO LOCK: UNGUIDED', wLocked: 'LOCKED: FIRE', wRange: 'OUT OF RANGE', wHold: 'HOLD TO LOCK', wNoTarget: 'NO TARGET IN RING', wRelease: ' LOCKED: RELEASE', wNoAmmo: 'NO AMMO', wSalvo: 'FIRING',
   lAcq: 'ACQUIRING', lSoft: 'SOFT LOCK', lHard: 'LOCKED', loadFoot: 'DEAD: CTRL OR F OPENS THE GARAGE',

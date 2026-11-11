@@ -173,11 +173,13 @@ class IF_Garage {
   }
 }
 
-// the credits for the step from level lvl to lvl + 1: floor(cost x caps.upgrade_cost_pct / 100) x (lvl + 1); the plugin's
-// Catalog.UpgradeCost is the same integer maths (SERVER_CONTRACT.md section 5)
+// the credits for the step from level lvl to lvl + 1: floor(max(cost, caps.upgrade_floor_cost) x caps.upgrade_cost_pct / 100) x (lvl + 1);
+// the plugin's Catalog.UpgradeCost is the same integer maths (SERVER_CONTRACT.md section 5b).
+// The floor (11 Nov 2026, skink52): a starter part has price 0 and every part has the same upgrade track, so a starter got for nothing
+// what a bought part pays 4.5 x its price for. A free part's upgrades are priced as if it cost the floor (the cheapest paid part).
 function IF_upgradeCost(p, lvl, caps) {
   const pct = caps && caps.upgrade_cost_pct !== undefined ? caps.upgrade_cost_pct : 100;
-  return Math.floor((p.cost || 0) * pct / 100) * ((lvl || 0) + 1);
+  return Math.floor(Math.max(p.cost || 0, (caps && caps.upgrade_floor_cost) || 0) * pct / 100) * ((lvl || 0) + 1);
 }
 // the garage name of an upgrade level: STOCK, MK I .. MK V
 function IF_tierName(lvl) { return lvl > 0 ? 'MK ' + ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][Math.min(9, lvl - 1)] : 'STOCK'; }
