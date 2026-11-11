@@ -1,4 +1,4 @@
-import { Instance, Entities, Console, GameRules, CSPlayerPawn, CSPlayerController, CSGearSlot, CSDamageFlags, CSRoundEndReason } from "cs_script/point_script";
+import { Instance, Console, Entities, GameRules, CSPlayerPawn, CSPlayerController, CSGearSlot, CSDamageFlags, CSRoundEndReason } from "cs_script/point_script";
 
 // mg_minecraft_multigames: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.
 // Everything here is driven by `mg_minecraft_multigames_io_script` -> RunScriptInput <input name>, with the activator passed through.
