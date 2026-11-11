@@ -35,6 +35,7 @@ ROAD, SW, AV = 560.0, 170.0, 450.0           # road width, sidewalk width, half 
 RZ, SZ = 2.0, 12.0                           # road and sidewalk surface z
 PLAZA = 1950.0
 DECK = 760.0
+HW_END, HW_FOOT, HW_PIERS = 3600.0, 5035.0, [-3000.0, -1800.0, -600.0, 600.0, 1800.0, 3000.0]      # set from the plan in main (sprawl.py HW_*)
 KIT = json.load(open(os.path.join(HERE, 'sprawl_kit.json')))
 BYMODEL = {v['model']: v for v in KIT.values()}
 # car004b, van001a and concretebags are in pak01 without their materials (the map compile reports them missing): not used
@@ -42,6 +43,7 @@ BYMODEL = {v['model']: v for v in KIT.values()}
 CARS = [('nuke_sedan01_low', 50), ('dust_limo_lowpoly', 28), ('nuke_sedan02', 9), ('taxi_city', 6), ('cara_82hatchback', 7)]
 ALSO = {'taxi_city': ['taxi_city_glass'], 'cara_82hatchback': ['cara_82hatchback_glass'], 'overpass_bus_station': ['overpass_bus_station_glass', 'overpass_bus_station_seat']}
 TINTS = ['255 255 255', '215 215 220', '70 70 76', '150 34 30', '44 64 116', '214 204 176', '96 106 96', '30 30 34', '170 170 176']
+LIVE_EVERY, LIVE_MAX = 3, 64                               # destructible cars: one in three of the one-piece cars, at most this many an arena
 BAKED = ('plaza_solid',)                                  # mesh kinds that are lightmapped
 SHADOWS = ('screen', 'tram', 'pier', 'gantry')            # unbaked kinds that still cast baked shadows
 SMALL = (4200.0, 5200.0); TINY = (3000.0, 3800.0)         # fade start / end distances (u) for small and tiny kinds
@@ -99,6 +101,7 @@ class Out:
     def __init__(self, mats, plan):
         self.m = mats; self.plan = plan
         self.buckets = defaultdict(list); self.props = []; self.lights = []; self.fx = []
+        self.live = []; self.ncar = 0
         self.PL = placer.Placer(cell=256.0, bounds=lambda model: (tuple(BYMODEL[model]['lo']), tuple(BYMODEL[model]['hi'])))
         self.n = Counter(); self.tris = Counter(); self.faces = Counter()
 
@@ -152,13 +155,30 @@ class Out:
     def car(self, rnd, x, y, z, heading, key=None, **kw):
         key = key or rnd.choices([c for c, _ in CARS], [w for _, w in CARS])[0]
         k = KIT[key]; longy = (k['hi'][1] - k['lo'][1]) > (k['hi'][0] - k['lo'][0])
-        return self.ground_prop(key, x, y, z, heading - (90.0 if longy else 0.0) + (180.0 if rnd.random() < 0.5 else 0.0), tint=rnd.choice(TINTS), **kw)
+        ok = self.ground_prop(key, x, y, z, heading - (90.0 if longy else 0.0) + (180.0 if rnd.random() < 0.5 else 0.0), tint=rnd.choice(TINTS), **kw)
+        # every LIVE_EVERY-th one-piece car is a destructible prop (core 88_props.js: shot, blown up or walked over; it explodes and
+        # burns): a named prop_dynamic_override instead of a prop_static, and an entry of arena.cars. No random draw is spent on the
+        # choice, so the rest of the pass comes out as before.
+        if ok and key not in ALSO:
+            self.ncar += 1
+            if self.ncar % LIVE_EVERY == 0 and len(self.live) < LIVE_MAX:
+                model, org, ang, scale, tint = self.props[-1]
+                big = key in ('bus01_2', 'semi_trailer')
+                r = 0.45 * max(k['hi'][0] - k['lo'][0], k['hi'][1] - k['lo'][1]) * scale
+                self.live.append([round(org[0], 1), round(org[1], 1), round(org[2], 1), round(r, 1), 1 if big else 0, round(ang[1], 1), round(ang[0], 1), round(ang[2], 1), tint or '255 255 255'])
+                self.props[-1] = (model, org, ang, scale, tint, True)
+        return ok
 
     def light(self, x, y, z, lumens, rng, color):
         self.lights.append(((x, y, z), lumens, rng, color))
 
     def write_entities(self):
-        for model, origin, angles, scale, tint in self.props:
+        for model, origin, angles, scale, tint, *live in self.props:
+            if live:                                                     # a destructible car: the script recolours and tips it over (48_props.js)
+                keys = dict(model=model, solid='0', targetname='ifr_car', rendercolor=tint or '255 255 255', disableshadows='1')
+                e = P.entity('prop_dynamic_override', origin, angles, group=GROUP, strict=False, **keys)
+                e.attr('scales')[2] = (scale, scale, scale)
+                continue
             keys = dict(model=model, solid='0', bakelighting='0')       # probe-lit: no lightmap charts for 2 000 small props
             if tint: keys['rendercolor'] = tint
             e = P.entity('prop_static', origin, angles, group=GROUP, strict=False, **keys)
@@ -308,7 +328,7 @@ class Seg:
 
     def usable(self, s):
         """False under a highway ramp"""
-        return not (self.hw and abs(self.s0 + s) > 3540.0)
+        return not (self.hw and abs(self.s0 + s) > HW_END - 60.0)
 
     def face(self, side):
         """yaw of something on the `side` sidewalk looking at the road"""
@@ -339,14 +359,13 @@ def static_obstacles(o):
         o.claim((x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) / 2 + pad, (y1 - y0) / 2 + pad, 0, z0 - 30, top + 400, check=False, name='tower')
     for cx, cy, yaw in plan['containers']: o.claim(cx, cy, 360, 360, 0, 0, 360, check=False, name='container')
     for ax, at in plan['highways']:
-        for q in range(-3000, 3001, 1200):
-            if ax == 'y' and abs(q) < 2400: continue
+        for q in HW_PIERS:
             x, y = (q, at) if ax == 'x' else (at, q)
             o.claim(x, y, 250, 135, 0 if ax == 'x' else 90, 0, DECK - 60, check=False, name='pier')
         for e in (-1, 1):                                               # the ramps
-            mid = e * (3600 + 720)
+            mid = e * (HW_END + HW_FOOT) / 2
             x, y = (mid, at) if ax == 'x' else (at, mid)
-            o.claim(x, y, 760, 400, 0 if ax == 'x' else 90, 0, DECK, check=False, name='ramp')
+            o.claim(x, y, (HW_FOOT - HW_END) / 2 + 40, 400, 0 if ax == 'x' else 90, 0, DECK, check=False, name='ramp')
     for x, y in plan['lamps']: o.claim(x + 365, y + 365, 26, 26, 0, 0, 600, check=False, name='mast')
     for x in (-3600, 3600): o.claim(x, 0, 300, 300, 0, 0, 500, check=False, name='flag')
 
@@ -734,7 +753,7 @@ def dress_highway(o, axis, at, cross, rnd):
     def mk(a0, a1, t0, t1, kind, ru=1.0, rv=1.0, along=1.0):
         p0 = W(a0, t0); p1 = W(a1, t1)
         o.put('mark', [(bx((p0[0], p0[1], z + 0.05), (p1[0], p1[1], z + 0.9), m['mk_' + kind]), top_spec((d[0] * along, d[1] * along), ru, rv))])
-    spans = [(-3590.0, cross - 400.0), (cross + 400.0, 3590.0)]
+    spans = [(-(HW_END - 10.0), cross - 400.0), (cross + 400.0, HW_END - 10.0)]
     for a0, a1 in spans:
         L = a1 - a0
         for t in (-8, 3): mk(a0, a1, t, t + 5, 'yellow', 1, L / 256)
@@ -746,15 +765,15 @@ def dress_highway(o, axis, at, cross, rnd):
         mk(cross - 560, cross - 470, t - 17, t + 17, 'arrow', along=-1.0); mk(cross + 470, cross + 560, -t - 17, -t + 17, 'arrow', along=1.0)
     p0 = W(cross - 150, -150); p1 = W(cross + 150, 150)
     o.put('mark', [(bx((min(p0[0], p1[0]), min(p0[1], p1[1]), z + 0.05), (max(p0[0], p1[0]), max(p0[1], p1[1]), z + 0.9), m['mk_hatch']), top_spec((0.0, 1.0), 3, 3))])
-    for q in range(-3000, 3001, 600):                                    # expansion joints
+    for q in range(-2400, 2401, 600):                                    # expansion joints
         if abs(q - cross) < 420: continue
         p0 = W(q - 3, -320); p1 = W(q + 3, 320)
         o.put('mark', [(bx((p0[0], p0[1], z + 0.02), (p1[0], p1[1], z + 0.7), m['rubber']), None)])
-    for a in range(-3540, 3541, 177):                                    # amber reflector studs on the parapets
+    for a in range(-int(HW_END) + 60, int(HW_END) - 59, 177):            # amber reflector studs on the parapets
         if abs(a - cross) < 400: continue
         for t in (-360, 360):
             x, y = W(a, t); o.put('stud', [(bx((x - 2, y - 2, z + 132), (x + 2, y + 2, z + 135.5), m['e_amber']), None)])
-    for i, a in enumerate(range(-3300, 3301, 600)):                      # lamp masts on the parapets, alternating sides
+    for i, a in enumerate(range(-2700, 2701, 600)):                      # lamp masts on the parapets, alternating sides
         if abs(a - cross) < 420: continue
         side = 1 if i % 2 else -1
         x, y = W(a, side * 360)
@@ -786,12 +805,12 @@ def dress_highway(o, axis, at, cross, rnd):
         o.car(rnd, x, y, z, yaw + rnd.uniform(-5, 5), key=rnd.choice(['bus01_2', 'semi_trailer']), pad=10)
     for e in (-1, 1):                                                    # ramp heads: cones and a warning board
         for k in range(6):
-            x, y = W(e * (3560 - k * 16), -300 + k * 34); o.ground_prop('traffic_cone', x, y, z, rnd.uniform(0, 360))
-        x, y = W(e * 3500, 250)
+            x, y = W(e * (HW_END - 40 - k * 16), -300 + k * 34); o.ground_prop('traffic_cone', x, y, z, rnd.uniform(0, 360))
+        x, y = W(e * (HW_END - 100), 250)
         o.put('furn', [(bx((-1.5, -34, 22), (1.5, 34, 40), m['metal_dark'], px=m['led_amber'], nx=m['led_amber']), 'fit'), (bx((-9, -28, 0), (9, -24, 22), m['orange']), None),
                        (bx((-9, 24, 0), (9, 28, 22), m['orange']), None)], x, y, z, yaw)
     # under the deck: piers
-    piers = [q for q in range(-3000, 3001, 1200) if not (axis == 'y' and abs(q) < 2400)]
+    piers = [int(q) for q in HW_PIERS]
     for q in piers:
         x, y = W(q, 0); parts = []
         for zz in (46, 600): parts.append((bx((x - 116, y - 116, zz), (x + 116, y + 116, zz + 14), m['conc_dark']), None))
@@ -861,12 +880,17 @@ def dress_plaza(o, rnd):
                 for j in range(rnd.randint(2, 3)):
                     ang = rnd.uniform(0, 6.28); o.ground_prop('patio_chair_01_low', tx + 19 * math.cos(ang), ty + 19 * math.sin(ang), -6.0, math.degrees(ang) + 180 + rnd.uniform(-30, 30), check=False)
             if rnd.random() < 0.6: o.ground_prop('patio_umbrella_closed', cx + rnd.uniform(-20, 20), cy + rnd.uniform(-20, 20), -6.0, 0, check=False)
-    for k in range(11):                                                  # the flood: vehicles caught in the basin, only their roofs out of the water
+    for k in range(11):                                                  # the flood: wrecks caught in the basin, half out of the water
         ang = rnd.uniform(0, 6.283); r = rnd.uniform(900, 1620)
         x, y = max(-1650, min(1650, r * math.cos(ang))), max(-1650, min(1650, r * math.sin(ang)))
         if abs(x) < 60 or abs(y) < 60: continue
-        if k == 0: o.car(rnd, x, y, -41.0, rnd.uniform(0, 360), key='bus01_2', pad=20)
-        else: o.car(rnd, x, y, -41.0 + rnd.uniform(0, 5), rnd.uniform(0, 360), pad=20)
+        # wrecks, not parked cars (skink52, 11 Nov 2026: "they'd be destroyed if they were there irl"): burnt-out and stripped bodies, rusted,
+        # lying at an angle where the flood left them, a little deeper in the silt
+        rust = rnd.choice(['74 52 40', '58 50 46', '96 70 52', '40 40 42', '84 60 44'])
+        if k == 0: o.ground_prop('bus01_2', x, y, -47.0, rnd.uniform(0, 360), tint=rust, pad=20, pitch=rnd.uniform(-3, 3), roll=rnd.choice((-1, 1)) * rnd.uniform(5, 9))
+        else:
+            key = rnd.choice(['dust_car_wreck_body', 'dust_car_wreck_body', 'dust_hatchback_body', 'flatnose_truck_wrecked', 'car_tarp_cover_1', 'dust_limo_lowpoly'])
+            o.ground_prop(key, x, y, -45.0 + rnd.uniform(0, 5), rnd.uniform(0, 360), tint=rust, pad=20, pitch=rnd.uniform(-7, 7), roll=rnd.uniform(-9, 9))
     # --- the dais: two steps into the water (solid) and a lit edge
     ring(o, 'plaza_solid', 372.0, 340.0, -50.0, 14.0, CONC2, top=FLOORM); ring(o, 'plaza_solid', 404.0, 372.0, -50.0, -12.0, CONC2, top=FLOORM)
     ring(o, 'plaza', 341.5, 340.0, 33.0, 37.0, m['e_cyan'])
@@ -1014,6 +1038,8 @@ def main(argv):
     if len(argv) < 3: sys.exit(__doc__)
     vmap, content = argv[1], argv[2]
     plan = json.load(open(os.path.join(content, '_gen', 'sprawl_plan.json')))
+    global HW_END, HW_FOOT, HW_PIERS
+    HW_END, HW_FOOT, HW_PIERS = float(plan.get('hw_end', HW_END)), float(plan.get('hw_foot', HW_FOOT)), list(plan.get('hw_piers', HW_PIERS))
     stub = defaultdict(str)
     SO.build_job(vmap, content, plan, stub, dry_run=True)                 # the same per-tower decisions as the city layer (ruin, roof, street band)
     mats = DM.materials(content)
@@ -1029,6 +1055,10 @@ def main(argv):
           % (meshes, faces, len(o.props), stats['prop_models'], tris, len(o.lights), len(o.fx)))
     if '--stats' in argv: json.dump(stats, open(argv[argv.index('--stats') + 1], 'w'), indent=1)
     if '--dry-run' in argv: return 0
+    ap = os.path.join(content, '_gen', 'arena.json')                      # the script's list of the destructible cars
+    if os.path.exists(ap):
+        A = json.load(open(ap)); A['cars'] = o.live; json.dump(A, open(ap, 'w'))
+        print('sprawl detail: %d destructible cars (ifr_car) -> %s' % (len(o.live), ap))
     import io, contextlib
     with contextlib.redirect_stdout(io.StringIO()):
         vmapgen.finish(d, vmap, group=GROUP, first_run_cleanup=False)

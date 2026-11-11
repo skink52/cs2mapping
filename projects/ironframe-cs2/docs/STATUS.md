@@ -15,6 +15,33 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**11 Nov 2026, midday (skink52's notes after looking at Sprawl): all 18 suites pass, both maps rebuilt 10:26 (Dunes) / 10:39 (Sprawl), no deleted entities, no failed resources, cache checks clean; Sprawl has 44 destructible cars an arena, Dunes 47. Unseen in game.**
+- **Sprawl ramps** (skink52: "where the ramps to the top level meet the ground make no sense - they ramp down halfway into the roads
+  below"): the decks ran to +-3600 and the ramps came down at +-5035, i.e. across the outer ring road (4350-5250) at half height.
+  Now (sprawl.py `HW_END` 2860, `HW_FOOT` 4335, `HW_PIERS`): the decks end just past the 2400 crossing and each ramp lands at
+  the kerb of the ring road, beside the outer block. The ramp's top runs from the deck's top edge to the ground (it sat 57 u
+  under the deck: a lip), a stepped concrete fill stands under it (the nav solids always treated it as solid: an unseen wall),
+  the barriers end in low blocks. Piers at -1800 / -600 / 600 / 1800 under both decks (the N-S one had none between +-2400).
+  The detail pass reads the deck length from the plan (`hw_end`, `hw_foot`, `hw_piers`). Nav grid regenerated.
+- **Vehicles in the water** (skink52: "they'd be destroyed if they were there irl"): the eleven in the flooded square are wrecks
+  now: stripped / burnt bodies, rust tints, lying at an angle, deeper in the silt (sprawl_detail.py, the flood loop).
+- **Destructible props** (skink52: "could we implement some interactive props? like cars that if take enough damage have
+  explosions etc and burn"): core `src/core/88_props.js`, adapter `src/cs2/48_props.js`, test `test/props.cjs` (22 checks).
+  - A prop has hit points (600; buses, trailers, trucks 1 600). Hitscan shots and beams, bullets in flight (they pass through:
+    a car is not cover), every explosion and a mech walking over it hurt it. At 0: it explodes a tick later (radius 330, 900
+    damage, credited to whoever destroyed it, weapon key `car`), so a row of cars goes up as a chain; it burns 14 s (a smoke
+    column, sparks); the body turns dark and slumps. Walked over: crushed flat into the ground, no explosion. All whole again
+    at each round start.
+  - Map side: `prop_dynamic_override` named `ifr_car` (the same name in every arena copy; matched to `arena.cars` by position).
+    Sprawl: one in three of the one-piece street cars, at most 64 an arena (sprawl_detail.py `LIVE_EVERY`, `car()`), written
+    into the Sprawl arena.json. Dunes: every second van / saloon / trailer / truck and every second barrel group and propane
+    cluster of the detail patch (`LIVE` in tools/patch_dunes_detail.py; 47 an arena, list in data/cars_dunes.json, merged
+    into arena.json by common.py `write_arena_json`).
+  - **Look in game**: the console line "destructible props: N of M entries have their ifr_car entity" (N = M expected); that
+    `Color` darkens these models (else the wreck look needs a second model); the smoke column; that 171 (Sprawl) / 94 (Dunes)
+    dynamic props cost no frame rate. Not done: a fire particle (smoke and sparks only), debris, a scorch decal.
+- Tests: `sh build/run_tests.sh` (now with props) all pass.
+
 **11 Nov 2026, late morning (skink52's notes on the morning batch): all below is tested (17 suites, 64-player mock), deployed, and both maps are rebuilt (Dunes vpk 09:13, Sprawl vpk 09:25; cache_check clean, no failed resources in either build log). Unseen in game.**
 - **Overdrive keys** (skink52: "Space R + E for overdrive is hard to use - difficult to position when forced to hold space (which is
   jump)"): now **R + E pressed together and held** (both shoulder buttons, within 8 ticks of each other; 45_features.js `featInput`,

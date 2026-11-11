@@ -19,6 +19,7 @@ function ifrShiftArena(src, off, k) {
   if (a.flags) { a.flags.t = sh(a.flags.t); a.flags.ct = sh(a.flags.ct); }
   if (a.nav) { a.nav.x0 += off.x; a.nav.y0 += off.y; if (Array.isArray(a.nav.height)) a.nav.height = a.nav.height.map((h) => h + off.z); }
   if (a.landmarks) for (const l of a.landmarks) l.pos = sh(l.pos);
+  if (a.cars) a.cars = a.cars.map(sh);            // destructible props (core 88_props.js, 48_props.js)
   return a;
 }
 

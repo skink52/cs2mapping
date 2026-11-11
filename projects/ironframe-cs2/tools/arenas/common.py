@@ -442,6 +442,10 @@ def write_arena_json(A, nav, booth_pos, cache_pos, path):
              points=[dict(id=pid, pos=[round(v, 1) for v in pos], radius=radius) for pid, pos, radius in A['points']],
              booth=list(booth_pos), cache=list(cache_pos), nav=nav,
              landmarks=[dict(name=n, pos=[round(v, 1) for v in p]) for n, p in A['landmarks']])
+    # destructible props a patch placed on a hand-edited map (tools/patch_dunes_detail.py writes data/cars_<arena>.json): the generator
+    # itself places none there, and its arena.json is rewritten at every build
+    extra = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data', 'cars_%s.json' % N.ARENA)
+    if os.path.exists(extra): j['cars'] = json.load(open(extra))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     json.dump(j, open(path, 'w'), separators=(',', ':'))
     return j

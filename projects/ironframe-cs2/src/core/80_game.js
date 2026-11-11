@@ -146,6 +146,7 @@ class IF_Game {
     M.khTarget = C.kh ? C.kh.target : 0; M.ctfCaptures = C.ctf ? C.ctf.captures : 0;   // the round's targets for the HUD's objective line
     /** @type {any} */ (this).objectivesInit(mode);
     /** @type {any} */ (this).featInit(mode);
+    IF_propsReset(this);                       // 88_props.js: every destructible prop whole again
     this.so = { state: 'pause', pauseT: 3, toSpawn: 0, spawnT: 0, boss: false, lost: false, done: false };
     this.combatOn = M.phase === 'running';
     this.votes.clear();
@@ -393,6 +394,7 @@ class IF_Game {
     for (let k = 0; k < L.length; k++) { const m = L[k]; if (m.alive) IF_weaponsStep(this, m, dt); }
     IF_bulletsStep(this, dt);
     IF_missilesStep(this, dt);
+    IF_propsStep(this, L, dt);
     IF_fxStep(this, dt);
     // out of the world (Orbital falls): dead
     const zmin = this.arena.bounds.min[2] - 1500;
@@ -578,4 +580,4 @@ class IF_Game {
 }
 
 // internals for the Node tests and the balance tool (not used by the adapter)
-IF_Game.lib = { IF_rayWorld, IF_effect, IF_explode, IF_applyDamage, IF_mechDie, IF_parseLoadout, IF_balanceTeams, IF_weaponDps, IF_mulberry, IF_capDist, IF_leadPoint };
+IF_Game.lib = { IF_propsSegment, IF_propsBlast, IF_rayWorld, IF_effect, IF_explode, IF_applyDamage, IF_mechDie, IF_parseLoadout, IF_balanceTeams, IF_weaponDps, IF_mulberry, IF_capDist, IF_leadPoint };

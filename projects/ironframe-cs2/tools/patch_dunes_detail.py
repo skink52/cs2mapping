@@ -36,6 +36,10 @@ BOX = ['132 70 52', '74 96 110', '150 134 100', '96 100 70', '120 60 44', '160 1
 VEH = [('flatnose_truck_wrecked', 3), ('dust_flatbed_truck_body', 3), ('dust_car_wreck_body', 4), ('dust_hatchback_body', 3), ('dust_taxi_body', 2),
        ('car_tarp_cover_1', 2), ('semi_trailer_freestanding', 2), ('cargo_container_closed', 2), ('van', 2), ('dust_limo_lowpoly', 1), ('nuke_sedan01_low', 2)]
 ALSO = {'dust_hatchback_body': ['dust_hatchback_wheels'], 'dust_taxi_body': []}
+# destructible ones (core 88_props.js: shot, blown up or walked over, they explode and burn): every second prop of these kinds is a named
+# prop_dynamic_override and an entry of data/cars_dunes.json. Fuel is what one expects to go up.
+LIVE = {'van': 0, 'nuke_sedan01_low': 0, 'dust_limo_lowpoly': 0, 'dust_taxi_body': 0, 'semi_trailer_freestanding': 1, 'semi_trailer': 1,
+        'barrel_group_tintable_01': 0, 'propane_tank_01_cluster_01': 0, 'flatnose_truck_wrecked': 1}
 SMALL = [('car_tire', 5), ('barrel_group_tintable_01', 4), ('wood_pallet', 3), ('traffic_cone', 3), ('propane_tank_01_cluster_01', 2), ('nuke_concrete_barrier', 3),
          ('cable_spool', 2), ('sawhorse_1', 2), ('garbage_bag_1', 1)]
 
@@ -48,7 +52,7 @@ class Pass:
         self.cells = {}                        # 128 u cells -> [(x, y, r)] of what this pass placed
         self._cell = {}
         self.out = []                          # (model, (x, y, z), (pitch, yaw, roll), scale, tint)
-        self.n = {}; self.tris = 0
+        self.n = {}; self.tris = 0; self.live = []; self.nlive = 0
 
     # -- where
     def gz(self, x, y): return D.ground_at(x, y)
@@ -99,8 +103,15 @@ class Pass:
         sl = math.tan(math.radians(min(self.slope(x, y), 20.0))) * r * 0.6 if z is None else 0.0
         zz = gz - lo[2] * scale - sink - sl
         ang = (self.rnd.uniform(-tilt, tilt), yaw % 360.0, self.rnd.uniform(-tilt, tilt)) if tilt else (0.0, yaw % 360.0, 0.0)
+        live = False
+        if key in LIVE and not ALSO.get(key):
+            self.nlive += 1
+            if self.nlive % 2 == 0:
+                live = True
+                self.live.append([round(x, 1), round(y, 1), round(zz, 1), round(max(34.0, 0.45 * max(hi[0] - lo[0], hi[1] - lo[1]) * scale), 1), LIVE[key],
+                                  round(ang[1], 1), round(ang[0], 1), round(ang[2], 1), tint or '255 255 255'])
         for kk in [key] + ALSO.get(key, []):
-            self.out.append((KIT[kk]['model'], (round(x, 1), round(y, 1), round(zz, 1)), ang, scale, tint if kk == key else None))
+            self.out.append((KIT[kk]['model'], (round(x, 1), round(y, 1), round(zz, 1)), ang, scale, tint if kk == key else None, live))
             self.n[kk] = self.n.get(kk, 0) + 1; self.tris += KIT[kk].get('tris', 0)
         self.cells.setdefault((int(x // 128), int(y // 128)), []).append((x, y, r))
         return True
@@ -243,15 +254,21 @@ def main(src, out, addon='out/addon', stats=None):
             keep.append((o[0], o[1], 90.0))
     ps = Pass(arena, keep); ps.build()
     for off in offsets:
-        for model, (x, y, z), ang, scale, tint in ps.out:
+        for model, (x, y, z), ang, scale, tint, live in ps.out:
+            if live:
+                e = G.ent('prop_dynamic_override', (x + off[0], y + off[1], z + off[2]), angles=ang, group=GROUP, targetname='ifr_car', model=model, solid='0',
+                          rendercolor=tint or '255 255 255', disableshadows='1')
+                e.attr('scales')[2] = (scale, scale, scale); continue
             keys = dict(model=model, solid='0', bakelighting='0')
             if tint: keys['rendercolor'] = tint
             e = G.ent('prop_static', (x + off[0], y + off[1], z + off[2]), angles=ang, group=GROUP, **keys)
             e.attr('scales')[2] = (scale, scale, scale)
     G.finish(d, out, group=GROUP, first_run_cleanup=False)
     rep = dict(props_per_copy=len(ps.out), copies=len(offsets), lod0_triangles_per_copy=ps.tris, camps=ps.n_camps, scatter=ps.n_scatter, kept_clear_of=len(keep),
-               by_model=dict(sorted(ps.n.items(), key=lambda kv: -kv[1])), placed=[(m, p, a, s) for m, p, a, s, _ in ps.out])
+               by_model=dict(sorted(ps.n.items(), key=lambda kv: -kv[1])), placed=[(m, p, a, s) for m, p, a, s, _, _ in ps.out], destructible=len(ps.live))
+    json.dump(ps.live, open(os.path.join(PROJ, 'data', 'cars_dunes.json'), 'w'))      # into arena.json at the next build (tools/arenas/common.py write_arena_json)
     if stats: json.dump(rep, open(stats, 'w'), indent=0)
+    print('dunes detail: %d destructible (data/cars_dunes.json)' % len(ps.live))
     print('dunes detail: %d props a copy x %d copies (%d k LOD0 triangles a copy), %d camps, %d scatter spots, clear of %d existing things -> %s'
           % (len(ps.out), len(offsets), ps.tris // 1000, ps.n_camps, ps.n_scatter, len(keep), out))
     print('  ' + ', '.join('%s %d' % kv for kv in list(rep['by_model'].items())[:14]))

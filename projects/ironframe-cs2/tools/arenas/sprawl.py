@@ -22,6 +22,9 @@ PITCH = 2400.0; BLOCK = 1500.0; AVENUE = PITCH - BLOCK
 CENTRES = [-3600.0, -1200.0, 1200.0, 3600.0]
 PLAZA_H = 1950.0; PLAZA_Z = -40.0; WATER_Z = -5.0
 HIGHWAY_Z = 700.0; HW_T = 60.0; HW_W = 800.0
+HW_END = 2860.0          # the decks run +-HW_END: just past the avenue crossing at 2400 (1950-2850)
+HW_FOOT = 4335.0         # where the ramps reach the ground: the kerb of the outer ring road (4350-5250), not across it
+HW_PIERS = [-1800.0, -600.0, 600.0, 1800.0]      # in the avenue under the deck, clear of every crossing
 A_POS, C_POS = (-3600.0, 3600.0), (3600.0, -3600.0); PODIUM_Z = 400.0
 SOLIDS = []; STRUCT = []
 CITY = os.environ.get('IF_SPRAWL_CITY', 'ops') == 'ops'
@@ -133,11 +136,11 @@ def block(ctx, cx, cy, rng, kind):
 
 
 def highway(ctx, axis, at, cross=None):
-    """elevated slab along x (axis 'x', at y = at) or along y, with pillars every 1200 and 26-degree ramps at both ends.
+    """elevated slab along x (axis 'x', at y = at) or along y, on the HW_PIERS pillars, with ramps at both ends down to HW_FOOT.
     cross: where the other highway's centre line meets this one (same deck height: a flat junction). The side barriers stop at the
     junction's corners with a corner post each; they used to run straight across the other road (skink52, 10 Nov 2026: "the side
     barriers of the roads cross over in an odd fashion at the joins"). The ramps carry barriers too, and both ends have posts."""
-    L0, L1 = -3600.0, 3600.0
+    L0, L1 = -HW_END, HW_END
     z0, z1 = HIGHWAY_Z, HIGHWAY_Z + HW_T
     off = HW_W / 2 - 40                       # barrier centre line from the deck centre
     def bx(a0, a1, w0, w1, zb, zt, mat):      # a box given along-axis and across-axis ranges
@@ -159,26 +162,33 @@ def highway(ctx, axis, at, cross=None):
             bx(a0, a1, w - 48, w + 48, z1 + 120, z1 + 132, M['concrete'])            # a coping on the barrier
         for q in posts:                       # end and junction-corner posts
             bx(q - 60, q + 60, w - 60, w + 60, z1, z1 + 170, M['concrete2'])
-    for q in np.arange(L0 + 600, L1, 1200.0):
-        if axis == 'y' and abs(q) < 2400: continue      # the N-S highway crosses the E-W one: no pillar in the crossing avenue
+    for q in HW_PIERS:
         bx(q - 110, q + 110, at - 110, at + 110, -20, z0, M['concrete'])
         bx(q - 150, q + 150, at - HW_W / 2 + 40, at + HW_W / 2 - 40, z0 - 60, z0, M['concrete'])   # a pillar head under the deck
         SOLIDS.append((q - 110, at - 110, 0, q + 110, at + 110, z0, False) if axis == 'x' else (at - 110, q - 110, 0, at + 110, q + 110, z0, False))
-    ang = math.radians(26.0)
-    run = HIGHWAY_Z / math.tan(ang); L = math.hypot(run, HIGHWAY_Z)
+    # the ramps: from the deck's end down to the kerb of the outer ring road (HW_FOOT). They used to start at 3600 and come down at 5035,
+    # right across that road at half height (skink52, 11 Nov 2026: "they ramp down halfway into the roads below"). The top surface runs
+    # from the deck's top edge to the ground (it used to sit 57 u under the deck: a lip), and under it stands a stepped concrete
+    # fill, so the ramp is an embankment and not a plank (the nav solids always said so: there was an unseen wall under it).
+    run = HW_FOOT - L1; ang = math.atan2(z1, run); Lr = math.hypot(run, z1); deg = math.degrees(ang)
     for e in (-1, 1):
         end = L1 if e > 0 else L0
-        mid_t = (end + e * run / 2, at, HIGHWAY_Z / 2 - HW_T / 2)
-        c = (mid_t[0], mid_t[1], mid_t[2]) if axis == 'x' else (at, mid_t[0], mid_t[2])
-        ctx.obox(c, (L / 2 + 20, HW_W / 2, HW_T / 2), 0.0 if axis == 'x' else 90.0, 26.0 * e, mats=dict(top=M['asphalt2'], side=M['concrete'], bottom=M['concrete']))
-        # the ramp's side barriers: the same box as the deck's, laid on the ramp (its centre lifted along the ramp's normal)
-        d = HW_T / 2 + 60
-        for s in (-1, 1):
-            along, zc, w = mid_t[0] + e * math.sin(ang) * d, mid_t[2] + math.cos(ang) * d, at + s * off
-            ctx.obox((along, w, zc) if axis == 'x' else (w, along, zc), (L / 2 - 30, 40, 60), 0.0 if axis == 'x' else 90.0, 26.0 * e, mats=M['concrete2'])
-        for k in range(5):
-            a, b = sorted((end + e * run * k / 5, end + e * run * (k + 1) / 5)); zt = HIGHWAY_Z * (1 - (k + 0.5) / 5)
+        top_mid = (end + e * run / 2, z1 / 2)                               # (along, z) of the top surface's middle
+        ca, cz = top_mid[0] - e * math.sin(ang) * HW_T / 2, top_mid[1] - math.cos(ang) * HW_T / 2
+        ctx.obox((ca, at, cz) if axis == 'x' else (at, ca, cz), (Lr / 2 + 6, HW_W / 2, HW_T / 2), 0.0 if axis == 'x' else 90.0, deg * e,
+                 mats=dict(top=M['asphalt2'], side=M['concrete'], bottom=M['concrete']))
+        for s in (-1, 1):                                                   # side barriers laid on the ramp
+            ba, bz, w = top_mid[0] + e * math.sin(ang) * 60, top_mid[1] + math.cos(ang) * 60, at + s * off
+            ctx.obox((ba, w, bz) if axis == 'x' else (w, ba, bz), (Lr / 2 - 30, 40, 60), 0.0 if axis == 'x' else 90.0, deg * e, mats=M['concrete2'])
+            fa = end + e * (run - 40)                                       # a low end block where each barrier meets the ground
+            bx(min(fa, fa + e * 70), max(fa, fa + e * 70), w - 52, w + 52, -10, 96, M['concrete2'])
+        N = 6
+        for k in range(N):
+            a, b = sorted((end + e * run * k / N, end + e * run * (k + 1) / N))
+            zt = z1 * (1 - (k + 0.5) / N)                                    # the nav step: the ramp's height at the step's middle
             SOLIDS.append((a, at - HW_W / 2, 0, b, at + HW_W / 2, zt, True) if axis == 'x' else (at - HW_W / 2, a, 0, at + HW_W / 2, b, zt, True))
+            zf = z1 * (1 - (k + 1) / N) - HW_T / math.cos(ang) + 4               # the fill: up to the slab's underside at the step's low end
+            if zf > 30: bx(a, b, at - HW_W / 2 + 14, at + HW_W / 2 - 14, -10, zf, M['concrete'])
 
 
 def plaza(ctx):
@@ -259,7 +269,7 @@ def build(ctx):
         return [(x, -3500 + i * 7000.0 / (n - 1), 1500.0, 0.0 if x < 0 else 180.0) for i in range(n)]
     ffa = [(x, y, 1500.0, (math.degrees(math.atan2(-y, -x))) % 360) for (x, y) in ((2400, 2400), (-2400, 2400), (2400, -2400), (-2400, -2400), (0, 4800), (0, -4800), (4800, 0), (-4800, 0))]
     if CITY:
-        PLAN.update(centres=CENTRES, block=BLOCK, avenue=AVENUE, plaza=PLAZA_H, highways=[['x', 2400.0], ['y', -2400.0]], highway_z=HIGHWAY_Z + HW_T,
+        PLAN.update(centres=CENTRES, block=BLOCK, avenue=AVENUE, plaza=PLAZA_H, highways=[['x', 2400.0], ['y', -2400.0]], highway_z=HIGHWAY_Z + HW_T, hw_end=HW_END, hw_foot=HW_FOOT, hw_piers=HW_PIERS,
                     hw_w=HW_W, play=PLAY, half=HALF, points=dict(A=[A_POS[0], A_POS[1], PODIUM_Z], B=[0.0, 0.0, 40.0], C=[C_POS[0], C_POS[1], PODIUM_Z]))
         gen = os.path.join(ctx.out, '_gen'); os.makedirs(gen, exist_ok=True)
         json.dump(PLAN, open(os.path.join(gen, 'sprawl_plan.json'), 'w'), indent=1)

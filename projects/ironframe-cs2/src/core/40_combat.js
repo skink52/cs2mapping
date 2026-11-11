@@ -283,6 +283,7 @@ function IF_mechDie(game, v, killer, wkey) {
 function IF_explode(game, pos, radius, dmg, impact, owner, wkey, kind, wp) {
   game.emit({ t: 'explode', pos: IF_v3(pos.x, pos.y, pos.z), radius, kind: kind || wkey || 'blast' });
   if (!(radius > 0)) return;
+  IF_propsBlast(game, pos, radius, dmg, owner);         // 88_props.js: cars in the blast
   const D = game.cfg.dmg;
   const g = game.grid, i0 = g.ci(pos.x - radius), i1 = g.ci(pos.x + radius), j0 = g.cj(pos.y - radius), j1 = g.cj(pos.y + radius);
   const st = ++g.stampN;
@@ -526,6 +527,7 @@ function IF_fireHitscan(game, m, wp, mult, spreadExtra) {
   const to = game._to;
   if (v) { const t = game._hitT; to.x = IF_lerp(mz.x, e.x, t); to.y = IF_lerp(mz.y, e.y, t); to.z = IF_lerp(mz.z, e.z, t); }
   else IF_vcopy(to, e);
+  IF_propsSegment(game, mz.x, mz.y, mz.z, to.x, to.y, to.z, w.damage * wp.dmgMult * (mult || 1), m.slot);      // 88_props.js: cars on the line
   IF_fireEvent(game, m, wp, mz, d);
   IF_beam(game, mz, to, w.en_shot > 0 || !!w.cannon, m.slot, w.cannon ? 1.5 : mult > 1 ? 1.4 : 1);
   if (v) { const fo = IF_falloff(game, wp.part, IF_vdist(mz, to)); IF_applyDamage(game, v, m.slot, w.damage * wp.dmgMult * (mult || 1) * fo, (w.impact || 0) * (mult > 1 ? 1.5 : 1) * fo, to, wp.part.key, mz, { wp }); game.emit({ t: 'hit', pos: IF_v3(to.x, to.y, to.z), normal: null, kind: 'mech' }); }
@@ -960,6 +962,7 @@ function IF_bulletsStep(game, dt) {
     let t1 = B.t[i] + dt, step = dt, worldHit = false;
     if (!grav && (B.flags[i] & IF_BF_WORLD) && t1 >= B.tWorld[i]) { step = Math.max(0, B.tWorld[i] - B.t[i]); worldHit = true; }
     let nx = ox + B.vx[i] * step, ny = oy + B.vy[i] * step, nz = oz + B.vz[i] * step;
+    if (game.dprops && game.dprops.alive) IF_propsSegment(game, ox, oy, oz, nx, ny, nz, B.dmg[i], B.owner[i]);      // 88_props.js
     // mechs in the cells of both ends
     const owner = B.owner[i], side = B.side[i], st = ++G.stampN, useLag = (B.flags[i] & IF_BF_LAG) !== 0;
     let hit = null, ht = 2;

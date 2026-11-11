@@ -313,6 +313,7 @@ function handleEvent(ev) {
   featEvent(ev);
   traitEvent(ev);
   auraEvent(ev);
+  if (ev.t === 'prop' || ev.t === 'props_reset') guard('props', () => propsEvent(ev));
   if (ev.t === 'qb') { const m = game.mechs.get(ev.slot); if (m) { const s = Math.sin((Math.atan2(m.vel.y, m.vel.x) * R2D - m.torsoYaw) * D2R); camKick(ev.slot, ev.chain ? 25 : 40, 0, -s * (ev.chain ? 110 : 90)); } }
   else if (ev.t === 'land') camKick(ev.slot, 0, ev.hard ? -70 : -25, 0);
   else if (ev.t === 'fire' && ev.hp >= 2) camKick(ev.slot, 25, 8, 0);
@@ -423,6 +424,7 @@ function think() {
 function frame(dt, now) {
   if ((ifrTickNo & 63) === 0) scanPeople();
   fxTick(now);
+  propsTick(now);
   srvTick(now);
   flushKills(); respawnWatch(now);
   if (navProbing) { const done = guard('nav probe', () => game.probeStep(world, 90)); if (done !== false) { navProbing = false; log('world survey done: ' + game.probeSummary()); } }

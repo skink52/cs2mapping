@@ -103,3 +103,5 @@ per-tick moves. Tests: `node test/auras.cjs`. Review: `preview/auras/sheet.png` 
   a prop from one client, so other players see that mech's aura dimmed too.
 - Hooks: `40_fx.js` fxMechGone -> auraGone (before the rig's props are reused), fxReset -> auraReset; `90_main.js` handleEvent ->
   auraEvent, frame -> auraTick after the mechs are drawn. Not tested in game yet (flipbook animation on props and tint > 1 unconfirmed).
+
+- **Destructible props** (`src/core/88_props.js`, adapter `48_props.js`): `arena.cars` `[[x, y, z, radius, big, yaw, pitch, roll, tint], ...]`; hit points 600 / 1 600; hurt by hitscan, bullets in flight (they pass through), explosions, a walking mech (crushed). Destroyed: `{t:"prop", id, how: "boom"|"crush", pos, slot}`, the explosion a tick later (`IF_explode`, key `car`, owner = the destroyer: chains), burning 14 s (`prop_out`), `props_reset` at the round start. Map: `prop_dynamic_override` named `ifr_car` at each entry's position.
