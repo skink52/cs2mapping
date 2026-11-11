@@ -197,7 +197,7 @@ out.push('', '## Anti-stomp: a fully upgraded loadout against stock', '');
   let t = 0, end = false;
   for (let k = 0; k < 64 * 620 && !end; k++) { g.tick(DT, t += DT); for (const e of g.events) if (e.t === 'round_end') end = true; g.events.length = 0; }
   const cr = [...g.mechs.values()].filter((m) => m.slot < 64).map((m) => m.sum.credits).sort((a, b) => a - b), med = cr[cr.length >> 1];
-  const lv = P.caps.levels, track = (p) => { let c = 0; for (let l = 0; l < lv; l++) c += C.IF_upgradeCost ? C.IF_upgradeCost(p, l, P.caps) : Math.floor((p.cost || 0) * (P.caps.upgrade_cost_pct || 100) / 100) * (l + 1); return c; };
+  const lv = P.caps.levels, track = (p) => { let c = 0; for (let l = 0; l < lv; l++) c += C.IF_upgradeCost ? C.IF_upgradeCost(p, l, P.caps) : Math.floor(Math.max(p.cost || 0, P.caps.upgrade_floor_cost || 0) * (P.caps.upgrade_cost_pct || 100) / 100) * (l + 1); return c; };
   const perDay = 5 * med + 2100;   // 5 rounds plus 3 daily contracts (the plugin's default pool pays 400-1 200, about 700 each)
   out.push('', '## Progression: earn rate and upgrade costs', '',
     `One Team Deathmatch round, 32 v 32 AI pilots to 150 kills, lasted ${t.toFixed(0)} s and paid a median ${med} credits (range ${cr[0]}-${cr[cr.length - 1]}; XP x ${P.xp.credits_per_xp}). ` +

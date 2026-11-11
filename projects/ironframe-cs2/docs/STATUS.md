@@ -49,8 +49,7 @@
   1 200 u, +40 % EN); every kill salvages 25 % ammo and 8 % AP; a weapon rested 6 s rebuilds its reserve (full in 120 s), so nobody is
   left dry. Artillery used to fire the instant it was earned at whatever was locked, at the spot the target had already left: it now
   arms after 1.5 s, each shell aims 0.9 s before landing at where the target will be, with a falling streak, and says so when the
-  target is too close. Unit tested (features: 62 checks); **balance not re-measured** (bots refit and salvage too: re-run
-  test/balance.cjs and watch round length), nothing of it played yet.
+  target is too close. Unit tested (features: 62 checks); test/balance.cjs re-run: a 32 v 32 AI Team Deathmatch round lasts 431 s (424 s before) and pays a median 487 credits (475), so bots refitting and salvaging barely move it. Nothing of it played yet.
 
 **11 Nov 2026, 11:52: Dunes on the local test server (C:\cs2server, port 27015).** `python -I tools/server_copy.py copy mg_ironframe_dunes`
 copies the map .vpk and the addon's compiled files under the server's game\csgo (5 390 files, 1.36 GB; manifest

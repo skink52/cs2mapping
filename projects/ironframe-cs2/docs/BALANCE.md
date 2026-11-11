@@ -122,7 +122,7 @@ One Team Deathmatch round, 32 v 32 AI pilots to 150 kills, lasted 431 s and paid
 | SC-Longbow | 9500 | 42750 | 88 | 9.4 |
 | PB-Eclipse | 12000 | 54000 | 111 | 11.9 |
 
-Starter parts (price 0) upgrade as if they cost 2000 (`caps.upgrade_floor_cost`, the cheapest paid part; 11 Nov 2026: they were free, and every part has the same track): a full track is 0 credits, 0 rounds. The power on top is small by design (AP +5 %, DPS +3 % at MK V); a frame at MK V also wears its aura in the accent colour.
+Starter parts (price 0) upgrade as if they cost 2000 (`caps.upgrade_floor_cost`, the cheapest paid part; 11 Nov 2026: they were free, and every part has the same track): a full track is 9000 credits, 19 rounds. The power on top is small by design (AP +5 %, DPS +3 % at MK V); a frame at MK V also wears its aura in the accent colour.
 
 ## Tuning notes
 
