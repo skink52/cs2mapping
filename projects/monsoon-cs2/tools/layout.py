@@ -4,7 +4,7 @@ render_board.py (the artillery board picture), make_skybox.py (MAP_X/MAP_Y/groun
 Units: Source units, Z up. CT (US) firebase south-east, T (PAVN) camp north-west. The river runs west -> east.
 All height functions take numpy arrays (or floats) and are vectorised.
 """
-import json, math
+import json, math, os
 import numpy as np
 from noise import fbm, smoothstep
 
@@ -29,9 +29,9 @@ MARSH_X0 = 5000.0        # east of this the floodplain dips into marsh pools
 
 # ---------------------------------------------------------------- places (x, y) / (x, y, z)
 CT_BASE = (3900.0, -2900.0)       # firebase hill centre
-CT_PLATEAU_R, CT_FOOT_R, CT_Z = 760.0, 1750.0, 620.0
+CT_PLATEAU_R, CT_FOOT_R, CT_Z = 1200.0, 2250.0, 620.0   # 11 Nov: was 760/1750, too small for 3 pads + 3 gun pits + the bunker ring
 T_BASE = (-3900.0, 2900.0)        # camp saddle centre
-T_PLATEAU_R, T_FOOT_R, T_Z = 700.0, 1500.0, 300.0
+T_PLATEAU_R, T_FOOT_R, T_Z = 1000.0, 1800.0, 300.0      # 11 Nov: was 700/1500 (three Hips need 700 u between masts)
 TEMPLE = (2600.0, 900.0); TEMPLE_R, TEMPLE_FOOT, TEMPLE_H = 420.0, 820.0, 160.0
 VILLAGE = (-300.0, 2400.0); VILLAGE_R, VILLAGE_FOOT, VILLAGE_Z = 650.0, 1000.0, 120.0
 CRASH = (300.0, -2400.0); CRASH_R, CRASH_FOOT, CRASH_Z = 600.0, 950.0, 110.0
@@ -71,9 +71,11 @@ def river_dir(x):
 
 # flags (conquest points): letter, name, (x, y). A and B sit where the river geometry puts them.
 def _flags():
-    ya = float(river_y(-2600.0)) - 960.0
+    # A stands on a paddy dike junction (column line 2, row line 1), not in the water of a cell
+    xa = PADDY_X0 + 2 * PADDY_CELL_X
+    ya = float(river_y(xa)) + PADDY_YR0 + PADDY_CELL_Y
     yb = float(river_y(0.0))
-    return [('a', 'Paddies', (-2600.0, ya)), ('b', 'Bridge', (0.0, yb)), ('c', 'Village', VILLAGE),
+    return [('a', 'Paddies', (xa, ya)), ('b', 'Bridge', (0.0, yb)), ('c', 'Village', VILLAGE),
             ('d', 'Temple', TEMPLE), ('e', 'Crash Site', CRASH)]
 
 
@@ -81,7 +83,12 @@ FLAGS = _flags()
 FLAG_R = 350.0           # capture radius
 BRIDGE_X = 0.0
 BRIDGE_Y = float(river_y(0.0))
-BRIDGE_LEN = 2 * BANK_W + 120     # deck from bank to bank (+ abutments)
+BRIDGE_LEN = 1200.0               # two 600-u truss spans along y, centred on the river
+BRIDGE_DECK_Z = 56.0              # top of the deck (flag B stands on it); ramps run down to the road at both ends
+BRIDGE_RAMP = 200.0               # length of each approach ramp beyond the span ends
+FARM = (FLAGS[0][2][0] + 40.0, FLAGS[0][2][1] - 640.0)      # the farm cluster south of the paddies (dry terrace)
+# small terraces flattened to their centre height: (x, y, flat radius, foot radius)
+FLATS = [(FARM[0], FARM[1], 330.0, 560.0)]
 
 # roads: (half width, [(x, y), ...]); trails are narrower
 ROADS = [
@@ -104,8 +111,12 @@ for (cx, cy, n, spread) in ((1400.0, -2000.0, 7, 900.0), (900.0, 1500.0, 6, 800.
         CRATERS.append((cx + _cr.uniform(-spread, spread), cy + _cr.uniform(-spread * 0.7, spread * 0.7), _cr.uniform(80, 150), _cr.uniform(18, 30)))
 
 
+CRATERS = [c for c in CRATERS if math.hypot(c[0] - CT_BASE[0], c[1] - CT_BASE[1]) > CT_PLATEAU_R + 380.0
+           and math.hypot(c[0] - T_BASE[0], c[1] - T_BASE[1]) > T_PLATEAU_R + 300.0]
+
+
 # tributary gullies (dry-season creek beds, monsoon mud): (half width, depth, [(x, y)...]) carved into the ground, mud paint
-GULLIES = [(42.0, 22.0, [(3400.0, -2050.0), (2900.0, -1500.0), (2500.0, -900.0), (2100.0, float(river_y(2100.0)) - 300.0)]),
+GULLIES = [(42.0, 22.0, [(3080.0, -1700.0), (2900.0, -1500.0), (2500.0, -900.0), (2100.0, float(river_y(2100.0)) - 300.0)]),
            (38.0, 20.0, [(-4200.0, 2100.0), (-3700.0, 1500.0), (-3300.0, 900.0), (-3100.0, float(river_y(-3100.0)) + 300.0)]),
            (30.0, 16.0, [(1900.0, 3300.0), (1500.0, 2500.0), (1100.0, 1700.0), (900.0, float(river_y(900.0)) + 300.0)]),
            (30.0, 16.0, [(-1200.0, -3600.0), (-900.0, -2900.0), (-1500.0, -2300.0), (-1700.0, float(river_y(-1700.0)) - 300.0)])]
@@ -184,7 +195,7 @@ def paddy_height(x, yr, x0, x1, yr0, yr1, cx, cy, rows_up, z0):
     return h, inside, floor
 
 
-def features(x, y, h):
+def features(x, y, h, flats=True):
     """flags' terraces, bases, karst skirts, paddies, roads, craters"""
     x = np.asarray(x, float); y = np.asarray(y, float)
     yr = y - river_y(x)
@@ -221,7 +232,16 @@ def features(x, y, h):
         d = _dist(x, y, (cx, cy)) / r
         bowl = np.where(d < 1.0, -dep * (1.0 - d * d) ** 2, 0.0) + np.where((d > 0.8) & (d < 1.5), dep * 0.18 * np.sin(np.clip((d - 0.8) / 0.7, 0, 1) * np.pi), 0.0)
         h = h + bowl
+    if flats:
+        for k, (fx, fy, r0, r1) in enumerate(FLATS):
+            if k not in _FLAT_Z:
+                _FLAT_Z[k] = float(features(np.array([fx]), np.array([fy]), base_terrain(np.array([fx]), np.array([fy])), flats=False)[0])
+            w = 1.0 - smoothstep(r0, r1, _dist(x, y, (fx, fy)))
+            h = h * (1 - w) + _FLAT_Z[k] * w
     return h
+
+
+_FLAT_Z = {}
 
 
 def _road_profile(pts, hw):
@@ -396,58 +416,97 @@ def ring(centre, r, n, start=0.0):
     return [(centre[0] + r * math.cos(start + 2 * math.pi * k / n), centre[1] + r * math.sin(start + 2 * math.pi * k / n)) for k in range(n)]
 
 
+def pol(c, r, deg):
+    a = math.radians(deg)
+    return (c[0] + r * math.cos(a), c[1] + r * math.sin(a))
+
+
+def _gate_angle():
+    """where road 0 crosses the firebase wall ring (degrees from the base centre)"""
+    c = CT_BASE; r = CT_PLATEAU_R - 110.0
+    a = np.array(ROADS[0][1][1], float); b = np.array(ROADS[0][1][0], float)
+    for t in np.linspace(0.0, 1.0, 2001):
+        p = a + (b - a) * t
+        if math.hypot(p[0] - c[0], p[1] - c[1]) <= r: return math.degrees(math.atan2(p[1] - c[1], p[0] - c[0])) % 360.0
+    return 142.0
+
+
 def firebase():
-    """CT firebase plan (everything on the plateau, z = CT_Z): pits, pads, bunkers, FDC"""
+    """CT firebase plan (on the plateau, z = CT_Z). 11 Nov: laid out again for the real prop sizes (480-u pads, 430-u gun pits):
+    pads east, the battery west / south, the gate where the road crosses the wall, bunkers on the wall ring between them."""
     c = CT_BASE
+    gate_a = _gate_angle()
+    wall_r = CT_PLATEAU_R - 110.0
+    b_ang = [96.0, 146.0, 215.0, 276.0, 321.0, 51.0]
+    r0 = ROADS[0][1][0]
     return dict(
         centre=c, z=CT_Z,
-        fdc=(c[0] - 40.0, c[1] + 60.0),                                   # the FDC bunker (plotting table inside)
-        guns=[(c[0] + 300.0 * math.cos(a), c[1] + 300.0 * math.sin(a)) for a in (math.radians(150), math.radians(230), math.radians(310))],
-        ammo=(c[0] + 180.0, c[1] + 140.0),
-        pads=[(c[0] + 520.0, c[1] + 120.0), (c[0] + 520.0, c[1] - 240.0), (c[0] + 240.0, c[1] + 460.0)],
+        fdc=(c[0] - 40.0, c[1] + 60.0), fdc_yaw=90.0,                     # the FDC bunker (plotting table in its porch, opening north)
+        guns=[pol(c, 600.0, a) for a in (176.0, 228.0, 280.0)], pit_r=232.0,
+        ammo=(c[0] + 300.0, c[1] - 120.0),
+        pads=[pol(c, 640.0, a) for a in (-34.0, 23.5, 81.5)], pad_angles=[-34.0, 23.5, 81.5], pad_scale=0.72,
         pad_yaw=180.0,
-        toc=(c[0] - 330.0, c[1] + 330.0),
-        tents=[(c[0] - 420.0, c[1] - 60.0), (c[0] - 420.0, c[1] - 200.0), (c[0] - 300.0, c[1] - 420.0)],
-        bunkers=ring(c, CT_PLATEAU_R - 110.0, 6, start=math.radians(15)),
-        m2=[0, 2, 4],                                                      # bunker indices with an M2
-        tower=(c[0] + 560.0 * math.cos(math.radians(60)), c[1] + 560.0 * math.sin(math.radians(60))),
-        gate=(c[0] + (CT_PLATEAU_R - 40.0) * math.cos(math.radians(142)), c[1] + (CT_PLATEAU_R - 40.0) * math.sin(math.radians(142))),
-        wire_r=CT_PLATEAU_R - 30.0,
-        rack=(c[0] + 60.0, c[1] - 160.0),
-        spawns=ring(c, 170.0, 16, start=0.3))
+        toc=(c[0] - 320.0, c[1] + 665.0), toc_yaw=90.0,
+        tents=[], tent_yaws=[],
+        bunkers=[pol(c, wall_r - 50.0, a) for a in b_ang], bunker_angles=b_ang,
+        m2=[0, 1, 5],                                                      # bunker indices with an M2 nest (north, north-west, north-east)
+        tower=pol(c, 880.0, 254.0),
+        quad50=pol(c, 960.0, 186.0),
+        gate=pol(c, wall_r, gate_a), gate_angle=gate_a,
+        road_in=[pol(c, wall_r + 40.0, gate_a), r0, (c[0] - 330.0, c[1] + 300.0), (c[0] - 150.0, c[1] - 120.0)],   # track inside the wall
+        wire_r=wall_r,
+        fuel=pol(c, 900.0, 302.0),
+        rack=(c[0] - 20.0, c[1] - 230.0),
+        spawns=ring((c[0] - 20.0, c[1] - 230.0), 130.0, 16, start=0.3))
 
 
 def camp():
-    """T camp plan: rocket pits, AA pits, hooches, heli clearing, tunnel portal, FDC hooch"""
+    """T camp plan. 11 Nov: laid out again: the three Hips (870 long, 690 rotor) sit 700 apart on the west / south side under nets,
+    rocket pits east (firing down the valley), hooches north, the tunnel portal on the east edge."""
     c = T_BASE
     return dict(
         centre=c, z=T_Z,
-        fdc=(c[0] + 60.0, c[1] - 80.0),
-        rockets=[(c[0] + 330.0 * math.cos(a), c[1] + 330.0 * math.sin(a)) for a in (math.radians(-60), math.radians(-20), math.radians(20), math.radians(60))],
-        ammo=(c[0] + 160.0, c[1] + 40.0),
-        aa=[(c[0] - 380.0, c[1] + 300.0), (c[0] + 120.0, c[1] + 480.0)],
-        pads=[(c[0] - 520.0, c[1] - 200.0), (c[0] - 480.0, c[1] + 160.0), (c[0] - 200.0, c[1] - 520.0)],
-        pad_yaw=0.0,
-        hooches=[(c[0] - 150.0, c[1] + 260.0), (c[0] - 320.0, c[1] + 20.0), (c[0] + 20.0, c[1] + 330.0), (c[0] - 60.0, c[1] - 330.0), (c[0] + 260.0, c[1] + 300.0)],
-        tunnel=(c[0] + 120.0, c[1] - 240.0),
-        rack=(c[0] - 40.0, c[1] + 120.0),
-        spawns=ring(c, 160.0, 16, start=0.7))
+        fdc=(c[0] - 110.0, c[1] + 170.0), fdc_yaw=-30.0,
+        rockets=[pol(c, 430.0, a) for a in (22.0, 58.0, -34.0)] + [(c[0] - 120.0, c[1] - 280.0)], pit_r=105.0,
+        ammo=(c[0] + 190.0, c[1] + 130.0),
+        aa=[(c[0] + 250.0, c[1] + 600.0), (c[0] + 720.0, c[1] - 360.0)],
+        pads=[(c[0] - 700.0, c[1] + 100.0), (c[0] - 620.0, c[1] - 600.0), (c[0] + 100.0, c[1] - 880.0)],
+        pad_yaw=0.0, net_scale=(1.75, 1.6, 1.5),
+        hooches=[(c[0] - 40.0, c[1] + 500.0, -90.0), (c[0] + 610.0, c[1] + 440.0, 200.0), (c[0] - 380.0, c[1] + 720.0, -70.0),
+                 (c[0] + 730.0, c[1] + 140.0, 180.0), (c[0] - 120.0, c[1] + 830.0, -90.0)],
+        tunnel=TUNNEL_PORTALS[0],
+        rack=(c[0] + 80.0, c[1] - 80.0),
+        spawns=ring((c[0] + 80.0, c[1] - 80.0), 115.0, 16, start=0.7))
 
 
-# tunnel plan (T camp): portals and the gallery graph, in the x/y plane; depth below the ground is handled by make_map
-TUNNEL_FLOOR_Z = T_Z - 230.0
-TUNNEL_PORTALS = [(T_BASE[0] + 120.0, T_BASE[1] - 240.0),          # camp (inside the base)
-                  (-3100.0, 1750.0),                                # north-west slope exit toward the paddies trail
+# tunnel plan (T camp): portals and the gallery graph in the x/y plane. The floor follows the ground about 150 u down and ramps up
+# to each portal (mv_places.tunnel_plan). 11 Nov: the camp portal moved to the east edge (the old one sat on a rocket pit).
+_J1 = (T_BASE[0] + 640.0, T_BASE[1] - 600.0)
+TUNNEL_PORTALS = [(T_BASE[0] + 520.0, T_BASE[1] - 300.0),          # camp (inside the base, east edge)
+                  (-3100.0, 1750.0),                                # south slope exit toward the paddies trail
                   (-2300.0, 2850.0)]                                # exit toward the village road
-TUNNEL_GALLERIES = [[(T_BASE[0] + 120.0, T_BASE[1] - 240.0), (-3600.0, 2400.0), (-3300.0, 2050.0), (-3100.0, 1750.0)],
-                    [(-3600.0, 2400.0), (-3000.0, 2600.0), (-2300.0, 2850.0)],
-                    [(-3300.0, 2050.0), (-3000.0, 2600.0)]]        # cross cut
-TUNNEL_CHAMBER = (-3300.0, 2350.0)
+TUNNEL_GALLERIES = [[TUNNEL_PORTALS[0], _J1, (-3300.0, 2050.0), (-3100.0, 1750.0)],
+                    [_J1, (-3000.0, 2600.0), (-2300.0, 2850.0)],
+                    [(-3300.0, 2050.0), (-3000.0, 2600.0)],        # cross cut
+                    [_J1, (T_BASE[0] + 800.0, T_BASE[1] - 690.0)]]  # stub into the chamber
+TUNNEL_CHAMBER = (T_BASE[0] + 800.0, T_BASE[1] - 690.0)
+TUNNEL_CHAMBER_R = 120.0
+TUNNEL_HW = 40.0
+
+
+def flag_z(letter):
+    """z of a flag's base: the ground, or the bridge deck for B"""
+    for l, name, c in FLAGS:
+        if l == letter: return BRIDGE_DECK_Z if l == 'b' else gz(*c)
+    raise KeyError(letter)
 
 
 def flag_spawns(letter):
     for l, name, c in FLAGS:
         if l == letter:
+            if l == 'b':     # both bridge heads, beside the road beyond the ramps (never in the river)
+                e = BRIDGE_LEN / 2 + BRIDGE_RAMP + 90.0
+                return [(c[0] + dx, c[1] + s * (e + dy)) for s in (-1, 1) for (dx, dy) in ((-150.0, 0.0), (150.0, 0.0), (-150.0, 110.0), (150.0, 110.0))]
             return ring(c, 230.0, 8, start=0.4)
     raise KeyError(letter)
 
@@ -455,8 +514,8 @@ def flag_spawns(letter):
 def mounted_guns():
     """neutral emplaced guns: (name, kind, (x, y), yaw)"""
     b = FLAGS[1][2]; d = TEMPLE
-    return [('bridge', 'm2', (b[0] + 150.0, b[1] - BANK_W - 160.0), 90.0),
-            ('temple', 'dshk', (d[0] + 60.0, d[1] - 40.0), -90.0)]
+    return [('bridge', 'm2', (b[0] + 150.0, b[1] - BRIDGE_LEN / 2 - 150.0), 90.0),
+            ('temple', 'dshk', (d[0] + 250.0, d[1] - 120.0), -45.0)]      # east side of the courtyard (11 Nov: the tower stands at the old spot)
 
 
 # ---------------------------------------------------------------- export for the script / radar / board
@@ -464,12 +523,24 @@ def export(path):
     fb = firebase(); cp = camp()
     data = dict(
         map=dict(x=MAP_X, y=MAP_Y, air=[AIR_X, AIR_Y, AIR_Z], water_z=WATER_Z, lobby_z=LOBBY_Z, park_z=PARK_Z),
-        flags=[dict(id=l, name=n, x=c[0], y=c[1], z=gz(*c), r=FLAG_R) for l, n, c in FLAGS],
+        flags=[dict(id=l, name=n, x=c[0], y=c[1], z=flag_z(l), r=FLAG_R) for l, n, c in FLAGS],
         ct=dict(centre=list(CT_BASE), z=CT_Z, guns=[list(g) for g in fb['guns']], fdc=list(fb['fdc']), pads=[list(p) for p in fb['pads']], pad_yaw=fb['pad_yaw']),
         t=dict(centre=list(T_BASE), z=T_Z, guns=[list(g) for g in cp['rockets']], fdc=list(cp['fdc']), pads=[list(p) for p in cp['pads']], pad_yaw=cp['pad_yaw']),
         karst=[dict(x=k[0], y=k[1], r=k[2], h=k[3], top=gz(k[0], k[1]) + k[3]) for k in KARST],
+        tunnels=[list(p) for p in TUNNEL_PORTALS], bridge=dict(x=BRIDGE_X, y=BRIDGE_Y, deck_z=BRIDGE_DECK_Z, length=BRIDGE_LEN),
         river=[[float(x), float(river_y(x))] for x in np.linspace(-MAP_X, MAP_X, 65)],
     )
+    # coarse ground heights for the script's AI pilots: z[j * nx + i] is the ground at (x0 + i * cell, y0 + j * cell)
+    cell = 128.0; tx0, ty0 = -AIR_X - 40.0, -AIR_Y - 60.0
+    nx = int(round(-2 * tx0 / cell)) + 1; ny = int(round(-2 * ty0 / cell)) + 1
+    GX, GY = np.meshgrid(tx0 + np.arange(nx) * cell, ty0 + np.arange(ny) * cell)          # rows = y, columns = x
+    data['terrain'] = dict(x0=tx0, y0=ty0, cell=cell, nx=nx, ny=ny, z=[int(round(v)) for v in np.maximum(height(GX, GY), WATER_Z).ravel()])
+    # emplaced guns as the map built them (mv_entities writes mounts.json beside this file): mountinfo["N"] matches mv_mount_N
+    mj = os.path.join(os.path.dirname(os.path.abspath(path)), 'mounts.json')
+    if os.path.exists(mj):
+        ms = json.load(open(mj))
+        data['mountinfo'] = {str(m['n']): m for m in ms}
+        data['mounts'] = ms
     json.dump(data, open(path, 'w'), indent=1)
     return data
 

@@ -1,0 +1,736 @@
+{
+ "addons": [
+  {
+   "id": 1735519742,
+   "title": "[LFS] Mi-8T Hip",
+   "author": "merydian",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": []
+  },
+  {
+   "id": 2165664559,
+   "title": "[LFS] Vietnam Helicopter Pack #2",
+   "author": "Gredwitch",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "hip",
+     "mdl": "models/gredwitch/mi8/mi8.mdl",
+     "scale": 1.07,
+     "yaw": "auto",
+     "origin": "feet",
+     "dynamic": true,
+     "role": {
+      "upper": "heli_hip_gun",
+      "rotor": "rotor_hip",
+      "tail": "tailrotor_hip"
+     },
+     "split": "rotor=^main_rotor$;tail=^tail_rotor$;upper=.*",
+     "hulls": 5,
+     "origin_xy_bone": "^main_rotor$",
+     "pivot": {
+      "rotor": "^main_rotor$",
+      "tail": "^tail_rotor$"
+     }
+    },
+    {
+     "name": "hip_slick",
+     "mdl": "models/gredwitch/mi8/mi8.mdl",
+     "scale": 1.07,
+     "yaw": "auto",
+     "origin": "feet",
+     "dynamic": true,
+     "role": "heli_hip",
+     "bodygroups": {
+      "RightRocket1": 1,
+      "RightRocket2": 1,
+      "RightRocket3": 1,
+      "LeftRocket1": 1,
+      "LeftRocket2": 1,
+      "LeftRocket3": 1,
+      "RightVZU": 1,
+      "LeftVZU": 1,
+      "RightMG": 1,
+      "BackMG": 1,
+      "RightPil": 3,
+      "LeftPil": 3
+     },
+     "drop_bones": "^(main_rotor|tail_rotor)$",
+     "origin_xy_bone": "^main_rotor$",
+     "hulls": 5,
+     "matsub_of": "hip",
+     "note": "rotors: hip_rotor / hip_tail at the same pivots as hip"
+    },
+    {
+     "name": "huey",
+     "mdl": "models/gredwitch/uh1/uh1.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "origin": "feet",
+     "dynamic": true,
+     "role": {
+      "upper": "heli_huey",
+      "rotor": "rotor_huey",
+      "tail": "tailrotor_huey"
+     },
+     "split": "rotor=^Mainrotor_Joint$;tail=^Tailrotor_Joint$;upper=.*",
+     "hulls": 4,
+     "origin_xy_bone": "^Mainrotor_Joint$",
+     "pivot": {
+      "rotor": "^Mainrotor_Joint$",
+      "tail": "^Tailrotor_Joint$"
+     }
+    }
+   ]
+  },
+  {
+   "id": 2125035846,
+   "title": "[LFS] Vietnam Helicopter Pack",
+   "author": "Gredwitch",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "hind",
+     "mdl": "models/gredwitch/mi24a/mi24a.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "origin": "feet",
+     "dynamic": true,
+     "role": "new",
+     "split": "rotor=^toprotor$;tail=^tailrotor$;upper=.*",
+     "hulls": 5,
+     "origin_xy_bone": "^toprotor$",
+     "pivot": {
+      "rotor": "^toprotor$",
+      "tail": "^tailrotor$"
+     }
+    }
+   ]
+  },
+  {
+   "id": 1671748726,
+   "title": "[simfphys] Vietnam Vehicles Pack",
+   "author": "Zackrovich",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "m35",
+     "mdl": "models/outerhaven/vehicles/m35_body.mdl",
+     "scale": 1.016,
+     "yaw": 0,
+     "origin": "keep",
+     "role": "truck_wreck",
+     "hulls": 3,
+     "ground": true
+    }
+   ]
+  },
+  {
+   "id": 3366544842,
+   "title": "[LVS] M113 pack",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "m113",
+     "mdl": "models/sw/ground/m113/m113.mdl",
+     "length": 194,
+     "yaw": "auto",
+     "role": "m113_hulk",
+     "hulls": 2
+    }
+   ]
+  },
+  {
+   "id": 740797619,
+   "title": "Bad Company 2 models: Vietnam pack",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "pbr",
+     "mdl": "models/badcomp2/vehicles/pbr.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "role": "pbr_wreck",
+     "hulls": 3
+    },
+    {
+     "name": "t54",
+     "mdl": "models/badcomp2/vehicles/t-54 nva.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "role": "new",
+     "hulls": 2
+    },
+    {
+     "name": "m151",
+     "mdl": "models/badcomp2/vehicles/m151.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "role": "new"
+    },
+    {
+     "name": "gaz69",
+     "mdl": "models/badcomp2/vehicles/gaz-69.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "role": "new"
+    },
+    {
+     "name": "comm_station",
+     "mdl": "models/badcomp2/props/communication station (vietnam era).mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "role": "radio_prc25 / plot_table radio"
+    },
+    {
+     "name": "nva_ammo_case",
+     "mdl": "models/badcomp2/props/nva ammo case.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "role": "ammo_crate",
+     "surface": "wood"
+    },
+    {
+     "name": "nva_ammo_case_open",
+     "mdl": "models/badcomp2/props/nva ammo case open.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "role": "rocket_crate",
+     "surface": "wood"
+    },
+    {
+     "name": "w_ak47",
+     "mdl": "models/badcomp2/weapons/ak-47.mdl",
+     "scale": 1.016,
+     "yaw": "long",
+     "origin": "center",
+     "role": "new (weapon world model: arms racks, later weapon work)"
+    },
+    {
+     "name": "w_rpg7",
+     "mdl": "models/badcomp2/weapons/rpg-7 (vietnam era).mdl",
+     "scale": 1.016,
+     "yaw": "long",
+     "origin": "center",
+     "role": "new (weapon world model: arms racks, later weapon work)"
+    },
+    {
+     "name": "w_m14",
+     "mdl": "models/badcomp2/weapons/m14.mdl",
+     "scale": 1.016,
+     "yaw": "long",
+     "origin": "center",
+     "role": "new (weapon world model: arms racks, later weapon work)"
+    },
+    {
+     "name": "w_m79",
+     "mdl": "models/badcomp2/weapons/m79.mdl",
+     "scale": 1.016,
+     "yaw": "long",
+     "origin": "center",
+     "role": "new (weapon world model: arms racks, later weapon work)"
+    },
+    {
+     "name": "w_m60",
+     "mdl": "models/badcomp2/weapons/m60 (vietnam era).mdl",
+     "scale": 1.016,
+     "yaw": "long",
+     "origin": "center",
+     "role": "new (weapon world model: arms racks, later weapon work)"
+    }
+   ]
+  },
+  {
+   "id": 3477505306,
+   "title": "[LVS] - DShK 12,7MM",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": []
+  },
+  {
+   "id": 942347951,
+   "title": "Functional DSHK Machine Gun",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": []
+  },
+  {
+   "id": 1978220591,
+   "title": "Rising Storm Jungle Props",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "rs_elephant_grass",
+     "mdl": "models/rising_storm/foliage/elephant_grass.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "elephant_grass_a",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_bamboo_bundle",
+     "mdl": "models/rising_storm/foliage/bamboo_bundle.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "bamboo_clump",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_jungle_palm",
+     "mdl": "models/rising_storm/foliage/jungle_palm01.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "new",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_nypa_palm",
+     "mdl": "models/rising_storm/foliage/nypa_palm01.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "new",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_taro",
+     "mdl": "models/rising_storm/foliage/jungle_taro_roots.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "new",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_jungle_bush",
+     "mdl": "models/rising_storm/foliage/jungle_bush.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "new",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_jungle_tree",
+     "mdl": "models/rising_storm/foliage/jungle_tree01.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "rubber_tree",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_mangrove",
+     "mdl": "models/rising_storm/foliage/jungle_mangrove.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "root_tangle",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_bamboo_wall",
+     "mdl": "models/rising_storm/foliage/bamboo_wall01.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "bamboo_fence",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_coconut_palm",
+     "mdl": "models/rising_storm/foliage/coconut_palm01.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "new",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_ferns",
+     "mdl": "models/rising_storm/foliage/ferns_group.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "new",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_grass_set",
+     "mdl": "models/rising_storm/foliage/jungle_grass_set01.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "elephant_grass_b",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_hedge",
+     "mdl": "models/rising_storm/foliage/jungle_hedge.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "new",
+     "surface": "grass"
+    },
+    {
+     "name": "rs_undergrowth",
+     "mdl": "models/rising_storm/foliage/jungle_undergrowth.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "new",
+     "surface": "grass"
+    }
+   ]
+  },
+  {
+   "id": 1920174934,
+   "title": "Firebrand - Fortifications",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "sandbag_fort",
+     "mdl": "models/ninja/esp/fortification/sandbagfort.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "new",
+     "surface": "sand"
+    },
+    {
+     "name": "sandbag_cover",
+     "mdl": "models/ninja/esp/fortification/sandbagcover.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "new",
+     "surface": "sand"
+    }
+   ]
+  },
+  {
+   "id": 422672588,
+   "title": "Fortification Props Model Pack",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": []
+  },
+  {
+   "id": 309931181,
+   "title": "Blue_Skies's Vietnam War Weapons",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": []
+  },
+  {
+   "id": 1923196118,
+   "title": "Vietnam War USAF Planes",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "skyraider",
+     "mdl": "models/stuffs/airplanes/a1j_skyraider.mdl",
+     "length": 610,
+     "yaw": 0,
+     "role": "new"
+    }
+   ]
+  },
+  {
+   "id": 127682564,
+   "title": "COD4 Vehicle props",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "bm21",
+     "mdl": "models/kali/vehicles/cod4/ural_bm21.mdl",
+     "scale": 1.016,
+     "yaw": 0,
+     "role": "new",
+     "hulls": 3
+    },
+    {
+     "name": "ural",
+     "mdl": "models/kali/vehicles/cod4/ural_4320.mdl",
+     "scale": 1.016,
+     "yaw": 0,
+     "role": "truck_wreck",
+     "hulls": 3
+    },
+    {
+     "name": "zpu4",
+     "mdl": "models/kali/vehicles/cod4/zpu-4.mdl",
+     "scale": 1.016,
+     "yaw": 0,
+     "role": "new"
+    },
+    {
+     "name": "rocket_grad",
+     "mdl": "models/kali/vehicles/cod4/bm21_rocket.mdl",
+     "scale": 1.016,
+     "yaw": "long",
+     "origin": "center",
+     "dynamic": true,
+     "role": "rocket_122"
+    }
+   ]
+  },
+  {
+   "id": 1391460275,
+   "title": "Gredwitch's Emplacement Pack",
+   "author": "Gredwitch",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "m101",
+     "mdl": "models/gredwitch/m2a1/m2a1_carriage_open.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "origin": "keep",
+     "dynamic": true,
+     "role": "howitzer_m102",
+     "ground": true,
+     "parts": [
+      {
+       "mdl": "models/gredwitch/m2a1/m2a1_wheels.mdl",
+       "pos": [
+        0,
+        0,
+        0
+       ]
+      },
+      {
+       "mdl": "models/gredwitch/m2a1/m2a1_yaw.mdl",
+       "pos": [
+        -5.40738,
+        0,
+        4.08412
+       ]
+      }
+     ],
+     "attach": {
+      "m101_gun": [
+       -18.73,
+       0,
+       40.22
+      ]
+     }
+    },
+    {
+     "name": "m101_gun",
+     "mdl": "models/gredwitch/m2a1/m2a1_gun.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "origin": "keep",
+     "dynamic": true,
+     "role": "howitzer_m102_gun",
+     "matsub_of": "m101"
+    },
+    {
+     "name": "m2_tripod",
+     "mdl": "models/gredwitch/m2browning/m2_tripod.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "origin": "keep",
+     "role": "m3_tripod",
+     "ground": true,
+     "attach": {
+      "m2_gun": [
+       0,
+       0,
+       62.9
+      ]
+     }
+    },
+    {
+     "name": "m2_gun",
+     "mdl": "models/gredwitch/m2browning/m2_gun.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "origin": "keep",
+     "dynamic": true,
+     "role": "m2_gun",
+     "matsub_of": "m2_tripod"
+    },
+    {
+     "name": "dshk_tripod",
+     "mdl": "models/gredwitch/dhsk/dhsk_tripod.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "origin": "keep",
+     "role": "dshk_mount",
+     "ground": true,
+     "parts": [
+      {
+       "mdl": "models/gredwitch/dhsk/dhsk_yaw.mdl",
+       "pos": [
+        0,
+        0,
+        42.5
+       ]
+      }
+     ],
+     "attach": {
+      "dshk_gun": [
+       -4.06,
+       0,
+       48.77
+      ]
+     }
+    },
+    {
+     "name": "dshk_gun",
+     "mdl": "models/gredwitch/dhsk/dhsk_gun.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "origin": "keep",
+     "dynamic": true,
+     "role": "dshk_gun",
+     "matsub_of": "dshk_tripod"
+    },
+    {
+     "name": "m60_gun",
+     "mdl": "models/gredwitch/m60/m60_gun.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "origin": "keep",
+     "dynamic": true,
+     "role": "m60_gun"
+    },
+    {
+     "name": "mortar_m1",
+     "mdl": "models/gredwitch/m1_mortar/m1_mortar_bipod.mdl",
+     "scale": 1.016,
+     "yaw": "auto",
+     "origin": "keep",
+     "role": "new",
+     "ground": true,
+     "parts": [
+      {
+       "mdl": "models/gredwitch/m1_mortar/m1_mortar.mdl",
+       "pos": [
+        0,
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 933819302,
+   "title": "Tent Army V2 by Neiremberg",
+   "author": "Neiremberg",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "tent_gp",
+     "mdl": "models/tent_v2/tent_green_v2.mdl",
+     "scale": 1.0,
+     "yaw": 0,
+     "role": "gp_tent",
+     "surface": "cloth"
+    }
+   ]
+  },
+  {
+   "id": 2618422747,
+   "title": "HD Oil Drum Remaster",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": []
+  },
+  {
+   "id": 1243825019,
+   "title": "Military Cases PROPS",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": []
+  },
+  {
+   "id": 3455190009,
+   "title": "PRL MI-8 replaces combine dropship",
+   "author": "GhostLynx",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": []
+  },
+  {
+   "id": 944539940,
+   "title": "Wooden Tower [Props] By Neiremberg",
+   "author": "Neiremberg",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "wood_tower",
+     "mdl": "models/defensive_camp_v2/camp_tower.mdl",
+     "height": 380,
+     "yaw": 0,
+     "role": "guard_tower",
+     "surface": "wood"
+    }
+   ]
+  },
+  {
+   "id": 887209835,
+   "title": "Helicopter Wreck Model",
+   "author": "?",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": [
+    {
+     "name": "heli_wreck",
+     "mdl": "models/helicopter/helicopter.mdl",
+     "scale": 1.0,
+     "yaw": "auto",
+     "role": "wreck_huey",
+     "hulls": 3
+    }
+   ]
+  },
+  {
+   "id": 939768444,
+   "title": "Defensive Camp /Wooden Defense [Props] By Neiremberg",
+   "author": "Neiremberg",
+   "license_note": "",
+   "rip": "",
+   "status": "fetched",
+   "items": []
+  }
+ ]
+}

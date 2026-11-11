@@ -393,10 +393,11 @@ def arms_rack(lod=0, seed=79, side='ct'):
             m.add(MG.cyl((-24 + k * 8, 30, 4), (-24 + k * 8, 60, 4), 1.4, 'soviet', p, sides=8))
             m.add(MG.cyl((-24 + k * 8, 56, 4), (-24 + k * 8, 64, 4), 3.4, 'soviet', p, sides=10, r1=1.0))
     SIGN = MG.text_img(['ARMS' if side == 'ct' else 'VU KHI', 'E: RIFLE  MG  AT'], 256, 72, color=(0.92, 0.9, 0.85), fonts=MG.STENCIL, size=26)
-    m.add(geo.plank(40, 2, 14, mat='wood', seed=seed + 40, R=geo.rot('x', 90), t=(0, -16, 56)))
-    m.add(geo.decal('sign', (-19, -17.2, 49.5), (1, 0, 0), (0, 0, 1), (38, 13)))
+    # sign board nailed to the front top rail (was a horizontal slab floating above the frame)
+    m.add(geo.plank(40, 14, 2, mat='wood', seed=seed + 40, R=geo.rot('x', 90), t=(0, -15, 53)))
+    m.add(geo.decal('sign', (-19, -16.1, 46.5), (1, 0, 0), (0, 0, 1), (38, 13)))
     m.recompute_normals(angle=50)
-    return m, dict(sign=SIGN)
+    return m, dict(imgs, sign=SIGN)      # child decal images (the ammo crate's stencil) merged in
 
 
 def sign_post(lines, w=64, h=24, lod=0, seed=80, color=(0.92, 0.9, 0.85), bg='od', height=70, fonts=MG.STENCIL):

@@ -145,7 +145,7 @@
 "origin": [
 -5000.0,
 3700.0,
-1471.9684673688653
+1409.6062397316355
 ],
 "angles": [
 0.0,
@@ -159,7 +159,7 @@
 "origin": [
 -4300.0,
 4500.0,
-1363.2149255086624
+1361.9983853424503
 ],
 "angles": [
 0.0,
@@ -173,7 +173,7 @@
 "origin": [
 -3000.0,
 4350.0,
-1255.8597141589526
+1254.6165916256355
 ],
 "angles": [
 0.0,
@@ -187,7 +187,7 @@
 "origin": [
 1400.0,
 3900.0,
-1323.8758419912294
+1323.533971238464
 ],
 "angles": [
 0.0,
@@ -201,7 +201,7 @@
 "origin": [
 4900.0,
 3200.0,
-1112.4767071367874
+1111.977781053751
 ],
 "angles": [
 0.0,
@@ -215,7 +215,7 @@
 "origin": [
 -1500.0,
 -4100.0,
-1315.1279123297586
+1315.1513033696453
 ],
 "angles": [
 0.0,
@@ -229,7 +229,7 @@
 "origin": [
 -5300.0,
 -2200.0,
-948.0592705045133
+947.9775919555068
 ],
 "angles": [
 0.0,
@@ -243,7 +243,7 @@
 "origin": [
 5700.0,
 -1300.0,
-746.9878310592951
+747.3858165478929
 ],
 "angles": [
 0.0,
@@ -1210,6 +1210,7329 @@
 -32.0,
 0.0,
 -3300.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "tunnel_probe",
+"cls": "env_combined_light_probe_volume",
+"origin": [
+-2832.0,
+2288.0,
+270.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_1",
+"cls": "logic_relay",
+"origin": [
+-3050.0,
+-2013.3380298446139,
+467.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_1_0_0",
+"cls": "info_particle_system",
+"origin": [
+-2650.0,
+-1613.3380298446139,
+467.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_2",
+"cls": "logic_relay",
+"origin": [
+-400.0,
+-148.86924800534536,
+476.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_2_0_0",
+"cls": "info_particle_system",
+"origin": [
+0.0,
+251.13075199465464,
+476.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_3",
+"cls": "logic_relay",
+"origin": [
+-700.0,
+2000.0,
+540.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_3_0_0",
+"cls": "info_particle_system",
+"origin": [
+-300.0,
+2400.0,
+540.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_4",
+"cls": "logic_relay",
+"origin": [
+2200.0,
+500.0,
+657.3839875773199
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_4_0_0",
+"cls": "info_particle_system",
+"origin": [
+2600.0,
+900.0,
+657.3839875773199
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_5",
+"cls": "logic_relay",
+"origin": [
+-100.0,
+-2800.0,
+530.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_5_0_0",
+"cls": "info_particle_system",
+"origin": [
+300.0,
+-2400.0,
+530.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_6",
+"cls": "logic_relay",
+"origin": [
+3500.0,
+-3300.0,
+1040.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_6_0_0",
+"cls": "info_particle_system",
+"origin": [
+3900.0,
+-2900.0,
+1040.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_7",
+"cls": "logic_relay",
+"origin": [
+-4300.0,
+2500.0,
+720.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rain_7_0_0",
+"cls": "info_particle_system",
+"origin": [
+-3900.0,
+2900.0,
+720.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_lightning",
+"cls": "logic_timer",
+"origin": [
+0.0,
+0.0,
+2600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_lightning_flash",
+"cls": "env_fade",
+"origin": [
+0.0,
+0.0,
+2600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_1",
+"cls": "info_teleport_destination",
+"origin": [
+4004.1937435863288,
+-3091.582373134026,
+628.0000000000001
+],
+"angles": [
+0.0,
+17.188733853924614,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_2",
+"cls": "info_teleport_destination",
+"origin": [
+3980.038268452972,
+-3046.9798527769844,
+628.0
+],
+"angles": [
+0.0,
+39.688733853924745,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_3",
+"cls": "info_teleport_destination",
+"origin": [
+3940.6528737968115,
+-3015.0163972551386,
+628.0000000000001
+],
+"angles": [
+0.0,
+62.188733853924774,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_4",
+"cls": "info_teleport_destination",
+"origin": [
+3892.033628924757,
+-3000.5581529222436,
+628.0
+],
+"angles": [
+0.0,
+84.68873385392463,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_5",
+"cls": "info_teleport_destination",
+"origin": [
+3841.582373134026,
+-3005.8062564136712,
+628.0000000000001
+],
+"angles": [
+0.0,
+107.18873385392462,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_6",
+"cls": "info_teleport_destination",
+"origin": [
+3796.9798527769844,
+-3029.961731547028,
+628.0000000000001
+],
+"angles": [
+0.0,
+129.68873385392473,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_7",
+"cls": "info_teleport_destination",
+"origin": [
+3765.016397255139,
+-3069.3471262031885,
+628.0
+],
+"angles": [
+0.0,
+152.18873385392467,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_8",
+"cls": "info_teleport_destination",
+"origin": [
+3750.5581529222436,
+-3117.966371075243,
+628.0
+],
+"angles": [
+0.0,
+174.68873385392465,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_9",
+"cls": "info_teleport_destination",
+"origin": [
+3755.8062564136712,
+-3168.417626865974,
+628.0
+],
+"angles": [
+0.0,
+-162.81126614607538,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_10",
+"cls": "info_teleport_destination",
+"origin": [
+3779.961731547028,
+-3173.0201472230156,
+628.0
+],
+"angles": [
+0.0,
+-140.31126614607527,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_11",
+"cls": "info_teleport_destination",
+"origin": [
+3819.3471262031885,
+-3204.983602744861,
+628.0
+],
+"angles": [
+0.0,
+-117.81126614607534,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_12",
+"cls": "info_teleport_destination",
+"origin": [
+3907.966371075243,
+-3259.4418470777564,
+628.0
+],
+"angles": [
+0.0,
+-95.31126614607538,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_13",
+"cls": "info_teleport_destination",
+"origin": [
+3918.417626865974,
+-3254.1937435863288,
+628.0
+],
+"angles": [
+0.0,
+-72.81126614607538,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_14",
+"cls": "info_teleport_destination",
+"origin": [
+3963.0201472230156,
+-3230.038268452972,
+628.0
+],
+"angles": [
+0.0,
+-50.311266146075255,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_15",
+"cls": "info_teleport_destination",
+"origin": [
+3994.983602744861,
+-3190.6528737968115,
+628.0
+],
+"angles": [
+0.0,
+-27.811266146075326,
+0.0
+]
+},
+{
+"name": "mv_spawn_ct_16",
+"cls": "info_teleport_destination",
+"origin": [
+4009.4418470777564,
+-3142.033628924757,
+628.0
+],
+"angles": [
+0.0,
+-5.31126614607537,
+0.0
+]
+},
+{
+"name": "mv_kit_ct",
+"cls": "info_target",
+"origin": [
+3880.0,
+-3130.0,
+650.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_1",
+"cls": "info_teleport_destination",
+"origin": [
+-3732.0431484622836,
+2894.0850340323345,
+308.0
+],
+"angles": [
+0.0,
+40.107045659157585,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_2",
+"cls": "info_teleport_destination",
+"origin": [
+-3767.0895802305486,
+2922.1052764543556,
+307.99999999999994
+],
+"angles": [
+0.0,
+62.60704565915766,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_3",
+"cls": "info_teleport_destination",
+"origin": [
+-3810.1911437745625,
+2934.580916122837,
+307.99999999999994
+],
+"angles": [
+0.0,
+85.1070456591577,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_4",
+"cls": "info_teleport_destination",
+"origin": [
+-3854.7860167613962,
+2929.612649990208,
+307.99999999999994
+],
+"angles": [
+0.0,
+107.60704565915772,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_5",
+"cls": "info_teleport_destination",
+"origin": [
+-3894.0850340323345,
+2907.9568515377164,
+307.99999999999994
+],
+"angles": [
+0.0,
+130.1070456591576,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_6",
+"cls": "info_teleport_destination",
+"origin": [
+-3922.1052764543556,
+2872.9104197694514,
+307.99999999999994
+],
+"angles": [
+0.0,
+152.60704565915765,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_7",
+"cls": "info_teleport_destination",
+"origin": [
+-3934.580916122837,
+2829.8088562254375,
+308.0
+],
+"angles": [
+0.0,
+175.1070456591577,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_8",
+"cls": "info_teleport_destination",
+"origin": [
+-3929.612649990208,
+2785.2139832386038,
+308.0
+],
+"angles": [
+0.0,
+-162.3929543408423,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_9",
+"cls": "info_teleport_destination",
+"origin": [
+-3907.9568515377164,
+2745.9149659676655,
+308.0
+],
+"angles": [
+0.0,
+-139.8929543408424,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_10",
+"cls": "info_teleport_destination",
+"origin": [
+-3872.9104197694514,
+2717.8947235456444,
+308.0
+],
+"angles": [
+0.0,
+-117.39295434084234,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_11",
+"cls": "info_teleport_destination",
+"origin": [
+-3829.8088562254375,
+2705.419083877163,
+308.0
+],
+"angles": [
+0.0,
+-94.8929543408423,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_12",
+"cls": "info_teleport_destination",
+"origin": [
+-3785.2139832386038,
+2710.387350009792,
+307.99999999999994
+],
+"angles": [
+0.0,
+-72.39295434084228,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_13",
+"cls": "info_teleport_destination",
+"origin": [
+-3745.9149659676655,
+2732.0431484622836,
+308.0
+],
+"angles": [
+0.0,
+-49.89295434084242,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_14",
+"cls": "info_teleport_destination",
+"origin": [
+-3717.8947235456444,
+2767.0895802305486,
+308.0
+],
+"angles": [
+0.0,
+-27.392954340842337,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_15",
+"cls": "info_teleport_destination",
+"origin": [
+-3705.419083877163,
+2810.1911437745625,
+308.0
+],
+"angles": [
+0.0,
+-4.892954340842291,
+0.0
+]
+},
+{
+"name": "mv_spawn_t_16",
+"cls": "info_teleport_destination",
+"origin": [
+-3710.387350009792,
+2854.7860167613962,
+307.99999999999994
+],
+"angles": [
+0.0,
+17.60704565915772,
+0.0
+]
+},
+{
+"name": "mv_kit_t",
+"cls": "info_target",
+"origin": [
+-3820.0,
+2820.0,
+329.99999999999994
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_flag_a",
+"cls": "info_target",
+"origin": [
+-2650.0,
+-1613.3380298446139,
+47.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_flagpole_a",
+"cls": "prop_dynamic",
+"origin": [
+-2650.0,
+-1613.3380298446139,
+47.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/flag_pole/flag_pole.vmdl"
+},
+{
+"name": "mv_flagspawn_a_1",
+"cls": "info_teleport_destination",
+"origin": [
+-2438.1559713793363,
+-1523.7718111136242,
+30.33702214138254
+],
+"angles": [
+0.0,
+22.918311805232918,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_a_2",
+"cls": "info_teleport_destination",
+"origin": [
+-2563.536531438372,
+-1400.2088000231452,
+33.2070871043231
+],
+"angles": [
+0.0,
+67.91831180523293,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_a_3",
+"cls": "info_teleport_destination",
+"origin": [
+-2739.5662187309895,
+-1401.4940012239504,
+26.5
+],
+"angles": [
+0.0,
+112.9183118052329,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_a_4",
+"cls": "info_teleport_destination",
+"origin": [
+-2863.1292298214685,
+-1526.874561282986,
+28.104255316884206
+],
+"angles": [
+0.0,
+157.91831180523292,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_a_5",
+"cls": "info_teleport_destination",
+"origin": [
+-2861.8440286206637,
+-1702.9042485756033,
+34.54055878676503
+],
+"angles": [
+0.0,
+202.9183118052329,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_a_6",
+"cls": "info_teleport_destination",
+"origin": [
+-2736.463468561628,
+-1826.4672596660826,
+83.52206937020895
+],
+"angles": [
+0.0,
+247.91831180523295,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_a_7",
+"cls": "info_teleport_destination",
+"origin": [
+-2560.4337812690105,
+-1825.1820584652774,
+89.55040332070237
+],
+"angles": [
+0.0,
+292.9183118052329,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_a_8",
+"cls": "info_teleport_destination",
+"origin": [
+-2436.8707701785315,
+-1699.8014984062418,
+36.505591999537224
+],
+"angles": [
+0.0,
+337.9183118052329,
+0.0
+]
+},
+{
+"name": "mv_kit_a",
+"cls": "info_target",
+"origin": [
+-2616.0,
+-1613.3380298446139,
+79.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_flag_b",
+"cls": "info_target",
+"origin": [
+56.0,
+251.13075199465464,
+56.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_flagpole_b",
+"cls": "prop_dynamic",
+"origin": [
+56.0,
+251.13075199465464,
+56.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/flag_pole/flag_pole.vmdl"
+},
+{
+"name": "mv_flagspawn_b_1",
+"cls": "info_teleport_destination",
+"origin": [
+-150.0,
+-638.8692480053453,
+38.180343456390084
+],
+"angles": [
+0.0,
+260.4333140102856,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_b_2",
+"cls": "info_teleport_destination",
+"origin": [
+150.0,
+-638.8692480053453,
+41.00662974505276
+],
+"angles": [
+0.0,
+279.5666859897144,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_b_3",
+"cls": "info_teleport_destination",
+"origin": [
+-150.0,
+-748.8692480053453,
+46.17112207193306
+],
+"angles": [
+0.0,
+261.46923439005184,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_b_4",
+"cls": "info_teleport_destination",
+"origin": [
+150.0,
+-748.8692480053453,
+50.79481813445444
+],
+"angles": [
+0.0,
+278.53076560994816,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_b_5",
+"cls": "info_teleport_destination",
+"origin": [
+-150.0,
+1141.1307519946547,
+38.704207520903694
+],
+"angles": [
+0.0,
+99.5666859897144,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_b_6",
+"cls": "info_teleport_destination",
+"origin": [
+150.0,
+1141.1307519946547,
+36.39191477848915
+],
+"angles": [
+0.0,
+80.43331401028559,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_b_7",
+"cls": "info_teleport_destination",
+"origin": [
+-150.0,
+1251.1307519946547,
+44.64032236443143
+],
+"angles": [
+0.0,
+98.53076560994813,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_b_8",
+"cls": "info_teleport_destination",
+"origin": [
+150.0,
+1251.1307519946547,
+44.546502019285874
+],
+"angles": [
+0.0,
+81.46923439005187,
+0.0
+]
+},
+{
+"name": "mv_kit_b",
+"cls": "info_target",
+"origin": [
+-46.0,
+191.13075199465464,
+80.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_flag_c",
+"cls": "info_target",
+"origin": [
+-214.0,
+2470.0,
+120.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_flagpole_c",
+"cls": "prop_dynamic",
+"origin": [
+-214.0,
+2470.0,
+120.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/flag_pole/flag_pole.vmdl"
+},
+{
+"name": "mv_flagspawn_c_1",
+"cls": "info_teleport_destination",
+"origin": [
+-88.15597137933642,
+2489.5662187309895,
+128.0
+],
+"angles": [
+0.0,
+22.91831180523289,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_c_2",
+"cls": "info_teleport_destination",
+"origin": [
+-253.53653143837204,
+2613.1292298214685,
+128.0
+],
+"angles": [
+0.0,
+67.91831180523292,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_c_3",
+"cls": "info_teleport_destination",
+"origin": [
+-389.5662187309896,
+2611.8440286206637,
+128.0
+],
+"angles": [
+0.0,
+112.91831180523292,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_c_4",
+"cls": "info_teleport_destination",
+"origin": [
+-513.1292298214686,
+2486.463468561628,
+128.0
+],
+"angles": [
+0.0,
+157.91831180523295,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_c_5",
+"cls": "info_teleport_destination",
+"origin": [
+-511.8440286206636,
+2310.4337812690105,
+128.0
+],
+"angles": [
+0.0,
+202.9183118052329,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_c_6",
+"cls": "info_teleport_destination",
+"origin": [
+-386.4634685616279,
+2186.8707701785315,
+128.0
+],
+"angles": [
+0.0,
+247.91831180523292,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_c_7",
+"cls": "info_teleport_destination",
+"origin": [
+-210.43378126901035,
+2188.1559713793363,
+128.0
+],
+"angles": [
+0.0,
+292.9183118052329,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_c_8",
+"cls": "info_teleport_destination",
+"origin": [
+-86.87077017853139,
+2313.536531438372,
+128.0
+],
+"angles": [
+0.0,
+337.918311805233,
+0.0
+]
+},
+{
+"name": "mv_kit_c",
+"cls": "info_target",
+"origin": [
+-180.0,
+2496.0,
+144.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_flag_d",
+"cls": "info_target",
+"origin": [
+2470.0,
+730.0,
+201.38398757731983
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_flagpole_d",
+"cls": "prop_dynamic",
+"origin": [
+2470.0,
+730.0,
+201.38398757731983
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/flag_pole/flag_pole.vmdl"
+},
+{
+"name": "mv_flagspawn_d_1",
+"cls": "info_teleport_destination",
+"origin": [
+2811.8440286206637,
+989.5662187309896,
+209.38398757731983
+],
+"angles": [
+0.0,
+22.91831180523289,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_d_2",
+"cls": "info_teleport_destination",
+"origin": [
+2746.463468561628,
+1053.1292298214685,
+245.38398757731983
+],
+"angles": [
+0.0,
+67.91831180523292,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_d_3",
+"cls": "info_teleport_destination",
+"origin": [
+2410.4337812690105,
+1111.8440286206635,
+209.38398757731983
+],
+"angles": [
+0.0,
+112.9183118052329,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_d_4",
+"cls": "info_teleport_destination",
+"origin": [
+2386.8707701785315,
+986.463468561628,
+209.38398757731983
+],
+"angles": [
+0.0,
+157.9183118052329,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_d_5",
+"cls": "info_teleport_destination",
+"origin": [
+2388.1559713793363,
+850.4337812690104,
+209.38398757731983
+],
+"angles": [
+0.0,
+202.91831180523292,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_d_6",
+"cls": "info_teleport_destination",
+"origin": [
+2473.536531438372,
+686.8707701785314,
+209.38398757731983
+],
+"angles": [
+0.0,
+247.91831180523292,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_d_7",
+"cls": "info_teleport_destination",
+"origin": [
+2689.5662187309895,
+688.1559713793365,
+209.38398757731983
+],
+"angles": [
+0.0,
+292.9183118052329,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_d_8",
+"cls": "info_teleport_destination",
+"origin": [
+2813.1292298214685,
+813.5365314383721,
+209.38398757731983
+],
+"angles": [
+0.0,
+337.9183118052329,
+0.0
+]
+},
+{
+"name": "mv_kit_d",
+"cls": "info_target",
+"origin": [
+2420.0,
+780.0,
+225.38398757731983
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_flag_e",
+"cls": "info_target",
+"origin": [
+360.0,
+-2520.0,
+110.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_flagpole_e",
+"cls": "prop_dynamic",
+"origin": [
+360.0,
+-2520.0,
+110.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/flag_pole/flag_pole.vmdl"
+},
+{
+"name": "mv_flagspawn_e_1",
+"cls": "info_teleport_destination",
+"origin": [
+511.8440286206636,
+-2310.4337812690105,
+120.63436698549208
+],
+"angles": [
+0.0,
+22.91831180523289,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_e_2",
+"cls": "info_teleport_destination",
+"origin": [
+386.46346856162796,
+-2226.8707701785315,
+118.0
+],
+"angles": [
+0.0,
+67.91831180523292,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_e_3",
+"cls": "info_teleport_destination",
+"origin": [
+210.4337812690104,
+-2288.1559713793363,
+118.0
+],
+"angles": [
+0.0,
+112.91831180523292,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_e_4",
+"cls": "info_teleport_destination",
+"origin": [
+126.87077017853144,
+-2313.536531438372,
+118.0
+],
+"angles": [
+0.0,
+157.91831180523292,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_e_5",
+"cls": "info_teleport_destination",
+"origin": [
+88.15597137933639,
+-2489.5662187309895,
+118.0
+],
+"angles": [
+0.0,
+202.9183118052329,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_e_6",
+"cls": "info_teleport_destination",
+"origin": [
+213.5365314383721,
+-2613.1292298214685,
+118.0
+],
+"angles": [
+0.0,
+247.91831180523292,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_e_7",
+"cls": "info_teleport_destination",
+"origin": [
+349.56621873098965,
+-2611.8440286206637,
+118.0
+],
+"angles": [
+0.0,
+292.9183118052329,
+0.0
+]
+},
+{
+"name": "mv_flagspawn_e_8",
+"cls": "info_teleport_destination",
+"origin": [
+513.1292298214686,
+-2486.463468561628,
+118.0
+],
+"angles": [
+0.0,
+337.918311805233,
+0.0
+]
+},
+{
+"name": "mv_kit_e",
+"cls": "info_target",
+"origin": [
+400.0,
+-2550.0,
+134.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_pad_ct_1",
+"cls": "info_target",
+"origin": [
+4417.770876399966,
+-3276.182561467183,
+622.0
+],
+"angles": [
+0.0,
+180.0,
+0.0
+]
+},
+{
+"name": "mv_heli_ct_1",
+"cls": "prop_dynamic",
+"origin": [
+4417.770876399966,
+-3276.182561467183,
+622.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+],
+"model": "models/vehicles/apache/apache.vmdl"
+},
+{
+"name": "mv_wreck_ct_1",
+"cls": "prop_dynamic",
+"origin": [
+-600.0,
+600.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/wreck_huey/wreck_huey.vmdl"
+},
+{
+"name": "mv_heli_eng_ct_1",
+"cls": "point_soundevent",
+"origin": [
+4417.770876399966,
+-3276.182561467183,
+742.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_gun_ct_1",
+"cls": "point_soundevent",
+"origin": [
+4417.770876399966,
+-3276.182561467183,
+742.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_gun2_ct_1",
+"cls": "point_soundevent",
+"origin": [
+4417.770876399966,
+-3276.182561467183,
+742.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_rkt_ct_1",
+"cls": "point_soundevent",
+"origin": [
+4417.770876399966,
+-3276.182561467183,
+742.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_smoke_ct_1",
+"cls": "info_particle_system",
+"origin": [
+4417.770876399966,
+-3276.182561467183,
+772.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_dust_ct_1",
+"cls": "info_particle_system",
+"origin": [
+4417.770876399966,
+-3276.182561467183,
+626.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_pad_ct_2",
+"cls": "info_target",
+"origin": [
+4493.397666922744,
+-2660.2517802138163,
+622.0
+],
+"angles": [
+0.0,
+180.0,
+0.0
+]
+},
+{
+"name": "mv_heli_ct_2",
+"cls": "prop_dynamic",
+"origin": [
+4493.397666922744,
+-2660.2517802138163,
+622.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+],
+"model": "models/vehicles/apache/apache.vmdl"
+},
+{
+"name": "mv_wreck_ct_2",
+"cls": "prop_dynamic",
+"origin": [
+-300.0,
+600.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/wreck_huey/wreck_huey.vmdl"
+},
+{
+"name": "mv_heli_eng_ct_2",
+"cls": "point_soundevent",
+"origin": [
+4493.397666922744,
+-2660.2517802138163,
+742.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_gun_ct_2",
+"cls": "point_soundevent",
+"origin": [
+4493.397666922744,
+-2660.2517802138163,
+742.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_gun2_ct_2",
+"cls": "point_soundevent",
+"origin": [
+4493.397666922744,
+-2660.2517802138163,
+742.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_rkt_ct_2",
+"cls": "point_soundevent",
+"origin": [
+4493.397666922744,
+-2660.2517802138163,
+742.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_smoke_ct_2",
+"cls": "info_particle_system",
+"origin": [
+4493.397666922744,
+-2660.2517802138163,
+772.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_dust_ct_2",
+"cls": "info_particle_system",
+"origin": [
+4493.397666922744,
+-2660.2517802138163,
+626.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_pad_ct_3",
+"cls": "info_target",
+"origin": [
+4011.1348337068353,
+-2269.7230380721867,
+622.0
+],
+"angles": [
+0.0,
+180.0,
+0.0
+]
+},
+{
+"name": "mv_heli_ct_3",
+"cls": "prop_dynamic",
+"origin": [
+4011.1348337068353,
+-2269.7230380721867,
+622.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+],
+"model": "models/vehicles/apache/apache.vmdl"
+},
+{
+"name": "mv_wreck_ct_3",
+"cls": "prop_dynamic",
+"origin": [
+0.0,
+600.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/wreck_huey/wreck_huey.vmdl"
+},
+{
+"name": "mv_heli_eng_ct_3",
+"cls": "point_soundevent",
+"origin": [
+4011.1348337068353,
+-2269.7230380721867,
+742.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_gun_ct_3",
+"cls": "point_soundevent",
+"origin": [
+4011.1348337068353,
+-2269.7230380721867,
+742.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_gun2_ct_3",
+"cls": "point_soundevent",
+"origin": [
+4011.1348337068353,
+-2269.7230380721867,
+742.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_rkt_ct_3",
+"cls": "point_soundevent",
+"origin": [
+4011.1348337068353,
+-2269.7230380721867,
+742.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_smoke_ct_3",
+"cls": "info_particle_system",
+"origin": [
+4011.1348337068353,
+-2269.7230380721867,
+772.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_dust_ct_3",
+"cls": "info_particle_system",
+"origin": [
+4011.1348337068353,
+-2269.7230380721867,
+626.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_pad_t_1",
+"cls": "info_target",
+"origin": [
+-4600.0,
+2960.0,
+301.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_t_1",
+"cls": "prop_dynamic",
+"origin": [
+-4600.0,
+2960.0,
+301.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/heli_hip/heli_hip.vmdl"
+},
+{
+"name": "mv_rotor_t_1",
+"cls": "prop_dynamic",
+"origin": [
+-4630.0,
+2960.0,
+474.84000000000003
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/rotor_hip/rotor_hip.vmdl"
+},
+{
+"name": "mv_tail_t_1",
+"cls": "prop_dynamic",
+"origin": [
+-5141.2,
+2976.0,
+461.72
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/tailrotor_hip/tailrotor_hip.vmdl"
+},
+{
+"name": "mv_wreck_t_1",
+"cls": "prop_dynamic",
+"origin": [
+-600.0,
+1000.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/wreck_hip/wreck_hip.vmdl"
+},
+{
+"name": "mv_heli_eng_t_1",
+"cls": "point_soundevent",
+"origin": [
+-4600.0,
+2960.0,
+421.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_gun_t_1",
+"cls": "point_soundevent",
+"origin": [
+-4600.0,
+2960.0,
+421.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_gun2_t_1",
+"cls": "point_soundevent",
+"origin": [
+-4600.0,
+2960.0,
+421.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_rkt_t_1",
+"cls": "point_soundevent",
+"origin": [
+-4600.0,
+2960.0,
+421.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_smoke_t_1",
+"cls": "info_particle_system",
+"origin": [
+-4600.0,
+2960.0,
+451.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_dust_t_1",
+"cls": "info_particle_system",
+"origin": [
+-4600.0,
+2960.0,
+305.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_pad_t_2",
+"cls": "info_target",
+"origin": [
+-4500.0,
+2260.0,
+301.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_t_2",
+"cls": "prop_dynamic",
+"origin": [
+-4500.0,
+2260.0,
+301.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/heli_hip/heli_hip.vmdl"
+},
+{
+"name": "mv_rotor_t_2",
+"cls": "prop_dynamic",
+"origin": [
+-4530.0,
+2260.0,
+474.84000000000003
+],
+"angles": [
+0.0,
+25.0,
+0.0
+],
+"model": "models/mv/rotor_hip/rotor_hip.vmdl"
+},
+{
+"name": "mv_tail_t_2",
+"cls": "prop_dynamic",
+"origin": [
+-5041.2,
+2276.0,
+461.72
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/tailrotor_hip/tailrotor_hip.vmdl"
+},
+{
+"name": "mv_wreck_t_2",
+"cls": "prop_dynamic",
+"origin": [
+-300.0,
+1000.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/wreck_hip/wreck_hip.vmdl"
+},
+{
+"name": "mv_heli_eng_t_2",
+"cls": "point_soundevent",
+"origin": [
+-4500.0,
+2260.0,
+421.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_gun_t_2",
+"cls": "point_soundevent",
+"origin": [
+-4500.0,
+2260.0,
+421.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_gun2_t_2",
+"cls": "point_soundevent",
+"origin": [
+-4500.0,
+2260.0,
+421.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_rkt_t_2",
+"cls": "point_soundevent",
+"origin": [
+-4500.0,
+2260.0,
+421.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_smoke_t_2",
+"cls": "info_particle_system",
+"origin": [
+-4500.0,
+2260.0,
+451.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_dust_t_2",
+"cls": "info_particle_system",
+"origin": [
+-4500.0,
+2260.0,
+305.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_pad_t_3",
+"cls": "info_target",
+"origin": [
+-3820.0,
+2060.0,
+301.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_t_3",
+"cls": "prop_dynamic",
+"origin": [
+-3820.0,
+2060.0,
+301.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/heli_hip_gun/heli_hip_gun.vmdl"
+},
+{
+"name": "mv_rotor_t_3",
+"cls": "prop_dynamic",
+"origin": [
+-3850.0,
+2060.0,
+474.84000000000003
+],
+"angles": [
+0.0,
+50.0,
+0.0
+],
+"model": "models/mv/rotor_hip/rotor_hip.vmdl"
+},
+{
+"name": "mv_tail_t_3",
+"cls": "prop_dynamic",
+"origin": [
+-4361.2,
+2076.0,
+461.72
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/tailrotor_hip/tailrotor_hip.vmdl"
+},
+{
+"name": "mv_wreck_t_3",
+"cls": "prop_dynamic",
+"origin": [
+0.0,
+1000.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/wreck_hip/wreck_hip.vmdl"
+},
+{
+"name": "mv_heli_eng_t_3",
+"cls": "point_soundevent",
+"origin": [
+-3820.0,
+2060.0,
+421.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_gun_t_3",
+"cls": "point_soundevent",
+"origin": [
+-3820.0,
+2060.0,
+421.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_gun2_t_3",
+"cls": "point_soundevent",
+"origin": [
+-3820.0,
+2060.0,
+421.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_rkt_t_3",
+"cls": "point_soundevent",
+"origin": [
+-3820.0,
+2060.0,
+421.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_smoke_t_3",
+"cls": "info_particle_system",
+"origin": [
+-3820.0,
+2060.0,
+451.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_heli_dust_t_3",
+"cls": "info_particle_system",
+"origin": [
+-3820.0,
+2060.0,
+305.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_ct_1",
+"cls": "prop_dynamic",
+"origin": [
+3301.4615698441057,
+-2858.1461157535246,
+620.0
+],
+"angles": [
+0.0,
+139.11655824777105,
+0.0
+],
+"model": "models/mv/howitzer_m102/howitzer_m102.vmdl"
+},
+{
+"name": "mv_tube_ct_1",
+"cls": "prop_dynamic",
+"origin": [
+3301.4615698441057,
+-2858.1461157535246,
+664.0
+],
+"angles": [
+-8.0,
+139.11655824777105,
+0.0
+],
+"model": "models/mv/howitzer_m102_gun/howitzer_m102_gun.vmdl"
+},
+{
+"name": "mv_gun_snd_ct_1",
+"cls": "point_soundevent",
+"origin": [
+3301.4615698441057,
+-2858.1461157535246,
+680.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_fx_ct_1",
+"cls": "info_particle_system",
+"origin": [
+3210.7364512393924,
+-2779.6034340183005,
+690.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rack_ct_1",
+"cls": "info_target",
+"origin": [
+3552.225108761573,
+-2735.840565799372,
+650.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_ct_2",
+"cls": "prop_dynamic",
+"origin": [
+3498.521636184685,
+-3345.886895286437,
+620.0
+],
+"angles": [
+0.0,
+136.27752122249046,
+0.0
+],
+"model": "models/mv/howitzer_m102/howitzer_m102.vmdl"
+},
+{
+"name": "mv_tube_ct_2",
+"cls": "prop_dynamic",
+"origin": [
+3498.521636184685,
+-3345.886895286437,
+664.0
+],
+"angles": [
+-8.0,
+136.27752122249046,
+0.0
+],
+"model": "models/mv/howitzer_m102_gun/howitzer_m102_gun.vmdl"
+},
+{
+"name": "mv_gun_snd_ct_2",
+"cls": "point_soundevent",
+"origin": [
+3498.521636184685,
+-3345.886895286437,
+680.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_fx_ct_2",
+"cls": "info_particle_system",
+"origin": [
+3411.7981117095983,
+-3262.9469754491292,
+690.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rack_ct_2",
+"cls": "info_target",
+"origin": [
+3556.5289979228396,
+-3072.983714681705,
+650.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_ct_3",
+"cls": "prop_dynamic",
+"origin": [
+4004.188906600158,
+-3490.884651807325,
+620.0
+],
+"angles": [
+0.0,
+138.91781556121217,
+0.0
+],
+"model": "models/mv/howitzer_m102/howitzer_m102.vmdl"
+},
+{
+"name": "mv_tube_ct_3",
+"cls": "prop_dynamic",
+"origin": [
+4004.188906600158,
+-3490.884651807325,
+664.0
+],
+"angles": [
+-8.0,
+138.91781556121217,
+0.0
+],
+"model": "models/mv/howitzer_m102_gun/howitzer_m102_gun.vmdl"
+},
+{
+"name": "mv_gun_snd_ct_3",
+"cls": "point_soundevent",
+"origin": [
+4004.188906600158,
+-3490.884651807325,
+680.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_fx_ct_3",
+"cls": "info_particle_system",
+"origin": [
+3913.736775368853,
+-3412.027743703375,
+690.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rack_ct_3",
+"cls": "info_target",
+"origin": [
+3824.8511634976135,
+-3277.15825217713,
+650.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_board_ct",
+"cls": "info_target",
+"origin": [
+3860.0,
+-2734.0,
+660.0
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "mv_boardseat_ct_1",
+"cls": "info_teleport_destination",
+"origin": [
+3880.0,
+-2625.0,
+628.0
+],
+"angles": [
+0.0,
+-118.8309683123904,
+0.0
+]
+},
+{
+"name": "mv_boardseat_ct_2",
+"cls": "info_teleport_destination",
+"origin": [
+3860.0,
+-2625.0,
+628.0
+],
+"angles": [
+0.0,
+-90.0,
+0.0
+]
+},
+{
+"name": "mv_boardseat_ct_3",
+"cls": "info_teleport_destination",
+"origin": [
+3800.0,
+-2625.0,
+628.0
+],
+"angles": [
+0.0,
+-61.169031687609625,
+0.0
+]
+},
+{
+"name": "mv_gun_t_1",
+"cls": "prop_dynamic",
+"origin": [
+-3501.3109425362813,
+3061.080835168842,
+300.0
+],
+"angles": [
+0.0,
+-41.162132208352446,
+0.0
+],
+"model": "models/mv/rocket_tripod/rocket_tripod.vmdl"
+},
+{
+"name": "mv_tube_t_1",
+"cls": "prop_dynamic",
+"origin": [
+-3501.3109425362813,
+3061.080835168842,
+346.0
+],
+"angles": [
+-20.0,
+-41.162132208352446,
+0.0
+],
+"model": "models/mv/rocket_rail/rocket_rail.vmdl"
+},
+{
+"name": "mv_round_t_1",
+"cls": "prop_dynamic",
+"origin": [
+-3501.3109425362813,
+3061.080835168842,
+354.0
+],
+"angles": [
+-20.0,
+-41.162132208352446,
+0.0
+],
+"model": "models/mv/rocket_122/rocket_122.vmdl"
+},
+{
+"name": "mv_gun_snd_t_1",
+"cls": "point_soundevent",
+"origin": [
+-3501.3109425362813,
+3061.080835168842,
+360.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_fx_t_1",
+"cls": "info_particle_system",
+"origin": [
+-3410.9689324540454,
+2982.0977913284,
+370.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rack_t_1",
+"cls": "info_target",
+"origin": [
+-3570.8629085022435,
+2904.8645619119575,
+329.99999999999994
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_t_2",
+"cls": "prop_dynamic",
+"origin": [
+-3672.134716379722,
+3264.660681347263,
+300.0
+],
+"angles": [
+0.0,
+-41.63825380919534,
+0.0
+],
+"model": "models/mv/rocket_tripod/rocket_tripod.vmdl"
+},
+{
+"name": "mv_tube_t_2",
+"cls": "prop_dynamic",
+"origin": [
+-3672.134716379722,
+3264.660681347263,
+346.0
+],
+"angles": [
+-20.0,
+-41.63825380919534,
+0.0
+],
+"model": "models/mv/rocket_rail/rocket_rail.vmdl"
+},
+{
+"name": "mv_round_t_2",
+"cls": "prop_dynamic",
+"origin": [
+-3672.134716379722,
+3264.660681347263,
+354.0
+],
+"angles": [
+-20.0,
+-41.63825380919534,
+0.0
+],
+"model": "models/mv/rocket_122/rocket_122.vmdl"
+},
+{
+"name": "mv_gun_snd_t_2",
+"cls": "point_soundevent",
+"origin": [
+-3672.134716379722,
+3264.660681347263,
+360.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_fx_t_2",
+"cls": "info_particle_system",
+"origin": [
+-3582.4521583488304,
+3184.929641061589,
+370.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rack_t_2",
+"cls": "info_target",
+"origin": [
+-3636.581817249885,
+3097.3974416217825,
+330.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_t_3",
+"cls": "prop_dynamic",
+"origin": [
+-3543.513843801332,
+2659.547051507579,
+300.0
+],
+"angles": [
+0.0,
+-36.88967501991717,
+0.0
+],
+"model": "models/mv/rocket_tripod/rocket_tripod.vmdl"
+},
+{
+"name": "mv_tube_t_3",
+"cls": "prop_dynamic",
+"origin": [
+-3543.513843801332,
+2659.547051507579,
+346.0
+],
+"angles": [
+-20.0,
+-36.88967501991717,
+0.0
+],
+"model": "models/mv/rocket_rail/rocket_rail.vmdl"
+},
+{
+"name": "mv_round_t_3",
+"cls": "prop_dynamic",
+"origin": [
+-3543.513843801332,
+2659.547051507579,
+354.0
+],
+"angles": [
+-20.0,
+-36.88967501991717,
+0.0
+],
+"model": "models/mv/rocket_122/rocket_122.vmdl"
+},
+{
+"name": "mv_gun_snd_t_3",
+"cls": "point_soundevent",
+"origin": [
+-3543.513843801332,
+2659.547051507579,
+360.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_fx_t_3",
+"cls": "info_particle_system",
+"origin": [
+-3447.538702501249,
+2587.513918489299,
+370.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rack_t_3",
+"cls": "info_target",
+"origin": [
+-3711.9159695664193,
+2629.853213126534,
+329.99999999999994
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_t_4",
+"cls": "prop_dynamic",
+"origin": [
+-4020.0,
+2620.0,
+300.0
+],
+"angles": [
+0.0,
+-33.09394797805481,
+0.0
+],
+"model": "models/mv/rocket_tripod/rocket_tripod.vmdl"
+},
+{
+"name": "mv_tube_t_4",
+"cls": "prop_dynamic",
+"origin": [
+-4020.0,
+2620.0,
+346.0
+],
+"angles": [
+-20.0,
+-33.09394797805481,
+0.0
+],
+"model": "models/mv/rocket_rail/rocket_rail.vmdl"
+},
+{
+"name": "mv_round_t_4",
+"cls": "prop_dynamic",
+"origin": [
+-4020.0,
+2620.0,
+354.0
+],
+"angles": [
+-20.0,
+-33.09394797805481,
+0.0
+],
+"model": "models/mv/rocket_122/rocket_122.vmdl"
+},
+{
+"name": "mv_gun_snd_t_4",
+"cls": "point_soundevent",
+"origin": [
+-4020.0,
+2620.0,
+360.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_gun_fx_t_4",
+"cls": "info_particle_system",
+"origin": [
+-3919.4668325464513,
+2554.478383400921,
+370.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rack_t_4",
+"cls": "info_target",
+"origin": [
+-4080.727223019498,
+2779.8536968116164,
+330.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_board_t",
+"cls": "info_target",
+"origin": [
+-4094.6410161513777,
+3080.0,
+340.0
+],
+"angles": [
+0.0,
+-30.0,
+0.0
+]
+},
+{
+"name": "mv_boardseat_t_1",
+"cls": "info_teleport_destination",
+"origin": [
+-3935.25902085825,
+2884.0577136594006,
+307.99999999999994
+],
+"angles": [
+0.0,
+129.12535317355,
+0.0
+]
+},
+{
+"name": "mv_boardseat_t_2",
+"cls": "info_teleport_destination",
+"origin": [
+-3905.25902085825,
+2936.0192378864667,
+307.99999999999994
+],
+"angles": [
+0.0,
+142.7554931475588,
+0.0
+]
+},
+{
+"name": "mv_boardseat_t_3",
+"cls": "info_teleport_destination",
+"origin": [
+-3875.25902085825,
+2987.9807621135333,
+308.0
+],
+"angles": [
+0.0,
+157.24450685244122,
+0.0
+]
+},
+{
+"name": "mv_boardseat_t_4",
+"cls": "info_teleport_destination",
+"origin": [
+-3845.25902085825,
+3039.9422863405994,
+308.0
+],
+"angles": [
+0.0,
+170.87464682645,
+0.0
+]
+},
+{
+"name": "mv_mount_1",
+"cls": "prop_dynamic",
+"origin": [
+3538.153364590592,
+-1878.1766236560788,
+650.0
+],
+"angles": [
+0.0,
+109.5,
+0.0
+],
+"model": "models/mv/m2_gun/m2_gun.vmdl"
+},
+{
+"name": "mv_mountseat_1",
+"cls": "info_teleport_destination",
+"origin": [
+3596.8465487076833,
+-1930.9645471572408,
+628.0000000000001
+],
+"angles": [
+0.0,
+109.5,
+0.0
+]
+},
+{
+"name": "mv_mount_snd_1",
+"cls": "point_soundevent",
+"origin": [
+3538.153364590592,
+-1878.1766236560788,
+660.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_mountinfo_1",
+"cls": "info_target",
+"origin": [
+3538.153364590592,
+-1878.1766236560788,
+670.0
+],
+"angles": [
+0.0,
+109.5,
+0.0
+]
+},
+{
+"name": "mv_mount_2",
+"cls": "prop_dynamic",
+"origin": [
+2905.9068793665256,
+-2467.756009285033,
+650.0
+],
+"angles": [
+0.0,
+156.5,
+0.0
+],
+"model": "models/mv/m2_gun/m2_gun.vmdl"
+},
+{
+"name": "mv_mountseat_2",
+"cls": "info_teleport_destination",
+"origin": [
+2957.2622435320927,
+-2530.085957144847,
+628.0
+],
+"angles": [
+0.0,
+156.5,
+0.0
+]
+},
+{
+"name": "mv_mount_snd_2",
+"cls": "point_soundevent",
+"origin": [
+2905.9068793665256,
+-2467.756009285033,
+660.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_mountinfo_2",
+"cls": "info_target",
+"origin": [
+2905.9068793665256,
+-2467.756009285033,
+670.0
+],
+"angles": [
+0.0,
+156.5,
+0.0
+]
+},
+{
+"name": "mv_mount_3",
+"cls": "prop_dynamic",
+"origin": [
+4544.787900838454,
+-2028.6191630909366,
+650.0
+],
+"angles": [
+0.0,
+53.5,
+0.0
+],
+"model": "models/mv/m2_gun/m2_gun.vmdl"
+},
+{
+"name": "mv_mountseat_3",
+"cls": "info_teleport_destination",
+"origin": [
+4471.477824780379,
+-2073.6351472855004,
+628.0
+],
+"angles": [
+0.0,
+53.5,
+0.0
+]
+},
+{
+"name": "mv_mount_snd_3",
+"cls": "point_soundevent",
+"origin": [
+4544.787900838454,
+-2028.6191630909366,
+660.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_mountinfo_3",
+"cls": "info_target",
+"origin": [
+4544.787900838454,
+-2028.6191630909366,
+670.0
+],
+"angles": [
+0.0,
+53.5,
+0.0
+]
+},
+{
+"name": "mv_mount_4",
+"cls": "prop_dynamic",
+"origin": [
+2945.258980446458,
+-3000.3473247369475,
+686.0
+],
+"angles": [
+0.0,
+-174.0,
+0.0
+],
+"model": "models/mv/quad50_gun/quad50_gun.vmdl"
+},
+{
+"name": "mv_mountseat_4",
+"cls": "info_teleport_destination",
+"origin": [
+3054.437264751699,
+-2984.668055246799,
+628.0
+],
+"angles": [
+0.0,
+-174.0,
+0.0
+]
+},
+{
+"name": "mv_mount_snd_4",
+"cls": "point_soundevent",
+"origin": [
+2945.258980446458,
+-3000.3473247369475,
+696.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_mountinfo_4",
+"cls": "info_target",
+"origin": [
+2945.258980446458,
+-3000.3473247369475,
+706.0
+],
+"angles": [
+0.0,
+-174.0,
+0.0
+]
+},
+{
+"name": "mv_mount_5",
+"cls": "prop_dynamic",
+"origin": [
+-3650.0,
+3500.0,
+358.0
+],
+"angles": [
+0.0,
+67.38013505195957,
+0.0
+],
+"model": "models/mv/dshk_gun/dshk_gun.vmdl"
+},
+{
+"name": "mv_mountseat_5",
+"cls": "info_teleport_destination",
+"origin": [
+-3714.6153846153848,
+3440.923076923077,
+308.0
+],
+"angles": [
+0.0,
+67.38013505195957,
+0.0
+]
+},
+{
+"name": "mv_mount_snd_5",
+"cls": "point_soundevent",
+"origin": [
+-3650.0,
+3500.0,
+368.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_mountinfo_5",
+"cls": "info_target",
+"origin": [
+-3650.0,
+3500.0,
+378.0
+],
+"angles": [
+0.0,
+67.38013505195957,
+0.0
+]
+},
+{
+"name": "mv_mount_6",
+"cls": "prop_dynamic",
+"origin": [
+-3180.0,
+2540.0,
+358.0
+],
+"angles": [
+0.0,
+333.434948822922,
+0.0
+],
+"model": "models/mv/dshk_gun/dshk_gun.vmdl"
+},
+{
+"name": "mv_mountseat_6",
+"cls": "info_teleport_destination",
+"origin": [
+-3277.2433402239944,
+2568.6216701119974,
+308.0
+],
+"angles": [
+0.0,
+333.434948822922,
+0.0
+]
+},
+{
+"name": "mv_mount_snd_6",
+"cls": "point_soundevent",
+"origin": [
+-3180.0,
+2540.0,
+368.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_mountinfo_6",
+"cls": "info_target",
+"origin": [
+-3180.0,
+2540.0,
+378.0
+],
+"angles": [
+0.0,
+333.434948822922,
+0.0
+]
+},
+{
+"name": "mv_mount_7",
+"cls": "prop_dynamic",
+"origin": [
+2660.0,
+860.0,
+259.38398757731983
+],
+"angles": [
+0.0,
+-90.0,
+0.0
+],
+"model": "models/mv/dshk_gun/dshk_gun.vmdl"
+},
+{
+"name": "mv_mountseat_7",
+"cls": "info_teleport_destination",
+"origin": [
+2760.0,
+924.0,
+245.38398757731983
+],
+"angles": [
+0.0,
+-90.0,
+0.0
+]
+},
+{
+"name": "mv_mount_snd_7",
+"cls": "point_soundevent",
+"origin": [
+2660.0,
+860.0,
+269.38398757731983
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_mountinfo_7",
+"cls": "info_target",
+"origin": [
+2660.0,
+860.0,
+279.38398757731983
+],
+"angles": [
+0.0,
+-90.0,
+0.0
+]
+},
+{
+"name": "mv_mount_8",
+"cls": "prop_dynamic",
+"origin": [
+150.0,
+-498.86924800534536,
+51.105905544162624
+],
+"angles": [
+0.0,
+90.0,
+0.0
+],
+"model": "models/mv/m2_gun/m2_gun.vmdl"
+},
+{
+"name": "mv_mountseat_8",
+"cls": "info_teleport_destination",
+"origin": [
+150.0,
+-556.8692480053453,
+34.22122936806524
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "mv_mount_snd_8",
+"cls": "point_soundevent",
+"origin": [
+150.0,
+-498.86924800534536,
+61.105905544162624
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_mountinfo_8",
+"cls": "info_target",
+"origin": [
+150.0,
+-498.86924800534536,
+71.10590554416262
+],
+"angles": [
+0.0,
+90.0,
+0.0
+]
+},
+{
+"name": "mv_boom_fx_1",
+"cls": "info_particle_system",
+"origin": [
+-700.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_1",
+"cls": "info_particle_system",
+"origin": [
+-700.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_1",
+"cls": "point_soundevent",
+"origin": [
+-700.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_1",
+"cls": "point_soundevent",
+"origin": [
+-700.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_1",
+"cls": "env_shake",
+"origin": [
+-700.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_1",
+"cls": "prop_dynamic",
+"origin": [
+-700.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_2",
+"cls": "info_particle_system",
+"origin": [
+-610.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_2",
+"cls": "info_particle_system",
+"origin": [
+-610.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_2",
+"cls": "point_soundevent",
+"origin": [
+-610.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_2",
+"cls": "point_soundevent",
+"origin": [
+-610.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_2",
+"cls": "env_shake",
+"origin": [
+-610.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_2",
+"cls": "prop_dynamic",
+"origin": [
+-610.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_3",
+"cls": "info_particle_system",
+"origin": [
+-520.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_3",
+"cls": "info_particle_system",
+"origin": [
+-520.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_3",
+"cls": "point_soundevent",
+"origin": [
+-520.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_3",
+"cls": "point_soundevent",
+"origin": [
+-520.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_3",
+"cls": "env_shake",
+"origin": [
+-520.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_3",
+"cls": "prop_dynamic",
+"origin": [
+-520.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_4",
+"cls": "info_particle_system",
+"origin": [
+-430.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_4",
+"cls": "info_particle_system",
+"origin": [
+-430.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_4",
+"cls": "point_soundevent",
+"origin": [
+-430.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_4",
+"cls": "point_soundevent",
+"origin": [
+-430.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_4",
+"cls": "env_shake",
+"origin": [
+-430.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_4",
+"cls": "prop_dynamic",
+"origin": [
+-430.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_5",
+"cls": "info_particle_system",
+"origin": [
+-340.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_5",
+"cls": "info_particle_system",
+"origin": [
+-340.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_5",
+"cls": "point_soundevent",
+"origin": [
+-340.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_5",
+"cls": "point_soundevent",
+"origin": [
+-340.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_5",
+"cls": "env_shake",
+"origin": [
+-340.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_5",
+"cls": "prop_dynamic",
+"origin": [
+-340.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_6",
+"cls": "info_particle_system",
+"origin": [
+-250.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_6",
+"cls": "info_particle_system",
+"origin": [
+-250.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_6",
+"cls": "point_soundevent",
+"origin": [
+-250.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_6",
+"cls": "point_soundevent",
+"origin": [
+-250.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_6",
+"cls": "env_shake",
+"origin": [
+-250.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_6",
+"cls": "prop_dynamic",
+"origin": [
+-250.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_7",
+"cls": "info_particle_system",
+"origin": [
+-160.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_7",
+"cls": "info_particle_system",
+"origin": [
+-160.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_7",
+"cls": "point_soundevent",
+"origin": [
+-160.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_7",
+"cls": "point_soundevent",
+"origin": [
+-160.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_7",
+"cls": "env_shake",
+"origin": [
+-160.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_7",
+"cls": "prop_dynamic",
+"origin": [
+-160.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_8",
+"cls": "info_particle_system",
+"origin": [
+-70.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_8",
+"cls": "info_particle_system",
+"origin": [
+-70.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_8",
+"cls": "point_soundevent",
+"origin": [
+-70.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_8",
+"cls": "point_soundevent",
+"origin": [
+-70.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_8",
+"cls": "env_shake",
+"origin": [
+-70.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_8",
+"cls": "prop_dynamic",
+"origin": [
+-70.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_9",
+"cls": "info_particle_system",
+"origin": [
+20.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_9",
+"cls": "info_particle_system",
+"origin": [
+20.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_9",
+"cls": "point_soundevent",
+"origin": [
+20.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_9",
+"cls": "point_soundevent",
+"origin": [
+20.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_9",
+"cls": "env_shake",
+"origin": [
+20.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_9",
+"cls": "prop_dynamic",
+"origin": [
+20.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_10",
+"cls": "info_particle_system",
+"origin": [
+110.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_10",
+"cls": "info_particle_system",
+"origin": [
+110.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_10",
+"cls": "point_soundevent",
+"origin": [
+110.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_10",
+"cls": "point_soundevent",
+"origin": [
+110.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_10",
+"cls": "env_shake",
+"origin": [
+110.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_10",
+"cls": "prop_dynamic",
+"origin": [
+110.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_11",
+"cls": "info_particle_system",
+"origin": [
+200.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_11",
+"cls": "info_particle_system",
+"origin": [
+200.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_11",
+"cls": "point_soundevent",
+"origin": [
+200.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_11",
+"cls": "point_soundevent",
+"origin": [
+200.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_11",
+"cls": "env_shake",
+"origin": [
+200.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_11",
+"cls": "prop_dynamic",
+"origin": [
+200.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_12",
+"cls": "info_particle_system",
+"origin": [
+290.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_12",
+"cls": "info_particle_system",
+"origin": [
+290.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_12",
+"cls": "point_soundevent",
+"origin": [
+290.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_12",
+"cls": "point_soundevent",
+"origin": [
+290.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_12",
+"cls": "env_shake",
+"origin": [
+290.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_12",
+"cls": "prop_dynamic",
+"origin": [
+290.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_13",
+"cls": "info_particle_system",
+"origin": [
+380.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_13",
+"cls": "info_particle_system",
+"origin": [
+380.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_13",
+"cls": "point_soundevent",
+"origin": [
+380.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_13",
+"cls": "point_soundevent",
+"origin": [
+380.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_13",
+"cls": "env_shake",
+"origin": [
+380.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_13",
+"cls": "prop_dynamic",
+"origin": [
+380.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_14",
+"cls": "info_particle_system",
+"origin": [
+470.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_14",
+"cls": "info_particle_system",
+"origin": [
+470.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_14",
+"cls": "point_soundevent",
+"origin": [
+470.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_14",
+"cls": "point_soundevent",
+"origin": [
+470.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_14",
+"cls": "env_shake",
+"origin": [
+470.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_14",
+"cls": "prop_dynamic",
+"origin": [
+470.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_15",
+"cls": "info_particle_system",
+"origin": [
+560.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_15",
+"cls": "info_particle_system",
+"origin": [
+560.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_15",
+"cls": "point_soundevent",
+"origin": [
+560.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_15",
+"cls": "point_soundevent",
+"origin": [
+560.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_15",
+"cls": "env_shake",
+"origin": [
+560.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_15",
+"cls": "prop_dynamic",
+"origin": [
+560.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_boom_fx_16",
+"cls": "info_particle_system",
+"origin": [
+650.0,
+-400.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_dirt_fx_16",
+"cls": "info_particle_system",
+"origin": [
+650.0,
+-370.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_boom_snd_16",
+"cls": "point_soundevent",
+"origin": [
+650.0,
+-340.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_whistle_snd_16",
+"cls": "point_soundevent",
+"origin": [
+650.0,
+-310.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_shake_16",
+"cls": "env_shake",
+"origin": [
+650.0,
+-280.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_rocket_16",
+"cls": "prop_dynamic",
+"origin": [
+650.0,
+-200.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_rocket/mv_rocket.vmdl"
+},
+{
+"name": "mv_tracer_1",
+"cls": "prop_dynamic",
+"origin": [
+-700.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_2",
+"cls": "prop_dynamic",
+"origin": [
+-640.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_3",
+"cls": "prop_dynamic",
+"origin": [
+-580.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_4",
+"cls": "prop_dynamic",
+"origin": [
+-520.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_5",
+"cls": "prop_dynamic",
+"origin": [
+-460.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_6",
+"cls": "prop_dynamic",
+"origin": [
+-400.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_7",
+"cls": "prop_dynamic",
+"origin": [
+-340.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_8",
+"cls": "prop_dynamic",
+"origin": [
+-280.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_9",
+"cls": "prop_dynamic",
+"origin": [
+-220.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_10",
+"cls": "prop_dynamic",
+"origin": [
+-160.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_11",
+"cls": "prop_dynamic",
+"origin": [
+-100.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_12",
+"cls": "prop_dynamic",
+"origin": [
+-40.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_13",
+"cls": "prop_dynamic",
+"origin": [
+20.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_14",
+"cls": "prop_dynamic",
+"origin": [
+80.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_15",
+"cls": "prop_dynamic",
+"origin": [
+140.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_16",
+"cls": "prop_dynamic",
+"origin": [
+200.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_17",
+"cls": "prop_dynamic",
+"origin": [
+260.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_18",
+"cls": "prop_dynamic",
+"origin": [
+320.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_19",
+"cls": "prop_dynamic",
+"origin": [
+380.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_20",
+"cls": "prop_dynamic",
+"origin": [
+440.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_21",
+"cls": "prop_dynamic",
+"origin": [
+500.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_22",
+"cls": "prop_dynamic",
+"origin": [
+560.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_23",
+"cls": "prop_dynamic",
+"origin": [
+620.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_tracer_24",
+"cls": "prop_dynamic",
+"origin": [
+680.0,
+0.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_tracer/mv_tracer.vmdl"
+},
+{
+"name": "mv_marker_1",
+"cls": "prop_dynamic",
+"origin": [
+-700.0,
+300.0,
+-4600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_mission_ring/mv_mission_ring.vmdl"
+},
+{
+"name": "mv_marker_2",
+"cls": "prop_dynamic",
+"origin": [
+-440.0,
+300.0,
+-4600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_mission_ring/mv_mission_ring.vmdl"
+},
+{
+"name": "mv_marker_3",
+"cls": "prop_dynamic",
+"origin": [
+-180.0,
+300.0,
+-4600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_mission_ring/mv_mission_ring.vmdl"
+},
+{
+"name": "mv_marker_4",
+"cls": "prop_dynamic",
+"origin": [
+80.0,
+300.0,
+-4600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_mission_ring/mv_mission_ring.vmdl"
+},
+{
+"name": "mv_marker_5",
+"cls": "prop_dynamic",
+"origin": [
+340.0,
+300.0,
+-4600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_mission_ring/mv_mission_ring.vmdl"
+},
+{
+"name": "mv_marker_6",
+"cls": "prop_dynamic",
+"origin": [
+-700.0,
+600.0,
+-4600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_mission_ring/mv_mission_ring.vmdl"
+},
+{
+"name": "mv_marker_7",
+"cls": "prop_dynamic",
+"origin": [
+-440.0,
+600.0,
+-4600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_mission_ring/mv_mission_ring.vmdl"
+},
+{
+"name": "mv_marker_8",
+"cls": "prop_dynamic",
+"origin": [
+-180.0,
+600.0,
+-4600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_mission_ring/mv_mission_ring.vmdl"
+},
+{
+"name": "mv_marker_9",
+"cls": "prop_dynamic",
+"origin": [
+80.0,
+600.0,
+-4600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_mission_ring/mv_mission_ring.vmdl"
+},
+{
+"name": "mv_marker_10",
+"cls": "prop_dynamic",
+"origin": [
+340.0,
+600.0,
+-4600.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_mission_ring/mv_mission_ring.vmdl"
+},
+{
+"name": "mv_smoke_fx_1",
+"cls": "info_particle_system",
+"origin": [
+-700.0,
+-700.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_smoke_fx_2",
+"cls": "info_particle_system",
+"origin": [
+-610.0,
+-700.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_smoke_fx_3",
+"cls": "info_particle_system",
+"origin": [
+-520.0,
+-700.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_smoke_fx_4",
+"cls": "info_particle_system",
+"origin": [
+-430.0,
+-700.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_smoke_fx_5",
+"cls": "info_particle_system",
+"origin": [
+-340.0,
+-700.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_smoke_fx_6",
+"cls": "info_particle_system",
+"origin": [
+-250.0,
+-700.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_pip_1",
+"cls": "prop_dynamic",
+"origin": [
+-700.0,
+-900.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_gunpip/mv_gunpip.vmdl"
+},
+{
+"name": "mv_pip_2",
+"cls": "prop_dynamic",
+"origin": [
+-550.0,
+-900.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_gunpip/mv_gunpip.vmdl"
+},
+{
+"name": "mv_pip_3",
+"cls": "prop_dynamic",
+"origin": [
+-400.0,
+-900.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_gunpip/mv_gunpip.vmdl"
+},
+{
+"name": "mv_pip_4",
+"cls": "prop_dynamic",
+"origin": [
+-250.0,
+-900.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_gunpip/mv_gunpip.vmdl"
+},
+{
+"name": "mv_pip_5",
+"cls": "prop_dynamic",
+"origin": [
+-100.0,
+-900.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_gunpip/mv_gunpip.vmdl"
+},
+{
+"name": "mv_pip_6",
+"cls": "prop_dynamic",
+"origin": [
+50.0,
+-900.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_gunpip/mv_gunpip.vmdl"
+},
+{
+"name": "mv_pip_7",
+"cls": "prop_dynamic",
+"origin": [
+200.0,
+-900.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_gunpip/mv_gunpip.vmdl"
+},
+{
+"name": "mv_pip_8",
+"cls": "prop_dynamic",
+"origin": [
+350.0,
+-900.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_gunpip/mv_gunpip.vmdl"
+},
+{
+"name": "mv_pip_9",
+"cls": "prop_dynamic",
+"origin": [
+500.0,
+-900.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_gunpip/mv_gunpip.vmdl"
+},
+{
+"name": "mv_pip_10",
+"cls": "prop_dynamic",
+"origin": [
+650.0,
+-900.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_gunpip/mv_gunpip.vmdl"
+},
+{
+"name": "mv_pip_11",
+"cls": "prop_dynamic",
+"origin": [
+800.0,
+-900.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_gunpip/mv_gunpip.vmdl"
+},
+{
+"name": "mv_pip_12",
+"cls": "prop_dynamic",
+"origin": [
+950.0,
+-900.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/fx/mv_gunpip/mv_gunpip.vmdl"
+},
+{
+"name": "mv_shell_1",
+"cls": "prop_dynamic",
+"origin": [
+-700.0,
+-1100.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_shell_2",
+"cls": "prop_dynamic",
+"origin": [
+-640.0,
+-1100.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_shell_3",
+"cls": "prop_dynamic",
+"origin": [
+-580.0,
+-1100.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_shell_4",
+"cls": "prop_dynamic",
+"origin": [
+-520.0,
+-1100.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_shell_5",
+"cls": "prop_dynamic",
+"origin": [
+-460.0,
+-1100.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_shell_6",
+"cls": "prop_dynamic",
+"origin": [
+-400.0,
+-1100.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_shell_7",
+"cls": "prop_dynamic",
+"origin": [
+-340.0,
+-1100.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_shell_8",
+"cls": "prop_dynamic",
+"origin": [
+-280.0,
+-1100.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_shell_9",
+"cls": "prop_dynamic",
+"origin": [
+-220.0,
+-1100.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_shell_10",
+"cls": "prop_dynamic",
+"origin": [
+-160.0,
+-1100.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_shell_11",
+"cls": "prop_dynamic",
+"origin": [
+-100.0,
+-1100.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_shell_12",
+"cls": "prop_dynamic",
+"origin": [
+-40.0,
+-1100.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_cache_wreck_hip",
+"cls": "prop_dynamic",
+"origin": [
+-700.0,
+-1500.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/wreck_hip/wreck_hip.vmdl"
+},
+{
+"name": "mv_cache_wreck_huey",
+"cls": "prop_dynamic",
+"origin": [
+-580.0,
+-1500.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/wreck_huey/wreck_huey.vmdl"
+},
+{
+"name": "mv_cache_rocket_122",
+"cls": "prop_dynamic",
+"origin": [
+-460.0,
+-1500.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/rocket_122/rocket_122.vmdl"
+},
+{
+"name": "mv_cache_shell_105",
+"cls": "prop_dynamic",
+"origin": [
+-340.0,
+-1500.0,
+-4200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+],
+"model": "models/mv/shell_105/shell_105.vmdl"
+},
+{
+"name": "mv_ambience",
+"cls": "point_soundevent",
+"origin": [
+0.0,
+0.0,
+-3200.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_tunnel_1",
+"cls": "info_teleport_destination",
+"origin": [
+-3362.0,
+2555.0,
+277.22075286582105
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_tunnel_2",
+"cls": "info_teleport_destination",
+"origin": [
+-3126.086956521739,
+1789.1304347826087,
+239.765568129621
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_tunnel_3",
+"cls": "info_teleport_destination",
+"origin": [
+-2345.6521739130435,
+2833.695652173913,
+256.7248738398529
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_1",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_2",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_3",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_4",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_5",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_6",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_7",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_8",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_9",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_10",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_11",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_12",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_13",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_14",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_seed_15",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_1",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_2",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_3",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_4",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_5",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_6",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_7",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_8",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_9",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_10",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_11",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_12",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_13",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_14",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_15",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_16",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_17",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_18",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_19",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_20",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_21",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_22",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_23",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_24",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_25",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_26",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_27",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_28",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_29",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_30",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_31",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_32",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_33",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_34",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_35",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_36",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_37",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_38",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_39",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_40",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_41",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_42",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_43",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_44",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_45",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_46",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_47",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_48",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_49",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_50",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_51",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_52",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_53",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_54",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_55",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_56",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_57",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_58",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_59",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_60",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_61",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_62",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_63",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_64",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_65",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_66",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_67",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_68",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_69",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_70",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_71",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_72",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_73",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_74",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_75",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_76",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_77",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_78",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_79",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_80",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_81",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_82",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_83",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_84",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
+],
+"angles": [
+0.0,
+0.0,
+0.0
+]
+},
+{
+"name": "mv_nav_no_85",
+"cls": "func_nav_markup",
+"origin": [
+0.0,
+0.0,
+0.0
 ],
 "angles": [
 0.0,

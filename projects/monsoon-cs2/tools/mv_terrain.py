@@ -25,6 +25,7 @@ def tile_res(cx, cy):
     near = min(math.hypot(cx - fx, cy - fy) for _, _, (fx, fy) in L.FLAGS)
     near = min(near, math.hypot(cx - L.CT_BASE[0], cy - L.CT_BASE[1]) - 300, math.hypot(cx - L.T_BASE[0], cy - L.T_BASE[1]) - 300)
     if near < 1150 or L.in_paddies(np.array([cx]), np.array([cy]))[0]: return 32
+    if min(math.hypot(cx - px, cy - py) for px, py in L.TUNNEL_PORTALS) < 1000 or math.hypot(cx - L.FARM[0], cy - L.FARM[1]) < 700: return 32   # portal cuts are 32-u cells
     if abs(cx) <= L.MAP_X + 256 and abs(cy) <= L.MAP_Y + 256 and abs(cy - float(L.river_y(cx))) < 3300: return 64
     return 128
 

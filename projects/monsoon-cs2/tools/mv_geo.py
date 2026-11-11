@@ -146,6 +146,8 @@ def cyl(p0, p1, r, mat, part=None, sides=12, caps=True, r1=None):
 
 
 def box(x0, y0, z0, x1, y1, z1, mat, part=None, r=0.4, seg=1, div=(1, 1, 1)):
+    # corners in any order: mirrored calls (s * a, s * b) used to give negative sizes and inside-out boxes (found 11 Nov)
+    x0, x1 = min(x0, x1), max(x0, x1); y0, y1 = min(y0, y1), max(y0, y1); z0, z1 = min(z0, z1), max(z0, z1)
     sx, sy, sz = x1 - x0, y1 - y0, z1 - z0
     return geo.rbox(sx, sy, sz, r=r, seg=seg, mat=mat, part=part, div=div, center=((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2))
 
@@ -201,3 +203,125 @@ def lathe_x(profile, mat, sides=16, part=None, x0=0.0):
     m = geo.lathe([(r, x) for r, x in profile], sides=sides, mat=mat, part=part)
     m.transform(geo.rot('y', 90), (x0, 0, 0))
     return m
+
+
+# ---------------------------------------------------------------- cards, sheets, vertical lofts, walls with openings (11 Nov)
+def card(p0, u, v, mat, part=None, atlas='cut', nv=3, nu=1, bend=(0, 0, 0), up=0.5):
+    """foliage card: origin p0, width vector u, height vector v, nv segments along v; bend (3,) is added with t^2 along v (a leaning
+    blade); chart u runs across the width, v up the height (the strip image's top is the card's top). Normals are tilted toward +z
+    by `up` so a clump shades as one soft mass. Charts go to the alpha-tested `atlas`."""
+    p0 = np.asarray(p0, float); u = np.asarray(u, float); v = np.asarray(v, float); bend = np.asarray(bend, float)
+    ss = np.linspace(0, 1, nu + 1); ts = np.linspace(0, 1, nv + 1)
+    P = p0 + ss[:, None, None] * u + ts[None, :, None] * v + (ts ** 2)[None, :, None] * bend
+    m = geo.surface(P, mat, part or geo.frame())
+    m.charts[0]['atlas'] = atlas; m.charts[0]['w'] = float(np.linalg.norm(u)); m.charts[0]['h'] = float(np.linalg.norm(v))
+    n = m.N * (1 - up) + np.array([0, 0, up]); m.N = n / (np.linalg.norm(n, axis=1, keepdims=True) + 1e-9)
+    return m
+
+
+def sheet(P, mat, part=None, double=True, atlas=None):
+    """thin shell through a (nu+1, nv+1, 3) grid; double = a second, flipped copy so both sides draw and bake their own texels"""
+    m = geo.surface(P, mat, part or geo.frame())
+    if double: m.add(geo.surface(P, mat, part or geo.frame(), flip=True))
+    if atlas:
+        for c in m.charts: c['atlas'] = atlas
+    return m
+
+
+def ngon(r, n, rot=0.0, sx=1.0, sy=1.0):
+    a = np.radians(rot) + np.arange(n) * 2 * np.pi / n
+    return np.stack([r * sx * np.cos(a), r * sy * np.sin(a)], 1)
+
+
+def rect_loop(hx, hy, cut=0.0, k=1):
+    """CCW rectangle loop of half sizes hx, hy; cut > 0 gives redented (stepped-in) corners with k steps of size cut"""
+    if cut <= 0: return np.array([[hx, -hy], [hx, hy], [-hx, hy], [-hx, -hy]], float)
+    q = []     # first quadrant corner (+x, +y), walking CCW from the +x side to the +y side
+    for i in range(k, 0, -1):
+        q += [(hx - (k - i) * cut, hy - i * cut), (hx - (k - i + 1) * cut, hy - i * cut)]
+    q = [(hx, hy - k * cut)] + q[1:] + [(hx - k * cut, hy)]
+    pts = []
+    for sx, sy, rev in ((1, 1, False), (-1, 1, True), (-1, -1, False), (1, -1, True)):
+        qq = [(sx * x, sy * y) for x, y in q]
+        pts += qq[::-1] if rev else qq
+    return np.array(pts, float)
+
+
+def vloft(rings, mat, part=None, cap_top=True, cap_bottom=False, angle=50.0):
+    """vertical loft: rings = [(z, loop (n,2) of (x,y))] bottom to top, all loops with n points in the same order"""
+    n = len(rings[0][1])
+    P = np.zeros((n + 1, len(rings), 3))
+    for j, (z, loop) in enumerate(rings):
+        loop = np.asarray(loop, float)
+        P[:n, j, 0] = loop[:, 0]; P[:n, j, 1] = loop[:, 1]; P[:n, j, 2] = z
+        P[n, j] = P[0, j]
+    m = geo.surface(P, mat, part)
+    cen = P[:n].mean((0, 1))
+    fc = m.V[m.F].mean(1) - cen; fc[:, 2] = 0
+    if np.einsum('ij,ij->i', m.face_normals(), fc).mean() < 0: m.F = m.F[:, ::-1]
+    if cap_top: m.add(geo.disk(P[:n, -1].mean(0), P[:n, -1], (0, 0, 1), mat, part))
+    if cap_bottom: m.add(geo.disk(P[:n, 0].mean(0), P[:n, 0], (0, 0, -1), mat, part))
+    m.recompute_normals(angle=angle)
+    return m
+
+
+def xform_pts(pts, R=None, t=(0, 0, 0)):
+    p = np.asarray(pts, float)
+    if R is not None: p = p @ np.asarray(R, float).T
+    return p + np.asarray(t, float)
+
+
+def slab_wall(a, b, z0, z1, thick, mat, part=None, openings=(), r=0.6):
+    """wall centred on the segment a -> b (x, y), from z0 to z1; openings = [(s0, s1, zlo, zhi)] measured along the wall.
+    Returns (mesh, hulls): one box per piece, so a doorway never sits inside a hull."""
+    a = np.asarray(a, float); b = np.asarray(b, float)
+    L = float(np.linalg.norm(b - a)); ang = float(np.degrees(np.arctan2(b[1] - a[1], b[0] - a[0])))
+    R = geo.rot('z', ang); t = (a[0], a[1], 0.0)
+    xs = sorted({0.0, L} | {float(np.clip(o[0], 0, L)) for o in openings} | {float(np.clip(o[1], 0, L)) for o in openings})
+    m = geo.Mesh(); hulls = []
+    def piece(s0, s1, za, zb):
+        if s1 - s0 < 0.5 or zb - za < 0.5: return
+        bx = box(s0, -thick / 2, za, s1, thick / 2, zb, mat, part, r=r)
+        bx.transform(R, t); m.add(bx)
+        hulls.append(xform_pts(pts_box(s0, -thick / 2, za, s1, thick / 2, zb), R, t))
+    for s0, s1 in zip(xs[:-1], xs[1:]):
+        cuts = sorted([o for o in openings if o[0] <= s0 + 1e-6 and o[1] >= s1 - 1e-6], key=lambda o: o[2])
+        z = z0
+        for o in cuts:
+            piece(s0, s1, z, min(o[2], z1)); z = max(z, o[3])
+        piece(s0, s1, z, z1)
+    return m, hulls
+
+
+def wedge_pts(x0, x1, y0, y1, z0, z1):
+    """ramp rising along +x from z0 at x0 to z1 at x1 (one convex piece)"""
+    return np.array([[x0, y0, z0], [x0, y1, z0], [x1, y0, z0], [x1, y1, z0], [x1, y0, z1], [x1, y1, z1]], float)
+
+
+def drape(x0, x1, y0, y1, boxes, mat, part=None, n=26, blur=1.6, lift=1.0, wrinkle=1.5, seed=0, double=True, floor=0.0):
+    """cloth dropped over boxes [(x0, y0, x1, y1, top z)]: flat on the tops, sagging off the edges toward `floor`"""
+    from scipy.ndimage import gaussian_filter, maximum_filter
+    nx = n; ny = max(4, int(round(n * (y1 - y0) / max(x1 - x0, 1e-6))))
+    X, Y = np.meshgrid(np.linspace(x0, x1, nx + 1), np.linspace(y0, y1, ny + 1), indexing='ij')
+    H = np.full(X.shape, float(floor))
+    for bx0, by0, bx1, by1, top in boxes:
+        H = np.where((X >= bx0) & (X <= bx1) & (Y >= by0) & (Y <= by1), np.maximum(H, top), H)
+    Z = np.maximum(H, gaussian_filter(maximum_filter(H, 3), blur))
+    Z = Z + lift + wrinkle * fbm(X * 0.11, Y * 0.11, seed * 1.7, 3, seed=int(seed) % 1000) * (0.4 + 0.6 * (Z - H > 0.5))
+    return sheet(np.stack([X, Y, Z], -1), mat, part, double=double)
+
+
+def limb(p0, p1, r0, r1, mat, seed=0, sides=8, n=6, wob=0.0, sag=0.0, caps=True, **pk):
+    """organic tapered limb (trunk, branch, root, vine) between two points: wobble sideways, sag in the middle"""
+    p0 = np.asarray(p0, float); p1 = np.asarray(p1, float)
+    rng = np.random.RandomState(int(abs(seed)) % (2 ** 31))
+    t = np.linspace(0, 1, n + 1)
+    pts = p0 + t[:, None] * (p1 - p0)
+    L = np.linalg.norm(p1 - p0)
+    if wob:
+        off = rng.normal(0, wob, (n + 1, 3)) * (np.sin(np.pi * t)[:, None] * 0.8 + 0.2); off[0] = 0
+        pts = pts + np.cumsum(off, 0) * 0.5
+    pts[:, 2] -= sag * L * np.sin(np.pi * t)
+    radii = r0 + (r1 - r0) * t ** 0.8
+    d = (p1 - p0) / max(L, 1e-6)
+    return geo.tube(pts, radii, sides=sides, mat=mat, part=geo.frame(R=geo.look_frame(d), o=p0, seed=seed, **pk), caps=caps)

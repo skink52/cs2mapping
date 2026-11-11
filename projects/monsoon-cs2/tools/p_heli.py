@@ -347,8 +347,8 @@ def _rotor_spec(fn, r):
 
 def specs():
     out = {}
-    out['heli_huey'] = lambda: _spec(huey_body, _hulls_huey(), gunship=False)
-    out['heli_huey_gun'] = lambda: _spec(huey_body, _hulls_huey(), gunship=True, seed=2)
+    # heli_huey / heli_huey_gun dropped 11 Nov: the US side flies the CC-BY Apache (tools/apache_setup.py, out/apache.json);
+    # huey_body stays because wreck_huey (the generic burnt hulk) is built from it
     out['heli_hip'] = lambda: _spec(hip_body, _hulls_hip(), gunship=False)
     out['heli_hip_gun'] = lambda: _spec(hip_body, _hulls_hip(), gunship=True, seed=12)
     out['rotor_huey'] = lambda: _rotor_spec(lambda lod: rotor(HUEY_ROTOR_R, flybar=True, lod=lod), HUEY_ROTOR_R)

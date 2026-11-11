@@ -95,8 +95,8 @@ def main(src, out_vmap, out_addon, prev=None):
     stamp('finish')
     counts = G.finish(d, out_vmap, group=GROUP, keeper=keeper, drop_classes=G.GENERATOR_OWNS_EXAMPLE,
                       extra_refs=[G.NAVATTR, G.LMRES, TER.CLIP, TER.NODRAW, TER.SKYBOX],
-                      entities_json=os.path.join(os.path.dirname(os.path.abspath(out_vmap)), '..', '..', '..', 'entities.json'))
-    L.export(os.path.join(os.path.dirname(os.path.abspath(out_vmap)), '..', '..', '..', 'layout.json'))
+                      entities_json=os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(out_vmap)), '..', '..', 'entities.json')))      # out/entities.json (the mock reads it)
+    L.export(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(out_vmap)), '..', '..', 'layout.json')))
     stamp('done: %d entities' % sum(counts.values()))
 
 

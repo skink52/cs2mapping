@@ -156,7 +156,7 @@ def school(lod=0, seed=93):
         if s < 0: MG.remove_faces(sheet, lambda c: (c[:, 0] < -L / 2 + 60) & (c[:, 1] < -W / 2 + 40))
         m.add(sheet)
         for xx in np.arange(-L / 2 - 20, L / 2 + 20, 48):
-            m.add(MG.box(xx, s * (W / 2 + 20), H - 6, xx + 4, s * 4, ridge_z - 2, 'wood_dark', p))
+            m.add(MG.cyl((xx, s * (W / 2 + 20), H - 6), (xx, s * 3, ridge_z - 4), 2.2, 'wood_dark', p, sides=5))      # rafters under the sheets
     m.add(MG.cyl((-L / 2 - 26, 0, ridge_z + 4), (L / 2 + 26, 0, ridge_z + 4), 4.0, 'tin', p, sides=6))
     # rubble at the damaged corner, bell post, chalkboard inside, a few desks
     rp = geo.frame(seed=seed + 7)
@@ -298,7 +298,6 @@ def ox_cart(lod=0, seed=102):
         m.add(MG.cyl((50, s * 18, 38), (130, s * 14, 46), 2.2, 'wood', p, sides=8))
         # spoked wheel
         m.add(geo.tube([(0, s * 34, 36), (0, s * 38, 36)], 36, sides=18, mat='wood_dark', part=p))
-        m.add(geo.tube([(0, s * 33, 36), (0, s * 39, 36)], 32, sides=18, mat='interior_dark', part=p))
         for k in range(10):
             a = k * np.pi / 5
             m.add(MG.cyl((0, s * 36, 36), (33 * np.cos(a), s * 36, 36 + 33 * np.sin(a)), 1.2, 'wood', p, sides=5))
@@ -326,8 +325,8 @@ def sampan(lod=0, seed=103, roof=True):
     hull = MG.loft(secs, 'wood', p, n=12)
     MG.remove_faces(hull, lambda c: (c[:, 2] > 22) & (np.abs(c[:, 0]) < 112))   # open top
     m.add(hull)
-    m.add(MG.box(-110, -26, 6, 110, 26, 8, 'wood_dark', p))                       # bottom boards (inside)
-    for xx in (-70, -20, 30, 80): m.add(MG.box(xx, -28, 8, xx + 3, 28, 20, 'wood', p))   # ribs
+    m.add(MG.box(-84, -17, 6, 84, 17, 8, 'wood_dark', p))                         # bottom boards (inside the hull, not past it)
+    for xx in (-70, -20, 30, 76): m.add(MG.box(xx, -25, 8, xx + 3, 25, 20, 'wood', p))   # ribs
     if roof:
         th = np.linspace(0, np.pi, 10)
         P = np.zeros((2, len(th), 3))
@@ -458,13 +457,19 @@ def _sh():
 
 
 def _wattle(ctx):
+    """split-bamboo matting: flat strips 3.4 u wide woven over uprights every 10 u, each row shifted (soft relief, no checkerboard)"""
+    from noise import hash01, smoothstep
     S_ = ctx.S
     u, v = S_[:, 0], S_[:, 1]
-    weave = np.sign(np.sin(u * 0.9) * np.sin(v * 0.35))
-    h = 0.25 * weave + 0.15 * np.sin(u * 0.9)
-    col = S.mix(S._c(0.52, 0.44, 0.26), S._c(0.36, 0.30, 0.18), (weave > 0).astype(np.float32))
+    row = np.floor(v / 3.4); fv = v / 3.4 - row
+    over = np.cos(u / 10.0 * np.pi + row * np.pi)
+    gap = smoothstep(0.14, 0.0, np.minimum(fv, 1 - fv))
+    tone = hash01(row.astype(np.int64), 5)
+    col = S.mix(S._c(0.53, 0.45, 0.27), S._c(0.42, 0.35, 0.20), tone) * (0.86 + 0.14 * over)[:, None]
+    col = col * (1 - 0.45 * gap)[:, None]
     n = fbm(ctx.P[:, 0] * 0.1, ctx.P[:, 1] * 0.1, ctx.P[:, 2] * 0.1, 3, seed=301) * 0.5 + 0.5
-    col = col * (0.8 + 0.3 * n[:, None])
+    col = col * (0.82 + 0.28 * n[:, None])
+    h = 0.22 * over - 0.45 * gap
     col, rough, h, _ = S.mud_layer(ctx, col, np.full(ctx.n, 0.9, np.float32), h, top=16.0, amount=0.8, splash=0.6)
     return dict(color=np.clip(S.ao_tint(col, ctx, 0.6), 0, 1), rough=rough, height=h)
 
@@ -477,10 +482,15 @@ def _tin(ctx):
 
 
 def _wicker(ctx):
+    """basket weave: thin weavers (1.3 u) over stakes every 3.6 u"""
+    from noise import hash01, smoothstep
     S_ = ctx.S
-    w = np.sign(np.sin(S_[:, 0] * 1.6) * np.sin(S_[:, 1] * 1.6))
-    col = S.mix(S._c(0.62, 0.50, 0.28), S._c(0.42, 0.33, 0.18), (w > 0).astype(np.float32))
-    return dict(color=np.clip(S.ao_tint(col, ctx, 0.6), 0, 1), rough=np.full(ctx.n, 0.9, np.float32), height=0.2 * w)
+    u, v = S_[:, 0], S_[:, 1]
+    row = np.floor(v / 1.3); fv = v / 1.3 - row
+    over = np.cos(u / 3.6 * np.pi + row * np.pi)
+    gap = smoothstep(0.2, 0.0, np.minimum(fv, 1 - fv))
+    col = S.mix(S._c(0.60, 0.49, 0.28), S._c(0.50, 0.40, 0.22), hash01(row.astype(np.int64), 6)) * (0.84 + 0.16 * over)[:, None] * (1 - 0.4 * gap)[:, None]
+    return dict(color=np.clip(S.ao_tint(col, ctx, 0.6), 0, 1), rough=np.full(ctx.n, 0.88, np.float32), height=0.2 * over - 0.3 * gap)
 
 
 def _hay(ctx):
@@ -496,7 +506,7 @@ def _two(fn, size=1024, hulls=None, ground=0.0, thr=30.0, surface='wood', cut=Fa
     if isinstance(a, tuple): a, imgs = a; b = b[0]
     lo, hi = a.bounds()
     spec = dict(lods=[a, b], lod_thresholds=[0.0, thr], size=size, decal_size=512, ground=ground, surface=surface, metal=False, shaders=_sh(),
-                decal_imgs=imgs, stock={}, hulls=hulls or [MG.pts_box(lo[0], lo[1], lo[2], hi[0], hi[1], hi[2])])
+                decal_imgs=imgs, stock={}, hulls=hulls if hulls is not None else [MG.pts_box(lo[0], lo[1], lo[2], hi[0], hi[1], hi[2])])
     if cut: spec['atlases'] = {'main': dict(size=size), 'cut': dict(size=512, alpha=lambda b: b['metal'], metal=False, fill=0.9, backfaces=True)}
     return spec
 

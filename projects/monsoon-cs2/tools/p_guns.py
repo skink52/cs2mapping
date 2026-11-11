@@ -85,11 +85,12 @@ def dshk_mount(lod=0, seed=54):
     m.add(MG.cyl((0, 0, 48), (0, 0, 60), 5.0, 'soviet', p, sides=12))
     for s in (-1, 1): m.add(MG.box(-6, s * 5, 54, 6, s * 7, 64, 'soviet', p))
     # the two wheels leaning against a leg (removed for the AA role)
-    for k, (dx, dy) in enumerate(((-46, -44), (-48, 44))):
+    for k, (dx, dy) in enumerate(((-58, -52), (-60, 50))):
         w = geo.tube([(-2, 0, 0), (2, 0, 0)], 14, sides=14, mat='rubber', part=p)
-        w.transform(geo.rot('x', 70 if k == 0 else -70), (dx, dy, 14))
+        w.transform(geo.rot('z', 20 * k) @ geo.rot('y', 90 - 8 * k), (dx, dy, 2.6 + 2 * k))       # lying on the ground beside the rear legs
         m.add(w)
-    m.add(MG.box(-8, -14, 0, 8, 14, 4, 'rust', p))                                      # ammo box at the foot
+    m.add(MG.box(14, -22, 0, 30, -8, 9, 'soviet', p, r=0.6))                              # ammo box at the foot
+    m.add(MG.cyl((18, -15, 9.4), (26, -15, 9.4), 0.5, 'gunsteel', p, sides=5))
     m.recompute_normals(angle=50)
     return m
 
