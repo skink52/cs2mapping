@@ -71,6 +71,7 @@ class Argv(unittest.TestCase):
         self.assertEqual(R.preset_flags('final')[R.preset_flags('final').index('-lightmapMaxResolution') + 1], '2048')
         with self.assertRaises(ValueError): R.preset_flags('ultra')
 
+    @unittest.skipUnless(os.name == 'nt', 'checks a Windows drive path')
     def test_map_argv(self):
         vmap = os.path.join(self.CS2, 'content', 'csgo_addons', 'mg_x', 'maps', 'mg_x.vmap')
         a = R.map_argv(vmap, 'nav', threads=4, cs2=self.CS2)
