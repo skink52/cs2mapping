@@ -19,6 +19,8 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   `Console`, `GameRules` without error and `Console.ServerCommand` works in game. The round-end calls were not exercised (no round ended).
 - **[autoport]** Two fake-console crash tests raced a timer against the client (failed on CI, passed on the PC): the fake game now dies on
   the first command after the load, and the crash dump is written before the console drops.
+- **[scripts]** `run_import.bat` and `run_fixrefs.bat` rename `vpk.signatures.aaa` back to `vpk.signatures` when their last import has
+  finished: the file is out of the way only while the importer runs. The dry run says so. Not yet run through a real import.
 - **[create]** `test/api.py`: DEPRECATED is told apart from INVALID and comes with the current spelling; `--json`; `--examples`; quoted
   globs; reads JavaScript held in `.py` generators; `test/api_allow.txt` lists deprecated calls kept on purpose, each with a reason
   (the live-test probe, whose console output was checked in game with `Instance.Msg`; the original addons under `projects/`).

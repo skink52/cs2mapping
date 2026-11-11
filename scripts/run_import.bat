@@ -53,6 +53,11 @@ for /f "usebackq tokens=1,2" %%a in ("%PORT%\queue.txt") do (
     echo !ADDON! FAILED>> "%PORT%\logs\stage_b_done.txt"
   )
 )
+rem put vpk.signatures back: only the importer needs it out of the way; CS2 and Steam expect it there
+if not exist "%CS2%\game\bin\win64\vpk.signatures" if exist "%CS2%\game\bin\win64\vpk.signatures.aaa" (
+  ren "%CS2%\game\bin\win64\vpk.signatures.aaa" vpk.signatures
+  echo Restored vpk.signatures
+)
 echo.
 echo All done. Tell Claude stage B finished - it reads the logs from C:\source1\cs2port\logs
 pause
@@ -62,6 +67,7 @@ goto :eof
 :dryrun
 echo DRY RUN, nothing will be imported or changed.
 if exist "%CS2%\game\bin\win64\vpk.signatures" echo would RENAME "%CS2%\game\bin\win64\vpk.signatures" to vpk.signatures.aaa
+echo would RENAME vpk.signatures.aaa back to vpk.signatures after the last import
 if not exist "%PORT%\import_map_auto.py" echo CANNOT RUN - "%PORT%\import_map_auto.py" is missing (run make_import_map_auto.py once)
 echo would COPY "%PORT%\import_map_auto.py" over "%SCRIPTS%\import_map_auto.py"
 if not exist "%PORT%\queue.txt" echo CANNOT RUN - no "%PORT%\queue.txt" & exit /b 1

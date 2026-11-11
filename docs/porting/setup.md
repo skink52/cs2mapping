@@ -192,7 +192,7 @@ PC copy of the tools matches the clone.
    `C:\source1\cs2port\import_map_auto.py` without the "Enter to Continue, Esc to Quit" prompt, and `run_import.bat` copies that next to
    Valve's script before every import. Run it again if a CS2 update changes Valve's script.
 4. **`vpk.signatures`.** The importer fails while `game\bin\win64\vpk.signatures` exists. `run_import.bat` renames it to
-   `vpk.signatures.aaa` every time, because Steam puts it back after updates.
+   `vpk.signatures.aaa` every time, because Steam puts it back after updates. When its last import is done it renames the file back (11 Nov 2026), as does `run_fixrefs.bat`.
 5. **CS:GO content** extracted into `<CS2>\csgo` (materials, models, gameinfo.txt), with `C:\cscontent` as a junction to it
    (`mklink /J C:\cscontent "<CS2>\csgo"`). A `.lnk` shortcut won't work because Python doesn't follow those.
 6. Only for the older `post_import_cleanup.py` texture cascade: VTFEdit-Reloaded's `VTFCmd.exe` at `C:\VTF\VTFEdit\VTFCmd.exe`, with staging

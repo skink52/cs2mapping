@@ -27,6 +27,11 @@ for %%a in (%*) do (
     echo ==== %%a : no maps\%%a_fix_refs.txt, skipped ====
   )
 )
+rem put vpk.signatures back: only the importer needs it out of the way; CS2 and Steam expect it there
+if not exist "%CS2%\game\bin\win64\vpk.signatures" if exist "%CS2%\game\bin\win64\vpk.signatures.aaa" (
+  ren "%CS2%\game\bin\win64\vpk.signatures.aaa" vpk.signatures
+  echo Restored vpk.signatures
+)
 echo.
 echo Done. Now run run_build.bat for these maps.
 pause
