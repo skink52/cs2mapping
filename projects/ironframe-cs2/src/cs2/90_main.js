@@ -123,7 +123,7 @@ function startRound() {
   const humans = humansPlaying();
   const roster = []; for (const pe of people.values()) if (pe.human && (pe.team === TEAM_T || pe.team === TEAM_CT) && pe.status !== 'spec') roster.push({ slot: pe.slot, team: pe.team });
   const copies = game.planRound(roster);
-  const mode = guard('pickMode', () => game.pickMode(humans)) || 'tb';
+  const mode = perfForce || guard('pickMode', () => game.pickMode(humans)) || 'tb';      // perfForce: the timing test (ifr_perf_64) wants Team Deathmatch
   guard('setMode', () => game.setMode(mode, humans));
   guard('startRound', () => { if (typeof game.startRound === 'function') game.startRound(gameTime()); });
   if (serverMode && humans >= 6 && typeof IF_balanceTeams === 'function') guard('balance', () => {
@@ -169,7 +169,7 @@ function finishRound() {
   const reason = w === TEAM_T ? CSRoundEndReason.TERRORISTS_WIN : w === TEAM_CT ? CSRoundEndReason.CTS_WIN : CSRoundEndReason.DRAW;
   ifrCvars(['mp_ignore_round_win_conditions 0']);
   guard('wincond', () => ifrFireName(CONFIG.MAP_PARAMS, 'FireWinCondition', reason));
-  roundEndWaitAt = gameTime() + (Instance.IsWarmupPeriod() ? 1 : CONFIG.ROUND_END_WAIT);   // warmup: CS2 ends no round, go on at once
+  roundEndWaitAt = gameTime() + (GameRules.IsWarmupPeriod() ? 1 : CONFIG.ROUND_END_WAIT);   // warmup: CS2 ends no round, go on at once
   for (const pe of people.values()) { if (pe.status === 'mech') { pe.status = 'intro'; } garageClose(pe); }
   renderReset(); fxReset();
 }
@@ -412,6 +412,7 @@ function watchdog(now) {
 // ---------------------------------------------------------------- the tick
 function think() {
   const t0 = perfOn ? clockMs() : 0;
+  perfBegin();
   ifrTickNo++;
   const now = Instance.GetGameTime();
   ifrTickTime = now; ifrInThink = true;
@@ -420,7 +421,7 @@ function think() {
   if (!(dt > 0) || dt > 0.25) dt = DT;
   if (ready) guard('frame', () => frame(dt, now));
   ifrInThink = false;
-  if (perfOn) perfTick(clockMs() - t0, now);
+  if (perfOn) { const ms = clockMs() - t0; perfTick(ms, now); perfDeepTick(ms, now); }
   Instance.SetNextThink(now);
 }
 function frame(dt, now) {
@@ -429,6 +430,7 @@ function frame(dt, now) {
   propsTick(now);
   srvTick(now);
   flushKills(); respawnWatch(now);
+  perfMark('fx+props+server');
   if (navProbing) { const done = guard('nav probe', () => game.probeStep(world, 90)); if (done !== false) { navProbing = false; log('world survey done: ' + game.probeSummary()); } }
   if (phase === 'lobby' && roundNo === 0 && initAt && now - initAt > 1.5) { log('starting the first round'); startRound(); }
   if ((ifrTickNo & 63) === 32) guard('watchdog', () => watchdog(now));
@@ -447,19 +449,29 @@ function frame(dt, now) {
   }
   if (phase === 'podium' && now > podiumAt) finishRound();
   for (const pe of people.values()) guard('person', () => personTick(pe, now));
+  perfMark('players in');
   if (phase === 'running' || phase === 'podium') {
     guard('core tick', () => game.tick(dt, now));
+    perfMark('core');
     const evs = game.events;
     for (let i = 0; i < evs.length; i++) guard('event ' + evs[i].t, () => handleEvent(evs[i]));
     evs.length = 0;
+    perfMark('events');
     for (const pe of people.values()) guard('after', () => personAfterTick(pe));
+    perfMark('players out');
     guard('render', renderAll);
+    perfMark('render');
     guard('features', featTick);
+    perfMark('features');
     for (const m of game.mechs.values()) guard('loops', () => fxMechLoops(m));
+    perfMark('loops');
     guard('auras', auraTick);
+    perfMark('auras');
     for (const pe of people.values()) guard('hudfeed', () => hudFeed(pe, now));
+    perfMark('hud feed');
   }
   if (typeof ifrHudTick === 'function') guard('hudtick', ifrHudTick);
+  perfMark('hud write');
 }
 
 // ---------------------------------------------------------------- perf
@@ -527,6 +539,57 @@ Instance.OnScriptInput('ifr_server', () => guard('ifr_server', onServerInput));
 Instance.OnScriptInput('ifr_pilot', (ev) => guard('ifr_pilot', () => onPilotInput(ev)));
 Instance.OnScriptInput('ifr_deny', (ev) => guard('ifr_deny', () => onDenyInput(ev)));
 // test only (CONFIG.DEBUG; test/mock_flows.mjs): the first piloting human destroys an AI mech, as far as the kill credit goes
+// The timing test (11 Nov 2026: 10-12 ms ticks with 16 mechs, never measured with 64). Server only: the plugin's console command
+// `slime_ifr_test input ifr_perf_64` (or ent_fire with cheats). It restarts the round as Team Deathmatch filled to 64 mechs (CS2 bots take
+// the player slots, the script's AI the rest) and logs, every 20 s: the tick time, how many ticks took 8 ms or more, the average time of
+// each part of the tick, and for the slow ticks which part was the biggest and where they fall in the 64-tick cycle (the once-a-second jobs).
+// ifr_perf_32: the same with 32. ifr_perf_off: back to normal. The clock is 1 ms coarse here, so the parts are averages over ~1280 ticks.
+let perfDeep = false, perfForce = '', perfSecT = 0, perfDeepAt = 0, perfDeepN = 0, perfDeepSum = 0, perfDeepMax = 0, perfSlow = 0;
+/** @type {Record<string, number>} */ const perfSecs = {};
+/** @type {Record<string, number>} */ const perfTickSecs = {};
+/** @type {Record<string, number>} */ const perfSlowBy = {};
+const perfSlowPhase = new Int32Array(64);
+function perfBegin() { if (perfDeep) { perfSecT = clockMs(); for (const k in perfTickSecs) perfTickSecs[k] = 0; } }
+function perfMark(name) { if (!perfDeep) return; const t = clockMs(), d = t - perfSecT; perfSecT = t; perfSecs[name] = (perfSecs[name] || 0) + d; perfTickSecs[name] = (perfTickSecs[name] || 0) + d; }
+function perfDeepTick(ms, now) {
+  if (!perfDeep || phase !== 'running') return;
+  perfDeepN++; perfDeepSum += ms; if (ms > perfDeepMax) perfDeepMax = ms;
+  if (ms >= 8) {
+    perfSlow++; perfSlowPhase[ifrTickNo & 63]++;
+    let top = 'other', tv = 0; for (const k in perfTickSecs) if (perfTickSecs[k] > tv) { tv = perfTickSecs[k]; top = k; }
+    perfSlowBy[top] = (perfSlowBy[top] || 0) + 1;
+  }
+  if (now < perfDeepAt) return;
+  const n = Math.max(1, perfDeepN);
+  const secs = Object.keys(perfSecs).sort((a, b) => perfSecs[b] - perfSecs[a]).map((k) => k + ' ' + (perfSecs[k] / n).toFixed(2)).join(', ');
+  const by = Object.keys(perfSlowBy).sort((a, b) => perfSlowBy[b] - perfSlowBy[a]).map((k) => k + ' x' + perfSlowBy[k]).join(', ');
+  const ph = []; for (let i = 0; i < 64; i++) if (perfSlowPhase[i]) ph.push([i, perfSlowPhase[i]]);
+  ph.sort((a, b) => b[1] - a[1]);
+  let bots = 0; for (const pe of people.values()) if (!pe.human) bots++;
+  log('perf: ' + game.mechs.size + ' mechs (' + humansPlaying() + ' humans, ' + bots + ' CS2 bots), ' + propCount + ' props: avg ' + (perfDeepSum / n).toFixed(2) + ' ms, max ' + perfDeepMax.toFixed(0) +
+    ' ms a tick, ' + perfSlow + ' of ' + perfDeepN + ' ticks took 8 ms or more');
+  log('perf parts, avg ms a tick: ' + secs);
+  if (perfSlow) log('perf slow ticks: biggest part ' + by + '; tick mod 64: ' + ph.slice(0, 6).map((x) => x[0] + ' x' + x[1]).join(', '));
+  perfDeepN = 0; perfDeepSum = 0; perfDeepMax = 0; perfSlow = 0; perfSlowPhase.fill(0);
+  for (const k in perfSecs) perfSecs[k] = 0;
+  for (const k in perfSlowBy) delete perfSlowBy[k];
+  perfDeepAt = now + 20;
+}
+function perfSet(n) {
+  if (!game) return;
+  perfDeep = n > 0; perfForce = n > 0 ? 'tb' : '';
+  for (const a of game.list) {
+    const A = /** @type {any} */ (a.g.cfg.ai);
+    if (n > 0) { if (!A.perfKeep) A.perfKeep = [A.fillTotal, A.floor]; A.fillTotal = n; A.floor = 999; }
+    else if (A.perfKeep) { A.fillTotal = A.perfKeep[0]; A.floor = A.perfKeep[1]; A.perfKeep = null; }
+  }
+  log(n > 0 ? 'perf test ON: Team Deathmatch filled to ' + n + ' mechs, a timing report every 20 s (ifr_perf_off ends it)' : 'perf test off: the next round is a normal one');
+  perfDeepAt = gameTime() + 20; perfDeepN = 0; perfDeepSum = 0; perfDeepMax = 0; perfSlow = 0;
+  cleanupRound(true); if (ready) rebind(); ifrCvars(CONFIG.CVARS_ALWAYS); startRound();
+}
+Instance.OnScriptInput('ifr_perf_64', () => guard('perf', () => perfSet(64)));
+Instance.OnScriptInput('ifr_perf_32', () => guard('perf', () => perfSet(32)));
+Instance.OnScriptInput('ifr_perf_off', () => guard('perf', () => perfSet(0)));
 Instance.OnScriptInput('ifr_test_npckill', () => guard('test npckill', () => {
   if (!CONFIG.DEBUG) return;
   for (const pe of people.values()) if (pe.human && pe.status === 'mech') { queueKill({ victim: 9999, killer: pe.slot, weapon: 'test' }); return; }

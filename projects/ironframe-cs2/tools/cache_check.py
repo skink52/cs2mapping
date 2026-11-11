@@ -289,9 +289,15 @@ def compile_addon(ad, resources, log_dir, tag):
         if r.get('ok'):          # everything in this batch is now what the compiler calls up to date: date the outputs so
             acc, seen = [], set()
             for res, _ in chunk: compiled_outputs(ad, res, acc, seen)
-            now = time.time()
+            # ...only the ones that are older than their content (11 Nov 2026: every output got a new date on every run, CS2's tools
+            # reloaded all of them in an open game, and the test server copy took all 900 MB again)
+            now = time.time(); newest = 0
+            for res, _ in chunk:
+                try: newest = max(newest, os.path.getmtime(ad.c(res)))
+                except OSError: pass
             for g in acc:
-                try: os.utime(g, (now, now))
+                try:
+                    if os.path.getmtime(g) <= newest + 2: os.utime(g, (now, now))
                 except OSError: pass
     print('compile %s: %d files, %d compiled, %d failed, %d skipped in %.0f s (logs %s)' % (ad.name, len(paths), tot['compiled'], tot['failed'], tot['skipped'], time.time() - t_start,
                                                                                          os.path.join(log_dir, 'rc_%s_%s.*.log' % (ad.name, tag))), flush=True)

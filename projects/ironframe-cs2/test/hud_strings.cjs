@@ -60,7 +60,7 @@ function table(file, name) {
 }
 const DENY_TEXT = table('src/cs2/70_server.js', 'DENY_TEXT');
 const ent = { IsValid() { return true; }, ResetForPlayer() {}, SetInputCaptureEnabled() {}, SetHasClassForPlayer() {}, SetDialogVariableStringForPlayer() {} };
-const base = { HUD, PARTS, console, Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg() {} }, ARENA: { name: 'Dunes', id: 'dunes', points: [], drops: { t: [], ct: [] } },
+const base = { HUD, PARTS, console, Entities: { FindByName: () => (ent ? [ent] : []), FireInput() {} }, Console: { Log() {}, ServerCommand() {} }, GameRules: { IsWarmupPeriod: () => false }, Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg() {} }, ARENA: { name: 'Dunes', id: 'dunes', points: [], drops: { t: [], ct: [] } },
   CONFIG: { HUD: 'ifr_hud', HUD_BUDGET: 900 }, serverMode: true, gfmt: fmt, guard: (w, f) => { try { return f(); } catch (e) { return null; } }, game: { garage: { describe: (id) => describe(id) } },
   gameTime: () => now, DENY_TEXT };
 vm.createContext(base);

@@ -26,6 +26,9 @@
   },
   "imports": [
     "Instance",
+    "Console",
+    "Entities",
+    "GameRules",
     "CSPlayerPawn",
     "CSPlayerController",
     "CSInputs",

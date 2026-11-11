@@ -211,7 +211,7 @@ function featEvent(ev) {
       } else {
         const br = Math.max(260, (ev.radius || 600) * 0.43);       // the fireballs fill the blast: 260 u out for 600, 520 u for a heavy frame's 1 200
         for (const d of [[0, 0], [br, 0], [-br, 0], [0, br], [0, -br]]) pfxBurst('gboom', v3(c.x + d[0], c.y + d[1], c.z), 3);
-        if (br > 400) for (const d of [[br, br], [-br, br], [br, -br], [-br, -br]]) pfxBurst('gboom', v3(c.x + d[0] * 0.7, c.y + d[1] * 0.7, c.z), 3);
+        if (br > 400) for (const d of [[br, br], [-br, br], [br, -br], [-br, -br]]) pfxBurst('boom', v3(c.x + d[0] * 0.7, c.y + d[1] * 0.7, c.z), 2);      // the smaller effect: only 8 big ones exist (CONFIG.FX.gboom)
         pfxBurst('spark', c, 1.0); sndAt('boom_large', ev.pos, true);
         explodeShake(ev.pos, Math.max(1400, (ev.radius || 600) * 2.3)); camKick(ev.slot, 120, -60, 0);
         featHumansNear(ev.pos, (pe) => { if (pe.slot !== ev.slot) reply(pe.slot, nameOf(ev.slot) + ' used OVERDRIVE', 2); });

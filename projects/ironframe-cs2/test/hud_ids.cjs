@@ -24,7 +24,7 @@ const ref = (id) => { calls++; if (!xmlIds.has(id)) { if (bad.length < 20) bad.p
 const ent = { IsValid: () => true, Reset() {}, ResetForPlayer() {}, SetInputCaptureEnabled() {}, IsInputCaptureEnabled: () => true,
   SetHasClass(id) { ref(id); }, SetHasClassForPlayer(slot, id) { ref(id); }, SetDialogVariableString(id) { ref(id); }, SetDialogVariableStringForPlayer(slot, id) { ref(id); } };
 const byId = new Map(PARTS.parts.map((p) => [p.id, p]));
-const base = { HUD, PARTS, console, Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg() {} },
+const base = { HUD, PARTS, console, Entities: { FindByName: () => (ent ? [ent] : []), FireInput() {} }, Console: { Log() {}, ServerCommand() {} }, GameRules: { IsWarmupPeriod: () => false }, Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg() {} },
   ARENA: { name: 'Dunes', id: 'dunes', points: [{ id: 'A', pos: [-3000, 0, 0] }, { id: 'B', pos: [0, 0, 0] }, { id: 'C', pos: [3000, 0, 0] }], drops: { t: [[-6000, 0, 0, 0]], ct: [[6000, 0, 0, 0]] } },
   CONFIG: { HUD: 'ifr_hud', HUD_BUDGET: 900 }, serverMode: true, gfmt: (n) => String(Math.round(n)), guard: (w, f) => { try { return f(); } catch (e) { return null; } },
   game: { garage: { budgets: () => ({ weight: 4900, load: 4600, en: 1500, output: 1400, valid: false, deny: 5, ap: 9000, walk: 440, boost: 1300, qb: 2500 }), describe: () => ({ rows: [['Type', 'proj'], ['Damage', '100'], ['Magazine', '30'], ['Ammo', '300'], ['DPS', '999'], ['Weight', '100'], ['EN load', '10']] }) }, mechs: new Map() },

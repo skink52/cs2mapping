@@ -259,7 +259,7 @@ function queueKill(ev) {
   pendingKills.push({ victim: ev.victim, killer: ev.killer, weapon: ev.weapon, at: gameTime() });
 }
 function npcKillScore(killer) {
-  const kp = killer >= 0 ? person(killer) : undefined; if (!kp || Instance.IsWarmupPeriod()) return;
+  const kp = killer >= 0 ? person(killer) : undefined; if (!kp || GameRules.IsWarmupPeriod()) return;
   const c = live(kp.ctrl); if (c) guard('npc score', () => c.AddScore(CONFIG.NPC_KILL_SCORE));
 }
 // ---- stand-in kills (11 Nov 2026, skink52: "Still no kill credits in game for killing bots"). The enemies of a Sortie and the fill of a map
@@ -283,7 +283,7 @@ function standInFor(kp, now) {
   return best;
 }
 function npcKill(k, now) {
-  const kp = person(k.killer); if (!kp || !kp.human || Instance.IsWarmupPeriod()) return;
+  const kp = person(k.killer); if (!kp || !kp.human || GameRules.IsWarmupPeriod()) return;
   let attacker = live(kp.pawn);
   if (!attacker || !attacker.IsAlive()) attacker = live(kp.ctrl);
   const sp = CONFIG.STANDIN_KILLS && realKills && attacker ? standInFor(kp, now) : undefined;
@@ -330,11 +330,11 @@ function flushKills() {
   if (!victim.IsAlive() && !vp.human && realKills && typeof victim.Reset === 'function') guard('bot back', () => victim.Reset());
   if (!victim.IsAlive()) return;
   const kp = k.killer >= 0 && k.killer !== k.victim ? person(k.killer) : undefined;
-  if (!realKills || Instance.IsWarmupPeriod()) { guard('fake kill', () => { victim.Kill(); }); if (kp && realKills === false) npcKillScore(k.killer); return; }
+  if (!realKills || GameRules.IsWarmupPeriod()) { guard('fake kill', () => { victim.Kill(); }); if (kp && realKills === false) npcKillScore(k.killer); return; }
   let attacker = kp ? live(kp.pawn) : undefined;
   if (kp && (!attacker || !attacker.IsAlive())) attacker = live(kp.ctrl);
   const inflictor = attacker;   // the killer's pawn (a prop as inflictor gave no credit in game, Nov 2026 playtest)
-  dlog('kill: victim ' + k.victim + ' killer ' + k.killer + ' person ' + !!kp + ' attacker ' + (attacker ? attacker.constructor.name : 'none') + ' real ' + realKills + ' warm ' + Instance.IsWarmupPeriod());
+  dlog('kill: victim ' + k.victim + ' killer ' + k.killer + ' person ' + !!kp + ' attacker ' + (attacker ? attacker.constructor.name : 'none') + ' real ' + realKills + ' warm ' + GameRules.IsWarmupPeriod());
   damageDepth++; allowDamage.add(k.victim);
   try {
     victim.TakeDamage({ damage: 1000, damageTypes: CSDamageTypes.BULLET, damageFlags: CSDamageFlags.FORCE_DEATH | CSDamageFlags.IGNORE_ARMOR | CSDamageFlags.SUPPRESS_PHYSICS_FORCE,

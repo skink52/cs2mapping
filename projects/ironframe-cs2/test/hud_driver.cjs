@@ -18,7 +18,7 @@ const ent = {
   SetHasClassForPlayer(slot, id, cls, on) { idsSeen.add(id); if (!HUD.panels[id]) throw new Error('class on an id the layout does not have: ' + id); calls.push(['cls', slot, id, cls, on]); },
   SetDialogVariableStringForPlayer(slot, id, v, text) { idsSeen.add(id); if (!HUD.panels[id] || v !== 'v') throw new Error('text on an id the layout does not have: ' + id + '.' + v); calls.push(['var', slot, id, text]); shownVar.set(slot + '|' + id, text); },
 };
-const ctx = { HUD, PARTS, ARENA, CONFIG: { HUD: 'ifr_hud', HUD_BUDGET: 900 }, Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg: (m) => console.log('  (log) ' + m) }, console };
+const ctx = { HUD, PARTS, ARENA, CONFIG: { HUD: 'ifr_hud', HUD_BUDGET: 900 }, Entities: { FindByName: () => (ent ? [ent] : []), FireInput() {} }, Console: { Log: (m) => console.log('  (log) ' + m), ServerCommand() {} }, GameRules: { IsWarmupPeriod: () => false }, Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg: (m) => console.log('  (log) ' + m) }, console };
 vm.createContext(ctx);
 const src = fs.readFileSync(path.join(root, 'src/cs2/50_hud.js'), 'utf8');
 const api = vm.runInContext(src + '\n;({ ifrHudInit, ifrHudSet, ifrHudVar, ifrHudNum, ifrHudLadder, ifrHudLine, ifrHudReset, ifrHudOff, ifrHudTick, ifrHudStats, ifrHudPending, ifrHudScreen, ifrHudVitals, ifrHudWeapons, ifrHudLock, ifrHudRadar, ifrHudMode, ifrHudSlate, ifrHudGarage, ifrHudCapture, ifrHudFeed, ifrHudCard, ifrHudCardOn, ifrHudHint, ifrHudHinted, ifrHudCount, ifrHudLoadout, ifrHudProject, ifrHudAllies, ifrHudWrapAll, ifrHudFitText, ifrHudFits, ifrHudCutList })', ctx);
@@ -250,7 +250,7 @@ test('panel ids: everything this harness drew names fewer ids than the budget (C
   for (const ts of Object.values(HUD.text_slots)) assert.ok(HUD.panels[ts.panel] && !ts.row, 'a text slot is one Label id: ' + ts.panel);
 });
 test('no HUD baked: every call is a no-op', () => {
-  const c2 = { HUD: {}, PARTS, CONFIG: {}, Instance: ctx.Instance, console };
+  const c2 = { HUD: {}, PARTS, CONFIG: {}, Instance: ctx.Instance, Entities: ctx.Entities, Console: ctx.Console, GameRules: ctx.GameRules, console };
   vm.createContext(c2);
   const a = vm.runInContext(src + '\n;({ ifrHudInit, ifrHudSet, ifrHudVitals, ifrHudTick })', c2);
   a.ifrHudInit(); a.ifrHudSet(0, 'ifr_nope', 'stOn', true); a.ifrHudVitals(0, mech(0, 2, 0)); assert.strictEqual(a.ifrHudTick(), 0);

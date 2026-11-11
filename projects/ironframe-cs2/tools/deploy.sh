@@ -2,7 +2,8 @@
 # deploy.sh: copies the built addon (out/addon, out/game) into CS2's addon folders through C:\source1\links for IF_ARENA's map.
 # First run: creates game\csgo_addons\<addon> from Valve's addon template (without readonly_tools_asset_info.bin / addoninfo.txt,
 # which make an addon read-only in the Workshop Tools launcher) and copies the template's postprocess + soundevents content.
-# Hammer must be closed. Only our files are copied; a map the mapper saved in Hammer is never overwritten unless IF_FORCE_MAP=1.
+# Only files whose bytes changed are written (tools/copy_changed.py: a new date on an unchanged file makes CS2's tools reload it and
+# every compiled file look stale). Hammer should be closed. Only our files are copied; a map the mapper saved in Hammer is never overwritten unless IF_FORCE_MAP=1.
 set -e
 cd "$(dirname "$0")/.."
 . ./tools/names.sh
@@ -23,11 +24,11 @@ if [ ! -d "$CONTENT/postprocess" ]; then
 fi
 if [ -f "$CONTENT/maps/$MAP.vmap" ] && [ -z "$IF_FORCE_MAP" ]; then
   echo "NOTE: $CONTENT/maps/$MAP.vmap exists; keeping it (IF_FORCE_MAP=1 overwrites). Generated map left in out/addon/maps/."
-  for dd in materials models panorama particles sounds soundevents resource; do [ -d "out/addon/$dd" ] && cp -r "out/addon/$dd" "$CONTENT/"; done
-  cp out/addon/maps/scripts/*.js "$CONTENT/maps/scripts/" 2>/dev/null || true
+  for dd in materials models panorama particles sounds soundevents resource; do [ -d "out/addon/$dd" ] && python -I tools/copy_changed.py "out/addon/$dd" "$CONTENT/$dd"; done
+  python -I tools/copy_changed.py out/addon/maps/scripts "$CONTENT/maps/scripts" --glob "*.js" --flat
 else
-  cp -r out/addon/. "$CONTENT/"
+  python -I tools/copy_changed.py out/addon "$CONTENT"
 fi
 rm -rf "$CONTENT/_gen"
-[ -d out/game ] && cp -r out/game/. "$GAME/" 2>/dev/null || true
+[ -d out/game ] && python -I tools/copy_changed.py out/game "$GAME"
 echo "deployed $TITLE to $CONTENT and $GAME"

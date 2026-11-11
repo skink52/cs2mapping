@@ -90,7 +90,7 @@ function ifrHudNow() {
 }
 function ifrHudLog(msg) {
   if (typeof log === 'function') log(msg);
-  else try { Instance.Msg('[ironframe] ' + msg); } catch (err) { /* no console */ }
+  else try { Console.Log('[ironframe] ' + msg); } catch (err) { /* no console */ }
 }
 
 // ---------------------------------------------------------------- the layout entity (re-found when it goes away)
@@ -102,7 +102,7 @@ function ifrHudEnt() {
     ifrHudEntity = null;
   }
   let e = null;
-  try { e = Instance.FindEntityByName(IFR_HUD_NAME); } catch (err) { e = null; }
+  try { e = Entities.FindByName(IFR_HUD_NAME)[0]; } catch (err) { e = null; }
   if (!e || typeof e.SetHasClassForPlayer !== 'function') {
     if (!ifrHudWarnedMissing) { ifrHudWarnedMissing = true; ifrHudLog('WARNING: no custom_hud_layout named ' + IFR_HUD_NAME + ' - no HUD'); }
     return null;
@@ -966,7 +966,7 @@ function ifrHudMode(slot, match, myTeam) {
   const mode = match.mode || 'tb';
   ifrHudVar(slot, 'mode', IFR_HUD_MODE_TAG[mode] || String(mode).toUpperCase());
   ifrHudOne(slot, s, 'ifr_mtag', 'mtag', IFR_HUD_MODE_TAG[mode] ? 'stM' + mode : '');
-  ifrHudVar(slot, 'clock', match.phase === 'warmup' ? 'WARMUP' : match.phase === 'podium' || match.phase === 'over' ? 'END' : ifrHudClock(match.timeLeft));
+  ifrHudVar(slot, 'clock', match.phase === 'warmup' ? 'PREP' : match.phase === 'podium' || match.phase === 'over' ? 'END' : ifrHudClock(match.timeLeft));
   const sc = match.scores || {}, tk = match.tickets;
   let sub;
   if (mode === 'cq' && tk) { sub = 'TICKETS   HOLD A B C TO DRAIN THE ENEMY'; ifrHudNum(slot, 'scoreT', tk[2] || 0, 1); ifrHudNum(slot, 'scoreCT', tk[3] || 0, 1); }

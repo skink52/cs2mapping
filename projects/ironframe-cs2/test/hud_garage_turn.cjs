@@ -18,7 +18,7 @@ const fwdOf = (yaw, pitch) => { const cp = Math.cos(pitch * D2R); return { x: Ma
 const normAngle = (a) => { a = a % 360; if (a > 180) a -= 360; if (a < -180) a += 360; return a; };
 const FRAMES = new Proxy({}, { get: (t, k) => ({ upper: 'models/' + String(k) + '_upper.vmdl', legs: 'models/' + String(k) + '_legs.vmdl', hardpoints: { ra: [40, -70, 60], la: [40, 70, 60], rs: [-20, -50, 120], ls: [-20, 50, 120] } }) });
 const base = { HUD, PARTS, console, KEYS, FRAMES, WEAPON_MODELS: {}, PAINTS: {}, FX_MODELS: {}, NULL_MODEL: '', serverMode: false, MK: { up: 1, down: 2, left: 4, right: 8, ok: 16, back: 32, cycle: 64, fire: 128, fire2: 256, use: 512 },
-  Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg() {}, TraceLine: () => ({ didHit: false, fraction: 1 }) }, ARENA: { name: 'Sprawl' }, CONFIG: { HUD: 'ifr_hud', BAY_CAMERA_YAW: { 1: BAY_YAW } },
+  Entities: { FindByName: () => (ent ? [ent] : []), FireInput() {} }, Console: { Log() {}, ServerCommand() {} }, GameRules: { IsWarmupPeriod: () => false }, Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg() {}, TraceLine: () => ({ didHit: false, fraction: 1 }) }, ARENA: { name: 'Sprawl' }, CONFIG: { HUD: 'ifr_hud', BAY_CAMERA_YAW: { 1: BAY_YAW } },
   gameTime: () => now, guard: (w, f) => f(), live: (e) => e, v3: (x, y, z) => ({ x, y, z }), fwdOf, normAngle, log() {}, warnOnce() {}, sndTone() {}, revivePawn() {}, menuKeys: () => 0,
   ifrFind: (n) => (n === 'ifr_bay_1' ? ent : undefined), localToWorld: (o) => o, weaponMountPos: (k, w, i, hp) => hp,
   takeProp: () => ({ id: placed.length }), releaseProp() {}, propModel() {}, propParent() {}, propColor() {},

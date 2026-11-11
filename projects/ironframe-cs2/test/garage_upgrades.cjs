@@ -25,7 +25,7 @@ const ent = { IsValid() { return true; }, ResetForPlayer() {}, SetInputCaptureEn
 const mail = new Map();   // slot -> mailbox name
 const base = {
   HUD, PARTS, console, Math, JSON, Map, Set, Number, String, Array, Object, Error,
-  Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg() {}, IsWarmupPeriod: () => false },
+  Entities: { FindByName: () => (ent ? [ent] : []), FireInput() {} }, Console: { Log() {}, ServerCommand() {} }, GameRules: { IsWarmupPeriod: () => false }, Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg() {}, IsWarmupPeriod: () => false },
   ARENA: { name: 'Dunes', id: 'dunes', points: [], drops: { t: [], ct: [] } },
   CONFIG: { HUD: 'ifr_hud', HUD_BUDGET: 900, MAIL_PREFIX: 'ifr_mail_', PROTOCOL: 1, HELLO_EVERY: 60 },
   IFR_VERSION: 'test', guard: (w, f) => { try { return f(); } catch (e) { logs.push(w + ': ' + e.message); return null; } },

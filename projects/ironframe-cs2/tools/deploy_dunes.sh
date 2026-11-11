@@ -6,6 +6,8 @@
 set -e
 cd "$(dirname "$0")/.."
 step() { echo; echo "== $(date +%T) $*"; }
+# CS2 open in tools mode on this addon reloads the script the moment it changes (the round being played is lost): hold, exit 3
+python -I tools/game_open.py mg_ironframe_dunes || exit 3
 step "deploy content"; IF_ARENA=dunes sh tools/deploy.sh
 step "patched map with the full cache"; python -I tools/patch_cache.py out/patched_objectives.vmap out/patched_assets.vmap out/addon
 step "sync + compile out-of-date assets, check against the patched map"

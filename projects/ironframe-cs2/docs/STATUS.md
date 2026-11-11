@@ -15,6 +15,45 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**11 Nov 2026, evening: second round of skink52's play (Dunes, from Hammer, local listen server). Build 25 + the timing test: 18 suites PASS, mock PASS, both addons deployed (Sprawl without the timing test), plugin harness 3/3, test server on Dunes.**
+- **No deprecated script calls left.** The 7 `Instance.*` calls (Msg, ServerCommand, FindEntityByName, FindEntitiesByName,
+  EntFireAtTarget, EntFireAtName, IsWarmupPeriod) are `Console.Log`, `Console.ServerCommand`, `Entities.FindByName`, `ent.FireInput`,
+  `Entities.FireInput`, `GameRules.IsWarmupPeriod` (src/cs2/10_util.js wrappers, 20_players, 50_hud, 70_server, 90_main; build.json and
+  out/sprawl/build.json import the three objects). `python create/test/api.py --strict --check` on both scripts: 0 invalid, 0
+  deprecated; the project's line in create/test/api_allow.txt is gone, so CI fails if one comes back. **In-game verified** (skink52's
+  console log after the script reloaded with the new calls, and the test server's console): `Console.Log` prints the `[ironframe]`
+  lines where `Instance.Msg` did, the HUD entity and all 94 prop entities were found (`Entities.FindByName`), `echo ifr_srv` ran.
+  Plugin: the one obsolete CounterStrikeSharp call (TTT body push, `VirtualFunctions.CBaseEntity_TakeDamageOldFunc`) is the
+  `OnEntityTakeDamagePre` listener; compiled, TTT round harness test passes, the push itself not seen in game.
+- **"Heavy overdrive dropped me to 1-2 fps for 30 s" was my deploy, not the overdrive.** A deploy chain reached the Dunes addon
+  while skink52 was playing it in tools mode. The console shows `Reloading Resource [1/114]: materials/...` for about 900 files and
+  `On-demand recompile of asset maps/scripts/ironframe.vjs (file CRC changed)`: tools mode reloads every addon file whose date
+  changes, and the script restarted mid-round. tools/deploy.sh copied with `cp -r` (new dates on everything), which also made all
+  289 compiled files look stale; tools/cache_check.py then re-dated every compiled file. Fixed: **tools/copy_changed.py** (writes
+  only files whose bytes differ), cache_check re-dates only outputs older than their content, and **tools/game_open.py**: a deploy
+  is HELD (exit 3) while a `cs2.exe -tools` is open on the addon; `IF_DEPLOY_OPEN=1` overrides. build/chain.sh stops there
+  ("BUILT AND TESTED, NOT DEPLOYED"). The blast's four outer fireballs are the small effect now (only 8 big ones exist in the pool).
+  **The heavy overdrive's own cost on the client is still not measured**: ask for a second try with no deploy running.
+- **Static HUD text is about 20 % wider at 1280 x 600** (Hammer's game window), not the 5-10 % assumed at noon: the death card's
+  `CTRL OR F: GARAGE (CHANGE WEAPONS AND FRAM` (screenshot). Rows get 25 % + 8 px to lay out in; the label boxes do not clip, a card
+  does, so tools/hud.py now FAILS the build when a text in a card-wide box (300 px or more) would pass the box's edge at 20 % wider
+  (`hud TIGHT`). Shortened: the death card line (`CTRL OR F: CHANGE WEAPONS OR FRAME`) and two intro lines. The mode clock said
+  `WARMU` (console: "HUD text cut in clock"): it says `PREP`. Centred static text sits up to 10 % right of centre at that window.
+- **Script time: too slow for a full server (measured).** skink52's game (1 human, 14-16 mechs): avg 3.5-4.0 ms per server tick,
+  a 10-12 ms tick about once a second (CS2 warns at 10 ms). A tick has 15.6 ms for everything. **With 64 mechs on the local test
+  server** (the new timing test, Team Deathmatch, 47 CS2 bots + 17 script AI, no human, 255 props, five 20 s windows): **avg 11.4-13.6
+  ms, max 48-65 ms, 1275-1280 of 1280 ticks at 8 ms or more**, 117-157 traces a tick; the server console fills with `Long frame: 114 ms
+  elapsed, 6 ticks` (it cannot hold 64 ticks a second). Where it goes, avg ms a tick: **core simulation 7.7-9.1**, render (moving the
+  props) 2.3-2.9, reading the players 0.5-0.6, events 0.2-0.3, loops 0.2-0.3, everything else under 0.2 each; the HUD is nothing here
+  because no human was in (not measured with 64 HUDs). The Node mock's 4.1 ms for 64 players was no guide: CS2's script engine is
+  several times slower than Node and every trace is an engine call. **Next: time the parts of the core tick (AI, movement and its
+  traces, weapons, missiles, lock-on) and cut it to about 5 ms**, before any public test with more than ~25 mechs.
+  The test: script inputs `ifr_perf_64` / `ifr_perf_32` / `ifr_perf_off` (src/cs2/90_main.js), fired by the plugin's console command
+  `slime_ifr_test input <name>` (guard-locked on a server: the harness unlocks it); `python build/perf_run.py start|read|tail|off`.
+- Still open from that log: booster particles follow a hidden rig under the map for a moment (`ifr_pfx_boost_NNN ... outside of cell
+  bounds`, console noise only); `soundevents_addon.vsndevts` recompiles on every load in tools mode (a template sound event points at
+  the missing `sounds/vent_01.wav`); two `ifr_vfog` volumetric fog controllers (one per arena copy), neither set to master.
+
 **11 Nov 2026, noon: skink52 played Dunes on the local test server (joined through Hammer). Then four changes from that session, build 23: 18 suites PASS, mock PASS, both addons deployed, plugin harness 3/3, test server restarted on Dunes 12:55.**
 - **SEEN IN GAME, good:** AI mech kills count on the scoreboard (the stand-ins; console: "AI mech kills are credited as real CS2 kills
   through CS2 bot stand-ins"), the killfeed hides them (plugin `KillfeedHumansOnly`), CS2 bots join on Dunes (4 of them), destructible

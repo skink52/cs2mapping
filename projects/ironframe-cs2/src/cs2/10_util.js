@@ -7,7 +7,8 @@ const IFR_VERSION = (typeof VERSION === 'object' && VERSION && VERSION.version) 
 let ifrTickTime = 0, ifrInThink = false, ifrTickNo = 0;
 function gameTime() { return ifrInThink ? ifrTickTime : Instance.GetGameTime(); }
 
-function log(msg) { Instance.Msg('[' + CONFIG.TAG + '] ' + msg); }
+// script API since Oct-Nov 2026: Console / Entities / GameRules (the Instance.* twins are deprecated; create/test/api.py --strict --check)
+function log(msg) { Console.Log('[' + CONFIG.TAG + '] ' + msg); }
 function dlog(msg) { if (CONFIG.DEBUG) log(msg); }
 const ifrWarned = new Set();
 function warnOnce(key, msg) { if (ifrWarned.has(key)) return; ifrWarned.add(key); log('WARNING: ' + msg); }
@@ -25,12 +26,12 @@ function guard(what, fn) {
   }
 }
 
-function ifrCmd(line) { Instance.ServerCommand(line); }
+function ifrCmd(line) { Console.ServerCommand(line); }
 function ifrCvars(list) { if (!CONFIG.APPLY_CVARS) return; for (const c of list) guard('cvar ' + c, () => ifrCmd(c)); }
-function ifrFind(name) { try { return live(Instance.FindEntityByName(name)); } catch (err) { return undefined; } }
-function ifrFindAll(name) { try { return (Instance.FindEntitiesByName(name) || []).filter((e) => live(e)); } catch (err) { return []; } }
-function ifrFire(ent, input, value) { Instance.EntFireAtTarget({ target: ent, input, value }); }
-function ifrFireName(name, input, value) { Instance.EntFireAtName({ name, input, value }); }
+function ifrFind(name) { try { return live(Entities.FindByName(name)[0]); } catch (err) { return undefined; } }
+function ifrFindAll(name) { try { return (Entities.FindByName(name) || []).filter((e) => live(e)); } catch (err) { return []; } }
+function ifrFire(ent, input, value) { if (live(ent)) ent.FireInput({ input, value }); }      // (a dead or missing entity used to be the engine's to ignore; ent.FireInput on undefined would throw)
+function ifrFireName(name, input, value) { Entities.FireInput({ name, input, value }); }
 
 function slotOfEntity(e) {
   if (!e) return undefined;

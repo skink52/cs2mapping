@@ -21,7 +21,7 @@ function srvSend(slot, op, args) {
   guard('ifr_srv', () => ifrCmd(line));
 }
 function ifrStat(slot, key, n) {
-  if (!statsOn || Instance.IsWarmupPeriod()) return;
+  if (!statsOn || GameRules.IsWarmupPeriod()) return;
   const pe = person(slot); if (!pe || !pe.human) return;
   const k = String(key).toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 32);
   if (!k) return;

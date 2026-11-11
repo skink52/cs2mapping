@@ -13,8 +13,6 @@ autoport/livetest.py                                       Instance.FindEntities
 autoport/livetest.py                                       Instance.IsFreezePeriod              moves with the probe's in-game recheck
 autoport/livetest.py                                       Instance.IsWarmupPeriod              moves with the probe's in-game recheck
 
-# IRONFRAME is being worked on in another session (11 Nov 2026); its sources were left alone in this pass.
-projects/ironframe-cs2/**                                  *                                    baseline 11 Nov 2026: project in active work elsewhere, not touched by the API pass
 
 # Baseline, 11 Nov 2026: original addons whose scripts are built from fragments and tested by their own stand-in engines,
 # which do not all model Entities / Console / GameRules yet. Each needs its own mock updated and its tests rerun when it is moved.

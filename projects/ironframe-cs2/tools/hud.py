@@ -166,13 +166,21 @@ def tint(sel, color, dyn=False):
     if not dyn: GLYPH_COLORS.setdefault('c28', set()).add(color); GLYPH_COLORS.setdefault('b28', set()).add(color); TINTS.append((sel + ' .Txt', color))
 
 
+TIGHT = []; SLACK = 0.25
 def slbl(text, cls, w, hh, size='S', color='Text', align='left', id_=None, **pl):
     """static text as neon type: a row of glyph pictures (proportional widths) inside a box that keeps the id and classes"""
     t = text.upper()
     gs = size if size in F.SIZES else 'XS'
     while F.METRICS[gs].text_w(t) > w * 1.1 and gs != 'XS': gs = F.SIZE_ORDER[F.SIZE_ORDER.index(gs) + 1]
     M = F.METRICS[gs]; rw = M.text_w(t)
+    # a static row comes out up to 10 % wider in game at a small window (see below): a text that fills its box at 1080 high is cut there
+    # (11 Nov 2026, skink52's screenshot of the death card: "... (CHANGE WEAPONS AND FRAM"). Listed at the end of the build; none allowed.
     need(color, gs)
+    # In game a row is wider than at 1080 high: CS2 scales the HUD to the window and rounds every glyph panel to whole pixels. Measured at
+    # 1280 x 600 (Hammer's game window, 11 Nov 2026): about 20 %. Two things follow. (1) The row panel gets 25 % + 8 px of room, or the
+    # letters that do not fit are not laid out. (2) The boxes do not clip (.Sl / .Txt are noclip) but a card does: a box of 300 px or more
+    # is sized to its card, so a text that would pass its box's right edge when 20 % wider is listed and fails the build (TIGHT).
+    need_w = rw + int(math.ceil(rw * SLACK)) + 8
     if rw > w:                                                                                    # modest overflow: the box grows, anchored by its alignment
         grow = rw - w
         if 'right' not in pl and not pl.get('center'):
@@ -180,10 +188,11 @@ def slbl(text, cls, w, hh, size='S', color='Text', align='left', id_=None, **pl)
         w = rw
     hh = max(hh, M.cap + 4)
     ox = 0 if align == 'left' else (w - rw) if align == 'right' else (w - rw) // 2
+    if w >= 300 and align != 'right' and ox + rw * 1.2 > w + 8: TIGHT.append('%s: %d px of text from x %d passes the %d px box when 20 %% wider (%s)' % (t, rw, ox, w, gs))
     kids = [P(None, 'G g%d' % ord(ch if 33 <= ord(ch) < 127 and not 97 <= ord(ch) <= 122 else '?') if ch != ' ' else 'G g32') for ch in t]
     # the row is wider than its letters (11 Nov 2026): CS2 rounds each glyph panel to whole pixels at the window's scale, a row can come out
     # 5-10 % wider than at 1080 high, and a letter that does not fit the row is not drawn
-    rp, ny = row_pl(rw + int(math.ceil(rw * 0.14)) + 6, hh, M, ox)
+    rp, ny = row_pl(need_w, hh, M, ox)
     row = P(None, row_cls(gs, color, '%s %s' % (rp, ny)), kids)
     return P(id_, ('Sl %s %s' % (cls, h.place(w=w, h=hh, **pl))).replace('  ', ' ').strip(), [row])
 
@@ -779,8 +788,8 @@ intro = P(None, 'Intro Plate ' + h.place(w=760, h=452, center=True, y=228), [
     lbl('iobj', '', 740, 26, 'S', 'Text', 'center', x=9, y=202, maxlen=52),
     lbl('iobj2', '', 740, 26, 'S', 'Text', 'center', x=9, y=228, maxlen=52),
     *[slbl(t_, '', 740, 22, 'XS', 'Dim', 'center', x=9, y=266 + i_ * 23) for i_, t_ in enumerate((
-        'WASD MOVE   SHIFT BOOST   CTRL QUICK-BOOST', 'SPACE JUMP / HOVER   F NEXT TARGET', 'MOUSE 1 / 2 ARM WEAPONS   R / E SHOULDER WEAPONS',
-        'KEEP AN ENEMY IN THE RING TO LOCK ON', 'HOLD R + E: OVERDRIVE   !HELP SHOWS THE CONTROLS'))],
+        'WASD MOVE   SHIFT BOOST   CTRL QUICK-BOOST', 'SPACE JUMP / HOVER   F NEXT TARGET', 'M1 / M2 ARM WEAPONS   R / E SHOULDER WEAPONS',
+        'KEEP AN ENEMY IN THE RING TO LOCK ON', 'HOLD R + E: OVERDRIVE   !HELP: THE CONTROLS'))],
     lbl('ihint', '', 740, 36, 'M', 'Warn', 'center', x=9, y=394, maxlen=40),
 ])
 death = P(None, 'Death Plate ' + h.place(w=600, h=264, center=True, y=300), [
@@ -789,7 +798,7 @@ death = P(None, 'Death Plate ' + h.place(w=600, h=264, center=True, y=300), [
     lbl('kframe', '', 580, 26, 'S', 'Acc', 'center', x=9, y=108, maxlen=28),
     lbl('kweapon', '', 580, 26, 'S', 'Text', 'center', x=9, y=136, maxlen=30),
     lbl('respawn', '', 580, 36, 'M', 'Warn', 'center', x=9, y=168, maxlen=32),
-    slbl('CTRL OR F: GARAGE (CHANGE WEAPONS AND FRAME)', '', 580, 22, 'XS', 'Dim', 'center', x=9, y=210),
+    slbl('CTRL OR F: CHANGE WEAPONS OR FRAME', '', 580, 22, 'XS', 'Dim', 'center', x=9, y=210),
     slbl('SPACE: BACK INTO THE FIGHT', '', 580, 22, 'XS', 'Dim', 'center', x=9, y=232),
 ])
 rule('.PCard', background_color=PLATE2, border='2px solid ' + LINE)
@@ -1283,3 +1292,5 @@ assert _xml_ids == IDS_TOTAL, 'ids in the xml (%d) != ids registered (%d): a pan
 if IDS_TOTAL > ID_BUDGET: sys.exit('hud: %d panel ids, over the budget of %d (CS2 stops updating panels past %d ids): use fewer ids (class changes on a parent, one Label per text)' % (IDS_TOTAL, ID_BUDGET, ID_CAP))
 print('hud %s: %d panels in the contract, %d switchable classes, %d text slots, %d ladders, %d pictures, %d states -> %s' %
       (NAME, len(PANELS), n_cls, len(TEXT), len(LADDERS), n_img, len(STATES), os.path.join(OUT, '_gen', 'hud.json')))
+for _t in sorted(set(TIGHT)): print('hud TIGHT (cut at a small window): ' + _t)
+assert not TIGHT, 'hud: %d static texts are too long for their box at a small window (lines above): shorten them' % len(set(TIGHT))
