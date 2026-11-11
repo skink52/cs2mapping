@@ -2,6 +2,11 @@
 
 > **AI-generated code.** These tools were written by Claude (an AI agent) for skink52's CS:GO to CS2 map ports, not hand-written.
 
+> **A ported map is not a finished map.** The pipeline gets a CS:GO map most of the way to CS2: it loads, plays and builds. It does not make it
+> Workshop-ready. Every port still needs a person to load it and look: lighting and shadows, materials and shaders that did not carry over,
+> skyboxes (maps with several arenas especially), collisions, map logic that CS2 handles differently, the loading screen and the Steam
+> description. Multi-game and scripted maps need the most. The tools list what they could not check; they cannot see the map.
+
 On the PC they live in `C:\source1\cs2port\tools` (this repo's `tools/` folder). **Since 2 Nov 2026 everything runs on the PC itself:** Claude Code
 runs from `C:\source1` and runs the tools, Valve's importer and the compiler directly, and the stage C working root is `C:\source1\cs2port\work`
 (built by `autoport/pclocal.py root`). The cloud-workspace route (tools in Claude's workspace, files sent through the linked-computer tools, batch

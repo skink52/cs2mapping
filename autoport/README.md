@@ -2,6 +2,11 @@
 
 > **AI-generated code.** Written by Claude (an AI agent) for skink52's map ports, not hand-written.
 
+> **A ported map is not a finished map.** The pipeline gets a CS:GO map most of the way to CS2: it loads, plays and builds. It does not make it
+> Workshop-ready. Every port still needs a person to load it and look: lighting and shadows, materials and shaders that did not carry over,
+> skyboxes (maps with several arenas especially), collisions, map logic that CS2 handles differently, the loading screen and the Steam
+> description. Multi-game and scripted maps need the most. The tools list what they could not check; they cannot see the map.
+
 Name the maps and come back to built addons. Maps with problems wait for Claude while the good ones build, and each one builds by itself once Claude marks it ready.
 It runs entirely on the PC and calls the normal pipeline ([tools/](../tools/README.md), [docs/porting/pipeline.md](../docs/porting/pipeline.md), the PC batch files) without changing them.
 

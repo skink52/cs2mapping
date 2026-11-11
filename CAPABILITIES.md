@@ -73,6 +73,9 @@ mean are in [docs/reference/compatibility.md](docs/reference/compatibility.md); 
 - Round settings (no freeze time, long rounds, a knife on spawn for one-team maps).
 - A report of everything that still needs a human look.
 
+A ported map is mostly there, not finished: it still needs a person to load it and check lighting, materials, skyboxes, collisions and
+map logic before it goes on the Workshop. Multi-game and scripted maps need the most.
+
 **Building and checking**
 - Compile maps from the command line one at a time, compiling textures/models/sounds/scripts first and copying the result into the game folder safely.
 - Read the build logs and fix compile errors.

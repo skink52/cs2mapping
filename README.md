@@ -7,6 +7,11 @@ Everything skink52 and Claude have worked out about **making Counter-Strike 2 ma
 > **AI-generated code.** The scripts and most of the write-ups in this repo were produced by Claude, an AI agent, working with skink52.
 > They aren't hand-written code, so please don't read them as a showcase of anyone's own programming. They're shared because the knowledge in them is useful.
 
+> **A ported map is not a finished map.** The pipeline gets a CS:GO map most of the way to CS2: it loads, plays and builds. It does not make it
+> Workshop-ready. Every port still needs a person to load it and look: lighting and shadows, materials and shaders that did not carry over,
+> skyboxes (maps with several arenas especially), collisions, map logic that CS2 handles differently, the loading screen and the Steam
+> description. Multi-game and scripted maps need the most. The tools list what they could not check; they cannot see the map.
+
 **New here? Read [CAPABILITIES.md](CAPABILITIES.md)** — a plain-language list of everything this toolkit can do, no coding knowledge needed.
 
 ## Porting CS:GO maps to CS2

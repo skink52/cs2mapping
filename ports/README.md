@@ -1,5 +1,10 @@
 # Ports
 
+> **A ported map is not a finished map.** The pipeline gets a CS:GO map most of the way to CS2: it loads, plays and builds. It does not make it
+> Workshop-ready. Every port still needs a person to load it and look: lighting and shadows, materials and shaders that did not carry over,
+> skyboxes (maps with several arenas especially), collisions, map logic that CS2 handles differently, the loading screen and the Steam
+> description. Multi-game and scripted maps need the most. The tools list what they could not check; they cannot see the map.
+
 One folder per map. The live status list is `existing_ports.txt` on the PC (snapshot in [../data](../data), updated 27 Oct 2026 from skink52's status list,
 which also covers other porters' maps, external ports and skink52's originals: mg_ka_heli_arena, Hellmatch, Space Racer).
 
