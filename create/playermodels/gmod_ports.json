@@ -1,0 +1,394 @@
+{
+ "about": "Rigged imports (It Takes Two FBX rips, League of Legends GLBs from modelviewer.lol) made into Garry's Mod player models by togmod.py. Commercial game assets: private testing only.",
+ "work": "C:/source1/playermodels",
+ "out": "C:/source1/gmod_ports",
+ "ref_male": "C:/source1/playermodels/extract/3122592785/models/rusty/citizens/male_08.mdl",
+ "ref_female": "C:/source1/playermodels/extract/3122592785/models/rusty/citizens/female_01.mdl",
+ "models": [
+  {
+   "slug": "itt_cody",
+   "name": "Cody (It Takes Two)",
+   "franchise": "It Takes Two",
+   "sex": "male",
+   "mdl": "models/player/ittakestwo/cody.mdl",
+   "source": "C:/source1/playermodels/ittakestwo/cody/Cody.fbx",
+   "note": "Hazelight rip via The Models Resource"
+  },
+  {
+   "slug": "itt_may",
+   "name": "May (It Takes Two)",
+   "franchise": "It Takes Two",
+   "sex": "female",
+   "mdl": "models/player/ittakestwo/may.mdl",
+   "source": "C:/source1/playermodels/ittakestwo/may/May.fbx",
+   "note": "Hazelight rip via The Models Resource"
+  },
+  {
+   "slug": "lol_jinx",
+   "name": "Jinx (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/jinx.mdl",
+   "source": "jinx.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_ezreal",
+   "name": "Ezreal (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/ezreal.mdl",
+   "source": "ezreal.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_akali",
+   "name": "Akali (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/akali.mdl",
+   "source": "akali.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_yasuo",
+   "name": "Yasuo (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/yasuo.mdl",
+   "source": "yasuo.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_ashe",
+   "name": "Ashe (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/ashe.mdl",
+   "source": "ashe.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_ekko",
+   "name": "Ekko (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/ekko.mdl",
+   "source": "ekko.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_jhin",
+   "name": "Jhin (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/jhin.mdl",
+   "source": "jhin.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_kaisa",
+   "name": "Kai'Sa (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/kaisa.mdl",
+   "source": "kaisa.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_lucian",
+   "name": "Lucian (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/lucian.mdl",
+   "source": "lucian.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_fiora",
+   "name": "Fiora (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/fiora.mdl",
+   "source": "fiora.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_camille",
+   "name": "Camille (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/camille.mdl",
+   "source": "camille.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_leesin",
+   "name": "Lee Sin (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/leesin.mdl",
+   "source": "leesin.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_samira",
+   "name": "Samira (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/samira.mdl",
+   "source": "samira.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_sylas",
+   "name": "Sylas (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/sylas.mdl",
+   "source": "sylas.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_viego",
+   "name": "Viego (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/viego.mdl",
+   "source": "viego.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_yone",
+   "name": "Yone (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/yone.mdl",
+   "source": "yone.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_twistedfate",
+   "name": "Twisted Fate (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/twistedfate.mdl",
+   "source": "twistedfate.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_gwen",
+   "name": "Gwen (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/gwen.mdl",
+   "source": "gwen.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_qiyana",
+   "name": "Qiyana (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/qiyana.mdl",
+   "source": "qiyana.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_senna",
+   "name": "Senna (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/senna.mdl",
+   "source": "senna.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_draven",
+   "name": "Draven (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/draven.mdl",
+   "source": "draven.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_kayn",
+   "name": "Kayn (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/kayn.mdl",
+   "source": "kayn.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_akshan",
+   "name": "Akshan (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/akshan.mdl",
+   "source": "akshan.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_aphelios",
+   "name": "Aphelios (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/aphelios.mdl",
+   "source": "aphelios.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_azir",
+   "name": "Azir (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/azir.mdl",
+   "source": "azir.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_hwei",
+   "name": "Hwei (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/hwei.mdl",
+   "source": "hwei.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_ivern",
+   "name": "Ivern (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/ivern.mdl",
+   "source": "ivern.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_ksante",
+   "name": "K'Sante (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/ksante.mdl",
+   "source": "ksante.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_locke",
+   "name": "Locke (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/locke.mdl",
+   "source": "locke.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_nilah",
+   "name": "Nilah (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/nilah.mdl",
+   "source": "nilah.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_orianna",
+   "name": "Orianna (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/orianna.mdl",
+   "source": "orianna.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_rakan",
+   "name": "Rakan (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/rakan.mdl",
+   "source": "rakan.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_swain",
+   "name": "Swain (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/swain.mdl",
+   "source": "swain.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_taliyah",
+   "name": "Taliyah (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/taliyah.mdl",
+   "source": "taliyah.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_xerath",
+   "name": "Xerath (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/xerath.mdl",
+   "source": "xerath.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_yunara",
+   "name": "Yunara (LoL)",
+   "franchise": "League of Legends",
+   "sex": "female",
+   "mdl": "models/player/lol/yunara.mdl",
+   "source": "yunara.glb",
+   "note": "Riot model, modelviewer.lol export"
+  },
+  {
+   "slug": "lol_zaahen",
+   "name": "Zaahen (LoL)",
+   "franchise": "League of Legends",
+   "sex": "male",
+   "mdl": "models/player/lol/zaahen.mdl",
+   "source": "zaahen.glb",
+   "note": "Riot model, modelviewer.lol export"
+  }
+ ],
+ "gmad": "D:/SteamLibrary/steamapps/common/GarrysMod/bin/gmad.exe",
+ "studiomdl": "D:/SteamLibrary/steamapps/common/GarrysMod/bin/studiomdl.exe",
+ "packs": [
+  {
+   "slug": "lol_pack",
+   "name": "League of Legends Player Models",
+   "tags": [
+    "fun",
+    "cartoon"
+   ],
+   "members": [
+    "lol_qiyana",
+    "lol_akshan",
+    "lol_aphelios",
+    "lol_hwei",
+    "lol_ksante",
+    "lol_orianna",
+    "lol_rakan",
+    "lol_taliyah",
+    "lol_nilah",
+    "lol_locke",
+    "lol_akali",
+    "lol_ezreal",
+    "lol_jinx",
+    "lol_leesin",
+    "lol_kayn",
+    "lol_samira",
+    "lol_draven",
+    "lol_viego",
+    "lol_yasuo"
+   ],
+   "note": "10 champions with no GMod Workshop player model (searched 8 Nov 2026) plus the 9 first single uploads (Jinx, Akali, ...), folded in"
+  }
+ ]
+}

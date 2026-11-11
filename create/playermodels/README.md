@@ -31,6 +31,9 @@ Python 3 with numpy and Pillow. No Blender, Crowbar or SourceIO needed: the Sour
 | `vpk.py <x_dir.vpk> [--list] [--prefix p] [--out DIR]` | Lists or extracts a Source 1 VPK (v1/v2). Used once for the base-game materials (HL2 + CS:S from the GMod dedicated server's `sourceengine/`) into `<work>/basegame/`. |
 | `gma.py <file.gma\|.bin> [out dir]` | Lists or extracts a GMod addon archive (also the LZMA legacy `.bin`). Paths are sanitised; nothing in the archive is run. |
 | `preview.py` | Textured software renderer for the previews (fork of `projects/cs21.6/preview/model_render.py`). |
+| `togmod.py <gmod_ports.json> [--only s,..] [--compile] [--studiomdl exe] [--no-preview]` | The reverse: npz imports (It Takes Two, League) to Garry's Mod player models on the stock ValveBiped skeleton with the proportion trick; SMD/QC/VMT/VTF/lua under `C:\source1\gmod_ports\`, compiled with GMod's studiomdl. See the guide's "imports to Garry's Mod". |
+| `gmod_publish.py <gmod_ports.json> [--only s,..] [--visibility 2]` | Packs each compiled GMod addon as addon.gma + preview.jpg + workshop.vdf for `steamcmd +login <account> +workshop_build_item <vdf>`. Uploads nothing itself. |
+| `gmod_ports.json` | The GMod picks: slug (its npz under `<work>/fbx/`), name, sex (m_anm / f_anm), GMod model path, stock reference skeletons. |
 | `catalog.json` | Every item looked at: workshop id, title, author, `chosen` (and `skip_reason`, `looked_at` batch if not), `batch`, `slug`, `mdl`, optional `skin`, `bodygroups`, `depends` (other item ids whose files it needs), and the `paths` block. An item can appear more than once (two characters from one pack). |
 | `MODELS.md`, `BATCH<n>.md` | The list of every converted model, and per-batch tables + review notes. |
 

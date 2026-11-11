@@ -159,6 +159,34 @@ Neeko's waist); `"fold_scale"` shrinks a folded chain (her tail, halved). Pose s
 Related: trenchwarfare's `tools/soldiers.py` makes CS2 players from Mixamo-rigged GLBs by stretching each bone to CS2's length (fine for
 generated soldiers; not used here, where models keep their proportions).
 
+## The other way: imports to Garry's Mod (`togmod.py`, Nov 2026)
+
+`togmod.py gmod_ports.json [--compile]` makes GMod player models from the same npz imports (It Takes Two's Cody and May,
+League champions). It reuses the converter's posing with a stock-shaped **ValveBiped** target instead of CS2's agent: an HL2
+citizen recompile (`ref_male` male_08, `ref_female` female_01, workshop item 3122592785), whose bones face -Y in the MDL
+(the posing works facing +X, so the template is turned and the output turned back). Mode is always `ownall`: every joint the
+model's own, stock bone **orientations**, one uniform scale fitted to the stock joints. GMod's animations (m_anm / f_anm,
+`$includemodel`) set bone positions as well as rotations, so the QC uses the **proportion trick**: `reference` = the stock
+skeleton, `proportions` = the model's, subtracted and played as a `predelta autoplay` sequence. Hit boxes: a box per main bone
+(Valve's groups), ragdoll: the citizen's solids and `$jointconstrain` limits (read from its .phy) with boxes sized to the model,
+`$bonemerge` on every Bip01 bone so studiomdl keeps the unweighted ones. Materials: VertexLitGeneric + VTF by VTFCmd
+(`C:\VTF\VTFEdit\VTFCmd.exe`), lua registers the model and stock c_arms. Output: `C:\source1\gmod_ports\` (`src/<slug>/` QC and
+SMDs, `addons/<slug>/` the addon, `preview/`). Compiling needs Garry's Mod's own `bin/studiomdl.exe` (not in the PC's tools; the
+anonymous GMod dedicated server can't be fetched per depot).
+First compiles (8 Nov 2026, Cody and May, GMod's own studiomdl from `D:\SteamLibrary\steamapps\common\GarrysModin`): clean,
+about 1 min each. GMod's studiomdl takes SMD coordinates as they are (no 90 degree turn: a turn written into the SMD came out in
+the MDL), so the SMDs are in the stock MDL's own frame. Over 60k vertices (Source's limit is 65536 per model) the mesh is split by
+material into body parts `body`, `body2` (Cody 62.6k, May 70k). Textures: DXT1 unless alpha-tested (VTFCmd's `-alphaformat`
+decides, the PNGs all carry alpha), normal maps at 1024: May went from 95 MB to 33 MB. Not yet seen in game.
+`gmod_publish.py` packs each compiled addon as `addon.gma` (GMA v3, written here) with a 512x512 preview and a `workshop.vdf` for
+SteamCMD: `steamcmd +login <account> +workshop_build_item <vdf> +quit` (app 4000; the account's own login, private by default). With GMod installed the archive is made by its own `gmad.exe`,
+which also checks the whitelist; the preview is `<slug>_front.png`, a clean three-quarter view.
+**Packs** (`"packs"` in gmod_ports.json): several models in one addon and one Workshop item (one lua file, a grid preview), so a
+subscriber's list isn't flooded. `lol_pack` = 10 champions that had no GMod Workshop player model (Workshop text search, 8 Nov 2026:
+Qiyana, Akshan, Aphelios, Hwei, K'Sante, Orianna, Rakan, Taliyah, Nilah, Locke); the ones already there (Jinx, Akali, Draven,
+Ezreal, Viego, Kayn, Yasuo, Lee Sin, Samira skins) were folded in afterwards at skink52's request: 19 models, 60 MB. **SteamCMD ignored the VDF's `"visibility" "2"`** on new GMod
+items: the first uploads came out public. Set visibility on the item page after uploading.
+
 ## Rights
 
 Workshop authors keep their rights, and many GMod player models are themselves ported from commercial games (batch 1 includes characters from
