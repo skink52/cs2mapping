@@ -32,8 +32,8 @@ The GitHub Actions workflow ([`.github/workflows/ci.yml`](../../.github/workflow
 | Unit tests (Linux) | Unit tested, informational | `tools/tests`; a failure does not block, the tools are Windows tools |
 | Map scripts | Simulated | every `ports/*/scripts/*.js` in the mock engine, the TTT script's suite, the mg_trenchwarfare type-check |
 
-CI has no CS2 install, so the tests that read CS2's own entity definitions (FGD files) are skipped there: 10 of the 144 `tools` tests
-and 1 of the 83 `autoport` tests. They run in full on a PC with CS2 (`python cs2mapping.py test`).
+CI has no CS2 install, so the tests that read CS2's own entity definitions (FGD files) are skipped there: 10 of the 155 `tools` tests
+and 1 of the 87 `autoport` tests. They run in full on a PC with CS2 (`python cs2mapping.py test`).
 
 Nothing in CI is Compiled, Hammer verified, In-game verified or Playtested. Those levels come from the PC and from people, and are
 recorded per map in `ports/<addon>/README.md` and per project in its status file.
@@ -44,7 +44,7 @@ One machine, one date. Add a row when the tools are run somewhere else or after 
 
 | Date | Windows | Python | Node | TypeScript | Python packages | CS2 / Workshop Tools build | What was run | Level reached |
 |---|---|---|---|---|---|---|---|---|
-| 2026-11-11 | Windows 11 (10.0.26200) | 3.13.15 | 26.13.0 | 7.0.2 | numpy 2.1.3, scipy 1.18.1, Pillow 12.3.0, mutagen 1.48.1, lameenc 1.9.0 | not recorded | `tools/tests` (144 tests), `autoport/tests` (83 tests), `ci/check_repo.py`, `ci/check_links.py`, `ci/mock_ports.sh` (55 scripts), TTT `run_mock.sh`, mg_trenchwarfare `tsc` | Unit tested / Simulated |
+| 2026-11-11 | Windows 11 (10.0.26200) | 3.13.15 | 26.13.0 | 7.0.2 | numpy 2.1.3, scipy 1.18.1, Pillow 12.3.0, mutagen 1.48.1, lameenc 1.9.0 | not recorded | `tools/tests` (155 tests), `autoport/tests` (87 tests), `ci/check_repo.py`, `ci/check_links.py`, `ci/mock_ports.sh` (55 scripts), TTT `run_mock.sh`, mg_trenchwarfare `tsc` | Unit tested / Simulated |
 
 Not yet recorded anywhere: the CS2 build number and Workshop Tools version each port or tool was last built against, and the versions of
 BSPSource, VTFCmd and RadGen in use. Record the CS2 build (Steam: Properties, Updates, or `version` in the console) in the port's README

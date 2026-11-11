@@ -92,6 +92,11 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --global typescript@7.0.2
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Every ported map's script calls only what the cs_script typings declare
+        run: python create/test/api.py --check ports/*/scripts/*.js
       - name: Every ported map's script in the stand-in engine
         run: sh ci/mock_ports.sh players=8 seconds=30
       - name: TTT script (type-check, mock rounds, map data, server hand-off)

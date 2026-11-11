@@ -6,7 +6,9 @@ in the same session.
 
 ## Start here: which project?
 
-The user names a project ("work out of cs2mapping, we're on TTT maps"). Find it below, read the project's own instructions file, then work in that folder.
+The user names a project ("work out of cs2mapping, we're on TTT maps"). Find it below, run `python create/context.py <project>` for a
+snapshot of where it stands (resume notes, uncommitted work, scripts, tests, and which section of which document to open), then read
+the project's own instructions file and work in that folder. The snapshot is a map of where to look, not a substitute for the section it points at.
 One clone of this repo covers everything; there are no other repos to clone or push.
 On the PC, Claude Code runs from `C:\source1` and reaches CS2, `C:\source2` and the addon folders through `C:\source1\links\` junctions
 ([docs/porting/setup.md](docs/porting/setup.md#claude-code-on-the-pc-one-folder)). Never search recursively over `links\cs2_root` or `links\csgo`.
@@ -38,7 +40,8 @@ New projects get their own folder under `projects/`, a README (with the AI discl
   `tools/weapons/` is the custom weapon builder (creation, not porting).
 - `scripts/`: things that run on the Windows PC (`run_import.bat`, `run_build.bat`, `build_maps.ps1`, `run_import_then_build.bat`,
   `run_build_one_example.bat`, `post_import_cleanup.py`, `vmap_refs.py`, `modelsfromrefs.py`, `make_import_map_auto.py`); see `scripts/README.md`.
-- `create/`: the creation toolkit for original addons; its index is `create/README.md`.
+- `create/`: the creation toolkit for original addons; its index is `create/README.md`. `create/context.py` (project snapshot) and
+  `create/test/api.py` (typings lookup and call check) are the two to run before working on a project's scripts.
 - `ci/` and `.github/workflows/ci.yml`: the repo checks and what CI runs (`ci/README.md`). `requirements/`: pip lists per area. Neither is copied to the PC.
   Before committing: `python ci/check_repo.py` and `python ci/check_links.py --anchors --baseline ci/known_broken_links.txt`.
 - How far something was checked is said in the words of `docs/reference/compatibility.md` (unit tested, simulated, compiled, Hammer verified,
@@ -58,6 +61,13 @@ New projects get their own folder under `projects/`, a README (with the AI discl
 
 ## Rules
 
+- **Look the cs_script API up; never write it from memory.** Before writing or changing a script call, run
+  `python create/test/api.py <word>` (or `--members CSPlayerPawn`): it prints the declaration from Valve's `create/test/point_script.d.ts`.
+  The API moved in Oct-Nov 2026 and will move again. A script is not finished until `python create/test/api.py --check <script.js>` reports
+  nothing unknown and `sh create/test/tscheck.sh <script.js>` passes; then the mock engine. All of that is "simulated", never "works in game".
+- **Read a map through its digest, not its file.** `python tools/mapdigest.py <map.vmap> --summary`, then `--graph`, `--class`, `--name`,
+  `--near` or `--touches` for the part in question: entities, names, positions and I/O wiring without the mesh data. It only reads.
+  Edit with `tools/vmapedit.py` (or the stage passes), after a backup (`docs/reference/file-safety.md`).
 - **The PC copy is what runs.** After changing anything in `tools/` or `scripts/`, copy the changed files to their PC paths
   (see `docs/porting/setup.md`) and say which ones you copied. Then check the sizes on the PC, because a stale copy has been delivered once before.
 - **No map content in git.** That means BSPs, VMFs, `.vmap`/`.vpk` files, and materials, models or sounds from the original maps. It also

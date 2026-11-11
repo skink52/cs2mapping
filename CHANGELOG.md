@@ -5,6 +5,17 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-11: three helpers for the agent (project snapshot, typings lookup, map digest)
+
+- **[create]** `context.py <project>`: one snapshot to read before a project's long documents (IRONFRAME's 145 KB status file gives 12 KB):
+  resume / to-do / next-steps sections with line numbers, uncommitted work, scripts and the API they call, test commands, document outlines.
+- **[create]** `test/api.py`: look a cs_script call up in Valve's typings, and `--check` a script's calls against them. All 55 port scripts
+  call only what exists; 136 calls across them use names the typings now mark deprecated (`Instance.FindEntityByName`, `ServerCommand`,
+  `Msg`, `EntFireAtName` ...), which the stage C script generator still writes. CI runs the check.
+- **[tools]** `mapdigest.py`: a `.vmap`'s entities and I/O wiring without geometry, with filters and a wiring-only view.
+- **[docs]** CLAUDE.md: run the snapshot first, look the API up before writing a call, read a map through its digest. Gotchas: CS2 stays
+  in the state it was in for a build and for an import; one import at a time.
+
 ## 2026-11-11: the gaps the real run made testable (build and import previews, rerun backup, CS2 detection)
 
 - **[scripts]** `build_maps.ps1 -DryRun` (also `--dry-run`, `-WhatIf`, `BUILD_DRYRUN=1`): per queue line, what would be compiled, which
