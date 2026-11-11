@@ -75,7 +75,7 @@ for (const S of [1, 2]) {
     const was = me.alive; me.alive = true; A.ifrHudAllies(S, me, al, () => true); flush(); A.ifrHudAllies(S, me, al, () => false); flush(); me.alive = was; }
   for (const k of ['hit', 'heavy', 'kill']) { A.ifrHudHit(S, k); flush(); A.ifrHudHit(S, k); flush(); }
   A.ifrHudFeed(S, { kill: 'PILOT_SEVEN', xp: 40, streak: 3, bounty: true, rookie: true }); flush(); A.ifrHudFeed(S, { kill: 'PILOT_EIGHT', xp: 80 }); flush();
-  A.ifrHudLoadout(S, me, 5); A.ifrHudCard(S, 'controls', 5); flush();
+  A.ifrHudLoadout(S, me, 5); A.ifrHudCard(S, 'controls', 5); A.ifrHudCard(S, 'help', 5); flush();
   A.ifrHudLine(S, 'ONE ROW', 2, false, 1); flush(); A.ifrHudLine(S, 'TWO ROWS: ' + 'WORD '.repeat(14), 2, false, 2); flush(); A.ifrHudLine(S, ''); A.ifrHudLine(S, 'THREE ROWS: ' + 'WORD '.repeat(24), 2, false, 2); flush();
   A.ifrHudHint(S, 'walk' + S, 'A HINT', 3); flush();
   // ------------------------------------------------ common: radar (all 64 dots, every kind), every mode

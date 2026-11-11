@@ -693,7 +693,7 @@ rule('.Card', background_color='#070c12fa', border='2px solid ' + PAL['Acc'], op
 rule('.Card.stOn', opacity='1')
 rule('.CardHd', background_color='#12202cf0')
 CTRL_ROWS = [('W A S D', 'MOVE'), ('SHIFT', 'BOOST (HOLD IT)'), ('CTRL', 'QUICK BOOST: DODGE'), ('SPACE', 'JUMP, HOLD TO HOVER'), ('MOUSE 1 / 2', 'ARM WEAPONS'),
-             ('R / E', 'SHOULDER WEAPONS'), ('AIM', 'RING ON ENEMY = LOCK'), ('F', 'NEXT TARGET'), ('HOLD F', 'FRAME SKILL (IF ANY)'), ('SPACE + R + E', 'OVERDRIVE (GOLD BAR)'),
+             ('R / E', 'SHOULDER WEAPONS'), ('AIM', 'RING ON ENEMY = LOCK'), ('F', 'NEXT TARGET'), ('HOLD F', 'FRAME SKILL (IF ANY)'), ('HOLD R + E', 'OVERDRIVE (GOLD BAR)'),
              ('DEAD: CTRL', 'GARAGE: NEW LOADOUT'), ('CHAT', '!HELP  !GARAGE  !VOTE')]
 CPITCH = 20
 CKW = max(F.METRICS['XS'].text_w(k_) for k_, _ in CTRL_ROWS) + 12
@@ -704,8 +704,26 @@ ck = [P(None, 'CardHd ' + h.place(w=CCW, h=24, x=0, y=0)), slbl('CONTROLS', '', 
 for i_, (k_, a_) in enumerate(CTRL_ROWS):
     ck.append(slbl(k_, '', CKW, 20, 'XS', 'Gold', x=10, y=27 + i_ * CPITCH)); ck.append(slbl(a_, '', CAW, 20, 'XS', 'Text', x=10 + CKW, y=27 + i_ * CPITCH))
 reg('ifr_ctrl', ['stOn'], prio=3)
+# 11 Nov 2026 (skink52: "The !help menu has a lot of text get cut off"): !help was this card plus four long sentences paged through the message line
+# (Labels in a font whose in-game width is unverified, 3.5 s a page). Now everything !help says is static neon type on a second card beside the
+# controls: no Label, no wrapping, no paging, so nothing can be cut. Both cards stay up 25 s; the bottom edge stays above CS2's chat box (y 600).
+HELP_TIPS = ['MISSILES TRACK ONCE THE BRACKET IS RED', 'GOLD BAR FULL: HOLD R + E = OVERDRIVE', 'DEAD: CTRL OR F OPENS THE GARAGE', 'HOLD TAB, THEN LET GO: THIS HELP']
+HELP_CMDS = [('!GARAGE', 'CHANGE YOUR MECH'), ('!LOADOUT 1-6', 'USE A SAVED LOADOUT'), ('!SPEC  !BACK', 'WATCH / RETURN'), ('!VOTE', 'VOTE ON THE NEXT MODE'),
+             ('!MODE', 'THIS MODE AND SCORE'), ('!PILOT', 'RANK, XP, CREDITS'), ('!CAM', 'CAMERA DISTANCE')]
+HKW = max(F.METRICS['XS'].text_w(k_) for k_, _ in HELP_CMDS) + 12
+HCW = 10 + max(max(F.METRICS['XS'].text_w(t_) for t_ in HELP_TIPS), HKW + max(F.METRICS['XS'].text_w(a_) for _, a_ in HELP_CMDS)) + 14
+hk_ = [P(None, 'CardHd ' + h.place(w=HCW, h=24, x=0, y=0)), slbl('HOW TO FIGHT', '', 200, 20, 'XS', 'Acc', x=10, y=2)]
+for i_, t_ in enumerate(HELP_TIPS): hk_.append(slbl(t_, '', HCW - 20, 20, 'XS', 'Text', x=10, y=27 + i_ * CPITCH))
+_hy = 27 + len(HELP_TIPS) * CPITCH + 2
+hk_ += [P(None, 'CardHd ' + h.place(w=HCW, h=22, x=0, y=_hy)), slbl('CHAT COMMANDS', '', 200, 20, 'XS', 'Acc', x=10, y=_hy + 1)]
+for i_, (k_, a_) in enumerate(HELP_CMDS):
+    hk_.append(slbl(k_, '', HKW, 20, 'XS', 'Gold', x=10, y=_hy + 25 + i_ * CPITCH)); hk_.append(slbl(a_, '', HCW - HKW - 20, 20, 'XS', 'Text', x=10 + HKW, y=_hy + 25 + i_ * CPITCH))
+HELP_H = _hy + 25 + len(HELP_CMDS) * CPITCH + 4
+reg('ifr_help', ['stOn'], prio=3)
 CTRL_H = 27 + len(CTRL_ROWS) * CPITCH + 4
 ctrl = P(None, 'Common ' + h.place(w=CCW + 4, h=CTRL_H + 4, x=LCX, y=CTRL_Y), [P('ifr_ctrl', 'Card ' + h.place(w=CCW, h=CTRL_H, x=0, y=0), ck)])
+assert CTRL_Y + max(CTRL_H, HELP_H) + 4 <= 600, 'the help cards reach into the chat box: %d' % (CTRL_Y + max(CTRL_H, HELP_H) + 4)
+helpc = P(None, 'Common ' + h.place(w=HCW + 4, h=HELP_H + 4, x=LCX + CCW + 10, y=CTRL_Y), [P('ifr_help', 'Card ' + h.place(w=HCW, h=HELP_H, x=0, y=0), hk_)])
 LOW = 496
 lk_ = [P(None, 'CardHd ' + h.place(w=LOW, h=24, x=0, y=0)), slbl('YOUR LOADOUT', '', 200, 20, 'XS', 'Acc', x=10, y=2),
        lbl('lcf', '', 240, 20, 'XS', 'Text', 'right', x=LOW - 250, y=2, maxlen=20)]
@@ -1024,7 +1042,7 @@ if len(slides) >= 1:
 else:
     print('hud: no loading slides in %s yet; nothing preloaded (re-run hud.py after loading.py)' % OUT)
 
-screen = P(None, 'Screen', [pre, vitals, buffs, reticle, lockroot, radar, pilot, streakp, ident, mode, objt, cap, badges, kill, line, loadc, ctrl, intro, death, podium, board, spec, garage])
+screen = P(None, 'Screen', [pre, vitals, buffs, reticle, lockroot, radar, pilot, streakp, ident, mode, objt, cap, badges, kill, line, loadc, ctrl, helpc, intro, death, podium, board, spec, garage])
 root = P('ifr_root', 'IfrRoot', [screen])
 # neon type: css per size / glyph class (proportional widths), colour pictures, team accent and state tints
 def rgb(k): return tuple(int(PAL[k][i:i + 2], 16) for i in (1, 3, 5))
@@ -1133,7 +1151,7 @@ def merge(*ds):
 fight_common = merge(
     A(ifr_root=['stOn', 'stFight', 'stTeamT'], ifr_l_ap='stL14', ifr_l_en='stL9', ifr_l_stg='stL6', ifr_qb='stL3', ifr_boost='stOn', ifr_cone='stC2', ifr_l_od='stL20', ifr_odready='stOn', ifr_bf_dmg='stOn', ifr_bf_shield='stOn', ifr_bf_ace='stOn', ifr_bf_radar='stOn', ifr_bf_arty='stOn',
       ifr_w0i='stWrifle', ifr_w1i='stWshotgun', ifr_w2i='stWvm6', ifr_w3i='stWdecoy', ifr_w0='stSel', ifr_l_w0m='stL16', ifr_l_w1m='stL10', ifr_l_w2c='stL8', ifr_l_w3m='stL20',
-      ifr_w1='stReload', ifr_w2='stLkNo', ifr_mtag='stMtb', ifr_xp='stOn', ifr_rookie='stOn', ifr_l_skp='stL2', ifr_load='stOn', ifr_ctrl='stOn',
+      ifr_w1='stReload', ifr_w2='stLkNo', ifr_mtag='stMtb', ifr_xp='stOn', ifr_rookie='stOn', ifr_l_skp='stL2', ifr_load='stOn', ifr_ctrl='stOn', ifr_help='stOn',
       ifr_lci0='stWrifle', ifr_lci1='stWshotgun', ifr_lci2='stWvm6', ifr_lci3='stWdecoy',
       ifr_rdDa='stG555', ifr_rdDe='stG20', ifr_line=['stOn', 'stHi', 'stR2'], ifr_kill='stOn', ifr_hit='stPop', ifr_hitH='stPop2', ifr_hitK='stPop',
       **{'ifr_rd%d' % i: ['stG%d' % ((i * 37 + 11) % 576), 'stE' if i % 3 else 'stA'] + (['stBig'] if i == 5 else ['stTgt'] if i == 7 else []) for i in range(18)}),
@@ -1203,7 +1221,7 @@ STATES = {
     'lock': merge(fight_common, A(ifr_lock='stHard3', ifr_lkx='stX%d' % (LKXN + 9), ifr_lky='stY%d' % (LKYN - 4), ifr_l_tap='stL8', ifr_l_lkp='stL12', ifr_th1='stLock', ifr_th5='stLaunch', ifr_th3='stClose', ifr_mwarn='stOn', ifr_assist='stOn',
                                   ifr_enbar='stStall', ifr_entag='stOn', ifr_stg='stStaggered', ifr_stgring='stOn', ifr_lag='stOn', ifr_shield='stOn',
                                   ifr_ml0='stDone', ifr_ml0x='stX%d' % (LKXN + 14), ifr_ml0y='stY%d' % (LKYN + 2), ifr_ml1='stOn', ifr_ml1x='stX%d' % (LKXN - 5), ifr_ml1y='stY%d' % (LKYN - 6), ifr_fr0='stOn', ifr_fr0x='stX%d' % (LKXN - 16), ifr_fr0y='stY%d' % (LKYN - 3), ifr_fr1='stFar', ifr_fr1x='stX%d' % (LKXN + 22), ifr_fr1y='stY%d' % (LKYN - 1),
-                                  ifr_w2=['stLkOn'], ifr_load=[], ifr_ctrl=[]),
+                                  ifr_w2=['stLkOn'], ifr_load=[], ifr_ctrl=[], ifr_help=[]),
                   T(ifr_tname='NEXT_ONE', ifr_rng='2 450', ifr_lstate='LOCKED', ifr_w2s='LOCKED: FIRE')),
     'death': merge(A(ifr_root=['stOn', 'stDeath', 'stTeamT'], ifr_line=['stOn', 'stR1'], ifr_mtag='stMcq', ifr_ctrl='stOn'), T(ifr_killer='PILOT_SEVEN', ifr_kweapon='VM-6 VERTICAL MISSILES', ifr_kframe='WHITE GLINT', ifr_respawn='RESPAWN IN 6',
                                                                                  ifr_mode='CONQUEST', ifr_sub='TICKETS', ifr_clock='6:30', ifr_scoreT='200', ifr_scoreCT='170', ifr_linea='CTRL OPENS THE GARAGE',

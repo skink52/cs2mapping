@@ -49,6 +49,12 @@ function expectFollow(t, what) { at(t, 'expect follow camera (' + what + ')', ()
 // garage keys: W (FORWARD) from the first tab wraps to SORTIE, Space (JUMP) launches
 function sortie(t) { at(t, 'W', tap(api.IN.FORWARD)); at(t + 0.1, 'release', tap(0)); at(t + 0.3, 'SPACE', tap(api.IN.JUMP)); at(t + 0.4, 'release', tap(0)); }
 
+// stand-in kills: ME is piloting from 57 s; an AI mech 'destroyed' at 58, 59 and 60 s
+const botsOf = () => api.players.filter((c) => c && c.bot);
+at(57.5, 'stand-in kills: before', () => { state.npc = { k0: api.ctrl(ME).kills, d0: botsOf().reduce((n, c) => n + c.deaths, 0), k1: -1, d1: -1, alive: false }; });
+for (const t of [58, 59, 60]) at(t, 'an AI mech destroyed by ME', () => { api.input('ifr_test_npckill', {}); });
+at(62, 'stand-in kills: after', () => { if (!state.npc) return; state.npc.k1 = api.ctrl(ME).kills; state.npc.d1 = botsOf().reduce((n, c) => n + c.deaths, 0);
+  state.npc.alive = botsOf().length > 0 && botsOf().every((c) => c.pawn && c.pawn.IsAlive()); });
 export default {
   setup(a) {
     api = a; api.manual.add(ME);
@@ -144,6 +150,16 @@ export default {
     if (state.watch) this.watch(a);
   },
   check(a) {
+    // stand-in kills (11 Nov 2026): three AI mechs destroyed by ME a second apart are three real CS2 kills, taken by a CS2 bot's pawn that
+    // is alive again afterwards; no team kill penalty (mp_teammates_are_enemies 1)
+    if (state.npc) {
+      a.log('stand-in kills: ME kills ' + state.npc.k0 + ' -> ' + state.npc.k1 + ', bot deaths ' + state.npc.d0 + ' -> ' + state.npc.d1 + ', bots alive after ' + state.npc.alive + ', teamkill penalties ' + a.stats.teamkills);
+      if (state.npc.k1 - state.npc.k0 !== 3) fails.push('stand-in kills: 3 AI mech kills gave ' + (state.npc.k1 - state.npc.k0) + ' kills on the scoreboard');
+      if (state.npc.d1 - state.npc.d0 < 3) fails.push('stand-in kills: the bots took ' + (state.npc.d1 - state.npc.d0) + ' deaths, expected 3 or more');
+      if (!state.npc.alive) fails.push('stand-in kills: a stand-in bot pawn stayed dead');
+      if (a.stats.teamkills) fails.push('team kill penalties: ' + a.stats.teamkills);
+      if (a.cvar('mp_teammates_are_enemies') !== '1') fails.push('mp_teammates_are_enemies is ' + a.cvar('mp_teammates_are_enemies'));
+    } else fails.push('stand-in kills: the check never ran');
     // kill credit: real CS2 kills between pawns, and score for the script AI's kills
     const ctl = a.players.filter(Boolean);
     const kills = ctl.reduce((n, c) => n + c.kills, 0), score = ctl.filter((c) => !c.bot).reduce((n, c) => n + c.score, 0);

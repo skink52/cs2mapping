@@ -15,6 +15,28 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**11 Nov 2026, afternoon (skink52: "The !help menu has a lot of text get cut off. Still no kill credits in game for killing bots"): all 18 suites pass; mock: 3 AI mech kills = 3 real kills, bots alive after, no team kill penalty; script + HUD compiled in both addons 11:04 / 11:07 (no map rebuild needed). Note: a Sprawl deploy with SPRAWL_NO_MAP=1 does not compile the script and HUD: run sh tools/compile_ui.sh mg_ironframe_sprawl after it. Unseen in game.**
+- **!help**: it was the controls card plus four long sentences paged through the message line (Labels, 3.5 s a page while the next
+  waited; the Label font's in-game width has never been seen, and a row wrapped to the last pixel is cut at both ends if CS2 draws
+  wider). Now !help shows two static cards for 25 s (a second !help puts them away): the controls, and beside them HOW TO FIGHT
+  (4 lines) and CHAT COMMANDS (7) as neon glyph pictures: no Label, no wrapping, no paging (tools/hud.py `HELP_TIPS` / `HELP_CMDS`,
+  panel `ifr_help`; 80_chat.js; holding Tab shows both for 12 s). The build fails if the cards reach under y 600 (CS2's chat box).
+  The controls card's overdrive row said SPACE + R + E: now HOLD R + E. Every other message on the line now wraps at 88 % of the
+  box (50_hud.js `IFR_HUD_LINE_FIT`), as insurance against the same cut. **If text is still cut anywhere, a screenshot says
+  whether it is width (ends of a row missing) or time.**
+- **Kill credit for AI mechs**: two causes found.
+  1. `mp_teammates_are_enemies 0` (00_config.js): a scripted kill of a pawn on the pilot's own CS2 team is a team kill (no kill,
+     -1). Skirmish is free-for-all on two CS2 teams, so half its kills were that. Now 1 (docs/reference/cs_script-notes.md said so).
+  2. The enemies of a Sortie, and the fill wherever CS2 bots did not join, are the script's own AI mechs: no pawn, so CS2 had
+     nothing to count (only `AddScore`). Now a CS2 bot's pawn stands in (20_players.js `npcKill`): it takes the kill from the pilot
+     (kills column, killfeed line with that bot's name) and is revived 0.5 s later, back on its mech or in the booth. Picked: a bot
+     whose mech is down, else one on the other CS2 team, else the one used longest ago. A Sortie keeps at least two CS2 bots for
+     this. Cost: those bots' deaths column counts the stand-in deaths, and the killfeed names the bot, not `AI-7`.
+  - No CS2 bot in the game: score only, as before, and the console says so once. **`!bots` in chat shows it**: "CS2 bots N of Q.
+    AI kills: R real, S score only". If N is 0 the bots are not joining (the console then also says "no CS2 bots joined").
+  - Not possible without a pawn: a killfeed line with the AI mech's own name. With the server plugin the kills column could be
+    set directly (not built).
+
 **11 Nov 2026, midday (skink52's notes after looking at Sprawl): all 18 suites pass, both maps rebuilt 10:26 (Dunes) / 10:39 (Sprawl), no deleted entities, no failed resources, cache checks clean; Sprawl has 44 destructible cars an arena, Dunes 47. Unseen in game.**
 - **Sprawl ramps** (skink52: "where the ramps to the top level meet the ground make no sense - they ramp down halfway into the roads
   below"): the decks ran to +-3600 and the ramps came down at +-5035, i.e. across the outer ring road (4350-5250) at half height.

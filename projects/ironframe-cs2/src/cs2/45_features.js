@@ -16,7 +16,7 @@ const CRATE_TEXT = { repair: 'REPAIR: +40 % AP now', ammo: 'AMMO REFILLED on eve
 // straight into"): the controls card at the first spawns and death screens (and on !help, or after holding Tab), the loadout card at every spawn,
 // and hints: one important line the first time something happens to a pilot in a session (the HUD keeps what was shown: ifrHudHint).
 // Every sentence is here so test/hud_strings.cjs can run each through the message line.
-const ONB = { controlSpawns: 2, controlSecs: 14, controlDeaths: 3, loadoutSecs: 8, loadoutFirst: 12, tabHold: 0.8, tabSecs: 8, modeHintAfter: 7 };
+const ONB = { controlSpawns: 2, controlSecs: 14, controlDeaths: 3, loadoutSecs: 8, loadoutFirst: 12, tabHold: 0.8, tabSecs: 12, modeHintAfter: 7 };
 const HINTS = {
   start: 'Keep an enemy inside the ring to lock on. Mouse 1 / 2 fire the arms, R / E the shoulders. !help: controls',
   stall: 'EN EMPTY: no hover or quick boost for 2.5 s. EN refills fast on the ground, slowly in the air',
@@ -85,7 +85,7 @@ function onbInput(pe, input) {
   // Tab held, then released: the controls card (the scoreboard hides the HUD while it is up)
   let tab = false; try { tab = !!pe.pawn.IsInputPressed(KEYS.scores); } catch (err) { tab = false; }
   if (tab) { if (!P.tabAt) P.tabAt = gameTime(); }
-  else if (P.tabAt) { if (gameTime() - P.tabAt >= ONB.tabHold && typeof ifrHudCard === 'function') ifrHudCard(pe.slot, 'controls', ONB.tabSecs); P.tabAt = 0; }
+  else if (P.tabAt) { if (gameTime() - P.tabAt >= ONB.tabHold && typeof ifrHudCard === 'function') { ifrHudCard(pe.slot, 'controls', ONB.tabSecs); ifrHudCard(pe.slot, 'help', ONB.tabSecs); } P.tabAt = 0; }
 }
 // every 16th tick: standing in a capture zone for the first time
 function onbZones() {

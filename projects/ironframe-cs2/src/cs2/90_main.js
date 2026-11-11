@@ -382,7 +382,9 @@ function manageBots(now) {
   const mode = game.matchFor(-1) ? game.matchFor(-1).mode : 'tb';
   const A = (game.list[0].g.cfg && game.list[0].g.cfg.ai) || { floor: 24, fillTotal: 16, sortieAllies: 8, skirmishFill: 8 };
   const target = humans >= A.floor ? 0 : mode === 'so' ? A.sortieAllies : mode === 'sk' ? A.skirmishFill : A.fillTotal;
-  const want = Math.max(0, Math.min(64 - humans - 2, target - humans));
+  let want = Math.max(0, Math.min(64 - humans - 2, target - humans));
+  // a Sortie's enemies are the script's own AI: keep two CS2 bots even with a full flight of humans, as stand-ins for the kill credit
+  if (CONFIG.STANDIN_KILLS && mode === 'so' && humans > 0) want = Math.max(want, Math.min(2, 64 - humans - 2));
   let bots = 0; for (const pe of people.values()) if (!pe.human) bots++;
   if (want !== botQuota) { botQuota = want; ifrCvars(['bot_quota_mode normal', 'bot_quota ' + want, 'bot_join_after_player 0', 'bot_stop 1']); if (want > bots) botsAskedAt = now; }
   if (want > 0 && bots === 0 && botsAskedAt && now - botsAskedAt > 20) { botsUnavailable = true; ifrCvars(['bot_quota 0']); log('no CS2 bots joined (the map needs a nav mesh): the script own AI mechs fill instead'); }
@@ -524,5 +526,10 @@ Instance.OnPlayerChat(({ player, text }) => guard('chat', () => onChat(player, t
 Instance.OnScriptInput('ifr_server', () => guard('ifr_server', onServerInput));
 Instance.OnScriptInput('ifr_pilot', (ev) => guard('ifr_pilot', () => onPilotInput(ev)));
 Instance.OnScriptInput('ifr_deny', (ev) => guard('ifr_deny', () => onDenyInput(ev)));
+// test only (CONFIG.DEBUG; test/mock_flows.mjs): the first piloting human destroys an AI mech, as far as the kill credit goes
+Instance.OnScriptInput('ifr_test_npckill', () => guard('test npckill', () => {
+  if (!CONFIG.DEBUG) return;
+  for (const pe of people.values()) if (pe.human && pe.status === 'mech') { queueKill({ victim: 9999, killer: pe.slot, weapon: 'test' }); return; }
+}));
 Instance.OnScriptInput('mgstat_on', () => guard('stats', () => { if (!statsOn) log('server stats on'); statsOn = true; }));
 Instance.OnScriptInput('mgstat_off', () => guard('stats', () => { statsOn = false; }));

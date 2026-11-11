@@ -107,6 +107,7 @@ building waits while held, `wp.mslWait`, and launches guided when it is done; re
 - Earning anything says what it is, what it does and how to use it (gold line): STREAK_TEXT, CRATE_TEXT, HINTS.od in 45_features.js.
 
 **Jump-in help.**
+- Help card (`ifr_help`, static, beside the controls card; 11 Nov 2026): HOW TO FIGHT and CHAT COMMANDS as glyph pictures. `!help` shows both cards for 25 s (again: away), holding Tab for 12 s. Nothing in `!help` is a Label any more. The message line wraps at 88 % of its box (`IFR_HUD_LINE_FIT`).
 - Controls card (`ifr_ctrl`, static, one class): first two spawns and first three death screens of a session, `!help` / `!keys`, and after
   holding Tab >= 0.8 s (shown on release; unverified that SHOW_SCORES reads in a mech). It covers the pilot plate while up.
 - Loadout card (`ifr_load`, right side, every spawn, 8-12 s): M1 / M2 / R / E with icon, name and role (`IFR_HUD_ROLE`), the frame, its trait

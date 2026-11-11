@@ -2,8 +2,10 @@
 // IRONFRAME CS2 adapter, part 8: chat commands (! or /). Replies are per-player HUD lines, not say (the host's chat is
 // rate limited and visible to all).
 // ===================================================================================================================
-// !help: pages of the two-row message line, shown one after another (each used to replace the last, so only the commands showed)
-// (10 Nov 2026 evening: !help also puts the controls card up; the pages are in gold and never cut short by other messages)
+// !help (11 Nov 2026, skink52: "The !help menu has a lot of text get cut off"): two static cards, the controls and beside them how to fight
+// and the chat commands (tools/hud.py HELP_TIPS / HELP_CMDS), for HELP_SECS; a second !help puts them away. The four sentences below were
+// paged through the message line, 3.5 s each: they are only used with a layout that has no help card.
+const HELP_SECS = 25;
 const HELP_LINES = [
   'WASD move, Shift boost, Ctrl quick boost, Space jump / hover. Mouse 1 / 2 fire the arms, R / E the shoulders',
   'Keep an enemy inside the ring to lock on; F switches target. Missiles track once the bracket is red',
@@ -41,6 +43,10 @@ function onChat(player, text) {
   dlog('chat command ' + t + ' from slot ' + slot);
   switch (word) {
     case '!help': case '!ironframe': case '!if': case '!controls': case '!keys':
+      if (typeof ifrHudHasCard === 'function' && ifrHudHasCard('help')) {
+        const on = ifrHudCardOn(slot, 'help');
+        ifrHudCard(slot, 'controls', on ? 0 : HELP_SECS); ifrHudCard(slot, 'help', on ? 0 : HELP_SECS); break;
+      }
       if (typeof ifrHudCard === 'function') ifrHudCard(slot, 'controls', 6 * HELP_LINES.length);
       HELP_LINES.forEach((l, i) => reply(slot, l, 6, i > 0, 2)); break;
     case '!garage': case '!mech': case '!loadouts':
@@ -108,6 +114,9 @@ function onChat(player, text) {
     case '!mode': { const mt = game.matchFor(slot), nm = (typeof IFR_HUD_MODE_NAMES === 'object' && IFR_HUD_MODE_NAMES[mt.mode]) || mt.mode || '?';
       reply(slot, nm + ' (arena ' + (game.arenaIndexOf(slot) + 1) + ' of ' + game.list.filter((a) => a.active).length + '): T ' + ((mt.scores || {})[2] | 0) + ', CT ' + ((mt.scores || {})[3] | 0), 5); } break;
     case '!perf': reply(slot, perfText || 'no figures yet', 6); break;
+    // what the kill credit is doing (11 Nov 2026): how many CS2 bots are in, and how AI mech kills were credited so far
+    case '!bots': { let n = 0; for (const q of people.values()) if (!q.human) n++;
+      reply(slot, 'CS2 bots ' + n + ' of ' + Math.max(0, botQuota) + (botsUnavailable ? ' (none joined: no nav mesh?)' : '') + '. AI kills: ' + standStats.real + ' real, ' + standStats.score + ' score only' + (realKills ? '' : '. Real kills are OFF'), 8); } break;
     default: break;
   }
 }

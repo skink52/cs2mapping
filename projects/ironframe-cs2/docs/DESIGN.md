@@ -301,7 +301,7 @@ Skies: 4096 × 2048 procedural panoramas (`tools/sky.py`: gradient, sun, clouds,
   900 class changes per tick and odd/even player halves (Space Racer).
 - **Garage UI:** key-driven while parked (W/S rows, A/D values, Space confirm, Ctrl back, F compare), with `<Button>`s and
   `OnCustomHudClicked` as the mouse path when the engine supports it. Part pictures are HUD images rendered offline.
-- **Chat:** `!garage !loadout 1-3 !cam !help !ironframe !spec !afk !back !vote !stats`; replies as per-player HUD lines.
+- **Chat:** `!garage !loadout 1-6 !cam !help !ironframe !spec !afk !back !vote !mode !pilot !hints !od !bots`; replies as per-player HUD lines.
 - **Robustness:** every player, projectile and module ticks in its own try/catch; slot ownership verified every 8 ticks;
   AFK on input only; full HUD reset on activate/team change/spawn; version banner `[ironframe] v0.1.0 ready: ...` with
   `MISSING` for absent entities; script time logged once a minute; `OnPlayerReset`/`OnPlayerTeamChanged` both re-read teams.

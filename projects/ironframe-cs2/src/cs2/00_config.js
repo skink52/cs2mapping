@@ -12,7 +12,7 @@ const CONFIG = {
   APPLY_CVARS: true,
   CVARS_ALWAYS: [
     'mp_ignore_round_win_conditions 1', 'mp_respawn_on_death_t 1', 'mp_respawn_on_death_ct 1', 'mp_respawn_immunitytime 0',
-    'mp_teammates_are_enemies 0', 'sv_gravity 0', 'sv_maxvelocity 6000', 'sv_disable_radar 1', 'mp_free_armor 0',
+    'mp_teammates_are_enemies 1',     /* 11 Nov 2026: at 0 a kill of a pawn on the pilot's own CS2 team was a team kill (no kill, -1): Skirmish, and every stand-in kill */ 'sv_gravity 0', 'sv_maxvelocity 6000', 'sv_disable_radar 1', 'mp_free_armor 0',
     'mp_buytime 0', 'mp_startmoney 0', 'mp_playercashawards 0', 'mp_teamcashawards 0', 'mp_death_drop_gun 0',
     'mp_solid_teammates 0', 'sv_disable_teamselect_menu 1', 'mp_autoteambalance 0', 'mp_limitteams 0',
     'mp_warmuptime 0', 'mp_warmup_pausetimer 0', 'mp_team_intro_time 0', 'mp_halftime 0', 'mp_match_can_clinch 0', 'mp_freezetime 0', 'mp_round_restart_delay 7', 'sv_disable_immunity_alpha 1',
@@ -50,7 +50,8 @@ const CONFIG = {
   CS2_BOTS: true,
   // ---- kill credit: CS2 score for a kill of the script's own AI mechs (they have no pawn, so no real kill); a killed human's pawn is
   //      revived by the script REVIVE_AFTER s after the kill (hidden in the booth) so the death orbit and the garage have a camera
-  NPC_KILL_SCORE: 2, REVIVE_AFTER: 1.5,
+  //      STANDIN_KILLS: a CS2 bot's pawn takes the kill for a destroyed AI mech (20_players.js npcKill), so it is a real CS2 kill
+  NPC_KILL_SCORE: 2, REVIVE_AFTER: 1.5, STANDIN_KILLS: true, STANDIN_BACK: 0.5,
   // ---- input and chat
   CHAT_COMMANDS: true, SAY_GAP: 1.1, AFK_WARN: 60, AFK_SPEC: 90,
   // ---- server plugin channel (docs/SERVER_CONTRACT.md); SERVER_STATS and server mode are switched on by the plugin's inputs

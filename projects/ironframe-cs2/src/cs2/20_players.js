@@ -253,22 +253,81 @@ function applyDamageEvent(ev) {
 }
 // a kill from the core: queued, applied with FORCE_DEATH a few ticks apart (the killfeed rolls; a kill blocked by CS2 is logged once)
 function queueKill(ev) {
-  // the script's own AI mechs (slots 64+) have no pawn: a pilot who kills one gets CS2 score (the kills column takes real kills only)
-  if (!person(ev.victim)) { npcKillScore(ev.killer); return; }
+  // the script's own AI mechs (slots 64+) have no pawn, and CS2 counts a kill only when a pawn dies: a human pilot's kill of one is queued
+  // for a stand-in (npcKill)
+  if (!person(ev.victim)) { const kp = ev.killer >= 0 ? person(ev.killer) : undefined; if (kp && kp.human) pendingKills.push({ victim: -1, killer: ev.killer, weapon: ev.weapon, at: gameTime(), npc: true }); return; }
   pendingKills.push({ victim: ev.victim, killer: ev.killer, weapon: ev.weapon, at: gameTime() });
 }
 function npcKillScore(killer) {
   const kp = killer >= 0 ? person(killer) : undefined; if (!kp || Instance.IsWarmupPeriod()) return;
   const c = live(kp.ctrl); if (c) guard('npc score', () => c.AddScore(CONFIG.NPC_KILL_SCORE));
 }
+// ---- stand-in kills (11 Nov 2026, skink52: "Still no kill credits in game for killing bots"). The enemies of a Sortie and the fill of a map
+// where CS2 bots did not join are the script's own AI mechs: nothing of CS2's dies with them, so the scoreboard's kills column and the
+// killfeed stayed empty (AddScore only moves the score column). Now a CS2 bot's pawn takes the kill from the pilot: a real kill, with the
+// killfeed line carrying that bot's name. Picked: a bot whose own mech is down (its pawn waits in the booth), else one on the other CS2
+// team, else the one used longest ago; STANDIN_BACK s later the pawn is revived and personTick mounts it on its mech again or parks it. The
+// bot's deaths column counts these. No CS2 bot in the game: CS2 score (NPC_KILL_SCORE) as before. !bots shows the counts.
+const standRevive = [];           // [{slot, at}]: stand-ins to bring back
+const standStats = { real: 0, score: 0 };
+function standInFor(kp, now) {
+  let best, bestRank = -1;
+  for (const pe of people.values()) {
+    if (pe.human || !(pe.team === TEAM_T || pe.team === TEAM_CT)) continue;
+    const pawn = live(pe.pawn); if (!pawn) continue;
+    if (!pawn.IsAlive() && (typeof pawn.Reset !== 'function' || now - (pe.standAt || 0) < 0.3)) continue;
+    const m = game.mechs.get(pe.slot);
+    const rank = (m && m.alive ? 0 : 4) + (pe.team !== kp.team ? 2 : 0) + Math.min(0.99, (now - (pe.standAt || -1e9)) / 600);
+    if (rank > bestRank) { best = pe; bestRank = rank; }
+  }
+  return best;
+}
+function npcKill(k, now) {
+  const kp = person(k.killer); if (!kp || !kp.human || Instance.IsWarmupPeriod()) return;
+  let attacker = live(kp.pawn);
+  if (!attacker || !attacker.IsAlive()) attacker = live(kp.ctrl);
+  const sp = CONFIG.STANDIN_KILLS && realKills && attacker ? standInFor(kp, now) : undefined;
+  let done = false;
+  if (sp) {
+    const pawn = sp.pawn;
+    guard('stand-in kill', () => {
+      if (!pawn.IsAlive()) pawn.Reset();
+      if (!pawn.IsAlive()) return;
+      damageDepth++; allowDamage.add(sp.slot);
+      try {
+        pawn.TakeDamage({ damage: 1000, damageTypes: CSDamageTypes.BULLET, damageFlags: CSDamageFlags.FORCE_DEATH | CSDamageFlags.IGNORE_ARMOR | CSDamageFlags.SUPPRESS_PHYSICS_FORCE,
+          attacker, inflictor: attacker });
+      } finally { damageDepth--; allowDamage.delete(sp.slot); }
+      done = !pawn.IsAlive();
+    });
+    sp.standAt = now;
+    if (done) standRevive.push({ slot: sp.slot, at: now + CONFIG.STANDIN_BACK });
+    else warnOnce('standin', 'a stand-in kill did not kill the bot pawn (a plugin or damage filter?): CS2 score instead');
+  }
+  if (done) { standStats.real++; if (standStats.real === 1) log('AI mech kills are credited as real CS2 kills through CS2 bot stand-ins'); }
+  else { standStats.score++; npcKillScore(k.killer); if (!sp && standStats.score === 1) log('no CS2 bot to stand in for an AI mech kill: CS2 score only (kills column unchanged)'); }
+  dlog('npc kill: killer ' + k.killer + ' stand-in ' + (sp ? sp.slot : 'none') + ' real ' + done);
+}
+function standTick(now) {
+  while (standRevive.length && standRevive[0].at <= now) {
+    const r = standRevive.shift(), pe = person(r.slot); if (!pe || pe.human) continue;
+    const pawn = live(pe.pawn) || pawnOf(pe.slot); if (!pawn) continue;
+    guard('stand-in back', () => { if (!pawn.IsAlive() && typeof pawn.Reset === 'function') pawn.Reset(); });
+    pe.pawn = pawn; pe.status = 'standin';       // personTick: back on its mech, or parked
+  }
+}
 let killNextAt = 0;
 function flushKills() {
   const now = gameTime();
+  standTick(now);
   if (!pendingKills.length || now < killNextAt) return;
   const k = pendingKills.shift();
   killNextAt = now + 0.05;
+  if (k.npc) { npcKill(k, now); return; }
   const vp = person(k.victim); const victim = vp ? live(vp.pawn) : undefined;
   if (!victim) return;
+  // a CS2 bot whose pawn is down as a stand-in: back first, so the pilot who destroyed its mech still gets the kill
+  if (!victim.IsAlive() && !vp.human && realKills && typeof victim.Reset === 'function') guard('bot back', () => victim.Reset());
   if (!victim.IsAlive()) return;
   const kp = k.killer >= 0 && k.killer !== k.victim ? person(k.killer) : undefined;
   if (!realKills || Instance.IsWarmupPeriod()) { guard('fake kill', () => { victim.Kill(); }); if (kp && realKills === false) npcKillScore(k.killer); return; }

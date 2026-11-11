@@ -190,19 +190,23 @@ function ifrHudWrapTokens(names, tokens, sep) {
   return out;
 }
 /** does `text` fit the box (pixels) and the cells of slot `name`? (an unknown slot fits anything) */
-function ifrHudFits(name, text) {
+function ifrHudFits(name, text, fit) {
   const ts = IFR_HUD_TEXT[name]; if (!ts) return true;
-  return String(text).length <= ts.max && ifrHudWidth(name, text) <= ts.w;
+  return String(text).length <= ts.max && ifrHudWidth(name, text) <= ts.w * (fit || 1);
 }
 /** `text` word-wrapped into rows that each fit slot `name` (pixels and cells); a word wider than a row is broken; nothing is dropped */
+// The message line wraps at IFR_HUD_LINE_FIT of its box (11 Nov 2026, skink52: "The !help menu has a lot of text get cut off"): the Label
+// font's width in CS2 is measured from the TTF, not seen in game, and a row wrapped to the last pixel is cut at both ends if CS2 draws wider.
+const IFR_HUD_LINE_FIT = 0.88;
 function ifrHudWrapAll(name, text) {
   const out = []; let cur = '';
+  const fit = name === IFR_HUD_LINE_SLOTS[0] ? IFR_HUD_LINE_FIT : 1;
   for (let w of ifrHudCleanText(text, 0).split(/\s+/).filter(Boolean)) {
     for (;;) {
       const c = cur ? cur + ' ' + w : w;
-      if (ifrHudFits(name, c)) { cur = c; break; }
+      if (ifrHudFits(name, c, fit)) { cur = c; break; }
       if (cur) { out.push(cur); cur = ''; continue; }
-      let k = w.length - 1; while (k > 1 && !ifrHudFits(name, w.slice(0, k))) k--;     // a word wider than the row: break it
+      let k = w.length - 1; while (k > 1 && !ifrHudFits(name, w.slice(0, k), fit)) k--;     // a word wider than the row: break it
       out.push(w.slice(0, k)); w = w.slice(k);
     }
   }
@@ -1166,8 +1170,10 @@ function ifrHudSlate(slot, kind, data) {
 }
 
 // ---------------------------------------------------------------- cards: controls and loadout (evening playtest 10 Nov 2026)
-const IFR_HUD_CARDS = { controls: 'ifr_ctrl', loadout: 'ifr_load' };
-/** shows card `name` ('controls' | 'loadout') for `seconds` (0 hides it now) */
+const IFR_HUD_CARDS = { controls: 'ifr_ctrl', loadout: 'ifr_load', help: 'ifr_help' };
+/** does this layout have card `name`? (an older hud.json has no 'help' card: !help then pages its text through the message line) */
+function ifrHudHasCard(name) { const id = IFR_HUD_CARDS[name]; return !!(IFR_HUD_ON && id && IFR_HUD_PANELS.has(id)); }
+/** shows card `name` ('controls' | 'loadout' | 'help') for `seconds` (0 hides it now) */
 function ifrHudCard(slot, name, seconds) {
   const id = IFR_HUD_CARDS[name];
   if (!IFR_HUD_ON || !id || !IFR_HUD_PANELS.has(id)) return;
