@@ -109,7 +109,7 @@ Kits picked at the base arms rack or at any held flag's supply crate (E on the c
 | Marksman (held flag crates only) | M21 (`weapon_g3sg1`) | SVD / Mosin (`weapon_scar20`) | 1 per team per 8 players |
 
 Custom weapon models come through `tools/weapons` (cs2mapping) from GLB/FBX, or from GMod workshop MDLs through the new
-`mdl` input added for this map (see [WEAPONS.md](WEAPONS.md)). Until a model is built, the stock CS2 weapon stands in; the
+`mdl` input added for this map (a `WEAPONS.md` for it is not written yet). Until a model is built, the stock CS2 weapon stands in; the
 loadout logic never depends on a model existing.
 
 Infantry extras:

@@ -45,6 +45,10 @@ Everything skink52 and Claude have worked out about **making Counter-Strike 2 ma
 | [docs/reference/cs_script-notes.md](docs/reference/cs_script-notes.md) | cs_script patterns: wiring, input, movement, weapons, kills/rounds, cameras, prop pools, HUD API, performance, testing |
 | [docs/reference/external-tools.md](docs/reference/external-tools.md) | Outside tools and references (Valve, BSPSource, Source 2 Viewer, Hammer5Tools, cs2-slop-porting, mocap, …) and their traps |
 | [docs/reference/ai-workflow.md](docs/reference/ai-workflow.md) | Working with Claude: who does what, house rules, transfer limits, unattended runs, verifying without the game |
+| [docs/reference/compatibility.md](docs/reference/compatibility.md) | What "tested" means here (unit tested, simulated, compiled, in-game verified, playtested), what CI covers, the versions last run with |
+| [docs/reference/file-safety.md](docs/reference/file-safety.md) | What each tool overwrites or deletes, its backups, dry runs, and how to roll back |
+| [docs/reference/engineering-notes.md](docs/reference/engineering-notes.md) | Path settings and environment variables, dependencies, and the proposals for one settings file, one command and releases |
+| [`requirements/`](requirements) / [`ci/`](ci/README.md) | pip lists per area (porting, creation, models) with the versions last run with; the repo checks CI runs |
 | [CHANGELOG.md](CHANGELOG.md) | Dated history, newest first |
 
 ## What is *not* here
@@ -56,7 +60,7 @@ No map content: no BSPs, decompiled VMFs, `.vmap` files, or textures, models and
 ## Licence
 
 Free for non-commercial use: copy, change, share and run anything here, including the tools, docs and cs_script files, and on game servers (donation/VIP servers are fine). Not to be sold, paywalled or built into a paid product or service. Code and docs: [PolyForm Noncommercial 1.0.0](LICENSE); art, sounds and maps: [CC BY-NC 4.0](LICENSE-CC-BY-NC-4.0.txt). Versions before 30 Oct 2026 were MIT.
-It covers this repo's own work only (Hellmatch's Freedoom-derived content stays under Freedoom's licence). Valve's tools and files (the import scripts `scripts/` runs alongside, `create/test/point_script.d.ts`), and the original maps,
+It covers this repo's own work only (Hellmatch's Freedoom-derived content stays under Freedoom's licence; `create/s2/vendor/meshoptimizer` is MIT and `create/fonts`' Cinzel is under the SIL Open Font License, each with its licence file alongside). Valve's tools and files (the import scripts `scripts/` runs alongside, `create/test/point_script.d.ts`), and the original maps,
 assets and sounds credited in each port, belong to their owners.
 
 ## Projects

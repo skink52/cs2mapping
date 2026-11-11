@@ -7,7 +7,7 @@ It runs entirely on the PC and calls the normal pipeline ([tools/](../tools/READ
 
 ## Run it
 
-Close Hammer and CS2, then double-click `C:\source1\cs2port\autoport\run_autoport.bat`. Paste or type the maps, on one line or several, and press Enter on an empty line. You get a plan to confirm, and everything after that runs by itself.
+Close Hammer and CS2 (autoport waits for them to close if they are open), then double-click `C:\source1\cs2port\autoport\run_autoport.bat`. Paste or type the maps, on one line or several, and press Enter on an empty line. You get a plan to confirm, and everything after that runs by itself.
 
 Or give the maps directly, which skips the questions:
 
@@ -27,6 +27,9 @@ A map can be a name (the version suffix is optional), a path, a folder, a wildca
 | `--allow-missing` | Let maps with missing assets build. Errors, unknowns and I/O problems still hold them |
 | `--vis-budget MIN` | How long vis may take before the build restarts with lean hints (default 20) |
 | `--no-online` | Skip the Steam Workshop and GameBanana search |
+| `--yes` | No questions: skip the confirmation on an interactive launch |
+| `--ingame` | After each build, check the map in an open CS2 Workshop Tools console ([In-game check](#in-game-check-cs2-map-mcp-10-nov-2026)) |
+| `--ingame-launch` | Like `--ingame`, but start CS2 Workshop Tools minimised for it and stop it after |
 
 Running it while a worker is active adds the maps to that worker's queue.
 
@@ -197,7 +200,7 @@ written fresh. Tests: `python -m unittest discover -s autoport/tests`.
 | `review.py` | The `review` commands |
 | `common.py` | Paths, the dated log, map state |
 | `watchdog.py`, `monitor.py` | Hang protection and the live window |
-| `pclocal.py`, `bspsrc.bat`, `run_autoport.bat` | Copying files to the PC, BSPSource's command line, the double-click launcher |
+| `pclocal.py`, `bspsrc.bat`, `run_autoport.bat` | Copying files to the PC, BSPSource's command line, the double-click launcher. `pclocal.py apply <addon> [--dry-run]` backs up and checks every file before overwriting it and records the run; `pclocal.py rollback <addon> [--dry-run]` undoes it ([file-safety.md](../docs/reference/file-safety.md)) |
 | `vconsole.py` | VConsole2 client (CS2 console over TCP 29000): send commands, read output, wait for a line |
 | `cs2live.py` | The running CS2: find it, launch it minimised (only when asked), load a map, screenshots, reset, stop what it launched |
 | `livetest.py` | Bot playtests, scripted scenarios, route walking and timings, physics probe, player marks |

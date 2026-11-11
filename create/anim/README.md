@@ -1,7 +1,8 @@
 # create/anim/: animated bodies for CS2 addons
 
 > **AI-generated code.** From [cs2-fighter](https://github.com/skink52/cs2mapping/tree/archive/cs2-fighter-anim-v3) (Puppet Brawl, branch `anim-v3`,
-> `tools/anim/`) by skink52, MIT, made project-neutral: no moves, fighters or game paths.
+> `tools/anim/`) by skink52, made project-neutral: no moves, fighters or game paths. Licence: [PolyForm Noncommercial 1.0.0](../../LICENSE),
+> like the rest of the repo ("MIT" in the file headers is the licence the source had before 30 Oct 2026).
 
 Make your own animations for CS2's player-agent skeleton (from mocap or from keyed poses), check them, and ship them as an
 invisible **rig** model that a script plays clips on, with a stock agent bone-merged on top for the looks.

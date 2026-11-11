@@ -1,0 +1,5 @@
+# Optional for porting: each is imported only by the tool named, which works without it or says what is missing.
+#   pip install -r requirements/porting-optional.txt -c requirements/constraints.txt
+mutagen      # tools/rangedmusic.py, coursemusic.py: reads song lengths (stage C `sounds`)
+lameenc      # tools/coursemusic.py: encodes MP3 when a song has to be converted
+lz4          # tools/vtexc.py: faster LZ4 block decode (falls back to the pure-Python decoder in vmatc.py)

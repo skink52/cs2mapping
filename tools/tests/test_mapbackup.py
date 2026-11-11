@@ -2,7 +2,7 @@
 
   python -m unittest discover -s tools/tests -p "test_mapbackup.py" -v
 """
-import datetime as dt, os, shutil, sys, tempfile, time, unittest
+import contextlib, datetime as dt, io, os, shutil, sys, tempfile, time, unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cs2mcp_fixtures as F
 import mapbackup as B
@@ -94,6 +94,30 @@ class Backups(unittest.TestCase):
         self.assertEqual(self.store.entries('m')[0]['pin'], 'v1')
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(B.main(['restore', 'nothing', '--store', self.store.root]), 2)
+
+    def test_damaged_copy_is_caught_and_restore_changes_nothing(self):
+        e = self.store.save(self.vmap)
+        self.assertEqual(self.store.verify(), {'checked': 1, 'bad': []})
+        F.write(self.vmap, b'work since the backup', 'wb')
+        with open(e and self.store.entries('m')[0]['file'], 'r+b') as f:          # flip bytes in the middle of the stored copy
+            f.seek(20); f.write(b'\x00\x00\x00\x00')
+        bad = self.store.verify('m')
+        self.assertEqual((bad['checked'], len(bad['bad'])), (1, 1))
+        with self.assertRaises(OSError): self.store.restore('m')
+        with open(self.vmap, 'rb') as f: self.assertEqual(f.read(), b'work since the backup')   # not overwritten
+        self.assertEqual(len(self.store.entries('m')), 1)                          # and no "before-restore" copy was made
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(B.main(['verify', '--store', self.store.root]), 1)
+
+    def test_recorded_hash_must_match(self):
+        import json
+        self.store.save(self.vmap)
+        e = self.store.entries('m')[0]; jp = e['file'][:-len('.vmap.xz')] + '.json'
+        meta = json.load(open(jp, encoding='utf-8')); meta['sha256'] = '0' * 64
+        F.write(jp, json.dumps(meta))
+        self.assertEqual(len(self.store.verify()['bad']), 1)
+        with self.assertRaises(OSError): self.store.restore('m', to=os.path.join(self.tmp, 'elsewhere.vmap'))
+        self.assertFalse(os.path.exists(os.path.join(self.tmp, 'elsewhere.vmap')))
 
 
 if __name__ == '__main__':

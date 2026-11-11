@@ -21,7 +21,7 @@ import collections, glob, math, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dmx, vmapedit as V
 
-CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
+CS2 = os.environ.get('CS2_ROOT') or r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 SAFE_REMOVE = {'info_ladder_dismount': 'CS2 ladders dismount on their own', 'info_landmark': 'level transitions', 'func_detail_blocker': 'a compile hint',
                'env_cascade_light': "CS:GO's cascaded sun shadows; CS2's light_environment casts them",
                'env_spritetrail': 'draws nothing in CS2 (no class); a particle trail would replace it'}

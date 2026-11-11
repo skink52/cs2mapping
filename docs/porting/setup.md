@@ -1,9 +1,13 @@
-# Setup: the PC side and the cloud side
+# Setup: the PC, and the cloud route
 
-The pipeline has two halves. The heavy lifting (decompiling, editing `.vmap` files, generating scripts, radars, materials) runs in Claude's
-cloud workspace with Python. Anything that has to run Valve's tools (the map importer, `resourcecompiler`) runs on the Windows PC
-from a double-clicked batch file. Files move between the two through the linked-computer file tools, so Claude can read and write the PC's
-folders but can't start programs there.
+**The supported route is everything on the Windows PC** (since 2 Nov 2026): Claude Code runs from the workspace folder and runs the Python
+tools, Valve's importer and `resourcecompiler` itself, normally through [autoport](../../autoport/README.md). Most of this page is that setup:
+where each repo file goes, the folder layout, the junctions, and [what has to be installed](#requirements).
+
+**The cloud route is the older alternative and still works:** the Python tools run in Claude's cloud workspace, files move through the
+linked-computer file tools, and the mapper double-clicks the batch files for the steps that need Valve's tools, because on that route Claude
+can read and write the PC's folders but can't start programs there. What differs is in [Cloud workspace](#cloud-workspace);
+[pipeline.md](pipeline.md) says "on the PC" / "in the cloud" wherever a step differs.
 
 ## Where the repo goes on the PC
 
@@ -11,12 +15,13 @@ folders but can't start programs there.
 |---|---|
 | `tools/*` except `tools/weapons/` (a creation tool, not needed for porting) | `C:\source1\cs2port\tools\` (this includes `tools/README.md`, the tool index) |
 | `docs/porting/pipeline.md` | `C:\source1\cs2port\cs2_port_pipeline.md` (and the claude.ai project doc `claude/cs2_port_pipeline.md`) |
-| `scripts/run_import.bat`, `run_build.bat`, `build_maps.ps1`, `run_import_then_build.bat`, `run_build_one_example.bat` | `C:\source1\cs2port\` |
+| `scripts/run_import.bat`, `run_build.bat`, `build_maps.ps1`, `run_import_then_build.bat`, `run_build_one_example.bat`, `run_fixrefs.bat`, `modelsfromrefs.py` | `C:\source1\cs2port\` (`run_fixrefs.bat` copies `modelsfromrefs.py` next to Valve's importer each time it runs) |
 | `scripts/make_import_map_auto.py` | `C:\source1\cs2port\` - run once (below); it writes `C:\source1\cs2port\import_map_auto.py` |
-| `scripts/post_import_cleanup.py`, `scripts/vmap_refs.py`, `scripts/modelsfromrefs.py` | `<CS2>\game\csgo\import_scripts\` (next to Valve's `import_map_community.py`, they import its `utils`) |
+| `scripts/post_import_cleanup.py`, `scripts/vmap_refs.py` | `<CS2>\game\csgo\import_scripts\` (next to Valve's `import_map_community.py`, they import its `utils`) |
+| `autoport/*` | `C:\source1\cs2port\autoport\` ([autoport/README.md](../../autoport/README.md#setup-on-a-new-pc)) |
 | `data/existing_ports.txt` | `C:\source1\cs2port\existing_ports.txt` (the PC copy is the live one) |
-| Not in the repo: `tools/addon_template/` | The cloud copy of `tools/` only. `prep.py` builds each new addon from `tools/addon_template/content/` and `game/`. Copy them from Valve's template in the CS2 install, `<CS2>\content\csgo_addons\addon_template\` and `<CS2>\game\csgo_addons\addon_template\` (the folders the Workshop Tools launcher copies when it creates an addon). prep.py skips the template vmap, `addoninfo.txt` and `readonly_tools_asset_info.bin` |
-| Not in the repo: `tools/bspsrc.sh` | The cloud copy of `tools/` only: written by `sh tools/setup_bspsrc.sh <staged lib/modules> tools` (or put it elsewhere and set `BSPSRC=`) |
+| Not in the repo: `tools/addon_template/` | Needed next to `prep.py` on both routes: `C:\source1\cs2port\tools\addon_template\` on the PC (autoport's launch check looks for it), and the cloud copy of `tools/`. `prep.py` builds each new addon from `tools/addon_template/content/` and `game/`. Copy them from Valve's template in the CS2 install, `<CS2>\content\csgo_addons\addon_template\` and `<CS2>\game\csgo_addons\addon_template\` (the folders the Workshop Tools launcher copies when it creates an addon). prep.py skips the template vmap, `addoninfo.txt` and `readonly_tools_asset_info.bin` |
+| Not in the repo: `tools/bspsrc.sh` | Cloud route only (on the PC, `autoport/bspsrc.bat` runs BSPSource from its own image): written by `sh tools/setup_bspsrc.sh <staged lib/modules> tools` (or put it elsewhere and set `BSPSRC=`) |
 | `ports/<addon>/scripts/*.js` | `<CS2>\content\csgo_addons\<addon>\maps\scripts\` (pipeline ports) or `...\<addon>\scripts\` (older jail ports) |
 
 `<CS2>` is `C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive`.
@@ -121,6 +126,59 @@ Removing a link (`rmdir` on the link only) is safe; deleting files inside a link
 - Never search recursively over `links\cs2_root` or `links\csgo` (huge); target a subfolder.
 - `links\` is excluded from git locally (`.git\info\exclude`) and never committed.
 - Docs may use link paths or real paths; scripts keep the real paths (or `C:\cscontent`) so they still work outside Claude Code.
+
+## Requirements
+
+Required on the PC for porting:
+
+| What | Why |
+|---|---|
+| Windows with CS2 and its **Workshop Tools** | Hammer, `resourcecompiler`, Valve's import scripts |
+| **Python 3** (`py` launcher and `python`; last run with 3.13) | every tool here |
+| `numpy`, `scipy`, `Pillow` | stage A, stage C and the checks: `pip install -r requirements/porting.txt -c requirements/constraints.txt` |
+| **BSPSource** (its Windows image, with its own Java) | decompiling; `autoport/bspsrc.bat` runs it, no separate Java needed |
+| **CS:GO content** extracted into `<CS2>\csgo` | what the importer reads (step 5 below) |
+| `tools/addon_template/` copied from the CS2 install | `prep.py` builds each new addon from it (table above) |
+
+Optional (each tool says so, or does without, when its extra is missing):
+
+| What | Used by |
+|---|---|
+| `mutagen`, `lameenc`, `lz4` ([requirements/porting-optional.txt](../../requirements/porting-optional.txt)) | music length and MP3 encoding (`rangedmusic.py`, `coursemusic.py`); faster texture decode (`vtexc.py`) |
+| **Node** 18+ (22.15+ for `create/anim` and `create/s2`) | compiled-material reading in `vmatc.py`, the script tests |
+| `VTFCmd.exe`, RadGen, Hammer5Tools | steps 6 to 8 below |
+| Java 21 | the cloud route only ([Cloud workspace](#cloud-workspace)) |
+
+The creation toolkit and model tools have their own lists: [requirements/](../../requirements). Versions the tools were last run with,
+and what "tested" means for each part: [docs/reference/compatibility.md](../reference/compatibility.md).
+
+### Paths without editing files
+
+These environment variables replace the built-in paths in the Python tools; set them instead of editing a script.
+
+| Variable | Replaces | Read by |
+|---|---|---|
+| `CS2_ROOT` | the CS2 install folder (`<CS2>`) | `tools/` (stage A, stage C, checks, compiler wrapper, radar) and `autoport/` |
+| `CS2PORT` | `C:\source1\cs2port` (tools, logs, working root) | `autoport/` |
+| `CS2MAP_SOURCE1` | `C:\source1` (decompiled maps, BSPSource, CS:GO's `pak01_dir.vpk`) | `autoport/`, `tools/prep.py` |
+| `CS2MAPPING` | the clone of this repo | `autoport/` |
+| `CS2MAP_BACKUPS` | the map backup store | `tools/mapbackup.py` |
+| `BSPSRC` | the BSPSource launcher | `tools/prep.py` |
+
+Still fixed in the file (edit the lines near the top): the batch files and `build_maps.ps1` in `scripts/` (`CS2`, `PORT`), and
+`scripts/post_import_cleanup.py` (which also takes `--steam-root`). A full list of what reads which path, and the plan for one shared
+configuration file, is in [docs/reference/engineering-notes.md](../reference/engineering-notes.md#paths-and-configuration).
+
+### Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| The importer fails straight away | `game\bin\win64\vpk.signatures` is back after a Steam update. `run_import.bat` renames it each run; run the import through it. |
+| `prep.py` stops with "addon_template" | `tools\addon_template\content` and `\game` are not next to `prep.py`. Copy them from the CS2 install (table above). |
+| autoport's launch check warns that tools differ from the repo | The PC copy under `cs2port\` is older or newer than the clone. Copy the changed files across and compare sizes. |
+| A tool cannot find CS2 | The install is not in the default Steam folder: set `CS2_ROOT` (above). |
+| A built `.vpk` is not replaced | The map is loaded in CS2. Unload it, or close CS2, and build again. |
+| An edit made by a tool vanished | Hammer had the map open and saved over it. Close Hammer first; the tool's backup is listed in [file-safety.md](../reference/file-safety.md). |
 
 ## One-time PC setup
 

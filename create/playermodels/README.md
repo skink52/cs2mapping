@@ -1,6 +1,6 @@
 # create/playermodels: GMod player models -> CS2 player models
 
-> **AI-generated code.** Written by Claude for skink52. MIT, like the rest of the repo. The workflow, the choices behind it and the
+> **AI-generated code.** Written by Claude for skink52. [PolyForm Noncommercial 1.0.0](../../LICENSE), like the rest of the repo. The workflow, the choices behind it and the
 > first batch are in [docs/creation/gmod-playermodels.md](../../docs/creation/gmod-playermodels.md).
 
 Python 3 with numpy and Pillow. No Blender, Crowbar or SourceIO needed: the Source 1 formats are read here. Run with `python3 -I`

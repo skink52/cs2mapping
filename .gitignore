@@ -39,3 +39,7 @@ logs/*.log
 tools/addon_template/
 tools/bspsrc.sh
 tools/jimg/
+
+# skink52's own PC housekeeping records (local only)
+docs/reference/disk_survey_*.md
+docs/reference/disk_cleanup_*.txt

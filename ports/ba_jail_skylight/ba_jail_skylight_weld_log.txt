@@ -4,4 +4,4 @@ moved 8604 vertices in 166 meshes (5332 grid point, 1849 prefab grid vertex, 747
 after: 229 near-miss vertex pairs across meshes
   remaining, by mesh pair (node ids): 39915-39934: 32, 39877-39896: 32, 39839-39858: 32, 39953-39972: 32, 39991-40010: 32, 23523-23648: 11, 39877-39915: 6, 23596-23648: 4
   most-changed meshes: 4382 faces (node 23648): 2825 verts, 793 faces (node 23523): 1633 verts, 4139 faces (node 23571): 1242 verts, 468 faces (node 23596): 1103 verts, 216 faces (node 23498): 374 verts, 256 faces (node 16798): 204 verts, 226 faces (node 38602): 112 verts, 128 faces (node 38659): 65 verts
-wrote C:/Users/ZACHAR~1.HOM/AppData/Local/Temp/claude/C--source1/0fbe07d7-aaad-4a55-9316-375d839c0b83/scratchpad/ba_jail_skylight_weld2.vmap (8054 vertex positions changed, nothing else)
+wrote <scratchpad>/ba_jail_skylight_weld2.vmap (8054 vertex positions changed, nothing else)

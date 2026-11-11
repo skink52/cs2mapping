@@ -2,7 +2,7 @@
 
 Collected from the ports in this repo and from the original cs_script addons (Hellmatch, Space Racer, mg_trenchwarfare, Puppet Brawl,
 mg_deku_tree, the bomb-arena game). Port names in the Fix column point at `ports/<addon>/`; project names point at the project repos
-listed in the [README](../../README.md#projects-built-with-this). Pipeline fixes run automatically in stage C (see
+listed in the [README](../../README.md#projects). Pipeline fixes run automatically in stage C (see
 [pipeline.md](../porting/pipeline.md)). **Unverified** means it had not been confirmed in CS2 when it was written down. Detailed write-ups for
 the original addons are in [../creation/](../creation/); cs_script API details are in [cs_script-notes.md](cs_script-notes.md).
 

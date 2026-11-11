@@ -30,7 +30,7 @@ if HERE not in sys.path:
     sys.path.append(HERE)   # appended: inside tools/mcp_server.py, tools/ modules keep priority
 import vconsole  # noqa: E402
 
-CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
+CS2 = os.environ.get('CS2_ROOT') or r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 GAME_BIN = os.path.join(CS2, 'game', 'bin', 'win64')
 CS2_EXE = os.path.join(GAME_BIN, 'cs2.exe')
 STATE_DIR = os.environ.get('AUTOPORT_LIVE_STATE', os.path.join(os.environ.get('CS2PORT', r'C:\source1\cs2port'), 'work', 'cs2live'))

@@ -23,7 +23,7 @@ import struct
 import sys
 import time
 
-CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
+CS2 = os.environ.get('CS2_ROOT') or r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 GAME_BIN = os.path.join(CS2, 'game', 'bin', 'win64')
 PATTERNS = ('cs2_*_crash.mdmp', 'cs2_*_error.mdmp', 'cs2_*_accessviolation.mdmp', 'cs2_*.mdmp')
 STREAM_MODULES, STREAM_EXCEPTION, STREAM_MISC = 4, 6, 15

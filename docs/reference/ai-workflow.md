@@ -4,12 +4,16 @@ What has worked for porting and building CS2 maps with Claude, and the practical
 
 ## How the work is split
 
-- **Claude** (cloud workspace, Python/Node): decompiling, editing `.vmap` files directly, generating models, materials, textures, HUD, sounds, scripts,
-  radars and loading screens, checking its own output (mesh checks, renders, type-checks, mock runs), and keeping the records in this repo.
-- **The mapper** (Windows PC): anything that runs Valve's tools — the map importer, `resourcecompiler` builds, Hammer, playing the map — by double-clicking
-  the batch files Claude prepares, then reporting what happened in game.
-- Claude reaches the PC's folders through the Claude desktop app's linked-computer bridge (files only; it can't start programs there unless a shell is
-  offered). If the PC isn't linked, nothing on it can be read or updated: open the chat in the desktop app on that PC and send a message.
+Two routes; the first is the normal one since 2 Nov 2026.
+
+- **On the PC (Claude Code):** Claude runs from the mapping workspace on the Windows PC and does everything there: decompiling, editing `.vmap` files
+  directly, generating models, materials, textures, HUD, sounds, scripts, radars and loading screens, running Valve's importer and `resourcecompiler`
+  (by hand or through [autoport](../../autoport/README.md)), checking its own output (mesh checks, renders, type-checks, mock runs), and keeping the
+  records in this repo. **The mapper** uses Hammer, plays the map and reports what happened in game.
+- **Cloud route (older, still works):** Claude works in a cloud workspace (Python/Node) and reaches the PC's folders through the Claude desktop app's
+  linked-computer bridge (files only; it can't start programs there unless a shell is offered). The mapper runs anything that needs Valve's tools
+  (the importer, builds) by double-clicking the batch files Claude prepares. If the PC isn't linked, nothing on it can be read or updated:
+  open the chat in the desktop app on that PC and send a message.
 
 ## House rules
 

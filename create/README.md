@@ -3,7 +3,8 @@
 > **AI-generated code.** Written by Claude for skink52's CS2 addons; collected here from
 > [trenchwarfare-cs2](https://github.com/skink52/cs2mapping/tree/main/projects/trenchwarfare-cs2), [hellmatch-cs2](https://github.com/skink52/cs2mapping/tree/main/projects/hellmatch-cs2),
 > [space-racer-cs2](https://github.com/skink52/cs2mapping/tree/main/projects/space-racer-cs2), [cs2-fighter](https://github.com/skink52/cs2mapping/tree/archive/cs2-fighter-anim-v3) and made project-neutral.
-> MIT, like the rest of the repo. Every file's header says where it came from. Tested offline only unless the guide says it ran in CS2.
+> Licence: [PolyForm Noncommercial 1.0.0](../LICENSE) (code) and [CC BY-NC 4.0](../LICENSE-CC-BY-NC-4.0.txt) (art, sounds), like the rest of the repo.
+> Every file's header says where it came from; "(MIT)" in a header is the licence its source had before 30 Oct 2026, not the current one. Tested offline only unless the guide says it ran in CS2.
 
 Python 3 with numpy, scipy and Pillow (ffmpeg for audio analysis and MP4 previews); Node 18+ for the tests, **Node 22.15+** for `anim/` and `s2/`
 (zstd-compressed CS2 files). Run the tools from this folder (they import each other).

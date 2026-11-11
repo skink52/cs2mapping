@@ -1,6 +1,6 @@
 # create/hats: GMod hats and accessories -> CS2 hats that bone-merge onto a player's head
 
-> **AI-generated code.** Written by Claude for skink52. MIT, like the rest of the repo. How it works, the research behind it
+> **AI-generated code.** Written by Claude for skink52. [PolyForm Noncommercial 1.0.0](../../LICENSE), like the rest of the repo. How it works, the research behind it
 > (no head attachment on CS2 agents: bone merge with `FollowEntity`), placement and rights: [docs/creation/gmod-hats.md](../../docs/creation/gmod-hats.md).
 > The server that wears them: slime-mg-gm `Credits/Hats.cs`, its `docs/hats.md`.
 

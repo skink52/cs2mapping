@@ -5,8 +5,12 @@ project repos it links (Hellmatch, Space Racer, mg_trenchwarfare, Puppet Brawl).
 lines marked *(project repos)* use tools that live in one of those projects, with the method written up here.
 No coding knowledge needed to read it. Each line links to the detailed write-up for whoever does the work.
 
-**How it works in practice:** you keep Hammer and CS2 on your PC; Claude works in the cloud, reads and writes your map folders through the Claude desktop
-app, and hands you batch files to double-click for the steps that need Valve's tools (importing, compiling). You test in game and say what's wrong.
+**How it works in practice:** everything runs on your Windows PC. Claude Code works in the mapping folder next to Hammer and CS2 and runs the tools,
+Valve's importer and the compiler itself; you test in game and say what's wrong. (The older way still works: Claude in the cloud, reading and writing
+your map folders through the Claude desktop app and handing you batch files to double-click for importing and compiling.)
+
+**How sure each line is:** "tested" in this repo's write-ups can mean anything from a unit test to a playtest. The exact words and what they
+mean are in [docs/reference/compatibility.md](docs/reference/compatibility.md); a simulated test or a clean compile is never proof that something works in game.
 
 ---
 
@@ -131,7 +135,7 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - Workshop images; trailers and GIFs with original music *(project repos)*.
 - Keeping an addon safe to publish: no copyrighted names, art or ripped models; credits and licences in place.
 
-**Keeping the projects in step** ([details](create/README.md#keeping-the-repos-in-step))
+**Keeping the projects in step** ([details](create/README.md#keeping-the-projects-in-step))
 - A fix to a shared tool reaches every game that uses it: one master copy here, checked and copied out to each game's repo, and a warning when a game's own version of a tool changes and the shared one hasn't caught up.
 
 ---
@@ -143,8 +147,14 @@ app, and hands you batch files to double-click for the steps that need Valve's t
 - [Working with Claude](docs/reference/ai-workflow.md) — how the work is split, the house rules, and the practical limits.
 - [Outside tools](docs/reference/external-tools.md) — the non-Valve and Valve tools used alongside this repo, and their traps.
 
+## Keeping your work safe
+
+- Compressed, checked backups of a map before it is changed, kept in tiers (recent, hourly, daily, weekly) with pinned copies kept for ever, and a restore that can itself be undone ([file-safety.md](docs/reference/file-safety.md)).
+- A preview of what copying a cleaned map back into your addon would create and overwrite, before anything changes; every overwritten file backed up first; and a rollback that puts it all back but leaves anything you edited since.
+- Automatic checks on every change to this repo, with no game needed: the tools' own tests, every ported map's script in a simulated engine, links and licence statements ([compatibility.md](docs/reference/compatibility.md#what-ci-covers)).
+
 ## What it can't do
 
-- Run Valve's tools on your PC by itself: you double-click the import/build batch files and play-test.
+- Play-test for you, or run Valve's tools from the cloud: on the PC Claude Code runs the importer and compiler itself; on the cloud route you double-click the import/build batch files. Either way you play-test.
 - Move parts of CS2's own HUD (it can only be hidden all at once), read number keys from script, or change the camera's near clipping.
 - Guarantee anything untested in game: every write-up marks what was confirmed in CS2 and what wasn't.

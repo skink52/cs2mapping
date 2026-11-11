@@ -1,0 +1,102 @@
+# CI for cs2mapping. Nothing here needs CS2, Hammer or any Valve tool: it checks the repo itself and runs the offline tests.
+# What each job proves, in the terms of docs/reference/compatibility.md:
+#   checks        -> files parse, docs and licences are consistent (no behaviour tested)
+#   tests-windows -> "unit tested": real parsing and file operations in temp folders, on the platform the tools are used on
+#   tests-linux   -> the same suites on Linux, informational (the tools are Windows tools; a Linux failure does not block)
+#   scripts       -> "simulated": map scripts type-checked and run against the stand-in engine, never against the game
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Repo checks (syntax, JSON, licence, links, doc lists)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax, JSON, tracked-file hygiene, personal paths, licence statements, pipeline step lists
+        run: python ci/check_repo.py --json check_repo.json
+      - name: Markdown links (relative links and heading anchors)
+        run: python ci/check_links.py --anchors --baseline ci/known_broken_links.txt --json check_links.json
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-reports
+          path: check_*.json
+          if-no-files-found: ignore
+
+  tests-windows:
+    name: Unit tests (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: requirements/*.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install -r requirements/dev.txt -c requirements/constraints.txt
+      - name: tools/ (vmap, FGD, backups, safe copies, compiler wrapper, generators)
+        run: python -m unittest discover -s tools/tests -p "test_*.py"
+      - name: autoport/ (pclocal apply and rollback; console and live checks against a fake CS2)
+        run: python -m unittest discover -s autoport/tests -p "test_*.py"
+
+  tests-linux:
+    name: Unit tests (Linux, informational)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true      # never run on Linux before this workflow existed; Windows is the supported platform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: requirements/*.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install -r requirements/dev.txt -c requirements/constraints.txt
+      - run: python -m unittest discover -s tools/tests -p "test_*.py"
+
+  scripts:
+    name: Map scripts (type-check and simulated engine, not CS2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --global typescript@7.0.2
+      - name: Every ported map's script in the stand-in engine
+        run: sh ci/mock_ports.sh players=8 seconds=30
+      - name: TTT script (type-check, mock rounds, map data, server hand-off)
+        working-directory: projects/cs2mapTTT
+        run: sh test/run_mock.sh
+      - name: mg_trenchwarfare script type-check
+        working-directory: projects/trenchwarfare-cs2/test
+        run: tsc -p tsconfig.json

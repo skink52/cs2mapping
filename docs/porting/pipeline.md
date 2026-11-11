@@ -56,9 +56,7 @@ do any of them by hand.
 
 ## Stage C fixes (automatic; the importer's main .vmap is keyvalues2 text and is saved back as binary)
 
-Step keys in run order (from `stage_c.run()`; `run_pass.py` takes these names): `merge, io, wall, equip, push, cmd, roundcfg, score, speed, gravity, dead,
-trigmat, trigsplit, toolpaths, rendermode, renderamt, steam, fire, particles, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, culled, displaybrush, splitfaces, sky, skyvis, vis, beams, lights, alpha, probes,
-waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`, `physpush` and `nullparams` when named; `nullparams` always runs with `io`).
+Step keys in run order (from `stage_c.run()`; `run_pass.py` takes these names): `merge, io, wall, equip, launch, push, cmd, roundcfg, score, speed, gravity, dead, trigmat, toolpaths, trigsplit, rendermode, renderamt, steam, fire, particles, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, culled, displaybrush, splitfaces, sky, skyvis, vis, beams, ropes, lights, alpha, probes, waterprobe, radar, assets, matflags, origindup, droppedio` (plus `overlaydepth`, `physpush` and `nullparams` when named; `nullparams` always runs with `io`).
 `alpha` and `assets` need CS2's `pak01_dir.vpk` staged as `<root>/vpk/cs2_pak01_dir.vpk`. `skyvis` runs only when `vis` isn't in the list.
 
 - **Prefabs** (`merge`): every prefab (lighting/nav/audio/cubemaps/environment/gameplay) collapsed into the map with world offsets kept; a 3D skybox prefab stays a prefab.
@@ -318,7 +316,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
 - `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, lightcover, visfit_detail, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
-  roundend, weaponmodels, playercolor, equipitems, rendermode, particles, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water, fire, splitfaces, waterprobe, culled, displaybrush, trigmat, toolpaths, trigsplit, nullparams, origindup` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
+  roundend, weaponmodels, playercolor, envglobal, equipitems, rendermode, particles, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water, fire, splitfaces, waterprobe, culled, displaybrush, trigmat, toolpaths, trigsplit, nullparams, origindup, ropes` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
   - **Daylight** (`daylight`, stage D only; for indoor maps that are still dark after stage C): adds a stationary light_environment using the map's env_sky

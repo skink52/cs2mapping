@@ -1,0 +1,4 @@
+# Development and CI. The test suites use the standard library's unittest, so this is the union the tests import and nothing else.
+#   pip install -r requirements/dev.txt -c requirements/constraints.txt
+# JavaScript checks need Node (see .github/workflows/ci.yml for the version CI uses); TypeScript checks need `npm i -g typescript`.
+-r porting.txt

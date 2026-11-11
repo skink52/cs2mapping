@@ -1,0 +1,6 @@
+# Creation toolkit (create/, tools/weapons/) and the Python build tools of the projects/ addons.
+# Also needed outside pip: Node 18+ for the tests, Node 22.15+ for create/anim and create/s2; ffmpeg for audio analysis and MP4 previews (optional).
+#   pip install -r requirements/creation.txt -c requirements/constraints.txt
+numpy
+scipy
+Pillow

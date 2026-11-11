@@ -75,6 +75,9 @@ foreach ($ln in $lines) {
     $assetsOnly = $false; $mode = 'full'
     if ($p[0] -ieq 'assets' -and $p.Count -gt 1) { $assetsOnly = $true; $p = @($p[1..($p.Count - 1)]) }
     elseif ($p[0] -in @('entities', 'lighting', 'final') -and $p.Count -gt 1) { $mode = $p[0].ToLower(); $p = @($p[1..($p.Count - 1)]) }
+    # addon and map names become folder and file names under the addon folders: a plain name only, never a path
+    $badName = @($p[0..([Math]::Min(1, $p.Count - 1))] | Where-Object { $_ -match '[\\/:*?"<>|]' -or $_ -match '^\.+$' })
+    if ($badName.Count) { Write-Host "Skipping '$ln': '$($badName[0])' is not a plain addon or map name" -ForegroundColor Red; continue }
     $queue += ,@($p[0], $(if ($p.Count -gt 1) { $p[1] } else { $p[0] }), $assetsOnly, $mode)
 }
 

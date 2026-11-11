@@ -483,6 +483,9 @@ def t_script_api(query, limit=20):
        'force': B('write even if the checks fail')}, ['content', 'name', 'code'], writes=True)
 def t_script_write(content, name, code, seconds=30, force=False):
     import shutil as sh, tempfile
+    import safepath
+    try: safepath.addon_name(name)                   # the script's file name: one component, so it stays in maps/scripts
+    except ValueError as ex: return {'error': 'bad script name: %s' % ex}
     node = sh.which('node')
     out = {}
     if node:

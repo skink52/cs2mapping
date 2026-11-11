@@ -26,11 +26,12 @@ PC layout produced (same as the manual process):
 import os, re, sys, json, shutil, subprocess
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hammer_resave
+import safepath
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 BSPSRC = os.environ.get('BSPSRC', os.path.join(ROOT, 'bspsrc.sh'))
-CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
-S1 = r'C:\source1'
+CS2 = os.environ.get('CS2_ROOT') or r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
+S1 = os.environ.get('CS2MAP_SOURCE1') or r'C:\source1'
 TEMPLATE = os.path.join(ROOT, 'addon_template')   # content/ and game/ template files
 SKIP_EXT = {'.nav', '.ain'}                       # CS:GO nav/AI graphs are useless in CS2
 
@@ -48,7 +49,10 @@ def clean_sound(rel):
 def winjoin(*a): return '\\'.join(x.strip('\\') for x in a)
 
 def prep(bsp, addon, out_root, log):
-    work = os.path.join(out_root, addon); shutil.rmtree(work, ignore_errors=True)
+    addon = safepath.addon_name(addon)                # a plain folder name: the next line deletes OUT/<addon>
+    work = os.path.join(out_root, addon)
+    if safepath.is_link(work): raise RuntimeError('%s is a link or junction; not deleting through it (remove the link with rmdir)' % work)
+    shutil.rmtree(work, ignore_errors=True)
     dec = os.path.join(work, 'decompile'); os.makedirs(dec)
     base = os.path.splitext(os.path.basename(bsp))[0]
     r = subprocess.run([BSPSRC, '--unpack_embedded', '-o', os.path.join(dec, base + '.vmf'), bsp], capture_output=True, text=True)

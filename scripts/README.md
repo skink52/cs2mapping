@@ -16,5 +16,7 @@
 | `reorg_pc.bat` + `reorg_pc.ps1` | anywhere | One-off tidy of `C:\source1`, `C:\source2` and `Desktop\CS2` into the layout in [setup.md](../docs/porting/setup.md#pc-folders). Previews every move, asks, then moves (never overwrites, never deletes files); logs to `C:\source2\reorg_log.csv` and writes `C:\source2\reorg_undo.ps1`. Leaves everything the runners use in place |
 | `make_links.bat` | anywhere | Makes the `C:\source1\links\` junctions (CS2 install, addon folders, `C:\source2`, `C:\VTF`) so Claude Code can work from `C:\source1` alone; see [setup.md](../docs/porting/setup.md#claude-code-on-the-pc-one-folder). Skips existing links, adds `links/` to `.git\info\exclude` |
 
-Stage A (decompile, assets) and stage C (all the map fixes) run in Claude's workspace. See [../docs/porting/pipeline.md](../docs/porting/pipeline.md) for the workflow,
+`build_maps.ps1` skips a queue line whose addon or map name is not a plain name (a path, `..`, a drive). What each runner writes inside the CS2 install, and what is backed up: [../docs/reference/file-safety.md](../docs/reference/file-safety.md).
+
+Stage A (decompile, assets) and stage C (all the map fixes) are the Python tools in `tools/`: on the PC they run from `C:\source1\cs2port	ools` (autoport or Claude Code), on the cloud route in Claude's workspace. See [../docs/porting/pipeline.md](../docs/porting/pipeline.md) for the workflow,
 [../tools/README.md](../tools/README.md) for the workspace tools and [../docs/porting/setup.md](../docs/porting/setup.md) for where each file goes.

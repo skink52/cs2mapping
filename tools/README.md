@@ -55,7 +55,8 @@ Everything runs with Python 3 + numpy, scipy and Pillow, normally on the PC itse
 | `mapsanity.py` | Read-only gameplay checks: spawns (floor, headroom, spacing), sun / sky, probes, lightmapres, nav seeds, buyzones | `python mapsanity.py <map.vmap> [--mode classic\|minigame\|course\|story]` |
 | `visualcheck.py` | Read-only: floating / buried / overlapping props, z-fighting (zfight.py), open meshes. Noisy on terrain and model-built maps | `python visualcheck.py <map.vmap>` |
 | `rcompile.py` | resourcecompiler presets (fast, nav, full, final, entities, lighting), single-asset compile, build-log reader | `python rcompile.py map\|asset\|analyze ...` |
-| `mapbackup.py` | Tiered lzma map backups with pins and source snapshots | `python mapbackup.py save\|list\|restore\|pin\|scan\|trim ...` |
+| `mapbackup.py` | Tiered lzma map backups with pins and source snapshots. Each copy is read back after it is written and checked against its sha256 before a restore; `verify` checks the whole store (exit 1 on a damaged copy) | `python mapbackup.py save\|list\|restore\|pin\|scan\|trim\|verify ...` |
+| `safepath.py` | Library for tools that copy, overwrite or delete in an addon: `addon_name` (a name, not a path), `inside` (containment as written, junctions allowed), `is_link`, `plan_copy` / `apply_plan` (backup, check, then write; change manifest; dry run) and `rollback`. Used by `prep.py`, `mcp_server.py` and `autoport/pclocal.py`. [file-safety.md](../docs/reference/file-safety.md) | `import safepath` |
 | `release.py` | One-map release addon plan + PUBLISH.md (dry run; `--apply` copies; never uploads) | `python release.py <map.vmap> [--apply]` |
 | `propatlas.py` | Stock prop search with real sizes and notes | `python propatlas.py search <words> --sizes` |
 | `kv3text.py` | KV3 text parse / write (.vmdl, .vpost, .vsndevts, .vpcf, .vdata) | `python kv3text.py <file>` |
@@ -65,13 +66,13 @@ Tests: `python -m unittest discover -s tools/tests` (fake CS2 folder; never runs
 
 ### Stage C step keys (run order, from `stage_c.run()`)
 
-`merge, io, wall, equip, launch, push, cmd, roundcfg, score, speed, gravity, dead, rendermode, renderamt, steam, fire, particles, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, sky, skyvis, vis, beams, lights, alpha, probes, radar, assets, matflags, droppedio`,
+`merge, io, wall, equip, launch, push, cmd, roundcfg, score, speed, gravity, dead, trigmat, toolpaths, trigsplit, rendermode, renderamt, steam, fire, particles, sounds, soundscripts, doors, overlays, overlayfix, ovlquads, facescale, culled, displaybrush, splitfaces, sky, skyvis, vis, beams, ropes, lights, alpha, probes, waterprobe, radar, assets, matflags, origindup, droppedio`,
 plus `overlaydepth` (= `overlayfix` + projection depth 8) and `physpush` (opt-in) when named. `vis` runs `visfit.py`; `skyvis` (the older shell-only pass) runs only when `vis` isn't in the list.
 `alpha` and `assets` need `<root>/vpk/cs2_pak01_dir.vpk` and are skipped silently without it. `daylight` is **not** a stage C step.
 
 ### stage_d.py passes
 
-`beams, lights, lightcover, visfit_detail, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, rendermode, particles, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water`.
+`beams, lights, lightcover, visfit_detail, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, equipitems, rendermode, particles, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water, ropes, nullparams, trigmat, toolpaths, trigsplit, fire, culled, displaybrush, splitfaces, origindup, waterprobe, roundend, weaponmodels, playercolor, envglobal`.
 Name differences from stage C: stage C's `vis` is stage D's `visfit`. `radar` here uses the default `pct=0.5`; for another value call
 `radar.run(m, c, pct=0, tex=radar.textures_for(c))` from Python (there's no CLI flag). sky, sounds, doors, assets, equip and the other stage C
 steps aren't stage D passes: use `run_pass.py`.
@@ -86,7 +87,7 @@ steps aren't stage D passes: use `run_pass.py`.
 | `roundend.py` | `roundend` (D) | game_round_end EndRound_* → script `RoundEnd_<n>_<Draw|T|CT>` (FireWinCondition on an info_map_parameters, `port_map_params` added if none; fallback kills the losing team and runs the clock out; OnRoundEnded outputs fired from the script); player_weaponstrip Strip → script `WeaponStrip`. Both entities removed. Autoport runs it when the VMF has either class |
 | `weaponmodels.py` | `weaponmodels` (D) | Props on CS:GO weapon world models (`models/weapons/w_<name>[_dropped].mdl`, which cs_mdl_import can't compile) → CS2's `weapons/models/<dir>/weapon_<name>.vmdl` from pak01, Hammer's asset list too. Autoport runs it when the VMF names a `models/weapons/w_` model |
 | `playercolor.py` | `playercolor` (D) | `!activator Color` outputs the importer dropped (read from the VMF, owner found by class / name / bounds) → script `Color_<r>_<g>_<b>` (`SetColor` on the activator); outputs the importer kept are left alone. Autoport runs it when the VMF has one |
-| `assets.py` | `alpha`, `assets` | Missing materials rebuilt from CS:GO's VPK (also stock CS2 stubs listed in `maps/<addon>_stub_materials.txt`), water → `liquids/nuke_water`, closest stock CS2 material otherwise; alpha-test/translucent masks |
+| `assets.py` | `alpha`, `assets` | Missing materials rebuilt from CS:GO's VPK (also stock CS2 stubs listed in `maps/<addon>_stub_materials.txt`), water → `anubis/anubis_water_canal`, closest stock CS2 material otherwise; alpha-test/translucent masks |
 | `soundscripts.py` | `soundscripts` | Source 1 soundscript names used by entities / door noises → same-named soundevents (map soundscripts, then CS:GO's manifest) |
 | `droppedio.py` | `droppedio` | Report: VMF outputs missing from the finished vmap (LOSS / SPECIAL / GONE; pipeline- and cs2mapTTT-handled ones listed apart) → `maps/<addon>_dropped_io.txt` |
 | `ovlquad.py` | `ovlquads` | Static overlays that land only on one brush entity (func_breakable, door…) → translucent quad parented to it (`<material>_quad.vmat`); mixed/slanted ones stay overlays (TO CHECK) |

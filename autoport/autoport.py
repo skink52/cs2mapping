@@ -9,11 +9,11 @@ Reuses cs2port/tools and the PC batch files unchanged. Every long step runs unde
 Steps: prep deliver import root stage_c fixups passes profile credit audit | build report. Maps go through every step up to audit first,
 then those with nothing held back build while the rest wait. Anything missing, wrong or unknown goes in logs/autoport/<date>.log.
 """
-import argparse, collections, glob, json, os, re, shutil, subprocess, sys, time, traceback
+import argparse, collections, filecmp, glob, json, os, re, shutil, subprocess, sys, time, traceback
 
 from common import *
 sys.path[:0] = [HERE, TOOLS]
-import pclocal, ports, vmapedit as V, assets, profiles, review, launch
+import pclocal, ports, vmapedit as V, assets, profiles, review, launch, mapbackup
 
 SPAWNS = ('info_player_terrorist', 'info_player_counterterrorist')
 MIN_VIS_AIR = 0.1   # billion cubic units; the smallest real map logged so far has 0.9
@@ -144,7 +144,12 @@ def root(m): pclocal.root(m.addon, WORK)
 def stage_c(m):
     wait_closed(m)
     pristine = m.vmap + '.imported'
-    if os.path.exists(pristine): shutil.copyfile(pristine, m.vmap)   # stage C wants the importer's vmap, even on a rerun
+    if os.path.exists(pristine):                                     # stage C wants the importer's vmap, even on a rerun
+        if os.path.exists(m.vmap) and not filecmp.cmp(pristine, m.vmap, shallow=False):
+            # the live map differs from the importer's (stage C output, or edits made in Hammer since): keep a copy before it is replaced
+            try: mapbackup.Store().save(m.vmap, kind='before-rerun')
+            except OSError as ex: raise StepFail('could not back up %s before putting the imported map back: %s' % (m.vmap, ex))
+        shutil.copyfile(pristine, m.vmap)
     else: shutil.copyfile(m.vmap, pristine)
     for tries in range(6):
         if m.tool('stage_c', m.addon, WORK, stall=600, limit=2 * 3600): raise StepFail('stage_c.py failed, see ' + m.log('stage_c'))

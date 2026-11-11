@@ -1,0 +1,26 @@
+# Broken links CI accepts for now. One 'file: link' per line. Remove a line when its link is fixed.
+# IRONFRAME model sheet: the preview frames are rendered locally and are not tracked (24 images).
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/ac4a_whiteglint.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/ac4a_hari.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/ac4a_oldking.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/ac4_berlioz.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/ac4a_noblesse.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/ac4_normal.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/ac4_002b.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/ac4_aretha.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/ac3_moa.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/tf_atlas.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/tf_stryder.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/tf_ogre.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/tf2_legion.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/tf2_ronin.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/gundam_rx78.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/gundam_barbatos.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/gundam_unicorn.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/me3_atlas.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/me2_loki.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/fear3_mule.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/tripo_scout.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/tripo_kestrel.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/tripo_warden.png
+projects/ironframe-cs2/docs/MODELS.md: ../preview/frames/tripo_bastion.png

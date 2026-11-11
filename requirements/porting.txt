@@ -1,0 +1,6 @@
+# Porting pipeline (tools/, scripts/, autoport/): what stage A, stage C and the checks import.
+# autoport/ itself is standard library only; scripts/ also imports Valve's own `utils` from the CS2 install (not on PyPI).
+#   pip install -r requirements/porting.txt -c requirements/constraints.txt
+numpy
+scipy
+Pillow

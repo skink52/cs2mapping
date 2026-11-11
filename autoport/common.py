@@ -4,9 +4,9 @@ import json, os, sys, time, traceback, uuid
 PORT = os.environ.get('CS2PORT', r'C:\source1\cs2port')
 TOOLS = os.path.join(PORT, 'tools')
 WORK = os.path.join(PORT, 'work')
-S1 = r'C:\source1'
+S1 = os.environ.get('CS2MAP_SOURCE1') or r'C:\source1'
 REPO = os.environ.get('CS2MAPPING', r'C:\source1\cs2mapping')
-CS2 = r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
+CS2 = os.environ.get('CS2_ROOT') or r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(WORK, 'autoport_state')
 INBOX = os.path.join(STATE, 'inbox')

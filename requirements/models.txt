@@ -1,0 +1,4 @@
+# Model processing (create/playermodels/, create/hats/): GMod models -> CS2. scipy is not needed here.
+#   pip install -r requirements/models.txt -c requirements/constraints.txt
+numpy
+Pillow

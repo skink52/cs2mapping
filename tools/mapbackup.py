@@ -7,6 +7,7 @@
   python mapbackup.py pin|unpin <map name> <stamp> [--label TEXT] [--store DIR]
   python mapbackup.py trim [<map name>] [--store DIR] [--dry-run]
   python mapbackup.py sources <stamp> --to DIR [--store DIR]                         restore a sources snapshot into an empty folder
+  python mapbackup.py verify [<map name>] [--store DIR]                              unpack every copy and compare it with its recorded sha256
 
 Store (--store, else env CS2MAP_BACKUPS, else C:\\source1\\cs2port\\map_backups): best on another disk or a synced folder.
   maps/<map>/<stamp>.vmap.xz + <stamp>.json      {kind, size, sha256, packed, source path, mtime, sources snapshot, pin}
@@ -17,6 +18,8 @@ WEEKLY weeks (the map as it was before that period's work), and pinned copies fo
 A snapshot stays while a kept copy refers to it or it is among the newest SOURCE_KEEP; objects nothing refers to are removed.
 Restoring over an existing map first saves that map (kind "before-restore"), so a restore can itself be undone; --to writes elsewhere.
 Hammer must not have the map open with unsaved edits when you restore over it (Hammer would overwrite it on its next save).
+Every copy is read back and unpacked right after it is written, and again before a restore: a copy whose bytes do not give the recorded
+sha256 is an error (a failed save leaves no copy behind; a restore of a damaged copy changes nothing). `verify` checks the whole store.
 
 Ported from backups.py in cs2-map-mcp by Rmgs123 (github.com/Rmgs123/cs2-map-mcp, MIT): same tiers, pins and source snapshots, fresh code;
 lzma instead of zstd (Python 3.13's standard library), no background worker (a save is synchronous, about 1 s per 30 MB).
@@ -74,8 +77,25 @@ class Store:
                 if os.path.exists(meta['file']): out.append(meta)
         return out                                  # oldest first (stamps sort by time)
 
-    def read(s, entry):
-        with open(entry['file'], 'rb') as f: return lzma.decompress(f.read())
+    def read(s, entry, check=True):
+        """the copy's bytes; with check, an OSError when they do not match the sha256 recorded at save time"""
+        try:
+            with open(entry['file'], 'rb') as f: data = lzma.decompress(f.read())
+        except lzma.LZMAError as ex:
+            raise OSError('backup %s is damaged (%s)' % (entry['file'], ex))
+        if check and entry.get('sha256') and _sha(data) != entry['sha256']:
+            raise OSError('backup %s does not match its recorded sha256' % entry['file'])
+        return data
+
+    def verify(s, name=None):
+        """unpack every copy (of one map, or of all) and compare with its sha256 -> {'checked': n, 'bad': [{map, stamp, problem}]}"""
+        out = {'checked': 0, 'bad': []}
+        for m in ([map_name(name)] if name else s.maps()):
+            for e in s.entries(m):
+                out['checked'] += 1
+                try: s.read(e)
+                except OSError as ex: out['bad'].append({'map': m, 'stamp': e['stamp'], 'problem': str(ex)})
+        return out
 
     def save(s, vmap, kind='manual', pin=None, sources=(), now=None):
         """-> the new entry, or None when the newest copy already has these bytes"""
@@ -90,7 +110,13 @@ class Store:
             stamp = (_when(stamp) + dt.timedelta(microseconds=1)).strftime(STAMP)
         packed = lzma.compress(data, preset=6)
         d = s.map_dir(vmap)
-        _write(os.path.join(d, stamp + '.vmap.xz'), packed)
+        xz = os.path.join(d, stamp + '.vmap.xz')
+        _write(xz, packed)
+        try: s.read({'file': xz, 'sha256': sha})           # read the copy back from disk before trusting it
+        except OSError:
+            try: os.remove(xz)
+            except OSError: pass
+            raise
         meta = {'kind': kind, 'size': len(data), 'packed': len(packed), 'sha256': sha, 'source': os.path.abspath(vmap),
                 'mtime': os.path.getmtime(vmap), 'pin': pin, 'sources': s.snapshot(sources, now) if sources else None}
         _write(os.path.join(d, stamp + '.json'), json.dumps(meta, indent=1).encode())
@@ -109,10 +135,11 @@ class Store:
     def restore(s, name, stamp='latest', to=None, force=False):
         e = s.find(name, stamp)
         dest = to or e['source']
+        data = s.read(e)                                   # checked against its sha256 before anything is touched
         if os.path.exists(dest):
             if to and not force: raise FileExistsError('%s exists (use --force)' % dest)
             s.save(dest, kind='before-restore')            # the restore can be undone
-        _write(dest, s.read(e))
+        _write(dest, data)
         return {'restored': e['stamp'], 'to': dest, 'size': e['size']}
 
     def pin(s, name, stamp, label='pinned'):
@@ -232,7 +259,7 @@ class Store:
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description='Tiered map backups')
-    ap.add_argument('cmd', choices=['save', 'scan', 'list', 'restore', 'pin', 'unpin', 'trim', 'sources'])
+    ap.add_argument('cmd', choices=['save', 'scan', 'list', 'restore', 'pin', 'unpin', 'trim', 'sources', 'verify'])
     ap.add_argument('args', nargs='*'); ap.add_argument('--store'); ap.add_argument('--kind', default='manual'); ap.add_argument('--pin')
     ap.add_argument('--label', default='pinned'); ap.add_argument('--sources', nargs='*', default=[]); ap.add_argument('--to')
     ap.add_argument('--force', action='store_true'); ap.add_argument('--dry-run', action='store_true'); ap.add_argument('--json', action='store_true')
@@ -246,6 +273,7 @@ def main(argv=None):
         elif a.cmd == 'restore': out = st.restore(a.args[0], a.args[1] if len(a.args) > 1 else 'latest', a.to, a.force)
         elif a.cmd == 'pin': st.pin(a.args[0], a.args[1], a.label); out = {'pinned': a.args[1]}
         elif a.cmd == 'unpin': st.unpin(a.args[0], a.args[1]); out = {'unpinned': a.args[1]}
+        elif a.cmd == 'verify': out = st.verify(a.args[0] if a.args else None)
         elif a.cmd == 'trim':
             out = {m: st.trim(m, dry_run=a.dry_run) for m in ([a.args[0]] if a.args else st.maps())}
         else:
@@ -253,6 +281,8 @@ def main(argv=None):
             out = st.restore_sources(a.args[0], a.to)
     except (OSError, KeyError, ValueError, IndexError) as ex:
         print('mapbackup: %s' % ex, file=sys.stderr); return 2
+    if a.cmd == 'verify':
+        print(json.dumps(out, indent=1)); return 1 if out['bad'] else 0
     if a.json or a.cmd != 'list': print(json.dumps(out, indent=1, default=str))
     else:
         for e in out: print('%s  %-14s %8.1f MB -> %6.1f MB%s' % (e['stamp'], e['kind'], e['size'] / 1e6, e['packed'] / 1e6, ('  [pin: %s]' % e['pin']) if e.get('pin') else ''))

@@ -1,0 +1,4 @@
+# Optional for model work, each used by one tool only.
+fast_simplification   # create/glbrig.py: mesh decimation
+playwright            # create/playermodels/lol_export.py and two project preview scripts: a headless browser
+# bpy / mathutils are Blender's own modules: create/playermodels/fbx_export.py runs inside Blender, they are not pip installs here.

@@ -5,6 +5,33 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-11: repo review (docs, CI, file safety)
+
+From an outside review of the repo. Unit tested and simulated only; nothing here was run against CS2 or a real addon.
+
+- **[docs]** The PC is now described as the supported route everywhere (setup.md, CAPABILITIES, scripts/README, ai-workflow, CLAUDE.md said
+  "cloud only"); the cloud route is marked as the older alternative. setup.md: a Requirements section (required / optional), the environment
+  variables that replace the built-in paths, troubleshooting, and corrected rows (`modelsfromrefs.py`, `run_fixrefs.bat`, `addon_template`,
+  `autoport/`). The stage C / stage D lists in pipeline.md and tools/README.md match the code again (`launch`, `ropes`, `envglobal` and 15
+  stage D passes were missing; water is `anubis/anubis_water_canal`). autoport/README lists `--yes`, `--ingame`, `--ingame-launch`.
+- **[docs]** Licence statements: four `create/` READMEs said "MIT, like the rest of the repo"; the repo has been PolyForm Noncommercial
+  since 30 Oct 2026. No licence text changed. Three broken links fixed; a user-profile path removed from a port log.
+- **[docs]** New: `docs/reference/compatibility.md` (the words for how far something was checked, what CI covers, versions last run with),
+  `file-safety.md` (what each tool overwrites, backups, dry runs, rollback, known gaps), `engineering-notes.md` (paths, dependencies, and
+  the proposals for one settings file, a `cs2mapping` command and dated release tags: proposed, not built).
+- **[ci]** `.github/workflows/ci.yml`: repo checks, the `tools/` and `autoport/` unit tests on Windows (Linux informational), every ported
+  map's script in the mock engine, the TTT suite, the mg_trenchwarfare type-check. `ci/check_repo.py`, `ci/check_links.py`,
+  `ci/mock_ports.sh`. Not yet run on GitHub.
+- **[tools]** `safepath.py`: name and containment checks (junction-aware), copy plans, verified backups, change manifests, rollback.
+  `mapbackup.py` reads each copy back after writing it, checks the sha256 before a restore, and has `verify`. `prep.py` refuses an addon
+  name that is a path and will not clear a work folder that is a link. `mcp_server.py` `script_write` refuses path-like names.
+- **[autoport]** `pclocal.py apply` backs up and checks every file it overwrites (not only the `.vmap`), writes a change manifest, and has
+  `--dry-run`; new `pclocal.py rollback`. Before a rerun puts the importer's map back over a map that has changed, autoport saves that map
+  with `mapbackup` (kind `before-rerun`). `CS2_ROOT` and `CS2MAP_SOURCE1` now override the built-in paths in `autoport/` and in
+  `prep.py`, `stage_c.py`, `mapcheck.py`.
+- **[scripts]** `build_maps.ps1` skips queue lines whose addon or map name is a path. **[create]** `gmod_publish.py` checks the pack slug
+  before deleting its folder. `requirements/`: pip lists per area with the versions last run with.
+
 ## 2026-11-10: IRONFRAME third playtest (Sprawl)
 
 - [ironframe] Fourth playtest (evening): the HUD rebuilt under CS2's cap of 1024 panel ids per custom_hud_layout (it referenced 2 600; text is Labels with dialog variables now, 461 ids), legs and upper body joined at the waist joint with the leg twist limited to 75 deg, Bastion's torso block moved out of its legs model (`mdl2cs2.py --torso-to-upper`, `tools/hole_check.py`), team colours on the markers, booster particles parented at the engine transform. [create] the mock engine counts HUD panel ids (`panelids=N`).

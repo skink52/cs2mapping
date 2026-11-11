@@ -57,7 +57,10 @@ def pack_members(cfg, pk):
 def build_pack(cfg, pk):
     """addons/<pack>/: every member's models and materials, one lua file registering them all, one addon.json"""
     import shutil
-    out = cfg['out']; dst = os.path.join(out, 'addons', pk['slug'])
+    slug = pk.get('slug') or ''
+    if not slug or slug in ('.', '..') or os.path.basename(slug) != slug or any(c in slug for c in '\\/:'):
+        sys.exit('pack slug %r must be a plain folder name (the folder addons/<slug> is deleted and rebuilt)' % slug)
+    out = cfg['out']; dst = os.path.join(out, 'addons', slug)
     if os.path.isdir(dst): shutil.rmtree(dst)           # rebuilt from the members each time (a dropped member must go)
     lua = ['-- %s: made by togmod.py / gmod_publish.py' % pk['name']]
     for m in pack_members(cfg, pk):

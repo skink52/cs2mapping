@@ -33,12 +33,16 @@ New projects get their own folder under `projects/`, a README (with the AI discl
 
 ## Layout
 
-- `tools/`: cs2port pipeline (runs in the cloud workspace). Entry points: `prep.py` (stage A), `stage_c.py` (stage C), `stage_d.py` / `run_pass.py`
+- `tools/`: cs2port pipeline (runs on the PC from `C:\source1\cs2port	ools`, through autoport or Claude Code; the cloud workspace is the older route). Entry points: `prep.py` (stage A), `stage_c.py` (stage C), `stage_d.py` / `run_pass.py`
   (follow-up passes). **Every file, its job and its usage line are in the tool index, `tools/README.md`**: keep it in step when a tool or a usage line changes.
   `tools/weapons/` is the custom weapon builder (creation, not porting).
 - `scripts/`: things that run on the Windows PC (`run_import.bat`, `run_build.bat`, `build_maps.ps1`, `run_import_then_build.bat`,
   `run_build_one_example.bat`, `post_import_cleanup.py`, `vmap_refs.py`, `modelsfromrefs.py`, `make_import_map_auto.py`); see `scripts/README.md`.
 - `create/`: the creation toolkit for original addons; its index is `create/README.md`.
+- `ci/` and `.github/workflows/ci.yml`: the repo checks and what CI runs (`ci/README.md`). `requirements/`: pip lists per area. Neither is copied to the PC.
+  Before committing: `python ci/check_repo.py` and `python ci/check_links.py --anchors --baseline ci/known_broken_links.txt`.
+- How far something was checked is said in the words of `docs/reference/compatibility.md` (unit tested, simulated, compiled, Hammer verified,
+  in-game verified, playtested). Tools that overwrite or delete in an addon follow `docs/reference/file-safety.md` and use `tools/safepath.py`.
 - `docs/porting/`, `docs/creation/`, `docs/reference/` (gotchas, cs_script notes, AI workflow, external tools). `CAPABILITIES.md` is the plain-language list for non-coders:
   keep it in step when a capability is added.
 - `docs/porting/pipeline.md`: the pipeline reference (workflow, every stage C step). It is deployed to the PC as `C:\source1\cs2port\cs2_port_pipeline.md`
