@@ -5,6 +5,21 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-11: the gaps the real run made testable (build and import previews, rerun backup, CS2 detection)
+
+- **[scripts]** `build_maps.ps1 -DryRun` (also `--dry-run`, `-WhatIf`, `BUILD_DRYRUN=1`): per queue line, what would be compiled, which
+  `.vpk` would be replaced (size and date) or created, the logs it would write; lines that cannot run exit 1. It changes nothing. Built
+  files are now checked by sha256, not only size, before the compiler's copy is removed. `CS2_ROOT` / `CS2PORT` override its paths.
+  `run_import.bat --dry-run` (or `IMPORT_DRYRUN=1`) lists what stage B would rename, unpack, import and replace.
+- **[autoport]** "CS2 / Hammer is open" now means this install's `cs2.exe`: a dedicated server running from another folder (the slime-mg test
+  server) made autoport wait for ever. `profiles.py` backs up the map before the respawn-window edit and keeps a `.bak` of `ttt_hud.css`.
+- **[tools]** `stage_c.py`'s result JSON, `rcompile.py` and `mapsanity.py --json` carry `level` and `manual_check_required`
+  ([compatibility.md](docs/reference/compatibility.md#verification-levels)): a clean compile says `compiled`, never more.
+- **[tests]** `autoport/tests/test_autoport_safety.py`: `autoport.py --dry-run` leaves the pipeline folder exactly as it was (run through
+  the real `main()`), and which `cs2.exe` counts.
+- **[port mg_minecraft_multigames]** rebuilt end to end through the new delivery path (27 min; the `.vpk` within 300 bytes of 9 Nov), then
+  rerun from stage C to see the map saved by `mapbackup` before the importer's copy went back over it.
+
 ## 2026-11-11: third review pass (junctions, job cancellation), and the first run on a real addon
 
 - **[autoport]** `pclocal.py root` checks what it builds on: the addon name must be a plain name, the addon folder must be a real folder,

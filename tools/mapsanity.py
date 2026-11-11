@@ -266,6 +266,9 @@ def main(argv=None):
         res = run(a.vmap, a.mode, a.min_spawns)
     except (OSError, ValueError, AssertionError, StopIteration) as ex:
         print('cannot read %s: %s' % (a.vmap, ex), file=sys.stderr); return 2
+    if isinstance(res, dict):
+        # a read of the .vmap file only: it finds problems, it cannot show the map works (docs/reference/compatibility.md)
+        res.setdefault('level', 'untested'); res.setdefault('manual_check_required', True); res.setdefault('checked', 'the .vmap file, offline')
     if a.json: print(json.dumps(res, indent=1))
     else:
         for f in res['findings']: print('%s\t%s\t%s' % (f['severity'], f['code'], f['text']))

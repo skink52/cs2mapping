@@ -1070,4 +1070,6 @@ if __name__ == '__main__':
         p = os.path.join(root, 'out', addon + '_game', rel); os.makedirs(os.path.dirname(p), exist_ok=True); open(p, 'wb').write(data)
     print('\n'.join(['- ' + l for l in c.log] + ['TO CHECK: ' + t for t in c.todo]))
     if c.need: print('NEED CS:GO archives:', sorted(c.need), '(or these files from the extracted CS:GO content, copied into <root>/embedded/<addon>/:', ', '.join(sorted(c.need_paths)) + ')')
-    json.dump({'log': c.log, 'todo': c.todo, 'files': sorted(c.files), 'need': sorted(c.need), 'need_paths': sorted(c.need_paths)}, open(os.path.join(root, 'out', addon + '_result.json'), 'w'), indent=1)
+    json.dump({'log': c.log, 'todo': c.todo, 'files': sorted(c.files), 'need': sorted(c.need), 'need_paths': sorted(c.need_paths),
+               # docs/reference/compatibility.md: stage C edits the map and proves nothing about it: not compiled, not seen in Hammer or in game
+               'level': 'untested', 'manual_check_required': True}, open(os.path.join(root, 'out', addon + '_result.json'), 'w'), indent=1)

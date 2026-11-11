@@ -9,6 +9,7 @@
 #   a line "entities mg_x [map]" recompiles only the entities (Hammer's entity-only build: no world, vis or nav) - for entity edits
 #   a line "lighting mg_x [map]" recompiles the world and lighting but not vis or nav - for texture / material changes with no brush moved
 #   a line "final mg_x [map]" is a full build (world, vis, nav, audio) with release lighting: 2048 lightmaps, VRAD quality 2
+#   -DryRun (or --dry-run, -WhatIf, or $env:BUILD_DRYRUN = 1) lists what each queue line would compile, replace and write, and changes nothing
 #   addons in $NoVis (below) build without -vis
 #   entities / lighting need an earlier full build: they start from the map's current .vpk in game\, and fall back to a full build when there is none.
 # CS2 can stay open (tested 7 Nov 2026): start it BEFORE the build and keep it open until the build ends - the compiler uses the
@@ -21,8 +22,10 @@ param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Maps)
 
 $ErrorActionPreference = 'Continue'
 $CS2     = 'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
+if ($env:CS2_ROOT) { $CS2 = $env:CS2_ROOT }       # the same overrides the Python tools read (docs/porting/setup.md)
 $RC      = Join-Path $CS2 'game\bin\win64\resourcecompiler.exe'
 $Port    = 'C:\source1\cs2port'
+if ($env:CS2PORT) { $Port = $env:CS2PORT }
 $OutRoot = Join-Path $env:LOCALAPPDATA 'Temp\valve\hammermapbuild\game'
 $Logs    = Join-Path $Port 'logs'
 $Ports   = Join-Path $Port 'existing_ports.txt'
@@ -59,9 +62,10 @@ if (-not (Test-Path $RC)) { Write-Host "resourcecompiler.exe not found at $RC" -
 # queue: "addon", "addon mapname", or "assets addon" (compile the addon's assets only, no map build)
 $queue = @()
 # on the command line a mode word joins the addon after it: "final ba_jail_keimusho" is one entry, as on a queue line
-$argLines = @(); $pend = ''
+$argLines = @(); $pend = ''; $DryRun = [bool]($env:BUILD_DRYRUN -match '^(1|true|yes)$')
 foreach ($m in @($Maps)) {
     if (-not $m) { continue }
+    if ($m -in @('-DryRun', '--dry-run', '-WhatIf')) { $DryRun = $true; continue }
     if ($m.ToLower() -in @('assets', 'entities', 'lighting', 'final')) { $pend = $m; continue }
     $argLines += $(if ($pend) { "$pend $m" } else { $m }); $pend = ''
 }
@@ -93,6 +97,35 @@ if (Get-Process -Name cs2 -ErrorAction SilentlyContinue | Where-Object { $_.Path
 while (Get-Process -Name resourcecompiler -ErrorAction SilentlyContinue) {
     Write-Host 'Another resourcecompiler is still running - waiting for it to finish...' -ForegroundColor Yellow
     Start-Sleep -Seconds 10
+}
+
+if ($DryRun) {
+    # nothing below this block runs: no compile, no delete, no copy, no log file, no change to existing_ports.txt
+    Write-Host ''; Write-Host 'DRY RUN, nothing will be compiled or changed.' -ForegroundColor Cyan
+    $cant = 0
+    foreach ($q in $queue) {
+        $addon = $q[0]; $map = $q[1]; $assetsOnly = $q[2]; $mode = $q[3]
+        $vmap = Join-Path $CS2 "content\csgo_addons\$addon\maps\$map.vmap"; $dest = Join-Path $CS2 "game\csgo_addons\$addon\maps\$map.vpk"
+        $content = Join-Path $CS2 "content\csgo_addons\$addon"
+        if ($mode -in @('entities', 'lighting') -and -not (Test-Path $dest)) { $mode = 'full (no earlier build for a partial one)' }
+        Write-Host "==== $addon : $(if ($assetsOnly) { 'assets only' } else { "$map.vmap, $mode build" }) ====" -ForegroundColor Cyan
+        if (-not (Test-Path $content)) { Write-Host "     CANNOT RUN - no addon folder $content" -ForegroundColor Red; $cant++; continue }
+        if (-not $assetsOnly -and -not (Test-Path $vmap)) { Write-Host "     CANNOT RUN - $vmap not found" -ForegroundColor Red; $cant++; continue }
+        $n = 0
+        foreach ($spec in @('materials|*.vmat', 'models|*.vmdl', 'panorama|*.vtex', 'panorama|*.xml', 'panorama|*.css', 'soundevents|*.vsndevts', 'sounds|*.wav', 'sounds|*.mp3', 'maps\scripts|*.js')) {
+            $d, $pat = $spec -split '\|'
+            $n += @(Get-ChildItem (Join-Path $content $d) -Recurse -Filter $pat -File -ErrorAction SilentlyContinue).Count
+        }
+        Write-Host "     would compile up to $n addon assets into game\csgo_addons\$addon (only the changed ones are rebuilt)"
+        Write-Host "     would write logs\${addon}_assets.log$(if (-not $assetsOnly) { " and logs\${addon}_build.log" })"
+        if ($assetsOnly) { continue }
+        if (Test-Path $dest) { $i = Get-Item $dest; Write-Host ("     would REPLACE {0} ({1:N1} MB, built {2:yyyy-MM-dd HH:mm})" -f $dest, ($i.Length / 1MB), $i.LastWriteTime) -ForegroundColor Yellow }
+        else { Write-Host "     would CREATE $dest" }
+        Write-Host "     would compile with $Threads threads$(if ($addon -in $NoVis) { ', no vis' }) through $OutRoot"
+        Write-Host "     would mark $addon [in progress, built] in existing_ports.txt"
+    }
+    if ($cant) { Write-Host "$cant of $($queue.Count) queue lines cannot run." -ForegroundColor Red; exit 1 }
+    exit 0
 }
 
 $summary = @()
@@ -181,11 +214,13 @@ foreach ($q in $queue) {
     # the outroot step: move the fresh vpk into the game addon before anything else runs
     if ((Test-Path $built) -and ((Get-Item $built).LastWriteTime -ge $t0.AddSeconds(-5))) {
         New-Item -ItemType Directory -Force -Path (Split-Path $dest) | Out-Null
-        $size = (Get-Item $built).Length; $ok = $false
+        $size = (Get-Item $built).Length; $hash = (Get-FileHash $built -Algorithm SHA256).Hash; $ok = $false
         for ($try = 1; $try -le 10 -and -not $ok; $try++) {
             try {
                 Copy-Item $built $dest -Force -ErrorAction Stop
-                if ((Get-Item $dest).Length -eq $size) { Remove-Item $built -Force; $ok = $true }
+                # the copy in game\ must be the file the compiler wrote (size and sha256) before the built one is removed
+                if ((Get-Item $dest).Length -eq $size -and (Get-FileHash $dest -Algorithm SHA256).Hash -eq $hash) { Remove-Item $built -Force; $ok = $true }
+                else { Write-Host "     $dest does not match the built file after copying, retrying ($try/10)..." -ForegroundColor Yellow; Start-Sleep -Seconds 2 }
             } catch { Write-Host "     $dest is locked, retrying ($try/10)..." -ForegroundColor Yellow; Start-Sleep -Seconds 5 }
         }
         # anything else the compiler wrote for this addon goes to the same place in game\
@@ -194,7 +229,9 @@ foreach ($q in $queue) {
             $rel = $_.FullName.Substring($addonOut.Length).TrimStart('\')
             $to = Join-Path $CS2 "game\csgo_addons\$addon\$rel"
             New-Item -ItemType Directory -Force -Path (Split-Path $to) | Out-Null
-            Copy-Item $_.FullName $to -Force; Remove-Item $_.FullName -Force
+            Copy-Item $_.FullName $to -Force
+            if ((Get-FileHash $to -Algorithm SHA256).Hash -eq (Get-FileHash $_.FullName -Algorithm SHA256).Hash) { Remove-Item $_.FullName -Force }
+            else { Write-Host "     WARNING - $to does not match $($_.FullName) after copying; the built file was kept" -ForegroundColor Red }
         }
         if ($ok) {
             $warn = $(if ($code -ne 0) { " (compiler exit code $code - check the log)" } else { '' })

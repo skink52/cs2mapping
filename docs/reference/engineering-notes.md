@@ -124,7 +124,7 @@ Highest value first.
 3. **The settings file** (above), starting with the Python side; `doctor` already reports where each path comes from.
 4. ~~Backups for `matnames`, `vmdlfix`, `gibfix`; atomic `vmapedit.Map.save`~~ Done 11 Nov 2026. Left: `polish.py` and `profiles.py`
    ([file-safety.md](file-safety.md#what-still-writes-without-a-backup-or-a-preview)).
-5. **`level` and `manual_check_required` fields** in the JSON that `stage_c`, `rcompile` and `mapsanity` write.
+5. ~~`level` and `manual_check_required` fields~~ Done 11 Nov 2026.
 6. ~~Correct the MCP tools' `destructiveHint`~~ Done 11 Nov 2026.
-7. **Dry run for `build_maps.ps1`** (`-WhatIf`). (`create/hats/pack.py --dry-run` exists now.)
+7. ~~Dry run for `build_maps.ps1`~~ Done 11 Nov 2026 (`-DryRun`), with `run_import.bat --dry-run`. Left: `run_fixrefs.bat`.
 8. Decide whether the 27 MB of tracked music and reference `.vmap` files under `projects/` that `.gitignore` now excludes should stay.

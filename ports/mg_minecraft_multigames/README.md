@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Built 9 Nov 2026, not yet tested in game or uploaded |
+| Status | Built 9 Nov 2026 and rebuilt from scratch 11 Nov 2026 (compiled; not yet tested in game or uploaded) |
 | Original map | Blogger(Dog), with a level by DexKekcuk (from the map's own chat credits) |
 | Source BSP | `mg_minecraft_multigames_v4_nc2.bsp` (from Briar's Dropbox, `CSGO/compiled maps/minigames`) |
 | Imported | 2026-11-09 |
@@ -16,6 +16,11 @@
 - 2026-11-09: the 2 'missing textures' were stale (lava_moving.vmat was built in stage C, the minecraft sky rebuilt as a panorama).
 - 2026-11-09: first build lacked the wood gibs (the parallel worker folder had no run_fixrefs.bat); rebuilt with them: 365 compiled, 0 failed (12 min 24 s).
 - 2026-11-09: loading-screen credit set to the original authors (`game/csgo_addons/mg_minecraft_multigames/maps/mg_minecraft_multigames.txt`).
+- 2026-11-11: **re-ported from scratch as the tester for the file-safety work** (skink52 offered it; nothing had been done to it by hand). The
+  9 Nov addon folders were moved to `C:\source1\archive\removed_addons_20261111\`, then autoport ran every step again with the new
+  `pclocal.py deliver` / `apply` (verified backups, change manifests): prep to audit 16 min, build 11 min. Held for the same 2 stale 'missing
+  textures' and marked ready. The built `.vpk` is 8 915 661 bytes against 8 915 386 on 9 Nov. Compiled only: not opened in Hammer, not loaded
+  in game. The loading-screen credit and the Steam description were copied back from the 9 Nov addon (a fresh port resets both).
 
 ## What the cleanup did
 

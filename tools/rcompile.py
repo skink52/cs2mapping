@@ -204,6 +204,14 @@ def _run(argv, log, timeout, cwd=None):
     return code, ''.join(chunks), round(time.time() - t0, 1)
 
 
+def _level(res):
+    """how far this result goes, in the words of docs/reference/compatibility.md: a clean compile is "compiled" and nothing more.
+    Nobody has looked at the result, so a person still has to (Hammer, then in game)."""
+    res['level'] = 'compiled' if res.get('ok') else 'untested'
+    res['manual_check_required'] = True
+    return res
+
+
 def build_map(vmap, preset='fast', threads=None, novis=False, log=None, timeout=None, cs2=None):
     rc = compiler_path(cs2)
     if not os.path.exists(rc): raise FileNotFoundError('resourcecompiler.exe not found at %s' % rc)
@@ -217,6 +225,7 @@ def build_map(vmap, preset='fast', threads=None, novis=False, log=None, timeout=
     fresh = bool(vpk and os.path.exists(vpk) and os.path.getmtime(vpk) >= t0 - 2)
     res.update({'exit_code': code, 'seconds': secs, 'output': vpk if fresh else None, 'preset': preset,
                 'ok': code == 0 and fresh and not (res['summary'] or {}).get('failed') and not res['crashed']})
+    _level(res)
     if code == 0 and not fresh: res['note'] = 'the compiler exited 0 but wrote no new .vpk (%s)' % vpk
     return res
 
@@ -229,7 +238,7 @@ def compile_assets(paths, force=False, log=None, timeout=600, cs2=None):
     code, text, secs = _run(asset_argv(paths, force, cs2), log, timeout, os.path.dirname(rc))
     res = analyze(text)
     res.update({'exit_code': code, 'seconds': secs, 'ok': code == 0 and not (res['summary'] or {}).get('failed') and not res['crashed']})
-    return res
+    return _level(res)
 
 
 def _print(res, as_json):

@@ -8,6 +8,9 @@ rem Just double-click this file. Logs go to C:\source1\cs2port\logs\
 set "CS2=C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive"
 set "PORT=C:\source1\cs2port"
 set "SCRIPTS=%CS2%\game\csgo\import_scripts"
+rem set IMPORT_DRYRUN=1 (or run: run_import.bat --dry-run) to list what would happen and change nothing
+if /i "%~1"=="--dry-run" set "IMPORT_DRYRUN=1"
+if defined IMPORT_DRYRUN goto :dryrun
 if not exist "%PORT%\logs" mkdir "%PORT%\logs"
 
 rem vpk.signatures blocks the importer - rename it if Steam put it back
@@ -53,3 +56,24 @@ for /f "usebackq tokens=1,2" %%a in ("%PORT%\queue.txt") do (
 echo.
 echo All done. Tell Claude stage B finished - it reads the logs from C:\source1\cs2port\logs
 pause
+
+goto :eof
+
+:dryrun
+echo DRY RUN, nothing will be imported or changed.
+if exist "%CS2%\game\bin\win64\vpk.signatures" echo would RENAME "%CS2%\game\bin\win64\vpk.signatures" to vpk.signatures.aaa
+if not exist "%PORT%\import_map_auto.py" echo CANNOT RUN - "%PORT%\import_map_auto.py" is missing (run make_import_map_auto.py once)
+echo would COPY "%PORT%\import_map_auto.py" over "%SCRIPTS%\import_map_auto.py"
+if not exist "%PORT%\queue.txt" echo CANNOT RUN - no "%PORT%\queue.txt" & exit /b 1
+for /f "usebackq tokens=1,2" %%a in ("%PORT%\queue.txt") do (
+  set "ADDON=%%a"
+  set "MAP=%%b"
+  if "!MAP!"=="" set "MAP=%%a"
+  echo ==== !ADDON! ^(vmf !MAP!^) ====
+  for %%z in ("%PORT%\assets\!ADDON!.zip" "%PORT%\assets\!ADDON!.2.zip" "%PORT%\assets\!ADDON!.3.zip" "%PORT%\assets\!ADDON!.4.zip") do if exist "%%~z" echo   would UNPACK %%~nxz into "%CS2%\csgo" ^(existing files kept^)
+  if exist "C:\source1\maps\!MAP!.vmf" (echo   would IMPORT C:\source1\maps\!MAP!.vmf into content\csgo_addons\!ADDON!) else (echo   CANNOT RUN - C:\source1\maps\!MAP!.vmf not found)
+  if exist "%CS2%\content\csgo_addons\!ADDON!\maps\!MAP!.vmap" (echo   would REPLACE the existing !MAP!.vmap with a fresh import) else (echo   would CREATE !MAP!.vmap)
+  echo   would run post_import_cleanup.py and write logs\!ADDON!_import.log, _cleanup.log
+)
+echo would write logs\stage_b_done.txt
+exit /b 0

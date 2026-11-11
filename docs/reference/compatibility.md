@@ -75,6 +75,6 @@ person still has to look. Today:
 | `tools/stage_c.py` | `<root>/out/<addon>_result.json`: files written, CS:GO files still needed |
 | `tools/rcompile.py`, `tools/mapsanity.py` | JSON on stdout with `--json` (see [tools/README.md](../../tools/README.md)) |
 
-A report from an automated check should carry `"level"` (one of the names above, lower case) and `"manual_check_required": true`
-whenever its level is below In-game verified. The tools in the last two rows do not yet; that is listed in
-[engineering-notes.md](engineering-notes.md#next-steps).
+A report from an automated check carries `"level"` (one of the names above, lower case) and `"manual_check_required": true` whenever
+its level is below In-game verified. `stage_c.py`, `rcompile.py` and `mapsanity.py --json` do: stage C and mapsanity say `untested`
+(they edit or read the map file and prove nothing about it), a clean compile says `compiled`.

@@ -81,6 +81,9 @@ def respawn_window(m):
     mp = V.Map(m.vmap); msg = respawnwindow.run(mp)
     if not msg: return
     if not msg.startswith('respawn window: respawning'): m.note('review', msg[0].upper() + msg[1:] + '.'); return
+    import mapbackup
+    try: mapbackup.Store().save(m.vmap, kind='before-respawnwindow')     # this edits the addon's map in place
+    except OSError as ex: m.note('review', 'Respawn window not added: the map could not be backed up first (%s).' % ex); return
     mp.save(m.vmap); guns = respawnwindow.weapons(mp)
     m.note('playtest', msg[0].upper() + msg[1:] + '. Die on an early obstacle and check you come back.' +
            (' The map also hands out %s: if it is a shooting map rather than a course, remove port_respawn_window.' % ', '.join(guns) if guns else ''))
@@ -110,7 +113,8 @@ def hud_images(m, addon_out):
         return
     css = os.path.join(addon_out, 'panorama', 'styles', 'custom_game', 'ttt_hud.css')
     text = re.sub(r'\s*background-image:\s*url\([^)]*\)[^;]*;', '', read(css))
-    open(css, 'w', encoding='utf-8', newline='').write(text)
+    import safepath
+    safepath.write_atomic(css, text.encode('utf-8'), backup='sibling')   # ttt_hud.css.bak_<stamp> beside it; untouched when nothing changes
     m.note('minor', 'No TTT HUD images found anywhere, so this map\'s HUD uses flat colours. Make them with projects/cs2mapTTT/tools/hud_theme.py if you want them.')
 
 def ttt_check(m):

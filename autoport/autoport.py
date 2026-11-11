@@ -80,8 +80,28 @@ class Map:
         wait_closed(s)
         pclocal.apply(s.addon, WORK)
 
+def cs2_paths():
+    """the .exe path of every running cs2.exe ('' for one whose path cannot be read), or None when that cannot be asked"""
+    try:
+        r = subprocess.run(['powershell', '-NoProfile', '-NonInteractive', '-Command',
+                            "Get-Process cs2 -ErrorAction SilentlyContinue | ForEach-Object { '|' + $_.Path }"],
+                           capture_output=True, text=True, errors='replace', timeout=60, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode: return None
+    return [l.strip()[1:] for l in r.stdout.splitlines() if l.strip().startswith('|')]
+
+def is_this_install(path, cs2=None):
+    """a running cs2.exe counts when it is this install's (the game or Hammer), or when its path cannot be read. A dedicated server in
+    another folder (the slime-mg test server) is a different cs2.exe: it does not hold this install's maps and never blocked a port."""
+    if not path: return True
+    return os.path.normcase(os.path.abspath(path)).startswith(os.path.normcase(os.path.abspath(cs2 or CS2)) + os.sep)
+
 def cs2_running():
-    return 'cs2.exe' in subprocess.run(['tasklist', '/FI', 'IMAGENAME eq cs2.exe', '/NH'], capture_output=True, text=True, errors='replace').stdout.lower()
+    paths = cs2_paths()
+    if paths is None:                                   # could not ask by path: fall back to any cs2.exe, as before
+        return 'cs2.exe' in subprocess.run(['tasklist', '/FI', 'IMAGENAME eq cs2.exe', '/NH'], capture_output=True, text=True, errors='replace').stdout.lower()
+    return any(is_this_install(p) for p in paths)
 
 def wait_closed(m):
     """CS2 and Hammer are both cs2.exe. Nothing edits or builds a map under them, and leaving one open costs waiting time rather than a failed map."""
