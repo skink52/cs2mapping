@@ -79,7 +79,7 @@ use Lower (`hintType` 8) instead of Low. Never Lowest alone: with only 256-unit 
 
 - **Hammer stays closed** while Claude edits a map. Back up the `.vmap` before editing it.
 - **Send only changed files** back to the PC.
-- **Build from the command line, one map at a time.** Run `run_build.bat` (`resourcecompiler` with Hammer's full-build arguments), with Hammer and CS2 closed.
+- **Build from the command line, one map at a time.** Run `run_build.bat` (`resourcecompiler` with Hammer's full-build arguments) with Hammer closed. CS2 must stay in the state it was in when the build started (skink52, 11 Nov 2026): open before the build and open until it ends, or closed throughout. Never start it part-way through a build, and never quit it part-way through ([pipeline.md](pipeline.md#stage-d-command-line-build-build_mapsps1)). `resourcecompiler` has limits of its own that are not written down here yet.
   Copy the built `.vpk` out of the temp outroot into `game\csgo_addons\<addon>\maps\` **before** the next compile starts. Builds that
   skipped this step clashed. `build_maps.ps1` does it and checks the copy.
 - **Assets compile before the map.** A command-line map build doesn't compile materials Hammer never loaded, and a missing material

@@ -7,7 +7,7 @@ It runs entirely on the PC and calls the normal pipeline ([tools/](../tools/READ
 
 ## Run it
 
-Close Hammer and CS2 (autoport waits for them to close if they are open), then double-click `C:\source1\cs2port\autoport\run_autoport.bat`. Paste or type the maps, on one line or several, and press Enter on an empty line. You get a plan to confirm, and everything after that runs by itself.
+Close Hammer and CS2 (autoport waits for this install's `cs2.exe` to close before it edits a map, because Hammer is the same program; for a build by hand the rule is only that CS2 stays as it was, open or closed, from start to end), then double-click `C:\source1\cs2port\autoport\run_autoport.bat`. Paste or type the maps, on one line or several, and press Enter on an empty line. You get a plan to confirm, and everything after that runs by itself.
 
 Or give the maps directly, which skips the questions:
 

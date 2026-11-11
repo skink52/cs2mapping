@@ -225,7 +225,7 @@ Stage C writes changed files to `<root>/out/<addon>/` (content files), `<root>/o
 ## Rules while Claude is editing
 
 - Close Hammer while a map is being edited. Hammer keeps the map in memory and will overwrite the edit when it saves.
-- CS2 can stay open during a build if it was started **before** the build and stays open until the build ends (quitting it mid-build kills the
+- CS2 must stay in the state it was in when the build started (skink52, 11 Nov 2026): open before the build and open until it ends, or closed throughout. Never start it part-way through a build, and never quit it part-way through. CS2 can stay open during a build if it was started **before** the build and stays open until the build ends (quitting it mid-build kills the
   compiler). Don't have the map being built loaded: a loaded `.vpk` can't be replaced
   ([pipeline.md](pipeline.md#stage-d-command-line-build-build_mapsps1)).
 - Before editing a `.vmap`, Claude backs it up (to `content\csgo_addons\prefabs+backups\`, or as `<map>.vmap.bak_<date>` next to it).
