@@ -44,6 +44,42 @@ Precedence, the same everywhere: **command-line argument, then environment varia
 - The batch files read the same values from `cs2paths.py --bat` (prints `set "CS2=..."` lines) instead of their own `set` lines.
 - `cs2mapping doctor` (below) prints each path, where its value came from, and what is missing.
 
+**Counted again on 11 Nov 2026** (code files, tests and documents left out): the CS2 install path is written in 23 files (6 in `tools/`,
+4 in `autoport/`, 8 in `scripts/`, 5 in `create/`); 11 of them read `CS2_ROOT` first, and the 12 that do not are the `scripts/` batch files
+and the five `create/` scripts. The cs2port root is written in 17 files, 5 of which read `CS2PORT`. Eleven `create/` scripts know about
+`toolkit.json`. The MCP servers (`tools/mcp_server.py`, `autoport/mcp_live.py`) take their paths from the modules they wrap, so they follow
+whatever those modules resolve and need no keys of their own.
+
+Keys the file should end up with, and what each replaces:
+
+| Key | Meaning | Today |
+|---|---|---|
+| `cs2_root` | the CS2 install | `CS2_ROOT`, 23 literals |
+| `source2_content`, `source2_game` | `<cs2_root>\content\csgo_addons`, `<cs2_root>\game\csgo_addons`; a key only so a test or a second install can point elsewhere | joined by hand in each tool |
+| `source1` | the Source 1 workspace (decompiled maps, the CS:GO `pak01_dir.vpk`) | `CS2MAP_SOURCE1` |
+| `workspace` | the cs2port root (tools copy, logs, `work\`) | `CS2PORT` |
+| `bspsource` | BSPSource launcher | `BSPSRC` |
+| `backups` | map backup store | `CS2MAP_BACKUPS`, `--store` |
+| `tools.blender`, `tools.steamcmd`, `tools.vtfcmd`, `tools.node` | optional external programs | `STEAMCMD`, PATH lookups, literals |
+
+The project layer of the precedence (argument, environment, **project file**, detected default) is a `cs2mapping.json` found by walking up
+from the folder a tool is run in, the way `create/toolkit.json` is found today; `create/toolkit.json` keeps working and is read as that
+project's file. A project file may set only the creation keys and `workspace`; it may not move `cs2_root` (one install per PC, and a
+project folder is not the place a wrong value should hide).
+
+Safest order to build it in, each step shippable and reversible on its own:
+
+1. `tools/cs2paths.py`: `resolve()` returns every key with its value and its source (`argument`, `env:NAME`, `file:<path>`, `default`).
+   It reads the environment names of today, so with no file present every value is what it is now. Unit tests only; nothing calls it yet.
+2. `cs2mapping doctor` prints from it. Any difference from what doctor prints today is a bug in step 1, found before a tool depends on it.
+3. `autoport/common.py` takes `CS2`, `PORT`, `S1`, `REPO` from it (the names stay; the 87 autoport tests already patch them).
+4. The `tools/` constants, one tool per commit.
+5. `create/modelio.CONF` becomes a view of it; the six scripts that parse `toolkit.json` themselves go through `CONF`.
+6. Last, the batch files and `build_maps.ps1`, through `cs2paths.py --bat` / `--ps1`, each tried with its dry run before a real one.
+
+What would make it unsafe: changing a default while moving it, resolving at import time in a module the tests patch, or letting a
+project file redirect a destructive tool. Steps 1 and 2 avoid all three and are the part worth doing next.
+
 Why it was not built in this pass: the batch files and `build_maps.ps1` are what the mapper double-clicks, and they cannot be tested
 without running real imports and builds, which this pass was not to do. The environment overrides above were the part that could be
 added and tested safely.
@@ -103,6 +139,64 @@ scripts, so every current command line keeps working.
 
 Order to build it in: `doctor` and `check` first (no risk, immediate use), then the pass-through commands. `create` is left out: the
 creation toolkit is dozens of unrelated generators and gains nothing from one verb.
+
+`project-report` was added on 11 Nov 2026 (`python cs2mapping.py project-report <project> [--vmap FILE] [--json]`): it calls
+`create/context.py`, `create/test/api.py` and `tools/mapdigest.py` as libraries and joins what they return. It holds no logic of its own
+beyond the cross-check of `RunScriptInput` names against the scripts' `OnScriptInput` names, and each tool is still run alone.
+
+### Proposed: a project manager (not built)
+
+The aim: one place that knows, for every project and port, its addon, maps, scripts, last build, last validation, open warnings, backups,
+API state and how far it was verified. The pieces exist; what is missing is a record that outlives a session.
+
+**Reuse, do not rewrite.** `create/context.py` (where a project stands, git, scripts, tests), `create/test/api.py` (API state),
+`tools/mapdigest.py` (map facts), `tools/mapsanity.py` / `fgdcheck.py` / `mapcheck.py` (validation, already JSON with a `level`),
+`tools/mapbackup.py` (backup history: its store is already a list of stamped, hashed copies), `autoport`'s per-map state and held-map
+list (build and port history), the apply / deliver manifests (what changed on disk), `ports/<addon>/README.md` (the human record), and
+`cs2mapping.py doctor` (the environment).
+
+**Data.** One small file per project, `project.json` beside its README (in git: it is a record, like the README), written only by the
+manager and only by appending or replacing whole sections:
+
+```json
+{ "schema": 1, "name": "mg_example", "kind": "port", "addon": "mg_example",
+  "maps": [{ "vmap": "maps/mg_example.vmap", "vmf": "mg_example.vmf", "sha256": "...", "entities": 1220 }],
+  "scripts": [{ "file": "scripts/mg_example_io.js", "sha256": "...", "api": { "invalid": 0, "deprecated": 0, "allowed": 0 } }],
+  "runs": [{ "when": "2026-11-11T14:02", "what": "build", "ok": true, "level": "compiled", "cs2_build": "...", "log": "...", "warnings": 3 }],
+  "verified": { "level": "compiled", "when": "2026-11-11", "by": "skink52", "note": "" },
+  "open": [{ "id": 1, "text": "loading screen image missing", "since": "2026-11-09" }] }
+```
+
+`runs` is append-only and capped (the last 50); `verified.level` is one of the seven words in [compatibility.md](compatibility.md) and only a
+person sets `in-game verified` or `playtested` (`cs2mapping project verify <name> --level ...`): no tool may raise it. Dependencies
+(models, materials, sounds a map uses) are not stored: `mapdigest.py` and `scripts/vmap_refs.py` recompute them from the map in seconds,
+and a stored copy would go stale. Machine paths never go in the file; they come from the settings file above.
+
+**Commands** (all under the existing front door; every one except `record` and `verify` reads only):
+
+| Command | Does |
+|---|---|
+| `cs2mapping project list` | every project and port: kind, verified level, last run, open items, uncommitted files |
+| `cs2mapping project show <name>` | today's `project-report`, plus the stored runs and open items |
+| `cs2mapping project record <name> --from <result.json>` | append a run from a tool's JSON result (`mapsanity`, `rcompile`, autoport's state) |
+| `cs2mapping project verify <name> --level <word> [--note ...]` | a person records how far it was checked |
+| `cs2mapping project backups <name>` | `mapbackup.py`'s store for that addon |
+
+**MCP.** Two read-only tools on the existing `tools/mcp_server.py` (`project_list`, `project_show`), marked read-only like the current
+inspection tools; `project_record` as a third, not destructive but writing, so it follows the `script_write` rules (name guard, repo
+folder only). No new server.
+
+**Configuration.** Needs the settings file's `workspace` and `source2_content` to find the addon behind a project; without them `show`
+reports the repo side only, as `project-report` does now.
+
+**Risks.** (1) A second source of truth beside the READMEs: keep `project.json` to facts a tool measured and leave prose in the README.
+(2) Stale records presented as current: every stored fact carries the file hash it was measured on, and `show` marks a fact stale when the
+hash no longer matches. (3) Automated writes into `projects/` folders another session is editing: `record` refuses when the folder has
+uncommitted changes it did not make. (4) Verification inflation: only the `verify` command, run by a person, sets the two highest levels.
+(5) Growth into a framework: no database, no daemon, no plugin system; if `project.json` and five subcommands are not enough, the answer
+is a better README, not more machinery.
+
+Order: `project list` and `show` from what exists (no stored file at all), then `record` fed by autoport, then `verify`.
 
 ### Proposed: releases
 

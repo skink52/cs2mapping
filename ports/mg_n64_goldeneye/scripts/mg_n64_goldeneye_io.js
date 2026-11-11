@@ -1,4 +1,4 @@
-import { Instance, CSPlayerPawn, CSPlayerController, CSGearSlot } from "cs_script/point_script";
+import { Instance, Console, CSPlayerPawn, CSPlayerController, CSGearSlot } from "cs_script/point_script";
 
 // mg_n64_goldeneye: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.
 // Everything here is driven by `mg_n64_goldeneye_io_script` -> RunScriptInput <input name>, with the activator passed through.
@@ -28,7 +28,7 @@ const COMMANDS = [
     "say *** Press E on a wall to gain a Nade ***"
 ];
 COMMANDS.forEach((cmd, i) => {
-    Instance.OnScriptInput("Cmd_" + i, () => { Instance.ServerCommand(cmd); });
+    Instance.OnScriptInput("Cmd_" + i, () => { Console.ServerCommand(cmd); });
 });
 
 // ---------------------------------------------------------------- spawn equips (game_player_equip without "Use Only")

@@ -41,7 +41,7 @@
 // KILL_SPEED the ball is simply inert, so "settles, then can be knifed again"
 // needs no extra state at all.
 
-import { Instance, CSDamageTypes, CSDamageFlags } from "cs_script/point_script";
+import { Instance, Entities, Console, CSDamageTypes, CSDamageFlags } from "cs_script/point_script";
 
 // ----- config ---------------------------------------------------------------
 const BALL_CLASS  = "func_physbox";   // "" to accept any class
@@ -72,7 +72,7 @@ const DEBUG       = false;            // flip to true to narrate start/stop/kill
 const DEBUG_KNIFE = false;            // flip to true to log what every swing traced into
 // ----------------------------------------------------------------------------
 
-function log(text) { if (DEBUG) Instance.Msg(`[dodgeball] ${text}`); }
+function log(text) { if (DEBUG) Console.Log(`[dodgeball] ${text}`); }
 
 log("script loaded");
 
@@ -131,8 +131,8 @@ function isBall(ent) {
 // from the console bypasses that chain, so the balls can sit there motion-
 // disabled and silently ignore a launch. Ask for motion ourselves.
 function wake(ent) {
-  Instance.EntFireAtTarget({ target: ent, input: "EnableMotion" });
-  Instance.EntFireAtTarget({ target: ent, input: "Wake" });
+  ent.FireInput({ input: "EnableMotion" });
+  ent.FireInput({ input: "Wake" });
 }
 
 function trackFor(ent) {
@@ -156,7 +156,7 @@ function rescan(now) {
   if (now < nextScan) return;
   nextScan = now + SCAN_INTERVAL;
 
-  for (const ent of Instance.FindEntitiesByClass(BALL_CLASS || "func_physbox")) {
+  for (const ent of Entities.FindByClass(BALL_CLASS || "func_physbox")) {
     if (isBall(ent)) trackFor(ent);
   }
   // Template-spawned balls get Broken and re-spawned, so drop the dead ones.
@@ -214,7 +214,7 @@ Instance.OnKnifeAttack((event) => {
     const hit = trace.didHit && trace.hitEntity
       ? `"${trace.hitEntity.GetEntityName() || "(unnamed)"}" (${trace.hitEntity.GetClassName()})`
       : trace.didHit ? "world" : "nothing";
-    Instance.Msg(`[dodgeball] ${nameOf(owner)} swung, traced ${hit}` +
+    Console.Log(`[dodgeball] ${nameOf(owner)} swung, traced ${hit}` +
                  `, live=${isLive()}` +
                  (REQUIRE_START ? ` (active=${active} pending=${startAt > 0})` : ""));
   }
@@ -344,32 +344,32 @@ Instance.OnRoundStart(() => {
 });
 
 // ----- console commands (need sv_cheats 1) ---------------------------------
-Instance.RegisterCheatCommand("dodgeball_start", () => requestStart("console"));
-Instance.RegisterCheatCommand("dodgeball_stop", () => stopGame("console"));
+Console.RegisterCheatCommand("dodgeball_start", () => requestStart("console"));
+Console.RegisterCheatCommand("dodgeball_stop", () => stopGame("console"));
 
-Instance.RegisterCheatCommand("dball_dump", () => {
+Console.RegisterCheatCommand("dball_dump", () => {
   const now = Instance.GetGameTime();
   rescan(0);
-  Instance.Msg(`[dodgeball] active=${active}` +
+  Console.Log(`[dodgeball] active=${active}` +
                ` pending=${startAt > 0 ? (startAt - now).toFixed(2) + "s" : "no"}` +
                ` tracked=${tracked.size}`);
   for (const [ent, ball] of tracked) {
-    if (!ent.IsValid()) { Instance.Msg(`  ${ball.name}: INVALID`); continue; }
+    if (!ent.IsValid()) { Console.Log(`  ${ball.name}: INVALID`); continue; }
     const speed = len(ent.GetAbsVelocity());
-    Instance.Msg(`  "${ball.name}" (${ent.GetClassName()})` +
+    Console.Log(`  "${ball.name}" (${ent.GetClassName()})` +
                  ` speed=${speed.toFixed(0)} lethal=${speed >= KILL_SPEED}`);
   }
 });
 
 // The important diagnostic: what func_physbox entities actually exist right
 // now, and what are they really called at runtime?
-Instance.RegisterCheatCommand("dball_scan", () => {
-  const all = Instance.FindEntitiesByClass(BALL_CLASS || "func_physbox");
-  Instance.Msg(`[dodgeball] ${all.length} x ${BALL_CLASS} in the map:`);
+Console.RegisterCheatCommand("dball_scan", () => {
+  const all = Entities.FindByClass(BALL_CLASS || "func_physbox");
+  Console.Log(`[dodgeball] ${all.length} x ${BALL_CLASS} in the map:`);
   for (const ent of all) {
     const name = ent.GetEntityName() || "(unnamed)";
     const o = ent.GetAbsOrigin();
-    Instance.Msg(`  "${name}" matchesPrefix=${isBall(ent)}` +
+    Console.Log(`  "${name}" matchesPrefix=${isBall(ent)}` +
                  ` at ${o.x.toFixed(0)} ${o.y.toFixed(0)} ${o.z.toFixed(0)}`);
   }
 });

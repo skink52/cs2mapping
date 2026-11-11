@@ -30,7 +30,7 @@ The GitHub Actions workflow ([`.github/workflows/ci.yml`](../../.github/workflow
 | Repo checks | none (consistency only) | `ci/check_repo.py`: every `.py` compiles, every `.js` parses, JSON parses, no build output or profile paths tracked, licence files and statements agree, the documented stage C / stage D lists match the code. `ci/check_links.py`: relative Markdown links and anchors |
 | Unit tests (Windows) | Unit tested, and Simulated for the console tests | `tools/tests`, `autoport/tests` |
 | Unit tests (Linux) | Unit tested, informational | `tools/tests`; a failure does not block, the tools are Windows tools |
-| Map scripts | Simulated | every `ports/*/scripts/*.js` in the mock engine, the TTT script's suite, the mg_trenchwarfare type-check |
+| Map scripts | Simulated | every `ports/*/scripts/*.js` in the mock engine, the TTT script's suite, the mg_trenchwarfare type-check; `api.py --strict`: no call outside Valve's typings and no deprecated call without a reason in `create/test/api_allow.txt` (ports, the generators in `tools/`, the original addons' built scripts) |
 
 CI has no CS2 install, so the tests that read CS2's own entity definitions (FGD files) are skipped there: 10 of the 155 `tools` tests
 and 1 of the 87 `autoport` tests. They run in full on a PC with CS2 (`python cs2mapping.py test`).
@@ -45,6 +45,8 @@ One machine, one date. Add a row when the tools are run somewhere else or after 
 | Date | Windows | Python | Node | TypeScript | Python packages | CS2 / Workshop Tools build | What was run | Level reached |
 |---|---|---|---|---|---|---|---|---|
 | 2026-11-11 | Windows 11 (10.0.26200) | 3.13.15 | 26.13.0 | 7.0.2 | numpy 2.1.3, scipy 1.18.1, Pillow 12.3.0, mutagen 1.48.1, lameenc 1.9.0 | not recorded | `tools/tests` (155 tests), `autoport/tests` (87 tests), `ci/check_repo.py`, `ci/check_links.py`, `ci/mock_ports.sh` (55 scripts), TTT `run_mock.sh`, mg_trenchwarfare `tsc` | Unit tested / Simulated |
+
+**cs_script API level (11 Nov 2026).** The port scripts and the stage C generators use the calls of the 5 Nov 2026 typings (`Entities`, `Console`, `GameRules`, `Entity.FireInput`), which need a CS2 build from 22 Oct 2026 or later. The change from the deprecated `Instance.*` calls is **simulated** (typings, type-check, mock engine: same behaviour before and after) and **not** compiled, Hammer verified or in-game verified. The scripts inside the addon folders on the PC still hold the older calls.
 
 Not yet recorded anywhere: the CS2 build number and Workshop Tools version each port or tool was last built against, and the versions of
 BSPSource, VTFCmd and RadGen in use. Record the CS2 build (Steam: Properties, Updates, or `version` in the console) in the port's README

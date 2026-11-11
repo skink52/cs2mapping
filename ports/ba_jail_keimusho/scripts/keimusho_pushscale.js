@@ -1,4 +1,4 @@
-import { Instance } from "cs_script/point_script";
+import { Instance, Console } from "cs_script/point_script";
 
 // ba_jail_keimusho: copy of ba_jail_seaside pushscale.js. Replaces "sm_cvar phys_pushscale 25" on rockbuttonon:
 // while on, knifing or shooting a falling rock (rock6-9) pushes it. rockbuttonon -> push_on, rockbuttonoff -> push_off.
@@ -28,11 +28,11 @@ function tryPush(pawn, range, strength) {
         ignorePlayers: true,
     });
     const ent = tr.didHit ? tr.hitEntity : undefined;
-    if (DEBUG) Instance.Msg(`[push] hit ${ent ? ent.GetEntityName() + " (" + ent.GetClassName() + ")" : "nothing"}`);
+    if (DEBUG) Console.Log(`[push] hit ${ent ? ent.GetEntityName() + " (" + ent.GetClassName() + ")" : "nothing"}`);
     if (!ent || !ent.IsValid() || !NAME_RE.test(ent.GetEntityName() || "")) return;
 
-    Instance.EntFireAtTarget({ target: ent, input: "EnableMotion" });
-    Instance.EntFireAtTarget({ target: ent, input: "Wake" });
+    ent.FireInput({ input: "EnableMotion" });
+    ent.FireInput({ input: "Wake" });
     const v = ent.GetAbsVelocity();
     ent.Teleport({
         velocity: {
@@ -48,7 +48,7 @@ if (Instance.OnGunFire) Instance.OnGunFire((e) => tryPush(e.weapon.GetOwner(), G
 
 function setEnabled(on) {
     enabled = on;
-    if (DEBUG) Instance.Msg(`[push] ${on ? "on" : "off"}`);
+    if (DEBUG) Console.Log(`[push] ${on ? "on" : "off"}`);
 }
 
 Instance.OnScriptInput("push_on", () => setEnabled(true));

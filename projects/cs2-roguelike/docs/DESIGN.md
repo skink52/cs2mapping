@@ -19,8 +19,8 @@ feeding one 64-player PvP showdown, three classes, minimal HUD) and marks where 
 - **Research first.** Read the repo's tools and docs before building; that time is not wasted.
 
 ### What exists now (v0.1.0)
-- `tools/layout.py`: lobby 1536², 12 vaults 1024² x 272 (kinds colonnade, cross, grid, split, ring, shrine, garden, archive, ruin), 8 staging rooms
-  512 x 384 with T and CT buy zones, arena 3072² with a 48-unit tier, a 144-unit dais, 8 balconies and 20 cover blocks, a cache room. All floors at z = 0.
+- `tools/layout.py`: lobby 1536Â², 12 vaults 1024Â² x 272 (kinds colonnade, cross, grid, split, ring, shrine, garden, archive, ruin), 8 staging rooms
+  512 x 384 with T and CT buy zones, arena 3072Â² with a 48-unit tier, a 144-unit dais, 8 balconies and 20 cover blocks, a cache room. All floors at z = 0.
 - `tools/vmap.py`: shells, Anubis trims and wall panels, the recessed conduit (stone lips + self-lit strip), pillars (base + 2 x 128), entry/exit plates,
   light_omni2 per room (5 stationary, accents baked-only), probe volume, lightmap-res shell and Low hint per room, Lowest over all, spawns, teleport
   targets, point_script, prop pool template (null model), cache props, team intros, post-processing, fog.

@@ -1,4 +1,4 @@
-import { Instance, CSPlayerPawn, CSPlayerController } from "cs_script/point_script";
+import { Instance, Entities, Console, CSPlayerPawn, CSPlayerController } from "cs_script/point_script";
 
 // mg_minecraft_adventure: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.
 // Everything here is driven by `mg_minecraft_adventure_io_script` -> RunScriptInput <input name>, with the activator passed through.
@@ -434,8 +434,8 @@ const portAnimSkin = PORT_ANIM.map(() => -1);
 function portAnimAttach() {
     for (const a of PORT_ANIM) {
         if (!a.owner) continue;
-        const prop = Instance.FindEntityByName(a.name); if (!prop) continue;
-        const owners = Instance.FindEntitiesByName(a.owner).filter(e => !a.ownerClass || e.GetClassName() === a.ownerClass);
+        const prop = Entities.FindByName(a.name)[0]; if (!prop) continue;
+        const owners = Entities.FindByName(a.owner).filter(e => !a.ownerClass || e.GetClassName() === a.ownerClass);
         let owner = owners[0];
         if (owners.length > 1 && a.spawn) {            // duplicate names: the one spawned where this prop's owner was expected
             let best = 1e18;
@@ -449,7 +449,7 @@ function portAnimAttach() {
             prop.SetParent(undefined);
             prop.Teleport({ position: owner.GetAbsOrigin(), angles: owner.GetAbsAngles() });
             prop.SetParent(owner);
-        } catch (e) { Instance.Msg("port_anim: could not attach " + a.name + ": " + e); }
+        } catch (e) { Console.Log("port_anim: could not attach " + a.name + ": " + e); }
     }
 }
 Instance.OnRoundStart(() => { portAnimAttach(); for (let i = 0; i < portAnimSkin.length; i++) portAnimSkin[i] = -1; wakeThink(); });
@@ -459,7 +459,7 @@ THINKERS.push(() => {
         const a = PORT_ANIM[i]; const f = Math.floor(t * a.fps) % a.frames;
         if (f === portAnimSkin[i]) continue;
         portAnimSkin[i] = f;
-        Instance.EntFireAtName({ name: a.name, input: "Skin", value: String(f) });
+        Entities.FireInput({ name: a.name, input: "Skin", value: String(f) });
     }
     return true;
 });

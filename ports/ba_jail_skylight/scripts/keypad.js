@@ -1,4 +1,4 @@
-import { Instance } from "cs_script/point_script";
+import { Instance, Entities, Console } from "cs_script/point_script";
 
 // ---- Settings ---------------------------------------------------------
 // The code, one number per press. Change this to whatever you want.
@@ -20,7 +20,7 @@ const DEBUG = false;
 // -----------------------------------------------------------------------
 
 function log(text) {
-    if (DEBUG) Instance.Msg(`keypad: ${text}`);
+    if (DEBUG) Console.Log(`keypad: ${text}`);
 }
 
 let entered = 0;        // how many digits have been pressed this attempt
@@ -29,9 +29,9 @@ let lastPress = 0;      // game time of the last press
 let ventOpened = false; // vent only opens once, like the old logic_case
 
 function fire(name, input, delay = 0) {
-    const count = Instance.FindEntitiesByName(name).length;
+    const count = Entities.FindByName(name).length;
     log(`fire ${input} on "${name}" (delay ${delay}) - ${count} matching entities`);
-    Instance.EntFireAtName({ name, input, delay });
+    Entities.FireInput({ name, input, delay });
 }
 
 function resetAttempt() {
@@ -89,23 +89,23 @@ let hooks = [];
 
 function hookButtons() {
     for (const id of hooks) {
-        try { Instance.DisconnectOutput(id); } catch (error) { /* already gone */ }
+        try { Entities.DisconnectOutput(id); } catch (error) { /* already gone */ }
     }
     hooks = [];
 
     for (let digit = 0; digit <= 9; digit++) {
         const name = `${digit}button`;
-        const buttons = Instance.FindEntitiesByName(name);
+        const buttons = Entities.FindByName(name);
         if (buttons.length === 0) {
-            Instance.Msg(`keypad: could not find a button named ${name}`);
+            Console.Log(`keypad: could not find a button named ${name}`);
             continue;
         }
         for (const button of buttons) {
-            const id = Instance.ConnectOutput(button, "OnPressed", () => press(digit));
+            const id = Entities.ConnectOutput({ target: button, output: "OnPressed", callback: () => press(digit) });
             if (id !== undefined) hooks.push(id);
         }
     }
-    Instance.Msg(`keypad: ready - hooked ${hooks.length} button outputs`);
+    Console.Log(`keypad: ready - hooked ${hooks.length} button outputs`);
 }
 
 function start() {
@@ -123,5 +123,5 @@ Instance.OnRoundStart(() => {
 
 // Console tests (need sv_cheats 1). They skip the buttons entirely, so they show
 // whether the sounds, lights and vent respond when fired from the script.
-Instance.RegisterCheatCommand("keypad_test_accept", () => success());
-Instance.RegisterCheatCommand("keypad_test_reject", () => failure());
+Console.RegisterCheatCommand("keypad_test_accept", () => success());
+Console.RegisterCheatCommand("keypad_test_reject", () => failure());

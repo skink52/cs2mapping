@@ -3,7 +3,7 @@ import json, os
 import gravity, physpush
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-def build(mapname, script_name, push=None, commands=None, scores=None, speeds=None, gravities=None, spawn_equips=None, equip_items=None, phys=None):
+def _build(mapname, script_name, push=None, commands=None, scores=None, speeds=None, gravities=None, spawn_equips=None, equip_items=None, phys=None):
     head = ['import { Instance, CSPlayerPawn, CSPlayerController%s } from "cs_script/point_script";' % ((', CSInputs' if speeds else '') + (', CSMoveType' if gravities else '') + (', CSGearSlot' if spawn_equips else '')), '',
             '// %s: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.' % mapname,
             '// Everything here is driven by `%s` -> RunScriptInput <input name>, with the activator passed through.' % script_name, '//']
@@ -36,7 +36,7 @@ def build(mapname, script_name, push=None, commands=None, scores=None, speeds=No
                  '/** @type {string[]} */',
                  'const COMMANDS = ' + json.dumps(commands, indent=4) + ';',
                  'COMMANDS.forEach((cmd, i) => {',
-                 '    Instance.OnScriptInput("Cmd_" + i, () => { Instance.ServerCommand(cmd); });',
+                 '    Instance.OnScriptInput("Cmd_" + i, () => { Console.ServerCommand(cmd); });',
                  '});']
     if scores:
         body += ['', '// ---------------------------------------------------------------- game_score replacement (entity removed in CS2)',
@@ -106,7 +106,7 @@ for (const [equip, items] of Object.entries(EQUIP_ITEMS)) {
     });
 }'''
 
-def patch_items(js, equip_items):
+def _patch_items(js, equip_items):
     """Add (or replace) the equip-items section in an existing <map>_io.js (follow-up pass)."""
     import re
     sec = ITEMS_JS.replace('__ITEMS__', json.dumps(equip_items, indent=4))
@@ -165,3 +165,15 @@ for (const s of __SPEEDS__) {
         wakeThink();
     });
 }'''
+
+
+def build(*a, **k):
+    """_build, then the import line made to name every API global the script uses (Entities, Console, GameRules)."""
+    import jsapi
+    return jsapi.ensure_imports(_build(*a, **k))
+
+
+def patch_items(*a, **k):
+    """_patch_items, then the import line made to name every API global the script uses (Entities, Console, GameRules)."""
+    import jsapi
+    return jsapi.ensure_imports(_patch_items(*a, **k))

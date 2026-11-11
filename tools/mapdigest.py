@@ -15,11 +15,17 @@ megabytes of mesh data. Reads the map; never writes to it.
   --out FILE         write the JSON there instead of printing it (never over a .vmap)
   --pretty           indent the JSON (default: one entity per line, which is smaller)
 
-JSON: {"map", "bytes", "summary": {entities, by_class, named, meshes, mesh_vertices, bounds, dangling_targets, special_targets},
+JSON: {"map", "bytes", "summary": {entities, by_class, named, meshes, bounds, dangling_targets, class_targets, special_targets,
+                                    references: {scripts, models, sounds, particles}, script_inputs},
        "entities": [{"i", "class", "name", "origin", "angles", "parent", "keys": {...}, "out": [[output, target, input, param, delay, times], ...]}]}
 "i" is the element index in the file: stable until the map is saved again, and what tools/vmapedit.py uses. Coordinates are rounded to
 one decimal. A target that no entity is named (and that is not !activator, !self ...) is listed under dangling_targets: usually a
-dropped entity or a typo. "level": this is a read of the file, not of the running map ("untested", docs/reference/compatibility.md).
+dropped entity or a typo, but not proof of a fault: a name can be given at run time (a script's SetEntityName, a point_template's
+name fix-up, a spawned entity), which a read of the file cannot see. A target that is the class of an entity in the map is listed
+under class_targets instead (the engine accepts a class name as a target). references: what the matched entities point at by key
+(cs_script, model, sound, particle), each with a use count; materials sit on mesh faces, which this tool leaves out
+(scripts/vmap_refs.py lists those). script_inputs: the names sent as RunScriptInput, to compare with a script's OnScriptInput names.
+"level": this is a read of the file, not of the running map ("untested", docs/reference/compatibility.md).
 
 Python 3.9+, standard library plus tools/vmapedit.py (which reads keyvalues2 text and binary DMX vmaps).
 """
@@ -46,6 +52,10 @@ def digest(path, classes=(), names=(), near=None, touches=(), extra_keys=(), lim
     ents = m.entities()
     all_names = collections.Counter(n for n in (m.name(e) for e in ents) if n)
     out, by_class, dangling, special = [], collections.Counter(), collections.Counter(), collections.Counter()
+    all_classes = {m.cls(e) for e in ents}
+    by_cls_target, script_inputs = collections.Counter(), collections.Counter()
+    refs = {'scripts': collections.Counter(), 'models': collections.Counter(), 'sounds': collections.Counter(), 'particles': collections.Counter()}
+    REF_KEYS = (('cs_script', 'scripts'), ('model', 'models'), ('soundName', 'sounds'), ('soundevent', 'sounds'), ('effect_name', 'particles'))
     matched = 0
     for e in ents:
         cls, name = m.cls(e), m.name(e)
@@ -61,7 +71,13 @@ def digest(path, classes=(), names=(), near=None, touches=(), extra_keys=(), lim
         for c in conns:
             t = c[1]
             if t.lower() in SPECIAL or t.startswith('!'): special[t] += 1
-            elif t and not any(fnmatch.fnmatchcase(n, t) for n in all_names) and t not in all_names: dangling[t] += 1
+            elif t and not any(fnmatch.fnmatchcase(n, t) for n in all_names) and t not in all_names:
+                if t in all_classes: by_cls_target[t] += 1
+                else: dangling[t] += 1
+            if str(c[2]).lower() == 'runscriptinput' and c[3]: script_inputs[str(c[3])] += 1
+        for k, kind in REF_KEYS:
+            v = m.P(e, k)
+            if v not in (None, '', '0'): refs[kind][str(v)] += 1
         if limit is not None and len(out) >= limit:
             continue
         rec = {'i': e, 'class': cls}
@@ -83,7 +99,11 @@ def digest(path, classes=(), names=(), near=None, touches=(), extra_keys=(), lim
                'named': sum(1 for e in out if 'name' in e) if limit is None else None,
                'duplicate_names': {n: c for n, c in all_names.items() if c > 1} if not (classes or names or near or touches) else None,
                'meshes': len(meshes), 'bounds': [_r(b[0]), _r(b[1])] if b else None,
-               'dangling_targets': dict(dangling.most_common()), 'special_targets': dict(special.most_common()),
+               'dangling_targets': dict(dangling.most_common()), 'class_targets': dict(by_cls_target.most_common()),
+               'special_targets': dict(special.most_common()),
+               'references': {k: dict(v.most_common(60)) for k, v in refs.items() if v},
+               'reference_counts': {k: len(v) for k, v in refs.items() if v},
+               'script_inputs': dict(sorted(script_inputs.items())),
                'truncated': bool(limit is not None and matched > len(out))}
     return {'map': os.path.basename(path), 'bytes': os.path.getsize(path), 'level': 'untested', 'manual_check_required': True,
             'summary': {k: v for k, v in summary.items() if v is not None}, 'entities': out}

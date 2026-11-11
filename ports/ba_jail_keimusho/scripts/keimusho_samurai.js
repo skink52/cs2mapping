@@ -1,4 +1,4 @@
-import { Instance, CSPlayerPawn, CSPlayerController, CSInputs, CSMoveType, CSGearSlot } from "cs_script/point_script";
+import { Instance, Entities, CSPlayerPawn, CSPlayerController, CSInputs, CSMoveType, CSGearSlot } from "cs_script/point_script";
 
 // ba_jail_keimusho: samurai mask power-up (CS:GO trigger_once next to the knife named "knife").
 // In CS:GO the T who touched it got player_speedmod x3, gravity 0.5, alpha 0 (invisible), 200 HP and the samurai mask.
@@ -58,11 +58,11 @@ function release(slot) {
 }
 
 function grabMask(slot) {
-    const m = Instance.FindEntityByName(MASK_NAME);
+    const m = Entities.FindByName(MASK_NAME)[0];
     if (!m || !m.IsValid()) return;
     mask = m; maskSlot = slot;
     m.SetParent(undefined);
-    Instance.EntFireAtTarget({ target: m, input: "DisableCollision" });
+    m.FireInput({ input: "DisableCollision" });
 }
 
 Instance.OnScriptInput("samurai_on", ({ activator }) => {
@@ -75,7 +75,7 @@ Instance.OnScriptInput("samurai_on", ({ activator }) => {
     // the map strips the player at the same moment and the floor knife is picked up by walking over it;
     // the map strips the player at the same moment and the floor knife is picked up by walking over it, so the
     // invisibility, knife check and mask follow run a moment later
-    Instance.EntFireAtName({ name: "samuraiscript", input: "RunScriptInput", value: "samurai_check", activator: pawn, delay: 0.3 });
+    Entities.FireInput({ name: "samuraiscript", input: "RunScriptInput", value: "samurai_check", activator: pawn, delay: 0.3 });
     wake();
 });
 
@@ -86,7 +86,7 @@ Instance.OnScriptInput("samurai_check", ({ activator }) => {
     pawn.SetColor({ r: 255, g: 255, b: 255, a: 0 });
     if (!pawn.FindWeaponBySlot(CSGearSlot.KNIFE)) {
         pawn.GiveNamedItem("weapon_knife", true);
-        const k = Instance.FindEntityByName(FLOOR_KNIFE);
+        const k = Entities.FindByName(FLOOR_KNIFE)[0];
         if (k && k.IsValid() && !k.GetOwner()) k.Remove();
     }
     grabMask(ctrl.GetPlayerSlot());

@@ -1,4 +1,4 @@
-import { Instance, CSPlayerPawn, CSPlayerController, CSGearSlot, CSInputs, CSMoveType } from "cs_script/point_script";
+import { Instance, Entities, CSPlayerPawn, CSPlayerController, CSGearSlot, CSInputs, CSMoveType } from "cs_script/point_script";
 
 // mg_pirates: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.
 // Everything here is driven by `mg_pirates_io_script` -> RunScriptInput <input name>, with the activator passed through.
@@ -1688,8 +1688,8 @@ function gameuiFire(ui, out, pawn, value) {
     for (const [o, target, input, param, delay] of GAMEUI[ui].outs) {
         if (o !== out) continue;
         const v = param !== "" ? param : (value ?? "");
-        if (target.toLowerCase() === "!activator") Instance.EntFireAtTarget({ target: pawn, input, value: v, activator: pawn, delay });
-        else Instance.EntFireAtName({ name: target, input, value: v, activator: pawn, delay });
+        if (target.toLowerCase() === "!activator") pawn.FireInput({ input, value: v, activator: pawn, delay });
+        else Entities.FireInput({ name: target, input, value: v, activator: pawn, delay });
     }
 }
 /** @param {string} ui */
@@ -1992,9 +1992,9 @@ function launchRotate(a, v) {
 }
 for (const [pusher, L] of Object.entries(LAUNCH)) {
     Instance.OnScriptInput("Launch_" + pusher, () => {
-        const pe = Instance.FindEntityByName(pusher);
-        const de = L.dest ? Instance.FindEntityByName(L.dest) : undefined;
-        const pv = L.pivot ? Instance.FindEntityByName(L.pivot) : undefined;
+        const pe = Entities.FindByName(pusher)[0];
+        const de = L.dest ? Entities.FindByName(L.dest)[0] : undefined;
+        const pv = L.pivot ? Entities.FindByName(L.pivot)[0] : undefined;
         /** @type {number[]} */ let dir;
         let from;
         if (de && pv) {
@@ -2008,7 +2008,7 @@ for (const [pusher, L] of Object.entries(LAUNCH)) {
         const near = pv ? pv.GetAbsOrigin() : from;
         let best, bestD = 400;
         for (const name of L.balls) {
-            for (const ent of Instance.FindEntitiesByName(name)) {
+            for (const ent of Entities.FindByName(name)) {
                 const o = ent.GetAbsOrigin(), v = ent.GetAbsVelocity();
                 const d = Math.hypot(o.x - near.x, o.y - near.y, o.z - near.z);
                 if (Math.hypot(v.x, v.y, v.z) < 100 && d <= bestD) { best = ent; bestD = d; }

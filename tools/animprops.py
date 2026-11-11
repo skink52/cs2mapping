@@ -217,8 +217,8 @@ const portAnimSkin = PORT_ANIM.map(() => -1);
 function portAnimAttach() {
     for (const a of PORT_ANIM) {
         if (!a.owner) continue;
-        const prop = Instance.FindEntityByName(a.name); if (!prop) continue;
-        const owners = Instance.FindEntitiesByName(a.owner).filter(e => !a.ownerClass || e.GetClassName() === a.ownerClass);
+        const prop = Entities.FindByName(a.name)[0]; if (!prop) continue;
+        const owners = Entities.FindByName(a.owner).filter(e => !a.ownerClass || e.GetClassName() === a.ownerClass);
         let owner = owners[0];
         if (owners.length > 1 && a.spawn) {            // duplicate names: the one spawned where this prop's owner was expected
             let best = 1e18;
@@ -232,7 +232,7 @@ function portAnimAttach() {
             prop.SetParent(undefined);
             prop.Teleport({ position: owner.GetAbsOrigin(), angles: owner.GetAbsAngles() });
             prop.SetParent(owner);
-        } catch (e) { Instance.Msg("port_anim: could not attach " + a.name + ": " + e); }
+        } catch (e) { Console.Log("port_anim: could not attach " + a.name + ": " + e); }
     }
 }
 Instance.OnRoundStart(() => { portAnimAttach(); for (let i = 0; i < portAnimSkin.length; i++) portAnimSkin[i] = -1; wakeThink(); });
@@ -242,7 +242,7 @@ THINKERS.push(() => {
         const a = PORT_ANIM[i]; const f = Math.floor(t * a.fps) %% a.frames;
         if (f === portAnimSkin[i]) continue;
         portAnimSkin[i] = f;
-        Instance.EntFireAtName({ name: a.name, input: "Skin", value: String(f) });
+        Entities.FireInput({ name: a.name, input: "Skin", value: String(f) });
     }
     return true;
 });
@@ -251,7 +251,7 @@ wakeThink();
 '''
 
 
-def patch_script(js, table):
+def _patch_script(js, table):
     import json
     block = JS % (MARK_A, json.dumps(table, indent=4), MARK_B)
     if MARK_A in js and MARK_B in js:
@@ -295,6 +295,12 @@ def run(m, content, addon, specs, log):
         log.append('added point_script %s' % script)
     log.append('animprops: %d faces -> %d skinned props; originals now toolsnodraw' % (n_faces, n_models))
     return table
+
+
+def patch_script(*a, **k):
+    """_patch_script, then the import line made to name every API global the script uses (Entities, Console, GameRules)."""
+    import jsapi
+    return jsapi.ensure_imports(_patch_script(*a, **k))
 
 
 if __name__ == '__main__':

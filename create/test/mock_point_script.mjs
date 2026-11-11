@@ -163,6 +163,7 @@ class Ent {
   constructor(name, cls, pos, ang) { this._id = nextId++; this._n = name || ''; this._c = cls; this._p = pos ? { ...pos } : V(); this._a = ang ? { ...ang } : Q(); this._v = V();
     this._ok = true; this._hp = 100; this._maxhp = 100; this._team = 0; this._parent = undefined; this._owner = undefined; this._mt = MT.NONE; }
   IsValid() { return this._ok; }
+  FireInput(cfg) { if (!cfg || typeof cfg !== 'object' || cfg.input === undefined) throw new Error('Entity.FireInput needs { input }'); entFire(() => [this], this._n || this._c, cfg); }
   GetClassName() { return this._c; } GetEntityName() { return this._n; } SetEntityName(n) { unindex(this); this._n = String(n); index(this); seeEnt(this); }
   GetAbsOrigin() { return { ...this._p }; } GetLocalOrigin() { return { ...this._p }; } GetAbsAngles() { return { ...this._a }; } GetLocalAngles() { return { ...this._a }; }
   GetAbsVelocity() { return { ...this._v }; } GetLocalVelocity() { return { ...this._v }; } GetAbsAngularVelocity() { return V(); } GetLocalAngularVelocity() { return V(); }
@@ -543,8 +544,38 @@ const Instance = new Proxy({
   },
 });
 
+// The API's other globals (Oct-Nov 2026): the same engine behind them as the Instance calls they replace. A member the
+// typings do not declare is reported like an unknown Instance method; a declared one this file does not model returns a default.
+const DGLOB = {};
+for (const m of dts.matchAll(/^\s{4}interface (IEntities|IConsole|IGameRules)\s*\{([\s\S]*?)^\s{4}\}/gm)) DGLOB[m[1]] = new Set([...m[2].matchAll(/^\s{8}([A-Z][A-Za-z]+)(?:<[^>]*>)?\(/gm)].map((x) => x[1]));
+const glob = (label, iface, impl) => new Proxy(impl, { get(t, k) {
+  if (typeof k === 'symbol') return t[k];
+  if (!(DGLOB[iface] || new Set()).has(k)) { count(stats.notInApi, label + '.' + k); return () => undefined; }
+  if (!(k in t)) return () => { count(stats.calls, 'unmodelled ' + label + '.' + k); return dflt(k); };
+  if (CALLS) cnt(label + '.' + k); return t[k];
+} });
+const needCfg = (cfg, what, keys) => { if (!cfg || typeof cfg !== 'object') throw new Error(what + ' needs a config object');
+  for (const k of keys) if (cfg[k] === undefined) throw new Error(what + ' needs { ' + keys.join(', ') + ' }'); return cfg; };
+const Entities = glob('Entities', 'IEntities', {
+  FindByName(n) { return Instance.FindEntitiesByName(n); }, FindByClass(c) { return Instance.FindEntitiesByClass(c); },
+  FireInput(cfg) { needCfg(cfg, 'Entities.FireInput', ['name', 'input']); Instance.EntFireAtName(cfg); },
+  ConnectOutput(cfg) { needCfg(cfg, 'Entities.ConnectOutput', ['target', 'output', 'callback']); return Instance.ConnectOutput(cfg.target, cfg.output, cfg.callback); },
+  DisconnectOutput(id) { Instance.DisconnectOutput(id); },
+});
+const cvarNum = (n) => (n in cvars && Number.isFinite(+cvars[n]) ? +cvars[n] : undefined);
+const Console = glob('Console', 'IConsole', {
+  Log(t) { Instance.Msg(t); }, ServerCommand(c) { Instance.ServerCommand(c); }, ClientCommand(s, c) { Instance.ClientCommand(s, c); }, RegisterCheatCommand() {},
+  GetConvarNumber: cvarNum, GetConvarBoolean(n) { const v = cvarNum(n); return v === undefined ? undefined : v !== 0; }, GetConvarString(n) { return n in cvars ? String(cvars[n]) : undefined; },
+  SetConvar(n, v) { cvars[n] = typeof v === 'boolean' ? (v ? '1' : '0') : String(v); },
+});
+const GameRules = glob('GameRules', 'IGameRules', {
+  IsWarmupPeriod() { return Instance.IsWarmupPeriod(); }, IsFreezePeriod() { return Instance.IsFreezePeriod(); }, IsTeamIntroPeriod() { return false; },
+  GetRoundsPlayed() { return Instance.GetRoundsPlayed(); }, GetRoundRemainingTime() { return Instance.GetRoundRemainingTime(); },
+  SetRoundRemainingTime(t) { Instance.SetRoundRemainingTime(t); }, AddTeamMoney() {},
+});
+
 // ---------------------------------------------------------------- load the script
-const stub = { Instance, ...ENUMS, ...CLS };
+const stub = { Instance, Entities, Console, GameRules, ...ENUMS, ...CLS };
 globalThis.__mock_cs2 = stub;
 const stubFile = path.join(os.tmpdir(), 'mock_point_script_stub_' + process.pid + '.mjs');
 fs.writeFileSync(stubFile, 'const s = globalThis.__mock_cs2;\nexport const ' + Object.keys(stub).map((k) => `${k} = s.${k}`).join(', ') + ';\n');

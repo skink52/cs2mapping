@@ -91,8 +91,21 @@ tick late, but it can't miss a release. A missed release would leave a thruster 
 
 ## Entities and I/O from script
 
-**API moves (CS2 updates 22 Oct and 5 Nov 2026).** The `Instance.*` names below still work but are marked deprecated; Valve keeps the old
-names in place. New code uses the new homes; the old scripts don't need changing until Valve removes them.
+**API moves (CS2 updates 22 Oct and 5 Nov 2026).** The `Instance.*` names below still work but are marked deprecated ("will be removed in a
+future update"). New code uses the new homes.
+
+**Where this repo stands (11 Nov 2026).** Every `ports/*/scripts/*.js` and every stage C script generator in `tools/` was moved to the new
+calls by `tools/jsapi.py` (317 calls in 36 port scripts, 17 template lines in six generators), one call at a time by the rules in the table;
+mg_fred_all's damage gate was moved by hand from `OnBeforePlayerDamage` to `OnModifyPlayerDamage`. Checked: `api.py --strict` (no invalid, no
+deprecated call), `tscheck.sh` (no new type error; one old one gone), and the stand-in engine, whose fired inputs, commands and errors were
+the same before and after for all 55 scripts. That is **simulated**. Not checked in CS2: nothing was compiled or loaded for this change, and
+the copies of these scripts in the addon folders on the PC were not touched (they keep the old, still working calls until the next port run
+or a deliberate copy). What the typings cannot tell us, and so is assumed until seen in game: `Entities.FindByName(n)[0]` is the entity the old
+`FindEntityByName(n)` returned when several share a name; `Console.Log` prints where `Instance.Msg` printed (the live-test probe in
+`autoport/livetest.py` parses that output, so it stays on `Instance.Msg` until checked in game); `ent.FireInput` on an entity variable that is
+`undefined` throws a TypeError in the script where `EntFireAtTarget({ target: undefined })` was the engine's to reject.
+Deprecated calls kept on purpose are listed with reasons in `create/test/api_allow.txt` (the probe; the original addons under `projects/`,
+whose own stand-in engines do not all model the new globals yet). CI fails on a deprecated call that is not in that file.
 
 | Old (deprecated) | New |
 |---|---|
@@ -103,6 +116,8 @@ names in place. New code uses the new homes; the old scripts don't need changing
 | `Instance.ConnectOutput(ent, "OnX", cb)` / `DisconnectOutput(id)` | `Entities.ConnectOutput({ target: ent, output: "OnX", callback: cb })` / `Entities.DisconnectOutput(id)` |
 | `Instance.Msg`, `ServerCommand`, `ClientCommand`, `RegisterCheatCommand` | `Console.Log`, `Console.ServerCommand`, ... (plus `Console.GetConvar*`, `SetConvar`) |
 | `Instance.IsWarmupPeriod`, `IsFreezePeriod`, `GetRoundsPlayed`, `Get/SetRoundRemainingTime`, `AddTeamMoney` | same names on `GameRules` (plus `TerminateRound`, `Start/EndWarmup`, `Get/AddTeamScore`) |
+| `Instance.OnBeforePlayerDamage(cb)` | `Instance.OnModifyPlayerDamage(cb)`: a different event (typed, after hitgroup multipliers, not called for zero damage); move by hand |
+| `Instance.EntFireAtName(name, input, data, delay)` (positional) | `Entities.FireInput({ name, input, value, delay })`; by hand: the third argument was a value or an object |
 
 Import the new tops alongside `Instance`: `import { Instance, Entities, Console, GameRules } from "cs_script/point_script"`.
 Also new on 5 Nov: `Entities.Spawn([{ classname, origin, angles, ...keyvalues }])` (experimental: spawn entities without a point_template),
@@ -124,7 +139,7 @@ anything held across a round restart), and `ConnectOutput` logs `Couldn't find o
   so anything hooked with `ConnectOutput` has to be hooked again in `OnRoundStart` (ba_jail_skylight's keypad, Mario Party's counters).
 - Cancel or change a hit with `Instance.OnModifyPlayerDamage(ev => ({ abort: true }) | ({ damage: n }) | ({ damageFlags }))`. It runs after hitgroup
   multipliers and doesn't fire for zero-damage hits. The older `OnBeforePlayerDamage` is marked deprecated in Valve's `point_script.d.ts`
-  (mg_fred_all's gate and the helicopter/vehicle scripts in ba_jail_skylight and jb_water_prison_cs2 still use it), as are `OnBeforeReload`/`OnReload`
+  (no port script uses it since 11 Nov 2026; mg_fred_all's gate was the last), as are `OnBeforeReload`/`OnReload`
   (use `OnScriptReload`). New scripts use `OnModifyPlayerDamage`.
 - Map-specific gates (e.g. mg_fred_all's `EnableDamage`): a trigger fires `RunScriptInput <name>` on `<addon>_io_script`, the script sets a flag,
   the damage hook aborts hits while it's off, and `OnRoundStart` resets it.

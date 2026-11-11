@@ -1,4 +1,4 @@
-import { Instance, Entity, BaseModelEntity, CSPlayerPawn, CSPlayerController, CSInputs, CSDamageFlags, CSGearSlot, CustomHudLayout, CSMoveType } from "cs_script/point_script";
+import { Instance, Entities, Console, Entity, BaseModelEntity, CSPlayerPawn, CSPlayerController, CSInputs, CSDamageFlags, CSGearSlot, CustomHudLayout, CSMoveType } from "cs_script/point_script";
 
 // mg_swag_multigames: CS2 replacements for CS:GO entities and I/O tricks that no longer exist.
 // Driven by `swag_io_script` -> RunScriptInput <input name>; the touching / pressing / picking-up player is the activator.
@@ -191,7 +191,7 @@ for (const [tele, info] of Object.entries(DATA.teleporters)) {
 /** @param {string} tele @param {CSPlayerPawn} pawn */
 function teleportTo(tele, pawn) {
     if (!currentDest[tele]) return;
-    const dest = Instance.FindEntityByName(currentDest[tele]);
+    const dest = Entities.FindByName(currentDest[tele])[0];
     if (!dest || !dest.IsValid()) return;
     // like trigger_teleport: move to the destination (read now - the buttons move it), take its facing, stop all movement
     const angles = dest.GetAbsAngles();
@@ -223,11 +223,11 @@ Instance.OnScriptInput("ZeroVelocity", ({ activator }) => {
 for (const [name, xyz, cls] of DATA.moves) {
     const [x, y, z] = nums(xyz);
     Instance.OnScriptInput(`MoveTo_${name}__${xyz}`, () => {
-        for (const ent of Instance.FindEntitiesByName(name)) ent.Teleport({ position: { x, y, z } });
+        for (const ent of Entities.FindByName(name)) ent.Teleport({ position: { x, y, z } });
         if (cls === "env_particle_glow") {
             // restart the sprite so it is drawn at its new position (they are always on in this map)
-            Instance.EntFireAtName({ name, input: "DestroyImmediately" });
-            Instance.EntFireAtName({ name, input: "Start", delay: 0.05 });
+            Entities.FireInput({ name, input: "DestroyImmediately" });
+            Entities.FireInput({ name, input: "Start", delay: 0.05 });
         }
     });
 }
@@ -236,7 +236,7 @@ for (const [name, xyz, cls] of DATA.moves) {
 for (const [target, rgbs] of DATA.colors) {
     const rgb = nums(rgbs);
     Instance.OnScriptInput(`Color_${target}__${rgbs}`, () => {
-        for (const ent of Instance.FindEntitiesByName(target)) if (ent instanceof BaseModelEntity) tint(ent, rgb);
+        for (const ent of Entities.FindByName(target)) if (ent instanceof BaseModelEntity) tint(ent, rgb);
     });
 }
 
@@ -246,7 +246,7 @@ const LAYOUT_NAME = "swag_overlay_layout";
 const killedOverlays = new Set();
 /** @param {string} panelId @param {boolean} visible */
 function setOverlay(panelId, visible) {
-    const ent = Instance.FindEntityByName(LAYOUT_NAME);
+    const ent = Entities.FindByName(LAYOUT_NAME)[0];
     if (ent instanceof CustomHudLayout) ent.SetHasClass(panelId, "Hidden", !visible);
 }
 for (const o of DATA.overlays) {
@@ -272,7 +272,7 @@ function showIntro() {
     if (introRounds > INTRO_ROUNDS || introShownRound === introRounds) return;
     introShownRound = introRounds;
     setOverlay(INTRO, true);
-    Instance.EntFireAtName({ name: SCRIPT_NAME, input: "RunScriptInput", value: "Hide_" + INTRO, delay: INTRO_TIME });
+    Entities.FireInput({ name: SCRIPT_NAME, input: "RunScriptInput", value: "Hide_" + INTRO, delay: INTRO_TIME });
 }
 Instance.OnRoundStart(() => roundSignal());
 
@@ -340,7 +340,7 @@ function winnerThink(now) {
     const p = pawn.GetAbsOrigin();
     if (inRegion(p, PICKER_ROOM)) { lobbyWinner = undefined; return; }
     if (inRegion(p, WINNER_SHAFT)) { winnerCheckAt = now + 0.5; return; }
-    const dest = Instance.FindEntityByName("spawn_winnerdest2");
+    const dest = Entities.FindByName("spawn_winnerdest2")[0];
     if (dest && dest.IsValid()) pawn.Teleport({ position: dest.GetAbsOrigin(), velocity: { x: 0, y: 0, z: 0 } });
     lobbyWinner = undefined;
 }
@@ -400,7 +400,7 @@ function physThink(now, dt) {
     if (now >= nextBallScan) {
         nextBallScan = now + 0.5;
         balls = [];
-        for (const cls of PHYS_CLASSES) for (const ent of Instance.FindEntitiesByClass(cls)) if (physRule(ent)?.run) balls.push(ent);
+        for (const cls of PHYS_CLASSES) for (const ent of Entities.FindByClass(cls)) if (physRule(ent)?.run) balls.push(ent);
     }
     if (balls.length === 0) return;
     const pawns = livePawns();
@@ -430,12 +430,12 @@ function physThink(now, dt) {
 
 // ---------------------------------------------------------------- round flow
 Instance.OnActivate(() => {
-    for (const cvar of NO_DEFAULT_LOADOUT) Instance.ServerCommand(`${cvar} ""`);
+    for (const cvar of NO_DEFAULT_LOADOUT) Console.ServerCommand(`${cvar} ""`);
     ensureThink();
 });
 // game_round_end "roundend" OnRoundEnded
 Instance.OnRoundEnd(() => {
-    for (const [name, input, value, delay] of DATA.roundEnd) Instance.EntFireAtName({ name, input, value, delay });
+    for (const [name, input, value, delay] of DATA.roundEnd) Entities.FireInput({ name, input, value, delay });
 });
 // Each round starts like the map was built (CS:GO respawned map entities each round).
 Instance.OnBeginRoundRestart(() => {

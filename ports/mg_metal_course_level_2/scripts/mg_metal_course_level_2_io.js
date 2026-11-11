@@ -1,4 +1,4 @@
-import { Instance, CSPlayerPawn, CSPlayerController } from "cs_script/point_script";
+import { Instance, Entities, Console, CSPlayerPawn, CSPlayerController } from "cs_script/point_script";
 
 // mg_metal_course_level_2: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.
 // Everything here is driven by `mg_metal_course_level_2_io_script` -> RunScriptInput <input name>, with the activator passed through.
@@ -326,7 +326,7 @@ const COMMANDS = [
     "sv_airaccelerate 2000"
 ];
 COMMANDS.forEach((cmd, i) => {
-    Instance.OnScriptInput("Cmd_" + i, () => { Instance.ServerCommand(cmd); });
+    Instance.OnScriptInput("Cmd_" + i, () => { Console.ServerCommand(cmd); });
 });
 
 // ---------------------------------------------------------------- game_score replacement (entity removed in CS2)
@@ -355,16 +355,16 @@ function heMove(ent, pos) {
 function heInit() {
     hePairs = [];
     for (const n of HE_NAMES) {
-        const w = Instance.FindEntityByName(n);
+        const w = Entities.FindByName(n)[0];
         if (!w || !w.IsValid()) continue;
         const wp = w.GetAbsOrigin();
         for (let k = 1; k <= 8; k++) {
-            const g = Instance.FindEntityByName("heglow_" + n + "_" + k);
+            const g = Entities.FindByName("heglow_" + n + "_" + k)[0];
             if (!g || !g.IsValid()) continue;
             const gp = g.GetAbsOrigin();
             hePairs.push({ name: n, w, g, owner: undefined, proj: undefined, thrown: false, wait: 0,
                 ofs: { x: gp.x - wp.x, y: gp.y - wp.y, z: gp.z - wp.z } });
-            Instance.EntFireAtTarget({ target: g, input: "ClearParent" });
+            g.FireInput({ input: "ClearParent" });
         }
     }
     heReady = hePairs.length > 0 || ++heTries > 50;
@@ -372,7 +372,7 @@ function heInit() {
 
 function heFindProjectile(owner, name) {
     if (!owner || !owner.IsValid()) return undefined;
-    for (const pr of Instance.FindEntitiesByClass("hegrenade_projectile")) {
+    for (const pr of Entities.FindByClass("hegrenade_projectile")) {
         if (hePairs.some((q) => q.proj === pr && q.name !== name)) continue;
         const po = pr.GetOwner();
         if (po && po.IsValid() && po === owner) return pr;
@@ -417,7 +417,7 @@ THINKERS.push(() => {
             continue;
         }
         if (q.thrown || ++q.wait > 10) {
-            Instance.EntFireAtTarget({ target: q.g, input: "Kill" });
+            q.g.FireInput({ input: "Kill" });
             hePairs.splice(i, 1);
         }
     }

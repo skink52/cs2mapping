@@ -35,7 +35,7 @@ New projects get their own folder under `projects/`, a README (with the AI discl
 
 ## Layout
 
-- `tools/`: cs2port pipeline (runs on the PC from `C:\source1\cs2port	ools`, through autoport or Claude Code; the cloud workspace is the older route). Entry points: `prep.py` (stage A), `stage_c.py` (stage C), `stage_d.py` / `run_pass.py`
+- `tools/`: cs2port pipeline (runs on the PC from `C:\source1\cs2port\tools`, through autoport or Claude Code; the cloud workspace is the older route). Entry points: `prep.py` (stage A), `stage_c.py` (stage C), `stage_d.py` / `run_pass.py`
   (follow-up passes). **Every file, its job and its usage line are in the tool index, `tools/README.md`**: keep it in step when a tool or a usage line changes.
   `tools/weapons/` is the custom weapon builder (creation, not porting).
 - `scripts/`: things that run on the Windows PC (`run_import.bat`, `run_build.bat`, `build_maps.ps1`, `run_import_then_build.bat`,
@@ -63,8 +63,11 @@ New projects get their own folder under `projects/`, a README (with the AI discl
 
 - **Look the cs_script API up; never write it from memory.** Before writing or changing a script call, run
   `python create/test/api.py <word>` (or `--members CSPlayerPawn`): it prints the declaration from Valve's `create/test/point_script.d.ts`.
-  The API moved in Oct-Nov 2026 and will move again. A script is not finished until `python create/test/api.py --check <script.js>` reports
-  nothing unknown and `sh create/test/tscheck.sh <script.js>` passes; then the mock engine. All of that is "simulated", never "works in game".
+  The API moved in Oct-Nov 2026 and will move again. A script is not finished until `python create/test/api.py --strict --check <script.js>`
+  reports nothing invalid and nothing deprecated, and `sh create/test/tscheck.sh <script.js>` passes; then the mock engine. All of that is
+  "simulated", never "works in game". Write the current calls (`Entities.FindByName`, `Entities.FireInput`, `ent.FireInput`, `Console.Log`,
+  `GameRules.*`), not the deprecated `Instance.*` ones; CI fails on a deprecated call with no reason in `create/test/api_allow.txt`.
+  `python tools/jsapi.py <script.js>` reports what it would move; `python cs2mapping.py project-report <project>` gives the whole picture.
 - **Read a map through its digest, not its file.** `python tools/mapdigest.py <map.vmap> --summary`, then `--graph`, `--class`, `--name`,
   `--near` or `--touches` for the part in question: entities, names, positions and I/O wiring without the mesh data. It only reads.
   Edit with `tools/vmapedit.py` (or the stage passes), after a backup (`docs/reference/file-safety.md`).

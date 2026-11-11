@@ -1,4 +1,4 @@
-import { Instance, CustomHudLayout } from "cs_script/point_script";
+import { Instance, Entities, Console, CustomHudLayout } from "cs_script/point_script";
 
 // CS2 replacement for the 25 CS:GO env_screenoverlay entities in mg_mario_party.
 //
@@ -42,9 +42,9 @@ const OVERLAYS = [
 
 /** @returns {CustomHudLayout | undefined} */
 function getLayout() {
-    const ent = Instance.FindEntityByName(LAYOUT_NAME);
+    const ent = Entities.FindByName(LAYOUT_NAME)[0];
     if (ent instanceof CustomHudLayout) return ent;
-    Instance.Msg(`overlays.js: custom_hud_layout "${LAYOUT_NAME}" not found`);
+    Console.Log(`overlays.js: custom_hud_layout "${LAYOUT_NAME}" not found`);
     return undefined;
 }
 

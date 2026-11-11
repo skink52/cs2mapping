@@ -18,7 +18,7 @@
 // along if you want it. What it never does is SetParent, which re-reads the
 // player's world position as a local offset and flings them across the map.
 
-import { Instance, CSInputs, CSMoveType } from "cs_script/point_script";
+import { Instance, Entities, Console, CSInputs, CSMoveType } from "cs_script/point_script";
 
 // ----- config ---------------------------------------------------------------
 const DEBUG = false;   // set false once it's working
@@ -78,7 +78,7 @@ const TEAM_LOCK = null;
 // const TEAM_LOCK = { 1: 3, 2: 3, 3: 3, 4: 3, 5: 2, 6: 2, 7: 2, 8: 2 };
 // ----------------------------------------------------------------------------
 
-Instance.Msg("[cars] script loaded");
+Console.Log("[cars] script loaded");
 
 const THRUSTER_PATTERN =
   new RegExp(`^${CAR_PREFIX}(\\d+)(forward|backward|back|left|right)$`, "i");
@@ -94,7 +94,7 @@ const useHeld = new Map();
 // ConnectOutput ids, so a hot reload doesn't stack duplicate hooks
 let outputHooks = [];
 
-function log(text) { if (DEBUG) Instance.Msg(`[cars] ${text}`); }
+function log(text) { if (DEBUG) Console.Log(`[cars] ${text}`); }
 
 function normaliseSuffix(suffix) {
   const lower = suffix.toLowerCase();
@@ -120,7 +120,7 @@ function wrapDegrees(degrees) {
 function discover() {
   cars.clear();
 
-  for (const thruster of Instance.FindEntitiesByClass("phys_thruster")) {
+  for (const thruster of Entities.FindByClass("phys_thruster")) {
     const name = thruster.GetEntityName();
     if (!name) continue;
 
@@ -151,11 +151,11 @@ function discover() {
     car.active[suffix] = false;
 
     // Anything left running from last round.
-    Instance.EntFireAtName({ name, input: "Deactivate" });
+    Entities.FireInput({ name, input: "Deactivate" });
   }
 
   if (cars.size === 0) {
-    Instance.Msg(`[cars] no cars found - expected phys_thruster entities named ` +
+    Console.Log(`[cars] no cars found - expected phys_thruster entities named ` +
                  `"${CAR_PREFIX}1forward" and friends`);
     return;
   }
@@ -171,7 +171,7 @@ function discover() {
     if (missing.length) log(`car ${car.id}: WARNING missing thrusters: ${missing.join(", ")}`);
 
     const destination = EXIT_TELEPORT[car.id];
-    if (destination && !Instance.FindEntityByName(destination)) {
+    if (destination && !Entities.FindByName(destination)[0]) {
       log(`car ${car.id}: WARNING exit teleport "${destination}" not found`);
     }
   }
@@ -179,7 +179,7 @@ function discover() {
 
 function carBody(car) {
   if (car.body && car.body.IsValid()) return car.body;
-  car.body = Instance.FindEntityByName(car.bodyName);
+  car.body = Entities.FindByName(car.bodyName)[0];
   return car.body && car.body.IsValid() ? car.body : undefined;
 }
 
@@ -190,17 +190,16 @@ function carBody(car) {
 function hookSeatTriggers() {
   // Stale ids after a round restart are expected; don't let one kill the hookup.
   for (const id of outputHooks) {
-    try { Instance.DisconnectOutput(id); } catch (error) { /* already gone */ }
+    try { Entities.DisconnectOutput(id); } catch (error) { /* already gone */ }
   }
   outputHooks = [];
 
   for (const car of cars.values()) {
     for (const suffix of SEAT_SUFFIXES) {
-      for (const trigger of Instance.FindEntitiesByName(`${CAR_PREFIX}${car.id}${suffix}`)) {
+      for (const trigger of Entities.FindByName(`${CAR_PREFIX}${car.id}${suffix}`)) {
         // A leftover game_ui named carNui has no OnStartTouch; the connect just
         // does nothing, which is why "ui" is safe to leave in SEAT_SUFFIXES.
-        const hook = Instance.ConnectOutput(trigger, "OnStartTouch",
-          ({ activator }) => enterCar(pawnFromEntity(activator), car));
+        const hook = Entities.ConnectOutput({ target: trigger, output: "OnStartTouch", callback: ({ activator }) => enterCar(pawnFromEntity(activator), car) });
 
         if (hook !== undefined) {
           outputHooks.push(hook);
@@ -231,7 +230,7 @@ function setThruster(car, suffix, on) {
   const name = car.thrusters[suffix];
   if (!name) return;
 
-  Instance.EntFireAtName({ name, input: on ? "Activate" : "Deactivate" });
+  Entities.FireInput({ name, input: on ? "Activate" : "Deactivate" });
   if (DEBUG) log(`car ${car.id} ${suffix} -> ${on ? "Activate" : "Deactivate"}`);
 }
 
@@ -333,11 +332,11 @@ function teleportOut(car, pawn) {
 
   if (EXIT_TELEPORT_BY_INPUT) {
     // Needs the point_teleport's Target set to !activator.
-    Instance.EntFireAtName({ name, input: "Teleport", activator: pawn, caller: pawn });
+    Entities.FireInput({ name, input: "Teleport", activator: pawn, caller: pawn });
     return;
   }
 
-  const destination = Instance.FindEntityByName(name);
+  const destination = Entities.FindByName(name)[0];
   if (!destination || !destination.IsValid()) {
     log(`car ${car.id}: exit teleport "${name}" missing, leaving driver in place`);
     return;
@@ -530,8 +529,8 @@ Instance.OnScriptInput("ExitCar", ({ activator }) => {
 
 // ----- console (needs sv_cheats 1) ------------------------------------------
 
-Instance.RegisterCheatCommand("cars_dump", () => {
-  Instance.Msg(`[cars] ${cars.size} car(s), ${outputHooks.length} trigger hook(s)`);
+Console.RegisterCheatCommand("cars_dump", () => {
+  Console.Log(`[cars] ${cars.size} car(s), ${outputHooks.length} trigger hook(s)`);
 
   for (const car of [...cars.values()].sort((a, b) => a.id - b.id)) {
     const driver = car.driverSlot >= 0
@@ -542,19 +541,19 @@ Instance.RegisterCheatCommand("cars_dump", () => {
       .map((control) => control.suffix);
     const destination = EXIT_TELEPORT[car.id];
 
-    Instance.Msg(`  car ${car.id}: body=${carBody(car) ? "ok" : "MISSING"}` +
+    Console.Log(`  car ${car.id}: body=${carBody(car) ? "ok" : "MISSING"}` +
                  ` thrusters=[${CONTROLS.map((c) => car.thrusters[c.suffix] ?? "MISSING").join(", ")}]` +
-                 ` exit=${destination ? (Instance.FindEntityByName(destination) ? destination : `${destination} MISSING`) : "none"}` +
+                 ` exit=${destination ? (Entities.FindByName(destination)[0] ? destination : `${destination} MISSING`) : "none"}` +
                  ` driver=${driver} running=[${running.join(",") || "none"}]`);
   }
 });
 
-Instance.RegisterCheatCommand("cars_enter", (args) => {
+Console.RegisterCheatCommand("cars_enter", (args) => {
   const car = cars.get(Number(args.trim()));
-  if (!car) { Instance.Msg(`[cars] usage: cars_enter <number>`); return; }
+  if (!car) { Console.Log(`[cars] usage: cars_enter <number>`); return; }
 
   const pawn = Instance.GetAllPlayerControllers()[0]?.GetPlayerPawn();
   if (pawn) enterCar(pawn, car);
 });
 
-Instance.RegisterCheatCommand("cars_exit", () => exitAll("cars_exit", true));
+Console.RegisterCheatCommand("cars_exit", () => exitAll("cars_exit", true));

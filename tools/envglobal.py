@@ -31,7 +31,7 @@ GLOBAL_NAMES.forEach((_, i) => {
 });
 Instance.OnRoundStart(() => {
     const on = GLOBAL_AUTOS.filter(([, i]) => GLOBAL_ON.has(i)).map(([relay]) => relay);   // states as the round began
-    for (const relay of on) Instance.EntFireAtName({ name: relay, input: "Trigger", delay: 0.1 });
+    for (const relay of on) Entities.FireInput({ name: relay, input: "Trigger", delay: 0.1 });
 });'''
 
 def run(m, c):
@@ -75,7 +75,7 @@ def run(m, c):
     if counters: c.todo.append('envglobal: counter inputs on env_global not converted: %s' % ', '.join(sorted(set(counters))))
 
 
-def patch_script(js, g):
+def _patch_script(js, g):
     if not js.startswith('import'):
         js = 'import { Instance } from "cs_script/point_script";\n\n' + js
     js = re.sub(r'\n// -{10,} env_global replacement.*?\n\}\);(?=\n|$)', '', js, flags=re.S)
@@ -84,3 +84,9 @@ def patch_script(js, g):
     if HEAD_LINE not in lines and last_head is not None: lines.insert(last_head + 1, HEAD_LINE)
     body = JS.replace('__NAMES__', json.dumps(g['names'])).replace('__INITIAL__', json.dumps(g['initial'])).replace('__AUTOS__', json.dumps(g['autos']))
     return '\n'.join(lines) + '\n\n' + body + '\n'
+
+
+def patch_script(*a, **k):
+    """_patch_script, then the import line made to name every API global the script uses (Entities, Console, GameRules)."""
+    import jsapi
+    return jsapi.ensure_imports(_patch_script(*a, **k))

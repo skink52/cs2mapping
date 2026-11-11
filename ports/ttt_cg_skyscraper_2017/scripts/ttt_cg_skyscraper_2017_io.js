@@ -1,4 +1,4 @@
-import { Instance, CSPlayerPawn, CSPlayerController } from "cs_script/point_script";
+import { Instance, Console, CSPlayerPawn, CSPlayerController } from "cs_script/point_script";
 
 // ttt_cg_skyscraper_2017: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.
 // Everything here is driven by `ttt_cg_skyscraper_2017_io_script` -> RunScriptInput <input name>, with the activator passed through.
@@ -12,5 +12,5 @@ const COMMANDS = [
     "sv_disable_immunity_alpha 1"
 ];
 COMMANDS.forEach((cmd, i) => {
-    Instance.OnScriptInput("Cmd_" + i, () => { Instance.ServerCommand(cmd); });
+    Instance.OnScriptInput("Cmd_" + i, () => { Console.ServerCommand(cmd); });
 });

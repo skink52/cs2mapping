@@ -1,4 +1,4 @@
-import { Instance, CSPlayerPawn, CSPlayerController, CSMoveType } from "cs_script/point_script";
+import { Instance, Console, CSPlayerPawn, CSPlayerController, CSMoveType } from "cs_script/point_script";
 
 // mg_galaxy_course: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.
 // Everything here is driven by `mg_galaxy_course_io_script` -> RunScriptInput <input name>, with the activator passed through.
@@ -16,7 +16,7 @@ const COMMANDS = [
     "say **Spawn room is now closing!**"
 ];
 COMMANDS.forEach((cmd, i) => {
-    Instance.OnScriptInput("Cmd_" + i, () => { Instance.ServerCommand(cmd); });
+    Instance.OnScriptInput("Cmd_" + i, () => { Console.ServerCommand(cmd); });
 });
 
 // ---------------------------------------------------------------- shared think loop

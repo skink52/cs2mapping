@@ -21,6 +21,29 @@ before it overwrites, how to preview a change, and how to undo one. Audit of 11 
 7. **The working root's junction is verified, not assumed.** `pclocal.py root` makes `content\<addon>` and reads it back; when a plain
    folder, a broken link or a junction to another place is already there it stops and says what to remove. It never replaces it.
 
+### Copies are decided by content
+
+`safepath.copy_atomic(src, dst)` (used by `pclocal.py root` through `copy_if_changed`, since 11 Nov 2026) hashes both files with SHA-256 and
+copies only when they differ. Size and modification time are not evidence: before this, `root` skipped a copy when the sizes matched and the
+working copy was not older, so a re-decompiled `.vmf` of the same length, or an older file restored over a newer one, left a stale input in
+the working root. The copy goes to a temporary file in the destination's folder, is flushed, read back and hashed, and only then moved over
+the destination (`os.replace`, atomic on one volume). On any failure the temporary file is removed and the destination is as it was.
+
+| Situation | Result |
+|---|---|
+| Same bytes, any timestamps | `same`: nothing written |
+| Other bytes, same size or not, destination older or newer | `modify`: replaced, verified |
+| No destination (its folder is made) | `create` |
+| Source missing or not a regular file | `CopyError`; destination untouched |
+| Destination is a link or a folder | `CopyError`: a link is refused, not followed and not replaced |
+| Bytes read back differ, or the source changed during the copy | `CopyError`; destination untouched |
+| Destination locked or read-only, disk full | the `OSError` Windows gives; destination untouched; nothing is forced or retried |
+
+`root` prints what happened to each input (`root inputs: mg_x.vmf replaced (content differed); cs2_pak01_dir.vpk unchanged; ...`) and stops
+with the reason when a copy cannot be made. It also refuses a link where the working root's `source1\maps` or `vpk` folder should be.
+Hashing costs a read of both files on every run (the two `pak01_dir.vpk` index files and one `.vmf`): a fraction of a second.
+Tested with real files in `tools/tests/test_copy_atomic.py` and `autoport/tests/test_pclocal.py` (unit tested).
+
 ## Backups
 
 | Kept by | What | Where | Checked | Undo |

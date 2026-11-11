@@ -1,4 +1,4 @@
-import { Instance, CSPlayerPawn, CSPlayerController, CSInputs, CSGearSlot } from "cs_script/point_script";
+import { Instance, Entities, Console, CSPlayerPawn, CSPlayerController, CSInputs, CSGearSlot } from "cs_script/point_script";
 
 // mg_arcs_multigames: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.
 // Everything here is driven by `mg_arcs_multigames_io_script` -> RunScriptInput <input name>, with the activator passed through.
@@ -1025,7 +1025,7 @@ const COMMANDS = [
     "say No remaining players to teleport. Dividing walls have been broken."
 ];
 COMMANDS.forEach((cmd, i) => {
-    Instance.OnScriptInput("Cmd_" + i, () => { Instance.ServerCommand(cmd); });
+    Instance.OnScriptInput("Cmd_" + i, () => { Console.ServerCommand(cmd); });
 });
 
 // ---------------------------------------------------------------- player_speedmod replacement (dead in CS2)
@@ -1130,5 +1130,5 @@ GLOBAL_NAMES.forEach((_, i) => {
 });
 Instance.OnRoundStart(() => {
     const on = GLOBAL_AUTOS.filter(([, i]) => GLOBAL_ON.has(i)).map(([relay]) => relay);   // states as the round began
-    for (const relay of on) Instance.EntFireAtName({ name: relay, input: "Trigger", delay: 0.1 });
+    for (const relay of on) Entities.FireInput({ name: relay, input: "Trigger", delay: 0.1 });
 });

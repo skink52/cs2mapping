@@ -98,9 +98,9 @@ function launchRotate(a, v) {
 }
 for (const [pusher, L] of Object.entries(LAUNCH)) {
     Instance.OnScriptInput("Launch_" + pusher, () => {
-        const pe = Instance.FindEntityByName(pusher);
-        const de = L.dest ? Instance.FindEntityByName(L.dest) : undefined;
-        const pv = L.pivot ? Instance.FindEntityByName(L.pivot) : undefined;
+        const pe = Entities.FindByName(pusher)[0];
+        const de = L.dest ? Entities.FindByName(L.dest)[0] : undefined;
+        const pv = L.pivot ? Entities.FindByName(L.pivot)[0] : undefined;
         /** @type {number[]} */ let dir;
         let from;
         if (de && pv) {
@@ -114,7 +114,7 @@ for (const [pusher, L] of Object.entries(LAUNCH)) {
         const near = pv ? pv.GetAbsOrigin() : from;
         let best, bestD = 400;
         for (const name of L.balls) {
-            for (const ent of Instance.FindEntitiesByName(name)) {
+            for (const ent of Entities.FindByName(name)) {
                 const o = ent.GetAbsOrigin(), v = ent.GetAbsVelocity();
                 const d = Math.hypot(o.x - near.x, o.y - near.y, o.z - near.z);
                 if (Math.hypot(v.x, v.y, v.z) < 100 && d <= bestD) { best = ent; bestD = d; }
@@ -127,7 +127,7 @@ for (const [pusher, L] of Object.entries(LAUNCH)) {
 }'''
 
 
-def patch_script(js, data):
+def _patch_script(js, data):
     sec = JS.replace('__LAUNCH__', json.dumps(data, indent=1))
     if 'const LAUNCH = ' in js:
         return re.sub(r'// -{10,} physics launchers.*?\n}\n?(?=\n// -{10,}|\Z)', lambda _: sec + '\n', js, flags=re.S)
@@ -142,3 +142,9 @@ def patch_script(js, data):
     last_head = max((i for i, l in enumerate(lines[:60]) if l.startswith('//   ')), default=None)
     if last_head is not None: lines.insert(last_head + 1, HEAD_LINE)
     return '\n'.join(lines) + '\n\n' + sec + '\n'
+
+
+def patch_script(*a, **k):
+    """_patch_script, then the import line made to name every API global the script uses (Entities, Console, GameRules)."""
+    import jsapi
+    return jsapi.ensure_imports(_patch_script(*a, **k))

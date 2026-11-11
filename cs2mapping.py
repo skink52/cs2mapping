@@ -5,6 +5,11 @@
                                            Valve's tools, and whether the PC copy of tools/ and autoport/ matches this clone
   python cs2mapping.py check               what CI runs: ci/check_repo.py, then ci/check_links.py
   python cs2mapping.py test                the unit tests: tools/tests, then autoport/tests
+  python cs2mapping.py project-report <project> [--vmap FILE] [--json]
+                                           one read-only report on a project or port: where it stands and git (create/context.py),
+                                           its scripts against Valve's typings (create/test/api.py), and with --vmap a map's
+                                           entities, references and wiring (tools/mapdigest.py), cross-checked: RunScriptInput
+                                           names the map sends that no script answers. Static: "simulated", not "works in game".
 
 doctor exit code: 0 = everything required is there, 1 = something required is missing (listed under PROBLEMS).
 Optional things that are missing are listed as notes and do not fail it. Paths come from the environment variables in
@@ -17,6 +22,7 @@ import importlib.metadata
 import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -184,12 +190,85 @@ def run(cmds):
     return 0
 
 
+def project_report(project, vmap=None):
+    """One report on a project or port from the three read-only helpers, each still usable alone:
+    create/context.py (where it stands), create/test/api.py (its scripts against the typings), tools/mapdigest.py (a map's entities
+    and wiring, when --vmap names one). Nothing is written and nothing here runs CS2: the report's level is "simulated" at best."""
+    for d in ('create', os.path.join('create', 'test'), 'tools'):
+        p = os.path.join(REPO, d)
+        if p not in sys.path: sys.path.insert(0, p)
+    import context, api
+    root = context.find_project(project)
+    snap = context.snapshot(root)
+    rep = {'project': snap['project'], 'path': snap['path'], 'level': 'simulated', 'manual_check_required': True,
+           'status_file': snap['status_file'], 'where': [{'title': w['title'], 'line': w['line']} for w in snap['where']],
+           'git': snap['git'], 'tests': snap['tests']['commands'], 'overrides': snap['overrides'], 'warnings': []}
+    decls = api.parse(os.path.join(REPO, 'create', 'test', 'point_script.d.ts')); allow = api.load_allow(api.ALLOW)
+    scripts = []; answered = set()
+    for s in snap['scripts']:
+        f = os.path.join(root, s['file'])
+        try: unknown, dep = api.check(decls, f)
+        except OSError: continue
+        kept = [t for _, t in dep if api.allowed(allow, f, t.split(' is deprecated')[0])]
+        scripts.append({'file': s['file'], 'bytes': s['bytes'], 'invalid': [t for _, t in unknown],
+                        'deprecated': [t for _, t in dep if t not in kept], 'allowed_deprecated': len(kept)})
+    answered = set(snap['script_facts'].get('inputs', [])); prefixes = set()
+    for s in snap['scripts']:                              # names built at run time: OnScriptInput("Cmd_" + i, ...) answers every Cmd_*
+        try:
+            with open(os.path.join(root, s['file']), encoding='utf-8', errors='replace') as fh: src = fh.read()
+        except OSError: continue
+        prefixes |= set(re.findall(r'OnScriptInput\(\s*["\']([^"\']+)["\']\s*\+', src)) | set(re.findall(r'OnScriptInput\(\s*`([^`$]+)\$\{', src))
+    rep['scripts'] = scripts
+    rep['api'] = {'invalid': sum(len(s['invalid']) for s in scripts), 'deprecated': sum(len(s['deprecated']) for s in scripts),
+                  'allowed_deprecated': sum(s['allowed_deprecated'] for s in scripts)}
+    if rep['api']['invalid']: rep['warnings'].append('%d script call(s) the typings do not declare' % rep['api']['invalid'])
+    if rep['api']['deprecated']: rep['warnings'].append('%d deprecated script call(s) with no allowlist reason' % rep['api']['deprecated'])
+    if snap['git']['uncommitted']: rep['warnings'].append('%d uncommitted file(s) in the folder: someone may be working here' % len(snap['git']['uncommitted']))
+    if vmap:
+        import mapdigest
+        d = mapdigest.digest(vmap, limit=0)
+        sm = d['summary']
+        rep['map'] = {'file': d['map'], 'bytes': d['bytes'], 'entities': sm['entities_in_map'], 'classes': len(sm['by_class']),
+                      'top_classes': dict(list(sm['by_class'].items())[:12]), 'meshes': sm['meshes'], 'bounds': sm.get('bounds'),
+                      'dangling_targets': sm['dangling_targets'], 'duplicate_names': len(sm.get('duplicate_names') or {}),
+                      'references': sm.get('reference_counts', {}), 'scripts': sm.get('references', {}).get('scripts', {}),
+                      'script_inputs': sm['script_inputs']}
+        missing = sorted(n for n in set(sm['script_inputs']) - answered if not any(n.startswith(p) for p in prefixes)) if scripts else []
+        if missing: rep['map']['inputs_no_script_answers'] = missing; rep['warnings'].append('the map sends %d RunScriptInput name(s) no script here answers (literal OnScriptInput names only; names built at run time are not seen)' % len(missing))
+        if sm['dangling_targets']: rep['warnings'].append('%d output target(s) no entity in the file is named (may be named at run time)' % len(sm['dangling_targets']))
+    return rep
+
+
+def show_report(r):
+    print('%s  (%s)   level: %s, never "works in game"' % (r['project'], r['path'], r['level']))
+    for w in r['where']: print('  where it stands: %s  [%s line %d]' % (w['title'], r['status_file'], w['line']))
+    print('  git: %s, %d uncommitted, last: %s' % (r['git']['branch'], len(r['git']['uncommitted']), (r['git']['recent'] or ['none'])[0]))
+    print('  scripts: %d   api: %d invalid, %d deprecated, %d deprecated kept by the allowlist' % (len(r['scripts']), r['api']['invalid'], r['api']['deprecated'], r['api']['allowed_deprecated']))
+    for s in r['scripts']:
+        for t in s['invalid'] + s['deprecated']: print('    %s: %s' % (s['file'], t[:150]))
+    if 'map' in r:
+        m = r['map']
+        print('  map %s: %d entities in %d classes, %d meshes, %d dangling targets, %d duplicate names; references %s' % (
+            m['file'], m['entities'], m['classes'], m['meshes'], len(m['dangling_targets']), m['duplicate_names'], m['references'] or 'none'))
+        if m.get('inputs_no_script_answers'): print('    RunScriptInput names no script answers: ' + ', '.join(m['inputs_no_script_answers'][:20]))
+    for c in r['tests'][:6]: print('  test: ' + c)
+    for w in r['warnings']: print('  WARNING: ' + w)
+    if not r['warnings']: print('  no warnings from the static checks')
+
+
 def main(argv=None):
-    ap = argparse.ArgumentParser(prog='cs2mapping', description='doctor, check, test (see the module docstring)')
-    ap.add_argument('cmd', choices=['doctor', 'check', 'test'])
-    ap.add_argument('--json', action='store_true', help='doctor: print the report as JSON')
+    ap = argparse.ArgumentParser(prog='cs2mapping', description='doctor, check, test, project-report (see the module docstring)')
+    ap.add_argument('cmd', choices=['doctor', 'check', 'test', 'project-report'])
+    ap.add_argument('project', nargs='?', help='project-report: a folder under projects/ or ports/ (name or path)')
+    ap.add_argument('--vmap', help='project-report: a .vmap to digest as well (read only)')
+    ap.add_argument('--json', action='store_true', help='doctor, project-report: print the report as JSON')
     a = ap.parse_args(argv)
     py = sys.executable
+    if a.cmd == 'project-report':
+        if not a.project: ap.error('project-report needs a project (python create/context.py --list)')
+        rep = project_report(a.project, a.vmap)
+        print(json.dumps(rep, indent=1)) if a.json else show_report(rep)
+        return 0
     if a.cmd == 'doctor':
         rep = doctor()
         print(json.dumps(rep, indent=1)) if a.json else show(rep)

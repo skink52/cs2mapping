@@ -358,7 +358,7 @@ let enemyDamage = false;
 Instance.OnScriptInput("EnableDamage", () => { enemyDamage = true; });
 Instance.OnScriptInput("DisableDamage", () => { enemyDamage = false; });
 Instance.OnRoundStart(() => { enemyDamage = false; });
-Instance.OnBeforePlayerDamage((event) => {
+Instance.OnModifyPlayerDamage((event) => {
     if (enemyDamage) return;
     const a = event.attacker, v = event.player;
     if (!a || !v) return;

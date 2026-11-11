@@ -18,5 +18,5 @@
 
 `build_maps.ps1 -DryRun` and `run_import.bat --dry-run` list what a run would compile, import and replace and change nothing; run the second before double-clicking stage B, because every line still in `queue.txt` is imported again over its addon's map. `build_maps.ps1` skips a queue line whose addon or map name is not a plain name (a path, `..`, a drive), checks each built file by sha256 before removing the compiler's copy, and reads `CS2_ROOT` / `CS2PORT`. What each runner writes inside the CS2 install, and what is backed up: [../docs/reference/file-safety.md](../docs/reference/file-safety.md).
 
-Stage A (decompile, assets) and stage C (all the map fixes) are the Python tools in `tools/`: on the PC they run from `C:\source1\cs2port	ools` (autoport or Claude Code), on the cloud route in Claude's workspace. See [../docs/porting/pipeline.md](../docs/porting/pipeline.md) for the workflow,
+Stage A (decompile, assets) and stage C (all the map fixes) are the Python tools in `tools/`: on the PC they run from `C:\source1\cs2port\tools` (autoport or Claude Code), on the cloud route in Claude's workspace. See [../docs/porting/pipeline.md](../docs/porting/pipeline.md) for the workflow,
 [../tools/README.md](../tools/README.md) for the workspace tools and [../docs/porting/setup.md](../docs/porting/setup.md) for where each file goes.

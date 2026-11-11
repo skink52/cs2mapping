@@ -1,4 +1,4 @@
-import { Instance, CSPlayerPawn, CSPlayerController, CSInputs, CSMoveType, CSGearSlot } from "cs_script/point_script";
+import { Instance, Console, CSPlayerPawn, CSPlayerController, CSInputs, CSMoveType, CSGearSlot } from "cs_script/point_script";
 
 // mg_color_multigames: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.
 // Everything here is driven by `mg_color_multigames_io_script` -> RunScriptInput <input name>, with the activator passed through.
@@ -494,7 +494,7 @@ const COMMANDS = [
     "say **Map is now loading...**"
 ];
 COMMANDS.forEach((cmd, i) => {
-    Instance.OnScriptInput("Cmd_" + i, () => { Instance.ServerCommand(cmd); });
+    Instance.OnScriptInput("Cmd_" + i, () => { Console.ServerCommand(cmd); });
 });
 
 // ---------------------------------------------------------------- player_speedmod replacement (dead in CS2)

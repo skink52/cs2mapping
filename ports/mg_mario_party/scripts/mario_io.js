@@ -1,4 +1,4 @@
-import { Instance, Entity, CSPlayerPawn, CSPlayerController, CSInputs, CSDamageFlags, CSMoveType, CSGearSlot } from "cs_script/point_script";
+import { Instance, Entities, Console, GameRules, Entity, CSPlayerPawn, CSPlayerController, CSInputs, CSDamageFlags, CSMoveType, CSGearSlot } from "cs_script/point_script";
 
 // mg_mario_party: CS2 replacements for CS:GO I/O tricks that no longer exist.
 // Everything here is driven by `mario_io_script` -> RunScriptInput <input name>, with the touching player as activator.
@@ -371,7 +371,7 @@ for (const name of DATA.names) {
         // "mushroom" = just grabbed the spawn-box mushroom; send them up like mushroom_grabber_tele did in CS:GO
         const pawn = toPawn(activator);
         if (name === "mushroom") mlog(`SetName_mushroom from the map, activator ${activator ? activator.GetClassName() : 'none'}`);
-        if (name === "mushroom" && pawn && pawn.IsValid()) Instance.EntFireAtName({ name: "mario_io_script", input: "RunScriptInput", value: "MushroomWinner", activator: pawn });
+        if (name === "mushroom" && pawn && pawn.IsValid()) Entities.FireInput({ name: "mario_io_script", input: "RunScriptInput", value: "MushroomWinner", activator: pawn });
     });
 }
 
@@ -498,7 +498,7 @@ Instance.OnPlayerReset(({ player }) => {
 const NO_DEFAULT_LOADOUT = ["mp_t_default_melee", "mp_ct_default_melee", "mp_t_default_secondary", "mp_ct_default_secondary",
                             "mp_t_default_primary", "mp_ct_default_primary", "mp_t_default_grenades", "mp_ct_default_grenades"];
 function noDefaultLoadout() {
-    for (const cvar of NO_DEFAULT_LOADOUT) Instance.ServerCommand(`${cvar} ""`);
+    for (const cvar of NO_DEFAULT_LOADOUT) Console.ServerCommand(`${cvar} ""`);
 }
 /** @param {CSPlayerPawn} pawn */
 function stripOnSpawn(pawn) {
@@ -515,7 +515,7 @@ for (const [tele, info] of Object.entries(DATA.teleporters)) {
     }
     Instance.OnScriptInput("Teleport_" + tele, ({ activator }) => {
         if (!activator || !activator.IsValid() || !currentDest[tele]) return;
-        const dest = Instance.FindEntityByName(currentDest[tele]);
+        const dest = Entities.FindByName(currentDest[tele])[0];
         if (!dest || !dest.IsValid()) return;
         // Same as trigger_teleport: move to the destination, take its facing, stop all movement.
         const angles = dest.GetAbsAngles();
@@ -556,7 +556,7 @@ for (const team of ["t", "ct"]) {
         }
         const bag = blockFortBag[team];
         const name = bag.splice(Math.floor(Math.random() * bag.length), 1)[0];
-        const dest = Instance.FindEntityByName(name);
+        const dest = Entities.FindByName(name)[0];
         if (!dest || !dest.IsValid()) return;
         const a = dest.GetAbsAngles();
         pawn.Teleport({ position: dest.GetAbsOrigin(), angles: { pitch: 0, yaw: a.yaw, roll: 0 }, velocity: { x: 0, y: 0, z: 0 } });
@@ -586,23 +586,23 @@ const DOG_RETARGET_DELAY = 1.5;                          // after the chased pla
 /** @type {{ ent: Entity, vx: number, vy: number, lastT: number, pickAt: number, wanderDir: number[] | undefined, wanderUntil: number, nextWander: number, target: CSPlayerPawn | undefined } | undefined} */
 let dog;
 /** @param {string} t */
-function dlog(t) { Instance.Msg(`[mario_io] chain chomp: ${t}`); }
+function dlog(t) { Console.Log(`[mario_io] chain chomp: ${t}`); }
 /** @param {{x:number,y:number,z:number}} p */
 function inDogArena(p) {
     return p.x >= DOG_ARENA.min.x && p.x <= DOG_ARENA.max.x && p.y >= DOG_ARENA.min.y && p.y <= DOG_ARENA.max.y &&
            p.z >= DOG_ARENA.min.z && p.z <= DOG_ARENA.max.z;
 }
 Instance.OnScriptInput("DogStart", () => {
-    const ent = Instance.FindEntityByName(DOG_BOX);
+    const ent = Entities.FindByName(DOG_BOX)[0];
     if (!ent || !ent.IsValid()) { dlog("DogStart, but Dog_box was not found"); return; }
     for (let n = 1; n <= 16; n++) {
-        Instance.EntFireAtName({ name: `Thruster_${n}`, input: "Kill" });
-        Instance.EntFireAtName({ name: `Thruster_${n}_timed`, input: "Kill" });
+        Entities.FireInput({ name: `Thruster_${n}`, input: "Kill" });
+        Entities.FireInput({ name: `Thruster_${n}_timed`, input: "Kill" });
     }
-    Instance.EntFireAtName({ name: "random_thruster_timer", input: "Disable" });
-    Instance.EntFireAtName({ name: "testtimer", input: "Kill" });
+    Entities.FireInput({ name: "random_thruster_timer", input: "Disable" });
+    Entities.FireInput({ name: "testtimer", input: "Kill" });
     // the start trigger's own "Dog_box EnableMotion" fires at the same moment, so freeze it again after that
-    for (const delay of [0, 0.1, 0.5]) Instance.EntFireAtName({ name: DOG_BOX, input: "DisableMotion", delay });
+    for (const delay of [0, 0.1, 0.5]) Entities.FireInput({ name: DOG_BOX, input: "DisableMotion", delay });
     const now = Instance.GetGameTime();
     dog = { ent, vx: 0, vy: 0, lastT: now, pickAt: now + DOG_FIRST_TARGET_DELAY, wanderDir: undefined, wanderUntil: 0,
             nextWander: now + 2, target: undefined };
@@ -708,7 +708,7 @@ let mushroom;
 let mushroomLogAt = 0;
 const MUSHROOM_DEBUG = false;                            // console trace while we chase the CS2 behaviour; set false when done
 /** @param {string} t */
-function mlog(t) { if (MUSHROOM_DEBUG) Instance.Msg(`[mario_io] ${t}`); }
+function mlog(t) { if (MUSHROOM_DEBUG) Console.Log(`[mario_io] ${t}`); }
 /** @param {{x:number,y:number,z:number}} v */
 function vstr(v) { return `${v.x.toFixed(0)} ${v.y.toFixed(0)} ${v.z.toFixed(0)}`; }
 
@@ -717,7 +717,7 @@ const MUSHROOM_HALF = 10;                               // mushroom_physbox1 is 
 
 /** @param {Entity} ent */
 function startMushroom(ent) {
-    for (const name of MUSHROOM_PARTS) Instance.EntFireAtName({ name, input: "Kill" });
+    for (const name of MUSHROOM_PARTS) Entities.FireInput({ name, input: "Kill" });
     // It pops out right under the block the player just headbutted, i.e. inside that player. CS:GO's physics shoved it
     // out of the player; CS2's doesn't (the player gets stuck and the mushroom is hidden inside them). So pop it out on
     // the open side away from the nearest player, already heading that way.
@@ -747,10 +747,10 @@ function startMushroom(ent) {
     mushroom = { ent, dir, startAt: now + 0.5, nextTurn: now + 0.5 + 1 + Math.random() * 2, yaw: ent.GetAbsAngles().yaw,
                  grabAt: now + MUSHROOM_GRAB_DELAY, lastT: now };
     // freeze its physics (the map's own EnableMotion outputs fire around now too, so repeat once they're done)
-    for (const delay of [0, 0.2, 0.5]) Instance.EntFireAtName({ name: MUSHROOM_NAME, input: "DisableMotion", delay });
-    const model = Instance.FindEntityByName(MUSHROOM_MODEL);
+    for (const delay of [0, 0.2, 0.5]) Entities.FireInput({ name: MUSHROOM_NAME, input: "DisableMotion", delay });
+    const model = Entities.FindByName(MUSHROOM_MODEL)[0];
     const f = (/** @type {{x:number,y:number,z:number}} */ v) => `${v.x.toFixed(0)} ${v.y.toFixed(0)} ${v.z.toFixed(0)}`;
-    Instance.Msg(`[mario_io] mushroom out: popped at ${f(pos)}, physbox now ${f(ent.GetAbsOrigin())}` +
+    Console.Log(`[mario_io] mushroom out: popped at ${f(pos)}, physbox now ${f(ent.GetAbsOrigin())}` +
                  (model && model.IsValid() ? `, model at ${f(model.GetAbsOrigin())}` : ", model not found"));
     ensureThink();
 }
@@ -764,8 +764,8 @@ function startMushroom(ent) {
  */
 function grabMushroom(pawn) {
     mlog(`script grab by slot ${pawn.GetPlayerController()?.GetPlayerSlot()} at ${vstr(pawn.GetAbsOrigin())}`);
-    for (const name of ["mushroom1_button", MUSHROOM_MODEL, MUSHROOM_NAME]) Instance.EntFireAtName({ name, input: "Kill" });
-    Instance.EntFireAtName({ name: "mushroom_tele_1", input: "Disable" });
+    for (const name of ["mushroom1_button", MUSHROOM_MODEL, MUSHROOM_NAME]) Entities.FireInput({ name, input: "Kill" });
+    Entities.FireInput({ name: "mushroom_tele_1", input: "Disable" });
     mushroom = undefined;
     sendMushroomWinner(pawn);
 }
@@ -776,7 +776,7 @@ function grabMushroom(pawn) {
  * @param {CSPlayerPawn} pawn
  */
 function sendMushroomWinner(pawn) {
-    const dest = Instance.FindEntityByName("winner_dest_1");
+    const dest = Entities.FindByName("winner_dest_1")[0];
     mlog(`sending mushroom winner to ${dest && dest.IsValid() ? vstr(dest.GetAbsOrigin()) : 'winner_dest_1 (NOT FOUND)'}`);
     if (dest && dest.IsValid()) {
         const a = dest.GetAbsAngles();
@@ -799,12 +799,12 @@ function moveMushroom(now) {
     if (!m.ent.IsValid()) { mlog(`mushroom physbox removed (t+${(now - m.grabAt + MUSHROOM_GRAB_DELAY).toFixed(1)}s)`); mushroom = undefined; return; }
     if (now >= mushroomLogAt) {
         mushroomLogAt = now + 1;
-        const model = Instance.FindEntityByName(MUSHROOM_MODEL);
+        const model = Entities.FindByName(MUSHROOM_MODEL)[0];
         mlog(`mushroom t+${(now - m.grabAt + MUSHROOM_GRAB_DELAY).toFixed(1)}s physbox ${vstr(m.ent.GetAbsOrigin())} dir ${m.dir}` +
              (model && model.IsValid() ? ` model ${vstr(model.GetAbsOrigin())}` : ' model GONE') + (now >= m.grabAt ? ' (grabbable)' : ''));
     }
     if (now >= m.grabAt) {
-        const model = Instance.FindEntityByName(MUSHROOM_MODEL);
+        const model = Entities.FindByName(MUSHROOM_MODEL)[0];
         const at = model && model.IsValid() ? model.GetAbsOrigin() : m.ent.GetAbsOrigin();
         for (let slot = 0; slot < 64; slot++) {
             const pawn = Instance.GetPlayerController(slot)?.GetPlayerPawn();
@@ -876,9 +876,9 @@ async function endRound(winner) {
     killTeam(winner === TEAM_T ? TEAM_CT : TEAM_T);
     await Instance.Delay(1.0);
     if (roundOver) return;
-    Instance.ServerCommand(`mp_default_team_winner_no_objective ${winner}`);
+    Console.ServerCommand(`mp_default_team_winner_no_objective ${winner}`);
     winnerCvarChanged = true;
-    Instance.SetRoundRemainingTime(0);
+    GameRules.SetRoundRemainingTime(0);
 }
 Instance.OnScriptInput("EndRound_CTWin", () => { endRound(TEAM_CT); });
 Instance.OnScriptInput("EndRound_TWin", () => { endRound(TEAM_T); });
@@ -886,7 +886,7 @@ Instance.OnScriptInput("EndRound_TWin", () => { endRound(TEAM_T); });
 Instance.OnRoundEnd(() => {
     roundOver = true;
     if (winnerCvarChanged) {                            // put the server back how it was for the other games
-        Instance.ServerCommand(`mp_default_team_winner_no_objective ${DEFAULT_WINNER_NO_OBJECTIVE}`);
+        Console.ServerCommand(`mp_default_team_winner_no_objective ${DEFAULT_WINNER_NO_OBJECTIVE}`);
         winnerCvarChanged = false;
     }
 });
@@ -910,14 +910,14 @@ const COUNTER_TO_CASE = [
 /** @type {number[]} */
 let counterHooks = [];
 function hookCounters() {
-    for (const id of counterHooks) Instance.DisconnectOutput(id);
+    for (const id of counterHooks) Entities.DisconnectOutput(id);
     counterHooks = [];
     for (const [counter, output, kase] of COUNTER_TO_CASE) {
-        for (const ent of Instance.FindEntitiesByName(counter)) {
-            const id = Instance.ConnectOutput(ent, output, ({ value }) => {
+        for (const ent of Entities.FindByName(counter)) {
+            const id = Entities.ConnectOutput({ target: ent, output: output, callback: ({ value }) => {
                 const n = Math.round(Number(value));
-                if (Number.isFinite(n)) Instance.EntFireAtName({ name: kase, input: "InValue", value: String(n) });
-            });
+                if (Number.isFinite(n)) Entities.FireInput({ name: kase, input: "InValue", value: String(n) });
+            } });
             if (id !== undefined) counterHooks.push(id);
         }
     }
@@ -933,7 +933,7 @@ Instance.OnRoundStart(() => {
 
 // ---------------------------------------------------------------- cannon boulder maker
 Instance.OnScriptInput("ResetAngles_boulder_maker", () => {
-    const maker = Instance.FindEntityByName("boulder_maker");
+    const maker = Entities.FindByName("boulder_maker")[0];
     if (maker && maker.IsValid()) maker.Teleport({ angles: { pitch: 0, yaw: 0, roll: 0 } });
 });
 
@@ -985,10 +985,10 @@ function rotateBy(ang, v) {
 for (const [trig, info] of Object.entries(BULLETS)) {
     Instance.OnScriptInput("BulletFire_" + trig, () => {
         const base = angleVec({ pitch: info.pushdir[0], yaw: info.pushdir[1], roll: 0 });
-        const t = Instance.FindEntityByName(trig);
+        const t = Entities.FindByName(trig)[0];
         const dir = t && t.IsValid() ? rotateBy(t.GetAbsAngles(), base) : base;
         const now = Instance.GetGameTime();
-        for (const ent of Instance.FindEntitiesByName(info.bullet)) {
+        for (const ent of Entities.FindByName(info.bullet)) {
             if (!ent.IsValid() || flying.some(f => f.ent === ent)) continue;
             flying.push({ ent, dir, t0: now });
         }
@@ -1001,14 +1001,14 @@ function moveBullets(now, dt) {
     if (flying.length === 0) return;
     flying = flying.filter(f => {
         if (!f.ent.IsValid()) return false;
-        if (now - f.t0 > BULLET_LIFE) { Instance.EntFireAtTarget({ target: f.ent, input: "KillHierarchy" }); return false; }
+        if (now - f.t0 > BULLET_LIFE) { f.ent.FireInput({ input: "KillHierarchy" }); return false; }
         const pos = f.ent.GetAbsOrigin();
         const step = BULLET_SPEED * dt;
         const next = { x: pos.x + f.dir.x * step, y: pos.y + f.dir.y * step, z: pos.z + f.dir.z * step };
         if (now - f.t0 > BULLET_ARM) {
             const tr = Instance.TraceLine({ start: pos, end: { x: next.x + f.dir.x * BULLET_REACH, y: next.y + f.dir.y * BULLET_REACH, z: next.z + f.dir.z * BULLET_REACH },
                                             ignoreEntity: f.ent, ignorePlayers: true });
-            if (tr.didHit && !tr.startedInSolid) { Instance.EntFireAtTarget({ target: f.ent, input: "KillHierarchy" }); return false; }
+            if (tr.didHit && !tr.startedInSolid) { f.ent.FireInput({ input: "KillHierarchy" }); return false; }
         }
         f.ent.Teleport({ position: next, velocity: { x: 0, y: 0, z: 0 } });
         return true;

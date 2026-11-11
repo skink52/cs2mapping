@@ -27,9 +27,7 @@
 // EnableHeliGuns unlocks them for the rest of the round - see "pilot's weapons"
 // below for the Hammer wiring. Every new round starts locked again.
 
-import {
-  Instance, CSInputs, CSMoveType, CSGearSlot, CSWeaponType, CustomCameraMode,
-} from "cs_script/point_script";
+import { Instance, Entities, Console, CSInputs, CSMoveType, CSGearSlot, CSWeaponType, CustomCameraMode } from "cs_script/point_script";
 
 // ----- the aircraft ---------------------------------------------------------
 // Copy the whole block to add a second one; nothing else needs changing.
@@ -147,7 +145,7 @@ const CAMERA_ANGLE_OFFSET = { pitch: 0, yaw: 0, roll: 0 };
 const EXIT_TELEPORT_FACING = true;
 // ----------------------------------------------------------------------------
 
-Instance.Msg("[heli] script loaded");
+Console.Log("[heli] script loaded");
 
 const ZERO = { x: 0, y: 0, z: 0 };
 
@@ -172,7 +170,7 @@ let pilotGunsEnabled = !PILOT_GUNS_LOCKED_BY_DEFAULT;
 // ConnectOutput ids, cleared on reload so hooks don't stack
 let outputHooks = [];
 
-function log(text) { if (DEBUG) Instance.Msg(`[heli] ${text}`); }
+function log(text) { if (DEBUG) Console.Log(`[heli] ${text}`); }
 
 function copyVector(v) { return { x: v.x, y: v.y, z: v.z }; }
 
@@ -191,7 +189,7 @@ function resolve(heli, slotName, entityName) {
   if (cached) return cached;
   if (!entityName) return undefined;
 
-  heli.cache[slotName] = live(Instance.FindEntityByName(entityName));
+  heli.cache[slotName] = live(Entities.FindByName(entityName)[0]);
   return heli.cache[slotName];
 }
 
@@ -223,7 +221,7 @@ function discover() {
       // Anything left running from before.
       if (heli.pilotSlot < 0) {
         heli.active[control.key] = false;
-        Instance.EntFireAtName({ name, input: "Deactivate" });
+        Entities.FireInput({ name, input: "Deactivate" });
       }
     }
 
@@ -240,11 +238,11 @@ function report(heli) {
 
   for (const control of CONTROLS) {
     const name = config.thrusters[control.key];
-    if (!name || !Instance.FindEntityByName(name)) missing.push(`thruster "${name ?? control.key}"`);
+    if (!name || !Entities.FindByName(name)[0]) missing.push(`thruster "${name ?? control.key}"`);
   }
 
   const anchor = config.cameraAnchor
-    ? (Instance.FindEntityByName(config.cameraAnchor) ? "ok" : "MISSING (using fallback offset)")
+    ? (Entities.FindByName(config.cameraAnchor)[0] ? "ok" : "MISSING (using fallback offset)")
     : "none (using fallback offset)";
 
   log(`${config.body}: camera anchor ${anchor}` +
@@ -257,7 +255,7 @@ function report(heli) {
  */
 function hookControls() {
   for (const id of outputHooks) {
-    try { Instance.DisconnectOutput(id); } catch (error) { /* already gone */ }
+    try { Entities.DisconnectOutput(id); } catch (error) { /* already gone */ }
   }
   outputHooks = [];
 
@@ -265,9 +263,8 @@ function hookControls() {
     const name = heli.config.control;
     if (!name) continue;
 
-    for (const button of Instance.FindEntitiesByName(name)) {
-      const hook = Instance.ConnectOutput(button, "OnPressed",
-        ({ activator }) => enterHeli(pawnFromEntity(activator), heli));
+    for (const button of Entities.FindByName(name)) {
+      const hook = Entities.ConnectOutput({ target: button, output: "OnPressed", callback: ({ activator }) => enterHeli(pawnFromEntity(activator), heli) });
 
       if (hook !== undefined) {
         outputHooks.push(hook);
@@ -384,7 +381,7 @@ function setThruster(heli, key, on) {
   const name = heli.config.thrusters[key];
   if (!name) return;
 
-  Instance.EntFireAtName({ name, input: on ? "Activate" : "Deactivate" });
+  Entities.FireInput({ name, input: on ? "Activate" : "Deactivate" });
   if (DEBUG) log(`${heli.config.body} ${key} -> ${on ? "Activate" : "Deactivate"}`);
 }
 
@@ -434,7 +431,7 @@ function cameraFor(pawn) {
   if (typeof pawn.GetCustomCamera !== "function") {
     if (!cameraApiWarned) {
       cameraApiWarned = true;
-      Instance.Msg("[heli] this build has no GetCustomCamera - flying without the pilot camera");
+      Console.Log("[heli] this build has no GetCustomCamera - flying without the pilot camera");
     }
     return undefined;
   }
@@ -560,7 +557,7 @@ function teleportOut(heli, pawn) {
   const name = heli.config.exitTeleport;
   if (!name) return;
 
-  const destination = live(Instance.FindEntityByName(name));
+  const destination = live(Entities.FindByName(name)[0]);
   if (!destination) {
     log(`${heli.config.body}: exit teleport "${name}" missing, leaving pilot in place`);
     return;
@@ -746,15 +743,15 @@ Instance.OnScriptInput("ExitHeli", ({ activator }) => {
 
 // ----- console (needs sv_cheats 1) ------------------------------------------
 
-Instance.RegisterCheatCommand("heli_dump", () => {
-  Instance.Msg(`[heli] ${helis.size} aircraft, ${outputHooks.length} button hook(s),` +
+Console.RegisterCheatCommand("heli_dump", () => {
+  Console.Log(`[heli] ${helis.size} aircraft, ${outputHooks.length} button hook(s),` +
                ` pilot weapons ${pilotGunsEnabled ? "UNLOCKED" : "locked"}`);
   for (const heli of helis.values()) {
     const pilot = heli.pilotSlot >= 0
       ? Instance.GetPlayerController(heli.pilotSlot)?.GetPlayerName() ?? heli.pilotSlot
       : "-";
     const running = CONTROLS.filter((c) => heli.active[c.key]).map((c) => c.key);
-    Instance.Msg(`  ${heli.config.body}: pilot=${pilot} running=[${running.join(",") || "none"}]`);
+    Console.Log(`  ${heli.config.body}: pilot=${pilot} running=[${running.join(",") || "none"}]`);
     report(heli);
   }
 });
@@ -764,14 +761,14 @@ Instance.RegisterCheatCommand("heli_dump", () => {
 // angles didn't change, Hammer isn't storing the rotation. If they did change
 // but the view didn't move, the camera side is the problem - try CAMERA_UNPARENT
 // or CAMERA_ANGLE_SOURCE "body". (Rotation only matters in "position"/"locked".)
-Instance.RegisterCheatCommand("heli_cam_debug", () => {
+Console.RegisterCheatCommand("heli_cam_debug", () => {
   const pos = (p) => `${p.x.toFixed(0)} ${p.y.toFixed(0)} ${p.z.toFixed(0)}`;
   const ang = (q) => `${q.pitch.toFixed(1)} ${q.yaw.toFixed(1)} ${q.roll.toFixed(1)}`;
   const show = (e) => `pos[${pos(e.GetAbsOrigin())}] ang[${ang(e.GetAbsAngles())}]`;
 
   for (const heli of helis.values()) {
     const config = heli.config;
-    const anchor = live(Instance.FindEntityByName(config.cameraAnchor));
+    const anchor = live(Entities.FindByName(config.cameraAnchor)[0]);
     const body = heliBody(heli);
     const pilotPawn = heli.pilotSlot >= 0
       ? Instance.GetPlayerController(heli.pilotSlot)?.GetPlayerPawn()
@@ -779,9 +776,9 @@ Instance.RegisterCheatCommand("heli_cam_debug", () => {
     const camera = pilotPawn && pilotPawn.IsValid() ? cameraFor(pilotPawn) : undefined;
     const wanted = cameraTransform(heli);
 
-    Instance.Msg(`[heli] ${config.body} camera debug`);
-    Instance.Msg(`  anchor "${config.cameraAnchor}": ${anchor ? show(anchor) : "NOT FOUND"}`);
-    Instance.Msg(`  body   "${config.body}": ${body ? show(body) : "NOT FOUND"}`);
+    Console.Log(`[heli] ${config.body} camera debug`);
+    Console.Log(`  anchor "${config.cameraAnchor}": ${anchor ? show(anchor) : "NOT FOUND"}`);
+    Console.Log(`  body   "${config.body}": ${body ? show(body) : "NOT FOUND"}`);
 
     if (camera) {
       const parent = camera.GetParent();
@@ -792,38 +789,38 @@ Instance.RegisterCheatCommand("heli_cam_debug", () => {
       const modeName = Object.keys(CustomCameraMode).find((k) => CustomCameraMode[k] === mode) ?? mode;
       // In "follow" the view is worked out from the follow config, so the
       // camera entity's own position here may not be where the view is.
-      Instance.Msg(`  camera: ${show(camera)} parent[${parentName}] mode=${modeName}`);
+      Console.Log(`  camera: ${show(camera)} parent[${parentName}] mode=${modeName}`);
     } else {
-      Instance.Msg(`  camera: nobody at the controls`);
+      Console.Log(`  camera: nobody at the controls`);
     }
 
     if (CAMERA_MODE === "follow") {
       const target = followTarget(heli);
       const name = target ? (target.entity.GetEntityName() || target.entity.GetClassName()) : "nothing";
-      Instance.Msg(`  following: ${name} offset[${pos(CAMERA_FOLLOW_OFFSET)}]`);
+      Console.Log(`  following: ${name} offset[${pos(CAMERA_FOLLOW_OFFSET)}]`);
     } else {
-      Instance.Msg(`  script is asking for: ${wanted ? `pos[${pos(wanted.position)}] ang[${ang(wanted.angles)}]` : "n/a"}`);
+      Console.Log(`  script is asking for: ${wanted ? `pos[${pos(wanted.position)}] ang[${ang(wanted.angles)}]` : "n/a"}`);
     }
-    Instance.Msg(`  settings: mode=${CAMERA_MODE} source=${CAMERA_ANGLE_SOURCE}` +
+    Console.Log(`  settings: mode=${CAMERA_MODE} source=${CAMERA_ANGLE_SOURCE}` +
                  ` unparent=${CAMERA_UNPARENT} offset[${ang(CAMERA_ANGLE_OFFSET)}]`);
   }
 });
 
-Instance.RegisterCheatCommand("heli_take", () => {
+Console.RegisterCheatCommand("heli_take", () => {
   const pawn = Instance.GetAllPlayerControllers()[0]?.GetPlayerPawn();
   if (pawn && helis.size > 0) enterHeli(pawn, [...helis.values()][0]);
 });
 
-Instance.RegisterCheatCommand("heli_release", () => exitAll("heli_release", true));
+Console.RegisterCheatCommand("heli_release", () => exitAll("heli_release", true));
 
 // Flip the pilot's weapons lock without pressing helib3. Same as firing the
 // EnableHeliGuns / DisableHeliGuns script inputs.
-Instance.RegisterCheatCommand("heli_guns", () => setPilotGuns(!pilotGunsEnabled, "heli_guns"));
+Console.RegisterCheatCommand("heli_guns", () => setPilotGuns(!pilotGunsEnabled, "heli_guns"));
 
 // If a camera ever does get stuck, this hands every held one back without
 // touching anything else.
-Instance.RegisterCheatCommand("heli_cam_reset", () => {
+Console.RegisterCheatCommand("heli_cam_reset", () => {
   const slots = [...cameraHeld.keys()];
   for (const slot of slots) giveBackCamera(slot);
-  Instance.Msg(`[heli] released ${slots.length} camera(s)`);
+  Console.Log(`[heli] released ${slots.length} camera(s)`);
 });

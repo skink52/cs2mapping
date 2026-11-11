@@ -226,7 +226,7 @@ class Root(unittest.TestCase):
         return buf.getvalue()
 
     def refused(self, addon='mg_test'):
-        with self.assertRaises((SystemExit, ValueError)) as cm: pclocal.root(addon, self.root)
+        with self.assertRaises((SystemExit, ValueError)) as cm, contextlib.redirect_stdout(io.StringIO()): pclocal.root(addon, self.root)
         return str(cm.exception)
 
     def can_link(self):
@@ -287,6 +287,46 @@ class Root(unittest.TestCase):
         put(os.path.join(self.root, 'out', 'mg_test', 'materials', 'mg_other.vmap'), b'OVERWRITTEN')
         with self.assertRaises(ValueError): pclocal.apply('mg_test', self.root)
         self.assertEqual(get(os.path.join(self.other, 'maps', 'mg_other.vmap')), b'another map')
+
+    def test_inputs_are_recopied_by_content_not_by_size_or_date(self):
+        """root used to skip a copy when the sizes matched and the working copy was not older: a re-decompiled .vmf of the same
+        length, or a restored older file, stayed stale in the working root"""
+        self.can_link()
+        self.assertIn('mg_test.vmf copied', self.build())
+        work = os.path.join(self.root, 'source1', 'maps', 'mg_test.vmf')
+        put(os.path.join(self.s1, 'maps', 'mg_test.vmf'), b'VMF')                    # same size, other bytes
+        os.utime(os.path.join(self.s1, 'maps', 'mg_test.vmf'), (1_600_000_000, 1_600_000_000))   # and older than the working copy
+        text = self.build()
+        self.assertIn('mg_test.vmf replaced (content differed)', text); self.assertIn('cs2_pak01_dir.vpk unchanged', text)
+        self.assertEqual(get(work), b'VMF')
+        self.assertIn('mg_test.vmf unchanged', self.build())
+        self.assertEqual([f for _, _, fs in os.walk(self.root) for f in fs if f.endswith('.copytmp')], [])
+
+    def test_missing_input_stops_with_a_reason(self):
+        self.can_link()
+        os.remove(os.path.join(self.s1, 'pak01_dir.vpk'))
+        self.assertIn('source is missing', self.refused())
+
+    def test_a_link_where_an_input_folder_should_be_is_refused(self):
+        self.can_link()
+        os.makedirs(self.root)
+        pclocal.make_junction(os.path.join(self.root, 'vpk'), os.path.join(self.other, 'maps'))
+        self.assertIn('is a link', self.refused())
+        self.assertEqual(sorted(os.listdir(os.path.join(self.other, 'maps'))), ['mg_other.vmap'])       # nothing was copied through it
+
+
+class CopyIfChanged(unittest.TestCase):
+    def setUp(self): self.tmp = tempfile.mkdtemp(prefix='pclocal_copy_')
+    def tearDown(self): shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_returns_what_it_did(self):
+        a, b = os.path.join(self.tmp, 'a'), os.path.join(self.tmp, 'sub', 'b')
+        put(a, b'1111')
+        self.assertEqual(pclocal.copy_if_changed(a, b), 'create'); self.assertEqual(pclocal.copy_if_changed(a, b), 'same')
+        put(b, b'2222'); os.utime(b, (1_950_000_000, 1_950_000_000))                # same size, newer: still not the source's bytes
+        self.assertEqual(pclocal.copy_if_changed(a, b), 'modify'); self.assertEqual(get(b), b'1111')
+        with self.assertRaises(OSError): pclocal.copy_if_changed(os.path.join(self.tmp, 'missing'), b)
+        self.assertEqual(get(b), b'1111')
 
 
 if __name__ == '__main__':

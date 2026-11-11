@@ -1,0 +1,69 @@
+# Deprecated cs_script calls kept on purpose. Read by create/test/api.py --check (and so by CI, which runs it with --strict).
+#   <path glob, from the repo root>   <Instance.Name or *>   <reason>
+# A line here does not say the call is fine for ever: Valve's typings say these "will be removed in a future update".
+# It says someone decided not to move this one yet, and why. Remove the line when the call is moved.
+# New deprecated calls anywhere else fail CI: use the current spelling (python create/test/api.py <name> prints it) or add a line with a reason.
+
+# The live-test probe. Its console output is parsed by autoport/livetest.py and was checked in game with these calls (Nov 2026).
+# Console.Log is declared as the replacement for Instance.Msg, but whether its lines reach the VConsole client the same way has
+# not been checked in game, and the probe is useless if they do not. Move it together with an in-game run of the probe.
+autoport/livetest.py                                       Instance.Msg                         in-game verified with this call; Console.Log output path not checked in game
+autoport/livetest.py                                       Instance.RegisterCheatCommand        moves with the probe's in-game recheck
+autoport/livetest.py                                       Instance.FindEntitiesByName          moves with the probe's in-game recheck
+autoport/livetest.py                                       Instance.IsFreezePeriod              moves with the probe's in-game recheck
+autoport/livetest.py                                       Instance.IsWarmupPeriod              moves with the probe's in-game recheck
+
+# IRONFRAME is being worked on in another session (11 Nov 2026); its sources were left alone in this pass.
+projects/ironframe-cs2/**                                  *                                    baseline 11 Nov 2026: project in active work elsewhere, not touched by the API pass
+
+# Baseline, 11 Nov 2026: original addons whose scripts are built from fragments and tested by their own stand-in engines,
+# which do not all model Entities / Console / GameRules yet. Each needs its own mock updated and its tests rerun when it is moved.
+projects/cs2-roguelike/out/addon/maps/scripts/nanite.js    Instance.FindEntityByName            baseline: not yet moved to the current API
+projects/cs2-roguelike/out/addon/maps/scripts/nanite.js    Instance.Msg                         baseline: not yet moved to the current API
+projects/cs2-roguelike/out/addon/maps/scripts/nanite.js    Instance.ServerCommand               baseline: not yet moved to the current API
+projects/cs2-roguelike/out/addon/maps/scripts/nanite.js    Instance.FindEntitiesByClass         baseline: not yet moved to the current API
+projects/cs2-roguelike/out/addon/maps/scripts/nanite.js    Instance.EntFireAtTarget             baseline: not yet moved to the current API
+projects/cs2-roguelike/out/addon/maps/scripts/nanite.js    Instance.SetRoundRemainingTime       baseline: not yet moved to the current API
+projects/cs2-roguelike/out/addon/maps/scripts/nanite.js    Instance.IsWarmupPeriod              baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/depth_racer.js Instance.Msg                         baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/depth_racer.js Instance.ServerCommand               baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/depth_racer.js Instance.FindEntityByName            baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/depth_racer.js Instance.EntFireAtTarget             baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/depth_racer.js Instance.IsWarmupPeriod              baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/depth_racer.js Instance.SetRoundRemainingTime       baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/depth_racer.js Instance.EntFireAtName               baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/depth_racer.js Instance.GetRoundRemainingTime       baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/depth_racer.js Instance.IsFreezePeriod              baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/neon_racer.js Instance.Msg                         baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/neon_racer.js Instance.ServerCommand               baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/neon_racer.js Instance.FindEntityByName            baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/neon_racer.js Instance.EntFireAtTarget             baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/neon_racer.js Instance.IsWarmupPeriod              baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/neon_racer.js Instance.SetRoundRemainingTime       baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/neon_racer.js Instance.EntFireAtName               baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/neon_racer.js Instance.GetRoundRemainingTime       baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/neon_racer.js Instance.IsFreezePeriod              baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/space_racer.js Instance.Msg                         baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/space_racer.js Instance.ServerCommand               baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/space_racer.js Instance.FindEntityByName            baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/space_racer.js Instance.EntFireAtTarget             baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/space_racer.js Instance.IsWarmupPeriod              baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/space_racer.js Instance.SetRoundRemainingTime       baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/space_racer.js Instance.EntFireAtName               baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/space_racer.js Instance.GetRoundRemainingTime       baseline: not yet moved to the current API
+projects/space-racer-cs2/out/addon/maps/scripts/space_racer.js Instance.IsFreezePeriod              baseline: not yet moved to the current API
+projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.ServerCommand               baseline: not yet moved to the current API
+projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.Msg                         baseline: not yet moved to the current API
+projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.FindEntityByName            baseline: not yet moved to the current API
+projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.FindEntitiesByClass         baseline: not yet moved to the current API
+projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.IsWarmupPeriod              baseline: not yet moved to the current API
+projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.SetRoundRemainingTime       baseline: not yet moved to the current API
+projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.EntFireAtTarget             baseline: not yet moved to the current API
+projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.EntFireAtName               baseline: not yet moved to the current API
+projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.FindEntitiesByName          baseline: not yet moved to the current API
+projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.ClientCommand               baseline: not yet moved to the current API
+projects/trenchwarfare-cs2/src/mg_trenchwarfare.js         Instance.EntFireAtName               baseline: not yet moved to the current API
+projects/trenchwarfare-cs2/src/mg_trenchwarfare.js         Instance.ServerCommand               baseline: not yet moved to the current API
+projects/trenchwarfare-cs2/src/mg_trenchwarfare.js         Instance.FindEntityByName            baseline: not yet moved to the current API
+projects/trenchwarfare-cs2/src/mg_trenchwarfare.js         Instance.FindEntitiesByName          baseline: not yet moved to the current API
+projects/trenchwarfare-cs2/src/mg_trenchwarfare.js         Instance.Msg                         baseline: not yet moved to the current API

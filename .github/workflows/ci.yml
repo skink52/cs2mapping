@@ -95,8 +95,10 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - name: Every ported map's script calls only what the cs_script typings declare
-        run: python create/test/api.py --check ports/*/scripts/*.js
+      - name: Scripts and script generators call only what the cs_script typings declare, and nothing deprecated without a written reason
+        run: >-
+          python create/test/api.py --strict --check "ports/*/scripts/*.js" "tools/*.py" autoport/livetest.py
+          "projects/*/out/addon/maps/scripts/*.js" "projects/cs2mapTTT/addon/maps/scripts/*.js" "projects/trenchwarfare-cs2/src/*.js"
       - name: Every ported map's script in the stand-in engine
         run: sh ci/mock_ports.sh players=8 seconds=30
       - name: TTT script (type-check, mock rounds, map data, server hand-off)

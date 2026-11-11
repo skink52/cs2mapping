@@ -21,7 +21,7 @@
 //   3. Name the map's weapons in Hammer to match the keys in BUFFS below.
 //   4. Remove the old buff_weapons point_script, or the two will fight.
 
-import { Instance, CSInputs, CSGearSlot } from "cs_script/point_script";
+import { Instance, Entities, Console, CSInputs, CSGearSlot } from "cs_script/point_script";
 
 // ----- config ---------------------------------------------------------------
 // Keyed by the weapon's targetname in Hammer.
@@ -93,7 +93,7 @@ const BASE_RUN_SPEED = 250;
 const RAMP           = 1.10;
 // ----------------------------------------------------------------------------
 
-function log(text) { if (DEBUG) Instance.Msg(`[buffs] ${text}`); }
+function log(text) { if (DEBUG) Console.Log(`[buffs] ${text}`); }
 
 log("script loaded");
 
@@ -180,9 +180,9 @@ function hideOne(entry, weapon) {
 
 function startGlow(entry, pawn, glow) {
   if (!glow || entry.glowing || !pawn.IsValid()) return;
-  Instance.EntFireAtTarget({ target: pawn, input: "SetGlowOverride", value: glow.color });
-  Instance.EntFireAtTarget({ target: pawn, input: "SetGlowRange", value: String(glow.range) });
-  Instance.EntFireAtTarget({ target: pawn, input: "StartGlowing" });
+  pawn.FireInput({ input: "SetGlowOverride", value: glow.color });
+  pawn.FireInput({ input: "SetGlowRange", value: String(glow.range) });
+  pawn.FireInput({ input: "StartGlowing" });
   entry.glowing = true;
   log(`glow on ${nameOf(pawn)} (${glow.color}, ${glow.range} units)`);
 }
@@ -190,7 +190,7 @@ function startGlow(entry, pawn, glow) {
 function stopGlow(entry, pawn) {
   if (!entry.glowing) return;
   entry.glowing = false;
-  if (pawn && pawn.IsValid()) Instance.EntFireAtTarget({ target: pawn, input: "StopGlowing" });
+  if (pawn && pawn.IsValid()) pawn.FireInput({ input: "StopGlowing" });
 }
 
 // ----- disguise prop --------------------------------------------------------
@@ -200,10 +200,10 @@ function stopGlow(entry, pawn) {
 function disguiseEntity(entry, disguise) {
   if (entry.disguiseEnt && entry.disguiseEnt.IsValid()) return entry.disguiseEnt;
 
-  const ent = Instance.FindEntityByName(disguise.prop);
+  const ent = Entities.FindByName(disguise.prop)[0];
   if (!ent || !ent.IsValid()) {
     if (!entry.disguiseWarned) {
-      Instance.Msg(`[buffs] disguise prop "${disguise.prop}" not found in the map`);
+      Console.Log(`[buffs] disguise prop "${disguise.prop}" not found in the map`);
       entry.disguiseWarned = true;
     }
     return undefined;
@@ -218,7 +218,7 @@ function disguiseEntity(entry, disguise) {
     position: { x: o.x, y: o.y, z: o.z },
     angles: { pitch: a.pitch, yaw: a.yaw, roll: a.roll },
   };
-  Instance.EntFireAtTarget({ target: ent, input: "DisableCollision" });
+  ent.FireInput({ input: "DisableCollision" });
   return ent;
 }
 
@@ -322,7 +322,7 @@ function applyDisguise(entry, pawn, disguise) {
     }
 
     // Neither worked. Fall back to chasing the player every tick.
-    Instance.Msg(`[buffs] couldn't parent the disguise cleanly - falling back to follow mode`);
+    Console.Log(`[buffs] couldn't parent the disguise cleanly - falling back to follow mode`);
     ent.SetParent(undefined);
     entry.parentFailed = true;
   }
@@ -427,7 +427,7 @@ function applySpeed(pawn, mult, dt) {
 
 /** Re-find the named weapon lying in the map. */
 function acquire(targetname, entry) {
-  const found = Instance.FindEntityByName(targetname);
+  const found = Entities.FindByName(targetname)[0];
   if (found && found.IsValid()) {
     entry.entity = found;
     log(`watching "${targetname}" (${found.GetClassName()})`);
@@ -446,7 +446,7 @@ function rearm(targetname, entry, classname, near) {
 
   let best;
   let bestDistance = REARM_RADIUS;
-  for (const candidate of Instance.FindEntitiesByClass(classname)) {
+  for (const candidate of Entities.FindByClass(classname)) {
     if (!candidate.IsValid() || candidate.GetOwner()) continue;
     const p = candidate.GetAbsOrigin();
     const distance = Math.hypot(p.x - near.x, p.y - near.y, p.z - near.z);
@@ -489,7 +489,7 @@ function updateWatch(targetname, buff, entry) {
       entry.holder = carrying[0];
       log(`"${targetname}" vanished; ${nameOf(carrying[0].pawn)} is the only ${buff.classname} holder`);
     } else if (carrying.length > 1) {
-      Instance.Msg(`[buffs] "${targetname}" vanished but ${carrying.length} players hold` +
+      Console.Log(`[buffs] "${targetname}" vanished but ${carrying.length} players hold` +
                    ` ${buff.classname} - can't tell who took it, buff not granted`);
     }
   }
@@ -558,17 +558,17 @@ Instance.OnScriptReload({ after: start });
 Instance.OnRoundStart(start);   // map entities are recreated, so re-find them
 
 // Console command (needs sv_cheats 1).
-Instance.RegisterCheatCommand("buffs_dump", () => {
+Console.RegisterCheatCommand("buffs_dump", () => {
   for (const [targetname, buff] of Object.entries(BUFFS)) {
     const entry = entryFor(targetname);
     const where = entry.entity && entry.entity.IsValid() ? "on the ground" : "not found";
     const who = entry.holder
       ? `${nameOf(entry.holder.pawn)} (slot ${entry.holder.slot})`
       : `nobody - entity ${where}`;
-    Instance.Msg(`[buffs] ${targetname} (${buff.classname}): ${who}`);
+    Console.Log(`[buffs] ${targetname} (${buff.classname}): ${who}`);
   }
   for (const [targetname, buff] of Object.entries(BUFFS)) {
     const carrying = holdersOf(buff.classname).map((h) => nameOf(h.pawn)).join(", ");
-    Instance.Msg(`[buffs]   carrying ${buff.classname}: ${carrying || "nobody"}`);
+    Console.Log(`[buffs]   carrying ${buff.classname}: ${carrying || "nobody"}`);
   }
 });

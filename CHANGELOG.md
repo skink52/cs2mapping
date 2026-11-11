@@ -5,6 +5,32 @@
 Newest first, in local time. Entries before this repo existed were rebuilt from file dates on the PC, the cleanup logs and the records
 of earlier Claude sessions. Dates taken only from file timestamps say "(file date)". Per-map detail is in [ports/](ports/README.md).
 
+## 2026-11-11: current cs_script API everywhere, copies decided by content, strict API check in CI
+
+- **[tools]** `jsapi.py`: moves a script off the `Instance.*` calls Valve's typings mark deprecated, one call at a time, by rules read from
+  the typings; forms it cannot be sure of are reported and left alone. The six stage C generators that wrote deprecated calls
+  (`gen_script`, `roundend`, `gameui`, `envglobal`, `physlaunch`, `animprops`) now write the current ones and fix the import line themselves.
+- **[ports]** All 55 map scripts are on the current API: 317 calls in 36 files (`Console.Log`, `Entities.FindByName`, `Entities.FireInput`,
+  `ent.FireInput`, `Entities.ConnectOutput`, `GameRules.SetRoundRemainingTime`), and mg_fred_all's damage gate by hand
+  (`OnModifyPlayerDamage`). **Simulated only**: strict typings check, type-check (no new error) and the stand-in engine (same inputs fired,
+  same commands, no errors, before and after). Nothing was compiled or loaded in CS2, and the scripts in the addon folders on the PC were
+  not touched. Needs CS2 from 22 Oct 2026 or later.
+- **[create]** `test/api.py`: DEPRECATED is told apart from INVALID and comes with the current spelling; `--json`; `--examples`; quoted
+  globs; reads JavaScript held in `.py` generators; `test/api_allow.txt` lists deprecated calls kept on purpose, each with a reason
+  (the live-test probe, whose console output was checked in game with `Instance.Msg`; the original addons under `projects/`).
+  `test/mock_point_script.mjs` models `Entities`, `Console`, `GameRules` and `Entity.FireInput`.
+- **[ci]** The API check is strict: an invalid call or a deprecated call with no allowlist reason fails. `check_repo.py` also catches
+  bytes that are not UTF-8, binary data in a text file, and a tab inside a Windows path in a document.
+- **[autoport]** `pclocal.py root` copies its inputs by content (`safepath.copy_atomic`: SHA-256, temporary file, verify, atomic replace).
+  It used to skip a copy when the sizes matched and the working copy was not older, which left a stale `.vmf` after a re-decompile of the
+  same length. It now says what it did with each input.
+- **[repo]** `python cs2mapping.py project-report <project> [--vmap FILE]`: one read-only report from `context.py`, `api.py` and
+  `mapdigest.py`. `mapdigest.py` adds references (scripts, models, sounds, particles), class-name targets and the `RunScriptInput` names sent.
+- **[docs]** Fixed: `CLAUDE.md` and `scripts/README.md` had `C:\source1\cs2port<TAB>ools` (a `\t` read as a tab by an editing script);
+  `projects/cs2-roguelike/docs/DESIGN.md` had three Latin-1 bytes (superscript two) in a UTF-8 file. No control character was found in
+  `CHANGELOG.md` itself: the one an earlier audit saw (`source1<BEL>rchive`) had been fixed the same day, when the control-character check was added.
+  `docs/reference/engineering-notes.md`: the settings-file plan with what a fresh count found, and a project-manager proposal.
+
 ## 2026-11-11: three helpers for the agent (project snapshot, typings lookup, map digest)
 
 - **[create]** `context.py <project>`: one snapshot to read before a project's long documents (IRONFRAME's 145 KB status file gives 12 KB):
@@ -14,7 +40,7 @@ of earlier Claude sessions. Dates taken only from file timestamps say "(file dat
   `Msg`, `EntFireAtName` ...), which the stage C script generator still writes. CI runs the check.
 - **[tools]** `mapdigest.py`: a `.vmap`'s entities and I/O wiring without geometry, with filters and a wiring-only view.
 - **[docs]** CLAUDE.md: run the snapshot first, look the API up before writing a call, read a map through its digest. Gotchas: CS2 stays
-  in the state it was in for a build and for an import; one import at a time.
+  in the state it was in for a build; one import at a time. (Corrected the same day: CS2 must be closed when an import starts.)
 
 ## 2026-11-11: the gaps the real run made testable (build and import previews, rerun backup, CS2 detection)
 

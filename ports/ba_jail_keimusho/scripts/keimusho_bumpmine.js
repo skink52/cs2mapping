@@ -1,4 +1,4 @@
-import { Instance, CSPlayerPawn, CSPlayerController, CSGrenadeType, CSGearSlot, CustomHudLayout, BaseModelEntity } from "cs_script/point_script";
+import { Instance, Entities, Console, CSPlayerPawn, CSPlayerController, CSGrenadeType, CSGearSlot, CustomHudLayout, BaseModelEntity } from "cs_script/point_script";
 
 // ba_jail_keimusho: CS:GO bump mines rebuilt in cs_script (weapon_bumpmine doesn't exist in CS2).
 // The floor buttons (bumpminebutton) fire the equip "awp spawner" (strip + weapon_decoy) and bumpscript -> RunScriptInput
@@ -29,7 +29,7 @@ const HUD_SECONDS = 5;                // the card shows at most this long, once 
 const MAX_SLOTS = 64;
 const LAND_FALLBACK = 3.0;            // no bounce event this long after the throw: place the mine where the decoy is
 let debug = false;
-function dbg(t) { if (debug) Instance.Msg("[bumpmine] " + t); }
+function dbg(t) { if (debug) Console.Log("[bumpmine] " + t); }
 
 /** @type {Map<number, number>} player slot -> charges left */
 const charges = new Map();
@@ -51,7 +51,7 @@ let hudWipes = [];
 function inArena(p) {
     return p.x >= ARENA.min.x && p.x <= ARENA.max.x && p.y >= ARENA.min.y && p.y <= ARENA.max.y && p.z >= ARENA.min.z && p.z <= ARENA.max.z;
 }
-function hud() { const e = Instance.FindEntityByName(HUD_NAME); return e instanceof CustomHudLayout ? e : undefined; }
+function hud() { const e = Entities.FindByName(HUD_NAME)[0]; return e instanceof CustomHudLayout ? e : undefined; }
 function setHud(slot, text) {
     if (hudSent.get(slot) === text) return;
     const h = hud(); if (!h) return;
@@ -87,7 +87,7 @@ function wake() { if (!thinking) { thinking = true; Instance.SetNextThink(Instan
 function buildPool() {
     pool = [];
     for (let i = 1; i <= POOL_SIZE; i++) {
-        const ent = Instance.FindEntityByName(POOL_PREFIX + i);
+        const ent = Entities.FindByName(POOL_PREFIX + i)[0];
         if (ent && ent.IsValid() && ent instanceof BaseModelEntity) { ent.SetColor({ r: 255, g: 255, b: 255, a: 0 }); pool.push({ ent, home: ent.GetAbsOrigin(), live: false, flying: false, armAt: 0, dieAt: 0, pos: undefined, name: POOL_PREFIX + i }); }
     }
 }
@@ -138,8 +138,8 @@ function poolOk() { return pool.length > 0 && pool.every((p) => p.ent && p.ent.I
 function takeMine() {
     if (!poolOk()) buildPool();
     if (pool.length === 0) {
-        const named = Instance.FindEntitiesByClass("prop_dynamic").map((e) => e.GetEntityName()).filter((n) => n && n.toLowerCase().includes("bump"));
-        Instance.Msg("[bumpmine] no bumpmine_1..8 props found - mine not placed (prop_dynamics named *bump*: " + (named.join(", ") || "none") + ")");
+        const named = Entities.FindByClass("prop_dynamic").map((e) => e.GetEntityName()).filter((n) => n && n.toLowerCase().includes("bump"));
+        Console.Log("[bumpmine] no bumpmine_1..8 props found - mine not placed (prop_dynamics named *bump*: " + (named.join(", ") || "none") + ")");
         return undefined;
     }
     let mine = pool.find((p) => !p.live && !p.flying);
@@ -155,7 +155,7 @@ function land(projectile, mine) {
     const now = Instance.GetGameTime();
     mine.flying = false; mine.live = true; mine.armAt = now + ARM_DELAY; mine.dieAt = now + MINE_LIFE; mine.pos = pos;
     mine.ent.Teleport({ position: pos, angles: { pitch: 0, yaw: Math.random() * 360, roll: 0 }, velocity: { x: 0, y: 0, z: 0 } });
-    Instance.EntFireAtName({ name: mine.name + "_land", input: "StartSound", delay: 0.02 });
+    Entities.FireInput({ name: mine.name + "_land", input: "StartSound", delay: 0.02 });
     dbg(`landed ${mine.name} at ${pos.x.toFixed(0)} ${pos.y.toFixed(0)} ${pos.z.toFixed(0)}`);
     wake();
 }
@@ -195,7 +195,7 @@ Instance.SetThink(() => {
             if (len < 4) { const yaw = pw.GetEyeAngles().yaw * Math.PI / 180; ux = Math.cos(yaw); uy = Math.sin(yaw); }
             else { ux = dx / len; uy = dy / len; }
             pw.Teleport({ velocity: { x: ux * LAUNCH_SPEED, y: uy * LAUNCH_SPEED, z: LAUNCH_UP } });
-            Instance.EntFireAtName({ name: mine.name + "_det", input: "StartSound" });
+            Entities.FireInput({ name: mine.name + "_det", input: "StartSound" });
             retire(mine);
             break;
         }
@@ -207,9 +207,9 @@ Instance.SetThink(() => {
 
 Instance.OnScriptInput("bump_on", () => { gameOn = true; dbg("game on"); wake(); });
 // debug: "ent_fire bumpscript RunScriptInput bump_debug" (or the bump_debug console command with sv_cheats 1) prints every give/throw/landing
-Instance.OnScriptInput("bump_debug", () => { debug = !debug; Instance.Msg("[bumpmine] debug " + (debug ? "on" : "off")); });
-Instance.RegisterCheatCommand("bump_debug", () => { debug = !debug; Instance.Msg("[bumpmine] debug " + (debug ? "on" : "off")); });
-Instance.RegisterCheatCommand("bump_on", () => { gameOn = true; Instance.Msg("[bumpmine] game on"); wake(); });
+Instance.OnScriptInput("bump_debug", () => { debug = !debug; Console.Log("[bumpmine] debug " + (debug ? "on" : "off")); });
+Console.RegisterCheatCommand("bump_debug", () => { debug = !debug; Console.Log("[bumpmine] debug " + (debug ? "on" : "off")); });
+Console.RegisterCheatCommand("bump_on", () => { gameOn = true; Console.Log("[bumpmine] game on"); wake(); });
 Instance.OnScriptInput("bump_off", () => { gameOn = false; charges.clear(); wipeHud(); });
 
 function reset() {

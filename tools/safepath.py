@@ -129,6 +129,58 @@ def sha256_file(path, chunk=1 << 20):
     return h.hexdigest()
 
 
+class CopyError(OSError):
+    """copy_atomic could not leave a verified copy; the destination is as it was before the call."""
+
+
+def copy_atomic(src, dst, chunk=1 << 20):
+    """Make dst hold exactly the bytes of src, deciding by content (SHA-256), never by size or timestamp.
+
+    -> {'op': 'same' | 'create' | 'modify', 'path': dst, 'sha256': hex of the content now at dst}.
+      same     dst already holds these bytes: nothing is written (its timestamp does not matter, older or newer)
+      create   dst did not exist
+      modify   dst held other bytes (same size or not) and was replaced
+    The copy is written to a temporary file in dst's own folder, flushed to disk, read back and hashed, and only then moved over
+    dst with os.replace (atomic on one volume): a reader sees the old file or the new one, never a part of one. The temporary
+    file is removed on every failure, and dst is then untouched.
+
+    Raises CopyError (an OSError) when: src is missing or not a regular file; dst is a folder or a link (a link is refused, not
+    followed and not replaced: remove it with rmdir / del first); the bytes read back do not match what was read from src; or src
+    changed while it was being copied. A locked or read-only dst, or a full disk, surfaces as the PermissionError / OSError Windows
+    gives, after the temporary file is removed. Nothing here clears a read-only flag or retries.
+    dst's folder is created when missing. Links in the folders above dst are the caller's to check (check_no_nested_links)."""
+    if not os.path.isfile(src):
+        raise CopyError('source is missing or not a regular file: %s' % src)
+    if is_link(dst):
+        raise CopyError('destination is a link (to %s), refused: %s' % (link_target(dst), dst))
+    if os.path.isdir(dst):
+        raise CopyError('destination is a folder: %s' % dst)
+    want = sha256_file(src, chunk)
+    exists = os.path.isfile(dst)
+    if exists and os.path.getsize(dst) == os.path.getsize(src) and sha256_file(dst, chunk) == want:
+        return {'op': 'same', 'path': dst, 'sha256': want}
+    folder = os.path.dirname(os.path.abspath(dst))
+    os.makedirs(folder, exist_ok=True)
+    tmp = os.path.join(folder, '.%s.%d.copytmp' % (os.path.basename(dst), os.getpid()))
+    try:
+        h = hashlib.sha256()
+        with open(src, 'rb') as fi, open(tmp, 'wb') as fo:
+            for b in iter(lambda: fi.read(chunk), b''):
+                h.update(b); fo.write(b)
+            fo.flush(); os.fsync(fo.fileno())
+        if h.hexdigest() != want:
+            raise CopyError('source changed while it was being copied: %s' % src)
+        got = sha256_file(tmp, chunk)
+        if got != want:
+            raise CopyError('copy does not match its source (sha256 %s, expected %s): %s' % (got[:12], want[:12], dst))
+        os.replace(tmp, dst)
+    finally:
+        if os.path.lexists(tmp):
+            try: os.remove(tmp)
+            except OSError: pass
+    return {'op': 'modify' if exists else 'create', 'path': dst, 'sha256': want}
+
+
 def write_atomic(path, data, backup=None, stamp=None, root=None):
     """Replace path with data (bytes) without ever leaving a half-written file under its name.
 

@@ -67,9 +67,11 @@ def deliver(manifests, force, dry_run=False, root=None):
     return man
 
 def copy_if_changed(src, dst):
-    if os.path.exists(dst) and os.path.getsize(src) == os.path.getsize(dst) and os.path.getmtime(src) <= os.path.getmtime(dst): return
-    os.makedirs(os.path.dirname(dst), exist_ok=True)
-    shutil.copyfile(src, dst)
+    """Make dst a verified copy of src. The decision is by content (SHA-256): two files of one size are compared byte for byte in
+    effect, and a destination with a newer timestamp is still replaced when it holds other bytes. Written through a temporary file
+    and moved into place (safepath.copy_atomic), so an interrupted copy leaves the old dst. -> 'same' | 'create' | 'modify';
+    raises OSError (safepath.CopyError for a missing source, a link or folder at dst, or a copy that does not verify)."""
+    return safepath.copy_atomic(src, dst)['op']
 
 def _same_folder(a, b):
     try: return os.path.samefile(a, b)
@@ -124,9 +126,15 @@ def root(addon, r):
         make_junction(link, real)
         why = check_junction(link, real)               # read it back: mklink reports success before the link can be trusted
     if why: sys.exit('working root not built: ' + why)
-    copy_if_changed(os.path.join(S1, 'maps', addon + '.vmf'), os.path.join(r, 'source1', 'maps', addon + '.vmf'))
-    copy_if_changed(os.path.join(CS2, 'game', 'csgo', 'pak01_dir.vpk'), os.path.join(r, 'vpk', 'cs2_pak01_dir.vpk'))
-    copy_if_changed(os.path.join(S1, 'pak01_dir.vpk'), os.path.join(r, 'vpk', 'csgo_pak01_dir.vpk'))
+    copied = []
+    for src, dst in ((os.path.join(S1, 'maps', addon + '.vmf'), os.path.join(r, 'source1', 'maps', addon + '.vmf')),
+                     (os.path.join(CS2, 'game', 'csgo', 'pak01_dir.vpk'), os.path.join(r, 'vpk', 'cs2_pak01_dir.vpk')),
+                     (os.path.join(S1, 'pak01_dir.vpk'), os.path.join(r, 'vpk', 'csgo_pak01_dir.vpk'))):
+        for d in (os.path.dirname(dst),):                  # these folders belong to the working root: a link there would send the copy elsewhere
+            if safepath.is_link(d): sys.exit('%s is a link (to %s): the working root must hold real folders' % (d, safepath.link_target(d)))
+        try: copied.append('%s %s' % (os.path.basename(dst), {'same': 'unchanged', 'create': 'copied', 'modify': 'replaced (content differed)'}[copy_if_changed(src, dst)]))
+        except OSError as ex: sys.exit('working root not built: %s' % ex)
+    print('root inputs: ' + '; '.join(copied))
     emb = os.path.join(r, 'embedded', addon); n = 0
     if safepath.is_link(emb): sys.exit('%s is a link (to %s): remove it with rmdir, then run root again' % (emb, safepath.link_target(emb)))
     for z in sorted(glob.glob(os.path.join(S1, 'maps', addon + '_embedded*.zip'))):

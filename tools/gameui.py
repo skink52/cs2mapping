@@ -72,8 +72,8 @@ function gameuiFire(ui, out, pawn, value) {
     for (const [o, target, input, param, delay] of GAMEUI[ui].outs) {
         if (o !== out) continue;
         const v = param !== "" ? param : (value ?? "");
-        if (target.toLowerCase() === "!activator") Instance.EntFireAtTarget({ target: pawn, input, value: v, activator: pawn, delay });
-        else Instance.EntFireAtName({ name: target, input, value: v, activator: pawn, delay });
+        if (target.toLowerCase() === "!activator") pawn.FireInput({ input, value: v, activator: pawn, delay });
+        else Entities.FireInput({ name: target, input, value: v, activator: pawn, delay });
     }
 }
 /** @param {string} ui */
@@ -130,7 +130,7 @@ def js_section(uis):
     return JS.replace('__UIS__', json.dumps(uis, indent=1))
 
 
-def patch_script(js, uis, think_js):
+def _patch_script(js, uis, think_js):
     """add (or replace) the game_ui section in an existing <addon>_io.js"""
     if 'const GAMEUI = ' in js:
         return re.sub(r'const GAMEUI = .*?;\n/\*\* @type \{Map', 'const GAMEUI = %s;\n/** @type {Map' % json.dumps(uis, indent=1), js, flags=re.S)
@@ -149,3 +149,9 @@ def patch_script(js, uis, think_js):
     js = '\n'.join(lines) + '\n'
     if 'const THINKERS' not in js: js += '\n' + think_js + '\n'
     return js + '\n' + js_section(uis) + '\n'
+
+
+def patch_script(*a, **k):
+    """_patch_script, then the import line made to name every API global the script uses (Entities, Console, GameRules)."""
+    import jsapi
+    return jsapi.ensure_imports(_patch_script(*a, **k))

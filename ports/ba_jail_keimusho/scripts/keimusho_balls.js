@@ -1,4 +1,4 @@
-import { Instance } from "cs_script/point_script";
+import { Instance, Entities } from "cs_script/point_script";
 
 // ba_jail_keimusho: climb game balls (func_physbox ball1-7, spawned by climbtemp1-7 and rolled down the climb).
 // In CS:GO players pushed them by walking into them; CS2 players don't move physics props, so this script does it:
@@ -17,7 +17,7 @@ let nextScan = 0;
 
 function scan(now) {
     nextScan = now + SCAN_EVERY;
-    balls = Instance.FindEntitiesByClass("func_physbox").filter((e) => e.IsValid() && NAME_RE.test(e.GetEntityName() || ""));
+    balls = Entities.FindByClass("func_physbox").filter((e) => e.IsValid() && NAME_RE.test(e.GetEntityName() || ""));
 }
 
 Instance.SetThink(() => {
@@ -45,7 +45,7 @@ Instance.SetThink(() => {
             const along = bv.x * nx + bv.y * ny;
             const want = Math.max(PUSH_MIN, into * PUSH_GAIN);
             if (along >= want) continue;
-            Instance.EntFireAtTarget({ target: b, input: "Wake" });
+            b.FireInput({ input: "Wake" });
             b.Teleport({ velocity: { x: bv.x + nx * (want - along), y: bv.y + ny * (want - along), z: bv.z } });
         }
     }

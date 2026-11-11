@@ -1,4 +1,4 @@
-import { Instance, Entity, CSPlayerPawn, CSPlayerController } from "cs_script/point_script";
+import { Instance, Console, Entity, CSPlayerPawn, CSPlayerController } from "cs_script/point_script";
 
 // CS2 port of changemodel.nut (logic_script "ModelChangeScript").
 // Triggered by: <trigger> -> ModelChangeScript -> RunScriptInput -> ChangeModel
@@ -64,7 +64,7 @@ Instance.OnScriptInput("ChangeModel", ({ activator }) => {
         pawn.Glow(GLOW_COLOR);
     }
     if (!applied) {
-        Instance.Msg(`changemodel.js: Octodad model did not apply (still "${pawn.GetModelName()}")`);
+        Console.Log(`changemodel.js: Octodad model did not apply (still "${pawn.GetModelName()}")`);
     }
 
     const slot = pawn.GetPlayerController()?.GetPlayerSlot();

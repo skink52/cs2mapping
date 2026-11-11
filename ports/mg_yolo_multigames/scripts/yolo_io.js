@@ -1,4 +1,4 @@
-import { Instance, Entity, BaseModelEntity, CSPlayerPawn, CSPlayerController, CSInputs, CSDamageFlags, CSMoveType, CSGearSlot, CustomHudLayout, CustomCameraMode, CSGrenadeProjectileBase } from "cs_script/point_script";
+import { Instance, Entities, Console, Entity, BaseModelEntity, CSPlayerPawn, CSPlayerController, CSInputs, CSDamageFlags, CSMoveType, CSGearSlot, CustomHudLayout, CustomCameraMode, CSGrenadeProjectileBase } from "cs_script/point_script";
 
 // mg_yolo_multigames: CS2 replacements for CS:GO entities and I/O tricks that no longer exist.
 // Driven by `yolo_io_script` -> RunScriptInput <input name>; the touching / pressing player is the activator.
@@ -184,7 +184,7 @@ for (const [tele, info] of Object.entries(DATA.teleporters)) {
     Instance.OnScriptInput("Teleport_" + tele, ({ activator }) => {
         const pawn = toPawn(activator);
         if (!pawn || !pawn.IsValid() || !currentDest[tele]) return;
-        const dest = Instance.FindEntityByName(currentDest[tele]);
+        const dest = Entities.FindByName(currentDest[tele])[0];
         if (!dest || !dest.IsValid()) return;
         // like trigger_teleport: move to the destination, take its facing, stop all movement
         const angles = dest.GetAbsAngles();
@@ -197,14 +197,14 @@ for (const [tele, info] of Object.entries(DATA.teleporters)) {
 for (const [maker, xyz] of DATA.makerOrigins) {
     const key = `MakerOrigin_${maker}__${xyz.map(v => String(v)).join("_")}`;
     Instance.OnScriptInput(key, () => {
-        for (const ent of Instance.FindEntitiesByName(maker)) ent.Teleport({ position: { x: xyz[0], y: xyz[1], z: xyz[2] } });
+        for (const ent of Entities.FindByName(maker)) ent.Teleport({ position: { x: xyz[0], y: xyz[1], z: xyz[2] } });
     });
 }
 
 // ---------------------------------------------------------------- prop colours
 for (const [target, [r, g, b]] of DATA.colors) {
     Instance.OnScriptInput(`Color_${target}__${r}_${g}_${b}`, () => {
-        for (const ent of Instance.FindEntitiesByName(target)) {
+        for (const ent of Entities.FindByName(target)) {
             if (ent instanceof BaseModelEntity) ent.SetColor({ r, g, b, a: ent.GetColor().a });
             // volleyball start (fb_relay colours the balls): the balls stay asleep at the serve spot, as in CS:GO, until hit
         }
@@ -215,7 +215,7 @@ for (const [target, [r, g, b]] of DATA.colors) {
 const LAYOUT_NAME = "yolo_overlay_layout";
 /** @param {string} panelId @param {boolean} visible */
 function setOverlay(panelId, visible) {
-    const ent = Instance.FindEntityByName(LAYOUT_NAME);
+    const ent = Entities.FindByName(LAYOUT_NAME)[0];
     if (ent instanceof CustomHudLayout) ent.SetHasClass(panelId, "Hidden", !visible);
 }
 // map credits: only in the first two rounds of the map, and the script hides it itself after 5 s
@@ -231,7 +231,7 @@ Instance.OnScriptInput("Show_spawn_overlay", () => {
     if (introRounds > INTRO_ROUNDS || introShownRound === introRounds) return;
     introShownRound = introRounds;
     setOverlay("spawn_overlay", true);
-    Instance.EntFireAtName({ name: SCRIPT_NAME, input: "RunScriptInput", value: "Hide_spawn_overlay", delay: INTRO_TIME });
+    Entities.FireInput({ name: SCRIPT_NAME, input: "RunScriptInput", value: "Hide_spawn_overlay", delay: INTRO_TIME });
 });
 Instance.OnScriptInput("Hide_spawn_overlay", () => setOverlay("spawn_overlay", false));
 
@@ -269,33 +269,33 @@ Instance.OnScriptInput("CreeperStart", ({ activator }) => {
     /** @type {{ ent: Entity, ofs: { x: number, y: number, z: number } }[]} */
     const parts = [];
     for (const cls of ["func_rotating", "env_explosion", "info_particle_system", "weapon_knife"]) {
-        for (const ent of Instance.FindEntitiesByClass(cls)) {
+        for (const ent of Entities.FindByClass(cls)) {
             const name = ent.GetEntityName();
             if (!CREEPER_PREFIXES.some(p => name.startsWith(p))) continue;
             const o = ent.GetAbsOrigin();
             if (Math.hypot(o.x - CREEPER_STORE.x, o.y - CREEPER_STORE.y, o.z - CREEPER_STORE.z) > 400) continue;   // only the set in storage
             // the knife isn't needed any more, but removing it at once also removes everything still parented to it (the whole creeper):
             // unparent first (below, synchronously), then kill the knife a moment later
-            if (cls === "weapon_knife") { Instance.EntFireAtTarget({ target: ent, input: "Kill", delay: 0.5 }); continue; }
+            if (cls === "weapon_knife") { ent.FireInput({ input: "Kill", delay: 0.5 }); continue; }
             ent.SetParent(undefined);
             parts.push({ ent, ofs: { x: o.x - CREEPER_STORE.x, y: o.y - CREEPER_STORE.y, z: o.z - CREEPER_STORE.z } });
         }
     }
     creeper.pawn = pawn; creeper.parts = parts;
-    Instance.EntFireAtName({ name: SCRIPT_NAME, input: "RunScriptInput", value: "SetAlpha_0", activator: pawn });
-    Instance.EntFireAtName({ name: SCRIPT_NAME, input: "RunScriptInput", value: "Speed_1.2", activator: pawn });
+    Entities.FireInput({ name: SCRIPT_NAME, input: "RunScriptInput", value: "SetAlpha_0", activator: pawn });
+    Entities.FireInput({ name: SCRIPT_NAME, input: "RunScriptInput", value: "Speed_1.2", activator: pawn });
     if (!pawn.FindWeaponBySlot(CSGearSlot.KNIFE)) pawn.GiveNamedItem("weapon_knife", true);
     for (const p of parts) {
         const base = creeperBase(p.ent);
         const step = CREEPER_STEPS.find(s => s[0] === base);
         if (step) {
-            Instance.EntFireAtTarget({ target: p.ent, input: "Start", delay: Number(step[1]) });
-            Instance.EntFireAtTarget({ target: p.ent, input: "DestroyImmediately", delay: Number(step[2]) });
+            p.ent.FireInput({ input: "Start", delay: Number(step[1]) });
+            p.ent.FireInput({ input: "DestroyImmediately", delay: Number(step[2]) });
         }
-        if (base === "mc_creeper_explosive") Instance.EntFireAtTarget({ target: p.ent, input: "Explode", delay: 7 });
-        Instance.EntFireAtTarget({ target: p.ent, input: "Kill", delay: 9 });
+        if (base === "mc_creeper_explosive") p.ent.FireInput({ input: "Explode", delay: 7 });
+        p.ent.FireInput({ input: "Kill", delay: 9 });
     }
-    Instance.EntFireAtName({ name: "mc_pickup_relay", input: "Trigger", activator: pawn });
+    Entities.FireInput({ name: "mc_pickup_relay", input: "Trigger", activator: pawn });
 });
 function creeperThink() {
     const pawn = creeper.pawn;
@@ -319,7 +319,7 @@ const cube = {
 function thruster(name, active) {
     if (cube.on[name] === active) return;
     cube.on[name] = active;
-    Instance.EntFireAtName({ name, input: active ? "Activate" : "Deactivate" });
+    Entities.FireInput({ name, input: active ? "Activate" : "Deactivate" });
 }
 function exitCube() {
     const pawn = cube.driver;
@@ -337,7 +337,7 @@ Instance.OnScriptInput("GameUI_cube_gameui", ({ activator }) => {
     if (cube.driver && cube.driver !== pawn) exitCube();
     cube.driver = pawn; cube.since = Instance.GetGameTime(); cube.on = {};
     pawn.SetMoveType(CSMoveType.NONE);                                  // "Freeze Player"
-    const body = Instance.FindEntityByName("cube");
+    const body = Entities.FindByName("cube")[0];
     if (body && body.IsValid()) {
         try {
             const cam = pawn.GetCustomCamera();
@@ -358,8 +358,8 @@ function cubeThink(now) {
     const x = (p.IsInputPressed(CSInputs.RIGHT) ? 1 : 0) - (p.IsInputPressed(CSInputs.LEFT) ? 1 : 0);
     thruster("front", y > 0); thruster("backward", y < 0);              // compare_y_axis
     thruster("right", x > 0); thruster("left", x < 0);                  // compare_x_axis
-    if (p.WasInputJustPressed(CSInputs.ATTACK2)) Instance.EntFireAtName({ name: "up2", input: "Activate" });
-    if (p.WasInputJustPressed(CSInputs.ATTACK)) Instance.EntFireAtName({ name: "cube_hurttrig", input: "Toggle" });
+    if (p.WasInputJustPressed(CSInputs.ATTACK2)) Entities.FireInput({ name: "up2", input: "Activate" });
+    if (p.WasInputJustPressed(CSInputs.ATTACK)) Entities.FireInput({ name: "cube_hurttrig", input: "Toggle" });
 }
 
 // ---------------------------------------------------------------- game_ui "game_ui33": secret knife (spawned by aim_spawn)
@@ -376,12 +376,12 @@ function knife33Think() {
     for (const [slot, enabled] of knife33) {
         const pawn = Instance.GetPlayerController(slot)?.GetPlayerPawn();
         if (!pawn || !pawn.IsValid() || !pawn.IsAlive()) {
-            if (enabled) Instance.EntFireAtName({ name: "push_up33", input: "Disable" });
+            if (enabled) Entities.FireInput({ name: "push_up33", input: "Disable" });
             knife33.delete(slot); continue;
         }
         const want = pawn.IsInputPressed(CSInputs.ATTACK) && !pawn.IsInputPressed(CSInputs.ATTACK2);
         if (want !== enabled) {
-            Instance.EntFireAtName({ name: "push_up33", input: want ? "Enable" : "Disable" });
+            Entities.FireInput({ name: "push_up33", input: want ? "Enable" : "Disable" });
             knife33.set(slot, want);
         }
     }
@@ -438,7 +438,7 @@ function nadeThink(now) {
         for (const h of HOLES) {
             if (holesDone.has(h.name) || !segmentHits(st.last, p, h)) continue;
             holesDone.add(h.name);
-            Instance.EntFireAtName({ name: h.name, input: "Trigger", activator: nade.GetThrower() });
+            Entities.FireInput({ name: h.name, input: "Trigger", activator: nade.GetThrower() });
         }
         st.last = p;
     }
@@ -474,11 +474,11 @@ function resetNadeGame() {
     nadeSlayAt = 0;
     for (const h of HOLES) {
         const n = h.name.slice("nade_hole".length);
-        Instance.EntFireAtName({ name: "hole_wall" + n, input: "Disable" });
-        Instance.EntFireAtName({ name: "nade_climb" + n, input: "Close" });
+        Entities.FireInput({ name: "hole_wall" + n, input: "Disable" });
+        Entities.FireInput({ name: "nade_climb" + n, input: "Close" });
     }
-    for (const c of ["nade_counter", "nade_counter1"]) Instance.EntFireAtName({ name: c, input: "SetValueNoFire", value: 0 });
-    Instance.EntFireAtName({ name: "nade_heal", input: "Enable" });
+    for (const c of ["nade_counter", "nade_counter1"]) Entities.FireInput({ name: c, input: "SetValueNoFire", value: 0 });
+    Entities.FireInput({ name: "nade_heal", input: "Enable" });
 }
 
 // ---------------------------------------------------------------- ball / block physics
@@ -552,9 +552,9 @@ function volleyScore(ball, p, now) {
     const v = VOLLEY.find(x => x.ball === name);
     if (!v || !inside(p, v.lo, v.hi, 0) || now - (lastScore.get(ball) ?? -10) < 1) return false;
     lastScore.set(ball, now);
-    const dest = Instance.FindEntityByName(v.dest);
+    const dest = Entities.FindByName(v.dest)[0];
     if (dest && dest.IsValid()) ball.Teleport({ position: dest.GetAbsOrigin(), velocity: { x: 0, y: 0, z: 0 }, angularVelocity: { x: 0, y: 0, z: 0 } });
-    Instance.EntFireAtName({ name: v.relay, input: "Trigger" });
+    Entities.FireInput({ name: v.relay, input: "Trigger" });
     // the ball then waits at its serve spot, as in CS:GO, until hit (knife / shot)
     return true;
 }
@@ -573,8 +573,8 @@ function physThink(now, dt) {
         physBodies = [];
         // by class and by name (whichever finds them), each prop once
         const found = new Set();
-        for (const cls of PHYS_CLASSES) for (const ent of Instance.FindEntitiesByClass(cls)) found.add(ent);
-        for (const r of PHYS) for (const n of [r.prefix, r.prefix + "*"]) for (const ent of Instance.FindEntitiesByName(n)) found.add(ent);
+        for (const cls of PHYS_CLASSES) for (const ent of Entities.FindByClass(cls)) found.add(ent);
+        for (const r of PHYS) for (const n of [r.prefix, r.prefix + "*"]) for (const ent of Entities.FindByName(n)) found.add(ent);
         for (const ent of found) {
             const rule = physRule(ent);
             if (rule && (rule.run || rule.gravity !== 1 || VOLLEY.some(v => v.ball === ent.GetEntityName()))) physBodies.push({ ent, rule });
@@ -636,7 +636,7 @@ function netThink() {
     const now = Instance.GetGameTime();
     if (now >= nextNetCheck) {
         nextNetCheck = now + 0.25;
-        const ent = Instance.FindEntityByName(NET.name);
+        const ent = Entities.FindByName(NET.name)[0];
         netAlive = !!ent && ent.IsValid();
     }
     if (!netAlive) return;
@@ -656,16 +656,16 @@ function netThink() {
 
 // ---------------------------------------------------------------- round flow
 Instance.OnActivate(() => {
-    for (const cvar of NO_DEFAULT_LOADOUT) Instance.ServerCommand(`${cvar} ""`);
+    for (const cvar of NO_DEFAULT_LOADOUT) Console.ServerCommand(`${cvar} ""`);
     ensureThink();
 });
 // game_round_end "roundend" OnRoundEnded: switch the scouts game's colour correction off
 // scouts (weed_relay, sv_gravity 160) and knife (knife_relay, sv_gravity 200) games lower the server gravity through point_servercommand
 // "cmd"; logic_auto put it back to 800 at map spawn in CS:GO. Put it back every round too, so the next game never starts in low gravity.
-Instance.OnRoundStart(() => { roundSignal(); resetNadeGame(); weed(0); creeper.pawn = undefined; creeper.parts = []; Instance.ServerCommand("sv_gravity 800"); });
+Instance.OnRoundStart(() => { roundSignal(); resetNadeGame(); weed(0); creeper.pawn = undefined; creeper.parts = []; Console.ServerCommand("sv_gravity 800"); });
 Instance.OnRoundEnd(() => {
     weed(0);
-    for (const [name, input, delay] of DATA.roundEnd) Instance.EntFireAtName({ name, input, delay });
+    for (const [name, input, delay] of DATA.roundEnd) Entities.FireInput({ name, input, delay });
 });
 // Each round starts with the teleport targets the map was built with (CS:GO respawned map entities each round).
 Instance.OnBeginRoundRestart(() => {

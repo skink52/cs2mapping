@@ -43,8 +43,8 @@ async function roundEnd(key) {
     const r = ROUNDEND[key];
     if (!r || roundEndOver) return;
     const reason = r.mode === 'T' ? CSRoundEndReason.TERRORISTS_WIN : r.mode === 'CT' ? CSRoundEndReason.CTS_WIN : CSRoundEndReason.DRAW;
-    Instance.EntFireAtName({ name: ROUNDEND_PARAMS, input: "FireWinCondition", value: reason });
-    for (const o of r.after) Instance.EntFireAtName({ name: o.t, input: o.i, value: o.p, delay: o.d });
+    Entities.FireInput({ name: ROUNDEND_PARAMS, input: "FireWinCondition", value: reason });
+    for (const o of r.after) Entities.FireInput({ name: o.t, input: o.i, value: o.p, delay: o.d });
     await Instance.Delay(1.5);
     if (roundEndOver) return;
     if (r.mode !== 'Draw') {
@@ -52,16 +52,16 @@ async function roundEnd(key) {
         roundEndKillTeam(winner === 2 ? 3 : 2);
         await Instance.Delay(1.0);
         if (roundEndOver) return;
-        Instance.ServerCommand(`mp_default_team_winner_no_objective ${winner}`);
+        Console.ServerCommand(`mp_default_team_winner_no_objective ${winner}`);
         roundEndCvar = true;
     }
-    Instance.SetRoundRemainingTime(0);
+    GameRules.SetRoundRemainingTime(0);
 }
 for (const key of Object.keys(ROUNDEND)) Instance.OnScriptInput("RoundEnd_" + key, () => { roundEnd(key); });
 Instance.OnRoundStart(() => { roundEndOver = false; });
 Instance.OnRoundEnd(() => {
     roundEndOver = true;
-    if (roundEndCvar) { Instance.ServerCommand("mp_default_team_winner_no_objective -1"); roundEndCvar = false; }
+    if (roundEndCvar) { Console.ServerCommand("mp_default_team_winner_no_objective -1"); roundEndCvar = false; }
 });'''
 
 STRIP_JS = r'''// ---------------------------------------------------------------- player_weaponstrip replacement (not in CS2)
@@ -123,7 +123,7 @@ def run(m, c):
         c.log.append('removed %d player_weaponstrip (not in CS2); %d Strip inputs -> script WeaponStrip (strips the activator)' % (len(strips), n))
 
 
-def patch_script(js, c):
+def _patch_script(js, c):
     """Add the round-end / strip sections to an <addon>_io.js (or start one)."""
     need = [x for x in ('CSPlayerPawn', 'CSPlayerController', 'CSDamageFlags', 'CSRoundEndReason') if c.roundend or x in ('CSPlayerPawn', 'CSPlayerController')]
     mt = re.match(r'import \{([^}]*)\} from "cs_script/point_script";', js)
@@ -144,3 +144,9 @@ def patch_script(js, c):
         js += '\n' + ROUNDEND_JS.replace('__PARAMS__', json.dumps(c.map_params)).replace('__ROUNDEND__', json.dumps(c.roundend, indent=4)) + '\n'
     if c.weaponstrip: js += '\n' + STRIP_JS + '\n'
     return js
+
+
+def patch_script(*a, **k):
+    """_patch_script, then the import line made to name every API global the script uses (Entities, Console, GameRules)."""
+    import jsapi
+    return jsapi.ensure_imports(_patch_script(*a, **k))

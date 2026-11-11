@@ -1,4 +1,4 @@
-import { Instance, Entity, BaseModelEntity, CSPlayerPawn, CSPlayerController, CSInputs, CustomHudLayout } from "cs_script/point_script";
+import { Instance, Entities, Console, Entity, BaseModelEntity, CSPlayerPawn, CSPlayerController, CSInputs, CustomHudLayout } from "cs_script/point_script";
 
 // mg_50arenas: CS2 replacements for CS:GO entities and I/O tricks that no longer exist.
 // Driven by `a50_io_script` -> RunScriptInput <input name>; the touching / picking-up player is the activator.
@@ -143,7 +143,7 @@ Instance.OnScriptInput("ApplyHP", ({ activator }) => {
 // ---------------------------------------------------------------- entity renames
 for (const [from, to] of DATA.renames) {
     Instance.OnScriptInput(`Rename_${from}__${to}`, () => {
-        for (const ent of Instance.FindEntitiesByName(from)) ent.SetEntityName(to);
+        for (const ent of Entities.FindByName(from)) ent.SetEntityName(to);
     });
 }
 
@@ -156,7 +156,7 @@ const SWEEP_NAME = { spawn_Tport: "crowdt1", spawn_CTport: "crowdct1" };   // th
 /** @param {string} tele @param {CSPlayerPawn} pawn */
 function teleport(tele, pawn) {
     if (!currentDest[tele]) return false;
-    const dest = Instance.FindEntityByName(currentDest[tele]);
+    const dest = Entities.FindByName(currentDest[tele])[0];
     if (!dest || !dest.IsValid()) return false;
     // like trigger_teleport: move to the destination, take its facing, stop all movement
     const angles = dest.GetAbsAngles();
@@ -204,7 +204,7 @@ Instance.OnScriptInput("SweepSkins", () => {
         if (slot === undefined || skinned.has(slot)) continue;
         const team = pawn.GetTeamNumber(), key = team === TEAM_T ? "skins_T" : team === TEAM_CT ? "skins_CT" : undefined;
         if (!key || !DATA.skinBoxes[key] || !inBox(pawn.GetAbsOrigin(), DATA.skinBoxes[key])) continue;
-        Instance.EntFireAtName({ name: team === TEAM_T ? "randomskin_T" : "randomskin_CT", input: "PickRandom", activator: pawn });
+        Entities.FireInput({ name: team === TEAM_T ? "randomskin_T" : "randomskin_CT", input: "PickRandom", activator: pawn });
     }
 });
 
@@ -212,7 +212,7 @@ Instance.OnScriptInput("SweepSkins", () => {
 const LAYOUT_NAME = "a50_overlay_layout";
 /** @param {string} panelId @param {boolean} visible */
 function setOverlay(panelId, visible) {
-    const ent = Instance.FindEntityByName(LAYOUT_NAME);
+    const ent = Entities.FindByName(LAYOUT_NAME)[0];
     if (ent instanceof CustomHudLayout) ent.SetHasClass(panelId, "Hidden", !visible);
 }
 Instance.OnScriptInput("ShowIntro", () => setOverlay("intro_overlay", true));
@@ -223,8 +223,8 @@ Instance.OnScriptInput("HideIntro", () => setOverlay("intro_overlay", false));
 /** @param {string | undefined} key */
 function showEffect(key) {
     if (key === effectOn) return;
-    if (effectOn && effectOn !== "xxx") Instance.EntFireAtName({ name: "a50_effect_" + effectOn, input: "Disable" });
-    if (key && key !== "xxx") Instance.EntFireAtName({ name: "a50_effect_" + key, input: "Enable" });   // xxx = white tint: no change
+    if (effectOn && effectOn !== "xxx") Entities.FireInput({ name: "a50_effect_" + effectOn, input: "Disable" });
+    if (key && key !== "xxx") Entities.FireInput({ name: "a50_effect_" + key, input: "Enable" });   // xxx = white tint: no change
     effectOn = key;
 }
 for (const key of DATA.effects) Instance.OnScriptInput("SetEffect_" + key, () => { effect = key; if (effectOn) showEffect(key); });
@@ -232,7 +232,7 @@ Instance.OnScriptInput("EffectOn", () => showEffect(effect));
 Instance.OnScriptInput("EffectOff", () => showEffect(undefined));
 
 // ---------------------------------------------------------------- server commands (point_servercommand startcms / msg_psc)
-DATA.commands.forEach((cmd, i) => Instance.OnScriptInput("Cmd_" + i, () => Instance.ServerCommand(cmd)));
+DATA.commands.forEach((cmd, i) => Instance.OnScriptInput("Cmd_" + i, () => Console.ServerCommand(cmd)));
 
 // ---------------------------------------------------------------- spawn strip (unnamed "Strip First" game_player_equip)
 // CS:GO ran it on every spawn, so everyone started with nothing (the round hands out its own weapons).
@@ -240,7 +240,7 @@ DATA.commands.forEach((cmd, i) => Instance.OnScriptInput("Cmd_" + i, () => Insta
 const NO_DEFAULT_LOADOUT = ["mp_t_default_melee", "mp_ct_default_melee", "mp_t_default_secondary", "mp_ct_default_secondary",
                             "mp_t_default_primary", "mp_ct_default_primary", "mp_t_default_grenades", "mp_ct_default_grenades"];
 Instance.OnActivate(() => {
-    for (const cvar of NO_DEFAULT_LOADOUT) Instance.ServerCommand(`${cvar} ""`);
+    for (const cvar of NO_DEFAULT_LOADOUT) Console.ServerCommand(`${cvar} ""`);
 });
 Instance.OnPlayerReset(({ player }) => {
     const slot = player.GetPlayerController()?.GetPlayerSlot();
@@ -255,7 +255,7 @@ Instance.OnPlayerReset(({ player }) => {
 // ---------------------------------------------------------------- round flow
 // game_round_end "efend" OnRoundEnded
 Instance.OnRoundEnd(() => {
-    for (const [name, input, value, delay] of DATA.roundEnd) Instance.EntFireAtName({ name, input, value, delay });
+    for (const [name, input, value, delay] of DATA.roundEnd) Entities.FireInput({ name, input, value, delay });
 });
 // Each round starts like the map was built (CS:GO respawned map entities each round).
 Instance.OnBeginRoundRestart(() => {

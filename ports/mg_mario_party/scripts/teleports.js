@@ -1,4 +1,4 @@
-import { Instance, Entity, CSPlayerPawn, CSPlayerController } from "cs_script/point_script";
+import { Instance, Entities, Entity, CSPlayerPawn, CSPlayerController } from "cs_script/point_script";
 
 // CS2 replacement for trigger_teleport's SetRemoteDestination input.
 // CS2 removed that input (it isn't in the FGD or the game), so Hammer flags it as an error
@@ -45,7 +45,7 @@ for (const tp of TELEPORTERS) {
     Instance.OnScriptInput("teleport_" + tp.trigger, ({ activator }) => {
         const pawn = toPawn(activator);
         if (!pawn || !pawn.IsValid()) return;
-        const dest = Instance.FindEntityByName(current[tp.trigger]);
+        const dest = Entities.FindByName(current[tp.trigger])[0];
         if (!dest || !dest.IsValid()) return;
 
         // Same as trigger_teleport: move to the destination, face its direction, stop all movement.

@@ -1,4 +1,4 @@
-import { Instance, CSPlayerPawn, CSPlayerController, CSGearSlot, CSDamageFlags, CSRoundEndReason } from "cs_script/point_script";
+import { Instance, Entities, Console, GameRules, CSPlayerPawn, CSPlayerController, CSGearSlot, CSDamageFlags, CSRoundEndReason } from "cs_script/point_script";
 
 // mg_minecraft_multigames: CS2 replacements for CS:GO entity behaviour that no longer works, written by the CS2 post-import clean.
 // Everything here is driven by `mg_minecraft_multigames_io_script` -> RunScriptInput <input name>, with the activator passed through.
@@ -281,7 +281,7 @@ const COMMANDS = [
     "say @[Map] Ghast number one defeated"
 ];
 COMMANDS.forEach((cmd, i) => {
-    Instance.OnScriptInput("Cmd_" + i, () => { Instance.ServerCommand(cmd); });
+    Instance.OnScriptInput("Cmd_" + i, () => { Console.ServerCommand(cmd); });
 });
 
 // ---------------------------------------------------------------- game_score replacement (entity removed in CS2)
@@ -346,8 +346,8 @@ async function roundEnd(key) {
     const r = ROUNDEND[key];
     if (!r || roundEndOver) return;
     const reason = r.mode === 'T' ? CSRoundEndReason.TERRORISTS_WIN : r.mode === 'CT' ? CSRoundEndReason.CTS_WIN : CSRoundEndReason.DRAW;
-    Instance.EntFireAtName({ name: ROUNDEND_PARAMS, input: "FireWinCondition", value: reason });
-    for (const o of r.after) Instance.EntFireAtName({ name: o.t, input: o.i, value: o.p, delay: o.d });
+    Entities.FireInput({ name: ROUNDEND_PARAMS, input: "FireWinCondition", value: reason });
+    for (const o of r.after) Entities.FireInput({ name: o.t, input: o.i, value: o.p, delay: o.d });
     await Instance.Delay(1.5);
     if (roundEndOver) return;
     if (r.mode !== 'Draw') {
@@ -355,16 +355,16 @@ async function roundEnd(key) {
         roundEndKillTeam(winner === 2 ? 3 : 2);
         await Instance.Delay(1.0);
         if (roundEndOver) return;
-        Instance.ServerCommand(`mp_default_team_winner_no_objective ${winner}`);
+        Console.ServerCommand(`mp_default_team_winner_no_objective ${winner}`);
         roundEndCvar = true;
     }
-    Instance.SetRoundRemainingTime(0);
+    GameRules.SetRoundRemainingTime(0);
 }
 for (const key of Object.keys(ROUNDEND)) Instance.OnScriptInput("RoundEnd_" + key, () => { roundEnd(key); });
 Instance.OnRoundStart(() => { roundEndOver = false; });
 Instance.OnRoundEnd(() => {
     roundEndOver = true;
-    if (roundEndCvar) { Instance.ServerCommand("mp_default_team_winner_no_objective -1"); roundEndCvar = false; }
+    if (roundEndCvar) { Console.ServerCommand("mp_default_team_winner_no_objective -1"); roundEndCvar = false; }
 });
 
 // ---------------------------------------------------------------- player_weaponstrip replacement (not in CS2)

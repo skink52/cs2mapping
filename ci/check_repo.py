@@ -132,6 +132,40 @@ def check_private(files):
 
 
 CONTROL = re.compile(rb'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
+# A tab inside a Windows path in prose: what "C:\source1\cs2port\tools" becomes when the text went through something that read
+# "\t" as an escape. Only in documents: code and data files use tabs for their own reasons.
+PATH_TAB = re.compile(rb'[A-Za-z]:\\[^\s`"\'<>|]*\t[A-Za-z0-9_.]')
+# The same accident with "\a" "\b" "\f" "\v" leaves a control character (caught by CONTROL); with "\n" or "\r" it breaks the line
+# after a path that ends in a backslash-less stub, which cannot be told from a real line end, so it is not looked for.
+DOC_EXT = {'.md', '.txt'}
+
+
+def text_problems(name: str, data: bytes) -> list[str]:
+    """What is wrong with a text file's bytes: control characters, bytes that are not UTF-8, and (documents only) a tab inside a
+    Windows path. Tab, line feed and carriage return are ordinary; so is every valid Unicode character, a BOM included."""
+    probs = []
+
+    def where(i):
+        around = CONTROL.sub(b'?', data[max(0, i - 24):i + 12]).decode('utf-8', 'replace').replace('\n', ' ').replace('\t', '<TAB>')
+        return data.count(b'\n', 0, i) + 1, around
+    if b'\x00' in data:
+        line, around = where(data.index(b'\x00'))
+        return ['%s:%d: NUL byte (%d in the file): binary data in a text file' % (name, line, data.count(b'\x00'))]
+    m = CONTROL.search(data)
+    if m:
+        line, around = where(m.start())
+        probs.append('%s:%d: control character 0x%02x near "%s"' % (name, line, data[m.start()], around))
+    try:
+        data.decode('utf-8')
+    except UnicodeDecodeError as ex:
+        line, around = where(ex.start)
+        probs.append('%s:%d: byte 0x%02x is not valid UTF-8 near "%s"' % (name, line, data[ex.start], around))
+    if Path(name).suffix.lower() in DOC_EXT:
+        m = PATH_TAB.search(data)
+        if m:
+            line, around = where(m.end() - 2)
+            probs.append('%s:%d: a tab inside a Windows path (a lost "\\t"?) near "%s"' % (name, line, around))
+    return probs
 
 
 def check_control(files):
@@ -140,12 +174,7 @@ def check_control(files):
         if Path(f).suffix.lower() not in TEXT_EXT:
             continue
         n += 1
-        data = (ROOT / f).read_bytes()
-        m = CONTROL.search(data)
-        if m:
-            line = data.count(b'\n', 0, m.start()) + 1
-            around = CONTROL.sub(b'?', data[max(0, m.start() - 24):m.start() + 12]).decode('utf-8', 'replace').replace('\n', ' ')
-            probs.append('%s:%d: control character 0x%02x near "%s"' % (f, line, data[m.start()], around))
+        probs += text_problems(f, (ROOT / f).read_bytes())
     return n, probs, ''
 
 

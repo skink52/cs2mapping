@@ -78,7 +78,7 @@
 // point_script entity with script file = scripts/vehicles.js. No outputs need
 // wiring - the script hooks vehicle_button5's OnPressed itself.
 
-import { Instance, CSInputs, CSMoveType, CSDamageTypes } from "cs_script/point_script";
+import { Instance, Entities, Console, CSInputs, CSMoveType, CSDamageTypes } from "cs_script/point_script";
 
 // ----- the cars -------------------------------------------------------------
 // Copy the whole block and change the 5s to add vehicle 6. Note that the map
@@ -250,7 +250,7 @@ const DISABLE_MOTION_DELAY = 1.5;  // game_ui PlayerOff -> vehicle_base5 Disable
 const EXIT_TELEPORT_FACING = true;
 // ----------------------------------------------------------------------------
 
-Instance.Msg("[vehicles] script loaded");
+Console.Log("[vehicles] script loaded");
 
 const ZERO = { x: 0, y: 0, z: 0 };
 
@@ -275,7 +275,7 @@ const reentryBlocked = new Map();
 let outputHooks = [];
 let lastThink = 0;
 
-function log(text) { if (DEBUG) Instance.Msg(`[vehicles] ${text}`); }
+function log(text) { if (DEBUG) Console.Log(`[vehicles] ${text}`); }
 
 function live(entity) { return entity && entity.IsValid() ? entity : undefined; }
 
@@ -299,7 +299,7 @@ function rotateZ(x, y, degrees) {
 
 function fire(name, input) {
   if (!name) return;
-  Instance.EntFireAtName({ name, input });
+  Entities.FireInput({ name, input });
 }
 
 function moveTypeFor(key) {
@@ -360,17 +360,17 @@ function report(vehicle) {
   const missing = [];
 
   if (!vehicleBase(vehicle)) missing.push(`base "${config.base}"`);
-  if (!Instance.FindEntityByName(config.button)) missing.push(`button "${config.button}"`);
+  if (!Entities.FindByName(config.button)[0]) missing.push(`button "${config.button}"`);
 
   for (const control of CONTROLS) {
     const name = config.thrusters[control.key];
-    if (!name || !Instance.FindEntityByName(name)) {
+    if (!name || !Entities.FindByName(name)[0]) {
       missing.push(`thruster "${name ?? control.key}"`);
     }
   }
   for (const key of ["idleSound", "igniteSound", "exitTeleport", "hurtTrigger"]) {
     const name = config[key];
-    if (name && !Instance.FindEntityByName(name)) missing.push(`${key} "${name}"`);
+    if (name && !Entities.FindByName(name)[0]) missing.push(`${key} "${name}"`);
   }
 
   log(`vehicle ${config.id}: ` +
@@ -382,7 +382,7 @@ function resolve(vehicle, slotName, entityName) {
   if (cached) return cached;
   if (!entityName) return undefined;
 
-  vehicle.cache[slotName] = live(Instance.FindEntityByName(entityName));
+  vehicle.cache[slotName] = live(Entities.FindByName(entityName)[0]);
   return vehicle.cache[slotName];
 }
 
@@ -395,7 +395,7 @@ function vehicleBase(vehicle) { return resolve(vehicle, "base", vehicle.config.b
  */
 function hookButtons() {
   for (const id of outputHooks) {
-    try { Instance.DisconnectOutput(id); } catch (error) { /* already gone */ }
+    try { Entities.DisconnectOutput(id); } catch (error) { /* already gone */ }
   }
   outputHooks = [];
 
@@ -403,9 +403,8 @@ function hookButtons() {
     const name = vehicle.config.button;
     if (!name) continue;
 
-    for (const button of Instance.FindEntitiesByName(name)) {
-      const hook = Instance.ConnectOutput(button, "OnPressed",
-        ({ activator }) => enterVehicle(pawnFromEntity(activator), vehicle));
+    for (const button of Entities.FindByName(name)) {
+      const hook = Entities.ConnectOutput({ target: button, output: "OnPressed", callback: ({ activator }) => enterVehicle(pawnFromEntity(activator), vehicle) });
 
       if (hook !== undefined) {
         outputHooks.push(hook);
@@ -772,7 +771,7 @@ function teleportOut(vehicle, pawn) {
     return;
   }
 
-  const destination = live(Instance.FindEntityByName(name));
+  const destination = live(Entities.FindByName(name)[0]);
   if (!destination) {
     log(`vehicle ${vehicle.config.id}: exit teleport "${name}" missing, leaving driver in place`);
     return;
@@ -972,11 +971,11 @@ Instance.OnScriptInput("ExitVehicle", ({ activator }) => {
  *   vehicle_tune ride follow|parent|stay
  *   vehicle_tune smooth 0|1      1 = Move() for the ride, 0 = Teleport()
  */
-Instance.RegisterCheatCommand("vehicle_tune", (args) => {
+Console.RegisterCheatCommand("vehicle_tune", (args) => {
   const [what, raw] = args.trim().split(/\s+/);
   const value = Number(raw);
   const number = (setter) => {
-    if (!Number.isFinite(value)) { Instance.Msg(`[vehicles] ${what} needs a number`); return; }
+    if (!Number.isFinite(value)) { Console.Log(`[vehicles] ${what} needs a number`); return; }
     setter(value);
   };
 
@@ -988,7 +987,7 @@ Instance.RegisterCheatCommand("vehicle_tune", (args) => {
     case "assist":   number((v) => { assistEnabled = v !== 0; }); break;
     case "axis":
       if (["x", "y", "z"].includes(raw)) assistTurnAxis = raw;
-      else Instance.Msg(`[vehicles] axis must be x, y or z`);
+      else Console.Log(`[vehicles] axis must be x, y or z`);
       break;
     case "smooth":   number((v) => { rideWithTeleport = v === 0; }); break;
     case "lift":
@@ -1023,7 +1022,7 @@ Instance.RegisterCheatCommand("vehicle_tune", (args) => {
           if (raw === "parent") attachParent(vehicle, pawn);
         }
       } else {
-        Instance.Msg(`[vehicles] ride must be follow, parent or stay`);
+        Console.Log(`[vehicles] ride must be follow, parent or stay`);
       }
       break;
     case "movetype":
@@ -1036,14 +1035,14 @@ Instance.RegisterCheatCommand("vehicle_tune", (args) => {
           if (pawn && pawn.IsValid() && pawn.IsAlive()) pawn.SetMoveType(moveTypeFor(raw));
         }
       } else {
-        Instance.Msg(`[vehicles] movetype must be none, noclip or walk`);
+        Console.Log(`[vehicles] movetype must be none, noclip or walk`);
       }
       break;
     case "": break;
-    default: Instance.Msg(`[vehicles] unknown setting "${what}"`); break;
+    default: Console.Log(`[vehicles] unknown setting "${what}"`); break;
   }
 
-  Instance.Msg(`[vehicles] assist=${assistEnabled ? "on" : "off"}` +
+  Console.Log(`[vehicles] assist=${assistEnabled ? "on" : "off"}` +
                ` power=${assistAccel} top=${assistMaxSpeed}` +
                ` turn=${assistTurnAccel} turntop=${assistMaxTurnRate}` +
                ` axis=${assistTurnAxis} movetype=${driverMoveType}` +
@@ -1055,7 +1054,7 @@ Instance.RegisterCheatCommand("vehicle_tune", (args) => {
 
     const v = base.GetAbsVelocity();
     const a = base.GetAbsAngularVelocity();
-    Instance.Msg(`  vehicle ${vehicle.config.id}: speed=${Math.hypot(v.x, v.y).toFixed(0)}` +
+    Console.Log(`  vehicle ${vehicle.config.id}: speed=${Math.hypot(v.x, v.y).toFixed(0)}` +
                  ` turning=${vehicle.turnRate.toFixed(0)} deg/s` +
                  ` angvel[x=${a.x.toFixed(1)} y=${a.y.toFixed(1)} z=${a.z.toFixed(1)}]`);
   }
@@ -1064,8 +1063,8 @@ Instance.RegisterCheatCommand("vehicle_tune", (args) => {
   // other two with `vehicle_tune axis`.
 });
 
-Instance.RegisterCheatCommand("vehicle_dump", () => {
-  Instance.Msg(`[vehicles] ${vehicles.size} vehicle(s), ${outputHooks.length} button hook(s)`);
+Console.RegisterCheatCommand("vehicle_dump", () => {
+  Console.Log(`[vehicles] ${vehicles.size} vehicle(s), ${outputHooks.length} button hook(s)`);
 
   for (const vehicle of vehicles.values()) {
     const config = vehicle.config;
@@ -1077,14 +1076,14 @@ Instance.RegisterCheatCommand("vehicle_dump", () => {
       ? `[${vehicle.seat.x.toFixed(1)} ${vehicle.seat.y.toFixed(1)} ${vehicle.seat.z.toFixed(1)}]`
       : "none";
 
-    Instance.Msg(`  vehicle ${config.id}: base=${vehicleBase(vehicle) ? "ok" : "MISSING"}` +
+    Console.Log(`  vehicle ${config.id}: base=${vehicleBase(vehicle) ? "ok" : "MISSING"}` +
                  ` driver=${driver} seat=${seat} running=[${running.join(",") || "none"}]` +
                  ` immune=[${[...vehicle.ownNames].join(" ")}]`);
     report(vehicle);
   }
 });
 
-Instance.RegisterCheatCommand("vehicle_enter", (args) => {
+Console.RegisterCheatCommand("vehicle_enter", (args) => {
   const wanted = Number(args.trim());
   const vehicle = [...vehicles.values()].find((v) => v.config.id === wanted)
     ?? [...vehicles.values()][0];
@@ -1096,17 +1095,17 @@ Instance.RegisterCheatCommand("vehicle_enter", (args) => {
   }
 });
 
-Instance.RegisterCheatCommand("vehicle_exit", () => exitAll("vehicle_exit", true));
+Console.RegisterCheatCommand("vehicle_exit", () => exitAll("vehicle_exit", true));
 
 // If a car ever ends up locked with nobody in it (script error, tools reload
 // mid-drive), this puts every one of them back in service.
-Instance.RegisterCheatCommand("vehicle_reset", () => {
+Console.RegisterCheatCommand("vehicle_reset", () => {
   exitAll("vehicle_reset", false);
   for (const vehicle of vehicles.values()) {
     fire(vehicle.config.button, "Unlock");
     fire(vehicle.config.base, "EnableMotion");
   }
-  Instance.Msg(`[vehicles] reset ${vehicles.size} vehicle(s)`);
+  Console.Log(`[vehicles] reset ${vehicles.size} vehicle(s)`);
 });
 
 // ----- THRUSTER FORCES ------------------------------------------------------
