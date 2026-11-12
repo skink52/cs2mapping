@@ -15,14 +15,14 @@ Status: `open` / `in progress (batch)` / `fixed (compiled)` / `fixed (in-game ve
 | 5 | Helicopters need weapons (check whether they exist but can't be found; make firing obvious) | S | fixed (simulated, compiled; FIX_PT1_S.md) |
 | 6 | `!air` works, `!help` doesn't; no other commands are discoverable | S | fixed (simulated, compiled; FIX_PT1_S.md) |
 | 7 | Bridge machine gun sounds tinny; use the M249 sound | S | fixed (simulated, compiled; FIX_PT1_S.md) |
-| 8 | Tunnel entrance very blocky (p1) | W | open |
-| 9 | Underground blockiness, floating arches (p6) | W | open |
-| 10 | Some T spawns stuck in the rocket/mortar battery wall | W | open |
-| 11 | Line across foliage (p2) | W | open |
-| 12 | Colour bug from grass on tree trunks: pale bands (p5) | W | open |
-| 13 | Vines on poles around the Khmer temple float in the air (p7) | W | open |
-| 14 | Sandbags look wrong (p3) | W | open |
-| 15 | Water should have depth: a real func_water | W | open |
+| 8 | Tunnel entrance very blocky (p1) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
+| 9 | Underground blockiness, floating arches (p6) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
+| 10 | Some T spawns stuck in the rocket/mortar battery wall | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
+| 11 | Line across foliage (p2) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
+| 12 | Colour bug from grass on tree trunks: pale bands (p5) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
+| 13 | Vines on poles around the Khmer temple float in the air (p7) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
+| 14 | Sandbags look wrong (p3) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
+| 15 | Water should have depth: a real func_water | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
 | 16 | Generated prop textures are low resolution across the board (p4) | P (round 2) | open |
 | 17 | Hay and hay bales are not photorealistic | P (round 2) | open |
 | 18 | Temple animal statues are the wrong vibe: source a proper model | P (round 2) | open |
