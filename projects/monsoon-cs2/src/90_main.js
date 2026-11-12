@@ -9,8 +9,12 @@ const stats = { rounds: 0, gunShots: 0, rockets: 0, fired: 0, shells: 0, beehive
                 flashes: 0, foAssists: 0, kitDenied: 0, flagSpawns: 0, spawnAboard: 0, spawnGuard: 0, afk: 0, joins: 0, lateJoins: 0, perfLines: 0, sanitised: 0,
                 teamSwitches: 0, reloads: 0, roleDeferred: 0, botRockets: 0, heliLostTeam: { 2: 0, 3: 0 }, bleedOn: { 2: 0, 3: 0 }, crashSurvivors: 0,
                 // review 2
-                departed: 0, hudActivates: 0, fetched: 0 };
+                departed: 0, hudActivates: 0, fetched: 0,
+                // review 3
+                aiHeliSwaps: 0, botTakeovers: 0, botReleases: 0, crewReleased: 0, heliHeld: 0, botsVotes: 0, botsSet: 0, botGoals: {} };
 let roster = [];
+// bot takeover (Instance.OnBotControl): human slot -> { bot: bot slot, pawn }, and bot slot -> human slot while he plays it
+const botCtl = new Map(), botTaken = new Map();
 const rosterAt = new Array(64).fill(null);
 let lastTick = 0, perfAt = 0, perfTicks = 0, perfMs = 0, perfMax = 0, tickNo = 0;
 const clock = typeof performance !== "undefined" && performance && typeof performance.now === "function" ? () => performance.now() : () => Date.now();
@@ -39,9 +43,11 @@ function leaveTeam(p, pawn) {
   if (p.team) leaveHeliRole(p);
   for (const team of TEAMS) for (let i = missions[team].length - 1; i >= 0; i--) if (missions[team][i].owner === p.slot) dropMission(team, i);
   if (alive) { hidePawn(p, pawn, false); freeze(p, pawn, false); }
-  p.role = null; p.team = 0; p.deployed = false; p.kit = "rifle"; p.kitNext = ""; p.spawnSel = "base"; p.waitRole = ""; p.afk = false; p.here = "";
+  p.role = null; p.team = 0; p.deployed = false; p.kit = "rifle"; p.kitNext = ""; p.spawnSel = "base"; p.waitRole = ""; p.afk = false; p.here = ""; p.goal = "";
 }
 function forgetPlayer(p) {
+  endBotControl(p.slot);
+  const hs = botTaken.get(p.slot); if (hs !== undefined) endBotControl(hs);
   leaveTeam(p, undefined);
   players.delete(p.slot);
 }
@@ -51,8 +57,11 @@ function buildRoster() {
     rosterAt[s] = null;
     let ctl = Instance.GetPlayerController(s), pawn;
     let alive = false, team = 0, pos = null;
+    if (ctl && botTaken.size && botTaken.has(s)) continue;      // a bot a human has taken over: the human's record plays its pawn, the bot's waits
     if (ctl) {
-      try { pawn = live(ctl.GetPlayerPawn()); } catch (e) { pawn = undefined; }
+      const bc = botCtl.size ? botCtl.get(s) : undefined;
+      if (bc) { let ok = false; try { ok = !!live(bc.pawn) && bc.pawn.IsAlive(); } catch (e) {} if (ok) pawn = bc.pawn; else endBotControl(s); }
+      if (!pawn) { try { pawn = live(ctl.GetPlayerPawn()); } catch (e) { pawn = undefined; } }
       if (pawn) { try { alive = pawn.IsAlive(); team = pawn.GetTeamNumber(); if (alive) pos = pawn.GetAbsOrigin(); } catch (e) { alive = false; } }
       if (alive && !finiteV(pos)) alive = false;
       // CS2 can leave a departed player's controller in the slot (IsConnected false), often with no disconnect event (a bot kicked
@@ -96,12 +105,13 @@ function resetRound(soft) {
     const pawn = pawnOf(p.slot);
     if (soft && pawn) { try { unseat(p, pawn, "deploy"); freeze(p, pawn, false); hidePawn(p, pawn, false); } catch (e) {} }
     dropSeats(p);
-    p.role = null; p.crew = -1; p.aiRole = ""; p.aiGun = null; p.waitRole = ""; p.carrying = ""; p.carryEnt = -1;
+    p.role = null; p.crew = -1; p.aiRole = ""; p.aiGun = null; p.goal = ""; p.waitRole = ""; p.carrying = ""; p.carryEnt = -1;
     p.deployed = false; p.deployAt = TNOW + CONFIG.LOBBY_FIRST; p.here = ""; p.msnSel = -1; p.board = false; p.mount = -1; p.protectUntil = 0;
     p.fired = 0; p.hits = 0; p.missions = 0; p.atReadyAt = 0; p.atGiveAt = 0; p.afk = false; p.afkAt = TNOW;
     if (soft && pawn) { let a = false; try { a = pawn.IsAlive(); } catch (e) {} if (a) toLobby(p, pawn); }
   }
   clearWorld(soft);
+  botCtl.clear(); botTaken.clear();             // a new round ends every takeover (CS2 respawns everyone in his own pawn)
   if (soft && points) {
     for (const h of allHelis) { for (const s of h.seats) s.slot = -1; h.owner = -1; h.yieldTo = -1; h.ai = null; h.inp = null; setEngine(h, false); setDust(h, false); hideWreck(h); if (h.ent) respawnHeli(h); h.rotorSpeed = 0; }
     for (const team of TEAMS) {
@@ -316,6 +326,8 @@ Instance.OnPlayerReset(({ player }) => {
 Instance.OnPlayerDisconnect(({ playerSlot }) => {
   const p = players.get(playerSlot);
   if (p) forgetPlayer(p);
+  endBotControl(playerSlot);
+  const hs = botTaken.get(playerSlot); if (hs !== undefined) endBotControl(hs);
 });
 // HUD changes sent before a joining client has loaded are lost (cs2-gotchas), while the cache believes they are on screen: start the
 // cache again when the client is ready, so everything is sent once more (review 2, defensive)
@@ -324,6 +336,48 @@ if (typeof Instance.OnPlayerActivate === "function") {
     let s = -1; try { s = player ? player.GetPlayerSlot() : -1; } catch (e) {}
     const p = s >= 0 ? players.get(s) : undefined;
     if (p && !p.bot) { TNOW = now(); hudReset(p); stats.hudActivates++; }
+  });
+}
+// A human (dead, spectating) takes over a bot of his side (bot_controllable): he plays the bot's pawn until it dies or the round ends.
+// The bot may be an AI pilot / gunner / crewman parked in a seat, shrunk and frozen: it gives everything up at once (its AI role, seat,
+// gun crew, helicopter), so the human gets a normal infantryman's body where it stands, and the director picks another bot for the
+// role. The human's own record plays that pawn (pawnOf / buildRoster), already deployed: no briefing room, no teleport (review 3).
+function endBotControl(hs) {
+  const e = botCtl.get(hs); if (!e) return;
+  botCtl.delete(hs); if (botTaken.get(e.bot) === hs) botTaken.delete(e.bot);
+  stats.botReleases++;
+  const hp = players.get(hs); if (hp) { dropSeats(hp); hp.sane = false; }
+}
+if (typeof Instance.OnBotControl === "function") {
+  Instance.OnBotControl(({ controller }) => {
+    TNOW = now();
+    let hs = -1, on = false, pawn;
+    try { hs = controller.GetPlayerSlot(); on = controller.IsControllingBot(); pawn = on ? live(controller.GetControlledBotPawn()) : undefined; } catch (e) { return; }
+    if (hs < 0) return;
+    endBotControl(hs);
+    if (!on || !pawn) return;
+    let bs = -1; try { const oc = pawn.GetOriginalPlayerController(); bs = oc ? oc.GetPlayerSlot() : -1; } catch (e) {}
+    if (bs < 0 || bs === hs) return;
+    const bq = players.get(bs);
+    if (bq) {
+      if (bq.aiRole) aiRelease(bq, false);
+      if (bq.heli) leaveHeli(bq, pawn, "role");
+      if (bq.mount >= 0) leaveMount(bq, pawn);
+      dropSeats(bq); leaveCrew(bq); leaveHeliRole(bq);
+      bq.role = "infantry"; bq.goal = "";
+      freeze(bq, pawn, false); hidePawn(bq, pawn, false);
+    }
+    botTaken.set(bs, hs); botCtl.set(hs, { bot: bs, pawn });
+    stats.botTakeovers++;
+    const hp = players.get(hs);
+    if (hp) {
+      dropSeats(hp);
+      cancelAirWait(hp);                       // a helicopter request of his would put the bot's body in a helicopter: withdrawn (his !air
+                                               // preference stays for his own next deploy)
+      if (hp.role && hp.role !== "infantry") setRole(hp, "infantry", hp.team);
+      hp.deployed = true; hp.deployedAt = TNOW; hp.first = false; hp.sane = false; hp.protectUntil = 0; hp.afk = false; hp.afkAt = TNOW; hp.afkPos = null;
+      toast(hp, "You took over a bot: infantry until it falls", 4);
+    }
   });
 }
 // which stats bucket a CS2 weapon kill or hit belongs to
@@ -401,6 +455,7 @@ if (typeof Instance.OnGunFire === "function") {
     if (p) { TNOW = now(); fireAT(p, owner); }
   });
 }
+const botVotes = new Map();                    // slot -> { n, at }: the !bots vote
 Instance.OnPlayerChat(({ player, text }) => {
   if (!player) return;
   TNOW = now();
@@ -463,11 +518,22 @@ Instance.OnPlayerChat(({ player, text }) => {
     if (!CONFIG.BOTS_CHAT) { toast(p, "!bots is switched off on this server", 3); return; }
     if (!Number.isFinite(n) || n < 0) { toast(p, "!bots <0-" + CONFIG.BOT_QUOTA_MAX + ">", 3); return; }
     const q = Math.min(CONFIG.BOT_QUOTA_MAX, n);
+    // review 3: anyone could set the quota, and "!bots 0" kicked every bot (and with them the AI pilots and crews) on everyone else.
+    // Now it is a vote: more than half of the humans on the server must ask for the same number within BOTS_VOTE s. A lone player
+    // (practice, a listen server alone) is a majority by himself, so it still works at once there.
+    if (p.bot) return;
+    botVotes.set(s, { n: q, at: TNOW }); stats.botsVotes++;
+    let humans = 0, yes = 0;
+    for (const o of players.values()) if (!o.bot && o.ctl) humans++;
+    for (const [vs, v] of botVotes) { if (TNOW - v.at > CONFIG.BOTS_VOTE || !players.has(vs)) { botVotes.delete(vs); continue; } if (v.n === q) yes++; }
+    const needed = Math.floor(Math.max(1, humans) / 2) + 1;
+    if (yes < needed) { say("[mv] " + nameOf(s) + " votes !bots " + q + ": " + yes + "/" + needed + " (type !bots " + q + " within " + CONFIG.BOTS_VOTE + " s to agree)"); return; }
+    botVotes.clear(); stats.botsSet++;
     CONFIG.BOTS_ON = q > 0; CONFIG.BOT_QUOTA = q;
     Console.ServerCommand("bot_quota_mode " + CONFIG.BOT_QUOTA_MODE);
     Console.ServerCommand("bot_quota " + q);            // bot_* cvars are on the Workshop command allow list
     if (q === 0) Console.ServerCommand("bot_kick");
-    say("[mv] bots: " + (q ? "quota " + q : "off") + " (set by " + nameOf(s) + ")");
+    say("[mv] bots: " + (q ? "quota " + q : "off") + " (" + (yes > 1 ? "vote, " + yes + " for" : "set by " + nameOf(s)) + ")");
   }
   else if (cmd === "roles" || cmd === "help") {
     const cnt = (r) => teamCount(p.team, (q) => q.role === r);

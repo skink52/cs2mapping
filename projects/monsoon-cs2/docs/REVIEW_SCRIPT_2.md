@@ -140,3 +140,123 @@ open map question, unchanged.
 `test/mock.mjs` (`review2` scenario, `script=`, `river=1`, `IsConnected` / `depart()`, `OnPlayerActivate` and the loading window,
 the empty-panel and departed-controller invariants, control characters in server commands, the three set-piece fixes); this file.
 `out/review2/` holds the pre-pass build, sources and mock, and the balance log.
+
+## Round 3 (12 Nov 2026): bot-only balance and the open items above. VERSION `mv-0.5`
+
+Everything here is **simulated** (mock engine, `sim_balance`, `tscheck`, `api.py --strict`); nothing has run in CS2. Not committed.
+The build before this round is kept as `out/review3/before_review3.js` (sources `out/review3/src_before/`, mock
+`out/review3/mock_before_review3.mjs`), the final one as `out/review3/final_mv05.js`; every balance log is in `out/review3/`.
+
+### 1. Bot-only balance (`src/85_ai.js`; numbers in `CONFIG.AI.PLAN`, `AI.REARM_GO`, `AI.MOUNT_AVOID`)
+
+**Why T won 75 % of bot rounds.** The bots' deploy choice scored each flag by its distance from the *base* plus noise and sent every
+bot to the single best one. Flags one hop from a held flag looked far (A is 6,700 u from the CT base but 3,000 from E), each side's
+bots chased the same flag, and nobody aimed past the front, so C (behind B) was never CT's target. B is about 500 u nearer the T
+front (C to B 2,170 u; E or D to B 2,670 u): T won the race to B, deployed there, and B, the hub (the flag nearest every other),
+handed T flag D as well.
+
+**What changed** (the world is untouched):
+- **A team plan** (`teamPlan`, refreshed every second): per flag a weight = value (own flag under attack: 3 x (1 + capture
+  progress); neutral 1.5, enemy 1.0) x exp(-distance from the side's nearest deploy point, i.e. its front, / 3,000) x pace, where
+  pace = (our run / the enemy's run)^2 clamped 0.5-2 (the side that reinforces a flag more slowly sends more men to it: CT at B),
+  x 3 for the enemy flag nearest our front (x 4 while we are being bled), floor 0.05.
+- **Squads spread** (`botGoal`): a deploying bot is sent to the flag the plan is most short of (weight share x bots minus bots
+  already sent there) and deploys at that flag if held, else at the held flag nearest it, else the base. No flag is ignored.
+- **No deploying into a lost fight**: a held flag with enemies within `SAFE` (1,150 u) is not a bot deploy point. `SAFE_CROWD`
+  (400 u) applies when the side has enough humans that the AI roles are off: there the bots reinforce the humans' fight (keeping
+  them off contested flags made mixed matches 25-35 % T).
+- **AI pilots** patrol by the plan's weights instead of at random, and avoid flags inside the arc of an enemy-manned emplaced gun
+  (`MOUNT_AVOID` 0.2: once the AI gunners chose guns that cover flags, mounts became the first killer of AI helicopters, 200+ per 40
+  rounds, and the median airframe life fell to 33 s).
+- **AI gunners** choose the emplaced gun whose arc covers a flag (the first T gun in the list faces the map edge: the T AI gunner sat
+  there all round while the CT one covered D; mount kills ran 12 : 0 against T).
+- **AI pilot uptime 50 % -> 75 %.** Where its time went before (new `sim_balance` line): flying 49 %, helicopter dead 19 %, pad
+  hold 11 %, bot dead / briefing 8 %, pad repair 6 %, re-arm 5 %. Fixes: a pilot whose helicopter is lost takes a free one standing
+  on its pad at once (`stats.aiHeliSwaps`) instead of waiting `HELI.RESPAWN` for his own; on the pad he lifts off once repaired with
+  60 % of his rockets (`REARM_GO`; the Apache waited 50 s for the last pair every sortie) after `PAD_HOLD` 4 s (was 10); the rotor
+  keeps turning on the pad (no 3 s spool-down and spool-up per sortie). After: flying 73 %, pad repair 9 %, bot dead 7 %, re-arm 4 %,
+  pad hold 4 %, helicopter dead 2 %.
+
+**Before / after**, `node test/sim_balance.mjs 40 32` on two seed sets (the default and `seed0=1001`), 80 rounds per cell. One
+standard error of a win rate over 80 rounds is about 5.6 points; the two 40-seed halves of one build differ by up to 17, so read a
+single 40-seed run as +-8. Every tuning was screened on 24-40 seeds and the candidates checked on both sets.
+
+| | bots before | bots after | mixed before | mixed after | target |
+|---|---|---|---|---|---|
+| T win rate, 80 rounds (set 1 / set 2) | **70 %** (75 / 65) | **49 %** (40 / 57) | 56 % (48 / 65) | **49 %** (43 / 55) | 45-55 % |
+| round length median (set 1 / set 2) | 11:53 / 12:19 | 12:51 / 12:53 | 17:43 / 16:34 | 17:07 / 17:39 | 12-20 min |
+| captures per round T/CT, a b c d e (set 1) | 3.1/2.9 1.7/1.1 1.4/0.5 1.2/1.4 2.2/3.0 | 2.9/2.6 4.1/3.5 2.1/1.3 0.7/1.3 2.9/3.6 | 2.5/2.4 2.4/2.2 3.1/2.4 2.6/3.3 2.6/3.5 | 3.5/3.0 2.8/2.5 1.6/0.6 1.1/2.0 2.8/3.7 | |
+| rounds in which both sides took it, a b c d e (set 1 / set 2) | 100/98 60/65 **25/40** 83/78 88/88 % | 95/100 100/100 65/65 55/55 93/88 % | 85 93 73 88 85 % (set 1) | 95 95 48 63 90 % (set 1) | every flag |
+| flag held T/CT, a b c d e (set 1) | 55/34 70/23 92/4 44/49 18/78 | 53/36 54/40 88/8 19/74 19/77 | 58/33 60/35 85/12 16/79 10/87 | 69/22 58/37 94/2 5/90 8/89 | |
+| dead flags (sim_balance rule) | c | none / d (1.9 changes, set 2) | none | none | none |
+| kills: rifle / mg / at / heli gun / heli rocket / arty / mount | 60/25/0/3/6/4/2 % | 60/26/1/2/6/3/2 % | 62/17/1/2/9/3/5 % | 67/19/1/1/7/3/2 % | 3-40 % each |
+| helicopter life median, lost per round | 55 s, 8.1 | 62 s, 11.1 (set 2: 55 s, 12.0) | 111 s, 12.9 | 112 s, 11.2 | 60-180 s |
+| AI uptime pilot / gunner / crew | 50 / 98 / 98 % | **75 / 99 / 98 %** | n/a | n/a | >= 50 % |
+
+"Mixed before" on set 2 (65 %) shows how wide the noise is: review 2's 48 % was set 1 alone.
+
+**Still short of a target, and why:**
+- **C and D.** Both sides now take C in 65 % of bot rounds (was 25-40 %) and B in all of them (was 60 %), but D fell from about 80
+  to 55 %: T reaches D less, because B is no longer its free forward deploy point. In mixed matches C (48 %) and D (63 %) are taken
+  by both sides less often than before. The flag at each side's back door (C for T; D and E for CT) is held 75-95 % of the round in
+  every set: that is the map (each is 3,600-4,000 u from its owner's base) more than the AI.
+- **Kill shares** (rifle 60 %+; AT, helicopter gun, artillery, mount 1-3 %) are the rate model's, as reviews 1 and 2 explain.
+- **Helicopters lost per round** rose (8 -> 11-12 in bot rounds) because the AI pilots fly half as much again; the median life is
+  in band (55-62 s, was 55-73).
+- **The mixed number depends on the test humans.** They always deploy at the base (`fwd=0`, as in every earlier run); `fwd=0.6`
+  (60 % of deploys at the front flag) moved mixed results by 20-40 points on either build. And real CS2 bots do not walk to the
+  nearest flag they do not hold as the stand-in's do: the deploy point is the only thing the script steers, so the plan's effect in
+  game may be smaller or larger than here.
+
+Rejected along the way (bots / mixed T win, 24-80 seeds): the plan without the deploy safety, 57-75 % / 46-57 %; hub weighting (B
+worth more to both), 67-71 % bots; pace exponent 3, 28-45 % bots and 28-38 % mixed; safety only when badly outnumbered, 57-65 % /
+25-45 %; bots always deploying at the base, 25 % bots. Logs: `out/review3/bal_*.txt`, `out/review3/grid_*.txt`.
+
+### 2. Open items from review 2, fixed
+
+| # | Item | Fix (file) | Covered by (`scenario=review3`) | Before (`script=out/review3/before_review3.js`) |
+|---|---|---|---|---|
+| 11 | A human joining a gun an AI crewman ran left the bot frozen there doing nothing, still counted as the side's AI crew | `takeCrew` releases every AI crewman on the gun a human joins (full or not); he redeploys as infantry and the director may give him an empty gun (`stats.crewReleased`) (20_players) | "human joins an AI crewman's gun": an AI crewman alone on every T gun, a human says `!artillery` | "AI crewman 16 is still on the gun the human joined (aiRole crew)" |
+| 12 | `!bots <n>` (and `!bots 0`, which kicks every bot and with them the AI pilots and crews) worked for any player | a vote: more than half of the humans on the server must ask for the same number within `BOTS_VOTE` (30) s. A lone player is a majority by himself, so practice and listen-server use is unchanged; `BOTS_CHAT false` still switches it off. Chosen as the simplest rule that needs no host detection (cs_script has no reliable "listen-server host") (90_main, 00_config) | "!bots is a vote": one of four, then a different number, then a majority | "one player of 4 set !bots alone" |
+| 13 | The AI bringing a helicopter home teleported the waiting human to the pad from wherever he was | `handHeli`: in the briefing room or at the base he gets it at once as before; out in the field the helicopter becomes his (role air, preference air) and waits on its pad; he is told so and deploys at it next life or walks back. Also used by the director's "a helicopter came free" pass (85_ai) | "helicopter home for a human in the field": he asks at the base, walks 2,900 u out, the AI lands | "the waiting human was teleported 2919 u out of the field (to the pad)" |
+| 14 | A human taking over a bot (`Instance.OnBotControl`, `bot_controllable`) drove a shrunk, frozen AI pilot / gunner / crewman | `OnBotControl`: the bot gives up its AI role, seat, gun crew and helicopter at once (pawn full size, unfrozen); the human's record plays the controlled pawn (`GetControlledBotPawn`, `pawnOf`, `buildRoster`) as a deployed infantryman where it stands, and his helicopter request is withdrawn; the bot's record is idle and out of the director until the takeover ends (pawn dead, round over, either leaves). Calls looked up with `api.py`: `OnBotControl`, `IsControllingBot`, `GetControlledBotPawn`, `GetOriginalPlayerController` (90_main, 10_util, 85_ai) | "human takes over an AI bot": an AI pilot, crewman and gunner taken over in turn, each released by the pawn's death | "the taken-over bot still has the AI pilot role" |
+
+Found while testing #13: a crewman at the plotting board who had asked for a helicopter was handed it in place and left frozen at
+the board (`handHeli` now counts the base, seat or not, as the base). Found while testing #14 (seed 19): a human with a helicopter
+request who took over a bot standing by a parked helicopter was put into it in the bot's body (the takeover now withdraws the
+request). Neither was ever in a released build.
+
+### 3. Gate (12 Nov 2026, final build: 3,597 lines)
+
+| Step | Result |
+|---|---|
+| `node tools/build_script.mjs` | 11 files, 3,597 lines, 267,585 bytes |
+| `api.py --strict --check` / `tscheck.sh` | 0 problems / OK |
+| `node test/mock.mjs 32 300` / `4 600` / `64 300` | PASS / PASS / PASS (`4 600`: the four humans now vote `!bots 14`) |
+| `32 600`, `64 600 humans=32`, `MOCK_NORESTART=1 32 600`, `32 300 scenario=churn / restart / edge / reload` | PASS |
+| `32 450 scenario=review2 humans=4` | PASS |
+| `32 450 scenario=review3 humans=4` | PASS on seeds 3, 7, 19, 29, 41, 53, 61; every piece FAILS on the pre-round build |
+
+**Script time**, one run at a time on an idle machine, builds alternated: `64 600 humans=32` new 0.097-0.103 ms/tick (6 runs), old
+0.094-0.099 the same afternoon (review 2 measured the old build at 0.093); `64 300` new 0.115, old 0.133. A CPU profile of both
+builds on `64 600 humans=32` gives the same script self time (2.76 s each) and no planner function in the top 25: the ~4 % in the
+per-tick figure is the match state (bots fight in other places: more AT-man shots and helicopter work), not new per-tick code; the
+only per-tick additions (two `Map` look-ups per slot, for takeovers) are skipped while no takeover runs. **Not met to the letter**:
+on today's machine the new build measures about 0.005 ms/tick above the old one.
+
+### 4. What only CS2 can confirm
+
+- The plan acts only through deploy points. Real CS2 bots do not walk to the nearest flag they do not hold, so bot-only balance in
+  game needs a look: watch `__mvDebug.stats.botGoals` (per side, "flag sent to > flag deployed at") and the flag owners in a bot match.
+- `OnBotControl` firing on both take and release, and `GetControlledBotPawn` / `GetOriginalPlayerController` answering as assumed
+  (the script does not rely on what `GetPlayerPawn()` returns on the human's controller during a takeover).
+- The hot rotor on the pad: the AI helicopter's engine sound and rotor animation keep running between sorties.
+
+### Files
+
+`src/00_config.js` (VERSION mv-0.5; `AI.PLAN`, `AI.REARM_GO`, `AI.MOUNT_AVOID`, `AI.PAD_HOLD` 4, `BOTS_VOTE`), `src/10_util.js`
+(`pawnOf`), `src/20_players.js` (`takeCrew`, `goal`), `src/85_ai.js` (plan, `botGoal`, `botSpawnChoice`, `botFlagOpen`; director:
+helicopter swap, takeover exclusion; `handHeli`; AI gunner gun choice; pilot pad turn-round; `aiWaypoint`, `mountCovers`),
+`src/90_main.js` (`OnBotControl`, `endBotControl`, `buildRoster`, the `!bots` vote, stats); `test/mock.mjs` (`review3` scenario, bot
+takeover in the stand-in engine, `fwd=`, the balance report's per-flag captures, contested time, AI pilot time by state and bot
+goals); `test/sim_balance.mjs` (`seed0=`, `script=` / `fwd=` pass-through, new report lines); `docs/SCRIPT.md`; this section.

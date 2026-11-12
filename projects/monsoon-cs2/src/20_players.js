@@ -14,7 +14,7 @@ function P(slot) {
           afk: false, afkAt: 0, afkEye: 0, afkPos: null, afkCheck: 0, statusAt: 0,
           fired: 0, hits: 0, missions: 0, here: "",
           // bots
-          aiRole: "", aiGun: null, leashAt: 0, leashPos: null, leashMoved: 0, lastCombat: -99, deployedAt: 0 };
+          aiRole: "", aiGun: null, goal: "", leashAt: 0, leashPos: null, leashMoved: 0, lastCombat: -99, deployedAt: 0 };
     players.set(slot, p);
   }
   return p;
@@ -44,10 +44,11 @@ function takeCrew(p, team) {
     if (score > bestScore) { bestScore = score; best = g; }
   }
   if (!best) return false;
-  if (best.crew.length >= MAXC) {          // a bot gives its seat to a human
-    const bs = best.crew.find((s) => { const q = players.get(s); return q && q.bot; });
-    const bq = players.get(bs);
-    if (bq) aiRelease(bq, true);
+  // a bot on the gun gives way to a human: when the gun is full, and also when there is room (review 3: the AI crewman stayed frozen
+  // at a gun the human now runs, doing nothing, and the director still counted him as the side's AI crew). Released, he goes back to
+  // the infantry and the director may give him an empty gun.
+  if (!p.bot) {
+    for (const s of best.crew.slice()) { const q = players.get(s); if (q && q.bot) { aiRelease(q, true); stats.crewReleased++; } }
   }
   if (best.crew.length >= MAXC) return false;
   best.crew.push(p.slot); p.crew = best.k;

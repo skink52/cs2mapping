@@ -2,7 +2,7 @@
 // battery, five flags, tickets. cs_script only, no plugins. Rules: docs/DESIGN.md 3; names: docs/CONTRACT.md; HUD ids: docs/SCRIPT.md.
 // Every tunable is in CONFIG. Units: Hammer units (40 u = 1 m), seconds, degrees.
 
-const VERSION = "mv-0.4 (12 Nov 2026, review pass 2)";
+const VERSION = "mv-0.5 (12 Nov 2026, review pass 3: bot balance)";
 
 const CONFIG = {
   HUD: "mv_hud", PARAMS: "mv_params",
@@ -157,6 +157,7 @@ const CONFIG = {
   // ---- bots and AI (low population). CS2 bots are players: the script cannot steer their legs, so infantry bots are placed
   // (deploy point, leash) and the vehicle / battery roles are simulated by the script while the bot's pawn sits in the seat.
   BOTS_ON: true, BOT_QUOTA: 10, BOT_QUOTA_MAX: 24, BOT_QUOTA_MODE: "fill", BOTS_CHAT: true, BOT_KITS: true,
+  BOTS_VOTE: 30,                         // !bots <n>: more than half of the humans must ask for the same n within this many s (one human alone: at once)
   AI: {
     MIN_HUMANS_FOR_ROLES: 4,             // a team with fewer humans than this gets AI pilots / gunners / crews
     PILOTS: 1, GUNNERS: 2, CREWS: 1,     // how many of each per team (bots permitting)
@@ -166,11 +167,16 @@ const CONFIG = {
     // pilot
     CRUISE: 520, CRUISE_SPEED: 0.6, ARRIVE: 700, LOOKAHEAD: 2.5, REACT: 1.5,
     STRAFE_RANGE: 2600, STRAFE_FIRE_MAX: 2000, STRAFE_FIRE_MIN: 650, STRAFE_PAIRS: 3, STRAFE_COOLDOWN: 14, STRAFE_ALT: 420,
-    ROCKET_SPREAD: 0.035, AIM_YAW: 7, RTB_HP: 50, PAD_HOLD: 10, WAIT_BOARD: 6,
+    ROCKET_SPREAD: 0.035, AIM_YAW: 7, RTB_HP: 50, PAD_HOLD: 4, WAIT_BOARD: 6,
+    REARM_GO: 0.6,                       // an AI pilot on its pad lifts off once repaired with this share of its rockets back (review 3: it waited for all)
+    MOUNT_AVOID: 0.2,                    // weight of a patrol flag inside the arc of an enemy-manned emplaced gun (review 3)
     // gunner
     GUN_RANGE: 3200, GUN_RETARGET: 0.5, GUN_REACT: 0.9, GUN_SPREAD: 0.025, GUN_BURST: 1.2, GUN_PAUSE: 1.1,
     // battery
     AT_RANGE: 2000, AT_FIRST: 8, AT_SPREAD: 0.08, AT_EVERY: 1.0, AT_BOTS: 2,     // the bot AT man: rockets at flying helicopters in range, this inaccurate
+    // team plan for the infantry bots' deploy points (85_ai teamPlan, review 3): weight per flag = what it is worth x exp(-distance
+    // from the side's nearest deploy point / REACH); a deploying bot is sent where the plan is shortest (weight share x bots - bots sent)
+    PLAN: { EVERY: 1.0, DEFEND: 3, GARRISON: 0, NEUTRAL: 1.5, ATTACK: 1.0, REACH: 3000, PUSH: 3, BLEED_PUSH: 4, FLOOR: 0.05, HUB: 0, HUB_EXP: 3, PACE: 2, PACE_MIN: 0.5, PACE_MAX: 2, SAFE: 1150, SAFE_FRIEND: 0, SAFE_BLED: 1150, SAFE_CROWD: 400 },
     CREW_LOAD: 11, CREW_THINK: 2.0, CREW_EXTRA_SIGMA: 30, CLUSTER_MIN: 2, CLUSTER_RADIUS: 320, CLUSTER_FLAG: 900, MARK_AGE: 6,
   },
 

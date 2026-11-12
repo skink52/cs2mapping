@@ -16,6 +16,8 @@
 //                             ground): a departed controller left in its slot, one AI helicopter per waiting human and a withdrawn
 //                             request, a pilot gone over the river, a pilot back on his pad, an AI gunner in an abandoned helicopter,
 //                             control characters in a name sent with say
+//                     review3 review pass 3's open items (humans=4): a human joining a gun an AI crewman runs, the !bots vote, a
+//                             helicopter the AI brings home for a human out in the field, a human taking over an AI bot (OnBotControl)
 //   piece=<text>      only the set pieces whose name contains <text> (one bug class at a time, e.g. scenario=edge piece="shot down")
 //   script=<file>     run that built script instead of building src/ (e.g. out/review2/before_review2.js: the build before pass 2)
 //   river=1           the river bed lies below the water (layout river line, 180 u each side); on in scenario=review2
@@ -240,7 +242,7 @@ class Cam extends Ent {
 }
 class Pawn extends Ent {
   constructor(ctl) { super('', 'player', { x: 0, y: 0, z: 0 }); this.ctl = ctl; this.hp = 100; this.armor = 0; this.helmet = false; this.weapons = []; this.keys = 0; this.mt = 2; this.eye = { pitch: 0, yaw: 0, roll: 0 }; this.active = null; this.model = 'agents/models/stock.vmdl'; }
-  GetPlayerController() { return this.ctl; } GetTeamNumber() { return this.ctl.team; } IsAlive() { return this.hp > 0; }
+  GetPlayerController() { return this.driver || this.ctl; } GetOriginalPlayerController() { return this.ctl; } GetTeamNumber() { return this.ctl.team; } IsAlive() { return this.hp > 0; }
   GetHealth() { return this.hp; } SetHealth(v) { if (!Number.isInteger(v)) throw new Error('SetHealth non-integer ' + v); this.hp = v; }
   GetArmor() { return this.armor; } SetArmor(v) { if (!Number.isInteger(v)) throw new Error('SetArmor non-integer ' + v); this.armor = v; } HasHelmet() { return this.helmet; } SetHasHelmet(v) { this.helmet = !!v; }
   IsInputPressed(b) { stats.inputs++; if (b & (b - 1)) throw new Error('masked IsInputPressed'); return (this.keys & b) !== 0; }
@@ -271,7 +273,9 @@ class Pawn extends Ent {
 }
 class Ctl extends Ent {
   constructor(slot, team, bot) { super('', 'cs_player_controller', { x: 0, y: 0, z: 0 }); this.slot = slot; this.team = team; this.bot = bot; this.pawn = new Pawn(this); this.drv = {}; this.q = []; this.hold = 0; this.stunt = ''; this.god = false; this.spec = false; this.gone = false; this.name = ''; }
-  GetPlayerSlot() { return this.slot; } GetPlayerPawn() { return this.spec || this.gone ? undefined : this.pawn; } IsBot() { return this.bot; } GetPlayerName() { return this.name || (this.bot ? 'bot' : 'p') + this.slot; } GetTeamNumber() { return this.team; }
+  // a human playing a bot (takeover): CS2 is assumed to answer GetPlayerPawn with the bot's pawn; the script must not depend on it
+  IsControllingBot() { return !!this.ctrl; } GetControlledBotPawn() { return this.ctrl || undefined; }
+  GetPlayerSlot() { return this.slot; } GetPlayerPawn() { return this.spec || this.gone ? undefined : this.ctrl || this.pawn; } IsBot() { return this.bot; } GetPlayerName() { return this.name || (this.bot ? 'bot' : 'p') + this.slot; } GetTeamNumber() { return this.team; }
   IsConnected() { return !this.gone; }
 }
 const worldEnt = new Ent('world', 'worldent', { x: 0, y: 0, z: 0 });
@@ -282,7 +286,7 @@ const everyone = () => ctls.filter((c) => c && !c.gone);
 // emptied after `linger` seconds
 function depart(c, linger) { c.gone = true; c.pawn.valid = false; const slot = c.slot; at(linger, () => { if (ctls[slot] === c) ctls[slot] = undefined; }); }
 function spawn(c, samePawn) {
-  if (c.spec || ctls[c.slot] !== c) return;
+  if (c.spec || ctls[c.slot] !== c || c.ctrl) return;      // no respawn while playing a bot
   const sp = lobby.filter((e) => (e.cls.endsWith('terrorist') && !e.cls.includes('counter')) === (c.team === 2));
   const e = sp[c.slot % sp.length];
   if (!samePawn) { c.pawn.valid = false; c.pawn = new Pawn(c); } else { c.pawn.hp = 100; c.pawn.mt = 2; }
@@ -350,7 +354,7 @@ const Instance = strict('Instance', {
   OnActivate: (f) => { hooks.activate = f; }, OnRoundStart: (f) => { hooks.round = f; }, OnPlayerReset: (f) => { hooks.reset = f; }, OnPlayerDisconnect: (f) => { hooks.disc = f; },
   OnPlayerKill: (f) => { hooks.kill = f; }, OnPlayerChat: (f) => { hooks.chat = f; }, OnBulletImpact: (f) => { hooks.bullet = f; }, OnModifyPlayerDamage: (f) => { hooks.mod = f; },
   OnPlayerDamage: (f) => { hooks.damage = f; }, OnGunFire: (f) => { hooks.gunfire = f; }, OnScriptReload: (c) => { hooks.reloadCfg = c; },
-  OnPlayerActivate: (f) => { hooks.pactivate = f; },
+  OnPlayerActivate: (f) => { hooks.pactivate = f; }, OnBotControl: (f) => { hooks.botctl = f; },
   GetPlayerController: (s) => ctls[s], TraceLine: traceLine,
 });
 const Entities = strict('Entities', {
@@ -553,6 +557,19 @@ function walk(c, pr, step) {      // what CS2's own bot brain / a walking human 
   }
 }
 // ---- balance mode drivers (mixed matches): the test's own stand-in players. They use the same keys a player has.
+// Where a human deploys (review 3): with probability FWD (opt fwd=, default 0: always the base) at the held flag nearest the front (the flag not ours
+// nearest any of ours), as the deploy prompt offers, otherwise at the base. Until review 3 every test human deployed at the base, which
+// favoured CT (D is 670 u nearer the CT base than A is to the T one) and was only offset by the old bot deploy rule's T bias.
+const FWD = opt.fwd !== undefined ? +opt.fwd : 0;
+function pickDeploy(c, pr) {
+  const held = D.flags.filter((f) => D.fn.flagOpen(f, c.team)), other = D.flags.filter((f) => f.owner !== c.team);
+  let sel = 'base';
+  if (held.length && other.length && Math.random() < FWD) {
+    let bd = 1e9;
+    for (const f of held) for (const g of other) { const d = d2(f.pos, g.pos); if (d < bd) { bd = d; sel = f.id; } }
+  }
+  if (pr.spawnSel !== sel) say(c, '!spawn ' + sel);
+}
 const foes = (team) => everyone().filter((c) => c.team !== team && !c.spec && c.pawn.hp > 0 && P(c) && P(c).deployed && !P(c).heli && c.pawn.pos.z > LOBBY_Z + 400);
 function hotSpot(team, from, maxD) {      // where the enemy infantry is thickest (a flag's surroundings), nearest first on ties
   let best = null, bn = 0;
@@ -1393,6 +1410,119 @@ if (SCEN === 'review2') {
   });
 }
 
+// ------------------------------------------------------------------ review pass 3: one set piece per fix (docs/REVIEW_SCRIPT_2.md "Round 3")
+// node test/mock.mjs 32 450 scenario=review3 humans=4   (each fails on out/review3/before_review3.js: add script=out/review3/before_review3.js)
+if (SCEN === 'review3') {
+  const grab = (c) => { c.stunt = curPiece.name; c.q = []; c.hold = 0; curPiece.actors.push(c); return c; };
+  const after = (name) => until(() => pieces.every((x) => x.name !== name || x.done), 'set piece "' + name + '" to finish', 500);
+  const onFoot = (team) => () => everyone().find((c) => !c.bot && c.team === team && !c.stunt && c.pawn.hp > 0 && P(c) && P(c).deployed && P(c).role === 'infantry' && !P(c).heli && P(c).mount < 0);
+  // (1) a human joins the battery while an AI crewman runs every gun: the bot leaves the gun he joins (it used to stay frozen there,
+  // doing nothing, still counted as the side's AI crew)
+  piece('human joins an AI crewman\'s gun', 20, function* () {
+    const team = 2, keep = { c: CONFIG.AI.CREWS, s: CONFIG.AI.MAX_ROLE_SHARE };
+    CONFIG.AI.CREWS = D.guns[team].length; CONFIG.AI.MAX_ROLE_SHARE = 1;
+    const aiGun = (g) => g.crew.some((s) => ctls[s] && ctls[s].bot && P(ctls[s]) && P(ctls[s]).aiRole === 'crew');
+    const free = () => everyone().find((c) => !c.bot && c.team === team && !c.stunt && c.pawn.hp > 0 && P(c) && P(c).deployed && !P(c).heli && P(c).mount < 0);
+    yield until(free, 'a T human on foot', 60);
+    const a = grab(free()); a.god = true;
+    putAt(a, baseSpot(team)); yield 0.1;
+    say(a, '!infantry'); yield 0.5;                           // the test's T crewman leaves the battery: the AI takes every gun
+    yield until(() => D.guns[team].every((g) => g.crew.length === 1 && aiGun(g)), 'an AI crewman alone on every T gun', 120);
+    putAt(a, baseSpot(team)); yield 0.1;
+    say(a, '!artillery'); yield 0.3;
+    const g = D.guns[team].find((x) => x.crew.includes(a.slot));
+    if (!g) throw new Error('the human got no gun (role ' + P(a).role + ')');
+    const bots = g.crew.filter((s) => ctls[s] && ctls[s].bot);
+    if (bots.length) throw new Error('AI crewman ' + bots.join(',') + ' is still on the gun the human joined (aiRole ' + bots.map((s) => P(ctls[s]).aiRole).join(',') + ')');
+    yield 1;
+    const idle = everyone().filter((c) => c.bot && c.team === team && P(c) && P(c).aiRole === 'crew' && !D.guns[team].some((x) => x.crew.includes(c.slot)));
+    if (idle.length) throw new Error('bot ' + idle[0].slot + ' keeps the AI crew role with no gun');
+    if (!g.crew.includes(a.slot)) throw new Error('the human lost his gun');
+    hit('AI crewman gives way to a human on his gun', D.stats.crewReleased || 0);
+    CONFIG.AI.CREWS = keep.c; CONFIG.AI.MAX_ROLE_SHARE = keep.s;
+    say(a, '!infantry');
+  });
+  // (2) !bots: one player can no longer set the quota (or kick every bot with !bots 0) for everyone; more than half of the humans can
+  piece('!bots is a vote', 40, function* () {
+    const hs = everyone().filter((c) => !c.bot), q0 = stats.cmds.bot_quota || 0, want = CONFIG.BOT_QUOTA;      // vote for the quota in force: nothing changes for the other pieces
+    if (hs.length < 3) throw new Error('needs 3+ humans');
+    say(hs[0], '!bots ' + want);
+    if ((stats.cmds.bot_quota || 0) !== q0) throw new Error('one player of ' + hs.length + ' set !bots alone');
+    say(hs[1], '!bots ' + (want + 1));                       // a different number does not count for his
+    if ((stats.cmds.bot_quota || 0) !== q0) throw new Error('two different numbers made a majority');
+    const need = Math.floor(hs.length / 2) + 1;
+    for (let i = 1; i < need; i++) say(hs[i + 1] || hs[i], '!bots ' + want);
+    if ((stats.cmds.bot_quota || 0) === q0) throw new Error('a majority (' + need + ' of ' + hs.length + ') did not set the quota');
+    hit('!bots needs a majority of the humans');
+  });
+  // (3) the AI brings a helicopter home for a human who asked at the base and then walked out into the field: it is his, but he is
+  // not teleported to the pad (it waits for him / his next deploy)
+  piece('helicopter home for a human in the field', 60, function* () {
+    yield after('human joins an AI crewman\'s gun');
+    const team = 3, keep = { p: CONFIG.AI.PILOTS, s: CONFIG.AI.MAX_ROLE_SHARE };
+    CONFIG.AI.PILOTS = 3; CONFIG.AI.MAX_ROLE_SHARE = 1;
+    const aiOwned = (h) => h.ai && ctls[h.owner] && ctls[h.owner].bot;
+    const free = () => everyone().find((c) => !c.bot && c.team === team && !c.stunt && c.pawn.hp > 0 && P(c) && P(c).deployed && !P(c).heli && P(c).mount < 0 && !P(c).board && !D.helis[team].some((h) => h.owner === c.slot));
+    let a = null, x = null;
+    // a free (or dead, waiting to respawn) helicopter goes to him at once: then he gives it back, the AI takes it, and he asks again
+    // (an AI helicopter standing on its pad is handed over at once, so every AI one must be in the air)
+    for (let tries = 0; tries < 20 && !x; tries++) {
+      yield until(() => D.helis[team].every((h) => h.owner >= 0 && (!ctls[h.owner] || !ctls[h.owner].bot || h.state === 'flying')) && D.helis[team].some((h) => aiOwned(h) && h.state === 'flying') && (a ? alive(a) : free()), 'every CT helicopter held, the AI ones in the air, a CT human on foot', 200);
+      a = a && alive(a) ? a : grab(free()); a.god = true;
+      putAt(a, baseSpot(team)); yield 0.1;
+      say(a, '!air'); yield 0.3;
+      x = D.helis[team].find((h) => h.yieldTo === a.slot);
+      if (!x && P(a).role === 'air') { say(a, '!infantry'); yield 4; }
+      else if (!x) yield 3;                                  // nothing to wait for this time (no AI pilot free to call home): later
+    }
+    if (!x) throw new Error('no AI helicopter was called home (role ' + P(a).role + '; helicopters ' + D.helis[team].map((h) => h.tag + ':' + h.state + ' owner ' + h.owner + (ctls[h.owner] ? (ctls[h.owner].bot ? ' bot' : ' human') : '') + ' yield ' + h.yieldTo).join(', ') + ')');
+    const spot = { x: 1800, y: -1900 }; putAt(a, spot);       // he walks off into the field meanwhile
+    yield until(() => x.owner === a.slot || x.state === 'dead' || P(a).role === 'air', 'the AI helicopter home and handed over', 150);
+    if (x.state === 'dead') { hit('helicopter home for a human in the field (lost on the way)'); CONFIG.AI.PILOTS = keep.p; CONFIG.AI.MAX_ROLE_SHARE = keep.s; return; }
+    yield 0.5;
+    const moved = d2(a.pawn.pos, spot);
+    if (moved > 50) throw new Error('the waiting human was teleported ' + Math.round(moved) + ' u out of the field (to the pad)');
+    if (!D.helis[team].some((h) => h.owner === a.slot) || P(a).role !== 'air') throw new Error('the helicopter is not his (owner ' + x.owner + ', role ' + P(a).role + ')');
+    hit('helicopter kept for a human in the field, no teleport', D.stats.heliHeld || 0);
+    CONFIG.AI.PILOTS = keep.p; CONFIG.AI.MAX_ROLE_SHARE = keep.s;
+    say(a, '!infantry');
+  });
+  // (4) a dead human takes over an AI bot (bot_controllable): the bot gives up its AI role, seat and helicopter at once, the pawn walks
+  // at normal size, the human plays it as a deployed infantryman (no briefing room, no teleport); when it falls all is as before
+  piece('human takes over an AI bot', 90, function* () {
+    yield after('helicopter home for a human in the field');
+    const team = 2;
+    for (const role of ['pilot', 'crew', 'gunner']) {
+      const pick = () => everyone().find((c) => c.bot && c.team === team && c.pawn.hp > 0 && P(c) && P(c).aiRole === role && P(c).deployed && (role !== 'pilot' || P(c).heli));
+      const free = () => everyone().find((c) => !c.bot && c.team === team && !c.stunt && c.pawn.hp > 0 && P(c) && P(c).deployed && !P(c).heli && P(c).mount < 0 && !P(c).board);
+      yield until(() => pick() && free(), 'a T bot with the AI ' + role + ' role seated, and a T human on foot (AI roles now: ' + [...D.players.values()].filter((x) => x.team === team && x.aiRole).map((x) => x.aiRole + (x.deployed ? '' : '-lobby')).join(' ') + '; humans: ' + everyone().filter((c) => !c.bot && c.team === team).map((c) => (c.pawn.hp > 0 ? '' : 'dead-') + (P(c) && P(c).deployed ? P(c).role : 'lobby') + (c.stunt ? '-stunt' : '')).join(' ') + ')', 200);
+      const b = pick(), a = grab(free()), bp = b.pawn, where = { ...bp.pos }, h = P(b).heli;
+      a.pawn.hp = 0; die(a.pawn, undefined); yield 0.2;      // dead, spectating: he presses E on the bot
+      a.ctrl = bp; bp.driver = a;
+      if (hooks.botctl) hooks.botctl({ controller: a });
+      yield 0.5;
+      const qb = P(b), qa = P(a);
+      if (qb.aiRole) throw new Error('the taken-over bot still has the AI ' + qb.aiRole + ' role');
+      if (qb.heli || qb.mount >= 0 || (h && h.seats.some((s) => s.slot === b.slot))) throw new Error('the taken-over bot still holds a seat');
+      if (D.guns[team].some((g) => g.crew.includes(b.slot))) throw new Error('the taken-over bot is still on a gun crew');
+      if ((bp.scale || 1) < 0.5 || bp.mt !== 2) throw new Error('the human plays a ' + ((bp.scale || 1) < 0.5 ? 'shrunk' : 'frozen') + ' pawn');
+      if (!qa || !qa.deployed || qa.role !== 'infantry') throw new Error('the human is not a deployed infantryman (' + (qa ? qa.role + (qa.deployed ? '' : ', briefing room') : 'no record') + ')');
+      if (role !== 'pilot' && d2(bp.pos, where) > 300) throw new Error('the human was moved ' + Math.round(d2(bp.pos, where)) + ' u on taking over');
+      yield until(() => [...D.players.values()].some((x) => x.team === team && x.aiRole === role && x.slot !== b.slot) || role === 'gunner', 'another bot to take the AI ' + role + ' role', 20);
+      hit('bot takeover: AI ' + role + ' given up');
+      yield 3;
+      bp.TakeDamage({ damage: 500, damageTypes: DT.BULLET, damageFlags: DF.FORCE_DEATH });      // the bot's body falls: control ends
+      yield 0.1;
+      a.ctrl = null; bp.driver = null;
+      if (hooks.botctl) hooks.botctl({ controller: a });
+      spawn(a);
+      yield until(() => a.pawn.hp > 0 && P(a) && P(a).deployed && b.pawn.hp > 0 && P(b) && P(b).deployed, 'both back in their own bodies', 30);
+      hit('bot takeover: ended cleanly', D.stats.botReleases || 0);
+      a.stunt = ''; a.god = false; curPiece.actors = curPiece.actors.filter((x) => x !== a);      // free for the next role
+    }
+  });
+}
+
 // ------------------------------------------------------------------ churn: players come and go in whatever seat they are in
 function churn(step) {
   if (step % 150 !== 75) return;
@@ -1461,7 +1591,7 @@ function invariants() {
     if (!fin(p.pos)) fail('pawn ' + slot + ' non-finite');
     if (seated !== ((p.scale || 1) < 0.5)) fail('pawn ' + slot + (seated ? ' is aboard but not hidden' : ' is shrunk but not aboard (' + (pr.deployed ? 'deployed' : 'lobby') + ')'));
     const parked = seated || pr.mount >= 0 || pr.board || pr.aiRole === 'crew';
-    if (!parked && p.mt !== 2) fail('pawn ' + slot + ' is frozen with no seat (' + (pr.deployed ? pr.role : 'lobby') + ')');
+    if (!parked && p.mt !== 2) fail('pawn ' + slot + ' is frozen with no seat (' + (pr.deployed ? pr.role : 'lobby') + ', t ' + time.toFixed(0) + ')');
     if (p.cam && p.cam.mode !== 0 && !seated && pr.mount < 0) fail('pawn ' + slot + ' is on a seat camera with no seat');
     if (!c.bot && pr.deployed && (seated || pr.mount >= 0 || pr.board) && p.weapons.length !== 1) fail('player ' + slot + ' holds ' + p.weapons.length + ' weapons in a seat');
     if (!c.bot && pr.deployed && !parked && p.weapons.length < 2) fail('player ' + slot + ' on foot holds ' + p.weapons.length + ' weapon(s)');
@@ -1478,6 +1608,25 @@ const ticketsStart = CONFIG.CONQUEST.TICKETS;
 let ticketsMoved = false, aiSeen = { pilot: false, gunner: false, crew: false }, aiWhenCrowded = false, maxAlt = 0, balDone = null;
 const ownTime = {};      // flag id -> seconds held by nobody / T / CT (balance report)
 const aiUp = { n: 0, pilot: { 2: 0, 3: 0 }, gunner: { 2: 0, 3: 0 }, crew: { 2: 0, 3: 0 } };
+const contestTime = {}, capsBy = {}, lastOwner = {};
+const pilotWhy = {};     // balance report: where each side's AI pilot spends the round (seconds per state, both sides summed)
+function pilotState(t) {
+  const bots = [...D.players.values()].filter((q) => q.team === t && q.bot && q.aiRole === 'pilot');
+  if (!bots.length) return 'no AI pilot';
+  let best = 'no AI pilot', rank = -1;
+  const order = ['no AI pilot', 'bot dead / briefing', 'helicopter dead', 'not aboard', 'pad: repair', 'pad: re-arm', 'pad: hold', 'take-off', 'flying'];
+  for (const q of bots) {
+    const c = ctls[q.slot], h = D.helis[t].find((x) => x.owner === q.slot);
+    let k;
+    if (!c || c.pawn.hp <= 0 || !q.deployed) k = 'bot dead / briefing';
+    else if (!h || h.state === 'dead' || h.state === 'crashing') k = 'helicopter dead';
+    else if (q.heli !== h) k = 'not aboard';
+    else if (h.state === 'flying') k = h.ai && h.ai.state === 'takeoff' ? 'take-off' : 'flying';
+    else k = h.hp < h.maxHp ? 'pad: repair' : h.rockets < h.M.ROCKETS ? 'pad: re-arm' : 'pad: hold';
+    if (order.indexOf(k) > rank) { rank = order.indexOf(k); best = k; }
+  }
+  return best;
+}      // flag id -> seconds both teams stood in it; flag id -> captures by T / CT (balance report)
 const thinkTimes = [];
 for (let step = 0; step < SECONDS * 64 && !balDone; step++) {
   time += DTICK;
@@ -1499,7 +1648,7 @@ for (let step = 0; step < SECONDS * 64 && !balDone; step++) {
     if (D.flags.map((f) => f.owner).join() !== owners.join()) fail('flag owners not carried over a script reload');
     hit('script reload');
   }
-  if (FEATURES || SCEN === 'edge' || SCEN === 'review2') runPieces();
+  if (FEATURES || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3') runPieces();
   for (const c of everyone()) {
     const p = c.pawn; p.keys = 0;
     if (c.spec || p.hp <= 0) continue;
@@ -1512,7 +1661,11 @@ for (let step = 0; step < SECONDS * 64 && !balDone; step++) {
     }
     const pr = P(c);
     if (c.stunt) { let k = c.hold; if (c.q.length) { k |= c.q[0].k; if (--c.q[0].n <= 0) c.q.shift(); } p.keys = k; continue; }
-    if (!pr || !pr.deployed) { if (!c.bot && step % 200 === (c.slot * 7) % 200) tap(c, IN.RELOAD); continue; }
+    if (!pr || !pr.deployed) {
+      if (BAL && !c.bot && pr && pr.team && c.drv.picked !== c.drv.born && ['walker', 'observer', 'mount'].includes(jobOf(c))) { c.drv.picked = c.drv.born; pickDeploy(c, pr); }
+      else if (!BAL && !c.bot && step % 200 === (c.slot * 7) % 200) tap(c, IN.RELOAD);
+      continue;
+    }
     if (c.bot) { if (!pr.heli && pr.mount < 0) walk(c, pr, step); continue; }
     const job = jobOf(c);
     if (BAL) {
@@ -1534,7 +1687,7 @@ for (let step = 0; step < SECONDS * 64 && !balDone; step++) {
   // chat: roles, kits, spawn choices, help, bots
   if (step === 64 * 2) for (const c of everyone()) { if (c.bot) continue; const j = jobOf(c); if (j === 'pilot') say(c, '!air'); if (j === 'crew') say(c, '!artillery'); if (j === 'walker' && !BAL) { if (c.slot % 8 !== 7) say(c, '!infantry'); say(c, ['!rifle', '!mg', '!rifle', '!spawn b'][c.slot % 4]); } if (j === 'walker' && BAL && c.slot % 4 < 3) say(c, c.slot % 4 === 2 ? '!at' : '!mg'); }
   if (step === 64 * 4 && !BAL) { const c = everyone().find((x) => !x.bot); if (c) { say(c, '!roles'); say(c, '/uniform'); say(c, '!spawn zz'); say(c, 'hello there'); } }
-  if (LOWPOP && step === 64 * 5) { say(ctls[0], '!bots 14'); fillBots(); }
+  if (LOWPOP && step === 64 * 5) { for (const c of everyone()) if (!c.bot) say(c, '!bots 14'); fillBots(); }      // a vote: more than half the humans
   if (step > 0 && step % (64 * 150) === 0) for (const c of everyone()) { if (!c.bot && !c.stunt && ['pilot', 'crew'].includes(jobOf(c)) && P(c) && P(c).role === 'infantry') say(c, jobOf(c) === 'pilot' ? '!air' : '!artillery'); }
   // low population, second half: the AI holds every helicopter, then a human asks for one and must get it
   if (LOWPOP && step === Math.floor(SECONDS * 32)) { CONFIG.AI.PILOTS = 3; CONFIG.AI.MAX_ROLE_SHARE = 1; }
@@ -1587,17 +1740,19 @@ for (let step = 0; step < SECONDS * 64 && !balDone; step++) {
   } else if (step > 4) fail('the think loop stopped at ' + time.toFixed(2));
   for (let i = checks.length - 1; i >= 0; i--) if (checks[i].at <= time) { const k = checks[i]; checks.splice(i, 1); let ok = false; try { ok = k.fn(); } catch (e) { ok = false; } if (!ok) fail('expected: ' + k.what + ' (t ' + time.toFixed(0) + ')'); }
   if (step % 16 === 0) {
+    for (const f of D.flags) { const k = capsBy[f.id] || (capsBy[f.id] = { 2: 0, 3: 0 }); if (lastOwner[f.id] !== undefined && f.owner !== lastOwner[f.id] && f.owner) k[f.owner]++; lastOwner[f.id] = f.owner; }
     if (D.game.tickets[2] !== ticketsStart || D.game.tickets[3] !== ticketsStart) ticketsMoved = true;
     invariants();
   }
   if (step % 64 === 0) {
     aiUp.n++;
-    for (const f of D.flags) { const o = ownTime[f.id] || (ownTime[f.id] = { 0: 0, 2: 0, 3: 0 }); o[f.owner]++; }
+    for (const f of D.flags) { const o = ownTime[f.id] || (ownTime[f.id] = { 0: 0, 2: 0, 3: 0 }); o[f.owner]++; if (f.contested) contestTime[f.id] = (contestTime[f.id] || 0) + 1; }
     for (const t of [2, 3]) {
       const bots = [...D.players.values()].filter((q) => q.team === t && q.bot);
       if (bots.some((q) => q.aiRole === 'pilot' && q.heli && q.heli.state === 'flying')) aiUp.pilot[t]++;
       if (bots.some((q) => q.aiRole === 'gunner' && (q.heli || q.mount >= 0))) aiUp.gunner[t]++;
       if (bots.some((q) => q.aiRole === 'crew' && q.deployed)) aiUp.crew[t]++;
+      if (BAL) { const k = pilotState(t); pilotWhy[k] = (pilotWhy[k] || 0) + 1; }
     }
   }
   if (BAL && D.game.over) balDone = D.stats.results[D.stats.results.length - 1];
@@ -1620,7 +1775,8 @@ if (BAL) {
                 tickets: { t: D.game.tickets[2], ct: D.game.tickets[3] }, flagChanges: Object.fromEntries(D.flags.map((f) => [f.id, f.changes])), captures: S.captures,
                 killsBy: S.killsBy, killsOn: S.killsOn, deaths: S.deaths, bleedOn: { t: S.bleedOn[2], ct: S.bleedOn[3] }, deathsOn: { t: Object.values(S.killsOn[2] || {}).reduce((a, b) => a + b, 0), ct: Object.values(S.killsOn[3] || {}).reduce((a, b) => a + b, 0) }, heliLives: lives, heliLost: S.heliLost, heliLostBy: S.heliLostBy, heliDmgBy: S.heliDmgBy, flights: S.flights,
                 heliLostTeam: { t: S.heliLostTeam[2], ct: S.heliLostTeam[3] }, shells: S.shells, shellHits: S.shellHits, missions: S.missions, missionShells: S.missionShells, missionHits: S.missionHits,
-                gunsDisabled: S.gunsDisabled, fired: S.fired, rockets: S.rockets, gunShots: S.gunShots, landings: S.landings, own: Object.fromEntries(Object.entries(ownTime).map(([k, o]) => [k, { t: +(o[2] / Math.max(1, aiUp.n)).toFixed(2), ct: +(o[3] / Math.max(1, aiUp.n)).toFixed(2) }])), ai: { pilot: frac(aiUp.pilot), gunner: frac(aiUp.gunner), crew: frac(aiUp.crew) }, perf, errors: errs.length + fails.length, fails: fails.slice(0, 5) };
+                gunsDisabled: S.gunsDisabled, fired: S.fired, rockets: S.rockets, gunShots: S.gunShots, landings: S.landings, own: Object.fromEntries(Object.entries(ownTime).map(([k, o]) => [k, { t: +(o[2] / Math.max(1, aiUp.n)).toFixed(2), ct: +(o[3] / Math.max(1, aiUp.n)).toFixed(2) }])), ai: { pilot: frac(aiUp.pilot), gunner: frac(aiUp.gunner), crew: frac(aiUp.crew) },
+                pilotWhy, botGoals: S.botGoals, contest: Object.fromEntries(D.flags.map((f) => [f.id, contestTime[f.id] || 0])), capsBy: Object.fromEntries(D.flags.map((f) => [f.id, { t: (capsBy[f.id] || {})[2] || 0, ct: (capsBy[f.id] || {})[3] || 0 }])), perf, errors: errs.length + fails.length, fails: fails.slice(0, 5) };
   console.log((JSONONLY ? '' : 'BALANCE ') + JSON.stringify(out));
   process.exit(fails.length ? 1 : 0);
 }
@@ -1655,7 +1811,7 @@ console.log(JSON.stringify({ script: { ...S, heliLives: S.heliLives.length, resu
   cmds: stats.cmds, setModel: stats.setmodel, maxAlt: Math.round(maxAlt), tickets: D.game.tickets, flags: D.flags.map((f) => f.id + ':' + f.owner).join(' '), churn: stats.churn } }));
 if (unusedIds.length) console.log('HUD contract ids never used in this run: ' + unusedIds.join(' '));
 // ---- coverage: feature -> times exercised. Set pieces fill cov; the rest comes from the script's own counters.
-if (FEATURES || SCEN === 'edge' || SCEN === 'review2') {
+if (FEATURES || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3') {
   const used = (id) => { const c = contract.get(id); return c && (c.textUsed || c.used.size) ? 1 : 0; };
   const table = FEATURES ? {
     ...cov,
@@ -1666,7 +1822,7 @@ if (FEATURES || SCEN === 'edge' || SCEN === 'review2') {
     'kills by artillery': S.killsBy.arty || 0,
     'helicopter lost with riders (crash kills)': Object.entries(S.killsBy).filter(([k]) => !['rifle', 'mg', 'other'].includes(k)).reduce((a, [, v]) => a + v, 0),
   } : cov;
-  const need0 = !opt.piece && (SECONDS >= 600 || SCEN === 'edge' || SCEN === 'review2');
+  const need0 = !opt.piece && (SECONDS >= 600 || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3');
   console.log('coverage (feature -> times exercised):');
   for (const [k, v] of Object.entries(table)) { console.log('  ' + String(Math.round(v * 10) / 10).padStart(6) + '  ' + k); if (need0 && !(v > 0)) fail('coverage: "' + k + '" was never exercised'); }
   for (const pc of pieces) if (!pc.done && need0) fail('set piece "' + pc.name + '" did not finish (waiting for: ' + (pc.what || 'its start') + ')');

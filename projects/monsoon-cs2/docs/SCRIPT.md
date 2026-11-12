@@ -220,7 +220,16 @@ Things worth knowing:
   `mv.capture`, `mv.flag_lost`, `mv.radio_blip`, `mv.heli_turbine`, `mv.rocket_fly` have no entity in CONTRACT and are not played.
 - Chat: `!infantry !artillery !air` (role now if open, else next respawn), `!rifle !mg !at`, `!roles`, `!spawn <a-e|base>`,
   `!pos`, `!uniform`, `!bots <n>`, and `!swap` = next free seat in a helicopter, or the next kit at an arms rack.
-  `/` works as well as `!`.
+  `/` works as well as `!`. `!bots <n>` is a vote (review 3): it takes effect when more than half of the humans on the server have
+  asked for the same number within `BOTS_VOTE` (30) s; a player alone on the server is a majority by himself. `BOTS_CHAT false`
+  switches it off.
+- Bot takeover (`Instance.OnBotControl`, `bot_controllable`): a dead human who takes over a bot of his side plays its pawn as a
+  deployed infantryman where it stands. If the bot was an AI pilot / gunner / crewman, it gives up its role, seat, gun crew and
+  helicopter at once (pawn back to full size, unfrozen) and the director picks another bot. The script reads the controlled pawn
+  through `GetControlledBotPawn()` and keeps the bot's own record idle until the takeover ends (the pawn dies, the round ends, the
+  human leaves). Assumed, not seen in CS2: the event fires on both take and release.
+- A helicopter the AI brings home for a human who asked (`!air`): in the briefing room or at the base he goes to it at once; out in
+  the field he is no longer teleported: it is his, it waits on its pad, and he deploys at it next life (or walks back).
 
 ## CONFIG guide
 
@@ -230,13 +239,14 @@ Things worth knowing:
 | `KITS`, `PISTOL`, `AT`, `BULLET_VS_HELI` | weapon classes per team, kit limits (`share`, `per`), the AT rocket, rifle damage to helicopters |
 | `UNIFORMS*` | models per team; only applied when an `mv_cache_N` prop holds that model |
 | `CONQUEST` | tickets, bleed, capture time, round length, round-end fallbacks |
-| `HELI` | flight feel (collective, pedals, cyclic `ACCEL`, tilt), landing limits, collision, crash, pad service, boarding and rope limits, camera, rockets |
+| `HELI` | flight feel (collective, pedals, cyclic `ACCEL`, tilt), landing limits, collision, crash, pad service, boarding and rope limits, camera, rockets; `ABANDON` (an empty helicopter left in the field is fetched to its pad after this long), `FETCH` (3 s: the same when its own pilot is alive, on foot and back on his pad: review 2) |
 | `HELI_MODELS`, `HELI_KINDS`, `WRECK_YAW` | per model: nose yaw, rotor size, seat / exit / pod / gun offsets, gun cone and damage; which model sits on which pad. These are **defaults**: `LAYOUT.models` (written into `out/layout.json` by `tools/mv_models.py` from the models the map was built with; the Apache block comes from `out/apache.json`) overwrites nose yaw, rotor radius, hub / tail hub, seats, exits, pods and the gun's muzzle / camera / cone in `heliModel()`, the pad list in `heliKind()` and the hulk's yaw in `wreckYaw()`. To change a seat or a hub, edit `mv_models.py`, re-run `make_map.py` (or `python -c "import layout; layout.export('../out/layout.json')"` in `tools/`) and rebuild the script. Damage, rate of fire and heat stay in CONFIG. Without a `models` block the old `LAYOUT.apache` / `HUDDATA.apache` route still works |
 | gun pivots | `40_arty.js` measures each tube's trunnion from the `mv_tube_*` prop's place on its carriage (fallback `LAYOUT.models.howitzer / rocket .trunnion`); `50_mounted.js` takes the pintle from the `mv_mount_N` origin and the muzzle distance from `LAYOUT.models.<kind>.muzzle` (fallback `MOUNT.MUZZLE`) |
 | `ARTY`, `BOARD` | shells, spread, flight time, laying speed, counter-battery, missions, board size |
 | `MOUNT` | emplaced gun kinds, cone, heat |
 | `POOL` | pool sizes: must match the map |
-| `BOTS_ON`, `BOT_QUOTA*`, `AI` | bots on/off and quota (`bot_quota_mode fill`), `MIN_HUMANS_FOR_ROLES`, how many AI pilots / gunners / crews, their reaction times and spread, leash times |
+| `BOTS_ON`, `BOT_QUOTA*`, `BOTS_CHAT`, `BOTS_VOTE`, `AI` | bots on/off and quota (`bot_quota_mode fill`); `!bots` on/off and its vote window; `MIN_HUMANS_FOR_ROLES`, how many AI pilots / gunners / crews, their reaction times and spread, leash times; `PAD_HOLD` and `REARM_GO` (an AI pilot lifts off from its pad once repaired with this share of its rockets back, after at least `PAD_HOLD` s; the rotor keeps turning on the pad) |
+| `AI.PLAN` | where infantry bots deploy (review 3, `teamPlan` in `85_ai.js`): per side a weight per flag, refreshed every `EVERY` s. Own flag under attack `DEFEND` x (1 + capture progress); own quiet flag `GARRISON`; neutral / enemy flag `NEUTRAL` / `ATTACK` x exp(-distance from the side's nearest deploy point / `REACH`), x `PUSH` for the enemy flag nearest the side's front (`BLEED_PUSH` while the side is being bled), never under `FLOOR`; x pace = (our run / the enemy's run to it)^`PACE`, clamped to `PACE_MIN`..`PACE_MAX` (the side that reinforces a flag more slowly sends more men to it); x (1 + `HUB` x centrality^`HUB_EXP`). A deploying bot is sent to the flag the plan is shortest of (weight share x bots - bots already sent there) and deploys at that flag if it holds it, else at its held flag nearest it, else the base. A held flag with enemies within `SAFE` u (more than `SAFE_FRIEND` x our men there) is not a bot deploy point; `SAFE_BLED` is that radius while the side is being bled, `SAFE_CROWD` while the side has enough humans that the AI roles are off (there the bots reinforce the humans' fight). AI pilots patrol by the same weights, and stay away from flags inside the arc of an enemy-manned emplaced gun (`AI.MOUNT_AVOID`); an AI pilot whose helicopter is lost takes a free one standing on its pad. AI gunners pick the emplaced gun whose arc covers a flag |
 | `SPAWN_PROTECT`, `BASE_RADIUS`, `AFK`, `FEED` | deploy cover (ends with the first shot); where a role change is immediate; AFK time; event-feed lines |
 | `CVARS` | server settings sent on activate (all on Valve's Workshop command allow list, checked against pak01 on 12 Nov 2026) |
 
@@ -255,11 +265,15 @@ point; the AT rocket does 45 to a helicopter (DESIGN 60).
 ```
 node tools/build_script.mjs
 node test/mock.mjs 32 600      # 22 humans in every role + 10 infantry bots, every set piece, coverage table (a feature at 0 fails)
-node test/mock.mjs 4 600       # 4 humans, "!bots 14": AI pilot / gunner / crew must act and yield seats
+node test/mock.mjs 4 600       # 4 humans vote "!bots 14": AI pilot / gunner / crew must act and yield seats
 node test/mock.mjs 64 600 humans=32                       # full server: 32 humans + 32 bots
 node test/mock.mjs 32 300 scenario=churn|restart|edge|reload
 node test/mock.mjs 32 300 scenario=edge piece="shot down"  # one bug class alone (piece= matches set-piece names)
-node test/sim_balance.mjs 60 32                             # many seeded rounds, real CONFIG: balance report (1.5-5 min)
+node test/mock.mjs 32 450 scenario=review2 humans=4         # review pass 2's bug classes (docs/REVIEW_SCRIPT_2.md)
+node test/mock.mjs 32 450 scenario=review3 humans=4         # review pass 3's fixes (REVIEW_SCRIPT_2.md "Round 3")
+node test/mock.mjs 32 450 scenario=review3 humans=4 script=out/review3/before_review3.js   # the same against the build before
+node test/sim_balance.mjs 40 32                             # many seeded rounds, real CONFIG: balance report (about 1 min per set)
+node test/sim_balance.mjs 40 32 seed0=1001 set=bots         # a second seed set, to check a tuning is not fitted to the first
 node --cpu-prof test/mock.mjs 64 300 humans=32             # hot spots
 npx tsc -p test/tsconfig.json
 python create/test/api.py --strict --check <full path>/out/addon/maps/scripts/mg_monsoon.js   (from cs2mapping)
@@ -269,13 +283,24 @@ Scenarios: `churn` (disconnects, slots changing hands, team switches, spectating
 ending while helicopters fly; CS2 restarts and the script's own restart alternate), `edge` (helicopter shot down with every seat
 taken, pilot disconnects mid-air, deaths at the board / on a gun / with a round in hand, contested flag, capture cap, ticket
 underflow; runs with the HUD additions), `reload` (the tools reload the script twice: tickets, clock, flag owners, preferences
-and counters carry over). Set pieces of the default run: kits and limits, marksman, Beehive, smoke vs gunners and observers, AT vs
+and counters carry over), `review2` (review pass 2, run with `humans=4` so the AI holds seats: a departed controller left in its
+slot, one AI helicopter per waiting human and a withdrawn request, a waiting human whose AI pilot left, a pilot gone over the river,
+a pilot back on his pad, an AI gunner in an abandoned helicopter, control characters in `say`), `review3` (review pass 3, `humans=4`:
+a human joining a gun an AI crewman runs, the `!bots` vote, a helicopter the AI brings home for a human out in the field, a human
+taking over an AI pilot / crewman / gunner bot and the takeover ending). Set pieces of the default run: kits and limits, marksman, Beehive, smoke vs gunners and observers, AT vs
 helicopter, counter-battery and repair, fire missions and flashes on the board, flight envelope (soft / hard / crash landings,
 soft wall, ceiling, wreck, pad repair / re-arm), spawn modes (flag, aboard, deploy cover), fast-rope, helicopter gun, belt reload,
 AFK gunner, AFK pilot in the air, late join, two E on one seat, role change deferred in the field.
 Mock switches: `MOCK_NORESTART=1` (CS2 never starts a new round: exercises the FireWinCondition and self-restart path),
 `MOCK_TICKETS`, `MOCK_ROUND`, `MOCK_LOG=1`, `DEBUGFLY=<slot>`, `hudnew=1`, `seed=`, `cfg.<path>=<json>`, `move.<flag>=dx,dy`,
-`spawnflip.<flag>=1`. The mock uses `out/entities.json` and the real HUD xml/css when they exist (otherwise it synthesises the
+`spawnflip.<flag>=1`, `script=<file>` (run that prebuilt script instead of building `src/`: e.g. `out/review2/before_review2.js`,
+`out/review3/before_review3.js`, the builds before each review pass), `river=1` (the river bed lies 120 u below the water, 180 u each
+side of the layout's river line, the bridge dry: on in `scenario=review2`), `fwd=<0-1>` (balance mode: the share of the test humans'
+deploys made at the held flag nearest the front instead of the base; default 0 = always the base, as every earlier balance run).
+`test/sim_balance.mjs` passes `cfg.*`, `move.*`, `spawnflip.*`, `ttk`, `engage`, `helihits`, `script`, `fwd` through, and takes
+`seed0=<n>` (first seed; seeds are seed0 + 7 i), `set=bots|mixed|both`, `md=1`. Its report also gives captures per flag by side,
+the rounds in which both sides took each flag, contested seconds, and where the AI pilot's time goes (flying, pad repair / re-arm /
+hold, helicopter dead, bot dead or briefing). The mock uses `out/entities.json` and the real HUD xml/css when they exist (otherwise it synthesises the
 entities from layout.json) and checks the HUD against the contract above. Default runs use 40 tickets (restart: 5) and 8 s captures
 so rounds end inside the run; `mode=balance` (sim_balance) uses the real CONFIG.
 

@@ -121,7 +121,12 @@ function toPawn(e) {
   try { if (typeof e.GetPlayerController === "function") return live(e); } catch (err) {}
   return undefined;
 }
-function pawnOf(slot) { if (slot < 0) return undefined; const c = Instance.GetPlayerController(slot); return c ? live(c.GetPlayerPawn()) : undefined; }
+// a human who has taken over a bot (OnBotControl, 90_main) plays the bot's pawn: that is his pawn for the script while it lives
+function pawnOf(slot) {
+  if (slot < 0) return undefined;
+  if (botCtl.size) { const bc = botCtl.get(slot); if (bc && live(bc.pawn)) return bc.pawn; }
+  const c = Instance.GetPlayerController(slot); return c ? live(c.GetPlayerPawn()) : undefined;
+}
 function nameOf(slot) { const c = Instance.GetPlayerController(slot); try { return c ? c.GetPlayerName() : "?"; } catch (e) { return "?"; } }
 function slotOfPawn(pawn) { try { const c = pawn.GetPlayerController(); return c ? c.GetPlayerSlot() : -1; } catch (e) { return -1; } }
 const KEYLIST = [CSInputs.FORWARD, CSInputs.BACK, CSInputs.LEFT, CSInputs.RIGHT, CSInputs.WALK, CSInputs.DUCK, CSInputs.JUMP, CSInputs.USE,

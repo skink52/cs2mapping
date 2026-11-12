@@ -5,6 +5,9 @@
 //     cfg.<path>=<json>     CONFIG override passed to every match, e.g. cfg.HELI.ACCEL=0.45 cfg.CONQUEST.NEUTRAL_FIRST=true
 //     ttk=<s> engage=<u> helihits=<n>   the infantry stand-in's rates (see mock.mjs FIGHT)
 //     label=<text>          printed in the header        md=1   print the table as markdown
+//     fwd=<0-1>             share of the mixed set's human deploys made at the front flag (default 0 = always the base, as before; 0.6 = a forward-deploying crowd)
+//     seed0=<n>             first seed (default 101; seeds are seed0 + 7 i): a second seed set to check a tuning on
+//     script=<file>         run that built script (e.g. out/review3/before_review3.js) instead of building src/
 // What is real and what is assumed: helicopters, their guns and rockets, artillery, emplaced guns, AT rockets, flags, tickets and the
 // AI roles are the script's own code. The infantry fight is a rate model (CS2's bots and players cannot be run here), and in "mixed"
 // the humans are the test's drivers. Numbers that depend mostly on the model are marked (model).
@@ -16,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2), pos = argv.filter((a) => !a.includes('=')), opt = Object.fromEntries(argv.filter((a) => a.includes('=')).map((a) => { const i = a.indexOf('='); return [a.slice(0, i), a.slice(i + 1)]; }));
 const SEEDS = +(pos[0] || 40), N = +(pos[1] || 32);
-const pass = Object.entries(opt).filter(([k]) => k.startsWith('cfg.') || k.startsWith('move.') || k.startsWith('spawnflip.') || ['ttk', 'engage', 'helihits'].includes(k)).map(([k, v]) => k + '=' + v);
+const pass = Object.entries(opt).filter(([k]) => k.startsWith('cfg.') || k.startsWith('move.') || k.startsWith('spawnflip.') || ['ttk', 'engage', 'helihits', 'script', 'fwd'].includes(k)).map(([k, v]) => k + '=' + v);
 const sets = (opt.set || 'both') === 'both' ? ['bots', 'mixed'] : [opt.set];
 const SRC = ['rifle', 'mg', 'at', 'heligun', 'helirocket', 'arty', 'mount'];
 
@@ -38,7 +41,7 @@ const pc = (x) => (Number.isFinite(x) ? (x * 100).toFixed(0) + ' %' : '-');
 const rows = [];
 const verdicts = [];
 for (const set of sets) {
-  const res = await pool(Array.from({ length: SEEDS }, (_, i) => () => run(set, 101 + i * 7)), Math.max(2, Math.min(10, os.cpus().length - 2)));
+  const res = await pool(Array.from({ length: SEEDS }, (_, i) => () => run(set, +(opt.seed0 || 101) + i * 7)), Math.max(2, Math.min(10, os.cpus().length - 2)));
   const bad = res.filter((r) => r.crash || r.errors);
   const ok = res.filter((r) => !r.crash);
   const secs = ok.map((r) => r.secs), wins = { 2: 0, 3: 0, 0: 0 };
@@ -65,6 +68,10 @@ for (const set of sets) {
     'flag held by T / CT, share of the round a b c d e': ['a', 'b', 'c', 'd', 'e'].map((k) => pc(mean(ok.map((r) => (r.own && r.own[k] ? r.own[k].t : NaN)))) + '/' + pc(mean(ok.map((r) => (r.own && r.own[k] ? r.own[k].ct : NaN))))).join(' '),
     'tickets lost per round T / CT: deaths, bleed': (sum((r) => r.deathsOn ? r.deathsOn.t : 0) / ok.length).toFixed(0) + ' / ' + (sum((r) => r.deathsOn ? r.deathsOn.ct : 0) / ok.length).toFixed(0) + ', ' +
       (sum((r) => r.bleedOn ? r.bleedOn.t : 0) / ok.length).toFixed(0) + ' / ' + (sum((r) => r.bleedOn ? r.bleedOn.ct : 0) / ok.length).toFixed(0),
+    'captures per round by T / CT a b c d e (mean)': ['a', 'b', 'c', 'd', 'e'].map((k) => mean(ok.map((r) => (r.capsBy && r.capsBy[k] ? r.capsBy[k].t : NaN))).toFixed(1) + '/' + mean(ok.map((r) => (r.capsBy && r.capsBy[k] ? r.capsBy[k].ct : NaN))).toFixed(1)).join(' '),
+    'rounds in which both sides took it a b c d e': ['a', 'b', 'c', 'd', 'e'].map((k) => pc(ok.filter((r) => r.capsBy && r.capsBy[k] && r.capsBy[k].t > 0 && r.capsBy[k].ct > 0).length / Math.max(1, ok.length))).join(' '),
+    'rounds in which it was fought over (both took it, or both inside 10 s+) a b c d e': ['a', 'b', 'c', 'd', 'e'].map((k) => pc(ok.filter((r) => (r.capsBy && r.capsBy[k] && r.capsBy[k].t > 0 && r.capsBy[k].ct > 0) || (r.contest && r.contest[k] >= 10)).length / Math.max(1, ok.length))).join(' '),
+    'contested seconds per round a b c d e (mean)': ['a', 'b', 'c', 'd', 'e'].map((k) => mean(ok.map((r) => (r.contest ? r.contest[k] || 0 : NaN))).toFixed(0)).join(' / '),
     'kills by source (model: rifle, mg)': SRC.map((k) => k + ' ' + pc(share[k])).join(', '), 'other deaths (falls, crashes by own error)': pc(other / Math.max(1, total + other)),
     'deaths per round, T side by source': SRC.concat(['crash', 'other']).map((k) => k + ' ' + (sum((r) => ((r.killsOn || {})[2] || {})[k] || 0) / ok.length).toFixed(0)).join(', '),
     'deaths per round, CT side by source': SRC.concat(['crash', 'other']).map((k) => k + ' ' + (sum((r) => ((r.killsOn || {})[3] || {})[k] || 0) / ok.length).toFixed(0)).join(', '),
@@ -76,6 +83,7 @@ for (const set of sets) {
     'artillery: fire missions / round, men hit per mission round': (sum((r) => r.missions) / ok.length).toFixed(1) + ', ' + (sum((r) => r.missionShells) ? (sum((r) => r.missionHits) / sum((r) => r.missionShells)).toFixed(2) : '-'),
     'guns knocked out per round': (sum((r) => r.gunsDisabled) / ok.length).toFixed(1),
     'AI role uptime pilot flying / gunner seated / crew at gun': set === 'bots' ? [ai('pilot'), ai('gunner'), ai('crew')].map(pc).join(' / ') : 'n/a (enough humans)',
+    'AI pilot time by state, both sides (share of side-seconds)': set === 'bots' ? (() => { const t = {}; for (const r of ok) for (const [k, v] of Object.entries(r.pilotWhy || {})) t[k] = (t[k] || 0) + v; const n = Object.values(t).reduce((a, b) => a + b, 0) || 1; return Object.entries(t).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + ' ' + pc(v / n)).join(', '); })() : 'n/a',
     'script ms/tick avg, worst max': mean(ok.map((r) => r.perf.avg)).toFixed(3) + ', ' + Math.max(...ok.map((r) => r.perf.max)).toFixed(1),
   };
   rows.push(R);

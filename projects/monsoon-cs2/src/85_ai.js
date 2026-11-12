@@ -27,10 +27,12 @@ function aiGunSpot(team) {
     if (gi < 0 || h.seats[gi].slot >= 0 || taken((g) => g.heli === h)) continue;
     return { heli: h, mount: null, tgt: null, since: 0, next: 0 };
   }
-  // emplaced guns: one at a flag we hold (the front) before the ones at the base
+  // emplaced guns: one at a flag we hold (the front) before the ones at the base, and of those the one whose arc covers a flag (review 3:
+  // the first T gun in the list faces the map edge, so the T AI gunner sat at it all round while the CT one covered flag D)
   const ours = (m) => { if (m.team === team) return 1; if (m.team) return 0; let f = null, bd = 1200; for (const q of flags) { const d = dist2(q.pos, m.pos); if (d < bd) { bd = d; f = q; } } return f && f.owner === team ? 2 : 0; };
+  const covers = (m) => { let n = 0; for (const f of flags) { const d = dist2(f.pos, m.pos); if (d > 150 && d < CONFIG.AI.GUN_RANGE && Math.abs(wrap180(Math.atan2(f.pos.y - m.pos.y, f.pos.x - m.pos.x) * R2D - m.yaw0)) < m.cone) n++; } return n; };
   let best = null, bs = 0;
-  for (const m of mounts) { if (m.user >= 0 || taken((g) => g.mount === m)) continue; const s = ours(m); if (s > bs) { bs = s; best = m; } }
+  for (const m of mounts) { if (m.user >= 0 || taken((g) => g.mount === m)) continue; const o = ours(m); if (!o) continue; const s = o + 0.4 * Math.min(2, covers(m)); if (s > bs) { bs = s; best = m; } }
   return best ? { heli: null, mount: best, tgt: null, since: 0, next: 0 } : null;
 }
 function tickDirector() {
@@ -39,7 +41,8 @@ function tickDirector() {
   directorAt = TNOW + A.DIRECTOR_EVERY;
   for (const team of TEAMS) {
     const bots = [], have = { pilot: 0, gunner: 0, crew: 0 };
-    for (const q of players.values()) if (q.team === team && q.bot && q.role) { bots.push(q); if (q.aiRole) have[q.aiRole]++; }
+    // (a bot a human has taken over is his for now: no AI role for it, review 3)
+    for (const q of players.values()) if (q.team === team && q.bot && q.role && !botTaken.has(q.slot)) { bots.push(q); if (q.aiRole) have[q.aiRole]++; }
     if (!aiWanted(team)) {
       for (const q of bots) {
         if (!q.aiRole) continue;
@@ -68,6 +71,19 @@ function tickDirector() {
         q.aiRole = "gunner"; q.aiGun = spot;
         have.gunner++; total++; stats.aiGunners++; aiStart(q);
       }
+      // an AI pilot whose helicopter was shot down takes a free one at once instead of waiting HELI.RESPAWN for his own (review 3:
+      // a fifth of the AI pilot's round went on waiting for a new airframe while two others stood on their pads)
+      for (const q of bots) {
+        if (q.aiRole !== "pilot") continue;
+        const own = ownHeli(q);
+        if (own && own.state !== "dead" && own.state !== "crashing") continue;
+        if (q.heli) continue;                                  // still aboard the one going down
+        const list = helis[team].filter((h) => h.ent && h.owner < 0 && h.yieldTo < 0 && h.state === "parked" && h.seats[0].slot < 0 && dist2(h.pos, h.pad.pos) < CONFIG.HELI.PAD_RADIUS);
+        const h = list.find((x) => x.M.ROCKETS > 0) || list[0];
+        if (!h) continue;
+        if (own) own.owner = -1;
+        h.owner = q.slot; stats.aiHeliSwaps++;
+      }
       // seated again after a respawn / a new helicopter
       for (const q of bots) {
         if (!q.aiRole || q.aiRole === "crew" || q.heli || q.mount >= 0 || !q.deployed) continue;
@@ -77,9 +93,25 @@ function tickDirector() {
     // a human waiting for a helicopter the AI was flying
     for (const q of players.values()) {
       if (q.team !== team || q.bot || q.waitRole !== "air" || q.role === "air") continue;
-      if (helis[team].some((h) => h.ent && h.owner < 0 && (h.yieldTo < 0 || h.yieldTo === q.slot))) { q.waitRole = ""; requestRole(q, "air", true); if (q.role === "air") toast(q, "A helicopter is free: it is yours", 4); }
+      if (helis[team].some((h) => h.ent && h.owner < 0 && (h.yieldTo < 0 || h.yieldTo === q.slot))) handHeli(q, "A helicopter is free: it is yours");
     }
   }
+}
+// a helicopter the AI brought home (or one that came free) for a human who asked for one. In the briefing room or at the base he gets
+// it at once (requestRole moves him to the pad, a short walk at most). Out in the field he is no longer teleported out of whatever he
+// is doing (review 3): the helicopter is his and waits on its pad; he walks back to it, or deploys at it next life.
+function handHeli(hq, msg) {
+  hq.waitRole = "";
+  const pawn = pawnOf(hq.slot);
+  let up = false, pos = null; try { up = !!pawn && pawn.IsAlive(); if (up) pos = pawn.GetAbsOrigin(); } catch (e) {}
+  const field = up && hq.deployed && !atBase(hq, pos);
+  if (!field) { requestRole(hq, "air", true); if (hq.role === "air") toast(hq, msg, 4); return; }
+  if (hq.board || hq.mount >= 0) unseat(hq, pawn, "role");       // (no plotting board out there; an emplaced gun is left)
+  setRole(hq, "air", hq.team);                 // the helicopter is his (owner); he stays where he is, on foot or in a helicopter seat
+  if (hq.role !== "air") return;
+  hq.pref = "air"; stats.heliHeld++;
+  const h = ownHeli(hq);
+  toast(hq, (h ? "Your " + h.M.label : "Your helicopter") + " waits on its pad at the base (yours at your next deploy)", 6);
 }
 function aiStart(q) { const r = rosterAt[q.slot]; if (r && r.alive && q.deployed) deploy(q, r.pawn); }
 function aiSeatTry(p, pawn) {
@@ -116,25 +148,98 @@ function aiDeploy(p, pawn) {
   aiSeatTry(p, pawn);
 }
 
-// ------------------------------------------------------------------ infantry bots: where to deploy, the leash
-function neededFlag(team) {
-  const base = LAYOUT[tagOf(team)].centre, enemy = otherTeam(team);
-  let best, bs = -1e9;
+// ------------------------------------------------------------------ infantry bots: the team plan, where to deploy, the leash
+// Review 3: the old choice scored every flag by its distance from the BASE plus noise and sent each bot to the single best one. Flags
+// one hop from a held flag looked far (A is 6700 u from the CT base but 3000 from E), every bot of a side chased the same flag, and a
+// flag behind the enemy's front (C) was never anyone's target: T won 75 % of bot-only rounds. Now each side keeps a plan, refreshed by
+// the director: a weight per flag from what it is worth (defend a threatened flag, take a neutral or enemy one, keep a small garrison)
+// and how far it is from the side's nearest deploy point (the base or a held flag: the front, not the base). Each deploying bot is
+// given the flag the plan is shortest of (weight share x bots minus bots already sent there), so squads spread over the lanes and no
+// flag is ignored. A side being bled pushes harder on the enemy flag nearest its front.
+const plan = { 2: null, 3: null };
+function frontCost(team, f) {
+  const base = LAYOUT[tagOf(team)].centre;
+  let d = Math.hypot(f.pos.x - base[0], f.pos.y - base[1]);
+  for (const q of flags) if (q !== f && flagOpen(q, team)) d = Math.min(d, dist2(q.pos, f.pos));
+  return d;
+}
+function threatened(f, team) { const e = otherTeam(team); return f.owner === team && (f.n[e] > 0 || (f.capTeam === e && f.prog > 0)); }
+// how central a flag is (1 = the hub, the flag nearest on average to all the others: the bridge): a held hub is a deploy point one short
+// run from every other flag, so it is worth more to both sides
+let hubOf = null;
+function hub(f) {
+  if (!hubOf || hubOf.n !== flags.length || !hubOf.v[f.id]) {
+    const m = {}; let lo = 1e9;
+    for (const a of flags) { let s = 0; for (const b of flags) if (b !== a) s += dist2(a.pos, b.pos); m[a.id] = s / Math.max(1, flags.length - 1); lo = Math.min(lo, m[a.id]); }
+    hubOf = { n: flags.length, v: {} };
+    for (const a of flags) hubOf.v[a.id] = Math.pow(lo / m[a.id], CONFIG.AI.PLAN.HUB_EXP);
+  }
+  return hubOf.v[f.id];
+}
+function teamPlan(team) {
+  const A = CONFIG.AI.PLAN, enemy = otherTeam(team);
+  let mine = 0, theirs = 0;
+  for (const f of flags) { if (f.owner === team) mine++; else if (f.owner === enemy) theirs++; }
+  const bled = theirs >= CONFIG.CONQUEST.BLEED_FLAGS, w = {};
+  let push = null, pc = 1e9;                                   // the enemy flag nearest our front
+  for (const f of flags) if (f.owner === enemy) { const c = frontCost(team, f); if (c < pc) { pc = c; push = f; } }
   for (const f of flags) {
-    let s = -Math.hypot(f.pos.x - base[0], f.pos.y - base[1]) / 4000;
-    if (f.owner === team) s += (f.n[enemy] > 0 || (f.capTeam === enemy && f.prog > 0)) ? 4 : -6;     // defend one under attack
-    else s += f.owner === 0 ? 2 : 1.5;
-    s += Math.random() * 1.2;
+    let v;
+    // pace: our run to the flag against the enemy's (each from its nearest deploy point other than this flag). Where the enemy's
+    // reinforcements arrive first, a flag is only taken and held with more men: the slower side sends more (the bridge is 500 u
+    // nearer the T front than the CT one)
+    const ours = frontCost(team, f), pace = Math.pow(clampN(ours / Math.max(1, frontCost(enemy, f)), A.PACE_MIN, A.PACE_MAX), A.PACE);
+    if (f.owner === team) v = threatened(f, team) ? A.DEFEND * (1 + f.prog) * pace : A.GARRISON;
+    else {
+      v = (f.owner === 0 ? A.NEUTRAL : A.ATTACK) * Math.exp(-ours / A.REACH) * pace;
+      if (f === push) v *= bled ? A.BLEED_PUSH : A.PUSH;
+      v = Math.max(v, A.FLOOR);
+    }
+    w[f.id] = v * (1 + A.HUB * hub(f));
+  }
+  // a flag with enemies close round it (more than SAFE_FRIEND x our men there) is no deploy point for a bot: it would appear in the
+  // middle of a fight it is losing. A side being bled cannot wait for safe ground: it deploys forward anyway (SAFE_BLED radius). A side
+  // with enough humans to run its vehicles and guns (no AI roles) uses SAFE_CROWD: there the bots are reinforcements for the humans'
+  // fight, and keeping them off a contested flag left the humans' side short of men there (mixed matches went from 48 to 25-35 % T)
+  const hot = {}, safe = !aiWanted(team) ? A.SAFE_CROWD : bled ? A.SAFE_BLED : A.SAFE;
+  for (const f of flags) {
+    let n = 0;
+    if (f.owner === team && safe > 0) for (const r of roster) if (r.alive && !r.seated && r.p.deployed && dist2(r.pos, f.pos) < safe) { if (r.team === enemy) n++; else if (r.team === team) n -= A.SAFE_FRIEND; }
+    hot[f.id] = n;
+  }
+  return { w, hot, at: TNOW, mine, theirs };
+}
+function botFlagOpen(f, team) { return flagOpen(f, team) && !(planFor(team).hot[f.id] > 0); }
+function planFor(team) { let pl = plan[team]; if (!pl || TNOW - pl.at > CONFIG.AI.PLAN.EVERY) pl = plan[team] = teamPlan(team); return pl; }
+// the flag this bot is sent to: the one the plan is most short of
+function botGoal(p, team) {
+  const pl = planFor(team), sent = {};
+  let n = 1, sum = 0;
+  for (const f of flags) { sent[f.id] = 0; sum += pl.w[f.id]; }
+  for (const q of players.values()) {
+    if (q === p || q.team !== team || !q.bot || q.aiRole || !q.deployed || !q.goal || sent[q.goal] === undefined) continue;
+    const r = rosterAt[q.slot]; if (!r || !r.alive) continue;
+    sent[q.goal]++; n++;
+  }
+  let best = null, bs = -1e9;
+  for (const f of flags) {
+    const s = pl.w[f.id] / sum * n - sent[f.id] + Math.random() * 0.3;
     if (s > bs) { bs = s; best = f; }
   }
   return best;
 }
 function botSpawnChoice(p, team) {
-  const need = neededFlag(team); if (!need) return "base";
-  if (flagOpen(need, team)) return need.id;
-  const base = LAYOUT[tagOf(team)].centre;
-  let sel = "base", bd = Math.hypot(need.pos.x - base[0], need.pos.y - base[1]);
-  for (const f of flags) { if (!flagOpen(f, team)) continue; const d = dist2(f.pos, need.pos); if (d < bd) { bd = d; sel = f.id; } }
+  const need = botGoal(p, team); if (!need) return "base";
+  p.goal = need.id;
+  let sel = "base";
+  if (botFlagOpen(need, team)) sel = need.id;
+  else {
+    const base = LAYOUT[tagOf(team)].centre;
+    let bd = Math.hypot(need.pos.x - base[0], need.pos.y - base[1]);
+    for (const f of flags) { if (!botFlagOpen(f, team)) continue; const d = dist2(f.pos, need.pos); if (d < bd) { bd = d; sel = f.id; } }
+  }
+  const g = stats.botGoals[team] || (stats.botGoals[team] = {}), k = need.id + ">" + sel;
+  g[k] = (g[k] || 0) + 1;
   return sel;
 }
 // the bot AT man: CS2's bot brain would only use the Zeus as a Zeus, so the script fires the launcher for him, at helicopters only
@@ -221,12 +326,26 @@ function tickAIMount(p, pawn, dt) {
 }
 
 // ------------------------------------------------------------------ AI pilot
+// the next flag to patrol: where the side's plan wants men (a threatened flag of ours, the enemy flag nearest our front), so the AI
+// helicopter supports the infantry bots instead of touring the map at random (review 3)
+// A flag inside the arc of an enemy-manned emplaced gun is a poor place to loiter (a .50 takes a helicopter apart in seconds): its
+// weight is cut to MOUNT_AVOID (review 3: once the AI gunners chose guns that cover flags, mounts became the first killer of AI
+// helicopters)
+function mountCovers(f, team) {
+  for (const m of mounts) {
+    if (m.user < 0) continue;
+    const q = players.get(m.user); if (!q || q.team === team) continue;
+    const d = dist2(f.pos, m.pos);
+    if (d < CONFIG.AI.GUN_RANGE && Math.abs(wrap180(Math.atan2(f.pos.y - m.pos.y, f.pos.x - m.pos.x) * R2D - m.yaw0)) < m.cone + 10) return true;
+  }
+  return false;
+}
 function aiWaypoint(h, ai) {
-  const enemy = otherTeam(h.team);
+  const pl = planFor(h.team);
   let best, bs = -1;
   for (const f of flags) {
     if (f.id === ai.wp) continue;
-    const s = (f.contested ? 3 : f.owner === enemy ? 2.5 : f.owner === 0 ? 2 : 1) * (0.4 + Math.random());
+    const s = (pl.w[f.id] + 0.15 + (f.contested ? 1 : 0)) * (0.4 + Math.random()) * (mountCovers(f, h.team) ? CONFIG.AI.MOUNT_AVOID : 1);
     if (s > bs) { bs = s; best = f; }
   }
   if (!best) return;
@@ -259,11 +378,12 @@ function aiPilotThink(h, ai) {
       const to = h.yieldTo; h.yieldTo = -1;
       if (bot) aiRelease(bot, true);
       const hq = players.get(to);
-      if (hq && !hq.bot && hq.team === h.team && h.owner < 0) { hq.waitRole = ""; requestRole(hq, "air", true); if (hq.role === "air") toast(hq, "Your helicopter is on the pad", 4); }
+      if (hq && !hq.bot && hq.team === h.team && h.owner < 0) handHeli(hq, "Your helicopter is on the pad");
       return;
     }
     if (padD > H.PAD_RADIUS) { ai.state = "takeoff"; return; }           // put down away from home: go again
-    if (h.hp >= h.maxHp && h.rockets >= h.M.ROCKETS && TNOW - ai.since > A.PAD_HOLD) ai.state = "takeoff";
+    // repaired and most rockets back: go (review 3: waiting for the last pair kept the Apache 50 s on the pad every sortie)
+    if (h.hp >= h.maxHp && h.rockets >= Math.min(h.M.ROCKETS, 2 * Math.ceil(h.M.ROCKETS * A.REARM_GO / 2)) && TNOW - ai.since > A.PAD_HOLD) ai.state = "takeoff";
     return;
   }
   if (ai.state === "takeoff") {
@@ -311,7 +431,9 @@ function tickAIPilot(h, dt) {
   if (!bot || !bot.bot || bot.aiRole !== "pilot") { h.ai = null; return; }
   if (h.state !== "parked" && h.state !== "flying") return;
   if (TNOW >= ai.think) { ai.think = TNOW + 0.25; aiPilotThink(h, ai); if (!h.ai) return; }
-  if (ai.state === "pad") return;                                            // rotor spools down, the pad works on the airframe
+  // on the pad the rotor keeps turning (a hot turn-round: no spool-down and spool-up every sortie) while the pad works on the airframe;
+  // it spools down only when the pilot is about to hand over or quit
+  if (ai.state === "pad") { if (!ai.release) h.inp = { fwd: 0, side: 0, coll: 0, yaw: h.yaw, fire: false, aim: null, spread: 0 }; return; }
   const inp = { fwd: 0, side: 0, coll: 0, yaw: h.yaw, fire: false, aim: null, spread: A.ROCKET_SPREAD };
   if (ai.state === "takeoff") { inp.coll = 1; h.inp = inp; return; }
   const dx = ai.goal.x - h.pos.x, dy = ai.goal.y - h.pos.y, d = Math.hypot(dx, dy) || 1e-6;
