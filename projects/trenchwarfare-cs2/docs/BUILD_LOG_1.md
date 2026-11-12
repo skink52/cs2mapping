@@ -60,6 +60,7 @@ Old route: all zips in `cs2port\assets\tw` are in the unpack bat's applied list 
 | 5 | Forced xml / css / js / svg | `resourcecompiler -f -i ...` from `C:\source1\cs2port` | ~16:51 | 1 / 30 / 1 / 1 compiled, 0 failed each |
 | 6 | Map compile | `watchdog --label "tw final" ... build_maps.ps1 final mg_trenchwarfare` | ~16:52-17:41 (49.7 min) | `OK in 49.7 min - mg_trenchwarfare.vpk moved`; 407 compiled, 0 failed; log `out/step9/mg_trenchwarfare_build.log` |
 | 8 | Nav pass 2 deploy + map compile 2 | `deploy_tw.py --apply` (map only) then `build_maps.ps1 final` | 18:52 deploy; compile 34.2 min | 0 compile errors, 0 entity DELETED (2 Steam Audio cache-file lines only); **nav 4,376 areas**; same 24,718 meshes / 1.40 M charts; log `out/step9/mg_trenchwarfare_build_run2.log` |
+| 9 | User decisions deploy + map compile 3 | `deploy_tw.py --apply` (map + script; js forced) then `build_maps.ps1 final` | 20:22 deploy; compile 33.1 min | 0 compile errors, 0 entity DELETED, nav 4,376 areas; check_world RESULT clean; log `out/step9/mg_trenchwarfare_build_run3.log` |
 | 7 | Stale models | `resourcecompiler -f -i` wire_coil, wire_fence_a, wire_fence_b, ladder | after the map | 4 compiled, 0 failed; check_world check 7 now 0 stale |
 
 CS2 tools mode closed throughout: yes (only the dedicated server `C:\cs2server` cs2.exe ran). Working folder `C:\source1\cs2port`: yes.
@@ -100,7 +101,6 @@ CS2 tools mode closed throughout: yes (only the dedicated server `C:\cs2server` 
 
 ## Remains
 
-- check_world `singletons`: the user's duplicate `info_map_parameters` (M2 opt-in, waiting for the user).
 - Everything in [TESTING.md](TESTING.md): nothing has been loaded in CS2.
 
 ## Post-compile checks

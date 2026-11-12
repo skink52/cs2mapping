@@ -32,7 +32,9 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   0 out of memory. Logs copied to `out/step9/`. `docs/BUILD_LOG_1.md` filled: nav **10,269 areas** (tw34 44,160; target < 5,000;
   the ~1,470 estimate was 7x off), 24,718 meshes / 1.40 M charts at 2048, vpk 519.9 MB. 4 stale models (wire, ladder) recompiled;
   check_world now fails only on the user's duplicate info_map_parameters.
-- 12 Nov 20:22: decisions applied and deployed (map + script; js force-compiled); map compile 3 running. (simulated, chain final CRC32 784ddc7b, gate PASS): id 7 `info_map_parameters` (Hammer defaults:
+- 12 Nov ~20:57: map compile 3 done: OK 33.1 min, 0 errors, 0 entity DELETED, nav 4,376, check_world clean. **This is the current
+  compiled build; level reached: compiled.** Next: the user's in-game `docs/TESTING.md`; optional sap seam rebuild (REVIEW_WORLD_2).
+- 12 Nov 20:22: decisions applied and deployed (map + script; js force-compiled). (simulated, chain final CRC32 784ddc7b, gate PASS): id 7 `info_map_parameters` (Hammer defaults:
   buying 0, dm spawn keys 0) deleted, `tw_params` kept; bench 72 (exact duplicate of 71, 1 u apart) dropped; all other benches kept.
   Sap roof NOT raised: the user's upper benches set the ceiling (57-62 u over the step benches), so entry stays crouched; proper
   seam fix (portal ramp, lintel, ground cap, roof to floor + 80) proposed in REVIEW_WORLD_2. check_play T9 probes each sap mouth
