@@ -64,8 +64,8 @@ python -u tools/deploy_tw.py --show       # the same, every file listed
 python -u tools/deploy_tw.py --apply      # copy (held while Hammer / cs2 -tools / a compile of this addon is running)
 ```
 
-- **List**: `out/step9/deploy_files.txt`, merged from `out/step5..8/deploy_files.txt` (5-7 from the chain run's side copies, 8 as step 8
-  wrote it, its `# GAME addon` section to the game addon). One line per file; a later step wins. Every step's map line is replaced by the
+- **List**: `out/step9/deploy_files.txt`, merged from `out/step5..8/deploy_files.txt` and `out/step10/deploy_files.txt` (CREDITS, Steam
+  description, licence files) (5-7 from the chain run's side copies, 8 and 10 as written, their `# GAME addon` section to the game addon). One line per file; a later step wins. Every step's map line is replaced by the
   chain's final map. The radar files the chain re-made are in it. A model -> material check runs on it: a material a listed model names
   must be in the list, in the addon or in the game's pak01 (the `stock.ensure` lesson: 5 monsoon props failed for stock copies nobody wrote).
 - **Gate** on the final map (`out/step9/gate.json`, logs in `out/step9/gate/`): `check_world` and `check_play` may not have a failure the

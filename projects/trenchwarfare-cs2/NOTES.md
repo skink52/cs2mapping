@@ -27,6 +27,9 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
+- 12 Nov ~22:30: release docs done: README (status "simulated, not publishable yet"), `docs/TESTING.md` (in-game checklist, groups
+  A-U), `docs/WORKSHOP.md` (page text + pre-upload checklist), new CREDITS.txt + Steam description staged in `out/step10/` and merged
+  by deploy_tw (dry run 117 files, gate PASS). Template wavs bird_01-06, interior_01, vent_01 are of unknown origin (checklist).
 - 12 Nov ~22:00: step 9a done (dry run only). `python -u tools/deploy_tw.py --chain` rebuilds the final map from the user's save
   (refuses unless CRC32 2e3f90d0), guards every stage, re-makes the radar; then the gate; then `create/deploy_addon.py` (dry run by
   default, `--apply` copies changed files only, backs up first, holds while Hammer / cs2 -tools has the addon open). Dry run: 110

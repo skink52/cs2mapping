@@ -13,8 +13,9 @@ Extra permission (on top of both licences): running this work on a game server i
 including community servers that take donations or sell perks (VIP, skins, etc.), as long as
 access to this work itself is not sold or paywalled and the work is not resold.
 
-Not covered: third-party models the map uses (knocked-out tanks, guns, battlefield clutter, under
-CC BY licences listed in the addon's CREDITS.txt) and Valve's own CS2 files keep their own terms.
+Not covered: third-party models the map and its weapons use (knocked-out tanks, guns, battlefield
+clutter, the weapon models; each listed with its own licence in the addon's CREDITS.txt) and Valve's
+own CS2 files keep their own terms.
 
 Required Notice: Copyright (c) 2026 skink52 (https://github.com/skink52)
 

@@ -23,7 +23,8 @@ usage (from the project folder):
             from this run in out/step9/chain/side/ and puts the step folders back as they were.
             Opt-in flags (default off, waiting for the user): --user-h1 unlock|remove (the 24 sap benches), --user-m2 (duplicate
             info_map_parameters); passed to patch_world_1 only. A deploy refuses flags that differ from the chain's.
-(b) list    out/step5..8/deploy_files.txt (5-7 from this chain run's side copies; 8 when present), merged into out/step9/deploy_files.txt
+(b) list    out/step5..8/deploy_files.txt (5-7 from this chain run's side copies; 8 when present) and out/step10/deploy_files.txt
+            (release docs: CREDITS, licences, Steam description; when present), merged into out/step9/deploy_files.txt
             (one line per file, last step wins, map = the chain's final vmap) + a model -> material check (a material a deployed model
             names must be in the list, in the addon or in the game's pak01: the "stock.ensure" gotcha).
 (c) gate    on the final map: check_world, check_play (no failure that the step 7 baseline did not have), check_contract --vmap --stage
@@ -54,7 +55,7 @@ MAP_REL = 'maps/mg_trenchwarfare.vmap'
 BASE = dict(crc32='2e3f90d0', size=67206918, sha256='9fb68e43ff31e7f87b129909489b0c1a594c2e83e66eaa07440ed6da0da5f73f')
 # earlier steps' own outputs (default flags), for the determinism comparison
 REFS = {'1_world_1': 'mg_trenchwarfare_patched.vmap', '2_models': 'mg_trenchwarfare_models.vmap', '3_terrain': 'mg_trenchwarfare_terrain.vmap'}
-STEP_LISTS = (5, 6, 7, 8)
+STEP_LISTS = (5, 6, 7, 8, 10)   # 8 and 10 are optional (a note when missing); 10 = release docs (CREDITS, licences, Steam description)
 PY = sys.executable
 OLD_BAT_LOG = r'C:\source1\cs2port\logs\mg_trenchwarfare_applied.txt'
 OLD_ZIPS = r'C:\source1\cs2port\assets\tw'
@@ -281,8 +282,8 @@ def chain(a):
 
 # ---------------------------------------------------------------- (b) the merged list
 def parse_list(path):
-    """a step's deploy list: 'rel', 'rel   <- src (comment)', 'game:rel'; a '# GAME addon' comment switches the lines after it to the
-    game addon (source out/game/<rel>). A BOM is ignored."""
+    """a step's deploy list: 'rel', 'rel   <- src (comment)', 'rel   <- "src with spaces"', 'game:rel'; a '# GAME addon' comment
+    switches the lines after it to the game addon (source out/game/<rel>). A BOM is ignored."""
     rows, section = [], 'content'
     for n, raw in enumerate(open(path, encoding='utf-8-sig'), 1):
         s = raw.strip()
@@ -297,7 +298,10 @@ def parse_list(path):
             side, s = 'game', s[5:].strip()
         if '<-' in s:
             r, src = (x.strip() for x in s.split('<-', 1))
-            src = src.split()[0].replace('\\', '/') if src else None   # "src (same bytes as ...)": the first word is the path
+            if src.startswith('"') and '"' in src[1:]:
+                src = src[1:].split('"', 1)[0].replace('\\', '/')      # a quoted path may hold spaces (step 10's Steam description)
+            else:
+                src = src.split()[0].replace('\\', '/') if src else None   # "src (same bytes as ...)": the first word is the path
         else:
             r, src = s, None
         rows.append(dict(side=side, rel=r.replace('\\', '/'), src=src, line=n))
@@ -318,7 +322,7 @@ def merge_lists(ch):
         cands.append(os.path.join(OUT, 'step%d' % k, 'deploy_files%s.txt' % ('_optin' if (k == 5 and optin) else '')))
         path = next((c for c in cands if os.path.isfile(c)), None)
         if not path:
-            (notes if k == 8 else problems).append('step %d deploy list not found (%s)' % (k, ', '.join(rel(c) for c in cands)))
+            (notes if k in (8, 10) else problems).append('step %d deploy list not found (%s)' % (k, ', '.join(rel(c) for c in cands)))
             continue
         used.append(dict(step=k, path=rel(path)))
         for r in parse_list(path):
