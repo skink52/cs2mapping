@@ -23,9 +23,9 @@ Status: `open` / `in progress (batch)` / `fixed (compiled)` / `fixed (in-game ve
 | 13 | Vines on poles around the Khmer temple float in the air (p7) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
 | 14 | Sandbags look wrong (p3) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
 | 15 | Water should have depth: a real func_water | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
-| 16 | Generated prop textures are low resolution across the board (p4) | P (round 2) | open |
-| 17 | Hay and hay bales are not photorealistic | P (round 2) | open |
-| 18 | Temple animal statues are the wrong vibe: source a proper model | P (round 2) | open |
+| 16 | Generated prop textures are low resolution across the board (p4) | P (round 2) | fixed (compiled; FIX_PT1_P.md) |
+| 17 | Hay and hay bales are not photorealistic | P (round 2) | fixed (compiled; FIX_PT1_P.md) |
+| 18 | Temple animal statues are the wrong vibe: source a proper model | P (round 2) | fixed (compiled; FIX_PT1_P.md) |
 | 19 | No custom weapons, no buy zone: era weapons, kills unlock optional upgrades (e.g. snipers) | G (round 2) | fixed (simulated, compiled; WEAPONS.md, FIX_PT1_G.md) |
 
 Batches: S = script and helicopters (`docs/FIX_PT1_S.md`), W = world geometry (`docs/FIX_PT1_W.md`), P = prop quality, G = era weapons and
