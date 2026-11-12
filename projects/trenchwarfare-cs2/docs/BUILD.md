@@ -64,6 +64,12 @@ default** (`--no-user-m2` / `--no-user-w5` to turn off). `--user-h1` must **not*
 bridges over the trench-to-tunnel seam.
 A deploy refuses flags that differ from the last chain's.
 
+`--pit-sandbags [both|ct|t]` (**OFF by default, pending the user's decision**; [REVIEW_WORLD_3.md](REVIEW_WORLD_3.md) W9): passed to
+`patch_world_3.py`, which then adds one more course of `sandbag_low` (clones of each pit's own cap bag) on the enemy-facing arc of the
+generated mortar pits' breastworks (a bare flag = `both`; `ct` / `t` = one side's pits only). It is recorded in `chain.json`'s flags only
+when on, so `python -u tools/deploy_tw.py --chain --pit-sandbags` must be followed by deploys with the same flag. To try it without
+touching `out/step9/`, run the stages by hand on copies (as in `out/step15/`, REVIEW_WORLD_3 W9).
+
 ## 2. The deploy
 
 ```
@@ -75,7 +81,7 @@ python -u tools/deploy_tw.py --apply      # copy (held while Hammer / cs2 -tools
 - **List**: `out/step9/deploy_files.txt`, merged from `out/step5..8/deploy_files.txt`, `out/step10/deploy_files.txt` (CREDITS, Steam
   description, licence files), `out/step11/deploy_files.txt` (weapon replacements), `out/step13/deploy_files.txt` (the rebuilt shelter: 44-u legs, 11 hull
   pieces, walkable dressing stations; [REVIEW_WORLD_3.md](REVIEW_WORLD_3.md) W2) and `out/step12/deploy_files.txt` (licence-replacement
-  assets), each when staged (5-7 from the chain run's side copies, 8 and 10-13 as written, their `# GAME addon` section to the game addon). One line per file; a later step wins. Every step's map line is replaced by the
+  assets) and `out/step14/deploy_files.txt` (prop rebuilds, staged by another session; same format as step 13), each when staged (5-7 from the chain run's side copies, 8 and 10-13 as written, their `# GAME addon` section to the game addon). One line per file; a later step wins. Every step's map line is replaced by the
   chain's final map. The radar files the chain re-made are in it. A model -> material check runs on it: a material a listed model names
   must be in the list, in the addon or in the game's pak01 (the `stock.ensure` lesson: 5 monsoon props failed for stock copies nobody wrote).
 - **Gate** on the final map (`out/step9/gate.json`, logs in `out/step9/gate/`): `check_world` and `check_play` may not have a failure the

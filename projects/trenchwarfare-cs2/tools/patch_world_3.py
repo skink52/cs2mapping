@@ -1,7 +1,7 @@
 """World patch 3 (13 Nov 2026, docs/REVIEW_WORLD_3.md): the real problems check_play still found in the generated content of the chained
 map, as one guarded delta patch. Reads the input map (never writes it); writes the patched copy, the guard's target list and a report.
 
-usage: python tools/patch_world_3.py [--in V] [--out V] [--targets T] [--report R] [--no-guard]
+usage: python tools/patch_world_3.py [--in V] [--out V] [--targets T] [--report R] [--no-guard] [--pit-sandbags [both|ct|t]]
   defaults: --in out/step9/chain/4_seams.vmap, --out out/mg_trenchwarfare_world3.vmap, --targets <out>.targets.json, --report <out>.report.json
   then (here unless --no-guard): python tools/patch_guard.py <in> <out> <targets> --strict
 Chain: patch_world_1 -> patch_models -> patch_terrain -> patch_seams -> patch_world_3 -> patch_sounds -> patch_nav.
@@ -29,6 +29,17 @@ or a mismatch stops the patch before anything is written; the user's objects, tw
                   (z-fight). A pool that
                   would keep under 30 % of its area, or cannot be closed, is reported and left as it was. Nothing is added. The
                   user's own pools (tw_user) are not touched (check_play lists them).
+  W9  pit sandbags OPTIONAL, OFF by default (--pit-sandbags [both|ct|t]; PENDING THE USER'S DECISION, docs/REVIEW_WORLD_3.md W9):
+                  one more course of sandbags on the enemy-facing arc of the generated mortar pits' breastworks. The three generated
+                  courses (make_map: walls at r 194 / 192, a sandbag_low cap at r 190, 17 bags a course, every other course half a bag
+                  round, +0.04 rad per pit) top out at about the crew's standing eye (ground + 64), so whether a fire-step eye 5,000 u
+                  away sees a crewman was a matter of a unit or two of terrain. The new course is the generator's fourth: sandbag_low
+                  (a clone of the pit's own cap bag: model, scale 1 1 1.1, keyvalues, vis group tw_gen) at r 188, half a bag round from
+                  the cap, on the slots whose span meets the arc where a line from any crew position (seats a / b, the tube) to any enemy
+                  fire step crosses the ring. Each bag rests on the exact triangles of the bags under it (LOD0 meshes): z is set so that
+                  3/4 of its bottom samples touch or bed into them (generator courses bed 0.4 u), and the report gives the largest gap and
+                  bedding. Refused (nothing written) when a bag would touch the tube, table, ammo box, stores or a crew seat's player box,
+                  or would need the tube to fire under 30 deg to clear it. 'both' = every pit of both sides, 'ct' / 't' = one side only.
 Every new value follows from the input map alone (same input, same bytes: vmapedit's random is seeded from the input CRC, as in the
 other stages). Level: "simulated" (check_play, patch_guard --strict). AI-generated (Claude) for skink52.
 """
@@ -193,6 +204,158 @@ def trim_pool(S, Q0, z, step=2.0, lo=0.35, hi=1.6, max_drop=25, min_area=0.3, it
     return Q0, z, False
 
 
+# ================================================================ W9 (optional): one more sandbag course on the pits' enemy-facing arc
+SANDBAG_LOW = 'models/tw/sandbag_low/sandbag_low.vmdl'
+FIRESTEP = 'models/tw/firestep/firestep.vmdl'
+PIT_NB, PIT_R_CAP, PIT_R_NEW = 17, 190.0, 188.0      # make_map: 17 bags a course; courses at r 194 / 192 / 190, each 2 u further in
+PIT_ANG_K = 0.04                                     # make_map: + 0.04 rad per pit (k 0..4 = mortarpit_<tg>_1..5)
+PIT_TOUCH_Q = 25.0                                   # z: 75 % of the bag's bottom samples touch or bed into the course under it
+PIT_MIN_ELEV = 30.0                                  # the tube must be able to fire at this elevation and up over the new course
+SEAT_BOX = (16.0, 72.0)                              # a crew seat's player box: half width, height
+
+
+def _wrap(a): return (a + math.pi) % (2 * math.pi) - math.pi
+
+
+def _world_tris(T, R, o): return T @ np.asarray(R).T + np.asarray(o)
+
+
+def _support_top(Tw, xy):
+    """highest point of the triangles Tw (n, 3, 3) straight over / under each point xy (k, 2); -inf where none covers it"""
+    out = np.full(len(xy), -np.inf)
+    if not len(Tw): return out
+    A, B, C = Tw[:, 0], Tw[:, 1], Tw[:, 2]
+    v0, v1 = (B - A)[:, :2], (C - A)[:, :2]
+    den = v0[:, 0] * v1[:, 1] - v1[:, 0] * v0[:, 1]
+    ok = np.abs(den) > 1e-9
+    A, B, C, v0, v1, den = A[ok], B[ok], C[ok], v0[ok], v1[ok], den[ok]
+    for k, p in enumerate(xy):
+        w = p[None, :] - A[:, :2]
+        b1 = (w[:, 0] * v1[:, 1] - v1[:, 0] * w[:, 1]) / den
+        b2 = (v0[:, 0] * w[:, 1] - w[:, 0] * v0[:, 1]) / den
+        hit = (b1 >= -1e-6) & (b2 >= -1e-6) & (b1 + b2 <= 1 + 1e-6)
+        if hit.any():
+            z = A[hit, 2] + b1[hit] * (B[hit, 2] - A[hit, 2]) + b2[hit] * (C[hit, 2] - A[hit, 2])
+            out[k] = z.max()
+    return out
+
+
+def plan_pit_sandbags(m, sc, sides, seed):
+    """-> (list of new bags per pit, report); raises Mismatch when the pits are not the generator's or a bag would not fit"""
+    import random as _r
+    ents = {}
+    for n in m.entities():
+        nm = m.name(n)
+        if nm: ents[nm] = n
+    fs = [(m.origin(n), n) for n in m.entities() if m.cls(n) == 'prop_static' and (m.P(n, 'model', '') or '') == FIRESTEP]
+    if len(fs) < 20: raise Mismatch('pit sandbags: only %d fire steps (%s) in the map' % (len(fs), FIRESTEP))
+    bag_T = CS.model_tris(SANDBAG_LOW)
+    if bag_T is None or not len(bag_T): raise Mismatch('pit sandbags: no LOD0 mesh for %s' % SANDBAG_LOW)
+    plans, rep = [], []
+    for tg in ('t', 'ct'):
+        if sides not in ('both', tg): continue
+        s = 1 if tg == 'ct' else -1
+        phi0 = math.pi if s > 0 else 0.0                 # toward the enemy (CT faces -x)
+        enemy = np.array([o[:2] for o, _ in fs if o[0] * s < 0], float)
+        for k in range(1, 6):
+            pn = ents.get('mortarpit_%s_%d' % (tg, k))
+            if pn is None or m.cls(pn) != 'info_target' or (m.g(pn, b'customVisGroup') or b'').decode() != GROUP:
+                raise Mismatch('pit sandbags: mortarpit_%s_%d is not a generated info_target' % (tg, k))
+            c = np.array(m.origin(pn)[:2], float); cz = m.origin(pn)[2]
+            crew = []
+            for q in ('a', 'b'):
+                e = ents.get('mortarcrew_%s_%d_%s' % (tg, k, q))
+                if e is None: raise Mismatch('pit sandbags: mortarcrew_%s_%d_%s missing' % (tg, k, q))
+                crew.append(('seat_' + q, m.origin(e)))
+            tube = ents.get('mortar_%s_%d' % (tg, k))
+            if tube is None: raise Mismatch('pit sandbags: tube mortar_%s_%d missing' % (tg, k))
+            crew.append(('tube', m.origin(tube)))
+            # the props of this pit (CS scene: R = rotation @ scale, o) and the cap course (the generator's third, sandbag_low at r 190)
+            near = [p for p in sc['props'] if np.hypot(p['o'][0] - c[0], p['o'][1] - c[1]) < 240.0]
+            caps = [p for p in near if p['model'] == SANDBAG_LOW and p['vg'] == GROUP and abs(np.hypot(p['o'][0] - c[0], p['o'][1] - c[1]) - PIT_R_CAP) < 2.0]
+            k0 = k - 1
+            want = [c + PIT_R_CAP * np.array([math.cos(2 * math.pi * q / PIT_NB + PIT_ANG_K * k0), math.sin(2 * math.pi * q / PIT_NB + PIT_ANG_K * k0)]) for q in range(PIT_NB)]
+            matched = sum(1 for w in want if any(np.hypot(p['o'][0] - w[0], p['o'][1] - w[1]) < 1.5 for p in caps))
+            if matched < 12: raise Mismatch('pit sandbags: pit %s_%d cap course matches the generator at %d of %d slots' % (tg, k, matched, PIT_NB))
+            # the arc: where a line from a crew position to an enemy fire step crosses the new course's ring
+            rel = []
+            for _, q in crew:
+                q2 = np.array(q[:2], float)
+                for f in enemy:
+                    d = f - q2; d /= np.hypot(*d)
+                    w = q2 - c; b = np.dot(w, d); cc = np.dot(w, w) - PIT_R_NEW ** 2
+                    t = -b + math.sqrt(max(0.0, b * b - cc))
+                    p = q2 + d * t
+                    rel.append(_wrap(math.atan2(p[1] - c[1], p[0] - c[0]) - phi0))
+            lo, hi = min(rel), max(rel)
+            half = math.pi / PIT_NB
+            slots = [q for q in range(PIT_NB) if _wrap(2 * math.pi * (q + 0.5) / PIT_NB + PIT_ANG_K * k0 - phi0) + half >= lo
+                     and _wrap(2 * math.pi * (q + 0.5) / PIT_NB + PIT_ANG_K * k0 - phi0) - half <= hi]
+            sup = [p for p in near if '/sandbag_' in p['model']]
+            sup_T = [(_world_tris(CS.model_tris(p['model']), p['R'], p['o'])) for p in sup if CS.model_tris(p['model']) is not None]
+            sup_T = np.concatenate(sup_T) if sup_T else np.zeros((0, 3, 3))
+            others = [p for p in near if '/sandbag_' not in p['model'] and CS.model_tris(p['model']) is not None]
+            tube_p = [p for p in near if p['i'] == tube]
+            muzzle = None
+            if tube_p and CS.model_tris(tube_p[0]['model']) is not None:
+                tw = _world_tris(CS.model_tris(tube_p[0]['model']), tube_p[0]['R'], tube_p[0]['o']).reshape(-1, 3)
+                muzzle = tw[np.argmax(tw[:, 2])]
+            rng = _r.Random('%s:%s_%d' % (seed, tg, k))
+            pit_rep = dict(pit='%s_%d' % (tg, k), arc_deg=[round(math.degrees(lo), 1), round(math.degrees(hi), 1)], slots=slots, bags=[],
+                           caps_matched=matched, muzzle_over_floor=round(float(muzzle[2] - cz), 1) if muzzle is not None else None)
+            src = None
+            for q in slots:
+                a = 2 * math.pi * (q + 0.5) / PIT_NB + PIT_ANG_K * k0
+                rx, ry = math.cos(a), math.sin(a)
+                x, y = c[0] + rx * PIT_R_NEW, c[1] + ry * PIT_R_NEW
+                yaw = (math.degrees(math.atan2(-rx, ry)) + rng.uniform(-2.0, 2.0)) % 360.0
+                cap = min(caps, key=lambda p: abs(_wrap(math.atan2(p['o'][1] - c[1], p['o'][0] - c[0]) - a)))   # the clone source: the cap under it
+                scl = [float(v) for v in (m.g(cap['i'], b'scales') or [1, 1, 1])]
+                R = np.array(V.rot_matrix([0.0, yaw, 0.0]), float) @ np.diag(scl)
+                Tb = _world_tris(bag_T, R, (x, y, 0.0))
+                Pv = Tb.reshape(-1, 3)
+                bot = Pv[Pv[:, 2] <= Pv[:, 2].min() + 3.0]
+                bot = np.unique(np.round(bot, 2), axis=0)
+                lo_xy, hi_xy = Pv[:, :2].min(0) - 2, Pv[:, :2].max(0) + 2
+                st = sup_T[(sup_T[:, :, 0].max(1) >= lo_xy[0]) & (sup_T[:, :, 0].min(1) <= hi_xy[0]) & (sup_T[:, :, 1].max(1) >= lo_xy[1]) & (sup_T[:, :, 1].min(1) <= hi_xy[1])]
+                top = _support_top(st, bot[:, :2])
+                okk = np.isfinite(top)
+                if okk.mean() < 0.6: raise Mismatch('pit sandbags: %s_%d slot %d: only %.0f %% of the bag rests on the course under it' % (tg, k, q, 100 * okk.mean()))
+                g = top[okk] - bot[okk, 2]                      # the z that puts each bottom sample on its support
+                z = float(np.percentile(g, 100 - PIT_TOUCH_Q))
+                z = round(z, 2)
+                gap = z + bot[okk, 2] - top[okk]                # > 0: in the air over the course; < 0: bedded into it
+                Tz = Tb + np.array([0.0, 0.0, z])
+                # nothing but sandbags may be inside the new bag (sampled surfaces of the tube, table, ammo box, stores, rack)
+                Rinv = np.linalg.inv(R)
+                blo, bhi = bag_T.reshape(-1, 3).min(0) + 0.5, bag_T.reshape(-1, 3).max(0) - 0.5
+                hits = []
+                for p in others:
+                    Sp = CS.sample_tris(_world_tris(CS.model_tris(p['model']), p['R'], p['o']), 4.0)
+                    L = (Sp - np.array([x, y, z])) @ Rinv.T
+                    n_in = int(np.all((L >= blo) & (L <= bhi), axis=1).sum())
+                    if n_in: hits.append((p['model'].split('/')[-1], p['nid'], n_in))
+                if hits: raise Mismatch('pit sandbags: %s_%d slot %d touches %s' % (tg, k, q, hits))
+                Pz = Tz.reshape(-1, 3)
+                for nm_, so in crew[:2]:
+                    fz = so[2] - 8.0                             # the teleport destination stands 8 u over the floor (make_map)
+                    if (Pz[:, 0].min() < so[0] + SEAT_BOX[0] and Pz[:, 0].max() > so[0] - SEAT_BOX[0] and Pz[:, 1].min() < so[1] + SEAT_BOX[0]
+                            and Pz[:, 1].max() > so[1] - SEAT_BOX[0] and Pz[:, 2].min() < fz + SEAT_BOX[1] and Pz[:, 2].max() > fz):
+                        raise Mismatch('pit sandbags: %s_%d slot %d meets the %s player box' % (tg, k, q, nm_))
+                elev = None
+                if muzzle is not None:
+                    dh = np.hypot(Pz[:, 0] - muzzle[0], Pz[:, 1] - muzzle[1])
+                    elev = float(np.degrees(np.arctan2(Pz[:, 2] - muzzle[2], dh)).max())
+                    if elev > PIT_MIN_ELEV: raise Mismatch('pit sandbags: %s_%d slot %d: the tube would need %.1f deg to clear it' % (tg, k, q, elev))
+                plans.append(dict(src=cap['i'], origin=(x, y, z), yaw=yaw, why='W9 pit sandbags (%s): mortarpit_%s_%d, 4th course slot %d' % (sides, tg, k, q)))
+                pit_rep['bags'].append(dict(slot=q, origin=[round(x, 2), round(y, 2), z], yaw=round(yaw, 2), clone_of=cap['nid'],
+                                            top_over_floor=round(float(Pz[:, 2].max() - cz), 1), max_gap=round(float(gap.max()), 1),
+                                            max_bed=round(float(-gap.min()), 1), unsupported_pct=round(100 * (1 - okk.mean()), 1),
+                                            tube_clear_deg=None if elev is None else round(elev, 1)))
+            rep.append(pit_rep)
+    return plans, rep
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description='world patch 3: air lanes, pit_t_2 rack, the pool poplar, crater pool rims')
     ap.add_argument('--in', dest='inp', default=os.path.join(OUT, 'step9', 'chain', '4_seams.vmap'))
@@ -200,6 +363,9 @@ def main(argv=None):
     ap.add_argument('--targets', default=None)
     ap.add_argument('--report', default=None)
     ap.add_argument('--no-guard', action='store_true')
+    # W9 option, OFF by default: pending the user's decision (docs/REVIEW_WORLD_3.md W9); a bare flag means 'both'
+    ap.add_argument('--pit-sandbags', nargs='?', const='both', choices=('both', 'ct', 't'), default=None,
+                    help='one more sandbag course on the enemy-facing arc of the mortar pits (both sides / one side); off by default')
     a = ap.parse_args(argv)
     for st_ in (sys.stdout, sys.stderr):
         if hasattr(st_, 'reconfigure'): st_.reconfigure(encoding='utf-8', errors='replace')
@@ -211,7 +377,8 @@ def main(argv=None):
     t0 = time.time()
     raw = open(inp, 'rb').read()
     m = V.Map(inp, data=raw); m.path = inp
-    V.random.seed('patch_world_3:%08x:%d' % (zlib.crc32(raw) & 0xffffffff, len(raw)))   # nothing here draws from it today; kept like the other stages
+    seed = 'patch_world_3:%08x:%d' % (zlib.crc32(raw) & 0xffffffff, len(raw))
+    V.random.seed(seed)   # only the optional pit sandbags draw from it (new referenceIDs / randomSeeds); kept like the other stages
     T = dict(input=inp, input_bytes=len(raw), input_crc32='%08x' % (zlib.crc32(raw) & 0xffffffff), modify={}, remove={}, add=[], prefix=[], root=False)
     rep = dict(trees=[], rack=None, pool_tree=None, pools=[], pools_left=[])
     nodes = by_node(m)
@@ -321,14 +488,45 @@ def main(argv=None):
                 % (rec['moved'], len(loop), rec['max_move'], dz, rec['worst_lip']))
         rep['pools'].append(rec)
 
+    # ---- W9 (optional, off by default): one more sandbag course on the pits' enemy-facing arc
+    if a.pit_sandbags:
+        try:
+            plans, rep['pit_sandbags'] = plan_pit_sandbags(m, sc, a.pit_sandbags, seed)
+        except Mismatch as ex:
+            sys.exit('patch_world_3: --pit-sandbags REFUSED, nothing written: %s' % ex)
+        par = {n_: p_ for n_, p_ in m.walk()}
+        node_id = [m.next_node_id()]
+        for pl in plans:
+            if par.get(pl['src']) != m.world: sys.exit('patch_world_3: --pit-sandbags: cap bag %d is not a child of the world' % pl['src'])
+            e = m.import_subtree(m, pl['src'], {}, node_id)
+            dmx.set_(m.E[e], b'referenceID', dmx.T_U64, V.random.getrandbits(63))
+            dmx.set_(m.E[e], b'randomSeed', dmx.T_INT, V.random.randint(1, 2 ** 31 - 1))
+            dmx.geta(m.E[e], b'origin')[2] = [float(v) for v in pl['origin']]
+            dmx.geta(m.E[e], b'angles')[2] = [0.0, float(pl['yaw']), 0.0]
+            dmx.geta(m.E[m.world], b'children')[2].append(e)
+            T['add'].append(dict(type='CMapEntity', **{'class': 'prop_static'}, why=pl['why']))
+        counts = {}
+        for e in m.entities(): counts[m.cls(e)] = counts.get(m.cls(e), 0) + 1
+        for attrs in m.doc.prefix:
+            pre = {x[0]: x for x in attrs}
+            if b'map_subasset_reference_names' in pre:
+                names = sorted(counts)
+                pre[b'map_subasset_reference_types'][2] = [b'entity'] * len(names)
+                pre[b'map_subasset_reference_names'][2] = [nm.encode() for nm in names]
+                pre[b'map_subasset_reference_counts'][2] = [counts[nm] for nm in names]
+                T['prefix'] += ['map_subasset_reference_counts']
+        rep['pit_sandbags_option'] = a.pit_sandbags
+
     n = m.save(outp)
     T['output'] = outp
     os.makedirs(os.path.dirname(os.path.abspath(tp)), exist_ok=True)
     json.dump(T, open(tp, 'w'), indent=1)
     rep.update(input=inp, output=outp, input_crc32=T['input_crc32'], seconds=round(time.time() - t0, 1))
     json.dump(rep, open(rp, 'w'), indent=1, default=float)
-    print('patched map: %s (%d bytes); %d poplars scaled, rack turned, pool poplar moved %.0f u, %d pool rims tucked in (%d left); %.1f s'
-          % (outp, n, len(rep['trees']), rep['pool_tree']['moved'], len(rep['pools']), len(rep['pools_left']), time.time() - t0))
+    print('patched map: %s (%d bytes); %d poplars scaled, rack turned, pool poplar moved %.0f u, %d pool rims tucked in (%d left)%s; %.1f s'
+          % (outp, n, len(rep['trees']), rep['pool_tree']['moved'], len(rep['pools']), len(rep['pools_left']),
+             ('; pit sandbags (%s): %d bags on %d pits' % (a.pit_sandbags, sum(len(p['bags']) for p in rep['pit_sandbags']), len(rep['pit_sandbags'])))
+             if a.pit_sandbags else '', time.time() - t0))
     if not a.no_guard:
         r = subprocess.run([sys.executable, os.path.join(HERE, 'patch_guard.py'), inp, outp, tp, '--strict', '--report',
                             os.path.splitext(outp)[0] + '.guard.json'], capture_output=True, text=True)

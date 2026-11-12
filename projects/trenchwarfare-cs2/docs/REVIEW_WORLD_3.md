@@ -29,7 +29,7 @@ Each finding below was first sorted into real or artefact with a probe on the ex
 | C3 | clipping: `tunnel_set` 6274 "12.4 u under water" | **artefact** | The prop is in a gallery at z -259. The pool is on the surface 190 u over it | Neutral check: a prop whose top is under the terrain at its own spot is not in the pool over it | gone |
 | C4 | clipping: `debris_metal_01b` 24.7 u and `_01f` under water | **artefact** (by design) | Debris sunk in a crater pool, out of sight (already 'bury' by design in the adapter) | `water_ok` + debris_metal | gone |
 | C5 | clipping: `tree_poplar_mature_02` 4456 "8.7 u under water" | **real** | A living mature poplar stood in the middle of a generated crater pool, which was centred on its trunk (render `before_poplar_pool`). A shell crater cannot form under a standing tree | Moved straight out of the pool, 58 u, its trunk 8 u past the water's edge, set on the ground (patch_world_3). It now stands on the bank, 16 u from the rim, 19 u over the water | gone |
-| W9 | sightlines: enemy fire steps -> mortar crews | **real, a design call** (not changed) | 13 / 380 and 54 / 380 pairs at 4,900-6,600 u (see "W9" below) | Proposal only | still FAILS: the one remaining check_play item |
+| W9 | sightlines: enemy fire steps -> mortar crews | **real, a design call** (not changed) | 13 / 380 and 54 / 380 pairs at 4,900-6,600 u (see "W9" below) | Proposal; prepared as `patch_world_3 --pit-sandbags` (OFF by default, the user's call): 4 / 380 a side when on | still FAILS: the one remaining check_play item |
 | R1 | generated revetment 121040 (`revet_iron_128`, -1892, 144) faces backwards | **probably the user's edit: listed, not rotated** | The generator would place it at yaw -90 (270): `layout.walls()` gives the wall at x -1892 with n (1, 0), and `yaw_for` gives -90. The base z it computes, -89.18, matches exactly. The map has yaw **90.00001525878906**. That float is Hammer's re-save signature. Of the other 11 revetments with Hammer float noise, 9 are the user's own (`tw_user`, e.g. their niche irons 57810 / 57813 / 57816 at exactly 90.00001525878906) and 2 are the woodsopen blockers. The other 680 revetments have exact yaws (270.0 / 90.0 / 0.0 / 180.0) | For the user: rotate 180 deg in Hammer if it was not meant (render `before_revet_121040`: the earth backing faces the trench) | listed |
 
 ## W2: the shelter
@@ -76,6 +76,80 @@ the CT crews are about 4x more exposed.
 the CT pits' breastworks, mirrored on T for parity. Or a low hedge or wreck screen 300-600 u in front of each pit row. Either would
 take the line at about 5,000 u. Check 2 keeps failing until one is chosen.
 
+### W9 option prepared: `--pit-sandbags` (13 Nov 2026; OFF by default, pending the user's decision)
+
+**Why the CT crews were the more exposed.** The generator's breastwork is three courses (walls at r 194 / 192, a `sandbag_low` cap at
+r 190, scale 1 1 1.1). The cap tops out at about +63 over the pit floor, and a standing crewman's eye is +64. So the breastwork stops
+the line by a unit or two, or misses it by a unit or two. Which way it went came down to the terrain between the trenches, not to the
+pits, and the result was the 13 / 54 split. One more course moves that margin to about 10-20 u on every line that crosses it.
+
+**What the flag does** (`tools/patch_world_3.py --pit-sandbags [both|ct|t]`, passed through by `deploy_tw.py`; default off, and with
+the flag off the stage output is byte-identical to before, CRC32 fe24aef1):
+- It adds a fourth course in the generator's own pattern. The bags are `sandbag_low`, clones of the pit's own cap bag (model,
+  scale 1 1 1.1, keyvalues, vis group `tw_gen`). They go at r 188, two units further in, like each earlier course. They sit half a bag
+  round from the cap, with the generator's yaw and +-2 deg jitter (seeded from the input CRC: a second run gave the same bytes, 7ad97c26).
+- Bags go only on the enemy-facing arc. A slot gets a bag when its span meets the arc where a line from any crew position (seat a,
+  seat b, the tube) to any enemy fire step crosses the ring: about -80..+80 deg of the facing direction. That is **7 of the 17 slots per
+  pit (8 at ct_2): 35 bags on T, 36 on CT, 71 in all.** The rear and flanks are unchanged.
+- Each bag rests on the exact LOD0 triangles of the bags under it. Its z is set so that 3/4 of its bottom samples touch or bed into
+  them. Contact is closer than the generator's own caps on their course: median gap 3.3 / 5.0 / 9.6 u (p50 / p75 / p90), against
+  5.7 / 8.0 / 12.3 u for the 166 existing caps. Largest bedding is 7 u (one bag in t_4's dip: 15.5 u, into a tilted cap).
+- The patch is refused (nothing written) if a bag would touch any other prop of the pit (tube, table, ammo box, stores, the turned rack)
+  or a crew seat's 32 x 72 player box, or if the tube would have to fire under 30 deg to clear the course. **Measured:** no prop touched,
+  no seat box touched. The muzzle stands 58-60 u over the floor (mortar_58mm / minenwerfer), and any elevation **over 7.5 deg** clears the
+  course. Both tubes fire at 45 deg or more, and the shells are simulated by the script (no trace from the tube).
+- **The crew at the table:** the course stands 71-83 u over the floor (median 77) on the front arc. The crew's seats, the table, the ammo
+  box and the walks between them are unchanged. Every pit's two seats are still joined, and each pit lost 1-3 of its ~330 walkable
+  cells at the foot of the wall. A crewman can no longer look out over the front arc from his seat. That is the point of the course;
+  he aims on the board, not by sight.
+- `ct` / `t` limit it to one side's pits. A course on the CT pits cannot change the T crews' lines (those run from x +1592 to x -3300,
+  nowhere near the CT pits), so `ct` alone leaves T at 13 / 380 while CT drops to 4 / 380 (derived from the two measured runs, not
+  run separately). That would turn the asymmetry round instead of removing it. In the same way, `t` alone would give CT 54 and T 4,
+  since the T pits do not lie between the T fire steps and the CT crews either.
+
+**Measured** on `out/step15/chain/` (4_seams = the 13 Nov chain's, CRC32 0ee969ec -> `5_world_3_both` 7ad97c26 -> `6_sounds` c5a7f74a ->
+`7_nav` 05f6cb3c). Every stage passed `patch_guard --strict` (world_3: 133 declared targets, 0 violations; sounds 12; nav 684). Logs and
+JSON are in `out/step15/gate/`.
+
+| check_play 2 sightlines (eye -> eye) | off (13 Nov chain, `out/step9/gate`) | `--pit-sandbags both` |
+|---|---|---|
+| CT fire steps -> T mortar crews | 13 / 380 | **4 / 380** |
+| T fire steps -> CT mortar crews | 54 / 380 | **4 / 380** |
+| fire steps -> posts (both sides) | 0 / 760, 0 / 760 | 0 / 760, 0 / 760 |
+
+| Check | Result with the flag |
+|---|---|
+| check_play T6 / walkability | 10 pits, both seats of each in one world (322 / 303 / 353 / 350 / 338 T, 329 / 335 / 358 / 372 / 345 CT cells; before 323 / 305 / 355 / 352 / 340, 330 / 338 / 360 / 374 / 346). Tube, table and ammo box present, no pit joined to a trench. All other worlds unchanged |
+| check_play 6 clipping | 0 buried, 0 floating > 6 u, 0 inside solids (same as off). check_play still `FAILED: sightlines` (8 pairs left: the baseline has the item, so nothing new for the gate) |
+| check_world | clean (prop_static 6,184) |
+| check_seams `--no-sight` | clean (no new gaps) |
+| patch_nav estimate | 342 NONAV boxes (off: 337), about 4,323 areas (off: 4,359). The bag tops are new walkable-looking ground outside play, so the box layout shifts a little |
+| `tools/navtest.py out/step15/chain/7_nav.vmap s15_pitbags` (count only, 138 s, `out/nav2/s15_pitbags.log`) | **4,529 areas**, the same as the deployed map's compile 5 (4,529) under the same compiled shelter. The pits are not bot areas, so the nav does not change. The temp map in `_navtest` was removed |
+
+**The 8 lines left** (4 per side) all go through one of two dips in the existing breastwork. At pit_t_4's south-east arc and
+pit_ct_2's south-west arc the ground falls away. The generator laid the courses on it 40-60 u under the pit floor (ct_2 slots 10-11;
+t_4 slots 13-15). The fourth course follows them down: those 5 bags top out at 7-45 u over the pit floor, so they close nothing there.
+Seen: t_4 seat a from CT eye (1592, -2752), t_4 seat b from three eyes at y -448..192; ct_2 seat b from four eyes at y -2880..-1984. Closing the dips
+would mean building them up two or three courses, which is a separate change. Left as found.
+
+**Renders** (`out/step15/render_views.py`, a copy of review 3's renderer; `out/step15/views/before_*.png` from the 13 Nov chain's
+`5_world_3`, `after_*.png` from `5_world_3_both`; contact sheets `out/step15/ba_t_enemy.png`, `ba_ct_enemy.png`, `ba_t_above.png`,
+`ba_ct_above.png`; looked at). `pit_<side>_<k>_enemy`: 520 u out along the real line from the crew seat to an enemy fire-step eye that
+saw it (or straight across), at that line's height, fov 34. `pit_<side>_<k>_above`: from behind the pit over the tube, onto the front
+arc. Blue boxes are the crew seats' 32 x 72 player boxes.
+- Before: on every pit the seats' boxes show their top over the cap, head and shoulders at that range.
+- After: on 8 of 10 pits the boxes are hidden behind the new course, or show only a sliver of the top (the box top is 8 u over the eye
+  the check uses). On ct_2 and t_4, viewed through their dips, they still stand clear. That matches the 8 lines left.
+- From above: the course follows the cap round the front arc, seated on it, with no gaps, floating bags or bags into the tube, table or
+  stores. In t_4's dip it steps down with the old courses.
+The renders are our software renderer: placement and scale, not lighting.
+
+**Recommendation.** If the user wants the crews covered, use `--pit-sandbags` (= `both`). It takes the asymmetry from 13 vs 54 to 4 vs 4
+for 71 bags on the front arcs only. Do not use `ct` alone: it reverses the imbalance. The two dips (pit_ct_2 SW, pit_t_4 SE) are the
+next step if 4 / 380 a side is still too many. check_play's sightline item will keep failing on those 8 pairs (`allowed` is 0) unless
+the adapter is given an allowance. The option is not in the shipped chain: `deploy_tw.py --chain --pit-sandbags`, the gate and a map
+compile are needed to ship it.
+
 ## Checker changes (both files read only; numbers above)
 
 - `create/check_play.py` (neutral, a fork of monsoon's; nothing pushed with libsync):
@@ -119,7 +193,8 @@ The renders are our software renderer: placement and scale, not lighting.
 
 ## For the user
 
-- **W9:** the mortar crews' exposure (proposal above) is a design choice. check_play keeps failing on it until one is chosen.
+- **W9:** the mortar crews' exposure (proposal above) is a design choice. check_play keeps failing on it until one is chosen. The
+  sandbag course is ready as `--pit-sandbags` (off by default; measured 13 / 54 -> 4 / 4 in "W9 option prepared").
 - **Revetment 121040** (-1892, 144) carries Hammer's float signature and faces backwards. If that was not meant, turn it 180 deg in
   Hammer. Nothing here rotates it.
 - **Shelters.** After the deploy, compile the assets (shelter.vmdl) before the map. In game, walk into a dressing station, standing

@@ -9,6 +9,7 @@ usage (from the project folder):
   python -u tools/deploy_tw.py --apply                                          the same, then copy (held while Hammer / cs2 -tools is open)
   options: --show (every file), --no-gate (dry run only), --force-vmap (replace an addon map that is not the base: backed up first)
            --no-user-m2 / --no-user-w5 (leave those out of the chain; they are on by default, see "Opt-in flags" below)
+           --pit-sandbags [both|ct|t] (OFF by default, pending the user's decision: passed to patch_world_3, see below)
 
 (a) chain   out/step9/chain/0_user.vmap (a copy of content\\...\\maps\\mg_trenchwarfare.vmap) -> 1_world_1 (patch_world_1, step 5)
             -> 2_models (patch_models, step 6) -> 3_terrain (patch_terrain, step 7) -> 4_seams (patch_seams: siding-top caps, sheet
@@ -32,10 +33,14 @@ usage (from the project folder):
               --user-h1 unlock|remove (OFF; do not use on this map): the 24 sap benches are the user's seam bridges, kept as placed.
             Decided by the user 12 Nov 2026: sap tunnels "do what's best for gameplay", duplicate info_map_parameters deleted if safe,
             then the correction that the benches are bridges (keep them; drop only the exact duplicate).
+            Passed to patch_world_3 only: --pit-sandbags [both|ct|t] (OFF by default; PENDING THE USER'S DECISION, docs/REVIEW_WORLD_3.md
+            W9): one more sandbag course on the enemy-facing arc of the mortar pits' breastworks. Recorded in chain.json's flags only
+            when on, so a chain built before the option still matches a plain deploy.
 (b) list    out/step5..8/deploy_files.txt (5-7 from this chain run's side copies; 8 when present), out/step10/deploy_files.txt
             (release docs: CREDITS, licences, Steam description; when present), out/step11/deploy_files.txt (weapon replacements,
             staged by the weapons work), out/step12/deploy_files.txt (licence-replacement assets) and out/step13/deploy_files.txt (the
-            rebuilt shelter: walkable dressing stations, docs/REVIEW_WORLD_3.md W2) (each when present; a later step wins), merged
+            rebuilt shelter: walkable dressing stations, docs/REVIEW_WORLD_3.md W2) and out/step14/deploy_files.txt (prop rebuilds,
+            the same format as step 13) (each when present; a later step wins), merged
             into out/step9/deploy_files.txt
             (one line per file, last step wins, map = the chain's final vmap) + a model -> material check (a material a deployed model
             names must be in the list, in the addon or in the game's pak01: the "stock.ensure" gotcha).
@@ -67,7 +72,8 @@ MAP_REL = 'maps/mg_trenchwarfare.vmap'
 BASE = dict(crc32='2e3f90d0', size=67206918, sha256='9fb68e43ff31e7f87b129909489b0c1a594c2e83e66eaa07440ed6da0da5f73f')
 # earlier steps' own outputs (default flags), for the determinism comparison
 REFS = {'1_world_1': 'mg_trenchwarfare_patched.vmap', '2_models': 'mg_trenchwarfare_models.vmap', '3_terrain': 'mg_trenchwarfare_terrain.vmap'}
-STEP_LISTS = (5, 6, 7, 8, 10, 11, 12, 13)   # 8, 10-13 optional (a note when missing); 10 = release docs (CREDITS, licences, Steam description), 11 = weapons, 12 = licence-replacement assets, 13 = the rebuilt shelter
+STEP_LISTS = (5, 6, 7, 8, 10, 11, 12, 13, 14)   # 8, 10-14 optional (a note when missing); 10 = release docs (CREDITS, licences, Steam description), 11 = weapons, 12 = licence-replacement assets, 13 = the rebuilt shelter, 14 = prop rebuilds (staged by another session)
+OPTIONAL_LISTS = (8, 10, 11, 12, 13, 14)
 PY = sys.executable
 OLD_BAT_LOG = r'C:\source1\cs2port\logs\mg_trenchwarfare_applied.txt'
 OLD_ZIPS = r'C:\source1\cs2port\assets\tw'
@@ -207,10 +213,16 @@ def restore(stage, snap):
     return kept
 
 
+def chain_flags(a):
+    """the chain's flags as chain.json records them; pit_sandbags only when on (chains from before the option stay comparable)"""
+    f = dict(user_h1=a.user_h1, user_m2=bool(a.user_m2), user_w5=bool(a.user_w5))
+    if getattr(a, 'pit_sandbags', None): f['pit_sandbags'] = a.pit_sandbags
+    return f
+
+
 def chain(a):
     os.makedirs(SIDE, exist_ok=True)
-    rec = dict(started=datetime.datetime.now().isoformat(timespec='seconds'), base=BASE,
-               flags=dict(user_h1=a.user_h1, user_m2=bool(a.user_m2), user_w5=bool(a.user_w5)), stages=[], ok=False)
+    rec = dict(started=datetime.datetime.now().isoformat(timespec='seconds'), base=BASE, flags=chain_flags(a), stages=[], ok=False)
     out_json = os.path.join(STEP9, 'chain.json')
 
     def save():
@@ -256,7 +268,8 @@ def chain(a):
         ('4_seams', [PY, '-u', 'tools/patch_seams.py', '--no-guard', '--targets', os.path.join(CHAIN, '4_seams.targets.json'),
                      '--report', os.path.join(CHAIN, '4_seams.report.json')], '4_seams.targets.json'),
         ('5_world_3', [PY, '-u', 'tools/patch_world_3.py', '--no-guard', '--targets', os.path.join(CHAIN, '5_world_3.targets.json'),
-                       '--report', os.path.join(CHAIN, '5_world_3.report.json')], '5_world_3.targets.json'),
+                       '--report', os.path.join(CHAIN, '5_world_3.report.json')] + (['--pit-sandbags', a.pit_sandbags] if a.pit_sandbags else []),
+         '5_world_3.targets.json'),
         ('6_sounds', [PY, '-u', 'tools/patch_sounds.py'], None),
         ('7_nav', [PY, '-u', 'tools/patch_nav.py', '--estimate', '--stage', os.path.join(OUT, 'addon'), '--targets', os.path.join(CHAIN, '7_nav.targets.json'),
                    '--report', os.path.join(CHAIN, '7_nav.report.json')], '7_nav.targets.json'),
@@ -373,7 +386,7 @@ def merge_lists(ch):
         cands.append(os.path.join(OUT, 'step%d' % k, 'deploy_files%s.txt' % ('_optin' if (k == 5 and optin) else '')))
         path = next((c for c in cands if os.path.isfile(c)), None)
         if not path:
-            (notes if k in (8, 10, 11, 12, 13) else problems).append('step %d deploy list not found (%s)' % (k, ', '.join(rel(c) for c in cands)))
+            (notes if k in OPTIONAL_LISTS else problems).append('step %d deploy list not found (%s)' % (k, ', '.join(rel(c) for c in cands)))
             continue
         used.append(dict(step=k, path=rel(path)))
         for r in parse_list(path):
@@ -578,6 +591,9 @@ def main(argv=None):
     ap.add_argument('--user-h1', choices=('unlock', 'remove'), help='NOT for this map: the sap benches are the user seam bridges (patch_world_1)')
     ap.add_argument('--user-m2', action=argparse.BooleanOptionalAction, default=True, help='delete the duplicate info_map_parameters id 7 (default on)')
     ap.add_argument('--user-w5', action=argparse.BooleanOptionalAction, default=True, help='delete bench 72, the exact copy of 71 (default on)')
+    # W9 (docs/REVIEW_WORLD_3.md): OFF by default, pending the user's decision; a bare flag means 'both'. Passed to patch_world_3.
+    ap.add_argument('--pit-sandbags', nargs='?', const='both', choices=('both', 'ct', 't'), default=None,
+                    help="one more sandbag course on the mortar pits' enemy-facing arc (patch_world_3; off by default, pending the user's decision)")
     ap.add_argument('--apply', action='store_true')
     ap.add_argument('--show', action='store_true')
     ap.add_argument('--no-gate', action='store_true', help='skip the gate (dry run only)')
@@ -601,7 +617,7 @@ def main(argv=None):
     ch = json.load(open(cj, encoding='utf-8'))
     if not ch.get('ok'):
         print('the last chain did not finish (%s): run --chain again' % ch.get('stopped')); return 1
-    want = dict(user_h1=a.user_h1, user_m2=bool(a.user_m2), user_w5=bool(a.user_w5))
+    want = chain_flags(a)
     if not a.chain and want != ch.get('flags'):
         print('the chain was built with flags %s, this run asks for %s: run --chain with the flags' % (ch.get('flags'), want)); return 1
     fin = os.path.join(PROJ, *ch['final']['path'].split('/'))
