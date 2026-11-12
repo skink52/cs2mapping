@@ -1,6 +1,8 @@
 """mg_trenchwarfare world checks on the user's vmap (adapted from projects/monsoon-cs2/tools/check_world.py). Reads only.
 
-usage: python tools/check_world.py [map.vmap] [--json out.json] [--verbose]      (map default: the content addon's vmap)
+usage: python tools/check_world.py [map.vmap] [--json out.json] [--verbose] [--stage DIR]   (map default: the content addon's vmap)
+  --stage DIR: a staging folder (e.g. out/addon) searched for models before the content addon; a model found only there counts as
+  present, and its missing compile is a warning ("staged, compile after deploy"), not a failure
 
 1 script names: every name the script looks up (src/mg_trenchwarfare.js loadPoints / fire targets) is present with the class it needs,
   counts per family; mortar_<tg>_K (the fire animation target) must be a prop_dynamic whose model has a "fire" sequence
@@ -36,6 +38,14 @@ VPK = os.path.join(LINKS, 'cs2_root', 'game', 'csgo', 'pak01_dir.vpk')
 VMAP = os.path.join(CONTENT, 'maps', 'mg_trenchwarfare.vmap')
 REVIEW = os.path.join(PROJ, 'out', 'review')
 OWN = ('models/tw/',)
+ROOTS = [CONTENT]          # model roots, staging first when --stage is given
+
+
+def src_of(mm):
+    for r in ROOTS:
+        p = os.path.join(r, mm.replace('/', os.sep))
+        if os.path.isfile(p): return p
+    return os.path.join(CONTENT, mm.replace('/', os.sep))
 
 # model pairs that touch by design (rows of revetment, stacked sandbags, dressing standing on another prop)
 OK_PAIR = [('sandbag', 'sandbag'), ('revet_', 'revet_'), ('revet_', 'sandbag'), ('revet_', 'firestep'), ('firestep', 'firestep'), ('firestep', 'sandbag'),
@@ -115,8 +125,8 @@ def main(path, out_json=None, verbose=False):
             px_, py_ = pit[0]['o'][:2]
             tube = [r for r in rows if r['cls'].startswith('prop_') and ('mortar' in r['model'] or 'minenwerfer' in r['model']) and math.hypot(r['o'][0] - px_, r['o'][1] - py_) < 40]
             for r in tube:
-                vf = CP.vmdl_files(type('A', (), {'model_roots': [CONTENT]})(), r['model'])
-                txt = open(os.path.join(CONTENT, r['model'].replace('/', os.sep)), errors='ignore').read() if os.path.exists(os.path.join(CONTENT, r['model'].replace('/', os.sep))) else ''
+                vf = CP.vmdl_files(type('A', (), {'model_roots': ROOTS})(), r['model'])
+                txt = open(src_of(r['model']), errors='ignore').read() if os.path.exists(src_of(r['model'])) else ''
                 fire = bool(re.search(r'"fire"', txt)) or bool(re.search(r'AnimFile|AnimationList', txt) and 'fire' in txt)
                 mortars.append(dict(who(r), pit='mortarpit_%s_%d' % (tg, k), want_name='mortar_%s_%d' % (tg, k), archetype=vf[2] if vf else None, fire_anim=fire))
     res['1'] = dict(expected=len(exp), wrong=bad, families=dict(fam), mortars=mortars)
@@ -159,7 +169,7 @@ def main(path, out_json=None, verbose=False):
     for w in out_b[:12]: print('    ', w)
     if out_b: fails.append('bounds')
     # ---- 4 overlaps (hull boxes)
-    A_ = type('A', (), {'model_roots': [CONTENT]})()
+    A_ = type('A', (), {'model_roots': ROOTS})()
     hb = {}
     def hull_box(model):
         if model in hb: return hb[model]
@@ -217,7 +227,7 @@ def main(path, out_json=None, verbose=False):
     if ps >= 9000: fails.append('prop count')
     # ---- 7 models
     idx = vpk_index()
-    missing = Counter(); notcompiled = Counter(); stale = Counter(); n_own = n_stock = 0; seen = set(); who_m = defaultdict(list)
+    missing = Counter(); notcompiled = Counter(); stale = Counter(); staged = Counter(); n_own = n_stock = 0; seen = set(); who_m = defaultdict(list)
     for r in rows:
         mm = r['model']
         if not mm.endswith('.vmdl'): continue
@@ -226,19 +236,22 @@ def main(path, out_json=None, verbose=False):
         seen.add(mm)
         if mm.startswith(OWN):
             n_own += 1
-            src = os.path.join(CONTENT, mm.replace('/', os.sep)); cmp_ = os.path.join(GAME, mm.replace('/', os.sep) + '_c')
+            src = src_of(mm); cmp_ = os.path.join(GAME, mm.replace('/', os.sep) + '_c')
             if not os.path.isfile(src): missing[mm] += 1
-            if not os.path.isfile(cmp_): notcompiled[mm] += 1
+            if not os.path.isfile(cmp_) and os.path.isfile(src) and not os.path.isfile(os.path.join(CONTENT, mm.replace('/', os.sep))): staged[mm] += 1
+            elif not os.path.isfile(cmp_): notcompiled[mm] += 1
             elif os.path.isfile(src) and os.path.getmtime(src) > os.path.getmtime(cmp_) + 2: stale[mm] += 1
         elif idx is not None:
             n_stock += 1
             if mm + '_c' not in idx and not os.path.isfile(os.path.join(GAME, mm.replace('/', os.sep) + '_c')): missing[mm] += 1
-    res['7'] = dict(own=n_own, stock=n_stock, missing={k: [who(r) for r in who_m[k]][:6] for k in missing}, not_compiled=list(notcompiled), stale=list(stale))
+    res['7'] = dict(own=n_own, stock=n_stock, missing={k: [who(r) for r in who_m[k]][:6] for k in missing}, not_compiled=list(notcompiled), stale=list(stale), staged=list(staged))
     print('7 models: %d of ours, %d stock (%s); %d missing, %d of ours not compiled in the game addon, %d compiled before their last .vmdl edit'
           % (n_own, n_stock, 'pak01 index' if idx is not None else 'NO VPK: stock not checked', len(missing), len(notcompiled), len(stale)))
     for mm in list(missing)[:12]: print('    missing %s x%d' % (mm, len(who_m[mm])))
     for mm in list(notcompiled)[:12]: print('    not compiled %s x%d' % (mm, len(who_m[mm])))
     for mm in list(stale)[:12]: print('    stale %s' % mm)
+    for mm in list(staged): print('    staged %s x%d (not in the addon yet: compile after deploy)' % (mm, len(who_m[mm])))
+    if staged: warn.append('%d staged models need deploy + compile' % len(staged))
     if missing or notcompiled: fails.append('models')
     # 7b archetypes
     arch_bad = []
@@ -267,4 +280,5 @@ if __name__ == '__main__':
     if argv and argv[0] in ('-h', '--help'): print(__doc__); sys.exit(2)
     path = argv[0] if argv and not argv[0].startswith('--') else VMAP
     oj = argv[argv.index('--json') + 1] if '--json' in argv else None
+    if '--stage' in argv: ROOTS.insert(0, os.path.abspath(argv[argv.index('--stage') + 1]))
     sys.exit(main(path, oj, '--verbose' in argv))

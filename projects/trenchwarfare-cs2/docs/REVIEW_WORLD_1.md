@@ -261,3 +261,98 @@ within 2 u.
 - Monsoon's `check_play.py` reads hull SMDs as raw triangles. The compiler wraps each `SingleHull` file in one convex hull. A concave hull
   file (an arch, an L) would be walkable in the check but solid in game. The neutral `create/check_play.py` models the convex hull.
 - Monsoon's own map is affected only if one of its hull files is concave; re-run its `check_play` through the neutral fork to see.
+
+## Step 5 results (12 Nov 2026): guarded patch `tools/patch_world_1.py`
+
+Offline only, so everything is **simulated**. No model was compiled, no map was opened in Hammer, nothing was played. The input map was
+only read (CRC 2e3f90d0 before and after). The addon was not written to.
+
+```
+cd projects/trenchwarfare-cs2
+python tools/dyn_models.py                         # dynamic twins -> out/addon/models/tw/... (list: out/step5_models.txt)
+python tools/patch_world_1.py [--user-h1 unlock|remove] [--user-m2] [--render]   # -> out/mg_trenchwarfare_patched.vmap
+python tools/patch_guard.py <input.vmap> out/mg_trenchwarfare_patched.vmap out/step5/patch_world_1.targets.json --strict
+python tools/check_world.py out/mg_trenchwarfare_patched.vmap --stage out/addon
+python tools/check_play.py  out/mg_trenchwarfare_patched.vmap --stage out/addon
+```
+
+- **`tools/patch_guard.py`** compares two maps node by node, keyed by nodeID. It covers:
+  - for every node: type, parent, class, each keyvalue, origin, angles, scales, vis group, I/O, a hash of the mesh data and of every
+    other attribute;
+  - the root attributes and the prefix (asset references, class counts).
+
+  It fails on any change, addition or removal that the patch's `targets.json` does not declare, down to the field.
+  - Validated with `--selftest`: it plants nine undeclared changes in memory (move 0.5 u, keyvalue changed, keyvalue added, entity
+    removed, node added, one mesh vertex 1 u, vis group, asset list, I/O delay). All nine are caught and an unchanged copy passes.
+  - Validated on the real output: with one declaration dropped (barrel 2811) and one narrowed (seed mesh 8377 to `angles`), it fails
+    and names both.
+- **`tools/dyn_models.py`** makes new files only, from the addon's sources:
+  - the dynamic-archetype twins: `revet_planks_broken_dyn`, `revet_planks_broken_128_dyn`, `tl_bench_dyn`;
+  - the animated mortars `minenwerfer_dyn` and `mortar_58mm_dyn`. Each has a root, body and barrel skeleton, `idle` (the default,
+    looping) and `fire` (0.8 s, ends in the rest pose).
+    - Minenwerfer: the tube and breech slide 4.5 u back along the bore and run out again; the carriage thumps.
+    - 58 mm: the bed thumps 1.4 u with a 0.7° rock; the tube flips 1.5° about its trunnion axle.
+    - `fire` is the script's `CONFIG.MORTAR_FIRE_ANIM` (`src/modules/00_config.js`).
+  - Barrel weights and poses were checked in renders of frames 0 / 2 / 8 / 23.
+- **Matching.** Every target is matched on id + class + model + origin within 2 u; meshes on id, parent class and bounds. The patch
+  verifies all of them before it changes anything. A mismatch stops it before anything is written.
+- **Id correction.** The tl_bench ids in H1 (56-63, 6615-6624) are check_play prop-list indices, and so are the ids in the L3 / L4
+  lists. The element ids of the 24 benches are **70-81 and 7933-7944**.
+
+### Each finding
+
+| Finding | Result | What was done, or why not |
+|---|---|---|
+| H1 sap benches | **opt-in** | `--user-h1 unlock`: the 24 benches (the user's) become `prop_dynamic undergroundopen` on `tl_bench_dyn`, so the barricade stands until the unlock and goes with the planks. Cost: the script runs `effects()` 26 times instead of 2. `--user-h1 remove` deletes them instead. **Also found:** each sap portal's roof edge is 65.7 u over the trench floor, so a standing player (68 u in the check) must crouch for the first step in. With the opt-in and a crouched player (check body top 50), both sides reach the chamber: 6 unreachable targets become 0, routes 2740 / 2733 u. Without the opt-in, 6 stay unreachable. A standing walk-in needs the generated roof row at y ±2816 (mesh 1225, tw_gen) raised about 8 u, right under the terrain lip (+5..+7): left for a Hammer look |
+| H2 blockers | **fixed** (model key only) | 7982 and 7983 (woodsopen) and 7979 and 7980 (undergroundopen, the user's; only their `model` changed, same geometry) now use the `_dyn` twins (archetype ""). check_world 7b: 4 → 0 |
+| H3 woods nav seeds | **fixed** | The 4 WALKABLESEED meshes moved to centre \|x\| 1110 (inside the fence), bottom 8 u under the lowest ground of the new footprint (dz -13..-15). Seeds off the walkable world 4 → 0; seed flood 654 758 → 21 764 cells (108 140 → 3 595 m²). Nav area count still to read from the next compile |
+| H4 mortar fire target | **fixed** | The 10 tubes are now `prop_dynamic mortar_<tg>_K` (K from the `mortarpit_` on each) on the animated twins. Keys: Hammer's prop_dynamic set taken from 7979, `use_animgraph 0`, Starting/Idle anim `idle` looping, `solid 6`. check_world 1: 10 wrong → 0, fire animation True ×10. Lighting is now from probes (was lightmapped) |
+| M1 shelters | left | Asset fix (separate convex hull pieces): step 6 |
+| M2 duplicate info_map_parameters | **opt-in** | `--user-m2` deletes id 7 (ungrouped); `tw_params` stays. With it, check_world comes out clean |
+| M3 posts in barrels | **fixed** | 1727 moved +10 u (the minimum is 9.7), its tins 1728 +10 u with it, 2811 moved -20.5 u (minimum 20.1). The minimum is what keeps a 32×32 box on the post 2 u clear of the barrel hull. T8: trench_ct_13 clean. trench_t_1 is still flagged because of the 16-u grid: the post sits exactly on a cell edge, so the check would need 19.7 u where the hull needs 9.7 (render `after_06`) |
+| M4 woods ladder nav | left | The user's volumes; nav ladder links in step 4 |
+| M5 woods cover | left | Adding cover is a design change, and the two trees the user moved (tw6) are not checked yet |
+| M6 low CT fire steps | left: **check artefact** | A probe of the 5 steps (x 1575, y -576..-320) shows a 16-u top tier at -23.9, a 12-u step up from the user's clip stair (top -36). A player at the wall stands on the tier: eye clearance about 14 u. T2 measures from the clip-stair top (2.1 u). Raising the props 6 u would make that step 18 u (the step limit) and open a 5-u gap under the step front. T2 should measure from the highest tier a player box fits on (check_play owner) |
+| L1 pit_t_2 | left | In-game walk check |
+| L2 | see H1 | |
+| L3 buried props | left | Sunk into the mud by design or not: ambiguous, and lifting risks floating props |
+| L4 props under water | left | Debris and a tree in crater pools read as intended. The tunnel_set in gallery water is worth a look in Hammer |
+| L5 water | z-fight **fixed**, edges left | Sheets 3450, 3459 and 3466 lowered 0.54 / 1.92 / 0.59 u, so each overlapping pair is 2 u apart: z-fight cells 15 → 0. Exposed edges 183 → 182: trimming pools is not a safe delta |
+| L6 sightlines to crews, L7 air lanes | left | Design calls |
+| L8 overlaps | left | The telephone is the user's; log into revet is cosmetic |
+| L9, L11 | by design | |
+| L10 stale compiles | left | Step 9 recompiles |
+
+### Checks before → after (default patch; opt-in in brackets)
+
+| Check | Before | After |
+|---|---|---|
+| patch_guard --strict | n/a | **PASS**: 24 declared nodes changed + 4 prefix keys, nothing else (opt-in: PASS, 48 + 1 removal) |
+| check_world | FAILED: script names (10), singletons, archetypes (4) | FAILED: singletons only (opt-in: **clean**); warnings: 11 overlaps (unchanged), 4 (5) staged models to deploy + compile |
+| check_play 1 / 1b | heal ×6 and pit_t_2 split; mines unreachable; chamber no route | Same, standing. Crouched + opt-in: 0 unreachable, chamber 2740 / 2733 |
+| check_play 7 water | 183 exposed, 15 z-fight | 182 exposed, **0 z-fight** |
+| check_play 9 nav | 4 seeds off, flood 654 758 cells | **0 off, flood 21 764** (passes) |
+| check_play T6 | tubes prop_static unnamed | `prop_dynamic mortar_<tg>_K` ×10 |
+| check_play T8 | t_1, ct_13 low | t_1 (grid artefact, above) |
+| check_play overall | 17 failing items | 15: walkability, routes, sightlines, clipping, water edges, T2 (M6 artefact), T4 ×6 (step 6), T7 ×2 (L7), T8 t_1 |
+
+`restage_out.py --vmap out/mg_trenchwarfare_patched.vmap --out out/step5/restage` passes its cross-checks, and its `entities.json`
+holds `mortar_t_1..5` / `mortar_ct_1..5` as prop_dynamic. The mock's `out/` is untouched.
+
+### Deploy (not done: Hammer may be open)
+
+The list is in `out/step5/deploy_files.txt` (with the opt-ins: `deploy_files_optin.txt`), all addon-relative:
+- `maps/mg_trenchwarfare.vmap` ← `out/mg_trenchwarfare_patched.vmap`;
+- 11 files from `out/addon/`, all new: the 4 `_dyn.vmdl`, the mortar `_dyn` SMDs and `anims/*.smd`; with the opt-ins, also
+  `models/tw/tl_bench/tl_bench_dyn.vmdl`.
+
+Before and after:
+- Back up the vmap and close Hammer first.
+- Then compile the models: they are uncompiled, and check_world reports them as "staged".
+- `docs/CONTRACT.md` still lists `mortar_<tg>_K` as 0 of 10 / MISSING, and the blocker models without `_dyn`. Its owner updates
+  both after deploy.
+
+In game, confirm:
+- the planks and benches stand at round start (and grep the compile log for `DELETED`);
+- the mortar recoils on fire;
+- nothing pushes the crew.

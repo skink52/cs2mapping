@@ -27,7 +27,13 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
-  Step 5 (world patches into `out/`) running.
+- 12 Nov ~15:30: step 5 done offline, NOT deployed. `python tools/patch_world_1.py` -> `out/mg_trenchwarfare_patched.vmap`
+  (guarded by `tools/patch_guard.py --strict`: 24 declared nodes, nothing else), `tools/dyn_models.py` builds `_dyn` model twins
+  into `out/addon`. Fixed H4 (mortars `prop_dynamic mortar_<tg>_K` with idle/fire anims), H2 (blockers on `_dyn` models), H3 (woods
+  seeds inside the fence: flood 654,758 -> 21,764 cells), M3 (barrels), L5 (z-fight). Opt-in, waiting for the user: `--user-h1
+  unlock|remove` (24 sap benches, element ids 70-81, 7933-7944), `--user-m2` (duplicate info_map_parameters). Sap entrance roof is
+  65.7 u above the floor (crouch to enter): ask the user. Deploy list: `out/step5/deploy_files.txt` (map + 11 model files);
+  models need compiling. Deploy happens in step 9 with the deploy tool, after checking Hammer/cs2 -tools are closed.
 
 ## State 2026-10-26 ~13:15 ACDT (tw8_content_01.zip radar, tw8_game.zip overview)
 

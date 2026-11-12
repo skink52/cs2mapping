@@ -1,6 +1,7 @@
 """mg_trenchwarfare gameplay checks: the trench adapter for the neutral create/check_play.py (offline; "simulated").
 
-usage: python tools/check_play.py [map.vmap] [--json out.json] [--only 1,6,T1] [--verbose] [--map out.png [x0,y0,x1,y1]]
+usage: python tools/check_play.py [map.vmap] [--json out.json] [--only 1,6,T1] [--verbose] [--map out.png [x0,y0,x1,y1]] [--stage DIR]
+       --stage DIR: a staging folder (e.g. out/addon) searched for models before the content addon
        (map default: the user's vmap in the content addon; read only)
 
 The neutral checks (create/check_play.py docstring) run with this map's worlds and points:
@@ -470,5 +471,7 @@ def t8_spawns(ctx):
 
 if __name__ == '__main__':
     argv = sys.argv[1:]
+    if '--stage' in argv:
+        k = argv.index('--stage'); A.model_roots = [os.path.abspath(argv[k + 1])] + list(A.model_roots); del argv[k:k + 2]
     if not argv or argv[0].startswith('--'): argv = [VMAP] + argv
     sys.exit(CP.cli(A, argv))
