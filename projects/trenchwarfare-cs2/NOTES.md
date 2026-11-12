@@ -27,6 +27,14 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
+- 12 Nov ~17:00: step 6 done offline, NOT deployed. 339 WW1 Workshop titles screened, 13 packs downloaded to
+  `C:\source1\gmod_assets\trenchwarfare` (outside the repo), catalog `tools/tw_gmod_catalog.json`. Only swap: `gun_75mm` -> Canon de 75
+  (3576805717, `tools/patch_models.py` -> `out/mg_trenchwarfare_models.vmap`, guard: 1 change). Ours beat every other low-risk pack;
+  all WW1 soldier and BF1/Verdun/etc packs are rips. LODs added to 5 props; `tools/fill_holes.py` tw_de_a 167 -> 154 open edges (rest
+  needs a re-weld in soldiers.py). Lewis + Mondragón stay (scale fine). Licence issues for the user (docs/WORKSHOP_COMPLIANCE.md):
+  Gewehr 98 confirmed BF1 rip (CC BY Sketchfab candidates need the user's account), Luger is CC BY-ND (replace/ask), Lewis + Colt
+  missing from CREDITS.txt, Lee-Enfield author unknown, Canon de 75 exact licence to confirm. Deploy list `out/step6/deploy_files.txt`
+  (after step 5; never copy other `gm_*` staging folders). libsync DIFFERS on monsoon check_mesh/vmesh are the other session's edits.
 - 12 Nov: **giant first-person weapons, cause (from the user):** the player character was set to an invalid/unloaded model (a CS2
   model picked in Hammer, which didn't have the game assets); Mario Party had the same symptom loading Octodad before it was ported.
   Only ever set compiled-in-addon (or stock, loaded) player models. Recorded in docs/reference/cs2-gotchas.md.
