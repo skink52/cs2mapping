@@ -2,7 +2,26 @@
 
 Read this first when resuming. Newest state at the top. Design: [docs/DESIGN.md](docs/DESIGN.md).
 
-## Resume here (12 Nov 2026, after build stage 3: nav cut, world pass 3, recompiled)
+## Resume here (12 Nov 2026, after build stage 4: world pass 4, recompiled)
+
+**State in one line:** `mg_monsoon.vpk` **recompiled** (42.0 min, `OK: 506 compiled, 0 failed`, 0 DELETED) with **12,597 nav areas**
+(was 15,033; "Compute Approach areas" 454 s, was 348 s); **never launched, not opened in Hammer**. Not committed.
+Records: [docs/BUILD_LOG_1.md](docs/BUILD_LOG_1.md) "Stage 4", [docs/REVIEW_WORLD_1.md](docs/REVIEW_WORLD_1.md) "Pass 4".
+
+- Route balance: the CT deploy point (rack + spawn ring, `layout.firebase()`) moved 190 u west toward the gate (it sat behind gun pit 1):
+  mirror balance A-D 1.06 -> **1.00**, C-E 1.11 -> **1.05**, B 1.06 -> **1.04** (check_play 1b). The firebase `POCKET_FILL` is re-derived
+  (pass 2 cells + the ammo yard, the tower ladder foot and a few single cells): 0 stuck pockets.
+- Nav: flag discs 600, road margins 64, the CT disc to the wire + 40, the T disc to its plateau - 50 (`mv_entities.NAV_ZONES` /
+  `NAV_MARGIN`); check 9: 0 stations off, every flag routed both ways. `check_play.py` is recalibrated on this compile (90,815 cells =
+  12,597 areas). Approach areas did not fall with the count: the next lever is fewer small areas inside the bases.
+- Village: 9 huts again (the 9th east beyond the pig pen, r 771; it took one hedge bank's spot), the crater-stone pocket gone (stones keep
+  a 40-u pad). Firebase: antenna mast, GP crew tent and the second latrine still have no clean room inside the wire (left out); the
+  water trailer stands in the strip by the FDC.
+- Checks on the compiled vmap: check_mesh 0 bad, check_world clean, check_play clean (9), mock 32 x 300 PASS; radar, board, HUD rebuilt.
+- `create/check_play.py` has the nav estimate / gate / `--nav-plan` behind the adapter; `libsync.py check` all in step.
+- 3D skybox cut to 1.93 M tris (docs/SKYBOX_PERF.md); instancing banyans (bakelighting 0 + probe volume) is an optional later step.
+
+## Earlier: after build stage 3 (12 Nov 2026, nav cut, world pass 3, recompiled)
 
 **State in one line:** `mg_monsoon.vpk` **recompiled** (41.5 min, 0 failed, 0 DELETED) with **15,033 nav areas** (was 33,661;
 "Compute Approach areas" 348 s, was 1,569 s) and the script mv-0.5 compiled; **never launched, not opened in Hammer**. Not committed.

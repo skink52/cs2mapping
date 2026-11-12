@@ -192,13 +192,17 @@ def build(d, group, out, T, clone):
     print('entities:', ', '.join('%s %d' % kv for kv in sorted(n.items())), '| mounts %d, nav seeds %d, NONAV boxes %d' % (len(S_['mounts']), seeds, len(nonav)))
 
 
-NAV_MARGIN = 160.0          # nav kept this far beyond a road's / trail's own half width
+NAV_MARGIN = 64.0           # nav kept this far beyond a road's / trail's own half width (pass 4: 160 -> 64)
 NAV_CELL = 128.0
 # pass 3 review (bot nav cost): the first compile made 33,661 nav areas ("Compute Approach areas" 26 min; mg_trenchwarfare lost FPS
 # with bots at 44k). Nav is kept only where bots fight and walk: the bases, the five flags and their surroundings, every road and
 # trail, two fords and the gully approach from the firebase to the temple's river stair (the CT walking route to D), the farm and
 # the tunnels. Everything else (outer valley sides, karst, the marsh, the jungle between the routes, deep river) is NONAV.
-NAV_ZONES = dict(ct_base=L.CT_PLATEAU_R + 100.0, t_base=L.T_PLATEAU_R + 150.0, flag=820.0, flag_a=650.0, farm=450.0, c123=450.0, portal=420.0,
+# pass 4 review: the compile made 15,033 areas with these at ct_base +100, t_base +150, flag 820, flag_a 650, margin 160. Cut toward
+# ~12,000 (check_play --nav-plan on the pass 3 map: 115,469 -> ~91,000 cells): the CT disc ends 40 u past the wire, the T disc 50 u
+# inside its plateau edge (its pads, AA pits and hooches are all within r 1000), the flag discs 600 u (capture radius 350, flag spawns
+# at 230, cover counted to 600), road margins 64 u. Every station stays on the nav and both bases still route to every flag (check 9).
+NAV_ZONES = dict(ct_base=L.CT_PLATEAU_R - 70.0, t_base=L.T_PLATEAU_R - 50.0, flag=600.0, flag_a=600.0, farm=450.0, c123=450.0, portal=420.0,
                  waypoint=160.0, seed=160.0)
 
 

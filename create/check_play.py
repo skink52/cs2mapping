@@ -12,7 +12,7 @@ layout comes from an Adapter the project passes in. A project keeps a small tool
         ...
     sys.exit(CP.cli(MyMap()))
 
-usage (through the adapter): check_play.py <map.vmap> [--json out.json] [--only 1,2,T1] [--verbose] [--map out.png [x0,y0,x1,y1]]
+usage (through the adapter): check_play.py <map.vmap> [--json out.json] [--only 1,2,T1] [--verbose] [--map out.png [x0,y0,x1,y1]] [--nav-plan]
 
 The scene is rebuilt from the vmap itself: world meshes (classified per face by material: terrain, world, player clip, water; tool
 materials skipped, ladder volumes and nav markup kept aside), and every solid prop's physics hulls (the PhysicsHullFile / PhysicsMeshFile
@@ -36,7 +36,15 @@ of the graph ("open" state) and added back as extra blocked nodes ("closed" stat
  7 water         sheet edges above the ground (visible edge), sheets overlapping at one height (z-fight), deep walkable spots
  8 terrain       path slopes (Adapter.paths), ground through walk-in floors (Adapter.floors), terrain holes with nothing under them
  9 nav           WALKABLESEED boxes on walkable ground, NONAV boxes over no protected point (Adapter.nav_protect), ladder volumes
-                 with walkable ground at the bottom and the top, and the walkable area the seeds flood (an estimate of the nav size)
+                 with walkable ground at the bottom and the top, and the walkable area the seeds flood (an estimate of the nav size).
+                 Nav estimate and gate (when the adapter sets nav_cal or lists nav_stations / nav_routes, or with --nav-plan): the open
+                 walk graph flooded from the seeds (Adapter.nav_seed_ok) and the worlds in Adapter.nav_starts with every node inside a
+                 NONAV box taken out (what island removal leaves), in 16-u cells, m2 and nav areas projected linearly from a compile
+                 (Adapter.nav_cal = dict(areas=, cells=)); fails when a station (Adapter.nav_stations) is off that nav or a bot route
+                 (Adapter.nav_routes: world -> point) is lost or has no way back; warns over Adapter.nav_target areas or when a bot's
+                 nav route is over Adapter.nav_detour x the walking route of the same label (1b)
+    --nav-plan   check 9 with the boxes Adapter.planned_navboxes(sc) returns (the markup the generator would write now) instead of
+                 the vmap's: a markup change measured before the map is regenerated
  project checks  Adapter.extra_checks(ctx): [(id, title, fn(ctx) -> dict(result, fail, warn, lines))]
 Exit code 1 when a check fails. Numbers go to Adapter.out_json (or --json).
 """
@@ -144,6 +152,15 @@ class Adapter:
     def clip_tag(self, p): return None
     def paths(self, ctx): return []
     def nav_protect(self, ctx): return []
+    # ---- nav estimate and gate (check 9; all optional, see the docstring)
+    nav_cal = None              # dict(areas=N, cells=M) from a compile ("Nav mesh ... loaded with N nav areas" against M flooded cells)
+    nav_target = None           # warn above this many estimated nav areas
+    nav_detour = 1.35           # warn when a bot's nav route is this much longer than the walking route of the same 1b label
+    def nav_stations(self, ctx): return []      # (name, x, y, z[, rxy, rz, dz]) that must be on the nav (default radii 48 / 40, dz -8)
+    def nav_routes(self, ctx): return []        # (label, world, (x, y, z)): bots must route from the world's start nodes there and back
+    def nav_starts(self, ctx): return []        # world labels whose start nodes also start the flood (bots spawn there)
+    def nav_seed_ok(self, box): return True     # False: a WALKABLESEED box left out of the flood (one in a lobby far below the map)
+    def planned_navboxes(self, sc): return None # --nav-plan: [(prop, name, (x0, y0, z0, x1, y1, z1))] the generator would write now
     def water_edge_ok(self, x, y, z): return False
     def hole_ok(self, x, y): return False
     def extra_checks(self, ctx): return []
@@ -816,6 +833,74 @@ def reach(g, start, reverse=False):
     return seen
 
 
+# ================================================================ nav estimate (check 9)
+# Ported from projects/monsoon-cs2/tools/check_play.py (pass 3, 12 Nov 2026). There two compiles calibrated it: 378,891 flooded cells
+# = 33,661 areas (0.089 per cell, open valley kept) and 115,469 cells = 15,033 areas (0.130 per cell, mostly bases, village, roads);
+# pass 4 trimmed the open rims: 90,815 cells = 12,597 areas (0.139). Recalibrate Adapter.nav_cal after each compile whose markup changed:
+# the projection is linear in the flooded cells and good to about 1.5x for a very different markup; the cell count is the solid number.
+def nonav_nodes(G, boxes):
+    """bool (K * NC): nodes whose feet are inside a NONAV box (nav generation makes no area there and cannot cross it)"""
+    out = np.zeros((G.K, NX, NY), bool); Z = G.Z.reshape(G.K, NX, NY)
+    for (x0, y0, z0, x1, y1, z1) in boxes:
+        i0 = max(0, int(math.floor((x0 - X0) / CELL - 0.5)) + 1); i1 = min(NX, int(math.ceil((x1 - X0) / CELL - 0.5)))
+        j0 = max(0, int(math.floor((y0 - Y0) / CELL - 0.5)) + 1); j1 = min(NY, int(math.ceil((y1 - Y0) / CELL - 0.5)))
+        if i1 <= i0 or j1 <= j0: continue
+        zz = Z[:, i0:i1, j0:j1]
+        out[:, i0:i1, j0:j1] |= (zz >= z0) & (zz <= z1)
+    return out.reshape(G.K * NC)
+
+
+def nav_estimate(G, boxes, seeds, starts=(), cal=None):
+    """flood the open walk graph from the WALKABLESEED boxes `seeds` and the node ids `starts` with the nodes inside the NONAV `boxes`
+    taken out: the nodes the nav mesh would cover (island removal drops the rest).
+    -> dict(cells, area_m2, areas (None without cal), unmarked_cells, boxes, seeds, nav (bool per node), Wn (nav graph), start)"""
+    from scipy import sparse
+    walkable = (G.exists & ~G.blocked).ravel()
+    ok = walkable & ~nonav_nodes(G, boxes)
+    start = list(starts)
+    for b in seeds: start += G.nodes_near((b[0] + b[3]) / 2, (b[1] + b[4]) / 2, b[2] - 2.0, 40.0, 16.0)
+    start = sorted(set(i for i in start if ok[i]))
+    D = sparse.diags(ok.astype(np.int8), dtype=np.int8); Wn = (D @ G.walk @ D).tocsr(); Wn.eliminate_zeros()
+    nav = reach((Wn + Wn.T).tocsr(), start) if start else np.zeros(len(ok), bool)
+    Dw = sparse.diags(walkable.astype(np.int8), dtype=np.int8); Wa = (Dw @ G.walk @ Dw).tocsr()
+    allw = reach((Wa + Wa.T).tocsr(), start) if start else np.zeros(len(ok), bool)
+    cells = int(nav.sum())
+    areas = int(round(cells * cal['areas'] / cal['cells'])) if cal and cal.get('cells') else None
+    return dict(cells=cells, area_m2=round(cells * (CELL * 0.0254) ** 2), areas=areas, unmarked_cells=int(allw.sum()), boxes=len(boxes), seeds=len(seeds),
+                nav=nav, Wn=Wn, start=start)
+
+
+def nav_gate(ctx, ne, walk_routes=None):
+    """stations on the nav and bot routes on it (Adapter.nav_stations / nav_routes) -> dict(off, lost, routes, detours)"""
+    from scipy.sparse import csgraph
+    from scipy import sparse
+    A, G = ctx.A, ctx.G; nav = ne['nav']
+    off = []
+    for s in A.nav_stations(ctx):
+        nm, x, y, z = s[:4]; rxy, rz, dz = (tuple(s[4:7]) + (48.0, 40.0, -8.0)[len(s[4:7]):])
+        if not any(nav[i] for i in G.nodes_near(x, y, z + dz, rxy, rz)): off.append(nm)
+    routes = {}; lost = []; detours = []
+    rts = A.nav_routes(ctx)
+    if rts:
+        Wn = ne['Wn'].tocoo(); ca = Wn.row % NC; cb = Wn.col % NC
+        Gn = sparse.csr_matrix((CELL * np.hypot(ca // NY - cb // NY, ca % NY - cb % NY) + 0.01, (Wn.row, Wn.col)), shape=Wn.shape)
+        dist = {}; back = {}
+        for (label, w, (x, y, z)) in rts:
+            if w not in dist:
+                st = [i for i in ctx.home.get(w, []) if nav[i]]
+                dist[w] = csgraph.dijkstra(Gn, indices=st, min_only=True) if st else None
+                back[w] = reach(ne['Wn'], st, reverse=True) if st else None
+            if dist[w] is None: lost.append('%s (world %s has no nav)' % (label, w)); routes[label] = None; continue
+            ids = [i for i in G.nodes_near(x, y, z - 8.0, 120.0, 80.0) if nav[i]]
+            d = min((dist[w][i] for i in ids), default=np.inf)
+            routes[label] = round(float(d)) if np.isfinite(d) else None
+            if not np.isfinite(d): lost.append(label)
+            elif not any(back[w][i] for i in ids): lost.append(label + ' (no way back)')
+            wr = (walk_routes or {}).get(label)
+            if wr and np.isfinite(d) and d > A.nav_detour * wr: detours.append('%s nav %d vs walk %d' % (label, d, wr))
+    return dict(off=off, lost=lost, routes=routes, detours=detours)
+
+
 # ================================================================ line of sight (2.5D)
 class Sight:
     def __init__(self, G, sc, A):
@@ -914,10 +999,14 @@ class Ctx:
 
 
 # ================================================================ the checks
-def run(path, A, only=None, out_json=None, verbose=False, plot=None, box=None):
+def run(path, A, only=None, out_json=None, verbose=False, plot=None, box=None, nav_plan=False):
     t0 = time.time()
     setup_grid(A.extent, A.cell)
     sc = load_scene(path, A, verbose)
+    if nav_plan:
+        planned = A.planned_navboxes(sc)
+        if planned is None: raise SystemExit('--nav-plan: the adapter has no planned_navboxes()')
+        sc = dict(sc, navboxes=list(planned))
     if verbose: print('  scene ready %.1fs' % (time.time() - t0))
     G = Grid(sc, verbose)
     ctx = Ctx(path, A, sc, G, verbose)
@@ -1294,6 +1383,24 @@ def run(path, A, only=None, out_json=None, verbose=False, plot=None, box=None):
         for l in lad: print('    ladder volume %s (%s): bottom nodes %d (floor %s, volume starts %s u above it), top nodes %d (floor %s)'
                             % (l['box'], l['vg'] or 'ungrouped', l['bottom_nodes'], l['bottom_floor'], l['gap_bottom'], l['top_nodes'], l['top_floor']))
         if bad_seed or covered or any(not l['bottom_nodes'] or not l['top_nodes'] for l in lad): fails.append('nav')
+        if nav_plan: print('    (boxes from the nav plan, not the vmap)')
+        # the nav the compile would make (estimate), every station on it, every bot route on it (ported from monsoon-cs2, pass 3)
+        stations = A.nav_stations(ctx); nroutes = A.nav_routes(ctx)
+        if A.nav_cal or stations or nroutes or nav_plan:
+            starts = sum((list(ctx.home.get(w, [])) for w in A.nav_starts(ctx)), [])
+            ne = nav_estimate(G, [b for p, n, b in nonav], [b for p, n, b in seeds if A.nav_seed_ok(b)], starts, A.nav_cal)
+            gate = nav_gate(ctx, ne, res.get('1b', {}).get('routes'))
+            res['9'].update(nav_cells=ne['cells'], nav_m2=ne['area_m2'], nav_areas_est=ne['areas'], unmarked_cells=ne['unmarked_cells'],
+                            stations_off_nav=gate['off'], bot_routes=gate['routes'], bot_routes_lost=gate['lost'], bot_detours=gate['detours'], nav_plan=bool(nav_plan))
+            print('    nav estimate: %d walk cells of %g u (%d m2) flooded from %d seeds + %d start nodes, %d without the NONAV boxes%s'
+                  % (ne['cells'], CELL, ne['area_m2'], ne['seeds'], len(starts), ne['unmarked_cells'],
+                     '; ~%d nav areas (linear in cells: %d cells = %d areas)' % (ne['areas'], A.nav_cal['cells'], A.nav_cal['areas']) if ne['areas'] is not None else ''))
+            if nroutes: print('    bot routes on the nav: ' + ', '.join('%s %s' % (k, v if v is not None else 'LOST') for k, v in gate['routes'].items()))
+            if stations: print('    stations off the nav: %d of %d%s' % (len(gate['off']), len(stations), (' ' + ', '.join(gate['off'][:12])) if gate['off'] else ''))
+            for x_ in gate['lost']: print('    bots cannot route', x_)
+            if gate['off'] or gate['lost']: fails.append('nav')
+            if gate['detours']: warn.append('bot nav detours over %.2f x the walking route: %s' % (A.nav_detour, '; '.join(gate['detours'])))
+            if ne['areas'] and A.nav_target and ne['areas'] > A.nav_target: warn.append('nav estimate ~%d areas (target under %d)' % (ne['areas'], A.nav_target))
         lap('9')
 
     # ---------------------------------------------------------------- project checks
@@ -1459,7 +1566,7 @@ def cli(A, argv=None):
     if '--map' in argv:
         i = argv.index('--map'); plot = argv[i + 1]
         if len(argv) > i + 2 and re.fullmatch(r'[-\d.,]+', argv[i + 2]): box = [float(v) for v in argv[i + 2].split(',')]
-    ctx = run(argv[0], A, only, oj, '--verbose' in argv, plot, box)
+    ctx = run(argv[0], A, only, oj, '--verbose' in argv, plot, box, nav_plan='--nav-plan' in argv)
     return 1 if ctx.fails else 0
 
 

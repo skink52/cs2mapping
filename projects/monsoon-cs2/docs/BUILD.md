@@ -4,8 +4,8 @@ AI-generated (Claude) for skink52. The terse command sheet is [../tools/build_mo
 each step is there and what to look for.
 
 **How far this is checked (12 Nov 2026).** Steps 1-11 have been run on this PC. The assets and the map are **compiled**
-(resourcecompiler, no errors; records in [BUILD_LOG_1.md](BUILD_LOG_1.md)): `maps/mg_monsoon.vpk` (final build, 66 min) and the 3D
-skybox `maps/mg_monsoon_3dskybox.vpk`. Nothing is Hammer verified or in-game verified: step 12 (launch) has not been run.
+(resourcecompiler, no errors; records in [BUILD_LOG_1.md](BUILD_LOG_1.md)): `maps/mg_monsoon.vpk` (final build, 42 min since the nav
+cut of stage 3; latest: stage 4, 12,597 nav areas) and the 3D skybox `maps/mg_monsoon_3dskybox.vpk`. Nothing is Hammer verified or in-game verified: step 12 (launch) has not been run.
 
 ## Before you start
 
@@ -35,7 +35,7 @@ skybox `maps/mg_monsoon_3dskybox.vpk`. Nothing is Hammer verified or in-game ver
 | 8 | Script + tests | from the project folder: `node tools/build_script.mjs`; `node test/mock.mjs 32 600`; `node test/mock.mjs 4 600`; `tsc -p test/tsconfig.json`; from `cs2mapping`: `python create/test/api.py --strict --check projects/monsoon-cs2/out/addon/maps/scripts/mg_monsoon.js` | under 2 min | both mock runs PASS, nothing invalid or deprecated |
 | 9 | Deploy | from the project folder: `python -I tools/deploy_monsoon.py` then `--apply` | dry run seconds; first apply about 1.2 GB copied, 1-3 min | see "Deploy" |
 | 10 | Compile assets, HUD, script | see "Compile" | first time 9 min (measured 12 Nov 2026) | `logs\mg_monsoon_assets.log` |
-| 11 | Compile the map, then the 3D skybox map | `build_maps.ps1 final mg_monsoon`, then `build_maps.ps1 final "mg_monsoon mg_monsoon_3dskybox"`, each under the watchdog | 66 min + skybox (measured 12 Nov 2026) | see "What to read in the build log" |
+| 11 | Compile the map, then the 3D skybox map | `build_maps.ps1 final mg_monsoon`, then `build_maps.ps1 final "mg_monsoon mg_monsoon_3dskybox"`, each under the watchdog | 42 min (stage 4, 12 Nov 2026; 66 min before the nav cut) + skybox | see "What to read in the build log" |
 | 12 | Launch | see "Local test with bots" | | TESTING_MONSOON.md |
 
 Order matters in three places: the map (4) needs the props, Apache and `out/props.json`; the HUD (7) preloads the slides and the board
@@ -53,8 +53,9 @@ fourth, so Hammer edits survive (vis groups `mv_gen` / `mv_user`). Back the live
 (`python C:\source1\cs2port\tools\mapbackup.py`, or copy it).
 
 Step 3 is optional for a rebuild: the conversions are already in `out/addon/models/mv/ext` (264 MB) and
-`materials/models/mv/ext` (280 MB). As generated on 11 Nov 2026 the map references **none** of them (the deploy dry run prints the
-list the vmap uses); they are a Workshop blocker if they ever are placed, see [WORKSHOP_COMPLIANCE.md](WORKSHOP_COMPLIANCE.md).
+`materials/models/mv/ext` (280 MB). Since the integration pass of 12 Nov 2026 the map **places 35 of them** (the Mi-8s, trucks,
+APCs, crash hulks, foliage and more; the deploy dry run prints the list the vmap uses). They are a Workshop blocker: the risk table
+per model is in [WORKSHOP_COMPLIANCE.md](WORKSHOP_COMPLIANCE.md).
 
 ## Deploy (step 9)
 
@@ -75,7 +76,8 @@ python -I tools/deploy_monsoon.py --apply    # copies; record in out/deploy/mg_m
   `basic_linear_post.vpost` from `addon_template`, and an empty game-side `addoninfo.txt`.
 - README_MONSOON.md, TESTING_MONSOON.md, CREDITS.md and both licence files go to both addon roots;
   `docs/WORKSHOP_DESCRIPTION.txt` becomes `mg_monsoon STEAM DESCRIPTION.txt` in the content addon (a hand-edited copy is kept).
-- `--skip-ext` leaves the GMod conversions out (544 MB less); only safe while the vmap references none of them.
+- `--skip-ext` leaves the GMod conversions out (544 MB less). Not safe for the current map, which places 35 of them (the compile
+  would miss those models); only for a map generated with `MV_NO_EXT=1` ([WORKSHOP_COMPLIANCE.md](WORKSHOP_COMPLIANCE.md)).
 
 Dry run of 12 Nov 2026, 03:15 (addon not yet created): 2697 files to copy plus 3 written (sound events, `addoninfo.txt`, the
 Steam description), 1157 MB, 0 to replace, 0 only in the destination; the largest parts are models about 540 MB and materials
@@ -143,10 +145,13 @@ From Git Bash quote the script path in single quotes (`'C:\source1\cs2port\build
   19.4 min (121,116 regions, 152,878 clusters merged to 4,096), lighting 14.5 min (charting 2 min, GPU lightmapping 10 min),
   nav + CSGO AI data about 28 min, of which "Compute Approach areas" alone is 26 min on one core with no log line until it ends,
   Steam Audio + bomb damage about 3 min. CPU at one core with a quiet log during approach areas is normal.
+  With the NONAV plan (`mv_entities.nonav_boxes`): stage 3 **41.5 min**, 15,033 nav areas, approach areas 348 s; stage 4 **42.0 min**,
+  **12,597 nav areas**, approach areas 454 s (BUILD_LOG_1.md "Stage 3", "Stage 4"). Expect about 42 min now, of which 6-8 min are
+  approach areas with a quiet log.
 - **The 3D skybox map needs its own build** (the main map's compile does not include it; its vpk holds no skybox world):
   `build_maps.ps1 final "mg_monsoon mg_monsoon_3dskybox"`, addon and map in **one quoted argument**, after the main map. Its log
   warns "No lightmap resolution volumes set": expected for a skybox map.
-- Checking on it: report elapsed against 66 min, whether CPU or the build log moved since the last look, and the last log line.
+- Checking on it: report elapsed against 42 min, whether CPU or the build log moved since the last look, and the last log line.
   No CPU, disk or log movement for 15 minutes = hung: stop it (and after stopping, `taskkill /PID <pid> /T /F` any
   `resourcecompiler.exe` this build left behind; never another session's). Two compiles of 12 Nov looked alive (one core at 100 %)
   but were stuck for good: in the map load (log stops at `Forced dmxconvert - Finished`, no "Settling physics objects" within a
@@ -171,11 +176,11 @@ From Git Bash quote the script path in single quotes (`'C:\source1\cs2port\build
 | packer asks for a higher `lightmapMaxResolution`, or a very small packer scale | too many charts for 2048 | same |
 | `no new mg_monsoon.vpk (exit code N)` | compile failed | the lines just above it in the build log |
 | `could not move ... (is the map loaded in CS2 or Hammer?)` | the vpk is still in the temp outroot | close the map, build again |
-| nav lines (`-nav`): area count | the nav mesh | mg_trenchwarfare lost FPS with 44k areas; the NONAV boxes are meant to keep this far lower. A count near that means `func_nav_markup` did not apply |
+| nav lines (`-nav`): area count | the nav mesh | mg_trenchwarfare lost FPS with 44k areas; the NONAV boxes keep this one at 12,597 (stage 4; `check_play.py` check 9 estimates it before a compile). A count far above that means `func_nav_markup` did not apply |
 
 First compile, 12 Nov 2026 (BUILD_LOG_1.md "Stage 2"): charting 1,830 unique meshes in 120 s, 270,837 UV charts into 2048 x 2048,
 no out-of-memory; nav 33,661 areas (`Nav mesh (v36/1) loaded with 33661 nav areas`); vis 4,096 clusters; 0 DELETED, 0 missing
-models or materials. Compiler build `pc64 Nov 11 2026` (from the log). The CS2 game build number (`version` in the console) is
+models or materials. After the nav cut: 15,033 areas (stage 3), 12,597 areas (stage 4, `OK: 506 compiled, 0 failed`). Compiler build `pc64 Nov 11 2026` (from the log). The CS2 game build number (`version` in the console) is
 still to be recorded at the first launch.
 
 ## Local test with bots (step 12)
@@ -190,11 +195,12 @@ and inactive). After the game is closed again, deploys are allowed.
    (or pick `mg_monsoon` in the Workshop Tools launcher). This is a local listen server; the script adds the bots itself.
 2. Console: `map mg_monsoon`. Then `version` and note the build number in NOTES.md.
 3. Expect in the console, in this order (none of this has been seen yet):
-   - `[mv] mg_monsoon script mv-0.3 (12 Nov 2026, review pass 1) - flags 5, bots on (quota 10)`
-   - `[mv] round 1 start (mv-0.3 (12 Nov 2026, review pass 1))`
+   - `[mv] mg_monsoon script mv-0.5 (12 Nov 2026, review pass 3: bot balance) - flags 5, bots on (quota 10)`
+   - `[mv] round 1 start (mv-0.5 (12 Nov 2026, review pass 3: bot balance))`
    - `[mv] points: spawns 16/16, helicopters 3/3, guns 4/3, mounts 8, uniforms cached N`
    - no `[mv] missing entity <name>` and no `[mv] error in ...` line
-   - once a minute: `[mv] script time X ms/tick avg, Y max over N ticks, P players, errors 0`
+   - once a minute: `[mv] perf: X ms/tick avg, Y ms max, N ticks, H HUD calls/tick, P players (Q human), F flying, R rockets, S shells, tickets T/C, errors 0`
+     (`src/90_main.js`; the version string is `VERSION` in `src/00_config.js`)
 4. Bots: the script sets `bot_quota_mode fill` and `bot_quota 10` when it activates. `!bots 14` in chat changes the quota
    (0 to 24), `!bots 0` removes them. With fewer than 4 humans on a team, bots are also put in a helicopter, on guns and on one
    battery crew.

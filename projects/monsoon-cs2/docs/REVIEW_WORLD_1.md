@@ -336,3 +336,110 @@ Builds: 1 the M113 roof and a hut roof as pockets, one stall short, one platform
 (check 9 estimate and bot routes, `--nav-plan`, nypa as a tree), `tools/mv_places.py` (temple ghat, court order, knoll-foot ruins;
 village market lane, platforms, hut roof clips; firebase gate items). No props rebuilt, no layout change; `docs/CONTRACT.md`
 unchanged.
+
+## Pass 4 (12 Nov 2026): C-E balance, nav toward 12,000, the village, the firebase leftovers
+
+Offline, then compiled (record: [BUILD_LOG_1.md](BUILD_LOG_1.md) "Stage 4"). Five map builds (`out/logs/p4_map1..5.log`); the fifth is
+the current `out/addon/maps/mg_monsoon.vmap`. The pass 3 map is kept as `out/review/p4/mg_monsoon_p3.vmap` for the before renders.
+
+### C-E route balance (the CT deploy point)
+Every CT route started behind gun pit 1: the spawn ring (rack at base centre + (-20, -230)) lay south-east of the pit and the gate
+north-west of it, so each route first walked round the pit's ring. Before moving anything, every candidate ring centre inside the wire
+(60-u grid) was measured on the pass 3 walk graph (reverse Dijkstra from each flag, the min over the 16 ring points, the T side fixed).
+Moving the ring toward the gate shortens every CT route by the same amount, so A-D and B move with C-E: a 500-u move (the open ground
+north of the pit) would have made C-E 0.87 and A-D 0.87. The chosen point, 190 u west (rack at centre + (-200, -180)), takes 133 u off
+each CT route. Further west the ring meets pit 2's sandbags, further north the FDC bunker. The battery was not turned: a pit at 280 deg
+would stand in pad 1's rotor cylinder.
+
+| check_play 1b | Pass 3 | Pass 4 (build 5) |
+|---|---|---|
+| CT / T to A | 7028 / 4632 | 6895 / 4632 |
+| CT / T to B | 5632 / 5291 | 5499 / 5291 |
+| CT / T to C | 7349 / 3511 | 7216 / 3513 |
+| CT / T to D | 4799 / 6894 | 4626 / 6894 |
+| CT / T to E | 3598 / 6797 | 3465 / 6797 |
+| mirror balance A-D / C-E / B | 1.06 / **1.11** / 1.06 | **1.00 / 1.05 / 1.04** |
+
+The firebase's `POCKET_FILL` was re-derived (a scratch probe takes the fill clips out of check_play's scene and lists the stuck cells
+inside the wire; build 3 showed that the new cells alone reopen the pass 2 remnant pockets, so the fill is the union of both, plus
+build 4's three remnant cells): 50 column runs, 139 cells. New ones: the ammo point's yard behind its crate stacks (19 cells, entered by dropping off the stacks), the foot of the
+tower ladder, one cell by pit 3 and two by the east bunker.
+
+### Nav toward 12,000 areas
+Measured with `check_play.py --nav-plan` (and a scratch probe running several settings on one walk graph) before regenerating. Where
+the pass 3 nav was: base discs 38,600 cells, the five flag discs 32,400, road margins 27,500 (14,200 of them in no other zone), the
+corridors 10,100, the paddies 8,800.
+
+| Setting (`mv_entities`) | Pass 3 | Pass 4 | Cells (estimate) |
+|---|---|---|---|
+| all as pass 3 | | | 115,469 (15,033 compiled) |
+| `NAV_ZONES['flag']` | 820 | 600 (capture radius 350, flag spawns at 230, cover counted to 600) | 110,410 at 650 alone |
+| `NAV_ZONES['flag_a']` | 650 | 600 (the paddy field stays whole) | |
+| `NAV_MARGIN` (beyond a road's half width) | 160 | 64 | 111,645 at 110 alone |
+| `NAV_ZONES['ct_base']` | plateau + 100 (1300) | plateau - 70 (1130: the wire at 1090 + 40) | |
+| `NAV_ZONES['t_base']` | plateau + 150 (1400) | plateau - 50 (1200: pads, AA pits and hooches lie within r 1000) | |
+| all four together | | | **90,815** on build 5 (~11,823 areas on the pass 3 calibration), 250 NONAV boxes |
+
+Check 9 on build 5: 0 stations off the nav (waypoint "behind the waterfall" off by design), every flag routed from both spawn rings
+and back; bot nav routes CT / T: A 6895 / 4632, B 6284 / 5712, C 7815 / 3513, D 4776 / 7054, E 3465 / 7622 (worst detour C 1.08 x the
+walking route). The estimate is linear in cells; what was cut (base rims, road shoulders, flag rims) is open ground, which the compiler
+covers with larger areas than the average kept cell, so the compile was expected somewhat above 11,800. **Compiled: 12,597 areas**
+(stage 4; check 9 is recalibrated on it, 0.139 areas per cell). "Compute Approach areas" took 454 s (stage 3: 348 s): not
+proportional to the count, the dense base and village nav is what costs there.
+
+### Village
+- **Pocket** (256 u2 at (-1064, 1976), a jump got out): a crater stone 20 u from the south-west hut's corner left one cell between them
+  that a player dropped into off the stone. Crater stones now keep a 40-u pad from every prop (`roads_and_craters`); 0 pockets there.
+- **9th hut**: a last ring of spots on the terrace edge (r 620-740, not 195-285 deg where the T-54 and a thicket stand), each at least
+  300 u from every standing hut (they stand 300-400 apart) and fitted with a 24-u pad. One fits: `hooch_b` at (470, 2430), r 771, east,
+  in its own clearing beyond the pig pen (no neighbour within 300 u). It took one hedge bank's spot on the outer ring (hedges /
+  thickets 2 -> 1). 9 huts, 2 platforms, 3 stalls, 3 cook fires, the shrine.
+
+### Firebase: antenna mast, crew tent, second latrine
+The deploy point's move freed the strip between the FDC bunker, pit 3 and pad 1's rotor cylinder, but only 190 u wide between the
+spawn ring and the wind sock. The antenna mast needs 248 u with its pad (guy anchors 262 x 228), a GP crew tent (0.85) 260 u: **no
+room, left out**. Build 2 placed the **second latrine** there, against the FDC bunker's back wall (the scan takes the spot nearest the
+centre); a latrine on the command bunker is not where one stands, so it now needs a 40-u pad and 450-810 u from the centre, and finds
+**no spot: left out**. The water trailer (scan) took the freed strip by the FDC (it stood by the south wall in pass 3). The culvert bunker
+and the M113 are no longer tried inside the wire: both stand at the gate since pass 3.
+
+### Also fixed
+- Build 2: a nypa palm 7.4 u over a slope (check 6): understorey nypa palms are sunk to the coarse terrain mesh's low side under their
+  36-u trunk footprint (`TER.mesh_low`, minus 18 tan(slope)). Build 4: check_world then read 25 of them as more than 8 u under the
+  smooth field; those are listed as exceptions (tag "rooted in slope"), as the dike bamboo are.
+
+### Checks on build 5
+| Check | Pass 3 (build 6) | Pass 4 (build 5) |
+|---|---|---|
+| check_play 1 stuck pockets (no jump out) | 1 (0): 256 u2 in the village | **0 (0)** |
+| check_play 1 targets unreachable | 0 of 121 | 0 of 121 |
+| check_play 1b A-D / C-E / B | 1.06 / 1.11 / 1.06 | **1.00 / 1.05 / 1.04** |
+| check_play 3 cover A-E | 14 / 17 / 25 / 38 / 42 | 14 / 17 / 26 / 38 / 42 |
+| check_play 4, 5, 6, 7, 8 | clean | clean |
+| check_play 9 nav | 243 boxes, 115,469 cells, 15,033 areas (compiled) | 250 boxes, 90,815 cells, ~11,823 estimated, **12,597 compiled**; 0 stations off, 0 routes lost |
+| check_world | clean | clean (6,841 prop_static, 0 overlaps, 0 off the ground) |
+| check_mesh | 0 bad | 1,377 meshes 0 bad |
+| map | 57.9 MB, 7,674 entities | 57.9 MB, 7,663 entities |
+
+Builds: 1 the C-E move measured (1.05), the old fill no longer matched (4 pockets without a jump out, the ammo yard), the trailer took the
+freed strip; 2 latrine against the FDC, a nypa palm floating, the 9th hut placed; 3 the derived fill alone reopened 4 pass 2 pockets;
+4 three remnant cells, 25 sunk nypa palms read as buried by check_world; 5 clean.
+
+Renders (`out/review/p4/`): `firebase_before.png` / `firebase_after.png` and `village_before.png` / `village_after.png`
+(`tools/vmap_preview.py`, world meshes only: the changes here are props, so they show the same ground), and the plans with props and
+the walk graph, `firebase_plan_before.png` / `firebase_plan_after.png`, `village_plan_before.png` / `village_plan_after.png`
+(`view_world.py top`), looked at: the spawn ring now west of the FDC with open ground to the gate track, the water trailer in the strip
+by the FDC, the ammo yard clipped (no magenta); the 9th hut east beyond the pig pen with its own yard, no pocket at the crater stones.
+
+### Left (pass 4)
+- Antenna mast, GP crew tent, second latrine: no clean room inside the wire (above).
+- One hedge bank fewer at the village (the 9th hut stands on its spot).
+- Nav 12,597 areas compiled; approach areas 454 s. Further cuts belong inside the bases (fewer, larger areas among the clutter), not
+  on the outer rims.
+
+### Changed files (pass 4)
+`tools/layout.py` (CT rack and spawn ring), `tools/mv_entities.py` (`NAV_ZONES`, `NAV_MARGIN`), `tools/mv_places.py` (firebase scan
+order and latrine rule, no inside culvert / M113 tries, `POCKET_FILL` re-derived; village 9th-hut ring; crater stones pad 40; nypa sink).
+No props rebuilt; `docs/CONTRACT.md` unchanged. Repo: `create/check_play.py` gained the nav estimate and gate (`nonav_nodes`,
+`nav_estimate`, `nav_gate`, Adapter `nav_cal` / `nav_target` / `nav_detour` / `nav_stations` / `nav_routes` / `nav_starts` /
+`nav_seed_ok` / `planned_navboxes`, `--nav-plan`).

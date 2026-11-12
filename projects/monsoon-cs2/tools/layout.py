@@ -524,8 +524,11 @@ def firebase():
         road_in=[pol(c, wall_r + 40.0, gate_a), r0, (c[0] - 330.0, c[1] + 300.0), (c[0] - 150.0, c[1] - 120.0)],   # track inside the wall
         wire_r=wall_r,
         fuel=pol(c, 930.0, 290.0),
-        rack=(c[0] - 20.0, c[1] - 230.0),
-        spawns=ring((c[0] - 20.0, c[1] - 230.0), 130.0, 16, start=0.3))
+        # pass 4 review: the deploy point (rack + spawn ring) 190 u west, toward the gate (was c + (-20, -230)): every CT route walked round
+        # gun pit 1 to the gate first (C-E mirror balance 1.11). Measured on the pass 3 walk graph before the move: A-D 1.06 -> 1.01,
+        # C-E 1.11 -> 1.05, B 1.06 -> 1.04 (further west the ring meets pit 2's sandbags, further north the FDC bunker)
+        rack=(c[0] - 200.0, c[1] - 180.0),
+        spawns=ring((c[0] - 200.0, c[1] - 180.0), 130.0, 16, start=0.3))
 
 
 def camp():

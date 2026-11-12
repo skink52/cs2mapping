@@ -226,3 +226,47 @@ the open valley sides that were taken out. `check_play.py` check 9 is recalibrat
 - C-E route balance 1.11 (REVIEW_WORLD_1 "Pass 3", Left).
 - The 3D skybox and the elephant grass VRAM points of Stage 2 are unchanged.
 - Not launched: BUILD.md step 12 is the next step, for skink52.
+
+## Stage 4: world pass 4, recompile (12 Nov 2026, compile 21:40-22:22)
+
+Level reached: the map is **compiled** again (resourcecompiler `OK: 506 compiled, 0 failed, 0 skipped, 41m:59s`, vpk in
+`game\csgo_addons\mg_monsoon\maps\`). Not Hammer verified, not in-game verified. No `cs2.exe` ran (checked before the deploy and the
+compile); the skybox agent's skybox compile had finished before this one started, and the 3D skybox map was not touched here (the deploy
+dry run did not list it). What changed in the world and why: [REVIEW_WORLD_1.md](REVIEW_WORLD_1.md) "Pass 4".
+
+### Commands and times
+| # | What | Command | Time | Result |
+|---|---|---|---|---|
+| 1 | Map, 5 builds | `watchdog ... -- python -u make_map.py ../out/template.vmap ../out/addon/maps/mg_monsoon.vmap ../out/addon` (logs `out/logs/p4_map1..5.log`) | 9-10 min each (540-615 s) | build 5: 7,663 entities, 1,377 meshes, 267 `func_nav_markup` (15 seeds, 250 NONAV) |
+| 2 | Offline checks on build 5 | `check_mesh.py`, `check_world.py`, `check_play.py`; `make_radar.py ../out/addon ../out/game`, `render_board.py ../out/addon`, `mv_hud.py ../out/addon`; project folder: `node tools/build_script.mjs`, `node test/mock.mjs 32 300` | about 6 min in all | 0 bad / clean / clean (9) / done / HUD 0 problems / mock PASS (mv-0.5, 3,597 lines) |
+| 3 | Deploy | `python -I tools/deploy_monsoon.py --list` (dry run), then `--apply` | seconds | 9 replaced (`mg_monsoon.vmap`, backed up as `mg_monsoon.vmap.bak_20261112_213946`; README / TESTING / CREDITS / LICENSE in both addon roots, the committed release docs), 3,118 unchanged, skybox vmap not listed; `out/deploy/mg_monsoon_deploy_20261112_213946.json` |
+| 4 | Map | from `C:\source1\cs2port`: `watchdog --label "mg_monsoon map p4" --expect 2500 --heartbeat 300 --stall 900 --max 7500 --log logs\mg_monsoon_p4_watch.log --watch logs\mg_monsoon_build.log -- powershell ... build_maps.ps1 final mg_monsoon` | **42.0 min** (21:40-22:22) | `OK in 42 min - mg_monsoon.vpk moved`; logs kept as `out/logs/mg_monsoon_build_p4.log`, `mg_monsoon_p4_watch.log` |
+
+The script (`mg_monsoon.js`) was unchanged by this pass (the deploy found it identical), so it was not recompiled.
+
+### Before / after
+| | Stage 3 | Stage 4 |
+|---|---|---|
+| Whole compile | 41.5 min | 42.0 min |
+| Nav polys: Recast / after NONAV / merged / before island removal | 43,638 / 31,386 / 20,882 / 20,163 | 40,191 / 27,485 / 18,149 / 17,576 |
+| **Nav areas** (`Nav mesh (v36/1) loaded with N nav areas`) | **15,033** | **12,597** |
+| CSGO: early occupy / hiding / encounter / **approach areas** | 14 s / 7 s / 22 s / **348 s** | 11 s / 6 s / 17 s / **454 s** |
+| nav file | | 2,928,009 bytes |
+| Vis | 152,931 clusters merged to 4,096 | 152,931 clusters generated, merged to the 4,096 cap |
+| Lightmap | 1,893 meshes charted in 118 s, 290,597 charts | 1,883 meshes in 118 s, 291,230 charts, no out-of-memory |
+| Bomb damage bake | 53 s | 569,670 nav points sampled |
+| vpk | 176,247,792 bytes | 170,748,319 bytes |
+| `DELETED` props / entities | 0 | 0 (the only "deleted" lines are Steam Audio's "baked data file will be deleted") |
+| Missing models / materials of ours | 0 | 0 (only the known `survival_river_0{2,4}_..._tga_...` water textures, 16 error-texture fallbacks for them, and `detail_prop_types.vdata_c`, harmless, see Stage 2) |
+
+The nav estimate before the compile said ~11,823 (pass 3 calibration); the compile made 12,597 (the cut rims were open ground, cut into
+larger areas than the average kept cell). `check_play.py` is recalibrated on this compile (90,815 cells = 12,597 areas, 0.139 per
+cell). "Compute Approach areas" took **longer** than in stage 3 (454 s against 348 s) with 16 % fewer areas: its cost is not
+proportional to the area count here (the areas taken out were large open ones; what is left is the dense base, village and road nav).
+Whole compile time is unchanged.
+
+### Remains
+- Approach areas 454 s: the next lever, if it matters, is fewer small areas inside the bases (the firebase and camp clutter cut the nav
+  into small pieces), not the outer rims.
+- FPS with bots at 12,597 areas is to be seen at the first launch (mg_trenchwarfare lost FPS at 44k, runs 4,376).
+- Not launched: BUILD.md step 12 is the next step, for skink52.

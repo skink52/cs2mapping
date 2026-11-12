@@ -193,7 +193,7 @@
   },
   "create/check_play.py": {
    "origin": "monsoon-cs2:tools/check_play.py",
-   "seen": "f5630176e888515323a98ec74e714d7832607205"
+   "seen": "2eb89b3674e9e8ac991121d0353877069801ea9c"
   },
   "create/chiptune.py": {
    "origin": "space-racer-cs2:tools/sounds.py",

@@ -475,8 +475,10 @@ def reach(g, start, reverse=False):
 # "Nav mesh (v36/1) loaded with 33661 nav areas" (0.089 areas per cell). Pass 3 (the NONAV plan of mv_entities.nonav_boxes):
 # 115,469 cells, 15,033 areas (0.130 per cell): what bots keep (bases, village, props, roads) is cut into smaller areas than the
 # open valley that was taken out, so the pass 3 point is used. Linear in the flooded cells, good to about 1.5x for a very
-# different markup; the cell count is the solid number.
-NAV_CAL = dict(areas=15033, cells=115469)
+# different markup; the cell count is the solid number. Pass 4 (flag discs 600, road margins 64, base discs to the wire): 90,815
+# cells, estimated ~11,823 on the pass 3 point, compiled 12,597 areas (0.139 per cell: the open rims taken out were cut into larger
+# areas than the average kept cell). The pass 4 point is used now.
+NAV_CAL = dict(areas=12597, cells=90815)
 NAV_TARGET = 15000             # areas: warn above this (the first compile's approach-area pass took 26 min at 33,661)
 NAV_DETOUR = 1.35              # warn when a bot's nav route to a flag is this much longer than the walking route (1b)
 
@@ -1130,7 +1132,7 @@ def main(path, only=None, out_json=None, verbose=False, nav_plan=False):
         ne = nav_estimate(G, sc, ents, boxes=[b for p, n, b in nonav], seeds=[b for p, n, b in seeds if b[2] > L.LOBBY_Z + 1500])
         nav = ne['nav']
         print('    nav estimate: %d walk cells of 16 u (%d m2) flooded from %d seeds + the base spawns, %d without the NONAV boxes; ~%s nav areas '
-              '(linear in cells, calibrated on the pass 3 compile: %d cells = %d areas)' % (ne['cells'], ne['area_m2'], ne['seeds'], ne['unmarked_cells'],
+              '(linear in cells, calibrated on the pass 4 compile: %d cells = %d areas)' % (ne['cells'], ne['area_m2'], ne['seeds'], ne['unmarked_cells'],
               ne['areas'], NAV_CAL['cells'], NAV_CAL['areas']))
         need = []
         for e in ents:

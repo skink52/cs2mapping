@@ -841,17 +841,19 @@ def firebase():
     inside = lambda x, y: math.hypot(x - c[0], y - c[1]) < wr - 90.0
     yaws4 = tuple(ang((0, 0)) + d_ for d_ in (0.0, 90.0, 45.0, 135.0))
     got_ = {}
-    for nm_, yw_, kw_ in (('water_trailer', yaws4, {}), ('antenna_mast', yaws4, {}), ('culvert_bunker', yaws4, {}), ('gp_tent', yaws4, dict(scale=0.85))):
+    # pass 4 review: the deploy point moved west (layout.firebase), which frees the ground between the FDC, pit 3 and pad 1's cylinder.
+    # The culvert bunker and the M113 stand at the gate since pass 3 (placed below), so they are no longer tried inside; the second
+    # latrine is tried only away from the wall (pass 2: its roof by the wall was the step onto the wall caps)
+    # (build 2: nearest the centre first, it stood against the FDC bunker's back wall; now with a 40-u pad and 450 u out at least)
+    inner = lambda x, y: 450.0 < math.hypot(x - c[0], y - c[1]) < wr - 280.0
+    # Build 1 of pass 4: the water trailer (first in the scan) took the freed strip by the FDC (190 u wide between the spawn ring and the
+    # wind sock: the mast needs 248 with its pad, a crew tent 260), so the latrine goes first and the trailer back to its pass 3 spot
+    for nm_, yw_, kw_, ok_ in (('antenna_mast', yaws4, {}, inside), ('gp_tent', yaws4, dict(scale=0.85), inside), ('latrine', yaws4, {}, inner),
+                               ('water_trailer', yaws4, {}, inside)):
         if nm_ in ('water_trailer', 'latrine') and W.count.get(S.mv(nm_), 0) >= (1 if nm_ == 'water_trailer' else 2): continue
-        got_[nm_] = W.scan(nm_, c[0], c[1], wr - 90.0, yw_, step=30.0, max_slope=9.0, pad=10.0, ok=inside, **kw_)
+        got_[nm_] = W.scan(nm_, c[0], c[1], wr - 90.0, yw_, step=30.0, max_slope=9.0, pad=40.0 if nm_ == 'latrine' else 10.0, ok=ok_, **kw_)
         if nm_ == 'gp_tent' and got_[nm_] is not None:
             clutter(rng, [('cot', 3), ('rucksack', 2), ('ammo_can', 1)], got_[nm_][0], got_[nm_][1], 10.0, 80.0)
-    if M.is_ext(M.static('apc') or ''):
-        q_ = None
-        for d_ in (0.0, 90.0, 45.0, 135.0):
-            q_ = W.park('apc', *L.pol(c, 520.0, 200.0), ang((0, 0)) + d_, search=wr - 120.0, step=40.0, max_slope=7.0, within=(c[0], c[1], wr - 110.0))
-            if q_ is not None: break
-        got_['m113'] = q_
     print('firebase pass 2: wind sock %s; %s' % ('placed' if ws_ else 'NOT placed', ', '.join('%s %s' % (k, 'placed' if v else 'no spot') for k, v in got_.items())))
     for a in (70.0, 118.0, 200.0, 255.0, 345.0):
         clutter(rng, [('drum_od', 1), ('ammo_crate', 1), ('rucksack', 1), ('jerry_can', 1), ('drum_rust', 1)], *L.pol(c, 940.0, a), 10.0, 90.0)
@@ -879,7 +881,11 @@ def firebase():
     # the quad .50 ring and pit 2, behind the sally blast wall) are clipped off: check_play's stuck cells of build 3 as column runs, each
     # inset 6 u so the clip never reaches a walkable neighbour. The firebase is laid out from its own RandomState: these stay put while
     # firebase() itself is unchanged; re-derive them (check_play pocket list) after any change here.
-    POCKET_FILL = [[2896, -3280, 2912, -3264, 620], [2912, -3312, 2928, -3264, 620], [2928, -3360, 2944, -3264, 620], [2944, -3392, 2960, -3264, 620], [2960, -3408, 2976, -3264, 620], [2976, -3392, 2992, -3264, 620], [2992, -3376, 3008, -3296, 620], [3008, -3376, 3024, -3312, 620], [3024, -3360, 3040, -3296, 620], [3024, -3248, 3040, -3232, 620], [3040, -3344, 3056, -3232, 620], [3056, -3344, 3072, -3248, 620], [3056, -3216, 3072, -3184, 620], [3072, -3328, 3088, -3216, 620], [3088, -3632, 3104, -3616, 620], [3088, -3328, 3104, -3216, 620], [3104, -3360, 3120, -3296, 620], [3120, -3376, 3136, -3344, 620], [3136, -3408, 3152, -3376, 620], [3152, -3424, 3168, -3408, 620], [3200, -3552, 3216, -3536, 620], [3664, -3776, 3680, -3760, 620], [2880, -3056, 2896, -3040, 620], [2896, -3056, 2912, -3040, 620], [2912, -3216, 2928, -3200, 620], [2912, -3040, 2928, -3024, 620], [2928, -3216, 2944, -3200, 620], [2928, -3040, 2944, -3024, 620], [2944, -3040, 2960, -3024, 620], [2960, -3216, 2976, -3200, 620], [2992, -3264, 3008, -3248, 620], [2992, -3200, 3008, -3184, 620], [3008, -3296, 3024, -3264, 620], [3024, -3280, 3040, -3264, 620]]      # build 3 cells, then build 4's remnants round the quad .50
+    # pass 4 review: re-derived after the deploy point moved (layout.firebase), on build 2 of pass 4 (check_play's stuck cells inside the
+    # wire with the old fill taken out of the scene) and joined with the pass 2 cells (build 3: the new cells alone left the pass 2 remnant
+    # pockets open again in the south-west yard). New cells: the ammo point's yard behind its crate stacks, the foot of the tower ladder,
+    # one cell by pit 3 and two by the east bunker; build 4's three remnant cells (two in the south-west yard, one at the ladder foot)
+    POCKET_FILL = [[2880, -3056, 2896, -3040, 620], [2896, -3280, 2912, -3264, 620], [2896, -3056, 2912, -3040, 620], [2912, -3312, 2928, -3264, 620], [2912, -3216, 2928, -3200, 620], [2912, -3040, 2928, -3024, 620], [2928, -3360, 2944, -3264, 620], [2928, -3216, 2944, -3200, 620], [2928, -3040, 2944, -3024, 620], [2944, -3392, 2960, -3264, 620], [2944, -3040, 2960, -3024, 620], [2960, -3408, 2976, -3264, 620], [2960, -3216, 2976, -3200, 620], [2976, -3392, 2992, -3264, 620], [2992, -3376, 3008, -3296, 620], [2992, -3264, 3008, -3248, 620], [2992, -3200, 3008, -3184, 620], [3008, -3376, 3024, -3248, 620], [3024, -3360, 3040, -3232, 620], [3040, -3344, 3056, -3232, 620], [3056, -3344, 3072, -3248, 620], [3056, -3216, 3072, -3184, 620], [3072, -3328, 3088, -3216, 620], [3088, -3632, 3104, -3616, 620], [3088, -3328, 3104, -3216, 620], [3104, -3360, 3120, -3296, 620], [3120, -3376, 3136, -3344, 620], [3136, -3408, 3152, -3376, 620], [3152, -3424, 3168, -3408, 620], [3200, -3552, 3216, -3536, 620], [3600, -3776, 3616, -3744, 620], [3616, -3760, 3632, -3744, 620], [3632, -3760, 3648, -3744, 620], [3664, -3776, 3680, -3760, 620], [3968, -2928, 3984, -2848, 620], [3984, -2928, 4000, -2912, 620], [3984, -2880, 4000, -2848, 620], [4000, -2928, 4016, -2912, 620], [4016, -2928, 4032, -2880, 620], [4016, -2800, 4032, -2784, 620], [4032, -2928, 4048, -2880, 620], [4032, -2800, 4048, -2784, 620], [4048, -2928, 4064, -2880, 620], [4048, -2800, 4064, -2784, 620], [4064, -2928, 4080, -2912, 620], [4096, -3536, 4112, -3520, 620], [4864, -3136, 4880, -3104, 620], [2944, -3216, 2960, -3200, 620], [2976, -3200, 2992, -3184, 620], [3648, -3776, 3664, -3760, 620]]
     for (x0_, y0_, x1_, y1_, z_) in POCKET_FILL:
         W.clip(P.box((x0_ + 6.0, y0_ + 6.0, z_ - 6.0), (x1_ - 6.0, y1_ - 6.0, z_ + 200.0), mat=TER.CLIP))
     # pass 3 review: the gate. Two of the items the wire has no room for stand outside it, on the flat apron south of the road where it
@@ -1237,6 +1243,21 @@ def village():
             q = W.fit('hooch_b', x, y, yw_, search=180.0, step=30.0, max_slope=12.0, fit='min', pad=8.0, within=(c[0], c[1], 780.0))
             if q is not None: yaw = yw_; break
         if q is not None: placed.append((q[0], q[1], yaw))
+    # pass 4 review: the 9th hut. The list above leaves 8 since pass 3 (the market lane and the second platform took one hut's room);
+    # one more ring of spots on the terrace edge (not 195-285 deg: T-54, thicket), each at least 300 u from every hut already standing
+    # (the huts here stand 300-400 apart) and fitted with a 24-u pad, so it stands in its own yard rather than wedged between neighbours
+    for r_ in (620.0, 660.0, 700.0, 740.0):
+        for a_ in np.arange(0.0, 360.0, 10.0):
+            if len(placed) >= 9: break
+            if 195.0 < a_ < 285.0: continue
+            x, y = L.pol(c, r_, a_)
+            if min(math.hypot(x - p[0], y - p[1]) for p in placed) < 300.0: continue
+            yaw = a_ + 180.0
+            q = None
+            for yw_ in (yaw, yaw + 90.0):
+                q = W.fit('hooch_b', x, y, yw_, search=60.0, step=30.0, max_slope=14.0, fit='min', pad=24.0, within=(c[0], c[1], 790.0))
+                if q is not None: yaw = yw_; break
+            if q is not None: placed.append((q[0], q[1], yaw)); print('village: 9th hut at (%.0f, %.0f), r %.0f' % (q[0], q[1], math.hypot(q[0] - c[0], q[1] - c[1])))
     platforms([(c[0] + r_ * math.cos(math.radians(a_)), c[1] + r_ * math.sin(math.radians(a_)), a_ + 90.0, True) for r_ in (330.0, 400.0, 470.0, 540.0, 610.0)
                for a_ in np.arange(5.0, 360.0, 12.0) if not 195.0 < a_ < 285.0])
     # pass 2 review: three cook fires in front of huts (the yard ones were crowded out), each with its pots and a smoke column on one
@@ -1729,7 +1750,9 @@ def roads_and_craters():
         for j in range(3):
             a = rng.uniform(0, 360); x, y = L.pol((cx, cy), r * rng.uniform(1.0, 1.35), a)
             m = S.ROCKS[rng.randint(len(S.ROCKS))]; sc = rng.uniform(1.2, 2.4); lo, hi = W.B(m)
-            if W.prop(None, x, y, gz(x, y) - lo[2] * sc * 0.5, rng.uniform(0, 360), stock=m, scale=sc, check=True, pad=4.0, tag='rock') is not None: n += 1
+            # pass 4 review: pad 4 -> 40. A stone 20 u from a hut's corner left a one-cell gap between them that a player could drop into
+            # off the stone and only jump out of (the 256 u2 village pocket at (-1064, 1976)); 40 u is a gap a player walks through
+            if W.prop(None, x, y, gz(x, y) - lo[2] * sc * 0.5, rng.uniform(0, 360), stock=m, scale=sc, check=True, pad=40.0, tag='rock') is not None: n += 1
         if rng.uniform() < 0.4:
             x, y = L.pol((cx, cy), r * 1.5, rng.uniform(0, 360))
             if float(L.slope(x, y)) < 18.0: W.prop('log_fallen', x, y, None, rng.uniform(0, 360), check=True, pad=6.0)
@@ -1835,8 +1858,13 @@ def jungle():
             if W.prop(None, float(X[i]), float(Y[i]), float(Z[i]) - 4.0, rng.uniform(0, 360), stock=m, trunk=M.TRUNK[m], check=True, pad=16.0, scale=sc, solid='0') is not None:
                 W.trunk_clip(float(X[i]), float(Y[i]), float(Z[i]), M.TRUNK[m] * sc); cnt['small_tree'] += 1
             continue
-        W.prop(None, float(X[i]), float(Y[i]), float(Z[i]) - 3.0, rng.uniform(0, 360), stock=m, solid='0', reg=False,
-               scale=rng.uniform(0.9, 1.3) if M.is_ext(m) else rng.uniform(0.9, 1.5)); cnt['under'] += 1
+        z_ = float(Z[i]) - 3.0
+        if 'nypa' in m:         # pass 4 review: a nypa stood 7.4 u over a slope (check_play 6 reads it as a tree on a 36-u trunk footprint over
+            # the coarse terrain mesh): sink it to the mesh's low side under that footprint
+            # (listed as rooted in the slope when that is more than 8 u under the smooth field: check_world's ground test)
+            z_ = min(float(Z[i]), float(TER.mesh_low(float(X[i]), float(Y[i]))[0])) - 3.0 - 18.0 * math.tan(math.radians(float(sl[i])))
+        W.prop(None, float(X[i]), float(Y[i]), z_, rng.uniform(0, 360), stock=m, solid='0', reg=False,
+               scale=rng.uniform(0.9, 1.3) if M.is_ext(m) else rng.uniform(0.9, 1.5), tag='rooted in slope' if z_ < float(Z[i]) - 7.5 else None); cnt['under'] += 1
     # ---- ferns and small plants: only near where people walk (roads, flags, bases)
     X, Y = grid(105.0)
     rd, hw = L.road_dist(X, Y)
