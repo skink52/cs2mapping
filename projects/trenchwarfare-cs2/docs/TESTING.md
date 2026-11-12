@@ -51,6 +51,7 @@ Logs: `C:\source1\cs2port\logs\mg_trenchwarfare_assets.log` and `mg_trenchwarfar
 ## D. Infantry
 
 - [ ] D1. Kit: T gets Gewehr 98 + Luger, CT Lee-Enfield + Colt; magazines from vdata. Record: R.
+- [ ] D1b. New models (13 Nov): Gewehr 98 (lawlordp), Luger P08 (Burdock), Lee-Enfield Mk III (Moony_State). In first person each sits in the hands like the old one (no giant weapon); the Gewehr and Lee bolts and the Luger toggle move on fire and reload; magazines drop. Record: R.
 - [ ] D2. Get 3 kills without dying (bots). Expect a MARKSMAN headline and the Mondragón (T) or Lewis (CT). SHIFT+E and `!swap` toggle back, ammo kept. Record: R.
 - [ ] D3. Stand at a dressing station (support trench by a shelter) while hurt. Expect health and armour to refill. Record: R.
 - [ ] D4. Walk the fire steps. Expect you can see over the parapet everywhere, CT x 1575, y -576..-320 included (M6: report if you can't). Record: R.
@@ -102,7 +103,7 @@ Logs: `C:\source1\cs2port\logs\mg_trenchwarfare_assets.log` and `mg_trenchwarfar
 
 ## K. Sap tunnels
 
-- [ ] K1. After J3, walk into each sap. Expect you need to **crouch** for the first step (roof 65.7 u over the floor). Record: R.
+- [ ] K1. After J3, walk into each sap. Expect you need to **crouch** at the mouth (the upper benches set 57-62 u head room); the new floor ramp, lintel and ground cap over each mouth show no gap or light leak. Record: R.
 - [ ] K2. Without the `--user-h1` opt-in, the bench barricade behind the planks still blocks the way (H1, known). Report if you can crouch-jump through and how. Record: R.
 - [ ] K3. With `--user-h1 unlock`, the benches stand until J3 and go with the planks; walk through to the chamber on both sides. Record: R.
 - [ ] K4. Galleries are lit, with no black void, no getting stuck and no falling through, the tunnel set in gallery water included (L4). Record: R.
@@ -110,6 +111,7 @@ Logs: `C:\source1\cs2port\logs\mg_trenchwarfare_assets.log` and `mg_trenchwarfar
 ## L. Terrain
 
 - [ ] L1. Walk no man's land and both rears. Expect fresh shell holes, churned mud and puddles, with no seams, spikes or holes at tile edges. Record: R.
+- [ ] L1b. Seams (13 Nov): walk the support/comm trenches and the mortar side, and look along the revetment tops from inside the trench and from no man's land. Expect no slot behind the siding top, no see-through cracks, no light leaks. Known: small steps at the six dressing-station niches (user revetments) and one backwards revetment at (-1892, 144). Record: R.
 - [ ] L2. **Mud stretch:** look at the steep crater walls (48 faces). Expect the texture is not visibly smeared. Record: R (`!pos` of the worst).
 - [ ] L3. **Ruts:** the tank tracks behind the 4 wrecks and the twin lorry ruts along both airfield edges (y about +-1100). Expect them to read at player scale. Record: R.
 - [ ] L4. Parked aircraft and props sit on the ground, not floating or sunk. The lightmap over the re-gridded tiles has no blotches. Record: R.
