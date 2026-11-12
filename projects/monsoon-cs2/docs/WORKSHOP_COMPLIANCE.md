@@ -10,6 +10,9 @@ here is in-game verified.
 
 ## Verdict
 
+**Decision (skink52, 12 Nov 2026): the map is for private use.** The current build stays as it is; the public-build steps below
+are kept for reference only.
+
 **The current build must not go on the public Steam Workshop.** Since the integration pass of 12 Nov 2026 the map **places 35
 converted Garry's Mod Workshop models** (the T Mi-8s, the CT howitzers, every M2 / DShK, the vehicles, the Rising Storm foliage, the
 sandbag nests, both crash hulks) and the script **caches and applies four GMod player models** as uniforms. Most of those are rips of
