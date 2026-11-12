@@ -227,11 +227,49 @@ def box_tris(lo, hi):
     return np.array([[c[a], c[b], c[d]] for (a, b, d_, e) in q for (a, b, d) in ((a, b, d_), (a, d_, e))])
 
 
+_DEPS = None                   # while load_scene builds a scene: rel path -> the file it resolved to (or None), for the cache check
+
+
 def resolve(A, rel):
+    out = None
     for r in A.model_roots:
         p = os.path.join(r, rel.replace('/', os.sep))
-        if os.path.isfile(p): return p
-    return None
+        if os.path.isfile(p): out = p; break
+    if _DEPS is not None: _DEPS[rel] = out
+    return out
+
+
+def _file_sig(p):
+    if p is None: return None
+    try: st = os.stat(p); return (p, st.st_size, st.st_mtime_ns)
+    except OSError: return (p, -1, -1)
+
+
+def _deps_current(A, deps):
+    """True when every model path the cached scene resolved still resolves to the same file, unchanged (a model rebuilt in the
+    staging folder, a model newly staged, a different --stage)"""
+    for rel, sig in deps.items():
+        p = None
+        for r in A.model_roots:
+            q = os.path.join(r, rel.replace('/', os.sep))
+            if os.path.isfile(q): p = q; break
+        if _file_sig(p) != (tuple(sig) if sig else None): return False
+    return True
+
+
+def scene_key(path, A):
+    """what a cached scene depends on besides the model files: the vmap (its full path, size and time), this file, the adapter's
+    file, the grid and the model roots. 12 Nov 2026: the key was the adapter name + the vmap's size and whole-second time only, so a
+    scene built without --stage (tools/patch_nav.py --estimate) was served to a later --stage run of the same map (a false
+    'separation' failure: the content addon's older models), and each new map evicted every other map's scene."""
+    import hashlib, inspect
+    st = os.stat(path)
+    try: af = inspect.getsourcefile(type(A)) or ''
+    except Exception: af = ''
+    parts = [A.name, os.path.normcase(os.path.abspath(path)), st.st_size, st.st_mtime_ns, os.stat(os.path.abspath(__file__)).st_mtime_ns,
+             (os.path.normcase(os.path.abspath(af)), os.stat(af).st_mtime_ns) if af and os.path.isfile(af) else '', list(map(float, A.extent)), float(A.cell),
+             [os.path.normcase(os.path.abspath(r)) for r in A.model_roots], type(A).__name__]
+    return '%s_%s' % (A.name, hashlib.sha1(repr(parts).encode()).hexdigest()[:20])
 
 
 def vmdl_files(A, model):
@@ -310,13 +348,41 @@ def _s(v):
 
 
 def load_scene(path, A, verbose=False):
-    """entities + triangle soup of the vmap, cached by the vmap's size and time (and this file's)"""
-    st = os.stat(path); me = os.stat(os.path.abspath(__file__))
-    key = '%s_%d_%d_%d_%s' % (A.name, st.st_size, int(st.st_mtime), int(me.st_mtime), '_'.join(map(str, map(int, A.extent))))
+    """entities + triangle soup of the vmap, cached by scene_key() (map path / size / time, model roots, this file and the adapter's)
+    and checked against every model file the scene was built from"""
+    global _DEPS
+    key = scene_key(path, A)
     cp = os.path.join(cache_dir(A), 'play_scene_%s.pkl' % key)
     if os.path.exists(cp):
-        try: return pickle.load(open(cp, 'rb'))
+        try:
+            sc_ = pickle.load(open(cp, 'rb'))
+            if isinstance(sc_.get('deps'), dict) and _deps_current(A, sc_['deps']):
+                sc_['cached'] = True
+                if verbose: print('  scene from the cache %s' % os.path.basename(cp))
+                return sc_
+            if verbose: print('  cached scene is stale (a model file changed): rebuilding')
         except Exception: pass
+    _DEPS = {}
+    try:
+        sc_ = _build_scene(path, A, verbose, key)
+        deps = {rel: _file_sig(p) for rel, p in sorted(_DEPS.items())}
+    finally:
+        _DEPS = None
+    sc_['deps'] = deps
+    sc_['model_roots'] = list(A.model_roots)
+    tmp = cp + '.%d.tmp' % os.getpid()
+    pickle.dump(sc_, open(tmp, 'wb'), protocol=4)
+    os.replace(tmp, cp)
+    # keep the 4 newest scenes of this adapter (a chain checks several maps, with and without a staging folder)
+    old = sorted(glob.glob(os.path.join(cache_dir(A), 'play_scene_%s_*.pkl' % A.name)), key=lambda f: os.path.getmtime(f), reverse=True)
+    for f in old[4:]:
+        try: os.remove(f)
+        except OSError: pass
+    sc_['cached'] = False
+    return sc_
+
+
+def _build_scene(path, A, verbose, key):
     import vmapedit as V
     t0 = time.time()
     m = V.Map(path)
@@ -423,10 +489,6 @@ def load_scene(path, A, verbose=False):
         props.append(p)
     sc_ = dict(ents=ents, tris=np.array(tris, float).reshape(-1, 3, 3), kinds=np.array(kinds, np.int8), srcs=np.array(srcs, np.int64), meshes=meshes,
                props=props, trunks=trunks, ladders=ladders, navboxes=navboxes, key=key, stock=sorted(stock), stock_measured=sorted(B.stock))
-    for old in glob.glob(os.path.join(cache_dir(A), 'play_scene_%s_*.pkl' % A.name)):
-        try: os.remove(old)
-        except OSError: pass
-    pickle.dump(sc_, open(cp, 'wb'), protocol=4)
     if verbose: print('  scene: %d tris, %d props, %.1fs' % (len(tris), len(props), time.time() - t0))
     return sc_
 
@@ -1246,13 +1308,14 @@ def run(path, A, only=None, out_json=None, verbose=False, plot=None, box=None):
         lap(cid)
 
     res['fails'] = fails; res['warnings'] = warn; res['timing'] = timing
+    res['scene'] = dict(map=os.path.abspath(path), key=sc.get('key'), from_cache=bool(sc.get('cached')), model_roots=list(A.model_roots))
     for w in warn: print('WARNING ' + w)
     oj = out_json or A.out_json
     if oj:
         os.makedirs(os.path.dirname(os.path.abspath(oj)), exist_ok=True)
         json.dump(res, open(oj, 'w'), indent=1, default=lambda o: o.item() if hasattr(o, 'item') else str(o))
     if plot: render(ctx, plot, box)
-    nchk = len([k for k in res if k not in ('fails', 'warnings', 'timing')])
+    nchk = len([k for k in res if k not in ('fails', 'warnings', 'timing', 'scene')])
     print('RESULT: %s  (%.0f s)' % ('clean (%d checks)' % nchk if not fails else 'FAILED: ' + ', '.join(sorted(set(fails), key=fails.index)), time.time() - t0))
     ctx.fails = fails
     return ctx

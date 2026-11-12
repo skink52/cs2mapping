@@ -471,6 +471,7 @@ def t8_spawns(ctx):
 
 if __name__ == '__main__':
     argv = sys.argv[1:]
+    if any(a in ('-h', '--help') for a in argv): print(__doc__); sys.exit(2)      # (was: ran the whole check on the user's map)
     if '--stage' in argv:
         k = argv.index('--stage'); A.model_roots = [os.path.abspath(argv[k + 1])] + list(A.model_roots); del argv[k:k + 2]
     if not argv or argv[0].startswith('--'): argv = [VMAP] + argv

@@ -57,9 +57,13 @@ class Mismatch(Exception): pass
 
 
 # ---------------------------------------------------------------- the walk graph of a map
+STAGE = []                    # --stage: staging folders searched for models before the content addon (as tools/check_play.py --stage)
+
+
 def scene(path):
     """(ctx, A) for a map: scene, grid and the play worlds' start nodes, as create/check_play.run builds them"""
     A = TCP.Trench()
+    A.model_roots = list(STAGE) + list(A.model_roots)
     A.out_json = None
     CP.setup_grid(A.extent, A.cell)
     sc = CP.load_scene(path, A)
@@ -255,7 +259,9 @@ def main(argv=None):
     ap.add_argument('--estimate', action='store_true')
     ap.add_argument('--cell', type=float, default=256.0)
     ap.add_argument('--margin', type=float, default=96.0)
+    ap.add_argument('--stage', default=None, help='staging folder (e.g. out/addon) searched for models before the content addon')
     a = ap.parse_args(argv)
+    if a.stage: STAGE[:] = [os.path.abspath(a.stage)]
     inp, outp = os.path.abspath(a.inp), os.path.abspath(a.out)
     if not safepath.inside(OUT, outp) or os.path.normcase(outp) == os.path.normcase(inp):
         sys.exit('patch_nav: --out must be under %s and not the input' % OUT)
