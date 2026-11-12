@@ -1,4 +1,4 @@
-# mg_trenchwarfare presentation: HUD, sounds, radar, plotting board, loading screen, skybox
+﻿# mg_trenchwarfare presentation: HUD, sounds, radar, plotting board, loading screen, skybox
 
 AI-generated (Claude) for skink52. Remaster step 8 (12 Nov 2026). Status: **simulated** (layout check, mock engine, numeric sound
 check, radar alignment check). Nothing here has been compiled or seen in CS2 yet. Details: [HUD.md](HUD.md) (HUD contract and layout),
@@ -25,7 +25,7 @@ Then the script gate in [SCRIPT.md](SCRIPT.md) (the mock reads the staged xml / 
 | Plotting-board maps | `render_sight.py` | `target_t.png`, `target_ct.png` (1024 px, shown 640) | `out/step8/sight_check.png`: all 10 pits drawn through `worldToSight` sit on the printed pit rings (looked at) |
 | Radar | `make_radar.py` | `mg_trenchwarfare_radar_psd.png` + `.vtex` (1024 px, BC7), game `resource/overviews/mg_trenchwarfare.txt` | `check_radar.py`: **clean** |
 | Loading screen | `render_slides.py` via `loading.py` | `map_icons/screenshots/1080p/mg_trenchwarfare.png`, `_1`, `_2`; `map_icon_mg_trenchwarfare.svg` | `out/step8/slides/*_cs2.png` (CS2's column, 4:3 / 21:9 cuts drawn; content inside the safe area, looked at); `--css-check` (the HUD css preloads all three and the icon) |
-| Sounds | `sounds.py` | 28 wavs + the events block; 3 pending | numeric listen-check: **clean** (SOUNDS.md) |
+| Sounds | `sounds.py` | 31 wavs + the events block (whistle_attack, plane_dive, rain_tin wired by `patch_sounds.py` + 60_air/75_front) | numeric listen-check: **clean** (SOUNDS.md) |
 
 **HUD look.** Dark olive canvas plates with a brass keyline, corner brackets and rivets for the live cards (status, orders card,
 headline banner); feathered dark bands for the prompt and toast; the briefing room's orders as a printed FIELD MESSAGE form with an

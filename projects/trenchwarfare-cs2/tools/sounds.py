@@ -8,7 +8,8 @@ usage: sounds.py <addon content out> <template soundevents_addon.vsndevts> [--no
           <addon>/soundevents/soundevents_addon.vsndevts  the template (the live addon file, read only) with our block replaced
           ../out/sounds_report.json                       the listen-check (peak, RMS, DC, loop seam, spectrum, length)
           --pending DIR (default ../out/step8/pending_sounds): sounds made and checked but NOT shipped, because nothing plays
-                         them yet (they need a script or map hook first: docs/SOUNDS.md "Waiting for wiring")
+                         them yet (they need a script or map hook first; none since 12 Nov 2026: the last three were wired by
+                         tools/patch_sounds.py and the script, docs/SOUNDS.md)
   exits 1 if a check fails (clipping, DC offset, a loop seam that would click, a spectrum that is not what the sound should be,
   an event naming a missing file, a shipped file no event uses, a contract event missing).
 
@@ -19,6 +20,9 @@ Events (docs/CONTRACT.md "Sound events"; docs/SOUNDS.md for the design):
   tw.plane_engine    3D 7000    loop: 9-cylinder rotary at 1200 rpm (90 Hz firing, 40 Hz two-blade prop)
   tw.plane_gun       3D 7000    twin synchronised MGs, two rounds per event (the script plays one every 2nd round, 3 variants)
   tw.ambient_blast   3D 9000    = the impact files (kept for older map wiring)
+  tw.whistle_attack  flat       the company officer's whistle, over the top: tw_whistle_attack (script, LOBBY_RESPAWN after round start)
+  tw.plane_dive      3D 5000    a biplane diving: engine winding up, rigging howling: tw_plane_dive_1..4 (script pool, 60_air)
+  tw.amb.rain_tin    3D 600     loop: rain on the shelters' elephant iron: tw_rain_tin_<tg>_1..3 (map: relay tw_rain OnUser1 / OnUser2)
   tw.amb.front       soundscape parent (env_soundscape in the map) -> tw.amb.wind (stereo loop), tw.amb.barrage (stereo loop:
                      drumfire beyond the horizon), tw.amb.guns, tw.amb.shells, tw.amb.mg, tw.amb.whistles, tw.amb.planes (ours,
                      random around the player) + tw.amb.crows, tw.amb.rifles, tw.amb.whiz (stock files)
@@ -424,7 +428,7 @@ def make_whistles(rng, v):
     return distant(x, rng, sec=1.6, tau=0.55, wet=0.75, lo=500, hi=4500, cut=5200, echoes=((0.55, 0.22, 2500),))
 
 
-# ---------------------------------------------------------------- pending: made and checked, not shipped until wired
+# ---------------------------------------------------------------- wired 12 Nov 2026 (were pending): patch_sounds.py + 60_air / 90_main
 def make_dive(rng, eng):
     """3 s: an aircraft diving: the engine winding up, the rigging wires howling, wind rush building"""
     L = 3.0; n = int(SR * L); t = np.arange(n) / SR; u = t / L
@@ -480,10 +484,11 @@ def build():
     for v in range(3): add('amb_mg_%d' % (v + 1), make_mg_far(R(80 + v), v), centroid=(150, 1500))
     for v in range(3): add('amb_whistle_%d' % (v + 1), make_whistles(R(90 + v), v), centroid=(1500, 4500), high=(0.45, 2000, 8000))
     for v in range(2): add('amb_plane_%d' % (v + 1), make_plane_far(R(95 + v), eng, v), centroid=(60, 1200))
-    # pending (need a script or map hook first)
-    add('plane_dive', make_dive(R(100), eng), ship=False, centroid=(200, 2500), late=True)
-    add('rain_tin', make_rain_tin(R(101)), loop=True, ship=False, centroid=(2000, 7000), high=(0.5, 2000, 12000))
-    add('whistle_attack', make_whistle_attack(R(102)), ship=False, centroid=(1800, 4500), high=(0.5, 2000, 8000))
+    # wired 12 Nov 2026 (tools/patch_sounds.py emitters; the script's dive pool and round-start whistle); ship=False keeps a sound
+    # out of the addon (written to --pending) until something plays it
+    add('plane_dive', make_dive(R(100), eng), centroid=(200, 2500), late=True)
+    add('rain_tin', make_rain_tin(R(101)), loop=True, centroid=(2000, 7000), high=(0.5, 2000, 12000))
+    add('whistle_attack', make_whistle_attack(R(102)), centroid=(1800, 4500), high=(0.5, 2000, 8000))
 
 
 # ================================================================ numeric listen-check (monsoon's)
@@ -574,7 +579,9 @@ def far(r, full=0.1, mid=0.35, midv=0.5):
 
 AMB_KIDS = ['tw.amb.wind', 'tw.amb.barrage', 'tw.amb.guns', 'tw.amb.shells', 'tw.amb.mg', 'tw.amb.whistles', 'tw.amb.planes',
             'tw.amb.crows', 'tw.amb.rifles', 'tw.amb.whiz']
-CONTRACT = ['tw.mortar_launch', 'tw.mortar_whistle', 'tw.mortar_impact', 'tw.plane_engine', 'tw.plane_gun', 'tw.amb.front']
+CONTRACT = ['tw.mortar_launch', 'tw.mortar_whistle', 'tw.mortar_impact', 'tw.plane_engine', 'tw.plane_gun', 'tw.amb.front',
+            'tw.whistle_attack', 'tw.plane_dive', 'tw.amb.rain_tin']
+FLAT = [(0, 1), (20000, 1)]     # heard everywhere at full level (csgo_mega with a flat distance curve: cs2-gotchas "play everywhere")
 
 
 def events():
@@ -584,6 +591,12 @@ def events():
     ev.append(ev3d('tw.mortar_impact', files('mortar_impact', 3), 1.0, [(0, 1), (1200, 1), (3800, 0.55), (7000, 0.22), (9000, 0)], pitch=(0.94, 1.05)))
     ev.append(ev3d('tw.plane_engine', files('plane_engine'), 1.0, [(0, 1), (800, 1), (3000, 0.45), (5000, 0.18), (7000, 0)]))
     ev.append(ev3d('tw.plane_gun', files('plane_gun', 3), 0.95, far(7000), pitch=(0.96, 1.04)))
+    # wired 12 Nov 2026: the round-start whistle (flat, one emitter), the dive (3D, the script's pool of 4 emitters on the aircraft),
+    # rain on the shelters' tin (3D loop inside each of the 6 dressing-station shelters, started / stopped with the rain relay)
+    ev.append(ev3d('tw.whistle_attack', files('whistle_attack'), 0.60, FLAT,
+                   extra=('use_distance_unfiltered_stereo_mapping_curve = true', 'distance_unfiltered_stereo_mapping_curve =') + tuple(E.curve(FLAT))))
+    ev.append(ev3d('tw.plane_dive', files('plane_dive'), 0.90, [(0, 1), (800, 1), (2500, 0.45), (5000, 0)]))
+    ev.append(ev3d('tw.amb.rain_tin', files('rain_tin'), 0.55, [(0, 1), (150, 1), (400, 0.35), (600, 0)], extra=('mixgroup = "Amb_Common"',)))
     ev.append(ev3d('tw.ambient_blast', files('mortar_impact', 3), 0.85, [(0, 1), (1200, 1), (3800, 0.5), (7000, 0.2), (9000, 0)], pitch=(0.92, 1.04)))
     ev.append(E._event('tw.amb.front', ['base = "amb.soundscapeParent.base"', 'enable_child_events = true', 'soundevent_01 =', '['] +
                        ['\t"%s",' % k for k in AMB_KIDS] + [']']))

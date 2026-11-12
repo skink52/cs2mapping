@@ -128,6 +128,19 @@ def main():
                         ('tw_shake_', 'env_shake', 'StartShake')):
         ent_row(p + '1..%d' % POOL, ['"%s"' % p], cls, pool(p), 'make_map.py', 'effect pool (POOL %d), Teleport + %s' % (POOL, inp))
     ent_row('tw_hud', ['"tw_hud"'], 'custom_hud_layout', ['tw_hud'], 'make_map.py', 'CONFIG.HUD')
+    # the sounds wired on 12 Nov 2026 (tools/patch_sounds.py; not in the deployed map: Known missing until that map is deployed)
+    ent_row('tw_whistle_attack', ['"tw_whistle_attack"'], 'point_soundevent', ['tw_whistle_attack'], 'patch_sounds.py',
+            'StartSound LOBBY_RESPAWN after each round start (75_front tickWhistle); fired only when it exists')
+    nd = cfg_num(js, 'EMITTERS')
+    ent_row('tw_plane_dive_1..%d' % nd, ['"tw_plane_dive_"'], 'point_soundevent', ['tw_plane_dive_%d' % i for i in range(1, nd + 1)], 'patch_sounds.py',
+            'pool of CONFIG.AIR.DIVE.EMITTERS (%d): SetSourceEntity to a diving aircraft, StartSound; StopSound when its flight ends (60_air diveSound / diveStop)' % nd)
+    tins = ['tw_rain_tin_%s_%d' % (tg, k) for tg in TEAMS for k in (1, 2, 3)]
+    rconn = {(c[0], c[1], c[2]) for e in by_name.get('tw_rain', []) for c in (e.get('out') or [])}
+    unwired = [n for n in tins if n in by_name and not {('OnUser1', n, 'StartSound'), ('OnUser2', n, 'StopSound')} <= rconn]
+    ent_row('tw_rain_tin_<tg>_1..3', [], 'point_soundevent', tins, 'patch_sounds.py',
+            'not looked up by the script: the rain relay tw_rain (patch_terrain) OnUser1 StartSound / OnUser2 StopSound, one per dressing-station shelter'
+            + ('; NOT WIRED from tw_rain: ' + ', '.join(unwired) if unwired else ''))
+    if unwired: rows['entity'][-1]['status'] = 'MISSING'
     for u in ('woodsopen', 'undergroundopen'):
         ent_row(u, ['"%s"' % u], 'prop_dynamic', [u], 'the user (blockers), made prop_dynamic by patch_unlocks.py',
                 'Entities.FindByName (both); Remove + effects when the area opens (CONFIG.UNLOCKS); positions: the bot leash and the bots\' sap-head / ladder posts')
@@ -144,7 +157,7 @@ def main():
     known_tok = set(re.findall(r'"([A-Za-z_0-9]+)"', ' '.join(
         ['"trench_" "heal_" "plane_" "tw_plane_" "tw_prop_" "tw_bomb_" "tw_tracer_" "tw_bombsight_" "tw_gunsight_" "tw_plane_eng_"',
          '"tw_plane_smoke_" "mortarpit_" "mortar_" "mortarcrew_" "tw_launch_snd_" "tw_launch_fx_" "tw_boom_fx_" "tw_dirt_fx_"',
-         '"tw_boom_snd_" "tw_whistle_snd_" "tw_shake_" "tw_hud"'])))
+         '"tw_boom_snd_" "tw_whistle_snd_" "tw_shake_" "tw_hud" "tw_whistle_attack" "tw_plane_dive_"'])))
     for m in re.finditer(r'(?:FindEntityByName|FindEntitiesByName|FindByName|\bbyName|findList|\bent|\bfire)\(\s*"([^"]+)"', js):
         tokens.add(m.group(1))
     for t in sorted(tokens - known_tok):
@@ -188,23 +201,31 @@ def main():
     # ---------------------------------------------------------------- sounds
     vs = os.path.join(a.addon, 'soundevents', 'soundevents_addon.vsndevts')
     vtext = open(vs, encoding='utf-8', errors='replace').read() if os.path.exists(vs) else ''
+    svs = os.path.join(a.stage, 'soundevents', 'soundevents_addon.vsndevts') if a.stage else ''
+    stext = open(svs, encoding='utf-8', errors='replace').read() if svs and os.path.exists(svs) else ''
     snd_ents = {}
-    srx = re.compile(r'^(tw_plane_(eng|gun|gun2|gun3)_(t|ct)_\d+|tw_launch_snd_.*|tw_boom_snd_\d+|tw_whistle_snd_\d+)$')
+    srx = re.compile(r'^(tw_plane_(eng|gun|gun2|gun3)_(t|ct)_\d+|tw_launch_snd_.*|tw_boom_snd_\d+|tw_whistle_snd_\d+|tw_whistle_attack|tw_plane_dive_\d+|tw_rain_tin_(t|ct)_\d+)$')
     for e in ents:
         sn = (e.get('keys') or {}).get('soundName')
         if sn and e.get('name') and srx.match(e['name']): snd_ents.setdefault(sn, set()).add(re.sub(r'_(t|ct)_\d+$|_\d+$', '_N', e['name']))
     for sn in sorted(snd_ents):
-        m = re.search(r'^\s*"?%s"?\s*=\s*\n?\s*\{(.*?)\n\t\}' % re.escape(sn), vtext, re.S | re.M)
-        if not m:
-            row('sound', sn, 'MISSING', '', '', 'tools/sounds.py', 'not defined in soundevents_addon.vsndevts; on ' + ', '.join(sorted(snd_ents[sn])))
+        evrx = r'^\s*"?%s"?\s*=\s*\n?\s*\{(.*?)\n\t\}' % re.escape(sn)
+        m = re.search(evrx, vtext, re.S | re.M)
+        sm = None if m else re.search(evrx, stext, re.S | re.M)      # --stage: an event only staged (not deployed yet)
+        if not m and not sm:
+            row('sound', sn, 'MISSING', '', '', 'tools/sounds.py', 'not defined in soundevents_addon.vsndevts%s; on %s' % (
+                ' (nor in the staged one)' if a.stage else '', ', '.join(sorted(snd_ents[sn]))))
             continue
-        files = re.findall(r'"(sounds/[^"]+\.vsnd)"', m.group(1))
+        files = re.findall(r'"(sounds/[^"]+\.vsnd)"', (m or sm).group(1))
         own = [f for f in files if f.startswith('sounds/tw/')]
-        lost = [f for f in own if not any(os.path.exists(os.path.join(a.addon, f[:-5] + x)) for x in ('.wav', '.mp3'))
-                or not os.path.exists(os.path.join(a.game, f + '_c'))]
+        if m:
+            lost = [f for f in own if not any(os.path.exists(os.path.join(a.addon, f[:-5] + x)) for x in ('.wav', '.mp3'))
+                    or not os.path.exists(os.path.join(a.game, f + '_c'))]
+        else:
+            lost = [f for f in own if not any(os.path.exists(os.path.join(a.stage, f[:-5] + x)) for x in ('.wav', '.mp3'))]
         stock = [f for f in files if f not in own]
-        row('sound', sn, 'MISSING' if lost else 'OK', '', '', 'tools/sounds.py', 'on %s; own files %s%s%s' % (
-            ', '.join(sorted(snd_ents[sn])), ', '.join(os.path.basename(f) for f in own) or 'none',
+        row('sound', sn, 'MISSING' if lost else 'OK', '', '', 'tools/sounds.py', '%son %s; own files %s%s%s' % (
+            '' if m else 'staged in %s, not compiled yet; ' % a.stage, ', '.join(sorted(snd_ents[sn])), ', '.join(os.path.basename(f) for f in own) or 'none',
             ('; MISSING ' + ', '.join(lost)) if lost else '', ('; %d stock vsnd (not checked offline)' % len(stock)) if stock else ''))
     g_vs = os.path.exists(os.path.join(a.game, 'soundevents', 'soundevents_addon.vsndevts_c'))
     row('file', 'soundevents/soundevents_addon.vsndevts', 'OK' if vtext and g_vs else 'MISSING', '', '', 'tools/sounds.py',

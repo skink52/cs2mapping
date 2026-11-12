@@ -14,6 +14,7 @@
 //   plane_<t|ct>_N (info_teleport_destination)  biplane air-spawn points; tw_plane_<t|ct>_N (prop_dynamic) the aircraft
 //   tw_hud (custom_hud_layout), tw_boom_fx_N / tw_dirt_fx_N / tw_boom_snd_N / tw_whistle_snd_N / tw_shake_N (effect pools),
 //   tw_launch_snd_<tag>_K / tw_launch_fx_<tag>_K (per mortar pit); mortar_<tag>_K (prop_dynamic, fire animation; optional)
+//   tw_whistle_attack (round-start whistle) and tw_plane_dive_1..N (dive sound pool): point_soundevents from tools/patch_sounds.py (optional)
 // The full list, with counts and who makes each name: docs/CONTRACT.md. Module map, build and tests: docs/SCRIPT.md.
 
 
@@ -74,6 +75,10 @@ const CONFIG = {
     CAM_FOLLOW: { x: 0, y: 0, z: 70 }, CAM_OFFSET: { x: -380, y: 0, z: 70 },
     PILOT: { back: -46, up: 30 },                // (hidden) pilot pawn relative to the plane origin: in the cockpit
     TRACER_EVERY: 3, TRACER_SPEED: 9000, SIGHT_DIST: 1600, GUN_SOUND_EVERY: 2,   // effects: every Nth round a tracer / gun sound; gun-sight pip distance
+    // dive sound (tw.plane_dive, 3 s): the nose PITCH degrees below the horizon at SPEED or more starts it on a free emitter of the pool
+    // tw_plane_dive_1..EMITTERS (tools/patch_sounds.py), lent to the aircraft for LEN s; re-armed once the nose is back above REARM and
+    // GAP s have passed. No free emitter (or a map without them): that dive is silent
+    DIVE: { PITCH: 25, REARM: 10, SPEED: 900, GAP: 6, LEN: 3, EMITTERS: 4 },
   },
   // soldier player models (tools/soldiers.py; each precached by a hidden prop_dynamic tw_uniform_N under the lobby). Applied a moment
   // after every spawn, picked by player slot. UNIFORMS_ON false = stock agents; players can opt out with !uniform.

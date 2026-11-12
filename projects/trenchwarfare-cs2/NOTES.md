@@ -27,6 +27,11 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
+- 12 Nov ~21:30: the 3 pending sounds are wired (simulated). `tw_whistle_attack` (briefing room, 1.5 s after round start, 75_front),
+  `tw_plane_dive_1..4` shared pool (60_air `diveSound`: nose 25 deg down at >= 900 u/s; cs_script cannot play a sound itself),
+  `tw_rain_tin_<tg>_1..3` over the dressing stations, started/stopped by the `tw_rain` relay. `tools/patch_sounds.py` (guarded,
+  11 entities) runs in the chain world_1 -> models -> terrain -> sounds -> nav. Contract 86/86 on the sounds map; deployed map has
+  4 known missing until deploy. Perf max fails only under another session's compile load (old build fails the same way).
 - 12 Nov ~20:30: step 8 done offline (simulated, staged in `out/step8/deploy_files.txt`; force-compile xml/css/js). HUD contract
   in `docs/HUD.md` (56 script ids), `tools/tw_hud.py` fails on any contract/layout/module mismatch, `tools/hud_check.py` 0 problems
   over 6 states x 3 widths; new canvas/brass look, wooden mortar plotting board, walnut cockpit. Script: HUD-only changes (headlines,

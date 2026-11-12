@@ -13,6 +13,8 @@
 //   mode=balance     one round window with the real CONFIG, a JSON result line (test/sim_balance via create/sim_balance.mjs); json=1 only that
 //   perf=<avg>,<max> fail when the script's think time (ms per tick) is over these
 //   script=<file>    run this build of the script instead of src/mg_trenchwarfare.js (no stale check)
+//   sounds=0         leave out the sound emitters of tools/patch_sounds.py (out/step8/patch_sounds.entities.json, added to the
+//                    deployed map's out/entities.json by default): the script must then fire nothing at them
 //   MOCK_LOG=1       print the script's console lines as they come
 // Fails (exit 1) on: a script error, a stale build, a call outside the current API, an input fired at a missing entity or one its
 // class lacks, a HUD id / class the xml / css lacks, a HUD call for a bot, SetModel on a shrunk pawn or after the kit was issued,
@@ -54,7 +56,7 @@ const fail = (m) => { if (!fails.includes(m) && fails.length < 40) fails.push(m)
 let time = 0, tick = 0;
 const stats = { hud: 0, vars: 0, hudBots: 0, fires: {}, dmg: 0, kills: 0, teleports: 0, moves: 0, traces: 0, msgs: [], cmds: {}, setModel: 0,
                 killsBy: {}, killsTeam: { 2: 0, 3: 0 }, killsTeamBy: {}, deaths: { 2: 0, 3: 0 }, assists: 0, mortarAssists: 0, teamKills: 0, blockedSeen: 0, rounds: 0, restarts: 0,
-                planeHitsRifle: 0, chats: {}, churn: {}, pieces: {} };
+                planeHitsRifle: 0, chats: {}, churn: {}, pieces: {}, sounds: {} };
 const piece = (k, n) => { stats.pieces[k] = (stats.pieces[k] || 0) + (n === undefined ? 1 : n); };
 
 // ------------------------------------------------------------------ the shipped script must be the build of the modules
@@ -83,6 +85,13 @@ const IN = ENUMS.CSInputs, MT = ENUMS.CSMoveType, DT = ENUMS.CSDamageTypes, DF =
 
 // ------------------------------------------------------------------ world
 const ENTS = JSON.parse(fs.readFileSync(path.join(root, 'out/entities.json'), 'utf8'));
+// the sound emitters of tools/patch_sounds.py (tw_whistle_attack, tw_plane_dive_N, tw_rain_tin_<tg>_N): not in the deployed map that
+// out/entities.json restages, so they are added from the patch's own list (names already present are not added twice); sounds=0: none
+const SNDF = path.join(root, 'out/step8/patch_sounds.entities.json');
+if (opt.sounds !== '0' && fs.existsSync(SNDF)) {
+  const have = new Set(ENTS.map((e) => e.name));
+  for (const e of JSON.parse(fs.readFileSync(SNDF, 'utf8')).entities) if (!have.has(e.name)) ENTS.push({ name: e.name, cls: e.cls, origin: e.origin, angles: e.angles });
+}
 const xml = fs.readFileSync(path.join(root, 'out/addon/panorama/layout/custom_game/mg_trenchwarfare.xml'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'out/addon/panorama/styles/custom_game/mg_trenchwarfare.css'), 'utf8');
 const RADAR = JSON.parse(fs.readFileSync(path.join(root, 'out/radar_region.json'), 'utf8'));
@@ -298,6 +307,7 @@ const Entities = strict('Entities', {
   FireInput: (o) => {
     const list = (byName.get(o.name) || []).filter((e) => e.valid);
     if (!list.length) { fail('Entities.FireInput at a missing entity ' + o.name); return; }
+    if (o.input === 'StartSound') stats.sounds[o.name] = (stats.sounds[o.name] || 0) + 1;
     for (const e of list) e.FireInput(o);
   },
 });
@@ -1090,6 +1100,11 @@ console.log('mg_trenchwarfare mock: ' + everyone().length + ' players (' + every
 console.log(JSON.stringify({ kills: stats.kills, killsTeam: stats.killsTeam, killsBy, hud: stats.hud, vars: stats.vars, fires: stats.fires, dmg: stats.dmg, blocked: stats.blocked || 0,
   teleports: stats.teleports, moves: stats.moves, setModel: stats.setModel, removed: stats.removed || 0, restarts: stats.restarts, churn: stats.churn }));
 if (Object.keys(stats.pieces).length) console.log('set pieces: ' + Object.entries(stats.pieces).map(([k, v]) => k + (v > 1 ? ' x' + v : '')).join('; '));
+// the sounds the script starts (patch_sounds.py emitters): counted at the emitters; the script's own counters must agree (no reload:
+// a reloaded script counts from 0)
+const sndW = stats.sounds.tw_whistle_attack || 0, sndD = Object.entries(stats.sounds).filter(([k]) => /^tw_plane_dive_\d+$/.test(k)).reduce((a, [, v]) => a + v, 0);
+if (!S.reloads && (sndW !== (S.whistles || 0) || sndD !== (S.dives || 0))) fail('sound counters disagree: whistle ' + sndW + ' vs ' + S.whistles + ', dives ' + sndD + ' vs ' + S.dives);
+if (opt.sounds === '0' && (sndW || sndD)) fail('sounds=0: the script started a sound at an emitter the map lacks');
 if (!SCEN) {
   const table = {
     'deploys: infantry': S.deploys.infantry, 'deploys: mortar crew': S.deploys.mortar, 'deploys: aircraft': S.deploys.air,
@@ -1100,6 +1115,7 @@ if (!SCEN) {
     'rifle kills (rate model)': killsBy.rifle || 0, 'areas opened (unlocks)': S.unlocks, 'dressing station heals': S.heals, 'streak upgrades': S.upgrades, 'rifle swaps': S.swaps,
     'uniforms set': S.uniforms, 'ambient bursts': S.ambient, 'damage blocked at the pit / pilot': S.blocked, 'field role requests deferred': S.deferred,
     '!pos / !roles / !uniform': (stats.chats['!pos'] || 0) + (stats.chats['!roles'] || 0) + (stats.chats['!uniform'] || 0), 'per-minute perf line': S.perfLines,
+    ['sounds: attack whistle / plane dives (' + sndW + ' / ' + sndD + ' started, ' + S.divesSilent + ' dives silent: pool busy or no emitters)']: sndW && sndD ? sndW + sndD : 0,
   };
   if (BAL || N < 16 || HUMANS < 16) delete table['air: AFK pilot taken home'];   // few humans: the AFK pilot may be shot down first
   const need = N >= 16 && SECONDS >= 300;

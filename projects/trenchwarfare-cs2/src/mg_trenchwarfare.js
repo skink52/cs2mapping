@@ -19,6 +19,7 @@ import { CSDamageFlags, CSDamageTypes, CSGearSlot, CSInputs, CSMoveType, Console
 //   plane_<t|ct>_N (info_teleport_destination)  biplane air-spawn points; tw_plane_<t|ct>_N (prop_dynamic) the aircraft
 //   tw_hud (custom_hud_layout), tw_boom_fx_N / tw_dirt_fx_N / tw_boom_snd_N / tw_whistle_snd_N / tw_shake_N (effect pools),
 //   tw_launch_snd_<tag>_K / tw_launch_fx_<tag>_K (per mortar pit); mortar_<tag>_K (prop_dynamic, fire animation; optional)
+//   tw_whistle_attack (round-start whistle) and tw_plane_dive_1..N (dive sound pool): point_soundevents from tools/patch_sounds.py (optional)
 // The full list, with counts and who makes each name: docs/CONTRACT.md. Module map, build and tests: docs/SCRIPT.md.
 
 
@@ -79,6 +80,10 @@ const CONFIG = {
     CAM_FOLLOW: { x: 0, y: 0, z: 70 }, CAM_OFFSET: { x: -380, y: 0, z: 70 },
     PILOT: { back: -46, up: 30 },                // (hidden) pilot pawn relative to the plane origin: in the cockpit
     TRACER_EVERY: 3, TRACER_SPEED: 9000, SIGHT_DIST: 1600, GUN_SOUND_EVERY: 2,   // effects: every Nth round a tracer / gun sound; gun-sight pip distance
+    // dive sound (tw.plane_dive, 3 s): the nose PITCH degrees below the horizon at SPEED or more starts it on a free emitter of the pool
+    // tw_plane_dive_1..EMITTERS (tools/patch_sounds.py), lent to the aircraft for LEN s; re-armed once the nose is back above REARM and
+    // GAP s have passed. No free emitter (or a map without them): that dive is silent
+    DIVE: { PITCH: 25, REARM: 10, SPEED: 900, GAP: 6, LEN: 3, EMITTERS: 4 },
   },
   // soldier player models (tools/soldiers.py; each precached by a hidden prop_dynamic tw_uniform_N under the lobby). Applied a moment
   // after every spawn, picked by player slot. UNIFORMS_ON false = stock agents; players can opt out with !uniform.
@@ -354,7 +359,8 @@ const stats = { killsBy: {}, killsByTeam: {}, deploys: { infantry: 0, mortar: 0,
                 // bots (85_ai): where infantry bots were sent, why the out-of-play leash moved one, the script-run roles and hand-overs
                 botDeploys: { fire: 0, support: 0, area: 0 }, botLeash: { nml: 0, lobby: 0, far: 0, lock: 0 },
                 aiPilots: 0, aiSorties: 0, aiGunRounds: 0, aiBombs: 0, aiCrews: 0, aiShots: 0, aiReleased: { humans: 0, yield: 0, trim: 0, lives: 0, lost: 0 },
-                yields: { air: 0, seat: 0 } };
+                yields: { air: 0, seat: 0 },
+                whistles: 0, dives: 0, divesSilent: 0 };     // sounds started by the script (tw_whistle_attack, the tw_plane_dive_N pool)
 try { globalThis.__twDebug = { players, crews, shells, stats, CONFIG }; } catch (e) {}
 let poolIdx = 0;
 
@@ -764,6 +770,38 @@ function gunAim(a, pawn, steer) {
   const dir = angleBetween(a.f, want) <= g ? want : rotateToward(a.f, want, g);
   return { s, dir, dist: Math.max(200, Math.min(A.SIGHT_DIST * 3, vlen(v3(pt.x - s.x, pt.y - s.y, pt.z - s.z)))) };
 }
+// the dive sound: a pool of map emitters tw_plane_dive_1..DIVE.EMITTERS lent to an aircraft for the length of the sound (SetSourceEntity
+// to it, then StartSound, as the engine's own emitter). Fewer map entities than one per aircraft; a busy emitter is never taken over
+const diveBusy = [];                                   // emitter number -> { until, ac }
+function diveSound(a, t) {
+  const D = CONFIG.AIR.DIVE;
+  if (a.diveArmed === undefined) a.diveArmed = true;
+  if (!a.diveArmed) {
+    if (a.f.z > -Math.sin(D.REARM * D2R) && t - (a.diveAt || -99) >= D.GAP) a.diveArmed = true;
+    return;
+  }
+  if (a.f.z > -Math.sin(D.PITCH * D2R) || a.speed < D.SPEED) return;
+  a.diveArmed = false; a.diveAt = t;
+  for (let i = 1; i <= D.EMITTERS; i++) {
+    const b = diveBusy[i];
+    if (b && b.until > t) continue;
+    if (!byName("tw_plane_dive_" + i)) break;           // a map without the pool (before tools/patch_sounds.py)
+    diveBusy[i] = { until: t + D.LEN, ac: a.ac };
+    a.diveEm = i;
+    fire("tw_plane_dive_" + i, "SetSourceEntity", a.ac.ent.GetEntityName());
+    fire("tw_plane_dive_" + i, "StartSound", undefined, 0.05);
+    stats.dives++;
+    return;
+  }
+  stats.divesSilent++;
+}
+// the flight ends (home, crash, AFK): a dive still sounding stops, or it would follow the aircraft to its park
+function diveStop(a) {
+  const i = a.diveEm; if (!i) return;
+  a.diveEm = 0;
+  const b = diveBusy[i];
+  if (b && b.ac === a.ac && b.until > now()) { b.until = 0; fire("tw_plane_dive_" + i, "StopSound"); }
+}
 function planeOfEntity(e) {
   if (!e || !points) return undefined;
   let nm = ""; try { nm = e.GetEntityName(); } catch (err) { return undefined; }
@@ -809,6 +847,7 @@ function endFlight(p, pawn, crashed) {
     impact({ team: p.team, k: -1, firerSlot: p.slot, firerGen: p.gen, src: "crash", x: a.pos.x, y: a.pos.y, z: a.pos.z, radius: 260, damage: 60 });
   }
   if (live(a.ac.ent)) {
+    diveStop(a);
     fire("tw_plane_eng_" + a.ac.ent.GetEntityName().slice("tw_plane_".length), "StopSound");
     fire("tw_plane_smoke_" + a.ac.ent.GetEntityName().slice("tw_plane_".length), "Stop");
     a.ac.ent.Teleport({ position: a.ac.park, angles: a.ac.parkAng, velocity: v3(0, 0, 0) });
@@ -929,6 +968,7 @@ function tickAir(p, pawn, dt, pressed, held, steer) {
   if ((tr && tr.didHit) || np.z < gz + A.ALT_MIN * 0.25) { crashPilot(p, pawn); return ""; }
   a.pos = np;
   placePlane(p, pawn, false);
+  diveSound(a, t);
   easeCamera(a, dt, t);
   a.aim = gunAim(a, pawn, steer);
   if (a.view === "cockpit") { const cam = a.cam; if (cam && live(cam)) { try { cam.Move({ position: cockpitPos(a) }); } catch (e) {} } }
@@ -1280,6 +1320,16 @@ function tickUnlocks(t) {
     for (const p of players.values()) headline(p, u.msg, 7);     // "TITLE - where" -> the banner plate
   }
 }
+// the company officer's whistle as the round's first deploys go over (LOBBY_RESPAWN after the round start): tw_whistle_attack, a flat
+// sound everyone hears (tools/patch_sounds.py); nothing on a map without the emitter
+let whistleAt = 0;
+function tickWhistle(t) {
+  if (!whistleAt || t < whistleAt) return;
+  whistleAt = 0;
+  if (!byName("tw_whistle_attack")) return;
+  fire("tw_whistle_attack", "StartSound");
+  stats.whistles++;
+}
 function tickAmbient() {
   const t = now(); if (t < nextAmbient) return;
   nextAmbient = t + CONFIG.AMBIENT_MIN + Math.random() * (CONFIG.AMBIENT_MAX - CONFIG.AMBIENT_MIN);
@@ -1623,6 +1673,7 @@ function think() {
     tickBombs(dt);
     tickTracers(dt);
     tickAmbient();
+    tickWhistle(t);
     tickUnlocks(t);
     aiThink(t, dt);
   } catch (e) { logErr("world", e); }
@@ -1775,7 +1826,8 @@ Instance.OnActivate(() => {
 });
 Instance.OnRoundStart(() => {
   roundStart = now(); roundKills = 0; unlocked.clear();
-  points = null; shells.length = 0; bombs.length = 0; tracers.length = 0;
+  points = null; shells.length = 0; bombs.length = 0; tracers.length = 0; diveBusy.length = 0;
+  whistleAt = now() + CONFIG.LOBBY_RESPAWN;      // over the top as the briefing room empties (deployAt below)
   // pilots and plotters of the last round: the map's aircraft are new entities, so only the pawn is put right (scale, move type, camera)
   for (const p of players.values()) {
     const pw = (p.air || p.inSight || p.hidden) ? pawnOf(p.slot) : undefined;

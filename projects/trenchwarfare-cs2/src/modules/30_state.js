@@ -32,6 +32,7 @@ const stats = { killsBy: {}, killsByTeam: {}, deploys: { infantry: 0, mortar: 0,
                 // bots (85_ai): where infantry bots were sent, why the out-of-play leash moved one, the script-run roles and hand-overs
                 botDeploys: { fire: 0, support: 0, area: 0 }, botLeash: { nml: 0, lobby: 0, far: 0, lock: 0 },
                 aiPilots: 0, aiSorties: 0, aiGunRounds: 0, aiBombs: 0, aiCrews: 0, aiShots: 0, aiReleased: { humans: 0, yield: 0, trim: 0, lives: 0, lost: 0 },
-                yields: { air: 0, seat: 0 } };
+                yields: { air: 0, seat: 0 },
+                whistles: 0, dives: 0, divesSilent: 0 };     // sounds started by the script (tw_whistle_attack, the tw_plane_dive_N pool)
 try { globalThis.__twDebug = { players, crews, shells, stats, CONFIG }; } catch (e) {}
 let poolIdx = 0;

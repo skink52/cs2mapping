@@ -110,6 +110,38 @@ function gunAim(a, pawn, steer) {
   const dir = angleBetween(a.f, want) <= g ? want : rotateToward(a.f, want, g);
   return { s, dir, dist: Math.max(200, Math.min(A.SIGHT_DIST * 3, vlen(v3(pt.x - s.x, pt.y - s.y, pt.z - s.z)))) };
 }
+// the dive sound: a pool of map emitters tw_plane_dive_1..DIVE.EMITTERS lent to an aircraft for the length of the sound (SetSourceEntity
+// to it, then StartSound, as the engine's own emitter). Fewer map entities than one per aircraft; a busy emitter is never taken over
+const diveBusy = [];                                   // emitter number -> { until, ac }
+function diveSound(a, t) {
+  const D = CONFIG.AIR.DIVE;
+  if (a.diveArmed === undefined) a.diveArmed = true;
+  if (!a.diveArmed) {
+    if (a.f.z > -Math.sin(D.REARM * D2R) && t - (a.diveAt || -99) >= D.GAP) a.diveArmed = true;
+    return;
+  }
+  if (a.f.z > -Math.sin(D.PITCH * D2R) || a.speed < D.SPEED) return;
+  a.diveArmed = false; a.diveAt = t;
+  for (let i = 1; i <= D.EMITTERS; i++) {
+    const b = diveBusy[i];
+    if (b && b.until > t) continue;
+    if (!byName("tw_plane_dive_" + i)) break;           // a map without the pool (before tools/patch_sounds.py)
+    diveBusy[i] = { until: t + D.LEN, ac: a.ac };
+    a.diveEm = i;
+    fire("tw_plane_dive_" + i, "SetSourceEntity", a.ac.ent.GetEntityName());
+    fire("tw_plane_dive_" + i, "StartSound", undefined, 0.05);
+    stats.dives++;
+    return;
+  }
+  stats.divesSilent++;
+}
+// the flight ends (home, crash, AFK): a dive still sounding stops, or it would follow the aircraft to its park
+function diveStop(a) {
+  const i = a.diveEm; if (!i) return;
+  a.diveEm = 0;
+  const b = diveBusy[i];
+  if (b && b.ac === a.ac && b.until > now()) { b.until = 0; fire("tw_plane_dive_" + i, "StopSound"); }
+}
 function planeOfEntity(e) {
   if (!e || !points) return undefined;
   let nm = ""; try { nm = e.GetEntityName(); } catch (err) { return undefined; }
@@ -155,6 +187,7 @@ function endFlight(p, pawn, crashed) {
     impact({ team: p.team, k: -1, firerSlot: p.slot, firerGen: p.gen, src: "crash", x: a.pos.x, y: a.pos.y, z: a.pos.z, radius: 260, damage: 60 });
   }
   if (live(a.ac.ent)) {
+    diveStop(a);
     fire("tw_plane_eng_" + a.ac.ent.GetEntityName().slice("tw_plane_".length), "StopSound");
     fire("tw_plane_smoke_" + a.ac.ent.GetEntityName().slice("tw_plane_".length), "Stop");
     a.ac.ent.Teleport({ position: a.ac.park, angles: a.ac.parkAng, velocity: v3(0, 0, 0) });
@@ -275,6 +308,7 @@ function tickAir(p, pawn, dt, pressed, held, steer) {
   if ((tr && tr.didHit) || np.z < gz + A.ALT_MIN * 0.25) { crashPilot(p, pawn); return ""; }
   a.pos = np;
   placePlane(p, pawn, false);
+  diveSound(a, t);
   easeCamera(a, dt, t);
   a.aim = gunAim(a, pawn, steer);
   if (a.view === "cockpit") { const cam = a.cam; if (cam && live(cam)) { try { cam.Move({ position: cockpitPos(a) }); } catch (e) {} } }

@@ -25,6 +25,7 @@ function think() {
     tickBombs(dt);
     tickTracers(dt);
     tickAmbient();
+    tickWhistle(t);
     tickUnlocks(t);
     aiThink(t, dt);
   } catch (e) { logErr("world", e); }
@@ -177,7 +178,8 @@ Instance.OnActivate(() => {
 });
 Instance.OnRoundStart(() => {
   roundStart = now(); roundKills = 0; unlocked.clear();
-  points = null; shells.length = 0; bombs.length = 0; tracers.length = 0;
+  points = null; shells.length = 0; bombs.length = 0; tracers.length = 0; diveBusy.length = 0;
+  whistleAt = now() + CONFIG.LOBBY_RESPAWN;      // over the top as the briefing room empties (deployAt below)
   // pilots and plotters of the last round: the map's aircraft are new entities, so only the pawn is put right (scale, move type, camera)
   for (const p of players.values()) {
     const pw = (p.air || p.inSight || p.hidden) ? pawnOf(p.slot) : undefined;

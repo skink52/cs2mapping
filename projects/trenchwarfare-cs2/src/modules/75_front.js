@@ -17,6 +17,16 @@ function tickUnlocks(t) {
     for (const p of players.values()) headline(p, u.msg, 7);     // "TITLE - where" -> the banner plate
   }
 }
+// the company officer's whistle as the round's first deploys go over (LOBBY_RESPAWN after the round start): tw_whistle_attack, a flat
+// sound everyone hears (tools/patch_sounds.py); nothing on a map without the emitter
+let whistleAt = 0;
+function tickWhistle(t) {
+  if (!whistleAt || t < whistleAt) return;
+  whistleAt = 0;
+  if (!byName("tw_whistle_attack")) return;
+  fire("tw_whistle_attack", "StartSound");
+  stats.whistles++;
+}
 function tickAmbient() {
   const t = now(); if (t < nextAmbient) return;
   nextAmbient = t + CONFIG.AMBIENT_MIN + Math.random() * (CONFIG.AMBIENT_MAX - CONFIG.AMBIENT_MIN);

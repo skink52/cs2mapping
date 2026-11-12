@@ -12,10 +12,13 @@ left the script (STALE), or on a shipped script older than its modules (STALE bu
 delivery, 67,206,918 B, CRC32 2e3f90d0) and the addon as it stood that day; rows changed by remaster steps 4 (bots) and 5 (world patch)
 were updated the same day. Level: a read of the files; nothing here is in-game verified.
 
-**Two states.** By default the check reads the deployed map (`out/digest.json` from `tools/restage_out.py`): 77 of 78 rows OK, the
-known missing `mortar_<tg>_K`. Step 5's patched map: `python tools/check_contract.py --vmap out/mg_trenchwarfare_patched.vmap --stage out/addon`
+**Two states.** By default the check reads the deployed map (`out/digest.json` from `tools/restage_out.py`): 77 of 81 rows OK, the
+known missing `mortar_<tg>_K` and (since 12 Nov) the three sound-emitter rows. Step 5's patched map: `python tools/check_contract.py --vmap out/mg_trenchwarfare_patched.vmap --stage out/addon`
 (also `out/nav_patched_step5.vmap`, step 5 + `tools/patch_nav.py`): 80 of 80 OK. `--stage` lets a model on a map entity that is only
-staged (`out/addon`, not compiled yet) count as OK, "staged, not compiled yet"; never a model the script sets on a pawn.
+staged (`out/addon`, not compiled yet) count as OK, "staged, not compiled yet"; never a model the script sets on a pawn. It does the same
+for a sound event only in the staged `soundevents_addon.vsndevts` whose own wavs are staged.
+Since the sound wiring (12 Nov 2026) the deployed map also misses the three sound-emitter rows below (Known missing); the chained map
+with them, `python tools/check_contract.py --vmap out/mg_trenchwarfare_sounds.vmap --stage out/addon`: 86 of 86 OK (exit 0).
 
 ## Files
 - Script: `src/modules/NN_*.js`, joined by `node ../../create/build_script.mjs src/build.json` into `src/mg_trenchwarfare.js` (the
@@ -65,6 +68,9 @@ plus the few entities it depends on without looking them up. "Count" is how many
 | `tw_whistle_snd_1..12` | point_soundevent | 12 of 12 | make_map.py | OK | effect pool (POOL 12), Teleport + StartSound |
 | `tw_shake_1..12` | env_shake | 12 of 12 | make_map.py | OK | effect pool (POOL 12), Teleport + StartShake |
 | `tw_hud` | custom_hud_layout | 1 of 1 | make_map.py | OK | CONFIG.HUD |
+| `tw_whistle_attack` | point_soundevent | 0 of 1 deployed; 1 of 1 in `out/mg_trenchwarfare_sounds.vmap` | patch_sounds.py | MISSING (known) deployed; OK patched | StartSound LOBBY_RESPAWN after each round start (75_front tickWhistle); fired only when it exists. soundName `tw.whistle_attack` (flat) |
+| `tw_plane_dive_1..4` | point_soundevent | 0 of 4 deployed; 4 of 4 patched | patch_sounds.py | MISSING (known) deployed; OK patched | pool of CONFIG.AIR.DIVE.EMITTERS (4): SetSourceEntity to a diving aircraft, StartSound; StopSound when its flight ends (60_air diveSound / diveStop); a dive with all 4 busy, or no emitter, is silent. soundName `tw.plane_dive` |
+| `tw_rain_tin_<tg>_1..3` | point_soundevent | 0 of 6 deployed; 6 of 6 patched | patch_sounds.py | MISSING (known) deployed; OK patched | not looked up by the script: the rain relay `tw_rain` (patch_terrain) OnUser1 StartSound / OnUser2 StopSound (checked), 88 u over each dressing-station shelter. soundName `tw.amb.rain_tin` (loop) |
 | `woodsopen` | prop_dynamic | 1 of 1 (2 entities) | the user (blockers), made prop_dynamic by patch_unlocks.py | OK | Entities.FindByName (both); Remove + effects when the area opens (CONFIG.UNLOCKS); positions: the bot leash and the bots' ladder post. Step 5: model `revet_planks_broken_128_dyn.vmdl` |
 | `undergroundopen` | prop_dynamic | 1 of 1 (2 entities) | the user (blockers), made prop_dynamic by patch_unlocks.py | OK | Entities.FindByName (both); Remove + effects when the area opens (CONFIG.UNLOCKS); positions: the bot leash and the bots' sap-head post. Step 5: model `revet_planks_broken_dyn.vmdl` |
 | `tw_script` | point_script | 1 of 1 | make_map.py | OK | runs the script (not looked up by it) |
@@ -120,7 +126,16 @@ The table above is the deployed addon (what `check_contract.py` reads). Step 8 (
 above plays only our synthesised files (`mortar_launch_1..2`, `mortar_whistle_1..2`, `mortar_impact_1..3`, `plane_engine` loop,
 `plane_gun_1..3`); the map's `env_soundscape` plays `tw.amb.front`, whose children are `tw.amb.wind`, `tw.amb.barrage`, `tw.amb.guns`,
 `tw.amb.shells`, `tw.amb.mg`, `tw.amb.whistles`, `tw.amb.planes` (ours) and `tw.amb.crows`, `tw.amb.rifles`, `tw.amb.whiz` (stock).
-Sounds made but waiting for a script or map hook (`tw.whistle_attack`, `tw.plane_dive`, `tw.amb.rain_tin`): [SOUNDS.md](SOUNDS.md).
+Wired 12 Nov 2026 (staged, not deployed; [SOUNDS.md](SOUNDS.md)): with `--vmap out/mg_trenchwarfare_sounds.vmap --stage out/addon`
+
+| Sound event | Made by | Status | Notes |
+|---|---|---|---|
+| `tw.whistle_attack` | tools/sounds.py | OK | staged in out/addon, not compiled yet; on tw_whistle_attack; own files whistle_attack.vsnd |
+| `tw.plane_dive` | tools/sounds.py | OK | staged in out/addon, not compiled yet; on tw_plane_dive_N; own files plane_dive.vsnd |
+| `tw.amb.rain_tin` | tools/sounds.py | OK | staged in out/addon, not compiled yet; on tw_rain_tin_N; own files rain_tin.vsnd |
+
+The script names no sound event: `tw_whistle_attack` and `tw_plane_dive_N` are looked up by name and fired only when present (the
+deployed map has neither, so the current map gets no input at a missing entity), `tw_rain_tin_<tg>_N` only by the map's rain relay.
 
 ## HUD (custom_hud_layout `tw_hud`)
 Per-id contract (kind, classes, step ranges, the module that writes it): [HUD.md](HUD.md#hud-contract), enforced by `tools/tw_hud.py`
@@ -179,6 +194,10 @@ Rows that are MISSING on purpose or until a later remaster step; `tools/check_co
   exists, so nothing is fired at a missing name. The lookup is also the fallback when `mortarpit_<tg>_K` is missing, which it is not.
   Step 5 (`tools/patch_world_1.py`, in `out/` until deployed) makes them `prop_dynamic` `mortar_<tg>_K` on the `_dyn` twins with idle
   + fire: with `--vmap out/mg_trenchwarfare_patched.vmap --stage out/addon` the row is OK. Drop this entry once that map is deployed.
+- `tw_whistle_attack`: added by `tools/patch_sounds.py` (chain world_1 -> models -> terrain -> sounds -> nav), not in the deployed map; the
+  script fires it only when it exists. OK with `--vmap out/mg_trenchwarfare_sounds.vmap --stage out/addon`. Drop once that chain is deployed.
+- `tw_plane_dive_1..4`: the same (the dive pool); a dive on the deployed map is silent.
+- `tw_rain_tin_<tg>_1..3`: the same (map-only: the rain relay `tw_rain`, itself from step 7's terrain patch, starts and stops them).
 
 ## Bots (remaster step 4)
 No new entity names: bots use the posts, the blockers, the crew seats and the aircraft above. CONFIG names the script and the map share:
