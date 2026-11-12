@@ -60,8 +60,3 @@ projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.EntFireAtTar
 projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.EntFireAtName               baseline: not yet moved to the current API
 projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.FindEntitiesByName          baseline: not yet moved to the current API
 projects/cs2mapTTT/addon/maps/scripts/ttt.js               Instance.ClientCommand               baseline: not yet moved to the current API
-projects/trenchwarfare-cs2/src/mg_trenchwarfare.js         Instance.EntFireAtName               baseline: not yet moved to the current API
-projects/trenchwarfare-cs2/src/mg_trenchwarfare.js         Instance.ServerCommand               baseline: not yet moved to the current API
-projects/trenchwarfare-cs2/src/mg_trenchwarfare.js         Instance.FindEntityByName            baseline: not yet moved to the current API
-projects/trenchwarfare-cs2/src/mg_trenchwarfare.js         Instance.FindEntitiesByName          baseline: not yet moved to the current API
-projects/trenchwarfare-cs2/src/mg_trenchwarfare.js         Instance.Msg                         baseline: not yet moved to the current API

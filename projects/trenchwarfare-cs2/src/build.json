@@ -1,0 +1,7 @@
+{
+  "name": "mg_trenchwarfare",
+  "modules": "modules",
+  "out": "mg_trenchwarfare.js",
+  "imports": "auto",
+  "header": ["AI-generated (Claude) for skink52's mg_trenchwarfare addon. Modules: docs/SCRIPT.md; names: docs/CONTRACT.md."]
+}

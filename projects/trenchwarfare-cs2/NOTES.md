@@ -20,7 +20,14 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   with a patch list for step 5. Needs the user: H1 (24 `tl_bench` they placed in the sap mouths keep the mine galleries shut after
   the unlock), M2 (duplicate `info_map_parameters` id 7 is ungrouped). H2: the 4 unlock blockers are `prop_dynamic` on static-archetype
   models (compiler may delete them: areas open from round start) - fix by rebuilding those models dynamic. H3: woods nav seeds outside
-  the fence flood 650k cells (likely the 44k nav areas). Step 3 (script) running.
+  the fence flood 650k cells (likely the 44k nav areas).
+- 12 Nov ~14:40: step 3 done (simulated). Script is `src/modules/NN_*.js` joined by `node ../../create/build_script.mjs src/build.json`
+  into `src/mg_trenchwarfare.js` (never edit the output). Gate in `docs/SCRIPT.md`: api check 0/0/0, tscheck OK, contract, mock,
+  6/6 scenarios, coverage, `sim_balance` 50 seeds T 54 % +-7, perf 0.37 ms/tick at 64. 18 bugs fixed (`docs/REVIEW_SCRIPT_1.md`).
+  For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
+  `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
+  `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
+  Step 5 (world patches into `out/`) running.
 
 ## State 2026-10-26 ~13:15 ACDT (tw8_content_01.zip radar, tw8_game.zip overview)
 

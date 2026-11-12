@@ -1,18 +1,19 @@
 # mg_trenchwarfare contract: names the map, the script, the HUD and the tests must agree on
 
-Single list of the entity names, models, sound events, HUD ids and commands that `src/mg_trenchwarfare.js` relies on, with where each
+Single list of the entity names, models, sound events, HUD ids and commands that the script (`src/modules/`, shipped as `src/mg_trenchwarfare.js`) relies on, with where each
 comes from and whether the current map and addon have it. Change a name here first, then on both sides. `tg` = `t` | `ct` (T = 2, CT = 3);
 `N` numbers an aircraft or post from 1, `K` a mortar crew 1..`CONFIG.CREWS`.
 
 **Checked by** `python tools/check_contract.py` (from the project folder): it reads the script, the map digest (`out/digest.json` from
 `tools/restage_out.py`, or a fresh `tools/mapdigest.py` read of the vmap) and the content + game addon folders, and exits 1 on any
-MISSING row not listed under [Known missing](#known-missing), on a script lookup that no row covers (UNLISTED), or on a row whose name has
-left the script (STALE). `--markdown` prints the tables below. The tables were generated on 12 Nov 2026 from the user's vmap (tw34
+MISSING row not listed under [Known missing](#known-missing), on a script lookup that no row covers (UNLISTED), on a row whose name has
+left the script (STALE), or on a shipped script older than its modules (STALE build). `--markdown` prints the tables below. The tables were generated on 12 Nov 2026 from the user's vmap (tw34
 delivery, 67,206,918 B, CRC32 2e3f90d0) and the addon as it stood that day. Level: a read of the files; nothing here is in-game verified.
 
 ## Files
-- Script: `src/mg_trenchwarfare.js` (one file; the addon copy is `content\...\maps\scripts\mg_trenchwarfare.js`, the map's
-  `tw_script` runs `maps/scripts/mg_trenchwarfare.vjs`).
+- Script: `src/modules/NN_*.js`, joined by `node ../../create/build_script.mjs src/build.json` into `src/mg_trenchwarfare.js` (the
+  shipped file; module map in [SCRIPT.md](SCRIPT.md)). The addon copy is `content\...\maps\scripts\mg_trenchwarfare.js`; the map's
+  `tw_script` runs `maps/scripts/mg_trenchwarfare.vjs`.
 - Map: the user's `content\csgo_addons\mg_trenchwarfare\maps\mg_trenchwarfare.vmap` (source of truth; delta patches only, REMASTER_PLAN).
   Most names were placed by `tools/make_map.py` (vis group `tw_gen`); later ones by the `tools/patch_*.py` delta patches.
 - HUD: `tools/tw_hud.py` + `tools/tw_cockpit.py` -> `panorama/layout/custom_game/mg_trenchwarfare.xml`, `panorama/styles/custom_game/mg_trenchwarfare.css`,
@@ -25,12 +26,12 @@ delivery, 67,206,918 B, CRC32 2e3f90d0) and the addon as it stood that day. Leve
   sight steps `CONFIG.TARGET_STEPS 192` = `tw_hud.py STEPS` (the `.x0..x191` / `.y0..y191` classes).
 
 ## Entities (targetnames)
-What the script looks up by name (FindEntityByName, FindEntitiesByName, EntFireAtName), plus the few entities it depends on without
-looking them up. "Count" is how many of the expected names exist with that class.
+What the script looks up by name (`Entities.FindByName` through `byName` / `findList`, `Entities.FireInput` through `fire`, `ent.FireInput`),
+plus the few entities it depends on without looking them up. "Count" is how many of the expected names exist with that class.
 
 | Name | Class | Count in the vmap | Made by | Status | Notes |
 |---|---|---|---|---|---|
-| `trench_<tg>_N` | info_teleport_destination | 20 / 20 (t / ct; script reads 1..64) | make_map.py | OK | infantry posts; the script header still says point_teleport |
+| `trench_<tg>_N` | info_teleport_destination | 20 / 20 (t / ct; script reads 1..64) | make_map.py | OK | infantry posts (deploy, and the bot leash: a post 400+ u from a closed blocker) |
 | `heal_<tg>_N` | info_target | 3 / 3 (t / ct; script reads 1..16) | make_map.py | OK | dressing stations |
 | `plane_<tg>_N` | info_teleport_destination | 5 / 5 (t / ct; script reads 1..16) | make_map.py | OK | air-spawn points |
 | `tw_plane_<tg>_N` | prop_dynamic | 5 / 5 (t / ct; script reads 1..16) | make_map.py | OK | the aircraft (CT SPAD VII, T Dr.I) |
@@ -49,15 +50,15 @@ looking them up. "Count" is how many of the expected names exist with that class
 | `mortarcrew_<tg>_K_b` | info_teleport_destination | 10 of 10 | make_map.py | OK | seat b: ammunition box |
 | `tw_launch_snd_<tg>_K` | point_soundevent | 10 of 10 | make_map.py | OK | StartSound on firing |
 | `tw_launch_fx_<tg>_K` | info_particle_system | 10 of 10 | make_map.py | OK | Stop/Start on firing |
-| `mortar_<tg>_K` | prop_dynamic | 0 of 10 | nobody (the mortars are prop_static) | MISSING (known) | SetAnimation fire (src fireMortar), and the fallback for a missing mortarpit_ |
+| `mortar_<tg>_K` | prop_dynamic | 0 of 10 | nobody (the mortars are prop_static) | MISSING (known) | looked up per round; SetAnimation fire by ent.FireInput when present (fireMortar), and the fallback for a missing mortarpit_ |
 | `tw_boom_fx_1..12` | info_particle_system | 12 of 12 | make_map.py | OK | effect pool (POOL 12), Teleport + Stop/Start |
 | `tw_dirt_fx_1..12` | info_particle_system | 12 of 12 | make_map.py | OK | effect pool (POOL 12), Teleport + Stop/Start |
 | `tw_boom_snd_1..12` | point_soundevent | 12 of 12 | make_map.py | OK | effect pool (POOL 12), Teleport + StartSound |
 | `tw_whistle_snd_1..12` | point_soundevent | 12 of 12 | make_map.py | OK | effect pool (POOL 12), Teleport + StartSound |
 | `tw_shake_1..12` | env_shake | 12 of 12 | make_map.py | OK | effect pool (POOL 12), Teleport + StartShake |
 | `tw_hud` | custom_hud_layout | 1 of 1 | make_map.py | OK | CONFIG.HUD |
-| `woodsopen` | prop_dynamic | 1 of 1 (2 entities) | the user (blockers), made prop_dynamic by patch_unlocks.py | OK | FindEntitiesByName; Remove + effects when the area opens (CONFIG.UNLOCKS) |
-| `undergroundopen` | prop_dynamic | 1 of 1 (2 entities) | the user (blockers), made prop_dynamic by patch_unlocks.py | OK | FindEntitiesByName; Remove + effects when the area opens (CONFIG.UNLOCKS) |
+| `woodsopen` | prop_dynamic | 1 of 1 (2 entities) | the user (blockers), made prop_dynamic by patch_unlocks.py | OK | Entities.FindByName (both); Remove + effects when the area opens (CONFIG.UNLOCKS) |
+| `undergroundopen` | prop_dynamic | 1 of 1 (2 entities) | the user (blockers), made prop_dynamic by patch_unlocks.py | OK | Entities.FindByName (both); Remove + effects when the area opens (CONFIG.UNLOCKS) |
 | `tw_script` | point_script | 1 of 1 | make_map.py | OK | runs the script (not looked up by it) |
 | `tw_uniform_1..4` | prop_dynamic | 4 of 4 | patch_uniforms.py | OK | hidden precache props for the uniform models (not looked up by the script) |
 | `info_player_terrorist / _counterterrorist` | spawns | 32 / 32 | make_map.py | OK | lobby spawns (the script teleports from there; not looked up) |
@@ -116,7 +117,7 @@ Ids the script sends (`SetDialogVariableStringForPlayer` via `hText`, `SetHasCla
 |---|---|---|---|
 | `soundevents/soundevents_addon.vsndevts` | tools/sounds.py | OK | content yes, game vsndevts_c yes |
 | `panorama/layout/custom_game/mg_trenchwarfare.vxml` | tools/tw_hud.py | OK | tw_hud layout key panorama/layout/custom_game/mg_trenchwarfare.vxml; content xml yes, css yes; game vxml_c yes, vcss_c yes |
-| `maps/scripts/mg_trenchwarfare.vjs` | src/ (copied by hand / zips) | OK | tw_script cs_script key; content .js yes (same as src/), game vjs_c yes |
+| `maps/scripts/mg_trenchwarfare.vjs` | src/mg_trenchwarfare.js (build of src/modules) | OK | tw_script cs_script key; content .js yes (same as src/), game vjs_c yes |
 
 ## Console commands and convars
 Sent with `ServerCommand` on activate (and `say` for chat). Nothing in the addon backs these, so they are OK by construction; the names
@@ -143,10 +144,10 @@ are not validated offline.
 
 ## Known missing
 Rows that are MISSING on purpose or until a later remaster step; `tools/check_contract.py` lets exactly these through.
-- `mortar_<tg>_K`: the 10 mortars are `prop_static` (`models/tw/ext/mortar_58mm` x5 CT, `models/tw/minenwerfer` x5 T), so
-  `fire("mortar_<tg>_K", "SetAnimation", "fire")` in `fireMortar` goes nowhere (harmless: EntFireAtName on a missing name does nothing).
-  The lookup is also the fallback when `mortarpit_<tg>_K` is missing, which it is not. Fixed in remaster step 5 (mortars as named
-  `prop_dynamic`, dynamic archetype, with a `fire` sequence) or by dropping the call in step 3.
+- `mortar_<tg>_K`: the 10 mortars are `prop_static` (`models/tw/ext/mortar_58mm` x5 CT, `models/tw/minenwerfer` x5 T). Since step 3
+  the script looks the name up once per round (`points.mortar`) and fires `SetAnimation fire` at the entity only when it exists, so
+  nothing is fired at a missing name. The lookup is also the fallback when `mortarpit_<tg>_K` is missing, which it is not. Remaster
+  step 5 makes them named `prop_dynamic` (dynamic archetype, with a `fire` sequence); no script change is needed then.
 
 ## Chat commands (script, not checked by the tool)
 `!infantry` / `!rifle`, `!mortar` / `!artillery`, `!air` / `!pilot`, `!roles`, `!swap` (also SHIFT+E), `!pos`, `!uniform`, `!random`.

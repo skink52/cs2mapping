@@ -4,6 +4,9 @@ defined, every HUD id / class the script sends is in the HUD xml / css, and the 
 says. Fails (exit 1) on any MISSING row that docs/CONTRACT.md does not list under "## Known missing", on a script lookup no row
 covers (UNLISTED), and on a row whose name no longer appears in the script (STALE). Reads only.
 
+The script is the shipped build src/mg_trenchwarfare.js (src/modules/NN_*.js joined by create/build_script.mjs, config src/build.json);
+a build older than its modules is a failure (STALE build), so the names checked are the modules' names.
+
 usage: python tools/check_contract.py [--digest out/digest.json | --vmap V] [--addon A] [--game G] [--script JS] [--markdown]
   --digest   the map digest (tools/restage_out.py writes out/digest.json); default: that file, else a fresh digest of --vmap
   --markdown print the tables for docs/CONTRACT.md instead of the plain report (same rows, same statuses)
@@ -17,6 +20,7 @@ PROJ = os.path.dirname(HERE)
 SCRIPT = os.path.join(PROJ, 'src', 'mg_trenchwarfare.js')
 CONTRACT = os.path.join(PROJ, 'docs', 'CONTRACT.md')
 MAPDIGEST = os.path.normpath(os.path.join(PROJ, '..', '..', 'tools', 'mapdigest.py'))
+BUILD = os.path.normpath(os.path.join(PROJ, '..', '..', 'create', 'build_script.mjs'))
 TEAMS = ('t', 'ct')
 
 
@@ -92,7 +96,7 @@ def main():
     per_plane = lambda fmt: [fmt % t for t in tags]
 
     ent_row('trench_<tg>_N', ['"trench_"'], 'info_teleport_destination', fam(r'trench_<tg>_'), 'make_map.py',
-            'infantry posts; the script header still says point_teleport', expect=(1, 64))
+            'infantry posts (deploy, and the bot leash: a post 400+ u from a closed blocker)', expect=(1, 64))
     ent_row('heal_<tg>_N', ['"heal_"'], 'info_target', fam(r'heal_<tg>_'), 'make_map.py', 'dressing stations', expect=(1, 16))
     ent_row('plane_<tg>_N', ['"plane_"'], 'info_teleport_destination', fam(r'plane_<tg>_'), 'make_map.py', 'air-spawn points', expect=(1, 16))
     ent_row('tw_plane_<tg>_N', ['"tw_plane_"'], 'prop_dynamic', planes, 'make_map.py', 'the aircraft (CT SPAD VII, T Dr.I)', expect=(1, 16))
@@ -111,7 +115,7 @@ def main():
     ent_row('tw_launch_snd_<tg>_K', ['"tw_launch_snd_"'], 'point_soundevent', crew('tw_launch_snd_%s_%d'), 'make_map.py', 'StartSound on firing')
     ent_row('tw_launch_fx_<tg>_K', ['"tw_launch_fx_"'], 'info_particle_system', crew('tw_launch_fx_%s_%d'), 'make_map.py', 'Stop/Start on firing')
     ent_row('mortar_<tg>_K', ['"mortar_"'], 'prop_dynamic', crew('mortar_%s_%d'), 'nobody (the mortars are prop_static)',
-            'SetAnimation fire (src fireMortar), and the fallback for a missing mortarpit_')
+            'looked up per round; SetAnimation fire by ent.FireInput when present (fireMortar), and the fallback for a missing mortarpit_')
     for p, cls, inp in (('tw_boom_fx_', 'info_particle_system', 'Stop/Start'), ('tw_dirt_fx_', 'info_particle_system', 'Stop/Start'),
                         ('tw_boom_snd_', 'point_soundevent', 'StartSound'), ('tw_whistle_snd_', 'point_soundevent', 'StartSound'),
                         ('tw_shake_', 'env_shake', 'StartShake')):
@@ -119,7 +123,7 @@ def main():
     ent_row('tw_hud', ['"tw_hud"'], 'custom_hud_layout', ['tw_hud'], 'make_map.py', 'CONFIG.HUD')
     for u in ('woodsopen', 'undergroundopen'):
         ent_row(u, ['"%s"' % u], 'prop_dynamic', [u], 'the user (blockers), made prop_dynamic by patch_unlocks.py',
-                'FindEntitiesByName; Remove + effects when the area opens (CONFIG.UNLOCKS)')
+                'Entities.FindByName (both); Remove + effects when the area opens (CONFIG.UNLOCKS)')
     ent_row('tw_script', [], 'point_script', ['tw_script'], 'make_map.py', 'runs the script (not looked up by it)')
     nu = len(set(re.findall(r'"(models/tw/players/[^"]+\.vmdl)"', js)))
     ent_row('tw_uniform_1..%d' % nu, [], 'prop_dynamic', ['tw_uniform_%d' % i for i in range(1, nu + 1)], 'patch_uniforms.py',
@@ -134,11 +138,11 @@ def main():
         ['"trench_" "heal_" "plane_" "tw_plane_" "tw_prop_" "tw_bomb_" "tw_tracer_" "tw_bombsight_" "tw_gunsight_" "tw_plane_eng_"',
          '"tw_plane_smoke_" "mortarpit_" "mortar_" "mortarcrew_" "tw_launch_snd_" "tw_launch_fx_" "tw_boom_fx_" "tw_dirt_fx_"',
          '"tw_boom_snd_" "tw_whistle_snd_" "tw_shake_" "tw_hud"'])))
-    for m in re.finditer(r'(?:FindEntityByName|FindEntitiesByName|findList|\bent|\bfire)\(\s*"([^"]+)"', js):
+    for m in re.finditer(r'(?:FindEntityByName|FindEntitiesByName|FindByName|\bbyName|findList|\bent|\bfire)\(\s*"([^"]+)"', js):
         tokens.add(m.group(1))
     for t in sorted(tokens - known_tok):
         problems.append('UNLISTED script lookup "%s..." (add a row for it)' % t)
-    if 'FindEntityByName(nm + i)' in js:
+    if 'byName(nm + i)' in js or 'FindEntityByName(nm + i)' in js:
         arr = re.search(r'for \(const nm of \[([^\]]+)\]\)', js)
         for t in re.findall(r'"([^"]+)"', arr.group(1) if arr else ''):
             if t not in known_tok: problems.append('UNLISTED pool lookup "%s"' % t)
@@ -234,7 +238,7 @@ def main():
     src_ok = cs.endswith('.vjs') and os.path.exists(os.path.join(a.addon, cs[:-4] + '.js'))
     same = src_ok and open(os.path.join(a.addon, cs[:-4] + '.js'), encoding='utf-8').read().replace('\r\n', '\n') == js.replace('\r\n', '\n')
     g_s = cs and os.path.exists(os.path.join(a.game, cs + '_c'))
-    row('file', cs or 'maps/scripts/mg_trenchwarfare.vjs', 'OK' if src_ok and g_s else 'MISSING', '', '', 'src/ (copied by hand / zips)',
+    row('file', cs or 'maps/scripts/mg_trenchwarfare.vjs', 'OK' if src_ok and g_s else 'MISSING', '', '', 'src/mg_trenchwarfare.js (build of src/modules)',
         'tw_script cs_script key; content .js %s (%s src/), game vjs_c %s' % ('yes' if src_ok else 'NO', 'same as' if same else 'DIFFERS from', 'yes' if g_s else 'NO'))
 
     # ---------------------------------------------------------------- console
@@ -244,6 +248,14 @@ def main():
     for c in ('bot_quota 0', 'bot_kick'):
         if '"%s"' % c in js: row('console', c, 'OK', '', '', 'script OnActivate', 'only when CONFIG.BOTS_ON is false')
     if '"say "' in js: row('console', 'say <text>', 'OK', '', '', 'script say()', 'chat announcements (unlocks, roles)')
+
+    # ---------------------------------------------------------------- the build must be current (only for the default script)
+    if os.path.abspath(a.script) == os.path.abspath(SCRIPT):
+        try:
+            r = subprocess.run(['node', BUILD, os.path.join(PROJ, 'src', 'build.json'), '--check'], capture_output=True, text=True)
+            if r.returncode: problems.append('STALE build: %s' % (r.stdout.strip() or r.stderr.strip())[:200])
+        except OSError as e:
+            print('note: node not found, build freshness not checked (%s)' % e)
 
     # ---------------------------------------------------------------- verdict
     known = set()

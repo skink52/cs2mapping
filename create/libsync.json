@@ -229,6 +229,14 @@
   "create/voxel.py": {
    "origin": "space-racer-cs2:tools/cars.py",
    "seen": "25bef6f6b979d7a5f5461ea44316e6a0647dbfd2"
+  },
+  "create/build_script.mjs": {
+   "origin": "monsoon-cs2:tools/build_script.mjs",
+   "seen": "eb52136a4c6eff25353a6b97ae30b17d396e3d69"
+  },
+  "create/sim_balance.mjs": {
+   "origin": "monsoon-cs2:test/sim_balance.mjs",
+   "seen": "ffa06bb0576e91299ff6768d4322bce476c76a9b"
   }
  }
 }

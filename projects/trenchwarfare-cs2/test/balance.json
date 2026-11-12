@@ -1,0 +1,25 @@
+{
+  "name": "mg_trenchwarfare balance (create/sim_balance.mjs)",
+  "mock": "mock.mjs",
+  "cwd": "..",
+  "seconds": 600,
+  "seedBase": 101,
+  "args": [],
+  "teams": { "2": "T", "3": "CT" },
+  "sources": ["rifle", "mortar", "plane_gun", "bomb", "shot_down", "crash", "crash_self"],
+  "model": ["rifle"],
+  "noTarget": ["crash", "crash_self"],
+  "targets": { "win": [0.45, 0.55], "share": [0.03, 0.40] },
+  "extras": [
+    { "key": "flightLife", "label": "aircraft sortie length median, s", "stat": "median" },
+    { "key": "flights", "label": "sorties per window (mean)", "stat": "mean" },
+    { "key": "shots", "label": "mortar shots per window (mean)", "stat": "mean" },
+    { "key": "assists", "label": "mortar assists per window (mean, mock rule: 41+ hp)", "stat": "mean" },
+    { "key": "unlockAt", "label": "areas opened at (s), median of both", "stat": "median" }
+  ],
+  "notes": [
+    "the round itself runs to mp_roundtime 60 (no win condition in the script); the winner here is the side with more kills in the window",
+    "rifle = the mock's rate model (infantry kill the nearest enemy in 4200 u, 30 s mean at 3300 u); shot_down = rifle hits on a plane (pilot killed); crash_self = a pilot's own crash",
+    "infantry in the mock stand still at their posts: bombs and mortars do better than against people who move"
+  ]
+}
