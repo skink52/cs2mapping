@@ -15,7 +15,7 @@
 - [ ] Further polish passes.
 
 ## Resume here
-**12 Nov 2026, night (skink52's Sprawl notes, "half rate for above 40 is yes", "update server"). build 31: 19 suites PASS, mock PASS, Sprawl generated clean (13 300 meshes, 0 bad, cache check OK), Dunes script deployed; Sprawl not yet compiled; test server down (CSS).**
+**12 Nov 2026, night (skink52's Sprawl notes, "half rate for above 40 is yes", "update server"). build 31: 19 suites PASS, mock PASS, Sprawl rebuilt and compiled (vpk 13 Nov 00:56, 5194 resources, 0 failed, cache check clean), Dunes script deployed, both copied to the test server's files; test server down (CSS, below). Unseen in game.**
 - **Sprawl ramps split** (skink52: "inelegant - and removed playable area ... a single lane on and off ramp, and have normal traffic
   flow between"): tools/arenas/sprawl.py `highway`. The decks are 900 wide (the avenue's width; barriers 40 thick at +-430) and each
   end parts into an off lane and an on lane (|t| 150-450, 300 wide, outer concrete barrier, inner steel guard rail on posts), with
