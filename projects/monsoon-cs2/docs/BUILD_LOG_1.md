@@ -180,3 +180,49 @@ addon have the same sha256), so they are current.
 - The PC copy of `build_maps.ps1` (`C:\source1\cs2port`) differs from `scripts/build_maps.ps1` in the repo: it bakes plain `full`
   builds at 2048 instead of 1024. Not touched; reconcile one way or the other.
 - Not launched: step 12 (BUILD.md "Local test with bots") is the next step, for skink52.
+
+## Stage 3: nav cut, world pass 3, recompile (12 Nov 2026, 16:50-20:15)
+
+Level reached: the map is **compiled** again (resourcecompiler `OK: 501 compiled, 0 failed`, vpk in `game\csgo_addons\mg_monsoon\maps\`).
+Not Hammer verified, not in-game verified. No `cs2.exe` ran at any point (checked before the deploy and before the compile). The
+3D skybox map was not rebuilt: nothing that feeds it (`layout.ground_low`, the sky, far terrain) changed. What changed in the world
+and why: [REVIEW_WORLD_1.md](REVIEW_WORLD_1.md) "Pass 3".
+
+### Commands and times
+| # | What | Command | Time | Result |
+|---|---|---|---|---|
+| 1 | Map, 6 builds | `watchdog ... -- python -u make_map.py ../out/template.vmap ../out/addon/maps/mg_monsoon.vmap ../out/addon` (logs `out/logs/p3_map1..6.log`) | 9.5-18 min each (the slow ones ran beside mg_trenchwarfare's compile) | build 6: 7,674 entities, 258 `func_nav_markup` (15 seeds, 243 NONAV) |
+| 2 | Offline checks on build 6 | `check_mesh.py`, `check_world.py`, `check_play.py` on the vmap; `make_radar.py ../out/addon ../out/game`, `render_board.py ../out/addon`; project folder: `node tools/build_script.mjs && node test/mock.mjs 32 300` | 1.5 min, 1 min, 1.5 min, 4 min, 2 min | 0 bad / clean / clean (9) / done / mock PASS (script mv-0.5, commit 07a5d7b, 3,597 lines) |
+| 3 | Deploy | `python -I tools/deploy_monsoon.py` (dry run), then `--apply` | seconds | 2 replaced (`mg_monsoon.vmap`, `mg_monsoon.js`), 3,125 unchanged; `out/deploy/mg_monsoon_deploy_20261112_191225.json` |
+| 4 | Map | from `C:\source1\cs2port`: `watchdog --label "mg_monsoon map" --expect 3600 --heartbeat 300 --stall 900 --max 10800 --log logs\mg_monsoon_p3_watch.log --watch logs\mg_monsoon_build.log -- powershell ... build_maps.ps1 final mg_monsoon` | 16 min queued behind mg_trenchwarfare's compile, then **41.5 min** (19:28-20:09) | `OK in 41.5 min - mg_monsoon.vpk moved`; logs kept as `out/logs/mg_monsoon_build_p3.log`, `mg_monsoon_p3_watch.log` |
+| 5 | Script | `resourcecompiler -f -i ...\maps\scripts\mg_monsoon.js` | 3 s | `OK: 1 compiled`, `mg_monsoon.vjs_c` 268,417 bytes (mv-0.5); a second dry run finds nothing left to deploy |
+
+`build_maps.ps1` printed "Another resourcecompiler is still running - waiting" every few seconds while it queued, so the watchdog saw
+log activity and did not count the wait as a stall.
+
+### Before / after
+| | Stage 2 (run 3) | Stage 3 |
+|---|---|---|
+| Whole compile | 65.8 min | **41.5 min** |
+| Nav polys: Recast / after NONAV / merged / before island removal | 65,461 / 61,438 / 43,528 / 42,052 | 43,638 / 31,386 / 20,882 / 20,163 |
+| **Nav areas** (`Nav mesh (v36/1) loaded with N nav areas`) | **33,661** | **15,033** |
+| CSGO: early occupy / hiding / encounter / **approach areas** | 31 s / 20 s / 63 s / **1,569 s** | 14 s / 7 s / 22 s / **348 s** |
+| Vis | 152,878 clusters merged to 4,096 | 152,931 merged to 4,096 |
+| Lightmap | 1,830 meshes charted in 120 s, 270,837 charts, lightmapping 602 s | 1,893 meshes in 118 s, 290,597 charts, lightmapping 608 s, no out-of-memory |
+| Bomb damage bake | - | 53 s |
+| vpk | 182,976,678 bytes | 176,247,792 bytes |
+| `DELETED` props / entities | 0 | 0 (the two `DELETED`-like lines are Steam Audio's "baked data file will be deleted") |
+| Missing models / materials of ours | 0 | 0 (only the known `survival_river_0{2,4}_..._tga_...` water textures and `detail_prop_types.vdata_c`, harmless, see Stage 2) |
+| Other lines | | `TestBoxHullForClipDir - polyBack is empty` (nav, harmless as before); 8,307 / 423,478 triangles outside vis; 2 % of triangles 240+ u from lightmap volumes |
+
+The offline estimate before the compile said ~10,260 areas (the flood fell from 378,891 to 115,469 cells, x 0.30, applied to
+33,661). The compile made 15,033 (x 0.45): the ground bots keep (bases, the village, props, roads) is cut into smaller areas than
+the open valley sides that were taken out. `check_play.py` check 9 is recalibrated on this compile (0.130 areas per 16-u cell).
+
+### Remains
+- **Nav at 15,033**: the target was well under 15,000. Approach areas fell from 26 to 6 min; FPS with bots is to be seen at the first
+  launch (mg_trenchwarfare lost FPS at 44k). Next cut, measured with `check_play.py --nav-plan` before regenerating: smaller flag and
+  road margins in `mv_entities.NAV_ZONES` / `NAV_MARGIN`, or fewer nav pieces inside the bases.
+- C-E route balance 1.11 (REVIEW_WORLD_1 "Pass 3", Left).
+- The 3D skybox and the elephant grass VRAM points of Stage 2 are unchanged.
+- Not launched: BUILD.md step 12 is the next step, for skink52.

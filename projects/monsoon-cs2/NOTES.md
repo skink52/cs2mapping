@@ -2,7 +2,24 @@
 
 Read this first when resuming. Newest state at the top. Design: [docs/DESIGN.md](docs/DESIGN.md).
 
-## Resume here (12 Nov 2026, after build stage 2: the map compiled)
+## Resume here (12 Nov 2026, after build stage 3: nav cut, world pass 3, recompiled)
+
+**State in one line:** `mg_monsoon.vpk` **recompiled** (41.5 min, 0 failed, 0 DELETED) with **15,033 nav areas** (was 33,661;
+"Compute Approach areas" 348 s, was 1,569 s) and the script mv-0.5 compiled; **never launched, not opened in Hammer**. Not committed.
+Records: [docs/BUILD_LOG_1.md](docs/BUILD_LOG_1.md) "Stage 3", [docs/REVIEW_WORLD_1.md](docs/REVIEW_WORLD_1.md) "Pass 3".
+
+- Nav: `mv_entities.nonav_boxes()` keeps nav only on the bases, flags, roads / trails, two declared routes (west ford; CT's route
+  to the temple) and the tunnels (243 NONAV boxes). `check_play.py` check 9 now estimates the nav (flood with NONAV nodes removed,
+  calibrated on this compile: 0.130 areas per 16-u cell), fails when a station is off the nav or a base cannot route to a flag on it,
+  and `--nav-plan` measures a markup change before regenerating. 15,033 is at the 15,000 line, not well under: next cut in REVIEW Pass 3 "Left".
+- World: temple ghat (river stair landing + two flights; CT to D 5199 -> 4799, A-D balance 1.15 -> 1.06), temple court 4 balustrades
+  + 4 lions (crate moved to the SE corner), a strangler-fig wall and a collapsed enclosure run at the knoll foot, village market lane
+  (3 stalls), 2 platforms, spirit-house offerings, hut-roof clips, 8 huts (was 9), culvert bunker + M113 outside the firebase gate.
+- Left: **C-E balance 1.11** (CT deploy point behind gun pit 1; needs a `layout.firebase()` change and POCKET_FILL re-derived),
+  antenna mast / crew tent / second latrine (no room in the wire), one jump-escapable village pocket.
+- Checks on the compiled vmap: check_mesh 0 bad, check_world clean, check_play clean (9), mock 32 x 300 PASS; radar and board rebuilt.
+
+## Earlier: after build stage 2 (12 Nov 2026, the map compiled)
 
 **State in one line:** `mg_monsoon.vpk` is **compiled** (final build, 65.8 min, 0 failed, 0 DELETED) and in
 `game\csgo_addons\mg_monsoon\maps\` with the 3D skybox's own `mg_monsoon_3dskybox.vpk`; **never launched, not opened in Hammer**.
@@ -16,6 +33,16 @@ Not committed. Full record: [docs/BUILD_LOG_1.md](docs/BUILD_LOG_1.md) "Stage 2"
   ("Compute Approach areas" alone 26 min); vpk 183 MB.
 - The skybox map needs its own build line: `build_maps.ps1 final "mg_monsoon mg_monsoon_3dskybox"` (one quoted argument).
 - Offline checks after the fixes: check_mesh 0 bad, check_world clean, check_play clean (9), mock 32 x 300 PASS.
+
+- **Script round 3 (12 Nov, simulated only, mv-0.5)**: bot-only T win 70 -> 49 % and mixed 56 -> 49 % over 80 seeds (team plan for bot
+  deploys, AI pilot uptime 50 -> 75 %), plus AI crew hand-over, `!bots` vote, no teleport for a waiting human in the field, bot takeover
+  (`OnBotControl`). Record and what is still short (flag D, perf +4 %): [docs/REVIEW_SCRIPT_2.md](docs/REVIEW_SCRIPT_2.md) "Round 3".
+- **Script review pass 2 (12 Nov, simulated only)**: 10 bugs fixed in `src/` (1 high: a departed player's controller left in its slot
+  kept its AI role / gun crew / helicopter; 6 medium: AI helicopter hand-over called more than once, not withdrawable, locked when its AI
+  pilot left; pilotless helicopter ditched in the river; pilot back on his pad without his helicopter; AI gunner kept an abandoned one in
+  the field; 3 low: empty panels after a restart, control characters in `say`, HUD lost while a client loads). VERSION `mv-0.4`.
+  New `node test/mock.mjs 32 450 scenario=review2 humans=4` (each piece fails on `out/review2/before_review2.js`). Full record and
+  what only CS2 can confirm: [docs/REVIEW_SCRIPT_2.md](docs/REVIEW_SCRIPT_2.md). SCRIPT.md "Tests" / CONFIG guide not yet updated for it.
 
 **Next:** skink52 launches it (docs/BUILD.md "Local test with bots": tools mode, `map mg_monsoon`, `version`) and works through
 TESTING_MONSOON.md. Watch FPS with bots (nav area count near the sibling's 44k that cost FPS) and VRAM (elephant grass is 109 MB of

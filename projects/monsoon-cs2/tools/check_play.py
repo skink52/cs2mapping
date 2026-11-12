@@ -1,6 +1,6 @@
 """mg_monsoon gameplay checks on the generated vmap (offline; "simulated" in the words of docs/reference/compatibility.md).
 
-usage: check_play.py <map.vmap> [--json out.json] [--only 1,2,...] [--verbose]
+usage: check_play.py <map.vmap> [--json out.json] [--only 1,2,...] [--verbose] [--nav-plan]
 
 The scene is rebuilt from the vmap itself, not from layout.py: terrain tiles, world meshes (terraces, stairs, ramps, berms, boulders,
 karst, the tunnel), player clips, water sheets, and every solid prop's physics hulls (the *_hull*.smd files the .vmdl compiles;
@@ -24,7 +24,12 @@ and a directed walk graph is built over it (step up 18 u per cell, drops allowed
  7 water         sheet edges above the ground (visible edge), sheets overlapping at the same height (z-fight), deep spots
  8 terrain       road / trail slope < 20 deg and cross fall, gullies across roads, bridge ramps meet the banks within 4 u, no ground
                  through walk-in floors, terrain holes covered underneath
- 9 nav           seeds on walkable ground; NONAV boxes over no road, flag, spawn or station
+ 9 nav           seeds on walkable ground; NONAV boxes over no road, flag, spawn or station (walk-on surfaces outside the nav plan,
+                 the waterfall shelf, excepted); nav estimate: the walk graph flooded from the seeds and base spawns with the nodes in
+                 NONAV boxes taken out (16-u cells, m2, and nav areas projected linearly from a compile: NAV_CAL); every flag,
+                 spawn, flag spawn, kit, rack, board seat, mount seat and tunnel portal on that nav; bots route from both spawn rings to
+                 every flag and back on it (fails otherwise); warns over NAV_TARGET areas or a nav route NAV_DETOUR x the walking one
+    --nav-plan   check 9 with the NONAV boxes mv_entities.nonav_boxes() would write now instead of the vmap's (before a regenerate)
 Exit code 1 when a check fails. Numbers go to out/check_play.json (before / after tables in docs/REVIEW_WORLD_*.md).
 """
 import os, sys, json, math, glob, re, time, pickle
@@ -53,7 +58,7 @@ WATER_OK = ('reeds', 'rice_clump', 'sampan', 'pbr', 'mangrove', 'nypa', 'fish_tr
 FOLIAGE = ('foliage', 'palm', 'weeds', 'grass', 'rice_clump', 'reeds', 'bamboo', 'rubber_tree', 'dead_tree', 'vine', 'root', 'ext/rs_', 'banyan', 'fern',
            'taro', 'yucca', 'tropical', 'ground_', 'hosta', 'generic_leaf')
 TREES = ('banyan', 'palm_tree_0', 'palm_tree_hr', 'palm_tree_small', 'rubber_tree', 'dead_tree', 'rs_jungle_tree', 'rs_jungle_palm', 'rs_coconut_palm', 'generic_tree', 'rs_mangrove',
-         'rs_bamboo_bundle', 'bamboo_clump')
+         'rs_bamboo_bundle', 'bamboo_clump', 'rs_nypa')         # pass 3: the nypa palm is a tree here as in the placer (crown from the trunk)
 BUILDINGS = ('hooch', 'camp_hut', 'school', 'gp_tent', 'fdc_bunker', 'bunker_', 'guard_tower', 'checkpoint', 'french_bunker', 'khmer_tower', 'khmer_gate',
              'c123_fuselage', 'conex', 'market_stall', 'latrine', 'shrine')
 # walk-in props: local floor rectangles (x0, y0, x1, y1, z) the ground must stay under
@@ -465,6 +470,62 @@ def reach(g, start, reverse=False):
     return seen
 
 
+# ================================================================ nav estimate (check 9)
+# Calibration: two compiles of 12 Nov 2026. Stage 2 (vmap kept as out/review/p3/mg_monsoon_s2.vmap): 378,891 flooded cells,
+# "Nav mesh (v36/1) loaded with 33661 nav areas" (0.089 areas per cell). Pass 3 (the NONAV plan of mv_entities.nonav_boxes):
+# 115,469 cells, 15,033 areas (0.130 per cell): what bots keep (bases, village, props, roads) is cut into smaller areas than the
+# open valley that was taken out, so the pass 3 point is used. Linear in the flooded cells, good to about 1.5x for a very
+# different markup; the cell count is the solid number.
+NAV_CAL = dict(areas=15033, cells=115469)
+NAV_TARGET = 15000             # areas: warn above this (the first compile's approach-area pass took 26 min at 33,661)
+NAV_DETOUR = 1.35              # warn when a bot's nav route to a flag is this much longer than the walking route (1b)
+
+
+def nonav_nodes(G, boxes):
+    """bool (K, NC): nodes whose feet are inside a NONAV box (nav generation makes no area there and cannot cross it)"""
+    out = np.zeros((G.K, NX, NY), bool); Z = G.Z.reshape(G.K, NX, NY)
+    for (x0, y0, z0, x1, y1, z1) in boxes:
+        i0 = max(0, int(math.floor((x0 - X0) / CELL - 0.5)) + 1); i1 = min(NX, int(math.ceil((x1 - X0) / CELL - 0.5)))
+        j0 = max(0, int(math.floor((y0 - Y0) / CELL - 0.5)) + 1); j1 = min(NY, int(math.ceil((y1 - Y0) / CELL - 0.5)))
+        if i1 <= i0 or j1 <= j0: continue
+        zz = Z[:, i0:i1, j0:j1]
+        out[:, i0:i1, j0:j1] |= (zz >= z0) & (zz <= z1)
+    return out.reshape(G.K, NC)
+
+
+def nav_estimate(G, sc, ents, boxes=None, seeds=None):
+    """flood the walk graph from the WALKABLESEED boxes and the base spawns with the nodes inside NONAV boxes taken out: the nodes
+    the nav mesh would cover (island removal drops the rest). -> dict(cells, area_m2, areas, nav (bool per node), Wn (nav graph))"""
+    from scipy import sparse
+    if boxes is None: boxes = [b for p, n, b in sc['navboxes'] if p == 'NONAV']
+    if seeds is None: seeds = [b for p, n, b in sc['navboxes'] if p == 'WALKABLESEED' and b[2] > L.LOBBY_Z + 1500]
+    walkable = (G.exists & ~G.blocked).ravel()
+    ok = walkable & ~nonav_nodes(G, boxes).ravel()
+    start = []
+    for b in seeds: start += G.nodes_near((b[0] + b[3]) / 2, (b[1] + b[4]) / 2, b[2] - 2.0, 40.0, 16.0)
+    for e in ents:
+        if re.fullmatch(r'mv_spawn_(ct|t)_\d+', e['name']): start += G.nodes_near(e['o'][0], e['o'][1], e['o'][2] - 8.0, 40.0, 40.0)
+    start = sorted(set(i for i in start if ok[i]))
+    D = sparse.diags(ok.astype(np.int8)); Wn = (D @ G.walk @ D).tocsr(); Wn.eliminate_zeros()
+    nav = reach((Wn + Wn.T).tocsr(), start) if start else np.zeros(len(ok), bool)
+    Dw = sparse.diags(walkable.astype(np.int8)); Wa = (Dw @ G.walk @ Dw).tocsr()
+    allw = reach((Wa + Wa.T).tocsr(), start) if start else np.zeros(len(ok), bool)
+    cells = int(nav.sum())
+    areas = int(round(cells * NAV_CAL['areas'] / NAV_CAL['cells'])) if NAV_CAL['cells'] else None
+    return dict(cells=cells, area_m2=round(cells * (CELL * 0.0254) ** 2), areas=areas, unmarked_cells=int(allw.sum()), boxes=len(boxes), seeds=len(seeds),
+                nav=nav, Wn=Wn, start=start)
+
+
+def planned_navboxes(sc):
+    """--nav-plan: the vmap's own WALKABLESEED boxes with the NONAV boxes mv_entities.nonav_boxes() would write now (layout + the
+    vmap's seeds + out/world_sites.json waypoints): the effect of a nav markup change measured before the map is regenerated"""
+    import mv_entities as ME
+    ws = json.load(open(os.path.join(OUT, 'world_sites.json'))) if os.path.exists(os.path.join(OUT, 'world_sites.json')) else {}
+    seeds = [b for b in sc['navboxes'] if b[0] == 'WALKABLESEED']
+    sites = dict(waypoints=ws.get('waypoints', []), seeds=[((b[0] + b[3]) / 2, (b[1] + b[4]) / 2) for p, n, b in seeds])
+    return seeds + [('NONAV', 'plan_%d' % (k + 1), list(b)) for k, b in enumerate(ME.nonav_boxes(None, sites=sites))]
+
+
 # ================================================================ line of sight (2.5D)
 class Sight:
     def __init__(self, G, sc):
@@ -512,9 +573,10 @@ class Sight:
 
 
 # ================================================================ the checks
-def main(path, only=None, out_json=None, verbose=False):
+def main(path, only=None, out_json=None, verbose=False, nav_plan=False):
     t0 = time.time()
     sc = load_scene(path, verbose)
+    if nav_plan: sc = dict(sc, navboxes=planned_navboxes(sc))
     G = Grid(sc, verbose)
     ents = sc['ents']; props = sc['props']
     by = {e['name']: e for e in ents if e['name']}
@@ -1047,7 +1109,10 @@ def main(path, only=None, out_json=None, verbose=False):
                 pts.append((e['name'], e['o'][0], e['o'][1], e['o'][2] - 8.0))
         for y in np.arange(L.BRIDGE_Y - L.BRIDGE_LEN / 2 - L.BRIDGE_RAMP + 16, L.BRIDGE_Y + L.BRIDGE_LEN / 2 + L.BRIDGE_RAMP, 32.0):
             pts.append(('bridge', L.BRIDGE_X, float(y), G.top(L.BRIDGE_X, float(y))))
+        import mv_entities as ME
         for (x0_, y0_, x1_, y1_, zt) in json.load(open(os.path.join(OUT, 'world_sites.json'))).get('surfaces', []):
+            # pass 3: a walk-on surface outside the places bots use (the shelf behind the waterfall) is NONAV by design
+            if not ME.nav_play_mask(np.array([(x0_ + x1_) / 2]), np.array([(y0_ + y1_) / 2]))[0]: continue
             for x in np.arange(x0_ + 24, x1_, 96.0):
                 for y in np.arange(y0_ + 24, y1_, 96.0): pts.append(('surface', float(x), float(y), zt))
         covered = []
@@ -1056,10 +1121,53 @@ def main(path, only=None, out_json=None, verbose=False):
                 if b[0] < x < b[3] and b[1] < y < b[4] and b[2] < z + 36.0 and b[5] > z: covered.append((nm, round(x), round(y), name)); break
         cc = Counter(c[0] for c in covered)
         res['9'] = dict(seeds=len(seeds), bad_seeds=bad_seed, nonav=len(nonav), covered=len(covered), covered_by=dict(cc.most_common(20)))
-        print('9 nav: %d seeds, %d not on walkable ground; %d NONAV boxes cover %d road / station points' % (len(seeds), len(bad_seed), len(nonav), len(covered)))
+        print('9 nav: %d seeds, %d not on walkable ground; %d NONAV boxes cover %d road / station points%s' % (len(seeds), len(bad_seed), len(nonav), len(covered),
+              ' (boxes from the nav plan, not the vmap)' if nav_plan else ''))
         for b in bad_seed[:8]: print('    seed', b)
         for c in covered[:10]: print('    NONAV over', c)
         if bad_seed or covered: fails.append('nav')
+        # pass 3: the nav the compile would make (estimate), every station on it, every flag reachable by bots from both bases
+        ne = nav_estimate(G, sc, ents, boxes=[b for p, n, b in nonav], seeds=[b for p, n, b in seeds if b[2] > L.LOBBY_Z + 1500])
+        nav = ne['nav']
+        print('    nav estimate: %d walk cells of 16 u (%d m2) flooded from %d seeds + the base spawns, %d without the NONAV boxes; ~%s nav areas '
+              '(linear in cells, calibrated on the pass 3 compile: %d cells = %d areas)' % (ne['cells'], ne['area_m2'], ne['seeds'], ne['unmarked_cells'],
+              ne['areas'], NAV_CAL['cells'], NAV_CAL['areas']))
+        need = []
+        for e in ents:
+            n_ = e['name']
+            if not (re.fullmatch(r'mv_(flag|kit|rack|boardseat|mountseat|tunnel|flagspawn|spawn)_.+', n_) and e['cls'] in ('info_target', 'info_teleport_destination')): continue
+            kit = re.match(r'mv_(kit|rack|flag)_', n_) and not n_.startswith('mv_flagspawn')
+            ids = G.nodes_near(e['o'][0], e['o'][1], e['o'][2] - (30.0 if kit else 8.0), 72.0 if kit else 48.0, 60.0 if kit else 40.0)
+            if not any(nav[i] for i in ids): need.append(n_)
+        wp_off = [w[0] for w in json.load(open(os.path.join(OUT, 'world_sites.json'))).get('waypoints', []) if not any(nav[i] for i in G.nodes_near(w[1], w[2], w[3], 60.0, 30.0))]
+        # bot routes: the nav graph (directed walk graph inside the nav) from each base's spawn ring to each flag and back
+        from scipy.sparse import csgraph as _cg
+        from scipy import sparse as _sp
+        Wn = ne['Wn'].tocoo(); ca = Wn.row % NC; cb = Wn.col % NC
+        Gn = _sp.csr_matrix((CELL * np.hypot(ca // NY - cb // NY, ca % NY - cb % NY) + 0.01, (Wn.row, Wn.col)), shape=Wn.shape)
+        sp_ = {tg: sorted(set(i for e in ents if re.fullmatch(r'mv_spawn_%s_\d+' % tg, e['name']) for i in node_ids(e) if nav[i])) for tg in ('ct', 't')}
+        broute = {}; lost = []; detour = []
+        for tg in ('ct', 't'):
+            if not sp_[tg]: lost.append('%s spawns have no nav' % tg); continue
+            dd = _cg.dijkstra(Gn, indices=sp_[tg], min_only=True); back = reach(ne['Wn'], sp_[tg], reverse=True)
+            for l in 'abcde':
+                e = by.get('mv_flag_' + l)
+                if e is None: continue
+                ids = [i for i in G.nodes_near(e['o'][0], e['o'][1], e['o'][2] - 8.0, 120.0, 80.0) if nav[i]]
+                d_ = min((dd[i] for i in ids), default=np.inf)
+                broute.setdefault(l, {})[tg] = round(float(d_)) if np.isfinite(d_) else None
+                if not np.isfinite(d_): lost.append('%s -> %s' % (tg, l.upper()))
+                elif not any(back[i] for i in ids): lost.append('%s -> %s (no way back)' % (tg, l.upper()))
+                walk_ = res.get('1b', {}).get('routes', {}).get(l, {}).get(tg)
+                if walk_ and np.isfinite(d_) and d_ > NAV_DETOUR * walk_: detour.append('%s -> %s nav %d vs walk %d' % (tg, l.upper(), d_, walk_))
+        res['9'].update(nav_cells=ne['cells'], nav_m2=ne['area_m2'], nav_areas_est=ne['areas'], unmarked_cells=ne['unmarked_cells'], stations_off_nav=need,
+                        waypoints_off_nav=wp_off, bot_routes=broute, bot_routes_lost=lost, bot_detours=detour, nav_plan=bool(nav_plan))
+        print('    bot routes on the nav (base spawns -> flag, CT / T): ' + ', '.join('%s %s / %s' % (l.upper(), v.get('ct'), v.get('t')) for l, v in broute.items()))
+        print('    stations off the nav: %d%s; waypoints off the nav: %s' % (len(need), (' ' + ', '.join(need[:12])) if need else '', ', '.join(wp_off) or 'none'))
+        for x_ in lost: print('    bots cannot route', x_)
+        if need or lost: fails.append('nav')
+        if detour: warn.append('bot nav detours over %.2f x the walking route: %s' % (NAV_DETOUR, '; '.join(detour)))
+        if ne['areas'] and ne['areas'] > NAV_TARGET: warn.append('nav estimate ~%d areas (target under %d)' % (ne['areas'], NAV_TARGET))
 
     res['fails'] = fails; res['warnings'] = warn
     for w in warn: print('WARNING ' + w)
@@ -1139,4 +1247,4 @@ if __name__ == '__main__':
     only = None; oj = None
     if '--only' in sys.argv: only = set(int(v) for v in sys.argv[sys.argv.index('--only') + 1].split(','))
     if '--json' in sys.argv: oj = sys.argv[sys.argv.index('--json') + 1]
-    sys.exit(main(sys.argv[1], only, oj, '--verbose' in sys.argv))
+    sys.exit(main(sys.argv[1], only, oj, '--verbose' in sys.argv, '--nav-plan' in sys.argv))

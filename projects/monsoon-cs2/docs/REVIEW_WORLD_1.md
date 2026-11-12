@@ -235,3 +235,104 @@ yard, temple dressing, haystack jitter, vectorised slope in `park`), `tools/p_te
 (`shell_105_dyn`), `tools/mv_entities.py` (shells and the cache list on the dynamic twin), `tools/check_world.py` (7b). Props built:
 guardian_statue, naga_balustrade, khmer_pillar(_broken), enclosure_wall(_ruin), root_wall, paving_slabs (+ LODs), shell_105_dyn.
 `docs/CONTRACT.md` not edited (entity names unchanged).
+
+## Pass 3 (12 Nov 2026): bot nav cost, the leftovers, route balance
+
+Offline, then compiled (record: [BUILD_LOG_1.md](BUILD_LOG_1.md) "Stage 3"). Six map builds (`out/logs/p3_map1..6.log`); the
+sixth is the current `out/addon/maps/mg_monsoon.vmap`. Before / after renders in `out/review/p3/` (`*_before.png` from the stage 2
+map, kept as `out/review/p3/mg_monsoon_s2.vmap`; `*_b1.png` and the final `village_after.png`, `temple_after.png`,
+`firebase_after.png`, `temple_ghat_cam_after.png` and the other `*_cam_after.png` views).
+
+### Bot nav (the most expensive thing in the compile)
+The stage 2 compile made **33,661 nav areas**; "Compute Approach areas" alone took 26 min, and mg_trenchwarfare lost FPS with bots
+at 44k. The old NONAV markup only covered steep cells, karst, deep river and a far band (94 boxes of 256 u).
+
+- `mv_entities.nonav_boxes()` now keeps nav only where bots fight and walk (`nav_play_mask`): the two base plateaus (+100 / +150 u),
+  a 820-u disc round flags B-E, the whole paddy field and a 650-u disc at A, the north-bank paddies, the farm, the C-123, the bridge
+  and both bank heads, the three tunnel portals (420 u), every road and trail (+160 u beyond its half width), and two declared
+  routes (`nav_corridors`): the west ford (camp trail to the paddies) and CT's walking route to the temple (out of the gate, down the
+  north-west flank and the gully floodplain, across the river to the west stair, with a branch to the new ghat). Inside those, steep
+  cells (except on a route), karst and deep river (except fords, the bridge and the routes) stay NONAV. Everything else, the outer
+  valley sides, the marsh, the waterfall gorge, the jungle between the routes and the karst crowns (boxes now reach 320 u over each
+  crown), is NONAV. 128-u cells merged into rectangles of up to 16 x 16: **243 boxes**. Over the tunnels a box starts 12 u over the
+  gallery roof (cells where the roof is within 40 u of the ground stay open), so the galleries keep their nav.
+- `check_play.py` check 9 measures it: the walk graph flooded from the WALKABLESEED boxes and base spawns with every node inside a
+  NONAV box taken out (what island removal leaves), in 16-u cells and m2, projected to nav areas linearly from the stage 2 compile
+  (first calibrated on the stage 2 flood, 378,891 cells = 33,661 areas; now on the pass 3 compile, 115,469 cells = 15,033 areas). It fails when any flag, spawn, flag spawn, kit, rack, board seat,
+  mount seat or tunnel portal is off that nav, or a base cannot route to a flag and back on it; it warns over 15,000 areas or when a
+  bot's nav route is over 1.35 x the walking route. `--nav-plan` runs it with the boxes the generator would write now, before a
+  regenerate.
+
+| | Stage 2 map | Pass 3 |
+|---|---|---|
+| NONAV boxes | 94 (256 u) | 243 (128 u) |
+| nav flood (16-u cells) / m2 | 378,891 / 62,580 | 115,458 / 19,069 (30 %) |
+| nav areas (compiled) | 33,661; Compute Approach areas 1,569 s | **15,033**; Compute Approach areas **348 s** (the estimate before the compile said ~10,260 on the stage 2 calibration: the kept ground is cut into smaller areas than the open valley taken out; check 9 is recalibrated on this compile, 0.130 areas per cell) |
+| stations off the nav, routes lost | - | 0, 0 (waypoint "behind the waterfall" off the nav by design) |
+| bot nav routes CT / T to A, B, C, D, E | - | 7028 / 4632, 6348 / 5712, 7798 / 3511, 4909 / 6904, 3598 / 7547 (walking: 7028 / 4632, 5632 / 5291, 7349 / 3511, 4799 / 6894, 3598 / 6797; worst detour 1.13) |
+
+The first plan routed CT bots to D round by the bridge (9,009 u against 5,199 walking): the gully corridor ran from the base centre
+up a 40-degree flank, and the river bank at the temple was steep. Fixed by the route above and by keeping steep cells on routes open
+(nav generation itself skips what is too steep).
+
+### Route balance
+Pass 2 had moved the mirror balance to A-D **1.15**, C-E **1.10** (1.105), B 1.06 (not the 1.04 / 1.09 / 1.06 of pass 1). Every CT
+route grew by about 105 u in pass 2: the clips over the sandbag walls (pass 2) stopped the walk graph shortcutting over gun pit 1's
+ring, which stands just inside the gate. Real, so kept.
+- **The temple ghat** (new): the south stair's lowest step hung 140 u over the river (the knoll's south face drops into the water): a
+  grand stair that ended in a drop. A landing at its foot and two 25-step flights down to the water along the bank, west and east,
+  built out from the cliff. The river approach from the CT side now climbs it through the gate: CT to D 5199 -> **4799**, A-D
+  **1.06**.
+- C-E stays **1.11** (C 7349 / 3511, E 3598 / 6797; my changes moved it by 0.004). The cause is the firebase: the CT spawn ring
+  sits behind gun pit 1, so every CT route first walks round the pit to the gate (T's camp has no such detour; T reaches E almost
+  in a straight line, 2 % over the beeline). Fixing it means moving the CT deploy point (rack + spawn ring) toward the gate or
+  turning the battery, both `layout.firebase()` changes that re-derive the firebase's POCKET_FILL: left for a pass that can rebuild
+  the firebase (below, "Left").
+
+### The leftovers of pass 2 (what was actually still open)
+Pass 2 had already placed the village shrine, 2 stalls, 3 cook fires, 2 platforms and the firebase wind sock. Still open were: a
+third market stall, the temple court (3 balustrades, 1 lion), root_wall / enclosure_wall_ruin unplaced, five firebase items.
+| Item | Pass 3 |
+|---|---|
+| Village market | Re-planned: the market lane on the temple road is laid out right after the designed huts, before the road-side huts (which had taken the lane edges): **3 stalls** in a row with baskets, water jars and fish traps round them; the spirit house gets its offerings (rice basket, water jar) in front |
+| Village platforms | Both drying platforms (2 waypoints, reachable): hut-side spots beside the designed huts first, then the road-side huts, then a ring spot. The extra huts stay on the terrace except north and east (at 680-700 u south-west they had taken the knocked-out T-54's and a bamboo thicket's spots: both back) |
+| Village huts | **8** (pass 2: 9). The market lane and the second platform take the room of one; extras are the small hooch only. Cover at C 25 / 7 (pass 2: 21 / 8) |
+| Hut roofs | build 3 found a hut roof as a stuck pocket (no jump out): every hooch gets a player clip over its footprint (as the pig pens) |
+| Temple court | The flag's supply crate stood at the head of the west stair and took a balustrade's and a lion's spot; it now goes in after the statuary (south-east corner by the DShK, kit station `mv_kit_d` moves with it). **4 balustrades, 4 lions** (both at the tower stair foot, 14 u further north clear of the pole; one at each side stair's head) |
+| Temple ghat | New (above): landing + two flights, keep-outs on it |
+| root_wall, enclosure_wall_ruin | On the knoll top they cannot stand (the knoll falls 26-40 deg past r 420: relief 62-77 u under the footprint on every edge). Placed at the knoll **foot** north and east (r 700-820, relief under 44 u), off the stair approaches and the west routes: **1 strangler-fig wall, 1 collapsed run** with its blocks spilled down the slope |
+| Firebase: culvert bunker, M113 | **Outside the gate**, on the flat apron south of the road (z 620 runs 110-240 u past the wire there): the culvert bunker as the gate's guard bunker, the M113 parked beside it (a player clip over the APC: build 1 found its roof a stuck pocket). Placed last in `firebase()`, so its RandomState and POCKET_FILL are untouched |
+| Firebase: antenna mast, GP crew tent, second latrine | Still no room inside the wire (scan of the whole disc, as pass 2); not placed outside (a mast and crew tents belong inside). Left |
+| Wind sock | Already placed in pass 2 (scan outside the rotor cylinders); unchanged |
+
+### Checks on the sixth build
+| Check | Stage 2 map | Pass 3 (build 6) |
+|---|---|---|
+| check_play 1 stuck pockets (no jump out) | 0 (0) | 1 (0): 256 u2 at (-1064, 1976) in the village, a jump gets out |
+| check_play 1b A-D / C-E / B | 1.15 / 1.10 / 1.06 | **1.06** / 1.11 / 1.06 |
+| check_play 3 cover A-E | 14 / 17 / 21 / 31 / 42 | 14 / 17 / 25 / 38 / 42 |
+| check_play 4, 5, 6, 7, 8 | clean | clean (check 4 now treats the nypa palm as a tree, as the placer does) |
+| check_play 9 nav | 15 seeds, 94 boxes | 15 seeds, 243 boxes, ~10,260 areas, 0 stations off, 0 routes lost |
+| check_world | clean | clean |
+| check_mesh | 1165 meshes 0 bad | 0 bad |
+
+Builds: 1 the M113 roof and a hut roof as pockets, one stall short, one platform short, the T-54 and a thicket lost to outer huts;
+2 platforms first left only 5 huts; 3 a hut roof pocket (no jump out), 7 huts; 4 and 5 two dressing props on a turned platform deck overlapping
+(check_world; the basket now stands at the ladder's foot); 6 clean.
+
+### Left (pass 3)
+- **Nav 15,033 areas**, at the 15,000 line rather than well under it (approach areas 26 -> 6 min). The next cut, measurable with
+  check_play.py --nav-plan before a regenerate: flag discs 820 -> 650, roads + 160 -> + 110, the base discs to the wire; or fewer
+  areas inside the bases (the firebase and camp clutter cut the nav into small pieces).
+- **C-E route balance 1.11** (target 0.9-1.1): the CT deploy point behind gun pit 1 (above). Needs a `layout.firebase()` change (deploy
+  ring toward the gate, or the battery turned) and the firebase's POCKET_FILL re-derived from check_play.
+- Firebase antenna mast, GP crew tent, second latrine: no room inside the wire.
+- Village 8 huts (design: 9); one jump-escapable 256-u2 pocket in the village at (-1064, 1976).
+- Bots have no nav behind the waterfall, on the karst crowns, in the marsh or in the jungle off the routes (by design); a bot that
+  ends up there is re-deployed by the script's leash (stood still 20 s).
+
+### Changed files (pass 3)
+`tools/mv_entities.py` (nav plan: `nav_play_mask`, `nav_corridors`, `tunnel_roof`, new `nonav_boxes`), `tools/check_play.py`
+(check 9 estimate and bot routes, `--nav-plan`, nypa as a tree), `tools/mv_places.py` (temple ghat, court order, knoll-foot ruins;
+village market lane, platforms, hut roof clips; firebase gate items). No props rebuilt, no layout change; `docs/CONTRACT.md`
+unchanged.

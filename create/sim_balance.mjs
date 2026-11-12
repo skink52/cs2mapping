@@ -4,7 +4,8 @@
 //
 // usage: node create/sim_balance.mjs <balance.json> [seeds=40] [players=32] [key=value ...]
 //   key=value pairs are passed through to the mock (e.g. seconds=600, ttk=20, cfg.X=...), label=<text> goes in the header,
-//   md=1 prints the table as markdown, jobs=<n> parallel runs (default CPUs - 2, 2..10)
+//   md=1 prints the table as markdown, jobs=<n> parallel runs (default CPUs - 2, 2..10),
+//   seed0=<n> first seed (default seedBase; seeds are seed0 + 7 i): a second seed set to check a tuning on
 // balance.json (paths relative to the JSON file's folder):
 //   { "name": "mg_example",
 //     "mock": "mock.mjs",                    // run as: node <mock> <players> <seconds> mode=balance json=1 seed=<n> [args] [pass-through]
@@ -30,7 +31,7 @@ if (!argv[0] || /^(-h|--help)$/.test(argv[0])) { console.log('usage: node create
 const cfgPath = path.resolve(argv[0]), base = path.dirname(cfgPath), C = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
 const rest = argv.slice(1), pos = rest.filter((a) => !a.includes('=')), opt = Object.fromEntries(rest.filter((a) => a.includes('=')).map((a) => { const i = a.indexOf('='); return [a.slice(0, i), a.slice(i + 1)]; }));
 const SEEDS = +(pos[0] || 40), N = +(pos[1] || 32), SECS = +(opt.seconds || C.seconds || 600);
-const pass = Object.entries(opt).filter(([k]) => !['seconds', 'label', 'md', 'jobs'].includes(k)).map(([k, v]) => k + '=' + v);
+const pass = Object.entries(opt).filter(([k]) => !['seconds', 'label', 'md', 'jobs', 'seed0'].includes(k)).map(([k, v]) => k + '=' + v);
 const mock = path.resolve(base, C.mock), cwd = path.resolve(base, C.cwd || '.');
 const SRC = C.sources || [], MODEL = new Set(C.model || []), TG = C.teams || { 2: 'T', 3: 'CT' }, TGT = C.targets || {};
 
@@ -52,7 +53,7 @@ const killsOf = (r, team) => (r.kills ? (r.kills[team] ?? r.kills[TG[team] && TG
 
 const t0 = Date.now();
 const width = +(opt.jobs || Math.max(2, Math.min(10, os.cpus().length - 2)));
-const res = await pool(Array.from({ length: SEEDS }, (_, i) => () => run((C.seedBase || 101) + i * 7)), width);
+const res = await pool(Array.from({ length: SEEDS }, (_, i) => () => run(+(opt.seed0 || C.seedBase || 101) + i * 7)), width);
 const bad = res.filter((r) => r.crash || r.errors), ok = res.filter((r) => !r.crash);
 const teams = Object.keys(TG).map(Number), wins = Object.fromEntries([...teams, 0].map((t) => [t, 0]));
 for (const r of ok) wins[r.winner] = (wins[r.winner] || 0) + 1;

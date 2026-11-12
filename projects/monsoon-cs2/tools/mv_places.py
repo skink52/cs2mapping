@@ -142,6 +142,7 @@ class World:
         kw.pop('_quiet', None)
         if any(k in model for k in BUILDING_KEYS): self.bld.append(f)
         if model.endswith('/pig_pen.vmdl'): self.clip_footprint(f)          # pass 2 review: the pens were stuck pockets (step in over the trough, no way out)
+        if model.endswith(('/hooch_a.vmdl', '/hooch_b.vmdl', '/hooch_c.vmdl')): self.clip_footprint(f, h=320.0)    # pass 3 review: a hut roof was a stuck pocket
         if reg:
             if pad:
                 f = dict(f); f['h'] = (f['h'][0] - pad, f['h'][1] - pad)
@@ -881,6 +882,20 @@ def firebase():
     POCKET_FILL = [[2896, -3280, 2912, -3264, 620], [2912, -3312, 2928, -3264, 620], [2928, -3360, 2944, -3264, 620], [2944, -3392, 2960, -3264, 620], [2960, -3408, 2976, -3264, 620], [2976, -3392, 2992, -3264, 620], [2992, -3376, 3008, -3296, 620], [3008, -3376, 3024, -3312, 620], [3024, -3360, 3040, -3296, 620], [3024, -3248, 3040, -3232, 620], [3040, -3344, 3056, -3232, 620], [3056, -3344, 3072, -3248, 620], [3056, -3216, 3072, -3184, 620], [3072, -3328, 3088, -3216, 620], [3088, -3632, 3104, -3616, 620], [3088, -3328, 3104, -3216, 620], [3104, -3360, 3120, -3296, 620], [3120, -3376, 3136, -3344, 620], [3136, -3408, 3152, -3376, 620], [3152, -3424, 3168, -3408, 620], [3200, -3552, 3216, -3536, 620], [3664, -3776, 3680, -3760, 620], [2880, -3056, 2896, -3040, 620], [2896, -3056, 2912, -3040, 620], [2912, -3216, 2928, -3200, 620], [2912, -3040, 2928, -3024, 620], [2928, -3216, 2944, -3200, 620], [2928, -3040, 2944, -3024, 620], [2944, -3040, 2960, -3024, 620], [2960, -3216, 2976, -3200, 620], [2992, -3264, 3008, -3248, 620], [2992, -3200, 3008, -3184, 620], [3008, -3296, 3024, -3264, 620], [3024, -3280, 3040, -3264, 620]]      # build 3 cells, then build 4's remnants round the quad .50
     for (x0_, y0_, x1_, y1_, z_) in POCKET_FILL:
         W.clip(P.box((x0_ + 6.0, y0_ + 6.0, z_ - 6.0), (x1_ - 6.0, y1_ - 6.0, z_ + 200.0), mat=TER.CLIP))
+    # pass 3 review: the gate. Two of the items the wire has no room for stand outside it, on the flat apron south of the road where it
+    # leaves the gate (the plateau runs 110-240 u past the wire there, z 620): the culvert bunker as the gate's guard bunker and the
+    # M113 parked beside the road. Both stay south of the road: the routes out of the gate (check_play 1b) turn north-west. Placed last,
+    # so nothing above (the firebase's RandomState, the POCKET_FILL cells) moves.
+    def apron(x, y, lo=10.0, hi=48.0):
+        r_ = math.hypot(x - c[0], y - c[1]); da_ = (ang((x, y)) - ga + 180.0) % 360.0 - 180.0
+        return 1140.0 <= r_ <= 1330.0 and lo <= da_ <= hi
+    gate_ = {}
+    gate_['culvert_bunker'] = W.scan('culvert_bunker', *L.pol(c, 1220.0, ga + 16.0), 240.0, (ga + 90.0, ga - 90.0, ga, ga + 180.0), step=20.0, max_slope=8.0, pad=10.0, ok=apron)
+    if M.is_ext(M.static('apc') or ''):
+        gate_['m113'] = W.scan(None, *L.pol(c, 1240.0, ga + 30.0), 260.0, (ga, ga + 180.0, ga + 90.0), stock=M.static('apc'), step=20.0, max_slope=7.0, pad=40.0, ok=apron)
+        if gate_['m113']:          # build 1 of pass 3: its roof was a stuck pocket (nobody climbs the APC): a clip over its footprint
+            q_ = gate_['m113']; W.clip_footprint(W.PL.footprint(M.static('apc'), q_[0], q_[1], gz(q_[0], q_[1]), q_[2]), h=150.0)
+    print('firebase gate (pass 3): %s' % ', '.join('%s %s' % (k, 'placed' if v else 'no spot') for k, v in gate_.items()))
     W.sites['seeds'] += [(c[0], c[1]), fb['rack']]
     G.lmres_box((c[0] - 200, c[1] - 200, z, c[0] + 200, c[1] + 200, z + 160), W.group)
     print('firebase: %d wall runs, %d mounts, %d parked vehicles' % (nb, len(W.sites['mounts']), n_v))
@@ -1139,62 +1154,53 @@ def village():
     huts = [(x, y, a + 180.0, nm) for (r, a, nm) in ((450, 22, 'hooch_a'), (450, 114, 'hooch_c'), (450, 208, 'hooch_c'), (455, 236, 'hooch_b'))
             for (x, y) in (L.pol(c, r, a),)]
     legs = [L.ROADS[1][1][1], L.ROADS[1][1][3], L.ROADS[5][1][1]]
+    road_huts = []
     for t, lat in ((350.0, 240.0), (560.0, 240.0), (300.0, 440.0), (470.0, 450.0)):
         for q in legs:
             dq = math.hypot(q[0] - c[0], q[1] - c[1]); ux, uy = (q[0] - c[0]) / dq, (q[1] - c[1]) / dq
             for sd in (1, -1):
-                huts.append((c[0] + ux * t - uy * sd * lat, c[1] + uy * t + ux * sd * lat, math.degrees(math.atan2(ux * sd, -uy * sd)) + 180.0,
-                             ('hooch_b', 'hooch_a', 'hooch_c')[len(huts) % 3]))
+                road_huts.append((c[0] + ux * t - uy * sd * lat, c[1] + uy * t + ux * sd * lat, math.degrees(math.atan2(ux * sd, -uy * sd)) + 180.0,
+                                  ('hooch_b', 'hooch_a', 'hooch_c')[(len(huts) + len(road_huts)) % 3]))
     nh = 0; placed = []
-    for (x, y, yaw, nm) in huts:
-        yaw += rng.uniform(-8, 8)
-        if nh >= 10 or math.hypot(x - c[0], y - c[1]) > 700.0 or W.prop(nm, x, y, None, yaw, fit='min', check=True, pad=4.0) is None: continue
-        nh += 1; placed.append((x, y, yaw))
+    def put_huts(lst):
+        nonlocal nh
+        for (x, y, yaw, nm) in lst:
+            yaw += rng.uniform(-8, 8)
+            if nh >= 10 or math.hypot(x - c[0], y - c[1]) > 700.0 or W.prop(nm, x, y, None, yaw, fit='min', check=True, pad=4.0) is None: continue
+            nh += 1; placed.append((x, y, yaw))
+    put_huts(huts)
     # pass 2 review: the yard re-planned. Its own pieces go right after the designed huts (before the extra huts take the room), at
     # designed spots: the spirit house on the open north side between the school and the west road, the market stalls along the
     # road edges (a market street on the temple road, one stall on the south road), the ox cart by the west road
+    # pass 3 review: the road-side huts came before the stalls and took the lane edges (the third stall never fitted): now the market
+    # lane on the temple road is laid out first, three stalls facing each other across it with their baskets round them, then the
+    # road-side huts fill in behind and around it; the spirit house gets its offerings
     def road_pt(q, t, lat):
         dq = math.hypot(q[0] - c[0], q[1] - c[1]); ux, uy = (q[0] - c[0]) / dq, (q[1] - c[1]) / dq
         return c[0] + ux * t - uy * lat, c[1] + uy * t + ux * lat, math.degrees(math.atan2(uy, ux))
     leg_s, leg_w, leg_e = L.ROADS[1][1][1], L.ROADS[1][1][3], L.ROADS[5][1][1]
-    W.fit('shrine', *L.pol(c, 250.0, 112.0), 292.0, search=150.0, step=20.0, pad=6.0, within=(c[0], c[1], 700.0))
+    sh_ = W.fit('shrine', *L.pol(c, 250.0, 112.0), 292.0, search=150.0, step=20.0, pad=6.0, within=(c[0], c[1], 700.0))
+    if sh_ is not None:          # offerings on the ground in front of the spirit house (it faces 292 deg: its front is local +x)
+        for (fw_, lt_, nm_) in ((52.0, -18.0, 'rice_basket'), (50.0, 20.0, 'water_jar')):
+            W.prop(nm_, *local(sh_[0], sh_[1], 292.0, fw_, lt_), None, rng.uniform(0, 360), check=True, pad=2.0)
     nst = 0
-    for (q, t, lat, flip) in ((leg_e, 230.0, 132.0, 0.0), (leg_e, 260.0, -132.0, 180.0), (leg_s, 250.0, -132.0, 180.0), (leg_e, 380.0, 132.0, 0.0), (leg_w, 250.0, 132.0, 0.0)):
+    for (q, t, lat, flip) in ((leg_e, 240.0, 132.0, 0.0), (leg_e, 300.0, -132.0, 180.0), (leg_e, 380.0, 132.0, 0.0), (leg_e, 440.0, -132.0, 180.0),
+                              (leg_s, 250.0, -132.0, 180.0), (leg_w, 250.0, 132.0, 0.0)):
         if nst >= 3: break
         x_, y_, yw_ = road_pt(q, t, lat)
-        if W.fit('market_stall', x_, y_, yw_ + flip + 180.0, search=90.0, step=15.0, pad=4.0, within=(c[0], c[1], 700.0)) is not None:
+        if W.fit('market_stall', x_, y_, yw_ + flip + 180.0, search=60.0, step=15.0, pad=4.0, within=(c[0], c[1], 700.0)) is not None:
             nst += 1
             clutter(rng, [('rice_basket', 3), ('water_jar', 1), ('fish_trap', 1)], *road_pt(q, t, lat + (40.0 if lat > 0 else -40.0))[:2], 20.0, 70.0)
     x_, y_, yw_ = road_pt(leg_w, 330.0, -150.0)
     W.fit('ox_cart', x_, y_, yw_ + 170.0, search=200.0, step=30.0, within=(c[0], c[1], 760.0))
-    # 12 Nov review: 6 of the 9 designed huts stood. The rest go wherever one fits on the terrace (smallest first)
-    for (r_, a_) in ((330.0, 300.0), (360.0, 160.0), (560.0, 330.0), (300.0, 250.0), (585.0, 275.0), (560.0, 150.0), (590.0, 40.0), (360.0, 5.0),
-                     (680.0, 300.0), (680.0, 200.0), (680.0, 100.0), (680.0, 0.0), (700.0, 250.0), (700.0, 150.0), (700.0, 50.0), (700.0, 350.0)):
-        if len(placed) >= 9: break
-        x, y = L.pol(c, r_, a_); yaw = a_ + 180.0 + rng.uniform(-10, 10)
-        q = None
-        for yw_ in (yaw, yaw + 90.0):        # gable end or eave to the yard, whichever fits
-            q = W.fit(('hooch_b', 'hooch_c')[len(placed) % 2], x, y, yw_, search=180.0, step=30.0, max_slope=12.0, fit='min', pad=8.0, within=(c[0], c[1], 780.0))
-            if q is not None: yaw = yw_; break
-        if q is not None: placed.append((q[0], q[1], yaw))
-    # pass 2 review: three cook fires in front of huts (the yard ones were crowded out), each with its pots and a smoke column on one
-    nfire = 0
-    for (x, y, yaw) in placed:
-        if nfire >= 3: break
-        for (fw_, lt_) in ((200.0, 70.0), (200.0, -70.0), (230.0, 0.0), (-200.0, 60.0), (-200.0, -60.0)):
-            q = W.fit('cook_fire', *local(x, y, yaw, fw_, lt_), rng.uniform(0, 360), search=60.0, step=20.0, pad=8.0, within=(c[0], c[1], 760.0))
-            if q is not None:
-                W.particle(q[0], q[1], gz(*q) + 10.0, FIRE); W.sites['fires'].append((q[0], q[1], gz(*q) + 10.0))
-                if nfire == 1: W.particle(q[0], q[1], gz(*q) + 40.0, SMOKESTACK)
-                clutter(rng, [('water_jar', 1), ('rice_basket', 1), ('log_fallen', 1)], q[0], q[1], 50.0, 90.0)
-                nfire += 1; break
     # two drying platforms at eave height beside huts (posts, a deck, a ladder, a rail): the "roof access" of the design. A hut's own
     # roof is a pitched thatch with a box hull: standing on that floats, a deck does not.
     npl = 0
     # pass 2 review: beside a hut first; else a free-standing platform on the yard ring (the second one never found a hut-side spot)
-    ring_ = [(c[0] + r_ * math.cos(math.radians(a_)), c[1] + r_ * math.sin(math.radians(a_)), a_ + 90.0, True) for r_ in (330.0, 400.0, 470.0, 540.0, 610.0, 660.0, 715.0)
-             for a_ in np.arange(5.0, 360.0, 12.0)]
-    for (x, y, yaw, *fr) in [tuple(q) + (False,) for q in placed] + ring_:
+    # pass 3 review: beside the designed huts before the road-side huts take their flanks; a ring spot only after all the huts
+    def platforms(cands):
+      nonlocal npl
+      for (x, y, yaw, *fr) in cands:
         if npl >= 2: break
         for (sd, fwd, lat) in ([(1, 0.0, 0.0), (-1, 0.0, 0.0)] if fr[0] else [(sd_, f_, l_) for l_ in (190.0, 240.0, 290.0) for f_ in (20.0, -70.0, 100.0, -150.0, 170.0) for sd_ in (1, -1)]):
             px, py = local(x, y, yaw, fwd, sd * lat)
@@ -1211,10 +1217,39 @@ def village():
             W.ladder(lx, ly, gz(lx, ly), zt, yaw)
             for ox in (-56, 0, 56):
                 for oy in (-44, 0, 44): W.keep(*local(px, py, yaw, ox, oy), 30.0, name='platform')
-            W.prop('rice_basket', *local(px, py, yaw, -40.0, sd * 4.0), zt, rng.uniform(0, 360), tag='platform', reg=False)
+            rng.uniform(0, 360)       # (keeps the village's random sequence) pass 3: the basket stood in the rack and the rail on a turned deck (check_world): it waits at the ladder's foot now
+            W.prop('rice_basket', *local(px, py, yaw, 112.0, sd * 34.0), None, yaw + 20.0, check=True, pad=2.0)
             W.prop('drying_rack', *local(px, py, yaw, -10.0, -sd * 30.0), zt, yaw, tag='platform', reg=False)
             W.sites['waypoints'].append(('village platform %d' % (npl + 1), px, py, zt))
             npl += 1; break
+    platforms([tuple(q) + (False,) for q in placed])
+    put_huts(road_huts)
+    # pass 3 review: the road-side and extra huts come after the market lane and the two platforms; the extras stay on the terrace
+    # (r 620 at most: at 680-700 they took the knocked-out T-54's and a bamboo thicket's spots below it)
+    # 12 Nov review: 6 of the 9 designed huts stood. The rest go wherever one fits on the terrace (smallest first)
+    for (r_, a_) in ((330.0, 300.0), (360.0, 160.0), (560.0, 330.0), (300.0, 250.0), (585.0, 275.0), (560.0, 150.0), (590.0, 40.0), (360.0, 5.0),
+                     (600.0, 210.0), (610.0, 120.0), (600.0, 300.0), (620.0, 20.0), (520.0, 60.0), (620.0, 170.0), (620.0, 340.0),
+                     (680.0, 300.0), (680.0, 100.0), (680.0, 0.0), (700.0, 150.0), (700.0, 50.0), (700.0, 350.0)):      # (not 200-280 deg below the terrace: T-54, thicket)
+        if len(placed) >= 9: break
+        x, y = L.pol(c, r_, a_); yaw = a_ + 180.0 + rng.uniform(-10, 10)
+        q = None
+        for yw_ in (yaw, yaw + 90.0):        # gable end or eave to the yard, whichever fits
+            q = W.fit('hooch_b', x, y, yw_, search=180.0, step=30.0, max_slope=12.0, fit='min', pad=8.0, within=(c[0], c[1], 780.0))
+            if q is not None: yaw = yw_; break
+        if q is not None: placed.append((q[0], q[1], yaw))
+    platforms([(c[0] + r_ * math.cos(math.radians(a_)), c[1] + r_ * math.sin(math.radians(a_)), a_ + 90.0, True) for r_ in (330.0, 400.0, 470.0, 540.0, 610.0)
+               for a_ in np.arange(5.0, 360.0, 12.0) if not 195.0 < a_ < 285.0])
+    # pass 2 review: three cook fires in front of huts (the yard ones were crowded out), each with its pots and a smoke column on one
+    nfire = 0
+    for (x, y, yaw) in placed:
+        if nfire >= 3: break
+        for (fw_, lt_) in ((200.0, 70.0), (200.0, -70.0), (230.0, 0.0), (-200.0, 60.0), (-200.0, -60.0)):
+            q = W.fit('cook_fire', *local(x, y, yaw, fw_, lt_), rng.uniform(0, 360), search=60.0, step=20.0, pad=8.0, within=(c[0], c[1], 760.0))
+            if q is not None:
+                W.particle(q[0], q[1], gz(*q) + 10.0, FIRE); W.sites['fires'].append((q[0], q[1], gz(*q) + 10.0))
+                if nfire == 1: W.particle(q[0], q[1], gz(*q) + 40.0, SMOKESTACK)
+                clutter(rng, [('water_jar', 1), ('rice_basket', 1), ('log_fallen', 1)], q[0], q[1], 50.0, 90.0)
+                nfire += 1; break
     nh = 0
     for (x, y, yaw) in placed:
         nh += 1
@@ -1260,7 +1295,7 @@ def village():
         x, y = L.pol(c, rng.uniform(250, 600), a + rng.uniform(-12, 12)); m = S.PALMS[rng.randint(len(S.PALMS))]
         W.prop(None, x, y, gz(x, y) - 4.0, rng.uniform(0, 360), stock=m, trunk=S.TRUNK[m], check=True, pad=30.0, scale=rng.uniform(0.9, 1.15))
     W.sites['seeds'] += [c]
-    print('village: %d hooches, %d platforms, %d hedges / thickets' % (nh, npl, nx_))
+    print('village: %d hooches, %d platforms, %d market stalls, %d cook fires, shrine %s, %d hedges / thickets' % (nh, npl, nst, nfire, 'yes' if sh_ else 'NO', nx_))
 
 
 def temple():
@@ -1278,18 +1313,29 @@ def temple():
         W.shape(P.stairs(mins, maxs, 14, rise=rise, mat=STONE, tread_mat=STONE_TOP))      # 7-u risers; the lower ones are under the knoll
     W.shape(P.stairs((c[0] - 70, c[1] - 76 - 60, z0 + t1), (c[0] + 70, c[1] - 76, z0 + t2), 5, rise='+y', mat=STONE, tread_mat=STONE_TOP))
     W.shape(P.stairs((c[0] + 200, c[1] + 40, z0 + t1), (c[0] + 260, c[1] + 180, z0 + t2), 5, rise='-x', mat=STONE, tread_mat=STONE_TOP))
-    for (x0, y0, x1, y1) in ((-80, -490, 80, -340), (-80, 340, 80, 490), (-490, -80, -340, 80), (340, -80, 490, 80), (-70, -136, 70, -76), (200, 40, 260, 180)):
-        for x in np.arange(x0 + 20, x1, 40.0):
-            for y in np.arange(y0 + 20, y1, 40.0): W.keep(c[0] + x, c[1] + y, 22.0, z=z0, name='stairs')
+    # pass 3 review: the river ghat. The south stair's lowest step hung 140 u over the river (the knoll's south face drops into the
+    # water): a grand stair that ended in a drop. A landing at its foot and two flights down to the water along the bank, west and east,
+    # built out from the cliff (their back half buried in it); the river approach to the gate (the CT side) now climbs it
+    zl = z0 - 70.0; gy0_, gy1_ = c[1] - HT - run - 54.0, c[1] - HT - run + 60.0; frun = 265.0
+    W.shape(P.box((c[0] - 110.0, gy0_, -70.0), (c[0] + 110.0, gy1_, zl), mat=STONE))                       # the landing
+    W.shape(P.box((c[0] - 80.0, gy1_ - 4.0, -70.0), (c[0] + 80.0, c[1] - HT - run + 90.0, zl), mat=STONE))   # under the stair's lower steps
+    W.shape(P.stairs((c[0] - 110.0 - frun, gy0_, -70.0), (c[0] - 110.0, gy1_, zl), 25, rise='+x', mat=STONE, tread_mat=STONE_TOP))
+    W.shape(P.stairs((c[0] + 110.0, gy0_, -70.0), (c[0] + 110.0 + frun, gy1_, zl), 25, rise='-x', mat=STONE, tread_mat=STONE_TOP))
+    W.surface(c[0] - 110.0, gy0_, c[0] + 110.0, gy1_, zl)
+    for x in np.arange(-110.0 - frun + 20.0, 110.0 + frun, 40.0):
+        for y in (gy0_ + 20.0, gy0_ + 60.0, gy0_ + 100.0): W.keep(c[0] + x, y, 22.0, z=zl, name='stairs')
     zc = z0 + t1; zu = z0 + t2
     W.prop('khmer_tower', c[0], c[1] + 120.0, zu, -90.0, tag='platform')          # its doorway faces the courtyard (south)
     W.prop('khmer_gate', c[0], c[1] - 290.0, zc, -90.0, tag='platform')
-    flag_site('d', c[0] - 150.0, c[1] - 180.0, zc, crate=(c[0] - 262.0, c[1] - 150.0, zc), crate_yaw=40.0)
+    # pass 3 review: the flag's supply crate stood at the head of the west stair's south side and took the spot of a balustrade and a
+    # lion; it is placed after the statuary now, in the south court between the gate's west wing and the corner balustrade
+    flag_site('d', c[0] - 150.0, c[1] - 180.0, zc)
     name, kind, (mx, my), myaw = L.mounted_guns()[1]
     W.mount('dshk', 'any', mx, my, myaw, z=zc, tag='platform')
-    for s_ in (-1, 1):          # pass 2 review: lions at the foot of the tower stair, before the fallen lintels take the spot
-        for dx_ in (98.0, 112.0):
-            if W.prop('guardian_statue', c[0] + s_ * dx_, c[1] - 140.0, zc, -90.0 + s_ * 6.0, tag='platform', check=True, pad=2.0) is not None: break
+    nlion = 0
+    for s_ in (-1, 1):          # a lion each side of the tower stair's foot (pass 3: 14 u further north, clear of the flag pole)
+        for dx_ in (104.0, 112.0):
+            if W.prop('guardian_statue', c[0] + s_ * dx_, c[1] - 126.0, zc, -90.0 + s_ * 6.0, tag='platform', check=True, pad=2.0) is not None: nlion += 1; break
     # balustrades along the courtyard edge (gaps at the stairs), guardians at the stairs
     nlo, nhi = W.B(S.mv('naga_balustrade')); bl = nhi[0] - nlo[0]
     # the collapsed gallery in the west court (world geometry): two walls, a roof fallen in over the middle, a doorway into the court.
@@ -1319,7 +1365,16 @@ def temple():
             for s in (-1, 1):
                 for tt_ in (100.0, 118.0):
                     if W.prop('guardian_statue', c[0] + ex * 0.86 + ux * s * tt_, c[1] + ey * 0.86 + uy * s * tt_, zc,
-                              math.degrees(math.atan2(ey, ex)), tag='platform', check=True, pad=2.0) is not None: break
+                              math.degrees(math.atan2(ey, ex)), tag='platform', check=True, pad=2.0) is not None: nlion += 1; break
+    # the flag's supply crate (kit station): the south court, nearest the flag, after the statuary (pass 3 review)
+    spots = sorted(((dx_, dy_) for dx_ in np.arange(-300.0, -199.0, 10.0) for dy_ in np.arange(-300.0, -199.0, 10.0)), key=lambda q: math.hypot(q[0] + 250.0, q[1] + 240.0))
+    for (dx_, dy_) in spots + [(dx_, dy_) for dx_ in np.arange(210.0, 301.0, 10.0) for dy_ in np.arange(-300.0, -199.0, 10.0)]:
+        yw_ = next((y_ for y_ in (40.0, 0.0, 90.0) if W.prop('supply_crate', c[0] + dx_, c[1] + dy_, zc, y_, tag='platform', check=True, pad=3.0) is not None), None)
+        if yw_ is not None: W.sites['kit']['d'] = (c[0] + dx_, c[1] + dy_, zc); break
+    else:
+        print('WARNING temple: no room for the flag crate, placed at the old spot'); W.prop('supply_crate', c[0] - 262.0, c[1] - 150.0, zc, 40.0, tag='platform')
+        W.sites['kit']['d'] = (c[0] - 262.0, c[1] - 150.0, zc)
+    print('temple court: %d balustrades, %d lions, crate at (%.0f, %.0f)' % (nb, nlion, W.sites['kit']['d'][0] - c[0], W.sites['kit']['d'][1] - c[1]))
     # fallen blocks where a corner is left free, two fallen lintels in the court (the court is small: balustrades, lions, the DShK,
     # the flag and its crate come first)
     for (dx, dy, yw) in ((288.0, -286.0, 30.0), (-290.0, -290.0, 140.0), (290.0, 290.0, 250.0), (-290.0, 40.0, 80.0), (-280.0, 300.0, 200.0), (230.0, -230.0, 60.0), (-230.0, -250.0, 120.0)):
@@ -1385,20 +1440,25 @@ def temple():
         tdir = {0: (1, 0), 1: (0, 1), 2: (0, 1)}[side]
         ts = (-278.0, 278.0)
         for k, t in enumerate(ts):
-            x_, y_ = c[0] + nrm[0] * R_ + tdir[0] * t, c[1] + nrm[1] * R_ + tdir[1] * t
-            yw_ = math.degrees(math.atan2(tdir[1], tdir[0])) + (180.0 if rng.uniform() < 0.5 else 0.0)
-            if gz(x_, y_) < L.WATER_Z + 20.0 or float(L.slope(x_, y_)) > 30.0: continue
-            kind = 'enclosure_wall'          # (the ruin / root variants spill rubble and roots over the court edge where the balustrades stand)
-            if relief(S.mv(kind), x_, y_, yw_) > 40.0: continue
-            # the walls' model bounds (fallen rubble, roots) reach over the court edge where the balustrades stand on the platform (in plan,
-            # not in fact: the hulls stay 4+ u clear), so the test is the wall line itself
-            if W.prop(kind, x_, y_, None, yw_, fit='min', dz=-6.0, check=True, pad=2.0, tag='slope') is not None:
-                nw_ += 1; nroot += kind == 'root_wall'
-                if kind != 'enclosure_wall': falls.append((x_ + nrm[0] * 70.0, y_ + nrm[1] * 70.0))
-                if kind == 'root_wall':
-                    W.prop(None, x_, y_, gz(x_, y_) - 2.0, rng.uniform(0, 360), stock=S.ROOTS[rng.randint(2)], solid='0', reg=False, tag='roots')
-                elif rng.uniform() < 0.6:
-                    W.prop('vine_curtain', x_ + nrm[0] * 21.0, y_ + nrm[1] * 21.0, gz(x_, y_) + 6.0, yw_ + 90.0, scale=(0.6, 1.0, 0.55), solid='0', reg=False, tag='slope')
+            yw0_ = math.degrees(math.atan2(tdir[1], tdir[0])) + (180.0 if rng.uniform() < 0.5 else 0.0)
+            # pass 3 review: the north edge has no balustrades (the upper terrace fills it), so the two north pieces are the fallen ones:
+            # a strangler fig splitting the wall (roots to the outside) and a collapsed run with its rubble; 8 u further out than the
+            # others so their inner face stays off the platform wall. Elsewhere (balustrades on the court edge) the plain wall.
+            kinds = (('root_wall', 410.0, 0.0), ('enclosure_wall', R_, yw0_)) if (side, k) == (0, 0) else \
+                    (('enclosure_wall_ruin', 410.0, yw0_), ('enclosure_wall', R_, yw0_)) if (side, k) == (0, 1) else (('enclosure_wall', R_, yw0_),)
+            for kind, rr_, yw_ in kinds:
+                x_, y_ = c[0] + nrm[0] * rr_ + tdir[0] * t, c[1] + nrm[1] * rr_ + tdir[1] * t
+                if gz(x_, y_) < L.WATER_Z + 20.0 or float(L.slope(x_, y_)) > 30.0: continue
+                if relief(S.mv(kind), x_, y_, yw_) > (52.0 if kind != 'enclosure_wall' else 40.0): continue
+                if W.prop(kind, x_, y_, None, yw_, fit='min', dz=-6.0, check=True, pad=2.0, tag='slope') is not None: break
+            else:
+                continue
+            nw_ += 1; nroot += kind == 'root_wall'
+            if kind != 'enclosure_wall': falls.append((x_ + nrm[0] * 70.0, y_ + nrm[1] * 70.0))
+            if kind == 'root_wall':
+                W.prop(None, x_, y_, gz(x_, y_) - 2.0, rng.uniform(0, 360), stock=S.ROOTS[rng.randint(2)], solid='0', reg=False, tag='roots')
+            elif rng.uniform() < 0.6:
+                W.prop('vine_curtain', x_ + nrm[0] * 21.0, y_ + nrm[1] * 21.0, gz(x_, y_) + 6.0, yw_ + 90.0, scale=(0.6, 1.0, 0.55), solid='0', reg=False, tag='slope')
     for (fx_, fy_) in falls:      # rubble fields: clusters, not a scatter
         for j in range(rng.randint(3, 6)):
             a_ = rng.uniform(0, 2 * math.pi); r_ = rng.uniform(10.0, 90.0); x_, y_ = fx_ + r_ * math.cos(a_), fy_ + r_ * math.sin(a_)
@@ -1407,17 +1467,35 @@ def temple():
             W.prop(None, x_, y_, gz(x_, y_) - lo_[2] * sc_ * 0.55, rng.uniform(0, 360), stock=m_, scale=sc_, check=True, pad=2.0, tag='rock')
     # strangler figs splitting fallen temple walls on the gentler parts of the knoll foot (the platform faces and the enclosure line have
     # the balustrades and porticos too close: build 3 had roots through a pillar)
-    for a_ in np.arange(12.0, 360.0, 24.0):
-        if nroot >= 5: break
-        for rr_ in (500.0, 560.0, 620.0, 680.0):
+    # pass 3 review: none of these ever stood (the 24-degree steps hit the stair lions and the causeway nagas; one orientation only):
+    # the outer enclosure that slid off the knoll is now a ring of fallen pieces at its foot, a strangler-fig wall and a collapsed run
+    # in turn, tried every 12 degrees north and east of the knoll, at its foot, three turns each, wherever the relief under the piece is under 44 u
+    nruin = 0; last_a = -99.0
+    for a_ in np.arange(6.0, 360.0, 12.0):
+        if nroot + nruin >= 4: break
+        if a_ - last_a < 50.0: continue                                  # spread round the knoll, not a row
+        if a_ > 140.0: continue                      # west (the T and CT approaches to the west stair) and south (river) stay clear
+        kind = 'root_wall' if nroot <= nruin else 'enclosure_wall_ruin'
+        done_ = False
+        for rr_ in (700.0, 740.0, 780.0, 820.0):                       # the knoll foot (the slope above is 26-40 deg)
             x_, y_ = L.pol(c, rr_, a_)
+            if min(abs(rr_ * math.sin(math.radians(a_ - ax_))) for ax_ in (0.0, 90.0)) < 210.0: continue   # off the north and east stair approaches
             if gz(x_, y_) < L.WATER_Z + 24.0 or float(L.slope(x_, y_)) > 26.0: continue
-            yw_ = a_ + 90.0
-            if relief(S.mv('root_wall'), x_, y_, yw_) > 44.0: continue
-            if W.prop('root_wall', x_, y_, None, yw_, fit='min', dz=-4.0, check=True, pad=4.0, tag='slope') is not None:
-                nroot += 1
-                W.prop(None, x_, y_, gz(x_, y_) + 2.0, a_ * 3.0, stock=S.ROOTS[int(a_) % 2], solid='0', reg=False, tag='roots')
-                break
+            for yw_ in (a_ + 90.0, a_ + 70.0, a_ + 110.0):
+                if relief(S.mv(kind), x_, y_, yw_) > 44.0: continue
+                if W.prop(kind, x_, y_, None, yw_, fit='min', dz=-4.0, check=True, pad=4.0, tag='slope', _quiet=True) is not None:
+                    if kind == 'root_wall':
+                        nroot += 1; W.prop(None, x_, y_, gz(x_, y_) + 2.0, a_ * 3.0, stock=S.ROOTS[int(a_) % 2], solid='0', reg=False, tag='roots')
+                    else:
+                        nruin += 1
+                        for j in range(3):                                # its blocks spilled down the slope
+                            px_, py_ = L.pol((x_, y_), rng.uniform(90.0, 150.0), a_ + rng.uniform(-40, 40)); m_ = S.RUBBLE[rng.randint(len(S.RUBBLE))]
+                            lo_, hi_ = W.B(m_); sc_ = rng.uniform(0.7, 1.2)
+                            if float(L.slope(px_, py_)) < 28.0 and gz(px_, py_) > L.WATER_Z + 20.0:
+                                W.prop(None, px_, py_, gz(px_, py_) - lo_[2] * sc_ * 0.55, rng.uniform(0, 360), stock=m_, scale=sc_, check=True, pad=2.0, tag='rock')
+                    done_ = True; last_a = a_; break
+            if done_: break
+    print('temple knoll foot (pass 3): %d strangler-fig walls, %d collapsed enclosure runs' % (nroot, nruin))
     print('temple pass 2: %d pillars, %d stair lions, %d causeway nagas, %d enclosure pieces (%d split by roots)' % (npil, nst_, nn_, nw_, nroot))
     # ruin dressing on the terrace: fallen lintels and block piles against the upper terrace and in the corners (cover), vines on the
     # tower and the gate, roots over the terrace edge

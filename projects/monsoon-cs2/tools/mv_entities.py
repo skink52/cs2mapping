@@ -1,9 +1,11 @@
 """mg_monsoon script entities (stage 5): every name in docs/CONTRACT.md. Positions come from layout.py and from what mv_places.py
 actually built (W.sites: kit stations, flag poles, mounts, racks, boards, pads, tunnel mouths, platform tops).
 
-Also the bot navigation markup: WALKABLESEED seeds at the bases, flags and roads, NONAV boxes over steep slopes, karst, deep
-river reaches (fords stay open) and everything outside the playable band, so the nav mesh stays small (mg_trenchwarfare's
-44k-area nav cost FPS). nav_markup(box, prop, name) writes one func_nav_markup with its closed toolsnavattribute box.
+Also the bot navigation markup: WALKABLESEED seeds at the bases, flags and roads, NONAV boxes over everything bots do not use
+(nav_play_mask: outside the bases, flags, roads, trails, fords and the tunnels; inside them steep slopes, karst and deep river),
+so the nav mesh stays small (mg_trenchwarfare's 44k-area nav cost FPS; this map's first compile made 33,661 areas).
+tools/check_play.py check 9 estimates the nav from these boxes (`--nav-plan` before a regenerate).
+nav_markup(box, prop, name) writes one func_nav_markup with its closed toolsnavattribute box.
 
 Writes out/world_sites.json for tools/check_world.py (platform tops, tunnel floor samples, listed off-ground props, spawn list).
 """
@@ -190,9 +192,78 @@ def build(d, group, out, T, clone):
     print('entities:', ', '.join('%s %d' % kv for kv in sorted(n.items())), '| mounts %d, nav seeds %d, NONAV boxes %d' % (len(S_['mounts']), seeds, len(nonav)))
 
 
-def nonav_boxes(W, cell=256.0):
-    """NONAV boxes: grid cells that are too steep, under a karst tower, deep river (fords near the bridge and the paddies stay open)
-    or outside the playable band; merged into rectangles. Cells over the tunnels and the bases stay navigable."""
+NAV_MARGIN = 160.0          # nav kept this far beyond a road's / trail's own half width
+NAV_CELL = 128.0
+# pass 3 review (bot nav cost): the first compile made 33,661 nav areas ("Compute Approach areas" 26 min; mg_trenchwarfare lost FPS
+# with bots at 44k). Nav is kept only where bots fight and walk: the bases, the five flags and their surroundings, every road and
+# trail, two fords and the gully approach from the firebase to the temple's river stair (the CT walking route to D), the farm and
+# the tunnels. Everything else (outer valley sides, karst, the marsh, the jungle between the routes, deep river) is NONAV.
+NAV_ZONES = dict(ct_base=L.CT_PLATEAU_R + 100.0, t_base=L.T_PLATEAU_R + 150.0, flag=820.0, flag_a=650.0, farm=450.0, c123=450.0, portal=420.0,
+                 waypoint=160.0, seed=160.0)
+
+
+def nav_corridors():
+    """(polyline, half width) of every walking route bots need beyond the roads: the fords and the CT approach to the temple"""
+    ry = lambda x: float(L.river_y(x))
+    t = L.TEMPLE
+    return [
+        # ford west: the camp - river trail on the north bank to the paddies (T's way to flag A)
+        ([(-2600.0, ry(-2600.0) + 420.0), (-2650.0, ry(-2650.0)), (-2700.0, ry(-2700.0) + L.PADDY_YR1 - 40.0)], 230.0),
+        # out of the firebase gate, down its north-west flank and the gully floodplain, across the river at x 2100-2400 to the temple's
+        # west stair (CT's walking route to flag D, check_play 1b; the hill north of the gate is too steep)
+        ([(3240.0, -2504.0), (2872.0, -2472.0), (2664.0, -2152.0), (2664.0, -920.0), (2424.0, -200.0), (2136.0, 88.0), (2056.0, 456.0), (2104.0, 840.0),
+          (t[0] - 340.0, t[1])], 230.0),
+        # pass 3: the branch across the river to the temple's ghat (the flights down from the south stair)
+        ([(2424.0, -200.0), (2330.0, 300.0), (t[0] - 200.0, float(L.river_y(t[0])) + 110.0), (t[0], float(L.river_y(t[0])) + 110.0)], 200.0),
+    ]
+
+
+def nav_play_mask(CX, CY, sites=None):
+    """True where bots keep nav (see NAV_ZONES / nav_corridors)"""
+    m = np.zeros(CX.shape, bool)
+    d = lambda p: np.hypot(CX - p[0], CY - p[1])
+    m |= d(L.CT_BASE) < NAV_ZONES['ct_base']
+    m |= d(L.T_BASE) < NAV_ZONES['t_base']
+    for l, _, c in L.FLAGS:
+        if l == 'a': continue
+        m |= d(c) < NAV_ZONES['flag']
+    fa = L.FLAGS[0][2]
+    m |= d(fa) < NAV_ZONES['flag_a']
+    yr = CY - L.river_y(CX)                                    # the whole paddy field (flag A) and the north-bank paddies
+    m |= (CX > L.PADDY_X0 - 150.0) & (CX < L.PADDY_X1 + 150.0) & (yr > L.PADDY_YR0 - 150.0) & (yr < L.PADDY_YR1 + 120.0)
+    m |= (CX > L.PADDY2_X0 - 120.0) & (CX < L.PADDY2_X1 + 120.0) & (yr > L.PADDY2_YR0 - 120.0) & (yr < L.PADDY2_YR1 + 120.0)
+    m |= d(L.FARM) < NAV_ZONES['farm']
+    m |= d(L.C123[:2]) < NAV_ZONES['c123']
+    m |= (np.abs(CX - L.BRIDGE_X) < 560.0) & (np.abs(CY - L.BRIDGE_Y) < L.BRIDGE_LEN / 2 + L.BRIDGE_RAMP + 420.0)
+    for p in L.TUNNEL_PORTALS: m |= d(p) < NAV_ZONES['portal']
+    for hw, pts in L.ROADS:
+        dd, _ = L.seg_dist(CX, CY, pts); m |= dd < hw + NAV_MARGIN
+    for pts, hw in nav_corridors():
+        dd, _ = L.seg_dist(CX, CY, pts); m |= dd < hw
+    for (nm, x, y, z) in (sites or {}).get('waypoints', []):
+        if 'waterfall' not in nm: m |= d((x, y)) < NAV_ZONES['waypoint']
+    for (x, y) in (sites or {}).get('seeds', []): m |= d((x, y)) < NAV_ZONES['seed']
+    return m
+
+
+def tunnel_roof(cell=NAV_CELL):
+    """{(i, j) of the nonav grid: highest tunnel ceiling (or open cut) z inside that cell}"""
+    t = PL.tunnel_plan(); gx, gy, occ, CZ = t['gx'], t['gy'], t['occ'], t['CZ']
+    X0, Y0 = -L.MAP_X - 256.0, -L.MAP_Y - 256.0
+    out = {}
+    for i, j in zip(*np.nonzero(occ)):
+        cz = float(CZ[i:i + 2, j:j + 2].max()) + (400.0 if t['open'][i, j] else 0.0)
+        k = (int((gx[i] + 8.0 - X0) // cell), int((gy[j] + 8.0 - Y0) // cell))
+        out[k] = max(out.get(k, -1e9), cz)
+    return out
+
+
+def nonav_boxes(W, cell=NAV_CELL, sites=None):
+    """NONAV boxes over every grid cell bots do not need (nav_play_mask), and inside the play zones over cells that are too steep,
+    under a karst tower or deep river (the fords and the bridge stay open); merged into rectangles. Over the tunnels a box starts
+    above the gallery roof, so the galleries keep their nav; a cell where the gallery is open to the sky (portal cuts) stays open.
+    W: the World (its sites: seeds, waypoints) or None with `sites` given (tools/check_play.py's estimate)."""
+    if sites is None: sites = W.sites if W is not None else {}
     X0, Y0 = -L.MAP_X - 256.0, -L.MAP_Y - 256.0
     nx = int((2 * L.MAP_X + 512) / cell); ny = int((2 * L.MAP_Y + 512) / cell)
     f = (np.arange(5) + 0.5) / 5 * cell
@@ -203,28 +274,44 @@ def nonav_boxes(W, cell=256.0):
     CX = X.mean((2, 3)); CY = Y.mean((2, 3))
     steep = (SL > 40.0).mean((2, 3)) > 0.6
     water = (Z < L.WATER_Z - 8.0).mean((2, 3)) > 0.7
-    ford = ((CX > 100.0) & (CX < 620.0)) | (np.abs(CX + 2650.0) < 260.0) | (CX > L.MARSH_X0 - 200.0)
-    base = (np.hypot(CX - L.CT_BASE[0], CY - L.CT_BASE[1]) < L.CT_FOOT_R + 200.0) | (np.hypot(CX - L.T_BASE[0], CY - L.T_BASE[1]) < L.T_FOOT_R + 200.0)
-    far = (L.water_dist(CX, CY) > 3500.0) & ~base
+    ford = ((CX > 100.0) & (CX < 620.0)) | (np.abs(CX + 2650.0) < 260.0)
+    route = np.zeros(CX.shape, bool)              # a route keeps its steep cells (nav generation itself skips what is too steep)
+    for pts, hw in nav_corridors():
+        dd, _ = L.seg_dist(CX, CY, pts); ford |= dd < hw; route |= dd < hw
+    for hw, pts in L.ROADS:
+        dd, _ = L.seg_dist(CX, CY, pts); route |= dd < hw + 64.0
+    steep &= ~route
     edge = (np.abs(CX) > L.MAP_X) | (np.abs(CY) > L.MAP_Y)
     karst = L.karst_dist(CX, CY) < -cell * 0.45
     bridge = (np.abs(CX - L.BRIDGE_X) < cell * 0.5 + 110.0) & (np.abs(CY - L.BRIDGE_Y) < L.BRIDGE_LEN / 2 + L.BRIDGE_RAMP + cell * 0.5)
+    play = nav_play_mask(CX, CY, sites)
     water &= ~ford & ~bridge                 # 12 Nov review: the river boxes swallowed the bridge deck (bots could not cross)
-    no = steep | water | far | edge | karst
-    wateronly = water & ~(steep | far | edge | karst)
-    t = PL.tunnel_plan()['box']
-    no &= ~((CX > t[0] - cell) & (CX < t[3] + cell) & (CY > t[1] - cell) & (CY < t[4] + cell) & ~karst)
+    no = ~play | steep | water | edge | karst
+    wateronly = water & play & ~(steep | edge | karst)
     zlo = Z.min((2, 3)); zhi = Z.max((2, 3))
+    z0c = zlo - 48.0
+    zt = zhi + 260.0
+    for (kx, ky, kr, kh, ks) in L.KARST:                     # the karst crowns too (bots never get up there)
+        zt = np.where(np.hypot(CX - kx, CY - ky) < kr, np.maximum(zt, L.gz(kx, ky) + kh + 320.0), zt)
+    # over the tunnels: the box starts above the roof (or the cell stays open where the roof is within 40 u of the ground / cut open)
+    tun = np.zeros(no.shape, bool)
+    for (i, j), roof in tunnel_roof(cell).items():
+        if not (0 <= i < nx and 0 <= j < ny): continue
+        tun[i, j] = True
+        if roof + 40.0 > zlo[i, j]: no[i, j] = False
+        else: z0c[i, j] = max(roof + 12.0, zlo[i, j] - 48.0)
     done = np.zeros(no.shape, bool); out = []
     for i in range(nx):
         for j in range(ny):
             if not no[i, j] or done[i, j]: continue
+            kind = (wateronly[i, j], tun[i, j])
+            same = lambda a, b: no[a, b] & ~done[a, b] & (wateronly[a, b] == kind[0]) & (tun[a, b] == kind[1])
             j1 = j
-            while j1 + 1 < ny and no[i, j1 + 1] and not done[i, j1 + 1] and j1 + 1 - j < 8: j1 += 1
+            while j1 + 1 < ny and same(i, j1 + 1) and j1 + 1 - j < 15 and not kind[1]: j1 += 1
             i1 = i
-            while i1 + 1 < nx and no[i1 + 1, j:j1 + 1].all() and not done[i1 + 1, j:j1 + 1].any() and i1 + 1 - i < 8: i1 += 1
+            while i1 + 1 < nx and np.all(same(i1 + 1, slice(j, j1 + 1))) and i1 + 1 - i < 15 and not kind[1]: i1 += 1
             done[i:i1 + 1, j:j1 + 1] = True
-            ztop = float(zhi[i:i1 + 1, j:j1 + 1].max()) + 260.0
-            if wateronly[i:i1 + 1, j:j1 + 1].all(): ztop = L.WATER_Z + 30.0          # river cells: nothing above the water is closed
-            out.append((X0 + i * cell, Y0 + j * cell, float(zlo[i:i1 + 1, j:j1 + 1].min()) - 48.0, X0 + (i1 + 1) * cell, Y0 + (j1 + 1) * cell, ztop))
+            ztop = float(zt[i:i1 + 1, j:j1 + 1].max())
+            if kind[0]: ztop = L.WATER_Z + 30.0          # river cells: nothing above the water is closed
+            out.append((X0 + i * cell, Y0 + j * cell, float(z0c[i:i1 + 1, j:j1 + 1].min()), X0 + (i1 + 1) * cell, Y0 + (j1 + 1) * cell, ztop))
     return out
