@@ -27,6 +27,12 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
+- 12 Nov ~19:30: step 7 done offline. `tools/patch_terrain.py --in out/mg_trenchwarfare_models.vmap --out out/mg_trenchwarfare_terrain.vmap`
+  patches 672 tw_gen terrain tiles: 367 new craters, tank/lorry ruts, puddles, erosion; protect mask (48 % of the map; trenches, pits,
+  spawns, runways, props, user objects, the user's explosions) read back at 0.000000 u change. Terrain tris 118k -> 198k (47 tiles
+  re-gridded to 16 u), map 67 -> 89 MB. 6 smoke columns `tw_crater_smoke_*` (on), 12 rain tiles `tw_rain` (off; FireUser1/2). Light
+  rig untouched (user-tuned). Guard PASS; check_world/check_play unchanged. Renders `out/review/terrain_*.png` (`tools/terrain_views.py`).
+  Chain now: world_1 -> models -> terrain -> nav (run `patch_nav.py` on the terrain output before deploy).
 - 12 Nov ~18:00: step 4 done (simulated). Bots in `src/modules/85_ai.js`: infantry placed at fire/support posts with a leash; a side
   with < 4 active humans gets 1 AI pilot + 2 AI mortar crews, handed to a human on request in the same call. `BOTS_ON: true`,
   `bot_quota_mode fill`, `bot_quota 16` - **only valid with the patched map** (nav seeds + NONAV); on the old compile set BOTS_ON false.

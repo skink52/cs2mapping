@@ -356,3 +356,136 @@ In game, confirm:
 - the planks and benches stand at round start (and grep the compile log for `DELETED`);
 - the mortar recoils on fire;
 - nothing pushes the crew.
+
+## Step 7: terrain (12 Nov 2026): guarded patch `tools/patch_terrain.py`
+
+Offline only, so everything is **simulated**: nothing was compiled, opened in Hammer or played. The input map was only read, and the
+addon folders were not written to.
+
+```
+cd projects/trenchwarfare-cs2
+python tools/patch_terrain.py [--in out/mg_trenchwarfare_models.vmap] [--out out/mg_trenchwarfare_terrain.vmap] [--no-fx] [--no-dense]   # 65 s
+python tools/patch_guard.py out/mg_trenchwarfare_models.vmap out/mg_trenchwarfare_terrain.vmap out/step7/patch_terrain.targets.json --strict
+python tools/check_world.py out/mg_trenchwarfare_terrain.vmap --stage out/addon
+python tools/check_play.py  out/mg_trenchwarfare_terrain.vmap --stage out/addon
+python tools/terrain_views.py          # out/review/terrain_*.png from out/step7/terrain_layers.npz
+```
+Chain: world_1 -> models -> **terrain** -> nav (`patch_nav.py --in out/mg_trenchwarfare_terrain.vmap`). Outputs in `out/step7/`:
+`patch_terrain.targets.json`, `patch_terrain.report.json` (every number below, the crater / track / rut lists), `patch_terrain.guard.json`,
+`check_*_before/after.log`, `terrain_layers.npz`, `deploy_files.txt`.
+
+### What the terrain is and what changed
+
+- **Targets.** The 672 generated terrain tiles: CMapMesh under the world, vis group `tw_gen`, one Valve blend material, 512 x 512 on a
+  32 / 64 / 128-u grid (172 / 152 / 348 tiles). The tool verifies every one before it changes anything (vis group, no transform, every
+  vertex on its grid, no extra faces); a mismatch writes nothing. User-owned meshes (`tw_user`, ungrouped: 2 water sheets, 13 clips,
+  2 ladder volumes) and the 16 parapet sheets are not touched.
+- **Detail layer** on a 16-u lattice, added to the vertex heights:
+  - 367 fresh shell craters (330 in no man's land, r 24-64; 30 in the rears, r 30-90, mostly near the mortar line; 7 on the flanks),
+    each a bowl, a raised lip and ejecta;
+  - mud ruts: the tracks of the 4 tanks in no man's land (two A7V-gauge treads, 100 u apart; the Renault 60 u), each chosen from 40
+    candidate curves as the one crossing the least protected ground, fading out behind the tank;
+  - lorry ruts along both edges of both airfields (|y| 1100, x 4700-6580, twin grooves 64 u apart, puddled in places);
+  - 9 puddle basins (shallow, flat-bottomed, in the low spots);
+  - subtle noise (churn in the battle zone, long swells in the woods);
+  - then erosion with `create/terrain_img.detail()` (2 gully passes, 414 k droplets, scree relaxation), its protect input being the
+    same mask.
+  - Soft limits: cut 16 u, fill 9 u. Layer -15.1 .. +8.3 u, rms 2.1 u where free; largest vertex move 13.4 u.
+- **Paint** follows (VertexPaintBlendParams / TintColor): fresh mud and darker wet ground in craters, tracks and basins; dirt in the
+  airfield ruts (forest blend). Normals are recomputed per face; texcoords stay planar x / y (the stored texture axes).
+- **Re-gridded tiles.** The 47 tiles the ruts cross, and the no man's land tiles with at least 40 % unprotected ground, are rebuilt at
+  16 u (same node, element and nodeID; the old surface is reproduced exactly under the 00-11 split, then the layer is added). Every
+  other changed tile keeps its topology. Edges against coarser tiles follow the coarse vertices (no cracks).
+- **Lightmap.** The battlefield `toolslightmapres` shell (mesh 7910, tw_gen) follows the change: 2293 floor vertices go down by the
+  deepest cut within 64 u (max 12.1 u), and 2373 roof vertices go up by the highest fill. Lightmap stays at 2048 (compile setting);
+  nothing adds charts.
+
+### Protect mask (hard; 48.4 % of the lattice)
+
+| What | Margin | Share |
+|---|---|---|
+| Trenches + banks (layout trench distance < 170) | | 6.5 % |
+| Parapet sheets | | 3.9 % |
+| Saps and galleries | +112 | 1.5 % |
+| Mortar pits, round each `mortarpit_*` | r 340 | 2.1 % |
+| Spawns / deploy posts / heal points / seats / nav markup | r 112 | 1.7 % |
+| The user's 13 env_explosions | r 200 | 0.9 % |
+| Runways (\|x\| 4236-7014, \|y\| <= 940) and plane lanes (\|x\| 3200-4300, \|y\| <= 900) | | 8.1 % |
+| Ladder volumes (+128) and ladder props (+64) | | 0.2 % |
+| Every prop footprint | +12 | 14.6 % |
+| Tree trunks | r 48 x scale + 16 | 14.8 % |
+| Water sheets (faces) | +48 | 4.9 % |
+| Clips | +24 | 3.2 % |
+| The gallery mesh | | 0.9 % |
+| The user's objects | | 0.7 % |
+| Ground effects | | 0.2 % |
+| The woods skirmish (track, fence, clearing) | | 3.2 % |
+| The terrain edge | 192 u | 6.2 % |
+
+- **Rule.** Any face that touches the mask keeps every vertex bit for bit (on a seam with a coarser tile, the whole coarse segment).
+  The layer then fades in over 64 u.
+- **Coverage.** Frozen: 80.6 % of the terrain; fully free 6.5 %. The map is densely dressed, so the detail lives in the gaps of no
+  man's land, the rears and the airfield edges. The woods are almost all frozen (trunks) and get nothing.
+- **Read back.** The patched map's own vertices, sampled exactly, change by at most **0.000000 u**: at 333 698 lattice points on the
+  mask, on the whole frozen region, and at 397 959 random off-lattice points on the mask.
+
+### Counts and checks, before -> after
+
+| | Before | After |
+|---|---|---|
+| terrain tiles: vertices / faces / triangles | 70 714 / 59 312 / 118 624 | 112 538 / 99 248 / 198 496 (+67 %, all from the 47 re-gridded tiles) |
+| map file | 67.2 MB | 89.4 MB |
+| faces newly steeper than 40 deg (mud stretch) | - | 48 (crater walls) |
+| patch_guard --strict | - | **PASS**: 331 declared nodes changed (330 tiles + the lightmap shell, field `mesh` only), 19 added (6 smoke + 12 rain + relay), 4 prefix keys |
+| check_world | FAILED: singletons (M2, the user's opt-in) | same; nothing new |
+| check_play | 15 failing items (step 5 list) | the same 15: same walk graph (t 2213 cells), routes 1825 / 1834, nav flood 21 764 cells |
+| check_play 6 clipping | 38 buried, 3 floating, 4 under water | 37 / 3 / 4. The one change (shell_pile 2331, 43 % -> under 35 %) stands on frozen ground that the read-back proves identical: a raster artefact of the finer triangles in a re-gridded tile |
+| check_play 7 water | 182 exposed edge points, 0 z-fight | 182, **0 z-fight**; two cluster centres moved 2-8 u (the same artefact). No water was added |
+| check_play 8 terrain, T5-T7 | clean | clean; parked planes on unchanged ground |
+
+No prop moved: every prop footprint is protected, so nothing needed re-seating and no user prop is affected.
+
+### Weather and light
+
+- **Smoke** (`create/fxkit.effect`, stock `particles/burning_fx/barrel_burning_engine_smoke_cheap.vpcf`, start on) at 6 fresh no man's
+  land shell holes, `tw_crater_smoke_1..6`: (-270, -1260), (1148, 340), (-64, -2603), (-1073, 711), (-46, 1316), (957, 2261).
+  Each is more than 520 u from the 7 existing smoke / fire systems and from the user's explosions, and more than 1100 u from the others.
+- **Rain.** fxkit has no camera-local rain (only `weather_tiles`, a fixed grid).
+  - Added: 12 `particles/rain_fx/rain.vpcf` tiles over the two trench systems, **start off**, under one relay `tw_rain`
+    (`ent_fire tw_rain FireUser1` / `FireUser2`). They cost nothing until fired.
+  - Whether a placed `rain.vpcf` looks right is unverified in game.
+  - **No fog particles** (the tw32 FPS lesson).
+- **Light**: unchanged, recorded before = after.
+  - Sun 55 / 145, 196 202 210 x 1.6; sky 150 160 175 x 1.6, sky_overcast_01.
+  - Cubemap fog 250-7500, height fog 300-2600; post-process exposure 0.6-1.8.
+  - 15 probe volumes, 23 lightmap-res meshes.
+  - Nothing is broken, and `create/gen_light.py` would replace the whole tuned set with a preset, so it was not used.
+
+### Images looked at (`out/review/`)
+
+- Hillshades, before | after (mud / wet tint) | mask and frozen faces: `terrain_whole`, `_nml_north`, `_nml_south`, `_t_rear`,
+  `_ct_rear`, `_t_airfield`, `_ct_airfield`, `_north_flank`, `_south_flank`.
+- Eye level, before above after (terrain only): `terrain_eye_t_firestep_east`, `_ct_firestep_west`, `_nml_overview_n/_s`,
+  `_ct_rear_mortars`, `_t_rear`, `_track_1..4_*` (beside each tank track), `_ruts_t_north/_south`.
+- They show new shell holes and churn between the old craters, tank treads running away from the wrecks, and twin lorry ruts along
+  the airfield edges.
+- Fixed while looking:
+  - the ruts first came out as one smeared band (grooves narrower than the 16-u lattice): widened to sigma 11, 64 u apart;
+  - the tank tracks first ran under protected pools and props: path choice added;
+  - the lightmap shell first jumped 58 u (it was compared with the ground instead of with the change).
+- No steps, spikes or seams at mask edges or tile edges. One faint straight line in the whole-map hillshade at y +-1100 is the airfield
+  ruts.
+- Left: the T north rut fades where it crosses a protected shell hole at about (-5300, 1100).
+
+### For the user / open
+
+- **Budget.** +80 k terrain triangles and +22 MB of vmap, all from the 16-u tiles. `--no-dense` gives heights and paint only, with no
+  grid change; in that mode no man's land keeps 32-u detail and the ruts cannot form.
+- **In game, check:**
+  - mud stretch on the 48 steep crater faces;
+  - the ruts and treads at player scale;
+  - that the 6 smoke columns read as smouldering;
+  - `ent_fire tw_rain FireUser1` (look and FPS);
+  - the lightmap at 2048 over the re-gridded tiles.
+- **Deploy list:** `out/step7/deploy_files.txt`. It holds the map only, because every particle is stock. If patch_nav runs after this
+  step, deploy its output instead.

@@ -63,6 +63,7 @@ Steps 1+2 run together, then 3 alone (it owns `src/`), then 4+5, 6+7, 8+9, 10.
 - 12 Nov: reminders set for each usage reset to Sat 13:00; vmap backed up; research done (TW_STATE, MONSOON_STANDARD); this plan.
 - 12 Nov: step 1 done (restage_out.py, mock green on Windows, CONTRACT.md + check_contract.py 76/77, 1 known missing).
 - 12 Nov: step 2 done (create/check_play.py + trench adapter, check_world.py, REVIEW_WORLD_1.md: 4 high, 6 mid, 11 low).
+- 12 Nov: step 7 done offline (patch_terrain: craters, ruts, erosion under a protect mask; smoke + rain fx; light unchanged).
 - 12 Nov: step 4 done (bots placed + leashed, AI pilots/crews yield to humans, BOTS_ON with fill 16, patch_nav ~1,470 areas est.; perf max to re-run on a quiet PC).
 - 12 Nov: step 6 done offline (Canon de 75 swap, LODs, tw_de_a holes, ASSETS + WORKSHOP_COMPLIANCE; Gewehr 98/Luger licence work for the user).
 - 12 Nov: step 5 done offline (patch_world_1 + patch_guard + dyn_models; H2/H3/H4/M3/L5 fixed in out/, H1/M2 opt-in), not deployed.
