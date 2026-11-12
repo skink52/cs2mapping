@@ -58,7 +58,17 @@ Steps 1+2 run together, then 3 alone (it owns `src/`), then 4+5, 6+7, 8+9, 10.
   loaded); check_contract covers the script's models. Still a TESTING item.
 - Monsoon's own lesson: its map has never been compiled or played; copy its offline rigour, and say "simulated" until CS2 confirms.
 
-## Progress
+## Progress (newest first)
+
+- 13 Nov 00:27: compile 4 deployed: seams (164 generated gaps -> 0), sap portal ramp/lintel/cap, Gewehr/Luger/Lee-Enfield replaced
+  (CC BY), Mondragon and Canon de 75 confirmed, template wavs synthesised; 0 errors, 0 DELETED, nav 4,397, check_world clean.
+  Patch stages deterministic. Next: world pass 3 (remaining check_play baseline failures), then the user's in-game TESTING.md.
+- 12 Nov 20:57: compile 3 (user decisions: duplicate info_map_parameters + duplicate bench dropped, sap benches kept as seam bridges).
+- 12 Nov 19:35: compile 2: nav 10,269 -> 4,376 (nav pass 2).
+- 12 Nov 17:41: first deploy (16:33) + compile: 0 failed, 0 DELETED. Step 10 done: second review (5 script bugs), README,
+  TESTING, WORKSHOP, credits.
+
+## Progress (step by step, 12 Nov)
 
 - 12 Nov: reminders set for each usage reset to Sat 13:00; vmap backed up; research done (TW_STATE, MONSOON_STANDARD); this plan.
 - 12 Nov: step 1 done (restage_out.py, mock green on Windows, CONTRACT.md + check_contract.py 76/77, 1 known missing).
