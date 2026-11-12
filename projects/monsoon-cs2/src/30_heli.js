@@ -69,7 +69,7 @@ function loadHelis() {
                   hp: M.HEALTH || H.HEALTH, maxHp: M.HEALTH || H.HEALTH, rockets: M.ROCKETS, rearmAcc: 0, rocketAt: 0, podI: 0,
                   seats: M.SEATS.map((s) => ({ kind: s.kind, off: s.off, slot: -1 })),
                   gun: gunFresh(),
-                  rotorSpeed: 0, spin: 0, anim: "", engine: false, engineSet: false, smoking: false, dust: false,
+                  rotorSpeed: 0, spin: 0, anim: "", rateSent: -1, pgun: gunFresh(), engine: false, engineSet: false, smoking: false, dust: false,
                   angSent: undefined, rotSent: undefined, tailSent: undefined, B: angleBasis({ pitch: 0, yaw, roll: 0 }),
                   lastHitBy: -1, lastHitAt: -99, lastSrc: "", rotorHitAt: 0, padT: 0, crashT: 0, respawnAt: 0, wreckUntil: 0, wreckOut: false,
                   guardUntil: 0, idleT: 0, firstFlightAt: 0, overWater: false, soft: false,
@@ -132,12 +132,21 @@ function placeRiders(h, snap) {
     if (p && p.camKind === "gun" && p.cam) { try { p.cam.Move({ position: local(heliOrigin(h), h.B, h.M.GUN.cam) }); } catch (e) {} }
   }
 }
+// the Apache's rotors are its own sequences: idle (stopped), spin_slow, spin. CS2's prop_dynamic plays one with SetAnimationLooping and
+// keeps it with SetIdleAnimationLooping (playtest 1: the old "SetAnimation" input does not exist in CS2, so the rotors never moved);
+// SetPlaybackRate spools the blades up and down between the two speeds, sent in 0.1 steps
 function setAnim(h, force) {
   if (!h.M.ANIMATED || !h.ent) return;
-  const A = h.M.ANIMS, want = h.rotorSpeed <= 0.03 ? A.off : h.rotorSpeed < 0.75 ? A.slow : A.full;
-  if (want === h.anim && !force) return;
-  h.anim = want;
-  fireEnt(h.ent, h.M.ANIM_INPUT, want);
+  const A = h.M.ANIMS, sp = h.rotorSpeed, want = sp <= 0.03 ? A.off : sp < 0.75 ? A.slow : A.full;
+  if (want !== h.anim || force) {
+    h.anim = want; h.rateSent = -1;
+    fireEnt(h.ent, h.M.ANIM_INPUT, want);
+    if (h.M.IDLE_INPUT) fireEnt(h.ent, h.M.IDLE_INPUT, want);
+  }
+  if (!h.M.RATE_INPUT) return;
+  const rate = want === A.off ? 1 : want === A.slow ? 0.4 + clampN(sp, 0, 0.75) * 1.4 : 0.85 + (clampN(sp, 0.75, 1) - 0.75) * 0.6;
+  const r = Math.round(rate * 10) / 10;
+  if (r !== h.rateSent) { h.rateSent = r; fireEnt(h.ent, h.M.RATE_INPUT, r); }
 }
 function setEngine(h, on) {
   if (h.engine === on) return;
@@ -220,7 +229,7 @@ function enterHeli(p, pawn, h, idx) {
   try { pawn.Teleport({ position: seatPos(h, idx), velocity: v3(0, 0, 0) }); } catch (e) {}
   try { pawn.SetEyeAngles({ pitch: s.kind === "gunner" ? 10 : 0, yaw: h.yaw + (s.kind === "gunner" ? h.M.GUN.yaw : 0), roll: 0 }); } catch (e) {}
   setSeatCamera(p, pawn, h);
-  if (!p.bot) toast(p, s.kind === "pilot" ? h.M.label + ": you have the controls" : s.kind === "gunner" ? h.M.GUN.name + ": MOUSE1 fires, R reloads, E gets out" : "Aboard. E gets out (rope below " + Math.round(CONFIG.HELI.ROPE_ALT * 0.0254) + " m)", 4);
+  if (!p.bot) { toast(p, seatToast(h, s.kind), 6); if (TNOW - p.seatHelpAt > 120) { p.seatHelpAt = TNOW; info(p, h.M.label + " " + s.kind.toUpperCase(), seatHelp(h, s.kind), "!controls shows this again.", 10); } }
   return true;
 }
 function leaveHeli(p, pawn, why) {
@@ -300,13 +309,16 @@ function gunTick(st, G, firing, dt) {
   return false;
 }
 function gunReload(st, G) { if (G.belt && !st.reloadAt && st.ammo !== undefined && st.ammo < G.belt) { st.reloadAt = TNOW + G.reload; stats.beltReloads++; } }
-function gunFresh() { return { heat: 0, locked: false, next: 0, shots: 0, ammo: undefined, reloadAt: 0 }; }
+function gunFresh() { return { heat: 0, locked: false, next: 0, shots: 0, ammo: undefined, reloadAt: 0, impactAt: 0 }; }
+// one round: hit test, a tracer every TRACER_EVERY rounds, the report every SOUND_EVERY (emplaced guns: every round), and a dirt puff
+// where the rounds land at most every IMPACT_EVERY s (playtest 1: firing showed nothing at the far end)
 function gunRound(st, G, muzzle, dir, pawn, team, snd, range, spread, src) {
   const s = spread === undefined ? G.spread : spread;
   const d = vnorm(v3(dir.x + gauss() * s, dir.y + gauss() * s, dir.z + gauss() * s));
   const dist = hitscan(muzzle, d, range, pawn, team, G.damage, G.heli, hitIgnore, src);
   if (st.shots % CONFIG.HELI.TRACER_EVERY === 0) tracer(muzzle, d, Math.max(60, dist));
-  if (st.shots % CONFIG.HELI.SOUND_EVERY === 0) fire(snd, "StartSound");
+  if (st.shots % (src === "mount" ? CONFIG.MOUNT.SOUND_EVERY : CONFIG.HELI.SOUND_EVERY) === 0) fire(snd, "StartSound");
+  if (dist < range - 1 && TNOW - (st.impactAt || 0) >= CONFIG.HELI.IMPACT_EVERY) { st.impactAt = TNOW; puff(vadd(muzzle, d, Math.max(0, dist - 6))); stats.impactPuffs++; }
   stats.gunShots++;
 }
 // the helicopter's gunner seat: aim = eye clamped to the gun's cone (relative to the airframe heading, level)
@@ -385,14 +397,48 @@ function fireRockets(h, pawn, aimDir, spread) {
   return true;
 }
 // where the pilot's crosshair points: the FOLLOW_POSITION camera rebuilt from the eye angles, traced along the eye
-function pilotAim(p, h, eye) {
+function pilotAimPoint(p, h, eye) {
   const C = CONFIG.HELI.CAM, B = angleBasis({ pitch: eye.pitch, yaw: eye.yaw, roll: 0 });
   const cam = vadd(v3(h.pos.x, h.pos.y, h.pos.z + h.groundOff + C.UP), B.f, -(p.camBack || C.BACK));
   const L = 9000;
   let tr; try { tr = Instance.TraceLine({ start: vadd(cam, B.f, (p.camBack || C.BACK) + 200), end: vadd(cam, B.f, L), ignoreEntity: hitIgnore, ignorePlayers: true }); } catch (e) {}
-  const pt = tr && tr.didHit ? tr.end : vadd(cam, B.f, L);
+  return tr && tr.didHit ? tr.end : vadd(cam, B.f, L);
+}
+function pilotAim(p, h, eye) {
   const from = local(heliOrigin(h), h.B, h.M.PODS[0] || [0, 0, 60]);
-  return vnorm(vsub(pt, from));
+  return vnorm(vsub(pilotAimPoint(p, h, eye), from));
+}
+// the pilot's own gun: the Apache's chin gun while the gunner seat is empty (MOUSE2), or the Mi-8 slick's nose gun (MOUSE1). Returns
+// { G, st, name } when this helicopter has one the pilot can fire now, else null
+function pilotGun(h) {
+  const M = h.M, PG = M.PILOT_GUN;
+  if (!PG) return null;
+  if (PG === "chin") { const gi = h.seats.findIndex((q) => q.kind === "gunner"); return gi >= 0 && h.seats[gi].slot < 0 ? { G: M.GUN, st: h.gun, name: M.GUN.name } : null; }
+  return { G: PG, st: h.pgun, name: PG.name };
+}
+function tickPilotGun(h, inp, dt) {
+  const pg = pilotGun(h);
+  if (!pg) return;
+  const G = pg.G, firing = !!inp.gun && !!inp.gunAt && h.state === "flying" && !h.landed;
+  const muzzle = local(heliOrigin(h), h.B, G.muzzle);
+  const want = firing ? angOf(vnorm(vsub(inp.gunAt, muzzle))) : { pitch: 0, yaw: h.yaw + G.yaw, roll: 0 };
+  const aim = clampAim(want, h.yaw + G.yaw, G.cone, G.up, G.down);
+  if (gunTick(pg.st, G, firing, dt)) stats.pilotGunShots++, gunRound(pg.st, G, muzzle, dirOf(aim), pawnOf(h.seats[0].slot), h.team, "mv_heli_" + (pg.st.shots % 4 < 2 ? "gun_" : "gun2_") + h.tag, G.range, undefined, "heligun");
+}
+// the controls of a seat in one HUD line (the instruments' info line when nothing is wrong) and in the boarding toast
+// (the info line is 700 px of 19 px text: about 60 characters; the toast 540 px of 27 px: about 36)
+function seatHint(h, kind) {
+  const M = h.M, pg = M.PILOT_GUN;
+  if (kind === "pilot") return (M.ROCKETS ? "MOUSE1 ROCKETS " + h.rockets + "   " : pg && typeof pg === "object" ? "MOUSE1 NOSE GUN   " : "") +
+    (pg === "chin" ? (pilotGun(h) ? "MOUSE2 CHIN GUN   " : "") : "") + "SPACE / CTRL   E OUT";
+  if (kind === "gunner") return "MOUSE1 FIRE   R BELT   E OUT   !swap";
+  return "RIDING   E OUT   !swap SEAT";
+}
+function seatToast(h, kind) {
+  if (kind === "pilot") return h.M.ROCKETS && h.M.PILOT_GUN === "chin" ? "You fly. MOUSE1 rockets, MOUSE2 gun" : h.M.ROCKETS ? "You fly. MOUSE1 fires rockets"
+    : h.M.PILOT_GUN && typeof h.M.PILOT_GUN === "object" ? "You fly. MOUSE1 fires the nose gun" : "You fly. !controls for the keys";
+  if (kind === "gunner") return "MOUSE1 fires. R belt. E out";
+  return "Aboard. E gets out";
 }
 
 // ------------------------------------------------------------------ damage, crash, wreck, respawn
@@ -637,8 +683,9 @@ function tickHeli(h, dt) {
   h.pos = np;
   placeHeli(h, false);
   placeRiders(h, false);
-  // rockets
+  // rockets; the pilot's own gun (chin gun with the gunner seat empty, the slick's nose gun)
   if (inp.fire && inp.aim && h.M.ROCKETS) fireRockets(h, pawnOf(h.seats[0].slot), inp.aim, inp.spread);
+  if (h.M.PILOT_GUN && h.seats[0].slot >= 0) tickPilotGun(h, inp, dt);
   // effects that follow the airframe
   if (h.smoking && h.tick % 2 === 0) { const sm = ent("mv_heli_smoke_" + h.tag); if (sm) { try { sm.Teleport({ position: v3(np.x, np.y, np.z + h.groundOff + 90) }); } catch (e) {} } }
   const dusty = h.alt < H.DUST_ALT && h.rotorSpeed > 0.5;
@@ -676,13 +723,24 @@ function tickSeat(p, pawn, dt, pressed, held) {
   if (!h.ent || h.state === "dead") { leaveHeli(p, pawn, ""); return; }
   const eye = eyeOf(pawn);
   if (s.kind === "pilot") {
-    const fireKey = (held & CSInputs.ATTACK) !== 0;
+    const fireKey = (held & CSInputs.ATTACK) !== 0, altKey = (held & CSInputs.ATTACK2) !== 0, PG = h.M.PILOT_GUN;
+    // MOUSE1 = rockets (gunships) or the nose gun (the slick); MOUSE2 = the chin gun (Apache, gunner seat empty)
+    const gunKey = PG === "chin" ? altKey : PG ? fireKey : false;
     if (!p.afk) h.inp = { fwd: ((held & CSInputs.FORWARD) ? 1 : 0) - ((held & CSInputs.BACK) ? 1 : 0), side: ((held & CSInputs.RIGHT) ? 1 : 0) - ((held & CSInputs.LEFT) ? 1 : 0),
-              coll: ((held & CSInputs.JUMP) ? 1 : 0) - ((held & CSInputs.DUCK) ? 1 : 0), yaw: eye.yaw, fire: fireKey,
-              aim: fireKey && h.M.ROCKETS && !h.landed ? pilotAim(p, h, eye) : null, spread: 0 };
+              coll: ((held & CSInputs.JUMP) ? 1 : 0) - ((held & CSInputs.DUCK) ? 1 : 0), yaw: eye.yaw, fire: fireKey && h.M.ROCKETS > 0,
+              aim: fireKey && h.M.ROCKETS && !h.landed ? pilotAim(p, h, eye) : null, spread: 0,
+              gun: gunKey, gunAt: gunKey && !h.landed ? pilotAimPoint(p, h, eye) : null };
     // an AFK pilot (no key, no look for AFK.TIME): the stick is let go so it does not fly on with the last keys held. It settles and
     // lets down; over the river it creeps to the bank first (a landing on water is a ditching). tickAfk takes him out once it is down.
     else h.inp = letDown(h);
+    // a trigger that does nothing says why, now and then (playtest 1: "helicopters need weapons")
+    if ((pressed & (CSInputs.ATTACK | CSInputs.ATTACK2)) && TNOW - p.gunNote > 4) {
+      const why = h.landed && (fireKey || gunKey) ? "Weapons fire in the air"
+                : fireKey && !h.M.ROCKETS && !(PG && PG !== "chin") ? "No pilot gun: the door gunner fires"
+                : fireKey && h.M.ROCKETS && h.rockets < 2 ? "Rockets empty: re-arm on your pad"
+                : altKey && PG === "chin" && !pilotGun(h) ? "Your gunner has the chin gun" : "";
+      if (why) { p.gunNote = TNOW; toast(p, why, 3); }
+    }
     easeCamera(p, h, dt);
     if (pressed & CSInputs.USE) {
       if (h.landed) { leaveHeli(p, pawn, ""); return; }

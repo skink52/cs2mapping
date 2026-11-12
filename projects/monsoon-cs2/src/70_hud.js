@@ -2,16 +2,14 @@
 const NEEDLE = (deg) => "a" + (((Math.round(deg / 5) % 72) + 72) % 72);
 function roleCard(p, role) {
   const team = p.team === T || p.team === CT ? p.team : CT;
-  if (role === "infantry") return info(p, "INFANTRY", ["Take the five flags: stand by the pole. Hold 3 to bleed their tickets.", "Kits: E at an arms rack or a held flag's crate, or !rifle !mg !at.",
-    "Hold E on far open ground: fire mission for your battery.", "E at a friendly helicopter to ride. E again ropes you down.", "E behind a heavy machine gun to man it."],
-    "!spawn a-e, base or heli picks where you deploy.");
-  if (role === "artillery") return info(p, team === T ? "ROCKET BATTERY" : "HOWITZER BATTERY", ["Two to a gun. E at the rack takes a round, E at the gun loads it.",
-    "E at the plotting board. WASD moves the reticle, SHIFT slows it.", "R steps through fire missions. MOUSE1 locks. SPACE fires when LAID.",
-    team === T ? "Load up to 4 rockets: they go as one salvo." : "MOUSE2 at the rack: HE, WP smoke, Beehive (close defence).", "A hit near an enemy gun knocks it out. Hold E on yours to repair."],
-    "You join a gun crew when a seat is free.");
-  if (role === "air") return info(p, "AIRCREW", ["SPACE climbs, CTRL descends. Hands off holds the height.", "The mouse turns the nose. WASD moves the way you push.",
-    "Land level and slow (under 3 m/s). E gets out on the ground.", "MOUSE1 fires rocket pairs (gunships). Your pad repairs and re-arms.", "Riders board with E while you sit or hover low."],
-    "You get a helicopter when a pad has one free.");
+  // (the card's lines are 320 px of 19 px text: about 34 characters; playtest 1 found pass 1's 70-character lines would not fit)
+  if (role === "infantry") return info(p, "INFANTRY", ["Stand at a flag pole to take it", "Hold 3 flags: their tickets bleed",
+    "E at a rack or held crate: kit", "Hold E on far ground: fire mission", "E: board a helicopter / man a gun"], "!spawn picks where you deploy");
+  if (role === "artillery") return info(p, team === T ? "ROCKET BATTERY" : "HOWITZER BATTERY", ["Two to a gun. E at the rack: round",
+    "E at the gun: load. E at the board", "WASD aims, MOUSE1 locks, R: mission", team === T ? "SPACE: salvo (up to 4 rockets)" : "SPACE fires. MOUSE2 at rack: shell",
+    "Hold E on a hit gun: repair"], "You join a crew when a seat is free");
+  if (role === "air") return info(p, "AIRCREW", ["SPACE climbs, CTRL descends", "Mouse turns, WASD moves", "Land slow and level. E: out",
+    "MOUSE1: rockets or the nose gun", "Your pad repairs and re-arms"], "!controls in the seat: every key");
 }
 // G = the gun's config (belt, reload). The belt read-out has its own label when the HUD has one (mv_gun_ammo, "HUD additions");
 // until then it rides on the name line, in steps of 5 rounds so the text is not re-sent for every shot.
@@ -50,7 +48,8 @@ function drawFlight(p, h, seat) {
   hClass(p, "mv_fly", "show", true);
   hClass(p, "mv_status", "show", false);
   hSwap(p, "mv_fly", "seat", "seat_" + seat.kind);
-  if (seat.kind === "gunner") drawGun(p, h.M.GUN.name, h.gun, h.M.GUN); else hClass(p, "mv_gun", "show", false);
+  const pg = seat.kind === "pilot" ? pilotGun(h) : null;
+  if (seat.kind === "gunner") drawGun(p, h.M.GUN.name, h.gun, h.M.GUN); else if (pg) drawGun(p, pg.name, pg.st, pg.G); else hClass(p, "mv_gun", "show", false);
   const phase = h.tick + p.slot;
   if (phase % 2 === 0) {
     const kmh = Math.hypot(h.speed, h.vel.z) * 0.0254 * 3.6, altm = h.alt * 0.0254, vs = h.vel.z * 0.0254;
@@ -74,7 +73,7 @@ function drawFlight(p, h, seat) {
     hText(p, id, s ? s.kind.toUpperCase() + "  " + (s.slot >= 0 ? nameOf(s.slot) : "-") : "");
     hClass(p, id, "me", !!s && s.slot === p.slot);
   }
-  hText(p, "mv_fly_info", h.state === "crashing" ? "GOING DOWN" : h.warn);
+  hText(p, "mv_fly_info", h.state === "crashing" ? "GOING DOWN" : h.warn || seatHint(h, seat.kind));
 }
 function stepOf(t) { return clampN(Math.floor(t * BOARD_STEPS), 0, BOARD_STEPS - 1); }
 function placeMarkerUV(p, id, u, v, on) {
@@ -161,5 +160,5 @@ function drawBrief(p, team) {
   const open = p.role === "infantry" && spawnChoices(p).includes(p.spawnSel);
   hText(p, "mv_brief_spawn", p.role === "infantry" ? "DEPLOY: " + (open ? spawnLabel(p.spawnSel) : "BASE  (" + (p.spawnSel === "heli" ? "no helicopter waiting" : spawnLabel(p.spawnSel) + ((flagById(p.spawnSel) || {}).owner === p.team ? " is under attack" : " is not ours")) + ")") + "   [R] next"
                                                    : p.role === "air" ? "DEPLOY: HELIPAD" : "DEPLOY: BATTERY");
-  hText(p, "mv_brief_count", "Moving out in " + Math.max(0, p.deployAt - TNOW).toFixed(0) + " s    chat: !infantry  !artillery  !air  !roles");
+  hText(p, "mv_brief_count", "Moving out in " + Math.max(0, p.deployAt - TNOW).toFixed(0) + " s    chat: !help  !infantry  !artillery  !air");
 }

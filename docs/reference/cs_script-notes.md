@@ -277,6 +277,11 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   target (e.g. a `SetSourceEntity` sound source). Template keys that worked for pools: `spawnflags 2`, `asynchronous 0`,
   `spawnGroupType INSERT_INTO_POINT_TEMPLATE_SPAWN_GROUP`, `clientOnlyEntityBehavior CREATE_FOR_CURRENTLY_CONNECTED_CLIENTS_ONLY`; source `prop_dynamic`
   with the null model, `solid 0`, `fademindist -1` (Hellmatch, Space Racer).
+- **Prop animation**: CS2's `prop_dynamic` has no `SetAnimation` input (see [cs2-gotchas](cs2-gotchas.md#entities-that-changed-or-vanished)):
+  `SetAnimationLooping` + `SetIdleAnimationLooping` with the sequence name, `SetPlaybackRate` for speed. A model with one-frame pose
+  sequences is a cheap way to show a state on one prop without moving it: mg_monsoon's capture flag has 21 poses `flag_00..20` of a
+  `flag` bone and the script plays the one for the capture progress (`projects/monsoon-cs2/tools/mv_flag_anim.py`; simulated and compiled,
+  unverified in game).
 - Prop skins: `EntFireAtTarget({ target: prop, input: "Skin", value: n })`; `n` is the material-group order in the vmdl (default group = 0, then each
   `MaterialGroup`). Used for team colours (Space Racer) and animated textures (Hellmatch steps one group per frame every 8 tics).
 - Teleport a prop only when it jumped more than ~400 u (Space Racer `TELEPORT_DIST`) or on a real reset; otherwise `Move`; send nothing for unchanged poses.
@@ -300,6 +305,15 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   `SetPlaybackRate` (rounded, sent only on change; 0 during hitstop).
 
 ## HUD (custom_hud_layout)
+
+- **Never switch the HUD off for good after a few throws** (mg_monsoon playtest 1, 12 Nov 2026). Its pass-1 script stopped all HUD calls for
+  the whole map after any 20 throws, from any player; a client that is still loading is the likely source (the stand-in, made to throw for
+  a loading client, lost the HUD for every player 2 s into the map, which matches what was seen: no capture bar, no help card, no controls).
+  Send calls to a client only once it is ready (`OnPlayerActivate`, with a timed fallback: a listen-server host can miss the event), hold
+  back only the player whose call threw for a short doubling wait, then `ResetForPlayer` and send his whole state again; back off the layout
+  only when several players fail together. Unverified in CS2: whether a call for a loading client throws or is only lost.
+- Anything a player must know (captures, the chat commands) should also reach chat (`say`, paced about 1 s a line): a HUD that is not up
+  then costs polish, not the game.
 
 - **1024 panel ids per layout, for good.** The layout entity remembers every panel id a script has named (class or dialog-variable calls) in a
   table of 1024; past it nothing new updates (`The maximum number of panel ids has been reached`). Text = one Label + dialog variable, not a
@@ -328,6 +342,13 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   loading. **Unverified**: other working scripts import `CustomHudLayout` without trouble.
 
 ## Testing without CS2
+
+- **Take entity inputs from the game's FGDs**, not a hand-written table: mg_monsoon's stand-in allowed `SetAnimation` on `prop_dynamic` and
+  passed every run while the rotors never turned in game. `projects/monsoon-cs2/test/mock.mjs` now reads `game/core/*.fgd` and
+  `game/csgo/*.fgd` (class bodies, `base(...)` followed), fails on an input the class lacks (CS2 itself only prints a console line), and
+  checks that an animation input names a sequence of the entity's model (its vmdl's `AnimFile` names).
+- A stand-in that drops HUD calls for a loading client hides a script that turns its HUD off after throws; give the stand-in an option to
+  throw there (`hudthrow=1`) and test that every other player keeps his HUD.
 
 - Type-check: `sh create/test/tscheck.sh <script.js>` (Valve's `point_script.d.ts`, needs `npm i -g typescript`).
 - Smoke test: `node create/test/mock_point_script.mjs <script.js> [entities.json] players=16 seconds=300` runs the real script on a stand-in engine with

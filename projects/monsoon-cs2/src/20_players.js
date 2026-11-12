@@ -6,6 +6,7 @@ function P(slot) {
   if (!p) {
     p = { slot, ctl: null, bot: false, team: 0, role: null, pref: "", waitRole: "", kit: "rifle", deployed: false, deployAt: 0, first: true, spawnSel: "base",
           hud: new Map(), toastUntil: 0, bannerUntil: 0, infoUntil: 0, prevKeys: 0, kills: 0, merit: 0, flown: 0, scripted: false,
+          seenAt: 0, hudReady: false, hudBlockUntil: 0, hudErr: 0, hudDirty: false, helpAt: -99, hints: 0, gunNote: 0, seatHelpAt: -99,     // playtest 1: HUD readiness, chat hints, first flag visit
           // seats: helicopter (heli + seat index), emplaced gun, battery crew / board
           heli: null, seat: -1, cam: null, camParent: undefined, camKind: "", camBack: 0, camSentBack: 0, camSentAt: -99, hidden: false, moveNone: false,
           mount: -1, crew: -1, board: false, u: 0.5, v: 0.5, msnSel: -1, carrying: "", carryEnt: -1, shellSel: 0,
@@ -382,4 +383,6 @@ function deploy(p, pawn) {
     sub = CONFIG.KITS[p.kit].name[team] + ". Take flags. Hold E on far ground to call artillery. E at a helicopter to ride.";
   }
   if (!p.bot) banner(p, ROLE_NAME[p.role] + (p.role === "infantry" ? " - " + CONFIG.KITS[p.kit].label : ""), sub, 6);
+  // the first deploy: say once in chat where the commands are (playtest 1: nothing said so, and !help showed only a HUD card)
+  if (!p.bot && p.hints === 0) { p.hints = 1; sayLater("[mv] " + nameOf(p.slot) + ": type !help for the commands, !controls for the keys. Take flags by standing at the pole."); }
 }

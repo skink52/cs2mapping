@@ -5,10 +5,44 @@ const game = { tickets: { 2: 0, 3: 0 }, bleed: { 2: 0, 3: 0 }, bleeding: { 2: fa
 function loadFlags() {
   flags.length = 0;
   for (const f of LAYOUT.flags) {
-    const e = need("mv_flag_" + f.id);
-    need("mv_flagpole_" + f.id);
-    flags.push({ id: f.id, name: f.name, pos: e ? e.GetAbsOrigin() : v3(f.x, f.y, f.z), r: f.r || 350, owner: 0, prog: 0, capTeam: 0, n: { 2: 0, 3: 0 }, contested: false, underAt: -99, changes: 0 });
-    fire("mv_flagpole_" + f.id, "Skin", 0);
+    // the capture circle is centred on the flag's marker; without it on the pole (what a player walks to), the layout point last
+    const e = need("mv_flag_" + f.id), pole = need("mv_flagpole_" + f.id);
+    let pos = v3(f.x, f.y, f.z), from = "layout";
+    try { if (e) { pos = e.GetAbsOrigin(); from = "mv_flag_" + f.id; } else if (pole) { pos = pole.GetAbsOrigin(); from = "pole"; } } catch (err) {}
+    flags.push({ id: f.id, name: f.name, pos, r: f.r || 350, owner: 0, prog: 0, capTeam: 0, n: { 2: 0, 3: 0 }, contested: false, underAt: -99, changes: 0,
+                 pole, pose: -1, poseF: 0, skin: -1, seen: false });
+    log("flag " + f.id.toUpperCase() + " at " + Math.round(pos.x) + " " + Math.round(pos.y) + " " + Math.round(pos.z) + " (" + from + "), radius " + (f.r || 350));
+  }
+  for (const f of flags) drawPole(f, true);
+}
+// the flag on its pole: which team's cloth, and how high (pose 0 = at the foot, POSES-1 = at the top). The owner's flag comes down over
+// the first half of an enemy capture and the taker's goes up over the second, so it reaches the top in the taker's colour at the flip;
+// a neutral flag hangs at the foot in white until someone raises theirs. The cloth travels at most POSE_RATE poses a second.
+function poleTarget(f) {
+  const top = CONFIG.CONQUEST.POSES - 1, p = clampN(f.prog, 0, 1);
+  if (!f.owner) return { skin: f.capTeam && p > 0 ? f.capTeam : 0, pose: Math.round(top * p) };
+  if (!f.capTeam || f.capTeam === f.owner || p <= 0) return { skin: f.owner, pose: top };
+  if (CONFIG.CONQUEST.NEUTRAL_FIRST) return { skin: f.owner, pose: Math.round(top * (1 - p)) };
+  return p < 0.5 ? { skin: f.owner, pose: Math.round(top * (1 - 2 * p)) } : { skin: f.capTeam, pose: Math.round(top * (2 * p - 1)) };
+}
+function drawPole(f, snap, dt) {
+  const C = CONFIG.CONQUEST, want = poleTarget(f);
+  if (snap || f.pose < 0) f.poseF = want.pose;
+  else {
+    const step = C.POSE_RATE * (dt || C.TICK);
+    // a colour change happens at the foot of the pole: the old cloth goes all the way down first
+    const goal = want.skin !== f.skin && f.skin >= 0 ? 0 : want.pose;
+    f.poseF += clampN(goal - f.poseF, -step, step);
+  }
+  let skin = f.skin;
+  if (snap || f.skin < 0 || (want.skin !== f.skin && f.poseF <= 0.01)) skin = want.skin;
+  const pose = Math.round(f.poseF);
+  if (skin !== f.skin) { f.skin = skin; fire("mv_flagpole_" + f.id, "Skin", skin === T ? 1 : skin === CT ? 2 : 0); }
+  if (pose !== f.pose) {
+    f.pose = pose;
+    const nm = "flag_" + (pose < 10 ? "0" : "") + pose;
+    fire("mv_flagpole_" + f.id, C.POSE_ANIM, nm);
+    fire("mv_flagpole_" + f.id, C.POSE_IDLE, nm);           // the prop returns to this pose whatever else plays
   }
 }
 function flagById(id) { for (const f of flags) if (f.id === id) return f; return undefined; }
@@ -25,14 +59,15 @@ function captureFlag(f, team) {
   const prev = f.owner, label = f.id.toUpperCase() + " " + f.name.toUpperCase();
   const to = prev && prev !== team && CONFIG.CONQUEST.NEUTRAL_FIRST ? 0 : team;
   f.owner = to; f.prog = 0; f.capTeam = 0; f.changes++;
-  fire("mv_flagpole_" + f.id, "Skin", to === T ? 1 : to === CT ? 2 : 0);
   fire("mv_flag_snd_" + f.id, "StartSound");                 // optional entity (not in CONTRACT): mv.capture at the pole
+  if (CONFIG.CHAT.CAPTURES) sayLater("[mv] " + TEAM_NAME[team] + (to ? " took " : " neutralised ") + label + "   (" + TEAM_NAME[T] + " " + countHeld(T) + " / " + TEAM_NAME[CT] + " " + countHeld(CT) + " flags)");
   stats.captures++; stats.capturesBy[f.id] = (stats.capturesBy[f.id] || 0) + 1;
   if (to) { feed(team, "We took " + label, "good", true); feed(otherTeam(team), prev ? "We lost " + label : "The enemy took " + label, "bad", true); }
   else { feed(team, label + " neutralised", "good", true); feed(prev, "We lost " + label, "bad", true); }
   for (const p of players.values()) if (!p.bot && p.team === team && p.here === f.id) p.merit++;
   log(TEAM_NAME[team] + (to ? " took " : " neutralised ") + label);
 }
+function countHeld(team) { let n = 0; for (const q of flags) if (q.owner === team) n++; return n; }
 function tickFlags(dt) {
   const C = CONFIG.CONQUEST;
   for (const f of flags) { f.n[T] = 0; f.n[CT] = 0; }
@@ -41,10 +76,12 @@ function tickFlags(dt) {
     if (!r.alive || r.seated || !r.p.deployed || r.p.afk || (r.team !== T && r.team !== CT)) continue;
     for (const f of flags) {
       if (Math.abs(r.pos.z - f.pos.z) > C.CAP_HEIGHT || dist2(r.pos, f.pos) > f.r) continue;
-      f.n[r.team]++; r.p.here = f.id; break;
+      f.n[r.team]++; r.p.here = f.id;
+      if (!f.seen && !r.bot) { f.seen = true; log("flag " + f.id.toUpperCase() + ": first human in the circle (slot " + r.slot + ", " + Math.round(dist2(r.pos, f.pos)) + " u from the pole)"); }
+      break;
     }
   }
-  if (game.over) return;
+  if (game.over) { for (const f of flags) drawPole(f, false, dt); return; }
   for (const f of flags) {
     const a = Math.min(C.CAPTURE_MAX, f.n[T]), b = Math.min(C.CAPTURE_MAX, f.n[CT]);
     f.contested = a > 0 && b > 0;
@@ -62,6 +99,7 @@ function tickFlags(dt) {
       if (f.prog <= 0) f.capTeam = 0;
     }
   }
+  for (const f of flags) drawPole(f, false, dt);
 }
 function loseTicket(team, n) {
   if (game.over || (team !== T && team !== CT) || !(n > 0)) return;

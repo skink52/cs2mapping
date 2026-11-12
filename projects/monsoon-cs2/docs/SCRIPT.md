@@ -3,7 +3,8 @@
 `src/NN_*.js` joined by `tools/build_script.mjs` into `out/addon/maps/scripts/mg_monsoon.js`. Names come from
 [CONTRACT.md](CONTRACT.md), rules from [DESIGN.md](DESIGN.md) sections 3 and 6. AI-generated (Claude) for skink52.
 
-Status: **simulated** (mock engine, `tsc`, `api.py --strict`). Nothing here has run in CS2. See "Simulated vs not yet tested".
+Status: **simulated** (mock engine, `tsc`, `api.py --strict`). mv-0.5 ran once in CS2 (playtest 1, 12 Nov 2026: docs/PLAYTEST_1.md);
+mv-0.6 carries the fixes for its script rows (docs/FIX_PT1_S.md) and has not run in CS2. See "Simulated vs not yet tested".
 
 ## HUD contract
 
@@ -218,8 +219,23 @@ Things worth knowing:
   is its base within `MOUNT.BASE_RADIUS` (else anyone) and its kind m2 (CT) / dshk.
 - Optional entities, used when present and not in CONTRACT: `mv_flag_snd_<a..e>` (point_soundevent, `StartSound` on capture).
   `mv.capture`, `mv.flag_lost`, `mv.radio_blip`, `mv.heli_turbine`, `mv.rocket_fly` have no entity in CONTRACT and are not played.
-- Chat: `!infantry !artillery !air` (role now if open, else next respawn), `!rifle !mg !at`, `!roles`, `!spawn <a-e|base>`,
-  `!pos`, `!uniform`, `!bots <n>`, and `!swap` = next free seat in a helicopter, or the next kit at an arms rack.
+- Chat: `!help` / `!commands` (the list on the HUD card and in chat, at most once per 20 s each), `!controls` / `!keys` (the keys
+  for the seat, gun or battery the player is on), `!infantry !artillery !air` (role now if open, else next respawn), `!rifle !mg !at`,
+  `!roles`, `!spawn <a-e|base|heli>`, `!pos`, `!uniform`, `!bots <n>`, and `!swap` = next free seat in a helicopter, or the next kit at an
+  arms rack. Any other `!word` answers "Unknown command: !help lists them". The first deploy tells the player in chat about `!help`.
+  Server chat lines (`sayLater`) go out one per `CHAT.SAY_GAP` s.
+- HUD (playtest 1): a client gets HUD calls once it is ready (`OnPlayerActivate`, or `HUDRUN.READY` s after first seen); a call that
+  throws holds back only that player (1-8 s, doubling), then his screen is reset and sent again; several players failing together back
+  off the layout. Nothing switches the HUD off for good (pass 1 did, after 20 throws).
+- Flags (playtest 1): the cloth runs up and down the pole with the capture (`drawPole`, pose sequences `flag_00..20` of
+  `models/mv/flag_pole/flag_pole.vmdl`, built by `tools/mv_flag_anim.py`; `SetAnimationLooping` + `SetIdleAnimationLooping`, `Skin` for the
+  colour): the owner's flag comes down over the first half of an enemy capture, the taker's goes up over the second; a neutral flag hangs
+  white at the foot. A player in a circle sees "CAPTURING B BRIDGE 45%" / "DEFENDING" / "CLEARING" / "CONTESTED" / "HOLDING" in the prompt
+  box. Captures are announced in chat. The capture circle is centred on `mv_flag_<id>`, else the pole, else the layout point (logged at load).
+- Helicopter weapons (playtest 1): Apache pilot MOUSE1 rockets, MOUSE2 the chin gun at his crosshair while the gunner seat is empty;
+  Mi-8 slick pilot MOUSE1 the A-12.7 nose gun (`PILOT_GUN`); Mi-8TV pilot MOUSE1 rockets; gunner seats MOUSE1. Impact puffs where rounds
+  land, tracers every 2nd round, the seat's controls on the instruments' info line, a card on boarding, a toast when a trigger can't fire.
+  The Apache's rotors: `SetAnimationLooping` / `SetIdleAnimationLooping` `idle` / `spin_slow` / `spin`, `SetPlaybackRate` to spool.
   `/` works as well as `!`. `!bots <n>` is a vote (review 3): it takes effect when more than half of the humans on the server have
   asked for the same number within `BOTS_VOTE` (30) s; a player alone on the server is a majority by himself. `BOTS_CHAT false`
   switches it off.
@@ -238,12 +254,13 @@ Things worth knowing:
 | `LOBBY_*`, `ROLES` | briefing time; chance of being drawn into the battery / an air slot |
 | `KITS`, `PISTOL`, `AT`, `BULLET_VS_HELI` | weapon classes per team, kit limits (`share`, `per`), the AT rocket, rifle damage to helicopters |
 | `UNIFORMS*` | models per team; only applied when an `mv_cache_N` prop holds that model |
-| `CONQUEST` | tickets, bleed, capture time, round length, round-end fallbacks |
+| `CONQUEST` | tickets, bleed, capture time, round length, round-end fallbacks; `POSES`, `POSE_RATE`, `POSE_ANIM` / `POSE_IDLE`: the flag on its pole |
+| `CHAT`, `HUDRUN` | chat pacing, capture announcements, the first-deploy hint; HUD readiness and back-off after a failed call |
 | `HELI` | flight feel (collective, pedals, cyclic `ACCEL`, tilt), landing limits, collision, crash, pad service, boarding and rope limits, camera, rockets; `ABANDON` (an empty helicopter left in the field is fetched to its pad after this long), `FETCH` (3 s: the same when its own pilot is alive, on foot and back on his pad: review 2) |
 | `HELI_MODELS`, `HELI_KINDS`, `WRECK_YAW` | per model: nose yaw, rotor size, seat / exit / pod / gun offsets, gun cone and damage; which model sits on which pad. These are **defaults**: `LAYOUT.models` (written into `out/layout.json` by `tools/mv_models.py` from the models the map was built with; the Apache block comes from `out/apache.json`) overwrites nose yaw, rotor radius, hub / tail hub, seats, exits, pods and the gun's muzzle / camera / cone in `heliModel()`, the pad list in `heliKind()` and the hulk's yaw in `wreckYaw()`. To change a seat or a hub, edit `mv_models.py`, re-run `make_map.py` (or `python -c "import layout; layout.export('../out/layout.json')"` in `tools/`) and rebuild the script. Damage, rate of fire and heat stay in CONFIG. Without a `models` block the old `LAYOUT.apache` / `HUDDATA.apache` route still works |
 | gun pivots | `40_arty.js` measures each tube's trunnion from the `mv_tube_*` prop's place on its carriage (fallback `LAYOUT.models.howitzer / rocket .trunnion`); `50_mounted.js` takes the pintle from the `mv_mount_N` origin and the muzzle distance from `LAYOUT.models.<kind>.muzzle` (fallback `MOUNT.MUZZLE`) |
 | `ARTY`, `BOARD` | shells, spread, flight time, laying speed, counter-battery, missions, board size |
-| `MOUNT` | emplaced gun kinds, cone, heat |
+| `MOUNT` | emplaced gun kinds, cone, heat; `SOUND_EVERY` (1: a report per round) |
 | `POOL` | pool sizes: must match the map |
 | `BOTS_ON`, `BOT_QUOTA*`, `BOTS_CHAT`, `BOTS_VOTE`, `AI` | bots on/off and quota (`bot_quota_mode fill`); `!bots` on/off and its vote window; `MIN_HUMANS_FOR_ROLES`, how many AI pilots / gunners / crews, their reaction times and spread, leash times; `PAD_HOLD` and `REARM_GO` (an AI pilot lifts off from its pad once repaired with this share of its rockets back, after at least `PAD_HOLD` s; the rotor keeps turning on the pad) |
 | `AI.PLAN` | where infantry bots deploy (review 3, `teamPlan` in `85_ai.js`): per side a weight per flag, refreshed every `EVERY` s. Own flag under attack `DEFEND` x (1 + capture progress); own quiet flag `GARRISON`; neutral / enemy flag `NEUTRAL` / `ATTACK` x exp(-distance from the side's nearest deploy point / `REACH`), x `PUSH` for the enemy flag nearest the side's front (`BLEED_PUSH` while the side is being bled), never under `FLOOR`; x pace = (our run / the enemy's run to it)^`PACE`, clamped to `PACE_MIN`..`PACE_MAX` (the side that reinforces a flag more slowly sends more men to it); x (1 + `HUB` x centrality^`HUB_EXP`). A deploying bot is sent to the flag the plan is shortest of (weight share x bots - bots already sent there) and deploys at that flag if it holds it, else at its held flag nearest it, else the base. A held flag with enemies within `SAFE` u (more than `SAFE_FRIEND` x our men there) is not a bot deploy point; `SAFE_BLED` is that radius while the side is being bled, `SAFE_CROWD` while the side has enough humans that the AI roles are off (there the bots reinforce the humans' fight). AI pilots patrol by the same weights, and stay away from flags inside the arc of an enemy-manned emplaced gun (`AI.MOUNT_AVOID`); an AI pilot whose helicopter is lost takes a free one standing on its pad. AI gunners pick the emplaced gun whose arc covers a flag |
@@ -255,7 +272,8 @@ cyclic `ACCEL` 0.7 (design 0.45: at 0.45 the median airframe life fell from 63 t
 lost); rockets re-arm progressively over `REARM_TIME` (per model); a flag flips straight to the capturing team
 (`CONQUEST.NEUTRAL_FIRST` true = via neutral: it made the side that wins the race to B hold it longer, T 90 % in bot matches);
 nobody aboard a helicopter takes pawn damage (the airframe does: riders cannot be picked off a hull the script can't trace
-into); the pilot can only leave when landed; no pilot ATTACK2 gun (the Apache has a gunner seat); the Hip slick has one door
+into); the pilot can only leave when landed; the Apache pilot fires the chin gun (MOUSE2) only while nobody is in the gunner seat, and
+the Hip slick's pilot has a fixed nose gun (playtest 1: "helicopters need weapons"); the Hip slick has one door
 gunner (CONTRACT); tickets 500 and bleed 1 per 6 s per flag over 2 (DESIGN 400 / 3 s: 8 min rounds); the Mi-8s are tougher than the
 Apache (170 / 160 / 100) because they carry the riders and land at flags; a flag with an enemy in its circle is not a deploy
 point; the AT rocket does 45 to a helicopter (DESIGN 60).
@@ -271,6 +289,7 @@ node test/mock.mjs 32 300 scenario=churn|restart|edge|reload
 node test/mock.mjs 32 300 scenario=edge piece="shot down"  # one bug class alone (piece= matches set-piece names)
 node test/mock.mjs 32 450 scenario=review2 humans=4         # review pass 2's bug classes (docs/REVIEW_SCRIPT_2.md)
 node test/mock.mjs 32 450 scenario=review3 humans=4         # review pass 3's fixes (REVIEW_SCRIPT_2.md "Round 3")
+node test/mock.mjs 12 240 scenario=pt1 humans=4             # playtest 1 (docs/FIX_PT1_S.md); add script=out/pt1/before_pt1.js: 11 failures
 node test/mock.mjs 32 450 scenario=review3 humans=4 script=out/review3/before_review3.js   # the same against the build before
 node test/sim_balance.mjs 40 32                             # many seeded rounds, real CONFIG: balance report (about 1 min per set)
 node test/sim_balance.mjs 40 32 seed0=1001 set=bots         # a second seed set, to check a tuning is not fitted to the first
@@ -291,7 +310,13 @@ taking over an AI pilot / crewman / gunner bot and the takeover ending). Set pie
 helicopter, counter-battery and repair, fire missions and flashes on the board, flight envelope (soft / hard / crash landings,
 soft wall, ceiling, wreck, pad repair / re-arm), spawn modes (flag, aboard, deploy cover), fast-rope, helicopter gun, belt reload,
 AFK gunner, AFK pilot in the air, late join, two E on one seat, role change deferred in the field.
-Mock switches: `MOCK_NORESTART=1` (CS2 never starts a new round: exercises the FireWinCondition and self-restart path),
+Every run takes each entity class's inputs from CS2's own FGDs (`game/core/*.fgd`, `game/csgo/*.fgd`; a hand table when the game is not
+installed) and FAILS on an input the class lacks or an animation input that names no sequence of the entity's model (playtest 1: the
+mock allowed `SetAnimation`, which CS2's `prop_dynamic` does not have). `pt1` (humans=4): HUD up for everyone with a client that loads for
+25 s while its HUD calls throw (`hudthrow=1`) and a host that never gets `OnPlayerActivate`; a lone man at a neutral flag's visible pole
+takes it in the real 15 s (cloth up the pole, prompt, chat line); `!help` / `!commands` / `!controls` / an unknown command; the Apache's
+rotor sequences and both pilot guns in the air (impact puffs, gun box, hint line); a report per round on an emplaced gun.
+Mock switches: `hudthrow=1`, `MOCK_NORESTART=1` (CS2 never starts a new round: exercises the FireWinCondition and self-restart path),
 `MOCK_TICKETS`, `MOCK_ROUND`, `MOCK_LOG=1`, `DEBUGFLY=<slot>`, `hudnew=1`, `seed=`, `cfg.<path>=<json>`, `move.<flag>=dx,dy`,
 `spawnflip.<flag>=1`, `script=<file>` (run that prebuilt script instead of building `src/`: e.g. `out/review2/before_review2.js`,
 `out/review3/before_review3.js`, the builds before each review pass), `river=1` (the river bed lies 120 u below the water, 180 u each
@@ -315,7 +340,11 @@ is in the coverage table of `node test/mock.mjs 32 600`.
 
 Not yet tested in CS2 (every item is an assumption):
 - `GameRules.TerminateRound` with `mp_ignore_round_win_conditions`, and whether `AddTeamScore` shows on the scoreboard.
-- `SetAnimation` on the Apache prop_dynamic; `Skin` on the flag poles; particle `Start` / `Stop` re-triggering.
+- `SetAnimationLooping` / `SetIdleAnimationLooping` / `SetPlaybackRate` on the Apache (its rotors) and on the flag poles (the 21 poses; the
+  0.3 s fade between them should read as the cloth sliding); `Skin` on the flag poles; particle `Start` / `Stop` re-triggering (the impact
+  puffs reuse the dirt particles of the explosion pool).
+- Whether a HUD call for a client still loading throws or is lost; `OnPlayerActivate` for a listen-server host. The script copes either way.
+- `mv.mount_gun` naming the game's own `sounds/weapons/m249/m249_0N.vsnd` from an addon event (compiled; the sound itself unheard).
 - Moving a parked pawn (`MOVETYPE_NONE`, scale 0.02) every tick under a `FOLLOW_POSITION` / `CONTROLLED_POSITION` camera
   on a helicopter; restoring the camera parent; what CS2 bots do while parked in a seat.
 - `OnGunFire` for `weapon_taser` and re-giving the Zeus.

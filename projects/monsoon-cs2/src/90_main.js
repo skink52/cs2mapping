@@ -11,7 +11,9 @@ const stats = { rounds: 0, gunShots: 0, rockets: 0, fired: 0, shells: 0, beehive
                 // review 2
                 departed: 0, hudActivates: 0, fetched: 0,
                 // review 3
-                aiHeliSwaps: 0, botTakeovers: 0, botReleases: 0, crewReleased: 0, heliHeld: 0, botsVotes: 0, botsSet: 0, botGoals: {} };
+                aiHeliSwaps: 0, botTakeovers: 0, botReleases: 0, crewReleased: 0, heliHeld: 0, botsVotes: 0, botsSet: 0, botGoals: {},
+                // playtest 1
+                impactPuffs: 0, pilotGunShots: 0, helps: 0 };
 let roster = [];
 // bot takeover (Instance.OnBotControl): human slot -> { bot: bot slot, pawn }, and bot slot -> human slot while he plays it
 const botCtl = new Map(), botTaken = new Map();
@@ -73,7 +75,7 @@ function buildRoster() {
     let p = P(s);
     if (p.ctl !== ctl) {                       // a slot can change hands with no disconnect event
       if (p.ctl) { forgetPlayer(p); p = P(s); }
-      p.ctl = ctl;
+      p.ctl = ctl; p.seenAt = TNOW || now();
       try { p.bot = ctl.IsBot(); } catch (e) { p.bot = false; }
       stats.joins++; if (game.start && !game.over && TNOW - game.start > 30 && !p.bot) stats.lateJoins++;
       if (!p.bot) hudReset(p);                 // whatever the last player in this slot had on screen
@@ -119,7 +121,7 @@ function resetRound(soft) {
       for (const g of guns[team]) { g.loaded = []; g.target = null; g.lay = "idle"; g.disabledUntil = 0; g.crew = []; g.aimer = -1; g.loader = -1; g.salvo = 0; g.impacts = []; g.ai = null; g.extraSigma = 0; g.yaw = g.yaw0; g.pitch = 0; g.cooldown = 0; }
     }
     for (const m of mounts) m.user = -1;
-    for (const f of flags) { f.owner = 0; f.prog = 0; f.capTeam = 0; f.contested = false; fire("mv_flagpole_" + f.id, "Skin", 0); }
+    for (const f of flags) { f.owner = 0; f.prog = 0; f.capTeam = 0; f.contested = false; f.skin = -1; f.pose = -1; drawPole(f, true); }
   } else {
     entCache.clear(); missing.clear(); points = null; hudEnt = undefined;
   }
@@ -148,17 +150,16 @@ function think() {
   } catch (e) { logErr("world (pre)", e); if (!points) return; }
   for (const r of roster) { try { thinkPlayer(r, dt); } catch (e) { logErr("player " + r.slot, e); } }
   for (const h of allHelis) { try { tickHeli(h, dt); } catch (e) { logErr("helicopter " + h.tag, e); } }
-  try {
-    for (const team of TEAMS) for (const g of guns[team]) { if (g.ai) tickAICrew(g); tickGun(g, dt); }
-    tickShells();
-    tickRockets(dt);
-    tickTracers(dt);
-    tickSmokes();
-    tickMissions();
-    if (TNOW >= game.flagAt) { const C = CONFIG.CONQUEST; tickFlags(game.flagAt ? Math.min(1, C.TICK + (TNOW - game.flagAt)) : C.TICK); game.flagAt = TNOW + C.TICK; }
-    tickTickets(dt);
-    tickAmbient();
-  } catch (e) { logErr("world", e); }
+  // every world system in its own try: one that throws every tick (an engine call CS2 refuses) no longer starves the ones after it.
+  // Flags and tickets run first: they are the game (playtest 1).
+  try { if (TNOW >= game.flagAt) { const C = CONFIG.CONQUEST; tickFlags(game.flagAt ? Math.min(1, C.TICK + (TNOW - game.flagAt)) : C.TICK); game.flagAt = TNOW + C.TICK; } } catch (e) { logErr("flags", e); }
+  try { tickTickets(dt); } catch (e) { logErr("tickets", e); }
+  for (const team of TEAMS) for (const g of guns[team]) { try { if (g.ai) tickAICrew(g); tickGun(g, dt); } catch (e) { logErr("gun " + g.tag, e); } }
+  try { tickShells(); } catch (e) { logErr("shells", e); }
+  try { tickRockets(dt); } catch (e) { logErr("rockets", e); }
+  try { tickTracers(dt); tickSmokes(); } catch (e) { logErr("tracers", e); }
+  try { tickMissions(); } catch (e) { logErr("missions", e); }
+  try { tickAmbient(); tickSay(); } catch (e) { logErr("ambient", e); }
   // script time, once a minute
   const ms = clock() - t0;
   stats.ticks++; stats.ms += ms; if (ms > stats.msMax) stats.msMax = ms;
@@ -169,7 +170,8 @@ function think() {
       stats.perfLines++;
       log("perf: " + (perfMs / Math.max(1, perfTicks)).toFixed(3) + " ms/tick avg, " + perfMax.toFixed(2) + " ms max, " + perfTicks + " ticks, " + (hudCalls / Math.max(1, perfTicks)).toFixed(1) +
           " HUD calls/tick, " + roster.length + " players (" + humans + " human), " + flying + " flying, " + rockets.length + " rockets, " + shells.length + " shells, tickets " +
-          game.tickets[T] + "/" + game.tickets[CT] + ", errors " + errCount);
+          game.tickets[T] + "/" + game.tickets[CT] + ", flags " + flags.map((f) => f.id + (f.owner === T ? "t" : f.owner === CT ? "c" : "-") + (f.prog > 0 ? Math.round(f.prog * 100) : "")).join(" ") +
+          ", HUD fails " + hudFails + ", errors " + errCount);
     }
     perfAt = TNOW; perfTicks = 0; perfMs = 0; perfMax = 0; hudCalls = 0;
   }
@@ -290,6 +292,7 @@ function thinkPlayer(r, dt) {
   } else if (p.holdKind === "mission") { p.holdKind = ""; p.holdT = 0; }
   drawHold(p, holdText, holdFrac);
   if (tickNo >= p.statusAt) { p.statusAt = tickNo + CONFIG.HUDCFG.STATUS_EVERY; drawStatus(p, team); }
+  if (!prompt && p.here) prompt = flagPrompt(p);
   commonHud(p, prompt);
 }
 
@@ -334,8 +337,13 @@ Instance.OnPlayerDisconnect(({ playerSlot }) => {
 if (typeof Instance.OnPlayerActivate === "function") {
   Instance.OnPlayerActivate(({ player }) => {
     let s = -1; try { s = player ? player.GetPlayerSlot() : -1; } catch (e) {}
-    const p = s >= 0 ? players.get(s) : undefined;
-    if (p && !p.bot) { TNOW = now(); hudReset(p); stats.hudActivates++; }
+    if (s < 0) return;
+    let bot = false; try { bot = player.IsBot(); } catch (e) {}
+    if (bot) return;
+    TNOW = now();
+    const p = P(s);
+    p.hudReady = true; if (!p.seenAt) p.seenAt = TNOW;
+    hudReset(p); stats.hudActivates++;
   });
 }
 // A human (dead, spectating) takes over a bot of his side (bot_controllable): he plays the bot's pawn until it dies or the round ends.
@@ -535,15 +543,66 @@ Instance.OnPlayerChat(({ player, text }) => {
     if (q === 0) Console.ServerCommand("bot_kick");
     say("[mv] bots: " + (q ? "quota " + q : "off") + " (" + (yes > 1 ? "vote, " + yes + " for" : "set by " + nameOf(s)) + ")");
   }
-  else if (cmd === "roles" || cmd === "help") {
+  else if (cmd === "roles") {
     const cnt = (r) => teamCount(p.team, (q) => q.role === r);
     const tm = onTeam ? p.team : CT;
     info(p, "COMBAT ROLES", ["INFANTRY (" + cnt("infantry") + ")  -  !infantry   kits !rifle !mg !at",
-      "ARTILLERY (" + cnt("artillery") + "/" + (guns[tm].length * CONFIG.ROLES.ARTY_CREW) + ")  -  !artillery",
-      "AIRCREW (" + cnt("air") + "/" + helis[tm].length + ")  -  !air", "!spawn a-e | base | heli    !swap    !pos    !uniform",
-      "!bots <n>  -  bots fill the empty roles when few humans play"], "A role's command shows its orders and asks for it.");
+      "ARTILLERY (" + cnt("artillery") + "/" + ((guns[tm] || []).length * CONFIG.ROLES.ARTY_CREW) + ")  -  !artillery",
+      "AIRCREW (" + cnt("air") + "/" + (helis[tm] || []).length + ")  -  !air", "!spawn a-e | base | heli    !swap    !pos    !uniform",
+      "!bots <n>  -  bots fill the empty roles when few humans play"], "!help lists every command. A role's command shows its orders.");
   }
+  // playtest 1: "!help doesn't work". It showed the roles card only, and only on the custom HUD; a player whose HUD was not up saw
+  // nothing at all. Now !help / !commands list every command on the HUD card AND in chat (paced, at most once per HELP_GAP s each).
+  else if (cmd === "help" || cmd === "commands" || cmd === "cmds" || cmd === "?") { stats.helps++; helpCard(p, true); }
+  else if (cmd === "controls" || cmd === "keys") controlsCard(p, pawn);
+  else if (cmd) toast(p, "Unknown command: !help lists them", 3);
 });
+// every chat command. The HUD card's label is 320 px of 19 px Stratum2 (about 34 characters): the card gets the short form, chat the long
+// one (lines measured with a condensed stand-in font, docs/FIX_PT1_S.md)
+const HELP_CARD = ["!infantry  !artillery  !air: role", "!rifle  !mg  !at: infantry kit", "!spawn a-e / base / heli: deploy",
+  "!swap: seat or kit   !controls: keys", "!roles  !pos  !uniform  !bots <n>"];
+const HELP_CHAT = [
+  "!infantry  !artillery  !air  -  choose a role (now at the base, else at your next deploy)",
+  "!rifle  !mg  !at  -  infantry kit     !spawn a-e | base | heli  -  where you deploy",
+  "!swap  -  next helicopter seat, or the next kit at an arms rack",
+  "!controls  -  the keys for the seat or gun you are on     !roles  -  who plays what",
+  "!pos  -  your position     !uniform  -  uniform on / off     !bots <n>  -  vote the bot count",
+];
+const HELP_GAP = 20;
+function helpCard(p, chat) {
+  info(p, "CHAT COMMANDS", HELP_CARD, "The full list is in chat.", 14);
+  if (!chat || p.bot || TNOW - (p.helpAt || -99) < HELP_GAP) return;
+  p.helpAt = TNOW;
+  sayLater("[mv] commands (for " + nameOf(p.slot) + "): " + HELP_CHAT[0]);
+  for (let i = 1; i < HELP_CHAT.length; i++) sayLater("[mv] " + HELP_CHAT[i]);
+}
+// the keys for what the player is doing now (helicopter seat, emplaced gun, battery, on foot)
+function controlsCard(p, pawn) {
+  const h = p.heli, s = h ? h.seats[p.seat] : null;
+  let title = "INFANTRY", lines = ["Stand at a flag pole to take it", "E at a rack or held crate: kit", "Hold E on far ground: fire mission",
+    "E: board a helicopter", "E: man a heavy machine gun"];
+  if (s) { title = h.M.label + " " + s.kind.toUpperCase(); lines = seatHelp(h, s.kind); }
+  else if (p.mount >= 0) { const m = mounts[p.mount]; title = m ? m.K.name : "MACHINE GUN"; lines = ["MOUSE1 fires, the mouse aims", "R: new belt", "Long bursts overheat", "E lets go of the gun", ""]; }
+  else if (p.role === "artillery") { title = "BATTERY"; lines = ["E at the rack: take a round", "E at the gun: load it", "E at the board: WASD aims", "MOUSE1 locks, SPACE fires", "Hold E on a hit gun: repair"]; }
+  info(p, title, lines, "!help: the chat commands", 12);
+}
+// a helicopter seat's controls, five card lines (also !controls)
+function seatHelp(h, kind) {
+  const M = h.M, PG = M.PILOT_GUN;
+  if (kind === "pilot") return ["SPACE climbs, CTRL descends", "Mouse turns, WASD moves",
+    M.ROCKETS ? "MOUSE1: rocket pair (" + M.ROCKETS + ")" : PG && typeof PG === "object" ? "MOUSE1: nose gun" : "No pilot weapon",
+    PG === "chin" ? "MOUSE2: chin gun (no gunner)" : "Door gun: the gunner seat", "Land slow and level. E: out"];
+  if (kind === "gunner") return ["MOUSE1 fires, the mouse aims", "R: new belt", "Long bursts overheat", "!swap: another seat", "E: out (rope when low)"];
+  return ["You ride", "E: out (rope when low)", "!swap: a free seat or the gun", "", ""];
+}
+function flagPrompt(p) {
+  const f = flagById(p.here); if (!f) return "";
+  const nm = f.id.toUpperCase() + " " + f.name.toUpperCase(), pc = Math.round(clampN(f.prog, 0, 1) * 100);
+  if (f.contested) return nm + " CONTESTED";
+  if (f.owner === p.team) return f.capTeam && f.capTeam !== p.team && f.prog > 0 ? "DEFENDING " + nm + " " + pc + "%" : "HOLDING " + nm;
+  if (f.capTeam === p.team) return "CAPTURING " + nm + " " + pc + "%";
+  return f.prog > 0 ? "CLEARING " + nm + " " + pc + "%" : "CAPTURING " + nm;
+}
 // the script was edited and reloaded in the tools: carry the match over (tickets, clock, flag owners) and start thinking again.
 // Seats are not carried: every pawn is put back on its feet (sanitise) and deploys again.
 if (typeof Instance.OnScriptReload === "function") {
@@ -558,7 +617,7 @@ if (typeof Instance.OnScriptReload === "function") {
         loadPoints(); startGame();
         if (m && m.tickets && !m.over) {
           game.tickets[T] = m.tickets[2]; game.tickets[CT] = m.tickets[3]; game.start = TNOW - (Number.isFinite(m.elapsed) ? m.elapsed : 0);
-          (m.owners || []).forEach((o, i) => { const f = flags[i]; if (f && (o === T || o === CT)) { f.owner = o; fire("mv_flagpole_" + f.id, "Skin", o === T ? 1 : 2); } });
+          (m.owners || []).forEach((o, i) => { const f = flags[i]; if (f && (o === T || o === CT)) { f.owner = o; drawPole(f, true); } });
         }
         const S = /** @type {any} */ (stats);
         const MS = /** @type {any} */ (m && m.stats);

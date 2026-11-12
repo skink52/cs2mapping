@@ -11,8 +11,12 @@ Teams: T = 2, CT = 3. Coordinates/POIs come from `tools/layout.py` (`out/layout.
   images `panorama/images/custom_game/mv/`, and `out/hud.json` (panel ids, step counts). Panel ids start `mv_`.
 - Sounds: `tools/sounds.py <addon> <template vsndevts>` -> `sounds/mv/*.wav`, events `mv.*` merged into `soundevents/soundevents_addon.vsndevts`.
 - Map: `tools/make_map.py` (stages in `mv_terrain.py`, `mv_places.py`, `mv_entities.py`); models `models/mv/<name>/<name>.vmdl`.
-- US helicopter: the CC-BY Apache, copied to `models/vehicles/apache/apache.vmdl` (anims `idle`, `spin_slow`, `spin`; origin on the
-  ground under the mast; nose direction and scale recorded in `out/apache.json` by `tools/apache_setup.py`).
+- US helicopter: the CC-BY Apache, copied to `models/vehicles/apache/apache.vmdl` (anims `idle`, `spin_slow`, `spin`, played with
+  `SetAnimationLooping` + `SetIdleAnimationLooping` and spooled with `SetPlaybackRate`: CS2's prop_dynamic has no `SetAnimation`; origin on
+  the ground under the mast; nose direction and scale recorded in `out/apache.json` by `tools/apache_setup.py`).
+- Flag pole: `models/mv/flag_pole/flag_pole.vmdl` = p_jungle.py's pole with skins (0 neutral, 1 T, 2 CT), re-rigged by
+  `tools/mv_flag_anim.py` (run after p_jungle.py): bones `root` + `flag`, 21 one-frame looping poses `flag_00` (cloth at the foot) ..
+  `flag_20` (at the top), archetype `animated_model`.
 
 ## Entities (targetnames)
 | Name | Class | Notes |
@@ -20,10 +24,10 @@ Teams: T = 2, CT = 3. Coordinates/POIs come from `tools/layout.py` (`out/layout.
 | `mv_script`, `mv_hud`, `mv_params` | point_script, custom_hud_layout, info_map_parameters | lobby |
 | `mv_spawn_<tg>_1..16` | info_teleport_destination | base deploy points |
 | `mv_flag_<a..e>` | info_target at the flag pole base | + `mv_flagspawn_<a..e>_1..8` info_teleport_destination |
-| `mv_flagpole_<a..e>` | prop_dynamic `flag_pole` | Skin 0 neutral, 1 T, 2 CT (script fires `Skin`) |
+| `mv_flagpole_<a..e>` | prop_dynamic `flag_pole` | Skin 0 neutral, 1 T, 2 CT (script fires `Skin`); the cloth's height: script fires `SetAnimationLooping` / `SetIdleAnimationLooping` `flag_00..20`. Optional map key `IdleAnim flag_00` |
 | `mv_flag_snd_<a..e>` | point_soundevent `mv.capture` at the pole | script fires `StartSound` on capture |
 | `mv_kit_<tg>` and `mv_kit_<a..e>` | info_target at each arms rack / flag supply crate | kit station (E within 80 u) |
-| `mv_heli_<tg>_1..3` | prop_dynamic (`model_archetype ""`) | CT: Apache x3. T: 1,2 = Mi-8 slick, 3 = Mi-8 gunship (models from `tools/mv_models.py`: converted `ext/hip_slick`, `ext/hip/hip_upper`; procedural `heli_hip`, `heli_hip_gun` when the conversions are absent) |
+| `mv_heli_<tg>_1..3` | prop_dynamic (`model_archetype ""`; the Apache's map key should be `IdleAnim idle`, not CS:GO's `DefaultAnim`) | CT: Apache x3. T: 1,2 = Mi-8 slick, 3 = Mi-8 gunship (models from `tools/mv_models.py`: converted `ext/hip_slick`, `ext/hip/hip_upper`; procedural `heli_hip`, `heli_hip_gun` when the conversions are absent) |
 | `mv_rotor_t_1..3`, `mv_tail_t_1..3` | prop_dynamic `ext/hip/hip_rotor`, `ext/hip/hip_tail` (fallback `rotor_hip`, `tailrotor_hip`) | T only (the Apache animates its own rotors); placed on the hubs from the model table |
 | `mv_pad_<tg>_1..3` | info_target | pad centre on the ground (park pose: pad yaw from layout) |
 | `mv_heli_eng_<tg>_N`, `mv_heli_gun_<tg>_N`, `mv_heli_gun2_<tg>_N`, `mv_heli_rkt_<tg>_N` | point_soundevent | `mv.heli_rotor` loop, `mv.heli_gun`, `mv.rocket_launch` |
@@ -61,15 +65,18 @@ and our procedural prop otherwise (`MV_NO_EXT=1` forces the procedural set, e.g.
 
 ## Seats
 - Apache: pilot (flies, rockets ATTACK), gunner (chin 30 mm, own aim), 2 wing riders (hang on the stub wings).
-- Hip slick: pilot, 1 door gunner (PK, left door), 4 riders. Hip gunship: pilot (rockets), 1 door gunner, 2 riders.
+- Hip slick: pilot (fixed A-12.7 nose gun, MOUSE1), 1 door gunner (PK, left door), 4 riders. Hip gunship: pilot (rockets), 1 door
+  gunner, 2 riders. The Apache pilot also fires the chin gun (MOUSE2) while the gunner seat is empty.
 - Seat offsets come from `layout.json` `models` (model space, nose frame); the script CONFIG holds the same numbers as defaults.
 
 ## Roles and chat
-`!infantry` `!artillery` `!air` `!rifle` `!mg` `!at` `!roles` `!swap` `!spawn <a-e|base>` `!pos` `!uniform` `!bots <n>`.
+`!help` `!commands` `!controls` `!infantry` `!artillery` `!air` `!rifle` `!mg` `!at` `!roles` `!swap` `!spawn <a-e|base|heli>` `!pos`
+`!uniform` `!bots <n>` (`/` works as `!`; one line each in docs/SCRIPT.md).
 Bots: infantry by default; when a team has fewer than `CONFIG.AI.MIN_HUMANS_FOR_ROLES` humans the script assigns bots to fly
 (AI pilot), gun (AI door/mount gunner) and crew the batteries (AI crew). Bots never take a seat a human asks for.
 
 ## Sound events
 `mv.heli_rotor` (loop), `mv.heli_turbine` (loop), `mv.heli_gun`, `mv.rocket_launch`, `mv.rocket_fly`, `mv.howitzer_fire`,
-`mv.rocket_fire`, `mv.shell_whistle`, `mv.shell_impact`, `mv.mount_gun`, `mv.capture`, `mv.flag_lost`, `mv.radio_blip`,
+`mv.rocket_fire`, `mv.shell_whistle`, `mv.shell_impact`, `mv.mount_gun` (CS2's own M249 report, `sounds/weapons/m249/m249_01..03`, one per
+round), `mv.capture`, `mv.flag_lost`, `mv.radio_blip`,
 `mv.amb.valley` (soundscape parent: cicadas, birds, river, distant guns, thunder).

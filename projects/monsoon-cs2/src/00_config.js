@@ -2,7 +2,7 @@
 // battery, five flags, tickets. cs_script only, no plugins. Rules: docs/DESIGN.md 3; names: docs/CONTRACT.md; HUD ids: docs/SCRIPT.md.
 // Every tunable is in CONFIG. Units: Hammer units (40 u = 1 m), seconds, degrees.
 
-const VERSION = "mv-0.5 (12 Nov 2026, review pass 3: bot balance)";
+const VERSION = "mv-0.6 (13 Nov 2026, playtest 1 fixes: flags, rotors, weapons, help)";
 
 const CONFIG = {
   HUD: "mv_hud", PARAMS: "mv_params",
@@ -13,6 +13,13 @@ const CONFIG = {
   BASE_RADIUS: 1700,                     // "at the base" for an immediate role change (elsewhere a role request waits for the next deploy)
   AFK: { TIME: 120, MOVE: 48, EVERY: 1.0 },   // a human with no key, no look and no step for TIME s frees their seat and stops counting
   FEED: { LINES: 3, TIME: 6, UNDER_ATTACK: 20, TICKETS_LOW: [100, 50, 20] },   // event feed (HUD additions, pass 1); toasts stand in without it
+  // chat (playtest 1: with no HUD on screen nothing told a player the commands, the captures or the controls). Server chat lines go out
+  // one per SAY_GAP s (CS2's flood limit); captures and !help also go to chat, so they reach a player whatever his HUD shows.
+  CHAT: { SAY_GAP: 1.1, SAY_MAX: 12, CAPTURES: true, HINT_AT: 4, HINT_EVERY: 240 },
+  // the custom HUD: a call that throws makes the script wait BACKOFF s (doubling up to BACKOFF_MAX), forget what it believed was on screen
+  // and send it all again; it never gives up for the map (pass 1 switched the HUD off for good after 20 throws). A client is sent HUD
+  // calls only once it is ready: OnPlayerActivate, or READY s after the script first saw it (a listen-server host can miss the event).
+  HUDRUN: { BACKOFF: 1, BACKOFF_MAX: 8, READY: 4 },
 
   // ---- roles
   ROLES: {
@@ -48,6 +55,10 @@ const CONFIG = {
   CONQUEST: {
     TICKETS: 500, DEATH_COST: 1, BLEED_FLAGS: 3, BLEED_SECONDS: 6, NEUTRAL_FIRST: false,   // holding BLEED_FLAGS+ bleeds 1 ticket / BLEED_SECONDS per flag over 2
     ROUND_SECONDS: 1200, CAPTURE_SECONDS: 15, CAPTURE_MAX: 3, DECAY: 0.05, CAP_HEIGHT: 260,
+    // the flag on its pole (models/mv/flag_pole: poses flag_00 = at the foot .. flag_20 = at the top, tools/mv_flag_anim.py) follows the
+    // capture: the owner's flag comes down over the first half, the taker's goes up over the second, it reaches the top at the flip.
+    // POSE_RATE: poses per second the cloth may travel (smooths the 4 Hz capture steps); ANIM: input that plays a pose
+    POSES: 21, POSE_RATE: 6, POSE_ANIM: "SetAnimationLooping", POSE_IDLE: "SetIdleAnimationLooping",
     TICK: 0.25,                           // seconds between flag presence checks
     END_DELAY: 6, RESTART_FALLBACK: 20, SELF_RESET: 40,   // TerminateRound delay; FireWinCondition fallback; the script restarts its own round
   },
@@ -71,7 +82,7 @@ const CONFIG = {
     ROCKET: { SPEED: 2600, GRAVITY: 120, BLAST: 300, DAMAGE: 150, HELI: 90, PAIR_INTERVAL: 0.6, LIFE: 6,
               GIMBAL_YAW: 8, GIMBAL_UP: 6, GIMBAL_DOWN: 35, GUN_DISABLE: 260 },
     HIT_RADIUS: 150, HIT_UP: 80,                            // sphere used for hitscan / projectile hits on a helicopter
-    TRACER_EVERY: 3, TRACER_SPEED: 9000, SOUND_EVERY: 2,
+    TRACER_EVERY: 2, TRACER_SPEED: 9000, SOUND_EVERY: 2, IMPACT_EVERY: 0.18,     // IMPACT_EVERY: s between dirt puffs where a gun's rounds land
     ROTOR_RPM: 1100,                                        // degrees per second of the Hip rotor props at full speed
     SPOOL: 3.0,                                             // seconds for the rotor to spin up / down
     AUTOLAND_VS: -200,                                      // a helicopter left without a pilot in the air settles at this rate
@@ -83,8 +94,13 @@ const CONFIG = {
   HELI_MODELS: {
     // CC-BY Apache (tools/apache_setup.py -> out/apache.json -> LAYOUT.models.apache)
     apache: {
-      label: "AH-64", HEALTH: 100, NOSE_YAW: -90, ROTOR_R: 303, ROTOR_Z: 156, ANIMATED: true, ANIM_INPUT: "SetAnimation",
+      // CS2's prop_dynamic has no "SetAnimation" input (playtest 1: the rotors never turned): SetAnimationLooping plays a sequence,
+      // SetIdleAnimationLooping makes it the one the prop returns to, SetPlaybackRate spools it (core/base.fgd)
+      label: "AH-64", HEALTH: 100, NOSE_YAW: -90, ROTOR_R: 303, ROTOR_Z: 156, ANIMATED: true, ANIM_INPUT: "SetAnimationLooping",
+      IDLE_INPUT: "SetIdleAnimationLooping", RATE_INPUT: "SetPlaybackRate",
       ANIMS: { off: "idle", slow: "spin_slow", full: "spin" },
+      // the pilot can fire the chin gun himself (MOUSE2, slaved to his crosshair) while nobody sits in the gunner seat, as the real AH-64
+      PILOT_GUN: "chin",
       SEATS: [{ kind: "pilot", off: [58.6, 0, 68.5] }, { kind: "gunner", off: [109.3, 0, 50.9] },
               { kind: "rider", off: [-4.6, 79.3, 80.2] }, { kind: "rider", off: [-4.6, -79.3, 80.2] }],
       EXIT: [[40, 150, 0], [40, -150, 0], [-60, 170, 0], [-60, -170, 0]],
@@ -95,6 +111,10 @@ const CONFIG = {
     // Mi-8 slick: pilot left seat, PK in the open left door, four riders on the cabin floor (floor z 30, cockpit floor z 40)
     hip: {
       label: "Mi-8", HEALTH: 170, NOSE_YAW: 0, ROTOR_R: 418, ROTOR_Z: 149.5, ANIMATED: false, HUB: [0, 0, 149.46], TAIL: [-513.2, 22.21, 157.27],
+      // the transport's pilot had nothing to fire (playtest 1: "helicopters need weapons"): a fixed nose machine gun on MOUSE1 (the
+      // Mi-8TV's A-12.7 mount), a small gimbal around the nose; the door gun stays with the gunner seat
+      PILOT_GUN: { name: "A-12.7 NOSE MG", muzzle: [222, 0, 50], yaw: 0, cone: 7, up: 4, down: 14,
+                   interval: 0.11, damage: 26, heli: 2.5, range: 4600, spread: 0.012, overheat: 5, cool: 4, belt: 150, reload: 5 },
       SEATS: [{ kind: "pilot", off: [176, 22, 56] }, { kind: "gunner", off: [119, 30, 46] },
               { kind: "rider", off: [62, 22, 46] }, { kind: "rider", off: [62, -22, 46] }, { kind: "rider", off: [4, 22, 46] }, { kind: "rider", off: [4, -22, 46] }],
       EXIT: [[119, 140, 0], [60, 140, 0], [180, 140, 0], [0, 140, 0], [-110, 140, 0], [-170, 140, 0]],
@@ -142,6 +162,7 @@ const CONFIG = {
   MOUNT: {
     USE_RADIUS: 70, CONE: 30, CONE_ANY: 180, UP: 35, DOWN: 20, RANGE: 5200, BASE_RADIUS: 1500, CAM: { back: 64, up: 22 },
     MUZZLE: 40,                          // pintle to muzzle; LAYOUT.models[kind].muzzle (the model the map uses) overrides it per kind
+    SOUND_EVERY: 1,                      // a shot sound per round (mv.mount_gun is CS2's own M249 report since playtest 1: one per round reads as a gun)
     KINDS: {
       m2:     { name: "M2 .50 CAL", interval: 0.11, damage: 40, heli: 4, spread: 0.010, overheat: 6, cool: 4, belt: 100, reload: 4 },
       dshk:   { name: "DShK 12.7",  interval: 0.10, damage: 40, heli: 6, spread: 0.011, overheat: 6, cool: 4, belt: 100, reload: 4 },

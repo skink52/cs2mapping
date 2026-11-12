@@ -17,7 +17,8 @@ Events (docs/CONTRACT.md "Sound events"):
   mv.rocket_fire     3D 14000        122 mm rail launch: ignition crack + tearing roar (2 variants)
   mv.shell_whistle   3D 4200         2.0 s falling whistle, loudest at the end = the impact moment
   mv.shell_impact    3D 11000        HE burst: crack, boom, debris, tail (3 variants)
-  mv.mount_gun       3D 7500         heavy MG shot (.50 / 12.7), 3 variants, pitch 0.95-1.05
+  mv.mount_gun       3D 7500         emplaced MG shot: CS2's own M249 report (sounds/weapons/m249/m249_01..03 from the game's pak01;
+                                     playtest 1 found the synthesised one tinny), pitch 0.93-1.02, one per round
   mv.capture / mv.flag_lost / mv.radio_blip   heard everywhere at the same volume (flat csgo_mega, no fall-off)
   mv.amb.valley      soundscape parent -> mv.amb.cicadas (stereo loop), mv.amb.river (stereo loop), mv.amb.birds, mv.amb.gecko,
                      mv.amb.frogs, mv.amb.thunder, mv.amb.guns (intermittent, random around the player)
@@ -606,7 +607,7 @@ def build():
     add('heli_rotor', make_rotor(R(11)), loop=True, low=(0.55, 40, 500), centroid=(90, 900))
     add('heli_turbine', make_turbine(R(12)), loop=True, centroid=(1500, 6500), high=(0.25, 2000, 12000))
     for v in range(3): add('heli_gun_%d' % (v + 1), make_heli_gun(R(20 + v), v), centroid=(200, 3500), mid=(0.15, 500, 8000), dur=(0.5, 1.1))
-    for v in range(3): add('mount_gun_%d' % (v + 1), make_mount_gun(R(30 + v), v), low=(0.25, 20, 300), mid=(0.10, 500, 8000), dur=(0.9, 1.6))
+    # mount_gun: no longer synthesised; mv.mount_gun plays the game's M249 (STOCK_M249 below)
     for v in range(2): add('rocket_launch_%d' % (v + 1), make_rocket_launch(R(40 + v), v), centroid=(500, 3500), dur=(1.4, 2.2))
     add('rocket_fly', make_rocket_fly(R(45)), centroid=(500, 4000), dur=(3.9, 4.1))
     for v in range(2): add('howitzer_fire_%d' % (v + 1), make_howitzer(R(50 + v), v), low=(0.5, 20, 200), mid=(0.04, 400, 8000), dur=(4.0, 5.2), tail=0.02)
@@ -721,6 +722,11 @@ def ev_rand(name, fl, volume, rmin, rmax, imin, imax, pitch=(0.96, 1.04)):
                            'vsnd_files_track_01 =', '['] + ['\t"%s",' % f for f in fl] + [']'])
 
 
+# CS2's own M249 report (compiled vsnd in the game's pak01, referenced by path: nothing is copied into the addon). Checked against the
+# pak01 index (out/vpk_index/cs2_index.pkl) by check_events when the index is there.
+STOCK_M249 = ['sounds/weapons/m249/m249_01.vsnd', 'sounds/weapons/m249/m249_02.vsnd', 'sounds/weapons/m249/m249_03.vsnd']
+
+
 def far(r, full=0.1, mid=0.35, midv=0.5):
     """a gun's fall-off: full volume near, half at about a third of the range, a long quiet reach to r"""
     return [(0, 1), (r * full, 1), (r * mid, midv), (r * 0.7, midv * 0.36), (r, 0)]
@@ -737,7 +743,7 @@ def events():
     ev.append(ev3d('mv.rocket_fire', files('rocket_fire', 2), 1.0, [(0, 1), (1400, 1), (4500, 0.5), (9000, 0.22), (14000, 0)], pitch=(0.96, 1.04)))
     ev.append(ev3d('mv.shell_whistle', files('shell_whistle'), 0.9, [(0, 1), (700, 1), (2000, 0.45), (4200, 0)], pitch=(0.95, 1.06)))
     ev.append(ev3d('mv.shell_impact', files('shell_impact', 3), 1.0, [(0, 1), (1200, 1), (3800, 0.55), (7500, 0.22), (11000, 0)], pitch=(0.94, 1.05)))
-    ev.append(ev3d('mv.mount_gun', files('mount_gun', 3), 1.0, far(7500), pitch=(0.95, 1.05)))
+    ev.append(ev3d('mv.mount_gun', STOCK_M249, 1.0, far(7500), pitch=(0.93, 1.02)))
     ev.append(ev2d('mv.capture', files('capture'), 0.60))
     ev.append(ev2d('mv.flag_lost', files('flag_lost'), 0.60))
     ev.append(ev2d('mv.radio_blip', files('radio_blip'), 0.45))
@@ -764,6 +770,12 @@ def check_events(text):
     want = ['mv.heli_rotor', 'mv.heli_turbine', 'mv.heli_gun', 'mv.rocket_launch', 'mv.rocket_fly', 'mv.howitzer_fire', 'mv.rocket_fire',
             'mv.shell_whistle', 'mv.shell_impact', 'mv.mount_gun', 'mv.capture', 'mv.flag_lost', 'mv.radio_blip', 'mv.amb.valley']
     prob += ['contract event missing: %s' % w for w in want if w not in names]
+    idx = os.path.join(HERE, '..', 'out', 'vpk_index', 'cs2_index.pkl')
+    if os.path.exists(idx):                                  # stock sounds an event names must be in the game
+        import pickle
+        have = pickle.load(open(idx, 'rb'))
+        for f in re.findall(r'"(sounds/(?!mv/)[^"]+)\.vsnd"', E.body_of(text, TAG)):
+            if f + '.vsnd_c' not in have: prob.append('event names a stock sound the game does not have: %s' % f)
     used = set(re.findall(r'sounds/mv/([^"]+)\.vsnd', text))
     prob += ['sound written but used by no event: %s' % s for s in SOUNDS if s not in used]
     for o, c in ('{}', '[]'):

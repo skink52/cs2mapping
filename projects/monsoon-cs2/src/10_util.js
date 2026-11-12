@@ -87,6 +87,12 @@ function logErr(where, e) {
 // everything said goes through the server console: `;` would end the command and start another (a player named `x";quit;"`),
 // `"` breaks the quoting, and control characters (NUL, ESC, tabs) have no business there either (review 2)
 function say(text) { Console.ServerCommand("say " + String(text).replace(/[;"\x00-\x1f\x7f]/g, " ").slice(0, 200)); }
+// chat lines that are not answers to a vote: queued and sent one per CHAT.SAY_GAP s (CS2 drops lines over its flood limit); a full queue
+// drops the oldest, so a burst of captures never delays a later !help by a minute
+const sayQueue = [];
+let sayAt = 0;
+function sayLater(text) { sayQueue.push(String(text)); while (sayQueue.length > CONFIG.CHAT.SAY_MAX) sayQueue.shift(); }
+function tickSay() { if (sayQueue.length && TNOW >= sayAt) { sayAt = TNOW + CONFIG.CHAT.SAY_GAP; say(sayQueue.shift()); } }
 
 // ------------------------------------------------------------------ entities (cached per round: map entities are re-created every round)
 const entCache = new Map();
@@ -159,15 +165,45 @@ function hurt(victim, damage, attackerPawn, types, src) {
 }
 
 // ------------------------------------------------------------------ HUD (per-player cache, only changes are sent)
+// Playtest 1: the pass-1 HUD switched itself off for the whole map after 20 throws (from anyone, at any time), and calls for a client that
+// had not finished loading went out and were lost while the cache believed them on screen. Now: a client is sent calls only once it is
+// ready (OnPlayerActivate, or HUDRUN.READY s after the script first saw it: a listen-server host can miss the event); a call that throws
+// holds that one player back for a short, doubling wait, after which his screen is reset and everything is sent again; only when several
+// players fail together (the layout itself is broken) does everyone wait. Nothing is ever switched off for good.
 let hudEnt;
-let hudFails = 0;
+let hudFails = 0, hudBackoff = 0, hudRetryAt = 0;
+const hudRecent = [];                            // [slot, time] of recent failures
 function hud() {
-  if (hudFails > 20) return undefined;       // the HUD API is marked experimental: stop after repeated throws
+  if (TNOW < hudRetryAt) return undefined;
   if (live(hudEnt)) return hudEnt;
+  entCache.delete(CONFIG.HUD);                   // never trust a cached layout entity that is no longer valid (a round restart re-creates it)
   hudEnt = /** @type {any} */ (ent(CONFIG.HUD));
   if (!hudEnt) entCache.delete(CONFIG.HUD);
   return hudEnt;
 }
+function hudReady(p) { return !p.bot && TNOW >= p.hudBlockUntil && (p.hudReady || (p.seenAt > 0 && TNOW - p.seenAt >= CONFIG.HUDRUN.READY)); }
+// the layout for calls to p now, or undefined; a player held back after a failure gets his screen reset (and his cache emptied) first
+function hudFor(p) {
+  if (!hudReady(p)) return undefined;
+  const h = hud(); if (!h) return undefined;
+  if (p.hudDirty) { p.hudDirty = false; p.hud.clear(); try { h.ResetForPlayer(p.slot); } catch (e) {} }
+  return h;
+}
+function hudFailed(p, e) {
+  const R = CONFIG.HUDRUN;
+  hudFails++; p.hudErr++;
+  p.hudBlockUntil = TNOW + Math.min(R.BACKOFF_MAX, R.BACKOFF * Math.pow(2, Math.min(6, p.hudErr - 1))); p.hudDirty = true; p.hud.clear();
+  if (!live(hudEnt)) { hudEnt = undefined; entCache.delete(CONFIG.HUD); }
+  hudRecent.push([p.slot, TNOW]);
+  while (hudRecent.length && TNOW - hudRecent[0][1] > 2) hudRecent.shift();
+  if (new Set(hudRecent.map((x) => x[0])).size >= 3) {            // several players at once: the layout, not a client
+    hudBackoff = Math.min(R.BACKOFF_MAX, hudBackoff ? hudBackoff * 2 : R.BACKOFF); hudRetryAt = TNOW + hudBackoff; hudRecent.length = 0;
+    hudEnt = undefined; entCache.delete(CONFIG.HUD);
+    for (const q of players.values()) { q.hudDirty = true; q.hud.clear(); }
+  }
+  if (hudFails <= 5 || hudFails % 100 === 0) log("HUD call refused for slot " + p.slot + " (" + hudFails + " so far): " + e + " - that screen is sent again in " + (p.hudBlockUntil - TNOW).toFixed(0) + " s");
+}
+function hudOk(p) { p.hudErr = 0; hudBackoff = 0; }
 // ids added after the HUD was generated ("HUD additions" in docs/SCRIPT.md) are only used when out/hud.json lists them
 const HUD_IDS = Array.isArray(HUDDATA.ids) ? new Set(HUDDATA.ids) : null;
 function hudHas(id) { return !!HUD_IDS && HUD_IDS.has(id); }
@@ -178,35 +214,45 @@ function hudRec(p, id) { let r = p.hud.get(id); if (!r) { r = { t: undefined, c:
 function hText(p, id, text) {
   if (p.bot) return;
   text = String(text === undefined || text === null ? "" : text);
-  const r = hudRec(p, id);
-  if (r.t === text) return;
-  const h = hud(); if (!h) return;
-  try { h.SetDialogVariableStringForPlayer(p.slot, id, "v", text); hudCalls++; } catch (e) { hudFails++; return; }
+  if (hudRec(p, id).t === text) return;
+  const h = hudFor(p); if (!h) return;
+  const r = hudRec(p, id);                       // (hudFor may have reset this screen and its cache)
+  try { h.SetDialogVariableStringForPlayer(p.slot, id, "v", text); hudCalls++; } catch (e) { hudFailed(p, e); return; }
+  if (p.hudErr) hudOk(p);
   r.t = text;
 }
 function hClass(p, id, cls, on) {
   if (p.bot) return;
   on = !!on;
-  const r = hudRec(p, id), old = r.c[cls];
+  let old = hudRec(p, id).c[cls];
   if (old === on || (old === undefined && !on)) return;
-  const h = hud(); if (!h) return;
-  try { h.SetHasClassForPlayer(p.slot, id, cls, on); hudCalls++; } catch (e) { hudFails++; return; }
+  const h = hudFor(p); if (!h) return;
+  const r = hudRec(p, id); old = r.c[cls];
+  if (old === on || (old === undefined && !on)) return;
+  try { h.SetHasClassForPlayer(p.slot, id, cls, on); hudCalls++; } catch (e) { hudFailed(p, e); return; }
+  if (p.hudErr) hudOk(p);
   r.c[cls] = on;
 }
 function hSwap(p, id, group, cls) {   // one class per group (marker positions, needles)
   if (p.bot) return;
+  if (hudRec(p, id).s[group] === cls) return;
+  const h = hudFor(p); if (!h) return;
   const r = hudRec(p, id), old = r.s[group];
   if (old === cls) return;
-  const h = hud(); if (!h) return;
   try {
     if (old) { h.SetHasClassForPlayer(p.slot, id, old, false); hudCalls++; }
     if (cls) { h.SetHasClassForPlayer(p.slot, id, cls, true); hudCalls++; }
-  } catch (e) { hudFails++; return; }
+  } catch (e) { hudFailed(p, e); return; }
+  if (p.hudErr) hudOk(p);
   r.s[group] = cls;
 }
 // the texts are gone after a reset, so the timers that keep a toast / banner / card up go too (a round restart left them running:
 // the new round opened with an empty banner and toast box on screen, review 2)
-function hudReset(p) { const h = hud(); if (h && !p.bot) { try { h.ResetForPlayer(p.slot); } catch (e) {} } p.hud.clear(); p.toastUntil = 0; p.bannerUntil = 0; p.infoUntil = 0; }
+// (a screen that cannot take calls yet is reset as soon as it can: hudFor does it first)
+function hudReset(p) {
+  if (!p.bot) { const h = hudFor(p); if (h) { try { h.ResetForPlayer(p.slot); } catch (e) {} } else p.hudDirty = true; }
+  p.hud.clear(); p.toastUntil = 0; p.bannerUntil = 0; p.infoUntil = 0;
+}
 function toast(p, text, secs) { if (!p || p.bot) return; hText(p, "mv_toast_text", text); p.toastUntil = TNOW + (secs || 3); }
 // the event feed (flag taken, helicopter down, gun silenced): the newest line on top, each for FEED.TIME seconds.
 // team = who reads it (0 = everyone); tone "good" / "bad" / "" as that reader sees it. Without the feed panels (HUD additions,

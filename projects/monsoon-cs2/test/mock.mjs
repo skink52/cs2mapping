@@ -18,6 +18,10 @@
 //                             control characters in a name sent with say
 //                     review3 review pass 3's open items (humans=4): a human joining a gun an AI crewman runs, the !bots vote, a
 //                             helicopter the AI brings home for a human out in the field, a human taking over an AI bot (OnBotControl)
+//                     pt1     playtest 1 (humans=4): HUD up for everyone with a slow client (hudthrow) and a host without
+//                             OnPlayerActivate, a lone man takes a flag at its pole at the real capture time (cloth up the pole, prompt,
+//                             chat), !help / !commands / !controls, the pilots' guns and the Apache rotor sequences, a report per round
+//   hudthrow=1        HUD calls for a client still loading throw instead of being lost (on in scenario=pt1)
 //   piece=<text>      only the set pieces whose name contains <text> (one bug class at a time, e.g. scenario=edge piece="shot down")
 //   script=<file>     run that built script instead of building src/ (e.g. out/review2/before_review2.js: the build before pass 2)
 //   river=1           the river bed lies below the water (layout river line, 180 u each side); on in scenario=review2
@@ -39,6 +43,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2), posArgs = argv.filter((a) => !a.includes('=')), opt = Object.fromEntries(argv.filter((a) => a.includes('=')).map((a) => a.split('=')));
 const N = +(posArgs[0] || 32), SECONDS = +(posArgs[1] || 600);
 const SCEN = opt.scenario || '', BAL = opt.mode === 'balance', JSONONLY = opt.json === '1';
+const HUDTHROW = opt.hudthrow === '1' || SCEN === 'pt1';
 const LOWPOP = N < 16 && opt.humans === undefined;
 let HUDNEW = opt.hudnew === '1' || SCEN === 'edge';     // also turned on below when out/hud.json already lists every addition
 const FEATURES = !BAL && !SCEN && N >= 16;
@@ -106,10 +111,55 @@ function checkPos(v, what) {
   if (Math.abs(v.x) > L.map.air[0] + 1400 || Math.abs(v.y) > L.map.air[1] + 1400 || v.z < PARK_Z - 60 || v.z > L.map.air[2] + 1500) throw new Error('position outside the world for ' + what + ': ' + JSON.stringify(v));
 }
 function checkAng(a, what) { if (!a || ![a.pitch, a.yaw, a.roll].every(Number.isFinite)) throw new Error('bad angles for ' + what + ': ' + JSON.stringify(a)); }
-const INPUTS = {
-  info_particle_system: ['Start', 'Stop'], point_soundevent: ['StartSound', 'StopSound', 'SetSourceEntity'], env_shake: ['StartShake'],
-  prop_dynamic: ['Skin', 'SetAnimation'], info_map_parameters: ['FireWinCondition'],
+// Inputs per entity class: read from CS2's own FGDs (game/core/*.fgd, game/csgo/*.fgd, base classes followed) when the game is
+// installed, else this table. Playtest 1: the old table allowed "SetAnimation" on prop_dynamic, an input CS2 does not have, so the
+// Apache's rotors never turned in game while every mock run passed. An input the class lacks is now a FAIL (CS2 itself only prints
+// a console line and ignores it, so the stand-in does not throw either).
+const INPUTS_FALLBACK = {
+  info_particle_system: ['Start', 'Stop', 'DestroyImmediately', 'StopPlayEndCap'], point_soundevent: ['StartSound', 'StopSound', 'SetSourceEntity'], env_shake: ['StartShake', 'StopShake'],
+  prop_dynamic: ['Skin', 'SetAnimationLooping', 'SetAnimationNoResetLooping', 'SetIdleAnimationLooping', 'SetAnimationNotLooping', 'SetAnimationNoResetNotLooping',
+                 'SetIdleAnimationNotLooping', 'SetPlaybackRate', 'SetBodyGroup', 'TurnOn', 'TurnOff', 'EnableCollision', 'DisableCollision'],
+  info_map_parameters: ['FireWinCondition'],
 };
+const GAME_DIR = process.env.CS2_GAME || 'C:/Program Files (x86)/Steam/steamapps/common/Counter-Strike Global Offensive/game';
+function loadFgd() {
+  const files = [];
+  for (const d of ['core', 'csgo']) { const dir = path.join(GAME_DIR, d); try { for (const f of fs.readdirSync(dir)) if (f.endsWith('.fgd')) files.push(path.join(dir, f)); } catch (e) {} }
+  if (!files.length) return null;
+  const cls = new Map();                       // name -> { bases: [], inputs: Set }
+  for (const f of files) {
+    const t = fs.readFileSync(f, 'utf8').replace(/\/\/[^\n]*/g, '');
+    const re = /@(\w+)([^@]*?)=\s*([A-Za-z_][\w]*)\s*:?/g; let m;
+    while ((m = re.exec(t))) {
+      if (!/Class$/.test(m[1])) continue;
+      const bm = /\bbase\s*\(([^)]*)\)/.exec(m[2]);
+      let i = t.indexOf('[', re.lastIndex); if (i < 0) continue;
+      // the body: the bracket after the name, to its match (strings skipped)
+      let depth = 0, j = i, inStr = false;
+      for (; j < t.length; j++) { const ch = t[j]; if (ch === '"') inStr = !inStr; else if (!inStr) { if (ch === '[') depth++; else if (ch === ']' && --depth === 0) break; } }
+      const body = t.slice(i, j); const ins = new Set();
+      for (const q of body.matchAll(/^\s*input\s+(\w+)\s*\(/gm)) ins.add(q[1]);
+      const e = cls.get(m[3]) || { bases: [], inputs: new Set() };
+      e.bases.push(...(bm ? bm[1].split(',').map((x) => x.trim()).filter(Boolean) : [])); for (const x of ins) e.inputs.add(x);
+      cls.set(m[3], e); re.lastIndex = j;
+    }
+  }
+  const memo = new Map();
+  const all = (n, seen = new Set()) => { if (memo.has(n)) return memo.get(n); const e = cls.get(n); const out = new Set(); if (!e || seen.has(n)) return out; seen.add(n); for (const x of e.inputs) out.add(x); for (const b of e.bases) for (const x of all(b, seen)) out.add(x); memo.set(n, out); return out; };
+  return { has: (c) => cls.has(c), inputs: all, files: files.length };
+}
+const FGD = loadFgd();
+const inputOk = (c, i) => (FGD && FGD.has(c) ? FGD.inputs(c).has(i) : (INPUTS_FALLBACK[c] || []).includes(i));
+// the sequences of a model, from its vmdl in out/addon (AnimFile names); null when the file is not there
+const seqCache = new Map();
+function sequencesOf(model) {
+  if (!model) return null;
+  if (seqCache.has(model)) return seqCache.get(model);
+  let r = null; try { r = new Set([...fs.readFileSync(path.join(root, 'out/addon', model), 'utf8').matchAll(/_class = "AnimFile"\s*name = "([^"]+)"/g)].map((m) => m[1])); } catch (e) {}
+  seqCache.set(model, r); return r;
+}
+const ANIM_INPUTS = new Set(['SetAnimationLooping', 'SetAnimationNoResetLooping', 'SetIdleAnimationLooping', 'SetAnimationNotLooping', 'SetAnimationNoResetNotLooping', 'SetIdleAnimationNotLooping']);
+const badInputs = new Set();
 const world = new Map();
 class Ent {
   constructor(name, cls, pos, ang) { this.name = name; this.cls = cls; this.pos = { ...pos }; this.ang = ang ? { ...ang } : { pitch: 0, yaw: 0, roll: 0 }; this.vel = { x: 0, y: 0, z: 0 }; this.valid = true; this.model = ''; this.inputs = {}; }
@@ -123,11 +173,20 @@ class Ent {
   GetTeamNumber() { return 0; }
   FireInput(o) {
     this.use();
-    const ok = INPUTS[this.cls] || [];
-    if (!ok.includes(o.input)) throw new Error('input ' + o.input + ' fired at ' + this.name + ' (' + this.cls + ')');
+    if (!inputOk(this.cls, o.input)) {
+      const k = this.cls + '.' + o.input;
+      if (!badInputs.has(k)) { badInputs.add(k); fail('input ' + o.input + ' fired at ' + this.name + ': ' + this.cls + ' has no such input in CS2 (' + (FGD ? 'game FGD' : 'fallback table') + ')'); }
+      return;                                       // CS2 prints a line and ignores it
+    }
     if (o.input === 'SetSourceEntity' && !world.has(String(o.value))) throw new Error('SetSourceEntity to a missing entity ' + o.value);
     if (o.input === 'Skin' && ![0, 1, 2].includes(o.value)) throw new Error('bad skin ' + o.value);
-    if (o.input === 'SetAnimation' && !['idle', 'spin_slow', 'spin'].includes(o.value)) throw new Error('bad animation ' + o.value);
+    if (ANIM_INPUTS.has(o.input)) {
+      const seq = sequencesOf(this.model);
+      if (seq && !seq.has(String(o.value))) { const k = this.model + ':seq'; if (!badInputs.has(k)) { badInputs.add(k); fail(o.input + ' "' + o.value + '" on ' + this.name + ': ' + this.model + ' has no such sequence (it has ' + ([...seq].slice(0, 6).join(', ') || 'none') + ')'); } }
+      this.anim = String(o.value); (this.anims || (this.anims = [])).push(this.anim);
+    }
+    if (o.input === 'SetPlaybackRate') { if (!Number.isFinite(+o.value) || +o.value < 0) throw new Error('bad playback rate ' + o.value); this.rate = +o.value; }
+    if (o.input === 'Skin') this.skin = o.value;
     stats.fires[o.input] = (stats.fires[o.input] || 0) + 1; this.inputs[o.input] = (this.inputs[o.input] || 0) + 1; this.last = o.input + ':' + o.value;
   }
 }
@@ -147,15 +206,19 @@ class Hud extends Ent {
   }
   st(slot) { let m = hudState.get(slot); if (!m) hudState.set(slot, m = new Map()); return m; }
   // a client still loading (cs2-gotchas: HUD changes sent before a joining client is ready are lost): the call is made and lost
-  SetHasClassForPlayer(slot, panel, cls, on) { stats.hud++; if (typeof on !== 'boolean') throw new Error('class flag not boolean'); this.chk(slot, panel, cls); if (loading.has(slot)) return; this.st(slot).set(panel + '#' + cls, on); }
+  // hudthrow=1 (scenario pt1): a call for a client that has not finished loading THROWS instead of being lost (unconfirmed CS2 behaviour; either
+  // way the script must keep its HUD for everyone: the pass-1 build switched the HUD off for the whole map after 20 throws)
+  lost(slot) { if (!loading.has(slot)) return false; if (HUDTHROW) { stats.hudThrows = (stats.hudThrows || 0) + 1; throw new Error('client ' + slot + ' is not ready'); } return true; }
+  SetHasClassForPlayer(slot, panel, cls, on) { stats.hud++; if (typeof on !== 'boolean') throw new Error('class flag not boolean'); this.chk(slot, panel, cls); if (this.lost(slot)) return; this.st(slot).set(panel + '#' + cls, on); }
   SetDialogVariableStringForPlayer(slot, panel, n, v) {
     stats.vars++; if (n !== 'v' || typeof v !== 'string') throw new Error('bad dialog variable'); if (/undefined|NaN|\[object|null/.test(v)) throw new Error('bad HUD text for ' + panel + ': ' + v);
     if (v.length > 96) throw new Error('HUD text too long for ' + panel + ' (' + v.length + '): ' + v);
-    this.chk(slot, panel); if (loading.has(slot)) return; this.st(slot).set(panel + '$', v);
+    this.chk(slot, panel); if (this.lost(slot)) return; this.st(slot).set(panel + '$', v);
   }
   ResetForPlayer(slot) { hudState.delete(slot); stats.hudResets = (stats.hudResets || 0) + 1; }
 }
 const shows = (slot, panel, cls) => !!(hudState.get(slot) && hudState.get(slot).get(panel + '#' + (cls || 'show')));
+const textOf = (slot, panel) => (hudState.get(slot) && hudState.get(slot).get(panel + '$')) || '';
 function synthesise() {
   const out = [];
   const add = (name, cls, x, y, z, yaw) => out.push({ name, cls, origin: [x, y, z], angles: [0, yaw || 0, 0] });
@@ -370,6 +433,7 @@ const Console = strict('Console', {
     if (!/^(mp_|bot_|say$)/.test(w)) throw new Error('server command outside the allowed set: ' + c);
     if (/[;"\x00-\x1f\x7f]/.test(c)) throw new Error('unsafe characters in a server command: ' + JSON.stringify(c));
     if (w === 'bot_quota') quota = +String(c).split(' ')[1]; if (w === 'bot_quota_mode') quotaMode = String(c).split(' ')[1];
+    if (w === 'say') { (stats.chat || (stats.chat = [])).push({ t: time, text: String(c).slice(4) }); if (process.env.MOCK_LOG) console.log(time.toFixed(2), 'CHAT', String(c).slice(4)); }
   },
 });
 let restartAt = -1;
@@ -398,7 +462,8 @@ async function loadScript() {
   }
   if (BAL) return;
   CONFIG.CONQUEST.TICKETS = +(process.env.MOCK_TICKETS || (SCEN === 'restart' ? 5 : 40));        // rounds must end inside the run
-  CONFIG.CONQUEST.CAPTURE_SECONDS = 8;
+  if (SCEN !== 'pt1') CONFIG.CONQUEST.CAPTURE_SECONDS = 8;      // pt1 runs the real capture time (playtest 1: a lone man at the pole)
+  if (SCEN === 'pt1') CONFIG.AI.GUNNERS = 0;                          // its pilots test the pilot guns with the gunner seat empty
   CONFIG.AFK.TIME = 40;
   if (process.env.MOCK_ROUND) CONFIG.CONQUEST.ROUND_SECONDS = +process.env.MOCK_ROUND;
 }
@@ -1574,8 +1639,11 @@ function invariants() {
     const c = ctls[slot];
     if (!c) { if (pr.ctl) fail('the script still knows slot ' + slot + ' after it emptied'); continue; }
     if (c.gone) { if (pr.ctl || pr.team || pr.aiRole) fail('the script still plays slot ' + slot + ' after its player left (controller left behind, ' + (pr.aiRole ? 'AI ' + pr.aiRole : pr.role) + ')'); continue; }
+    // a screen the script does not draw on yet (a slot that just changed hands: in CS2 that is a new client with a fresh HUD; this stand-in
+    // keeps the old occupant's panels until the script resets them, which it does once the client is ready, playtest 1)
+    const screenLive = !c.bot && !loading.has(slot) && !pr.hudDirty && (pr.hudReady === undefined || pr.hudReady || time - (pr.seenAt || 0) >= (CONFIG.HUDRUN ? CONFIG.HUDRUN.READY : 0)) && time >= (pr.hudBlockUntil || 0);
     // a panel shown with no text: its text went with a HUD reset (round restart, slot change) while the timer that shows it ran on
-    if (!c.bot && !loading.has(slot)) {
+    if (screenLive) {
       const st = hudState.get(slot);
       for (const [panel, text] of [['mv_banner', 'mv_banner_title'], ['mv_toast', 'mv_toast_text'], ['mv_info', 'mv_info_title']])
         if (shows(slot, panel) && !(st && st.has(text + '$'))) fail('player ' + slot + ' sees an empty ' + panel + ' (round ' + stats.rounds + ', t ' + time.toFixed(0) + ')');
@@ -1595,9 +1663,10 @@ function invariants() {
     if (p.cam && p.cam.mode !== 0 && !seated && pr.mount < 0) fail('pawn ' + slot + ' is on a seat camera with no seat');
     if (!c.bot && pr.deployed && (seated || pr.mount >= 0 || pr.board) && p.weapons.length !== 1) fail('player ' + slot + ' holds ' + p.weapons.length + ' weapons in a seat');
     if (!c.bot && pr.deployed && !parked && p.weapons.length < 2) fail('player ' + slot + ' on foot holds ' + p.weapons.length + ' weapon(s)');
-    if (!c.bot && pr.deployed && !pr.heli && !pr.board && !shows(slot, 'mv_obj')) { if ((pr.deployedAt || 0) + 1 < time) fail('player ' + slot + ' is deployed without the objective bar'); }
-    if (!c.bot && !pr.heli && shows(slot, 'mv_fly')) fail('player ' + slot + ' sees the flight instruments on foot');
-    if (!c.bot && !pr.board && shows(slot, 'mv_board')) fail('player ' + slot + ' sees the plotting board away from it');
+    // (a client still loading has no HUD yet; one whose HUD call failed is sent everything again after its short wait: playtest 1)
+    if (!c.bot && pr.deployed && !pr.heli && !pr.board && !shows(slot, 'mv_obj') && !loading.has(slot)) { if (Math.max(pr.deployedAt || 0, (pr.hudBlockUntil || 0) + 1, (pr.seenAt || 0) + (CONFIG.HUDRUN ? CONFIG.HUDRUN.READY : 0) + 1) + 1 < time) fail('player ' + slot + ' is deployed without the objective bar'); }
+    if (screenLive && !pr.heli && shows(slot, 'mv_fly')) fail('player ' + slot + ' sees the flight instruments on foot');
+    if (screenLive && !pr.board && shows(slot, 'mv_board')) fail('player ' + slot + ' sees the plotting board away from it');
   }
 }
 
@@ -1627,6 +1696,143 @@ function pilotState(t) {
   }
   return best;
 }      // flag id -> seconds both teams stood in it; flag id -> captures by T / CT (balance report)
+// node test/mock.mjs 12 240 scenario=pt1 humans=4   playtest 1 (docs/FIX_PT1_S.md). Add script=out/pt1/before_pt1.js to watch the
+// pass-1 build fail each piece. Runs with the real capture time and hudthrow=1 (HUD calls for a client still loading throw).
+if (SCEN === 'pt1') {
+  const grab = (c) => { c.stunt = curPiece.name; c.q = []; c.hold = 0; curPiece.actors.push(c); return c; };
+  const after = (name) => until(() => pieces.every((x) => x.name !== name || x.done), 'set piece "' + name + '" to finish', 400);
+  const onFoot = (team) => everyone().find((c) => !c.bot && c.team === team && !c.stunt && c.pawn.hp > 0 && P(c) && P(c).deployed && P(c).role === 'infantry' && !P(c).heli && P(c).mount < 0 && !P(c).board);
+  const chatSince = (t0, rx) => (stats.chat || []).filter((m) => m.t >= t0 && rx.test(m.text));
+  // a human of the team made an infantryman at the base (the default jobs give this population pilots and gun crews only)
+  const anyHuman = (team) => everyone().find((c) => !c.bot && c.team === team && !c.stunt && c.pawn.hp > 0 && P(c) && P(c).deployed && !loading.has(c.slot) && !P(c).heli && P(c).role !== 'air');
+  function* infantryman(team) {
+    yield until(() => anyHuman(team), 'a deployed human of team ' + team, 90);
+    const a = grab(anyHuman(team)); a.god = true;
+    if (P(a).heli || P(a).mount >= 0 || P(a).board) { press(a, IN.USE); yield 0.5; }
+    putAt(a, baseSpot(team)); yield 0.1;
+    if (P(a).role !== 'infantry') { say(a, '!infantry'); yield 0.5; }
+    for (let k = 0; ; k++) {
+      const q = P(a);
+      if (q.deployed && q.role === 'infantry' && !q.heli && q.mount < 0 && !q.board && !q.carrying) return a;
+      if (k > 80) throw new Error('human ' + a.slot + ' is not on foot as infantry (role ' + q.role + ', deployed ' + q.deployed + ', heli ' + !!q.heli + ', mount ' + q.mount + ', board ' + q.board + ', crew ' + q.crew + ', pref ' + q.pref + ', waitRole ' + q.waitRole + ')');
+      if (k % 20 === 10) { putAt(a, baseSpot(team)); say(a, '!infantry'); }
+      yield 0.25;
+    }
+  }
+  // (1) the HUD stays up for everyone while one client takes 25 s to load (its calls throw meanwhile) and one never gets OnPlayerActivate
+  piece('HUD up for everyone despite a slow client', 2, function* () {
+    const slow = addPlayer(false, undefined, 25);
+    const deaf = addPlayer(false, undefined, 1e9);           // a listen-server host whose OnPlayerActivate never comes
+    yield 30;
+    const hs = everyone().filter((c) => !c.bot && c !== slow && c !== deaf && c.pawn.hp > 0 && P(c) && P(c).deployed);
+    if (!hs.length) throw new Error('no deployed human to look at');
+    const dark = hs.filter((c) => !shows(c.slot, 'mv_obj'));
+    if (dark.length) throw new Error('the objective bar is not on screen for ' + dark.length + ' of ' + hs.length + ' deployed humans (script HUD failures: ' + (stats.hudThrows || 0) + ' throws)');
+    yield until(() => P(slow) && P(slow).deployed && shows(slow.slot, 'mv_obj'), 'the slow client deployed with the objective bar up', 30);
+    loading.delete(deaf.slot);                               // his client is fine, only the event never came
+    yield until(() => shows(deaf.slot, 'mv_brief') || shows(deaf.slot, 'mv_obj'), 'the host without OnPlayerActivate gets a HUD', 20);
+    hit('HUD up for everyone, slow client and missing OnPlayerActivate');
+  });
+  // (2) a human alone at a neutral flag's visible pole (the map's mv_flagpole, not the script's idea of the flag), real capture time:
+  // he takes it in CAPTURE_SECONDS; the cloth goes up the pole in his colour; he sees the capture on the HUD and the prompt; chat says it
+  piece('flag taken by one man at the pole', 40, function* () {
+    yield after('HUD up for everyone despite a slow client');
+    const team = 3, C = CONFIG.CONQUEST;
+    const a = yield* infantryman(team);
+    const f = D.flags.filter((x) => x.owner !== team).sort((x, y) => d2(x.pos, L.ct.centre ? { x: L.ct.centre[0], y: L.ct.centre[1] } : x.pos) - d2(y.pos, { x: L.ct.centre[0], y: L.ct.centre[1] }))[0];
+    if (!f) throw new Error('every flag is CT already');
+    const pole = world.get('mv_flagpole_' + f.id); if (!pole) throw new Error('no mv_flagpole_' + f.id + ' in the map');
+    const clear = () => { for (const c of everyone()) if (c !== a && c.pawn.hp > 0 && d2(c.pawn.pos, pole.pos) < f.r + 150) putAt(c, { x: pole.pos.x + 1400, y: pole.pos.y + 1400 }); };
+    clear(); f.prog = 0; f.capTeam = 0; f.owner = 0;
+    pole.anims = []; const t0 = time;
+    putAt(a, { x: pole.pos.x + 70, y: pole.pos.y + 20, z: pole.pos.z });
+    let promptSeen = '', ringSeen = false;
+    while (f.owner !== team) {
+      clear(); putAt(a, { x: pole.pos.x + 70, y: pole.pos.y + 20, z: pole.pos.z });
+      const tx = textOf(a.slot, 'mv_prompt_text'); if (/CAPTUR/.test(tx) && shows(a.slot, 'mv_prompt')) promptSeen = tx;
+      if (shows(a.slot, 'mv_flag_' + f.id, 'here')) ringSeen = true;
+      if (time - t0 > C.CAPTURE_SECONDS + 6) throw new Error('flag ' + f.id + ' not taken ' + (time - t0).toFixed(0) + ' s after a lone CT stood ' + Math.round(d2(a.pawn.pos, pole.pos)) + ' u from its pole (progress ' + f.prog.toFixed(2) + ', counted ' + f.n[team] + ')');
+      yield 0.25;
+    }
+    const took = time - t0;
+    if (took < C.CAPTURE_SECONDS * 0.8) throw new Error('taken in ' + took.toFixed(1) + ' s, faster than CAPTURE_SECONDS');
+    if (!ringSeen) throw new Error('the HUD never showed him inside the flag circle (mv_flag_' + f.id + ' .here)');
+    if (!promptSeen) throw new Error('no "CAPTURING ..." prompt on his screen');
+    yield 3;
+    const poses = pole.anims.filter((x) => /^flag_\d\d$/.test(x)).map((x) => +x.slice(5));
+    if (poses.length < 5) throw new Error('the flag did not move on its pole (' + poses.length + ' pose changes: ' + pole.anims.slice(0, 8).join(' ') + ')');
+    if (poses[poses.length - 1] !== CONFIG.CONQUEST.POSES - 1) throw new Error('the flag did not end at the top (last pose ' + poses[poses.length - 1] + ')');
+    for (let i = 1; i < poses.length; i++) if (poses[i] < poses[i - 1] - 0 && poses[i - 1] !== 0) {}   // (a neutral flag only rises)
+    if (pole.skin !== 2) throw new Error('the pole shows skin ' + pole.skin + ', not CT (2)');
+    if (!chatSince(t0, new RegExp('took ' + f.id.toUpperCase())).length) throw new Error('nobody was told in chat');
+    hit('lone capture at the pole: ' + took.toFixed(1) + ' s, ' + poses.length + ' poses, prompt "' + promptSeen + '"');
+  });
+  // (3) !help / !commands: the command list on the HUD card and in chat; an unknown command answers
+  piece('!help and !commands', 20, function* () {
+    const a = yield* infantryman(2), t0 = time;
+    say(a, '!help'); yield 0.3;
+    if (!shows(a.slot, 'mv_info') || !/COMMAND/.test(textOf(a.slot, 'mv_info_title'))) throw new Error('!help put no command card on the HUD (title "' + textOf(a.slot, 'mv_info_title') + '")');
+    yield 7;
+    const lines = chatSince(t0, /^\[mv\]/);
+    if (lines.length < 5 || !lines.some((m) => /!infantry/.test(m.text)) || !lines.some((m) => /!spawn/.test(m.text))) throw new Error('!help sent ' + lines.length + ' chat lines: ' + lines.map((m) => m.text).join(' | ').slice(0, 200));
+    const n0 = (stats.chat || []).length; say(a, '!commands'); yield 0.3;
+    if (!/COMMAND/.test(textOf(a.slot, 'mv_info_title'))) throw new Error('!commands showed no card');
+    yield 3;
+    if ((stats.chat || []).length > n0) throw new Error('!commands right after !help repeated the list in chat (no rate limit)');
+    say(a, '!flibber'); yield 0.3;
+    if (!/Unknown command/.test(textOf(a.slot, 'mv_toast_text'))) throw new Error('an unknown command got no answer');
+    say(a, '!controls'); yield 0.3;
+    if (!/INFANTRY/.test(textOf(a.slot, 'mv_info_title'))) throw new Error('!controls on foot showed "' + textOf(a.slot, 'mv_info_title') + '"');
+    hit('!help, !commands, !controls, unknown command');
+  });
+  // (4) a pilot in each helicopter: the Apache's rotor sequences play (SetAnimationLooping, the idle kept, spooled by playback rate);
+  // the slick's pilot fires a nose gun; the Apache pilot fires the chin gun with MOUSE2 while the gunner seat is empty; tracers and
+  // impact puffs show; the hint line names the controls
+  piece('helicopter weapons and rotors', 30, function* () {
+    yield after('flag taken by one man at the pole');
+    for (const team of [3, 2]) {
+      const h = D.helis[team].find((x) => x.ent && x.state === 'parked' && x.kind !== 'hip_gun' && x.seats.every((s) => s.slot < 0));
+      if (!h) throw new Error('no free ' + (team === 3 ? 'Apache' : 'Mi-8 slick') + ' on its pad');
+      const a = yield* infantryman(team);
+      putAt(a, { x: h.pos.x, y: h.pos.y, z: h.pos.z }); yield 0.1;
+      h.owner = a.slot; say(a, '!air'); yield 0.5;
+      if (P(a).heli !== h) { putAt(a, { x: h.pos.x + 120, y: h.pos.y + 40, z: h.pos.z }); press(a, IN.USE); yield 0.5; }
+      if (P(a).heli !== h || P(a).seat !== 0) throw new Error('could not seat a pilot in ' + h.tag + ' (seat ' + P(a).seat + ')');
+      if (!/MOUSE/.test(textOf(a.slot, 'mv_fly_info') + textOf(a.slot, 'mv_toast_text'))) throw new Error('no control hint for the pilot (info "' + textOf(a.slot, 'mv_fly_info') + '", toast "' + textOf(a.slot, 'mv_toast_text') + '")');
+      const e = world.get(h.name); e.anims = [];
+      a.hold = IN.JUMP; yield until(() => !h.landed && h.alt > 250, 'take-off of ' + h.tag, 15); a.hold = 0;
+      if (h.M.ANIMATED) {
+        if (!e.anims.includes('spin') && !e.anims.includes('spin_slow')) throw new Error('the Apache rotor sequence never played (inputs ' + JSON.stringify(e.inputs) + ')');
+        if (!e.inputs.SetIdleAnimationLooping || !e.inputs.SetPlaybackRate) throw new Error('the rotor sequence is not kept / spooled (inputs ' + JSON.stringify(e.inputs) + ')');
+      }
+      const s0 = D.stats.pilotGunShots, p0 = D.stats.impactPuffs;
+      const tgt = { x: h.pos.x + Math.cos(h.yaw * Math.PI / 180) * 900, y: h.pos.y + Math.sin(h.yaw * Math.PI / 180) * 900 };
+      lookAt(a, { x: tgt.x, y: tgt.y, z: ground(tgt.x, tgt.y) });
+      a.hold = team === 3 ? IN.ATTACK2 : IN.ATTACK; yield 2.5; a.hold = 0;
+      const shots = D.stats.pilotGunShots - s0;
+      if (shots < 8) throw new Error((team === 3 ? 'Apache pilot MOUSE2 (chin gun, gunner seat empty)' : 'Mi-8 slick pilot MOUSE1 (nose gun)') + ' fired ' + shots + ' rounds in 2.5 s');
+      if (D.stats.impactPuffs <= p0) throw new Error('no impact puff where the rounds landed');
+      if (!shows(a.slot, 'mv_gun')) throw new Error('the pilot gun box is not on screen');
+      a.hold = IN.DUCK; yield until(() => h.landed, 'landing of ' + h.tag, 30); a.hold = 0;
+      press(a, IN.USE); yield 0.5;
+      hit((team === 3 ? 'Apache' : 'Mi-8 slick') + ' pilot gun: ' + shots + ' rounds in 2.5 s');
+    }
+  });
+  // (5) the emplaced gun (the bridge M2): one report per round
+  piece('emplaced gun report per round', 60, function* () {
+    yield after('helicopter weapons and rotors');
+    const m = D.mounts.find((x) => x.kind === 'm2' && !x.team) || D.mounts[0];
+    const a = yield* infantryman(3);
+    putAt(a, m.seat.pos); press(a, IN.USE); yield 0.4;
+    if (P(a).mount !== D.mounts.indexOf(m)) throw new Error('could not man ' + m.name);
+    const snd = world.get('mv_mount_snd_' + m.n), n0 = (snd && snd.inputs.StartSound) || 0, s0 = m.st.shots;
+    a.hold = IN.ATTACK; yield 1.0; a.hold = 0;
+    const rounds = m.st.shots - s0, reports = ((snd && snd.inputs.StartSound) || 0) - n0;
+    if (rounds < 5 || reports < rounds) throw new Error(rounds + ' rounds, ' + reports + ' reports');
+    press(a, IN.USE); yield 0.4;
+    hit('emplaced gun: ' + rounds + ' rounds, ' + reports + ' reports');
+  });
+}
 const thinkTimes = [];
 for (let step = 0; step < SECONDS * 64 && !balDone; step++) {
   time += DTICK;
@@ -1648,7 +1854,7 @@ for (let step = 0; step < SECONDS * 64 && !balDone; step++) {
     if (D.flags.map((f) => f.owner).join() !== owners.join()) fail('flag owners not carried over a script reload');
     hit('script reload');
   }
-  if (FEATURES || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3') runPieces();
+  if (FEATURES || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3' || SCEN === 'pt1') runPieces();
   for (const c of everyone()) {
     const p = c.pawn; p.keys = 0;
     if (c.spec || p.hp <= 0) continue;
@@ -1811,7 +2017,7 @@ console.log(JSON.stringify({ script: { ...S, heliLives: S.heliLives.length, resu
   cmds: stats.cmds, setModel: stats.setmodel, maxAlt: Math.round(maxAlt), tickets: D.game.tickets, flags: D.flags.map((f) => f.id + ':' + f.owner).join(' '), churn: stats.churn } }));
 if (unusedIds.length) console.log('HUD contract ids never used in this run: ' + unusedIds.join(' '));
 // ---- coverage: feature -> times exercised. Set pieces fill cov; the rest comes from the script's own counters.
-if (FEATURES || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3') {
+if (FEATURES || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3' || SCEN === 'pt1') {
   const used = (id) => { const c = contract.get(id); return c && (c.textUsed || c.used.size) ? 1 : 0; };
   const table = FEATURES ? {
     ...cov,
@@ -1822,7 +2028,7 @@ if (FEATURES || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3') {
     'kills by artillery': S.killsBy.arty || 0,
     'helicopter lost with riders (crash kills)': Object.entries(S.killsBy).filter(([k]) => !['rifle', 'mg', 'other'].includes(k)).reduce((a, [, v]) => a + v, 0),
   } : cov;
-  const need0 = !opt.piece && (SECONDS >= 600 || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3');
+  const need0 = !opt.piece && (SECONDS >= 600 || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3' || SCEN === 'pt1');
   console.log('coverage (feature -> times exercised):');
   for (const [k, v] of Object.entries(table)) { console.log('  ' + String(Math.round(v * 10) / 10).padStart(6) + '  ' + k); if (need0 && !(v > 0)) fail('coverage: "' + k + '" was never exercised'); }
   for (const pc of pieces) if (!pc.done && need0) fail('set piece "' + pc.name + '" did not finish (waiting for: ' + (pc.what || 'its start') + ')');
