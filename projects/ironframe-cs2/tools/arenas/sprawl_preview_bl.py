@@ -21,6 +21,10 @@ SHOTS = {   # name: (eye, target, lens mm)
     'under': ((1150, 2180, 210), (-1400, 2500, 330), 22),
     'roofs': ((5200, -5200, 3600), (800, -800, 600), 30),
     'top': ((0, -1, 11000), (0, 0, 0), 60),
+    'ramp': ((4650, 2100, 230), (2700, 2450, 420), 22),          # the split ramps of the east-west deck, from the ring road
+    'stub': ((4300, 120, 240), (7100, 0, 700), 24),              # a street leaving the ring: barricade, outer blocks, the wall
+    'ring': ((4700, -3900, 330), (5300, 2600, 900), 22),          # along the east ring road: the outer blocks' fronts
+    'outer': ((3000, -3000, 2600), (6400, 1000, 900), 26),        # over the roofs towards the outer ring and the wall
 }
 
 

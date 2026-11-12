@@ -65,7 +65,7 @@ class IF_Game {
     // pilot's garage upgrades (the adapter passes pe.pilot, null stand-alone); dropped with removePlayer
     this.keptPilots = new Map();
     this.fillAdj = 0;   // how the humans fare against the AI fill (50_ai.js fillSkill); survives reset() like the pilots
-    this.time = 0; this.now = 0; this.tickN = 0; this.combatOn = false; this.eventsFx = true;
+    this.time = 0; this.now = 0; this.tickN = 0; this.loadLevel = 0; this.combatOn = false; this.eventsFx = true;
     this.so = { state: 'pause', pauseT: 0, toSpawn: 0, spawnT: 0, boss: false, lost: false, done: false };
     this.npcSlot0 = IF_clamp((this.cfg && this.cfg.npcSlot0) || IF_NPC_SLOT0, IF_NPC_SLOT0, IF_MAX_MECHS - 64);
     this.cqAcc = 0; this.fillAcc = 0; /** @type {any[]} */ this.objFx = []; /** @type {any} */ this.hillFx = null;
@@ -379,13 +379,23 @@ class IF_Game {
     // (perfHook: the adapter's timing test names the stage that just ended; undefined in normal play)
     const pf = /** @type {any} */ (this).perfHook;
     if (pf) pf('spawn');
+    // load shedding (cfg.load): AI mechs in two groups by slot taking turns; `on(m)`: this is m's turn (always for humans)
+    // the count is the whole server's when the adapter runs several arenas (loadTotal: last tick's live mechs in all of them)
+    const LD = this.cfg.load || {}, par = this.tickN & 1, live = Math.max(L.length, /** @type {any} */ (this).loadTotal || 0);
+    const aiHalf = live > (LD.aiHalfAbove ?? 1e9), simHalf = live > (LD.simHalfAbove ?? 1e9);
+    this.loadLevel = simHalf ? 2 : aiHalf ? 1 : 0;
     // AI fills inputs (it reads last tick's threats)
-    for (let k = 0; k < L.length; k++) { const m = L[k]; if (!m.human && m.ai) IF_Ai.step(this, m, dt); }
+    for (let k = 0; k < L.length; k++) {
+      const m = L[k]; if (m.human || !m.ai) continue;
+      if (aiHalf && (m.slot & 1) !== par) continue;
+      IF_Ai.step(this, m, aiHalf ? dt * 2 : dt);
+    }
     if (pf) pf('ai');
     // movement
     for (let k = 0; k < L.length; k++) {
       const m = L[k];
-      IF_mechStep(this, m, dt);
+      m.simOff = simHalf && !m.human && (m.slot & 1) !== par;
+      if (!m.simOff) IF_mechStep(this, m, simHalf && !m.human ? dt * 2 : dt);
       m.threats.length = 0; m.lockedBy = 0;
       if (playing) m.sum.survive += dt;
     }
@@ -396,7 +406,11 @@ class IF_Game {
     if (pf) pf('separate');
     // locks and weapons
     const se = this.cfg.lock.seekEvery;
-    for (let k = 0; k < L.length; k++) { const m = L[k]; if (m.alive) IF_lockStep(this, m, dt, ((this.tickN + m.slot) % se) === 0); }
+    for (let k = 0; k < L.length; k++) {
+      const m = L[k]; if (!m.alive || m.simOff) continue;
+      const half = simHalf && !m.human;
+      IF_lockStep(this, m, half ? dt * 2 : dt, half ? ((((this.tickN >> 1) + m.slot) % Math.max(1, se >> 1)) === 0) : ((this.tickN + m.slot) % se) === 0);
+    }
     if (pf) pf('lock');
     for (let k = 0; k < L.length; k++) { const m = L[k]; if (m.alive) IF_weaponsStep(this, m, dt); }
     if (pf) pf('weapons');

@@ -584,7 +584,14 @@ function renderProjectiles() {
 function renderAll() {
   spawnBudget = CONFIG.SPAWN_BUDGET;
   for (const m of game.mechs.values()) {
-    if (m.alive || (m.deathT && gameTime() - m.deathT < CONFIG.DEATH_CAM_SECONDS + 0.5)) guard('mech draw', () => renderMech(m));
+    if (m.alive && m.simOff) {
+      // a script-AI mech the core skipped this tick (load shedding, core cfg.load): drawn a tick ahead along its velocity, so it
+      // moves every tick on screen although it is simulated every other one
+      const p = m.pos, v = m.vel, d = 1 / 64;
+      m.pos = IF_v3(p.x + v.x * d, p.y + v.y * d, p.z + v.z * d);
+      guard('mech draw', () => renderMech(m));
+      m.pos = p;
+    } else if (m.alive || (m.deathT && gameTime() - m.deathT < CONFIG.DEATH_CAM_SECONDS + 0.5)) guard('mech draw', () => renderMech(m));
     else if (rigs.has(m.slot)) renderDropMech(m.slot);
   }
   for (const slot of Array.from(rigs.keys())) if (!game.mechs.has(slot)) renderDropMech(slot);

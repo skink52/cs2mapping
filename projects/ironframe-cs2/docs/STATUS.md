@@ -15,6 +15,47 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**12 Nov 2026, night (skink52's Sprawl notes, "half rate for above 40 is yes", "update server"). build 31: 19 suites PASS, mock PASS, Sprawl generated clean (13 300 meshes, 0 bad, cache check OK), Dunes script deployed; Sprawl not yet compiled; test server down (CSS).**
+- **Sprawl ramps split** (skink52: "inelegant - and removed playable area ... a single lane on and off ramp, and have normal traffic
+  flow between"): tools/arenas/sprawl.py `highway`. The decks are 900 wide (the avenue's width; barriers 40 thick at +-430) and each
+  end parts into an off lane and an on lane (|t| 150-450, 300 wide, outer concrete barrier, inner steel guard rail on posts), with
+  the street running on between them (300 u) and **under them where they are high**: columns at the outer edge under pitched cap
+  beams while the underside is above 400 u (`UNDER_CLEAR`, heavy frames are 336), then an embankment block laid parallel to the lane
+  (no steps: they left saw-tooth gaps). A gore barrier closes the deck's middle where the lanes part (detail pass: chevron boards, a
+  crash cushion of drums, cones, an amber board over each lane mouth). Nav: the lanes are walkable steps, the street between is ground.
+  The deck dressing (studs, lamps, gantries, edge lines) follows the new barrier line `PAR`.
+- **Signs that floated** (skink52): the neon blade signs hung 120 u off the block edge whatever stood there (over a low block's car
+  park, in front of a set-back tower) on a bracket to nothing. `sign_mount` hangs each on a real tower face within 420 u of the street,
+  bottom above the canopy, top under the roof; the blade stands out from the wall (20-160 u) on two arms, and its light is in front
+  of it (it was inside). 22 signs (topped up from their own random stream; the outer blocks' fronts carry some).
+  **Mirrored text**: Hammer's default face axes read backwards on faces looking -x or +y, so half the shop signs on the canopies
+  were mirrored all along (seen on a wall board in the preview). sprawl_ops `READ_U` / `read_uv` gives every sign face the axis that
+  reads left to right; a blade is two halves back to back, each reading right on its side.
+- **Containers removed** (skink52: "very large", then "Containers can all be removed, we don't need them"): the 30 in the avenues
+  are gone (they were the stock 40-ft container at scale 2.4: 690 x 288 x 326 u, four times a car).
+- **The void past the ring road** (skink52: "an elegant, AAA quality, on theme container"): `outer_ring`. The sky shell is
+  +-7424 (was +-5376, where the terrain stops). Past the ring road the grid goes on: a row of outer blocks (centres +-6000) with a
+  street-wall slab, a row of towers facing the arena and a taller one set back behind them (the city layer builds them like any
+  tower, never as ruins; the detail pass dresses their faces and billboards, no roof clutter). Every street that leaves the ring is
+  closed just past the kerb by a **concrete barricade** (precast T-wall sections set a little out of line, one sometimes missing,
+  floodlight masts with a light), and behind everything
+  stands the **quarantine wall**: 1900 u, cast-in courses, buttresses, a lit lip and lamps on top, a lit board (QUARANTINE ZONE /
+  NO ENTRY / FLOOD BARRIER 7) on it at the end of each street. Outside PLAY: no nav, nothing playable. The fog (end 7000) softens it.
+  Cycles previews of the four views (`ramp`, `stub`, `ring`, `outer` in sprawl_preview_bl.py SHOTS) were judged and fixed
+  (embankment steps, the blank wall, mirrored text).
+- **Load shedding (half-rate simulation)**: core cfg.load `{aiHalfAbove: 24, simHalfAbove: 40}`, counted over the whole server (the
+  arena wrapper passes the live total of all copies). Above 24 each script-AI mech thinks every other tick; above 40 its movement and
+  lock-on also run every other tick with twice the time step, in two groups by slot. Humans, weapons, bullets, missiles and mech
+  collisions always run every tick; the adapter draws a skipped AI mech a tick ahead along its velocity, so it does not judder.
+  CS2 bots count as AI. test/load.cjs (11 checks: levels, groups, distance travelled within 30 % of full rate, a 60 s round stays
+  finite and fights); 19 suites PASS. **Not measured in CS2** (the test server is down, below): expected ~4 ms off the 64-mech
+  tick (AI, movement and lock-on are ~8 ms of it). It does nothing for human mechs: a full human server still needs the 64-HUD and
+  per-human numbers.
+- **Test server updated** to CS2 1.41.9.7 (SteamCMD validate, gameinfo re-patched) and now **crashes a second after every map load**
+  (after "Created physics"): CounterStrikeSharp 1.0.379 predates the update; **v1.0.380 (12 Nov) is "fix: Game Update 1.41.9.7"**.
+  Needs skink52's OK to download (49 MB with runtime) and a check of the guard's CSS command shield after it.
+- Dunes deploy: six Tripo materials were stale (their AO pictures re-copied with the same image, new date); compiled.
+
 **12 Nov 2026, 04:30: build 30 (18 suites PASS, mock PASS, both addons deployed, plugin harness 3/3, test server on Dunes).**
 - **CS2's own HUD**: skink52's recording of `slime_ifr_test hidehud` (every single bit, 2 s each): only bit 4 does anything and it hides
   everything, the chat box included. No supported way removes the score bar, the health number or the bottom icon one by one (the
@@ -45,7 +86,7 @@
   0.7, weapons + bullets + missiles 1.3. **39 mechs: 9.4-12 ms.** In-game benchmark: the script engine is about 5 x slower than Node
   (3 M arithmetic 278 ms against 58), a line trace 21 us, sphere 16, hull 17, a Teleport 3. Nothing cut yet: traces are already
   staggered and small tweaks buy 10-20 %. The real fix for more than ~40 mechs is half-rate simulation (alternate halves at 32 Hz):
-  **asked skink52, not started.** A real 64-player round has no AI (fill is 16 mechs under 22 humans); 64 HUDs are unmeasured.
+  **built 12 Nov (core cfg.load), see above.** A real 64-player round has no AI (fill is 16 mechs under 22 humans); 64 HUDs are unmeasured.
 
 **11 Nov 2026, evening: second round of skink52's play (Dunes, from Hammer, local listen server). Build 25 + the timing test: 18 suites PASS, mock PASS, both addons deployed (Sprawl without the timing test), plugin harness 3/3, test server on Dunes.**
 - **No deprecated script calls left.** The 7 `Instance.*` calls (Msg, ServerCommand, FindEntityByName, FindEntitiesByName,

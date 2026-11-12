@@ -37,6 +37,12 @@ const IF_MODE_NAMES = { tb: 'Team Deathmatch', cq: 'Conquest', sk: 'Skirmish', s
 // numbers come from PARTS.move at construction (cfg.move overrides those).
 const IF_DEFAULT_CFG = {
   dtMax: 0.05,                       // a tick longer than this is clamped (a hitch never teleports a mech)
+  // Load shedding for full servers (12 Nov 2026: 64 mechs took 11-15 ms of a 15.6 ms tick, measured on the test server). Script-AI
+  // mechs are split into two groups by slot that take turns: above aiHalfAbove live mechs each AI thinks every other tick; above
+  // simHalfAbove its movement and lock-on also run every other tick, with twice the time step. Human mechs, weapons, bullets,
+  // missiles and collisions between mechs always run every tick. The adapter draws a skipped AI mech a tick ahead from its
+  // velocity when a human is near, so it does not judder (core m.simOff).
+  load: { aiHalfAbove: 24, simHalfAbove: 40 },
   move: {},                          // overrides of PARTS.move keys
   npcSlot0: 64,                      // first AI slot of this game (arena copy k: 64 + 64 k)
   round: { tb: 600, cq: 600, sk: 600, so: 600, kh: 600, ctf: 720, warmup: 5, podium: 12 },

@@ -114,3 +114,9 @@ per-tick moves. Tests: `node test/auras.cjs`. Review: `preview/auras/sheet.png` 
   auraEvent, frame -> auraTick after the mechs are drawn. Not tested in game yet (flipbook animation on props and tint > 1 unconfirmed).
 
 - **Destructible props** (`src/core/88_props.js`, adapter `48_props.js`): `arena.cars` `[[x, y, z, radius, big, yaw, pitch, roll, tint], ...]`; hit points 600 / 1 600; hurt by hitscan, bullets in flight (they pass through), explosions, a walking mech (crushed). Destroyed: `{t:"prop", id, how: "boom"|"crush", pos, slot}`, the explosion a tick later (`IF_explode`, key `car`, owner = the destroyer: chains), burning 14 s (`prop_out`), `props_reset` at the round start. Map: `prop_dynamic_override` named `ifr_car` at each entry's position.
+
+- **Load shedding** (core `cfg.load` in `00_defs.js`, tick in `80_game.js`, server-wide count from `src/cs2/15_arenas.js`, drawing in
+  `30_render.js`): above `aiHalfAbove` (24) live mechs on the server every script-AI mech (CS2 bots included) thinks every other tick;
+  above `simHalfAbove` (40) its movement and lock-on also run every other tick with twice the time step, in two groups by slot
+  (`m.simOff`: skipped this tick). Humans, weapons, bullets, missiles and mech-to-mech collisions always run every tick. The adapter
+  draws a skipped mech a tick ahead along its velocity. Test: `test/load.cjs`. Not measured in CS2 yet.

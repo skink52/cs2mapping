@@ -26,6 +26,11 @@ import matkit
 MDIR = 'materials/ifr/sprawl'
 CONCRETE = 'materials/concrete/hr_c/hr_concrete_wall_006.vmat'
 CONCRETE2 = 'materials/de_overpass/concrete/concrete_12.vmat'
+# A face's texture right-to-left is Hammer's default axis (meshedit._axes: u = +y on x faces, +x on y faces), which reads backwards
+# on faces looking -x or +y (12 Nov 2026, a mirrored wall board in the preview). READ_U: the u axis that reads left to right for a
+# face whose outward normal is the key.
+READ_U = {(0, -1): [1, 0, 0], (0, 1): [-1, 0, 0], (-1, 0): [0, -1, 0], (1, 0): [0, 1, 0]}
+def read_uv(nx, ny): return {'axis_u': READ_U[(nx, ny)], 'axis_v': [0, 0, -1], 'fit': [1, 1]}
 CONCRETE_DARK = 'materials/concrete/hr_c/hr_concrete_floor_001_dark.vmat'
 FLOOR = 'materials/de_overpass/concrete/concrete_floor_4.vmat'
 ASPHALT = 'materials/de_overpass/asphalt/asphalt_road_worn_01.vmat'
@@ -33,6 +38,7 @@ ROOF = 'materials/de_overpass/buildings/roof_metal_painted_1.vmat'
 STEEL = 'materials/de_overpass/metal/rusty_metal_1.vmat'
 TRIM = 'materials/de_nuke/hr_nuke/hr_metal_trim_001.vmat'
 SIGN_WORDS = ['ラーメン', 'ホテル', 'カラオケ', '薬局', '質屋', 'ゲーム', '酒場', '電器', '居酒屋', 'パチンコ', '寿司', '24時間']
+WALL_WORDS = ['QUARANTINE ZONE', 'NO ENTRY', 'FLOOD BARRIER 7']   # Latin only: the horizontal sign fonts have no kanji      # the boards on the quarantine wall (sprawl.py outer_ring)
 SHOP_WORDS = ['NOODLE BAR', 'PAWN', 'HOTEL', 'ARCADE', 'PHARMACY', 'KARAOKE', 'REPAIR', 'BAR 24H', 'TELECOM', 'MECH PARTS']
 FACADE_UV = 1.2          # world units per texel on a 1024 basis: the 16-floor window tile = 1229 u, a storey = 76.8 u (was 2.0 = 128 u:
                          # CS2 player scale). Human scale on this map is 0.6 (tools/arenas/sprawl_detail.py), so a 300-u mech is 4 storeys
@@ -136,6 +142,8 @@ def materials(content):
     for k, word in enumerate(SHOP_WORDS):
         hexcol = list(NEON.values())[(k + 1) % 4]
         out['hsign_%d' % k] = matkit.write_material(content, MDIR, 'hsign_%02d' % k, neon_sign(word, hexcol, False, 1024, 256), kind='emissive', roughness=0.4, glow=5.0)
+    for k, word in enumerate(WALL_WORDS):
+        out['wsign_%d' % k] = matkit.write_material(content, MDIR, 'wsign_%02d' % k, neon_sign(word, ('#ff3a28', '#ffb030', '#ffb030')[k], False, 1024, 256), kind='emissive', roughness=0.4, glow=4.0)
     red = np.zeros((64, 64, 3), np.uint8); red[:] = (255, 30, 20)
     out['aviation'] = matkit.write_material(content, MDIR, 'aviation_red', red, kind='emissive', roughness=0.5, glow=8.0)
     lamp = np.zeros((64, 64, 3), np.uint8); lamp[:] = (255, 228, 190)
@@ -190,7 +198,7 @@ def tower_ops(t, mats, ruin, stats):
             elif side == 1: lo, hi = ((x0 + x1) / 2 - sw / 2, y1 + 62, z0 + SB + 22), ((x0 + x1) / 2 + sw / 2, y1 + 74, z0 + SB + 22 + sh)
             elif side == 2: lo, hi = (x0 - 74, (y0 + y1) / 2 - sw / 2, z0 + SB + 22), (x0 - 62, (y0 + y1) / 2 + sw / 2, z0 + SB + 22 + sh)
             else: lo, hi = (x1 + 62, (y0 + y1) / 2 - sw / 2, z0 + SB + 22), (x1 + 74, (y0 + y1) / 2 + sw / 2, z0 + SB + 22 + sh)
-            ops.append(shaped(lo, hi, mats['hsign_%d' % k], uv={'fit': [1, 1]})); stats['shop_signs'] += 1
+            ops.append(shaped(lo, hi, mats['hsign_%d' % k], uv=read_uv(*((0, -1), (0, 1), (-1, 0), (1, 0))[side]))); stats['shop_signs'] += 1
     zs = z0 + SB
     # ruins: the top broken in 3 x 3 cells at different heights, the upper floors hollow
     cells = []
@@ -311,17 +319,39 @@ def sign_ops(plan, mats):
         if any((ax == 'x' and abs(y - at) < plan['hw_w'] / 2 + 160) or (ax == 'y' and abs(x - at) < plan['hw_w'] / 2 + 160) for ax, at in hw_lines):
             continue                                                                 # under / through a highway deck
         placed.append((x, y))
-        # a blade sign standing out from the block edge into the sidewalk, readable along the avenue
-        hw, ht, th = 70.0, 260.0, 10.0
-        if s in (0, 1): lo, hi = (x - th, y - hw, z - ht), (x + th, y + hw, z + ht); bx = cx + (B / 2 if s == 0 else -B / 2)
-        else: lo, hi = (x - hw, y - th, z - ht), (x + hw, y + th, z + ht)
+        # a blade sign standing out from a tower's wall (sprawl.py sign_mount: the face it hangs on), readable along the street, on
+        # two short arms. It used to be a flat board 120 u off the block edge, often with no wall behind it (skink52, 12 Nov 2026:
+        # "signs that float unnaturally"). Out from the wall: the blade from 20 to 160 u, 20 thick, 520 tall.
+        face = n.get('face')
+        if face is None: continue
+        nrm = 1.0 if s in (0, 2) else -1.0
+        ht, th = 260.0, 10.0
+        o0, o1 = sorted((face + nrm * 20, face + nrm * 160))
         mat = mats['vsign_%d' % (k % len(SIGN_WORDS))]
-        ops.append(shaped(lo, hi, mats={'side': mat, 'top': TRIM, 'bottom': TRIM}, uv={'fit': [1, 1]}))
-        # bracket back to the block face
-        if s == 0: ops.append(box((cx + B / 2 - 10, y - 8, z + ht - 40), (x, y + 8, z + ht - 20), TRIM))
-        elif s == 1: ops.append(box((x, y - 8, z + ht - 40), (cx - B / 2 + 10, y + 8, z + ht - 20), TRIM))
-        elif s == 2: ops.append(box((x - 8, cy + B / 2 - 10, z + ht - 40), (x + 8, y, z + ht - 20), TRIM))
-        else: ops.append(box((x - 8, y, z + ht - 40), (x + 8, cy - B / 2 + 10, z + ht - 20), TRIM))
+        for h in (-1, 1):                                                           # two halves back to back: both faces read right
+            if s in (0, 1): lo, hi = (o0, y + min(0, h * th), z - ht), (o1, y + max(0, h * th), z + ht); nrm2 = (0, h)
+            else: lo, hi = (x + min(0, h * th), o0, z - ht), (x + max(0, h * th), o1, z + ht); nrm2 = (h, 0)
+            ops.append(shaped(lo, hi, mats={'side': mat, 'top': TRIM, 'bottom': TRIM}, uv=read_uv(*nrm2)))
+        b0, b1 = sorted((face - nrm * 2, face + nrm * 24))
+        for zz in (z + ht - 60, z - ht + 40):                                       # the arms, into the wall and into the blade
+            if s in (0, 1): ops.append(box((b0, y - 6, zz), (b1, y + 6, zz + 14), TRIM))
+            else: ops.append(box((x - 6, b0, zz), (x + 6, b1, zz + 14), TRIM))
+    return ops
+
+
+def wall_ops(plan, mats):
+    """a lit board on the quarantine wall at the end of every street that leaves the ring: what closes the view down the street
+    (sprawl.py outer_ring), flat on the wall face between two cast-in courses"""
+    w = plan.get('wall')
+    if not w: return []
+    ops, k, F = [], 0, w['inner']
+    for c in w['streets']:
+        for nx, ny in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+            mat = mats['wsign_%d' % (k % len(WALL_WORDS))]; k += 1
+            if ny: lo, hi = (c - 520, ny * F - (14 if ny > 0 else -14), 860), (c + 520, ny * F, 1120)
+            else: lo, hi = (nx * F - (14 if nx > 0 else -14), c - 520, 860), (nx * F, c + 520, 1120)
+            lo, hi = [min(a, b) for a, b in zip(lo, hi)], [max(a, b) for a, b in zip(lo, hi)]
+            ops.append(shaped(lo, hi, mats={'side': mat, 'top': TRIM, 'bottom': TRIM}, uv=read_uv(-nx, -ny)))
     return ops
 
 
@@ -339,10 +369,11 @@ def build_job(vmap, content, plan, mats, dry_run=False):
     rnd = random.Random(7)
     for t in plan['towers']:
         h = t['box'][5] - t['box'][2]
-        ruin = (not t['walk_roof']) and h > 1200 and rnd.random() < 0.38
+        ruin = (not t.get('edge')) and (not t['walk_roof']) and h > 1200 and rnd.random() < 0.38      # the outer ring is never ruined (hollow shells)
         ops += tower_ops(t, mats, ruin, stats); stats['towers'] += 1
     sops, nseg, njun = street_ops(plan, mats); ops += sops
     ops += sign_ops(plan, mats)
+    ops += wall_ops(plan, mats)
     ops += weather_ops(plan)
     stats.update(street_segments=nseg, junctions=njun, signs=len(plan['neon']), ops=len(ops))
     job = {'in': vmap, 'out': vmap, 'group': 'ifr_city', 'content': content, 'backup': True, 'dry_run': dry_run, 'ops': ops}

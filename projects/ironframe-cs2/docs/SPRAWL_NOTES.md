@@ -116,3 +116,14 @@ Before / after: `preview/arenas/sprawl_detail_*.png`.
 | 15 | matkit | No way to mark a material non-solid. | `sprawl_detail_mats._write` inserts `Attributes { "mapbuilder.nonsolid" "1" }` (the block matkit's water uses). Unverified in game. |
 | 16 | sprawl_ops | The storefront band's texture was not anchored to the tower base (world-aligned v): towers on a 200-u slab showed the tile's middle at the pavement. | `uv.shift = [0, z0 * 4]`. |
 | 17 | visualcheck | Useful again: found fire-escape landings coplanar with the floor ledges, overlapping puddles, paint under paint. | Fixed in the generator. |
+
+## 12 Nov 2026: split ramps, wall-hung signs, container stacks, the outer ring
+- Ramps (`sprawl.py highway`, `LANE_IN`, `UNDER_CLEAR`): decks 900 wide; each end parts into two 300-u lanes with the street between
+  and under them (columns while the underside is above 400 u, then an embankment block parallel to the lane). Detail pass: the gore
+  (chevrons, drums, cones) and lane boards; the deck dressing follows `PAR` (barrier line, plan `hw_w`).
+- Signs: `sign_mount` puts every neon blade on a real tower face (plan `neon[].face`); `sprawl_ops.sign_ops` draws the blade out from
+  the wall on two arms.
+- Containers: removed (skink52). The barricades are concrete T-wall sections.
+- Outer ring (`outer_ring`, `edge_block`, `SHELL_H` 7424, `EDGE_C`, `WALL_IN`, `WALL_H`): outer blocks (plan towers with `edge`),
+  concrete barricades across the streets leaving the ring, the quarantine wall with boards (`sprawl_ops.wall_ops`, plan `wall`).
+  Preview shots `ramp`, `stub`, `ring`, `outer`.

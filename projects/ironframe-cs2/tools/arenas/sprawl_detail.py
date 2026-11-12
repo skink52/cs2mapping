@@ -36,6 +36,8 @@ RZ, SZ = 2.0, 12.0                           # road and sidewalk surface z
 PLAZA = 1950.0
 DECK = 760.0
 HW_END, HW_FOOT, HW_PIERS = 3600.0, 5035.0, [-3000.0, -1800.0, -600.0, 600.0, 1800.0, 3000.0]      # set from the plan in main (sprawl.py HW_*)
+HW_W, LANE_IN = 800.0, 0.0                   # the deck width and where the split ramp lanes start (plan hw_w, lane_in)
+PAR = HW_W / 2 - 40.0                        # the deck barriers' centre line (sprawl.py highway: HW_W / 2 - 20 from 12 Nov 2026)
 KIT = json.load(open(os.path.join(HERE, 'sprawl_kit.json')))
 BYMODEL = {v['model']: v for v in KIT.values()}
 # car004b, van001a and concretebags are in pak01 without their materials (the map compile reports them missing): not used
@@ -357,15 +359,17 @@ def static_obstacles(o):
     for t in plan['towers']:
         x0, y0, z0, x1, y1, top = t['box']; pad = 78.0 if z0 <= 210 else 4.0
         o.claim((x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) / 2 + pad, (y1 - y0) / 2 + pad, 0, z0 - 30, top + 400, check=False, name='tower')
-    for cx, cy, yaw in plan['containers']: o.claim(cx, cy, 360, 360, 0, 0, 360, check=False, name='container')
+    for cx, cy, yaw in plan['containers']: o.claim(cx, cy, 140, 110, yaw, 0, 300, check=False, name='container')     # a stack of two columns
     for ax, at in plan['highways']:
         for q in HW_PIERS:
             x, y = (q, at) if ax == 'x' else (at, q)
             o.claim(x, y, 250, 135, 0 if ax == 'x' else 90, 0, DECK - 60, check=False, name='pier')
-        for e in (-1, 1):                                               # the ramps
+        for e in (-1, 1):                                               # the ramps: two lanes, the street between them stays free
             mid = e * (HW_END + HW_FOOT) / 2
-            x, y = (mid, at) if ax == 'x' else (at, mid)
-            o.claim(x, y, (HW_FOOT - HW_END) / 2 + 40, 400, 0 if ax == 'x' else 90, 0, DECK, check=False, name='ramp')
+            for sd in (-1, 1):
+                tc = sd * (LANE_IN + HW_W / 2) / 2
+                x, y = (mid, at + tc) if ax == 'x' else (at + tc, mid)
+                o.claim(x, y, (HW_FOOT - HW_END) / 2 + 40, (HW_W / 2 - LANE_IN) / 2 + 10, 0 if ax == 'x' else 90, 0, DECK, check=False, name='ramp')
     for x, y in plan['lamps']: o.claim(x + 365, y + 365, 26, 26, 0, 0, 600, check=False, name='mast')
     for x in (-3600, 3600): o.claim(x, 0, 300, 300, 0, 0, 500, check=False, name='flag')
 
@@ -611,8 +615,8 @@ def water_tank(o, x, y, z, r=34.0, h=46.0):
 def dress_block(o, blk, rnd):
     m = o.m; cx, cy = blk['centre']; kind = blk['kind']; h = 750.0
     towers = [t for t in o.plan['towers'] if abs((t['box'][0] + t['box'][3]) / 2 - cx) < h and abs((t['box'][1] + t['box'][4]) / 2 - cy) < h]
-    if kind in ('tall', 'podium'):
-        top = 200.0 if kind == 'tall' else 400.0
+    if kind in ('tall', 'podium', 'edge'):
+        top = 400.0 if kind == 'podium' else 200.0
         for (p0, p1, nrm) in (((cx - h, cy - h), (cx + h, cy - h), (0, -1)), ((cx - h, cy + h), (cx + h, cy + h), (0, 1)),
                               ((cx - h, cy - h), (cx - h, cy + h), (-1, 0)), ((cx + h, cy - h), (cx + h, cy + h), (1, 0))):
             if kind == 'podium' and nrm[0] == (-1 if cx > 0 else 1): continue          # the ramp side
@@ -698,7 +702,7 @@ def dress_tower(o, t, rnd, ti):
     if not roof: return
     rx0, ry0, rx1, ry1 = roof; rz = top + 14
     ix0, iy0, ix1, iy1 = rx0 + 100, ry0 + 100, rx1 - 100, ry1 - 100
-    if ix1 - ix0 > 160 and iy1 - iy0 > 160:
+    if ix1 - ix0 > 160 and iy1 - iy0 > 160 and not t.get('edge'):         # the outer ring's roofs: only the billboards (seen from the arena)
         used = []
         if t.get('roof_box'): used.append((t['roof_box'][0] + 120, t['roof_box'][1] + 100, 170))
         def spot(r):
@@ -758,7 +762,7 @@ def dress_highway(o, axis, at, cross, rnd):
         L = a1 - a0
         for t in (-8, 3): mk(a0, a1, t, t + 5, 'yellow', 1, L / 256)
         for t in (-160, 160): mk(a0 + 20, a1 - 20, t - 2.5, t + 2.5, 'dash', 1, (L - 40) / 150)
-        for t in (-316, 311): mk(a0, a1, t, t + 5, 'solid', 1, L / 256)
+        for t in (-(PAR - 44), PAR - 49): mk(a0, a1, t, t + 5, 'solid', 1, L / 256)
     # the flat junction: stop lines and arrows (left-hand traffic: heading +a keeps to t > 0)
     mk(cross - 416, cross - 404, 10, 310, 'stop'); mk(cross + 404, cross + 416, -310, -10, 'stop')
     for t in (80, 240):
@@ -767,26 +771,26 @@ def dress_highway(o, axis, at, cross, rnd):
     o.put('mark', [(bx((min(p0[0], p1[0]), min(p0[1], p1[1]), z + 0.05), (max(p0[0], p1[0]), max(p0[1], p1[1]), z + 0.9), m['mk_hatch']), top_spec((0.0, 1.0), 3, 3))])
     for q in range(-2400, 2401, 600):                                    # expansion joints
         if abs(q - cross) < 420: continue
-        p0 = W(q - 3, -320); p1 = W(q + 3, 320)
+        p0 = W(q - 3, -(PAR - 40)); p1 = W(q + 3, PAR - 40)
         o.put('mark', [(bx((p0[0], p0[1], z + 0.02), (p1[0], p1[1], z + 0.7), m['rubber']), None)])
     for a in range(-int(HW_END) + 60, int(HW_END) - 59, 177):            # amber reflector studs on the parapets
         if abs(a - cross) < 400: continue
-        for t in (-360, 360):
+        for t in (-PAR, PAR):
             x, y = W(a, t); o.put('stud', [(bx((x - 2, y - 2, z + 132), (x + 2, y + 2, z + 135.5), m['e_amber']), None)])
     for i, a in enumerate(range(-2700, 2701, 600)):                      # lamp masts on the parapets, alternating sides
         if abs(a - cross) < 420: continue
         side = 1 if i % 2 else -1
-        x, y = W(a, side * 360)
+        x, y = W(a, side * PAR)
         o.put('lamp', lamp(m, 'e_white', 250.0, 90.0), x, y, z + 132, yaw + (-90 if side > 0 else 90))
-        lx, ly = W(a, side * 250); o.light(lx, ly, z + 330, 15000, 760, LIGHT['white'])
+        lx, ly = W(a, side * (PAR - 110)); o.light(lx, ly, z + 330, 15000, 760, LIGHT['white'])
     for gi, a in enumerate((-1300.0 if cross < 0 else -2700.0, 1500.0 if cross < 0 else 300.0)):       # sign gantries over the deck
         parts = []
-        for t in (-360, 360):
+        for t in (-PAR, PAR):
             x, y = W(a, t); parts.append((bx((x - 9, y - 9, z + 132), (x + 9, y + 9, z + 800), m['metal_grey']), None))
         for zz in (z + 740, z + 790):
-            p0 = W(a, -360); p1 = W(a, 360); parts.append((bar([(p0[0], p0[1], zz), (p1[0], p1[1], zz)], 7, 7, m['metal_grey']), None))
+            p0 = W(a, -PAR); p1 = W(a, PAR); parts.append((bar([(p0[0], p0[1], zz), (p1[0], p1[1], zz)], 7, 7, m['metal_grey']), None))
         for k in range(8):
-            p0 = W(a, -360 + k * 90); p1 = W(a, -270 + k * 90)
+            p0 = W(a, -PAR + k * PAR / 4); p1 = W(a, -PAR + (k + 1) * PAR / 4)
             parts.append((bar([(p0[0], p0[1], z + (740 if k % 2 else 790)), (p1[0], p1[1], z + (790 if k % 2 else 740))], 3, 3, m['metal_grey']), None))
         o.put('gantry', parts)
         for k, t in enumerate((-190, 150)):
@@ -803,12 +807,18 @@ def dress_highway(o, axis, at, cross, rnd):
                 x, y = W(a, lane + rnd.uniform(-20, 20)); o.car(rnd, x, y, z, yaw + rnd.uniform(-14, 14), pad=10)
         a = rnd.uniform(a0 + 300, a1 - 300); x, y = W(a, rnd.choice([-235, 235]))
         o.car(rnd, x, y, z, yaw + rnd.uniform(-5, 5), key=rnd.choice(['bus01_2', 'semi_trailer']), pad=10)
-    for e in (-1, 1):                                                    # ramp heads: cones and a warning board
-        for k in range(6):
-            x, y = W(e * (HW_END - 40 - k * 16), -300 + k * 34); o.ground_prop('traffic_cone', x, y, z, rnd.uniform(0, 360))
-        x, y = W(e * (HW_END - 100), 250)
-        o.put('furn', [(bx((-1.5, -34, 22), (1.5, 34, 40), m['metal_dark'], px=m['led_amber'], nx=m['led_amber']), 'fit'), (bx((-9, -28, 0), (9, -24, 22), m['orange']), None),
-                       (bx((-9, 24, 0), (9, 28, 22), m['orange']), None)], x, y, z, yaw)
+    for e in (-1, 1):                                                    # ramp heads: the gore where the two lanes part
+        x, y = W(e * (HW_END - 49), 0)                                   # chevron boards on the gore barrier (sprawl.py), facing the traffic
+        o.put('furn', [(bx((-1.5, -LANE_IN + 10, 0), (1.5, LANE_IN - 10, 90), m['metal_dark'], px=m['mk_chevron'], nx=m['mk_chevron']), 'fit')], x, y, z + 14, yaw)
+        for k in range(3):                                               # a crash cushion: three orange drums in front of it
+            for j in (-1, 0, 1):
+                x, y = W(e * (HW_END - 80 - k * 34), j * 34); o.put('furn', [(cyl(x, y, 15, z, z + 40, m['orange'], 8), None), (cyl(x, y, 15.5, z + 26, z + 32, m['white'], 8), None)])
+        for k in range(5):                                               # cones closing the middle off
+            x, y = W(e * (HW_END - 200 - k * 50), (-1 if k % 2 else 1) * (LANE_IN - 40)); o.ground_prop('traffic_cone', x, y, z, rnd.uniform(0, 360))
+        for sd in (-1, 1):                                               # an amber board over each lane's mouth
+            x, y = W(e * (HW_END - 100), sd * (PAR - 30))
+            o.put('furn', [(bx((-1.5, -34, 22), (1.5, 34, 40), m['metal_dark'], px=m['led_amber'], nx=m['led_amber']), 'fit'), (bx((-9, -28, 0), (9, -24, 22), m['orange']), None),
+                           (bx((-9, 24, 0), (9, 28, 22), m['orange']), None)], x, y, z, yaw)
     # under the deck: piers
     piers = [int(q) for q in HW_PIERS]
     for q in piers:
@@ -1038,8 +1048,9 @@ def main(argv):
     if len(argv) < 3: sys.exit(__doc__)
     vmap, content = argv[1], argv[2]
     plan = json.load(open(os.path.join(content, '_gen', 'sprawl_plan.json')))
-    global HW_END, HW_FOOT, HW_PIERS
+    global HW_END, HW_FOOT, HW_PIERS, HW_W, LANE_IN, PAR
     HW_END, HW_FOOT, HW_PIERS = float(plan.get('hw_end', HW_END)), float(plan.get('hw_foot', HW_FOOT)), list(plan.get('hw_piers', HW_PIERS))
+    HW_W, LANE_IN = float(plan.get('hw_w', HW_W)), float(plan.get('lane_in', LANE_IN)); PAR = HW_W / 2 - 20.0
     stub = defaultdict(str)
     SO.build_job(vmap, content, plan, stub, dry_run=True)                 # the same per-tower decisions as the city layer (ruin, roof, street band)
     mats = DM.materials(content)

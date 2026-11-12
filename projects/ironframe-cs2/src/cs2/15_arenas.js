@@ -108,8 +108,12 @@ class IfrArenas {
   endRound() { for (const a of this.list) if (a.active && a.g.match.phase === 'running') a.g.endRound(true); }
   reset() { for (const a of this.list) if (a.g.reset) a.g.reset(); this.slotArena.clear(); }
   tick(dt, now) {
+    // load shedding (core cfg.load) looks at the whole server: three arenas of 22 are one script's 66 mechs
+    let total = 0;
+    for (const a of this.list) if (a.active) total += a.g.alive.length;
     for (const a of this.list) {
       if (!a.active) continue;
+      /** @type {any} */ (a.g).loadTotal = total;
       a.g.tick(dt, now);
       const ev = a.g.events;
       for (let i = 0; i < ev.length; i++) { ev[i].arena = a.k; this.events.push(ev[i]); }

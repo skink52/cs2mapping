@@ -59,7 +59,7 @@ class IF_Mech {
     this.radius = 90; this.height = 288; this.landLagTime = 0.45; this.staggerMax = 1400; this.lockSoft = 0.3; this.lockHard = 0.9;
     this.meleeMult = 1; this.cannonMoveAcc = 0.6; this.loaded = false;
     // pose
-    this.pos = IF_v3(0, 0, 0); this.vel = IF_v3(0, 0, 0); this.legYaw = 0; this.torsoYaw = 0; this.pitch = 0; this.aimPitch = 0;
+    this.pos = IF_v3(0, 0, 0); this.vel = IF_v3(0, 0, 0); this.simOff = false; this.legYaw = 0; this.torsoYaw = 0; this.pitch = 0; this.aimPitch = 0;
     this.aimOrigin = IF_v3(0, 0, 0); this.aimDir = IF_v3(1, 0, 0); this.wish = IF_v3(0, 0, 0); this.wishLen = 0;
     this.onGround = true; this.boosting = false; this.assault = false; this.qbTime = 0; this.qbCd = 0; this.qbAt = -99; this.qbDir = IF_v3(1, 0, 0); this.hover = false; this.braced = false;
     this.qbJet = 0; this.qbChained = false; this.qbCdTime = 0.45; this.weightF = 0;   // AC_FEEL: QB jet, two-step chain, reload by class/weight
