@@ -24,7 +24,7 @@ cut of stage 3; latest: stage 4, 12,597 nav areas) and the 3D skybox `maps/mg_mo
 | # | Step | Command (from `tools/`) | Time | Check |
 |---|---|---|---|---|
 | 1 | Procedural props (117) | `MV_OUT=<abs>/out/addon python -u build_all_props.py [names]` | 10-95 s per prop; all of them about 40 min (estimate) | `out/props.json` has every name with a vmdl; turntables in `preview/` |
-| 1b | Flag pole with skins | `MV_OUT=... python p_jungle.py` | seconds | after any rebuild of `flag_pole_n/_t/_ct` |
+| 1b | Flag pole with skins, then its capture rig | `MV_OUT=... python p_jungle.py`, then at once `python mv_flag_anim.py ../out/addon` | seconds | after any rebuild of `flag_pole_n/_t/_ct`; p_jungle rewrites `flag_pole.vmdl` without the rig, so `flag_00..` sequences must be listed in it afterwards |
 | 1c | LODs | `python lod_decimate.py ../out/addon ../out/addon mv/<name> ...` | 1-2 min | after any rebuild of the 15 props in the list below; prints charts per LOD |
 | 2 | Apache (CC-BY, US helicopters) | `python apache_setup.py ../out/addon` | under 1 min | `out/apache.json`; 60 MB under `models/vehicles/apache` |
 | 3 | GMod conversions | `python -I gmod_assets.py fetch`, `convert`, `view`, `report` | fetch: download speed (several GB); convert about 30 s per model, 53 models | `out/gmod_models.json`; `out/gmod/view/_sheet*.png` |
@@ -43,8 +43,10 @@ picture from step 6; the script build (8) bakes in `out/layout.json` (written by
 `out/entities.json` (step 4). After any change to `tools/layout.py` re-run 4, 6, 7, 8.
 
 Step 1c list (rebuilding one of these overwrites its vmdl, so re-run `lod_decimate.py` on it): bunker_large, bunker_small,
-cargo_pallet, checkpoint, culvert_bunker, fdc_bunker, fuel_bladder, gp_tent, guard_tower, truss_span, sandbag_wall, sandbag_wall_b,
-sandbag_wall_128, sandbag_low, sandbag_low_128.
+cargo_pallet, checkpoint, culvert_bunker, fdc_bunker, fuel_bladder, gp_tent, guard_tower, truss_span, and the sandbag walls
+(`tools/p_sandbag_mv.py`, since playtest 1): sandbag_w_h1, sandbag_w_h2, sandbag_w_h3, sandbag_w_h4, sandbag_a118_h1, sandbag_a118_h2,
+sandbag_a232_h1, sandbag_a232_h2. The old sandbag_wall, sandbag_wall_b, sandbag_wall_128, sandbag_low, sandbag_low_128 are no longer
+placed. vine_drape (playtest 1) is a single-LOD card prop.
 
 Step 4, first run and later runs: the first run takes `out/template.vmap` (a copy of
 `content\csgo_addons\addon_template\maps\xxx_mapname_xxx.vmap`). Once the map has been opened and edited in Hammer, pass the

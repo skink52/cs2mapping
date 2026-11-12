@@ -1,4 +1,4 @@
-# mg_monsoon playtest 1 (skink52, 12 Nov 2026): findings and fix tracker
+﻿# mg_monsoon playtest 1 (skink52, 12 Nov 2026): findings and fix tracker
 
 The first in-game run of the pass-4 build (mv-0.5). Screenshots are in `out/playtest1/` (not in git): p1 tunnel entrance, p2 foliage line, p3 sandbags,
 p4 hut textures, p5 trunk colour, p6 underground, p7 temple vines.
@@ -8,13 +8,13 @@ Status: `open` / `in progress (batch)` / `fixed (compiled)` / `fixed (in-game ve
 
 | # | Finding | Batch | Status |
 |---|---|---|---|
-| 1 | Flags don't move and can't be captured | S | open |
-| 2 | Apache rotors don't spin | S | open |
-| 3 | Helicopters may be slightly too large | S | open |
-| 4 | T helicopter (Mi-8) has significant invisible / see-through parts | S | open |
-| 5 | Helicopters need weapons (check whether they exist but can't be found; make firing obvious) | S | open |
-| 6 | `!air` works, `!help` doesn't; no other commands are discoverable | S | open |
-| 7 | Bridge machine gun sounds tinny; use the M249 sound | S | open |
+| 1 | Flags don't move and can't be captured | S | fixed (simulated, compiled; FIX_PT1_S.md) |
+| 2 | Apache rotors don't spin | S | fixed (simulated, compiled; FIX_PT1_S.md) |
+| 3 | Helicopters may be slightly too large | S | won't fix (both within 2-4 % of real size at the map's 40 u/m scale; knobs in FIX_PT1_S.md) |
+| 4 | T helicopter (Mi-8) has significant invisible / see-through parts | S | fixed (simulated, compiled; FIX_PT1_S.md) |
+| 5 | Helicopters need weapons (check whether they exist but can't be found; make firing obvious) | S | fixed (simulated, compiled; FIX_PT1_S.md) |
+| 6 | `!air` works, `!help` doesn't; no other commands are discoverable | S | fixed (simulated, compiled; FIX_PT1_S.md) |
+| 7 | Bridge machine gun sounds tinny; use the M249 sound | S | fixed (simulated, compiled; FIX_PT1_S.md) |
 | 8 | Tunnel entrance very blocky (p1) | W | open |
 | 9 | Underground blockiness, floating arches (p6) | W | open |
 | 10 | Some T spawns stuck in the rocket/mortar battery wall | W | open |
