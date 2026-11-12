@@ -154,7 +154,8 @@ Method and config keys: [docs/creation/custom-weapons.md](../docs/creation/custo
 | File | What it does | Usage |
 |---|---|---|
 | `build_weapon.py` | FBX/GLB → CS2 weapon vmdl rigged to a stock weapon skeleton (DMX mesh, hull, magazine, stock anims, materials, optional scope); output under the config's `out` | `python3 build_weapon.py <config.json>` (env `WW1_STOCK` = folder of decompiled stock weapon vmdl/dmx) |
-| `lee.json`, `gewehr.json`, `luger.json`, `colt.json` | Example configs (Lee-Enfield, Gewehr 98, Luger, Colt) | |
+| `lee.json`, `gewehr.json`, `luger.json`, `colt.json` | Configs (Lee-Enfield, Gewehr 98, Luger, Colt); gewehr/luger are the CC BY Workshop replacements (Nov 2026) | |
+| `compare.py` | Candidate contact sheet (raw GLBs, textured) and the scale check: built bodies vs the stock weapon in weapon_offset space (side, 3/4, shoulder, approximate first-person camera, side-view overlays) | `python -I compare.py glbs <out.png> <label>=<a.glb> ...`; `python -I compare.py built <out.png> --stock weapon_snip_awp <label>=<body.dmx>[@<root>[;<root>]] ...` |
 | `preview.py` | Left/right/top software renders of a built weapon body | `python3 preview.py <name or config.json> ...` (env `WEAPON_OUT`, default `/home/claude/out2`; `WEAPON_PREVIEW_DIR`, default `/tmp`) |
 | `fbxparse.py`, `fbxmesh.py` | Binary FBX reader; static meshes in Source space | `python3 fbxparse.py <file.fbx>` dumps the node tree |
 | `glbmesh.py` | GLB → parts in Source space, embedded textures exported | |

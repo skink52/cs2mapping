@@ -1,5 +1,5 @@
 """Build a CS2 weapon model (vmdl + DMX mesh/hull/mag + stock anims + materials) from an FBX, rigged to a stock weapon skeleton."""
-import os, re, shutil, sys
+import os, re, shutil, sys, tempfile
 import numpy as np
 from PIL import Image, ImageDraw
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -37,6 +37,18 @@ def joint_tree(bones):
     order = []
     for r in roots: dmxmodel.flatten(r, order)
     return roots, [j.name for j in order]
+
+def grade_color(path, g):
+    """colour grade a base-colour PNG in place, split by saturation: g = {"sat_min": s, "hi": [hue_shift_deg, sat_mul, val_mul],
+    "lo": [sat_mul, val_mul]}; "hi" grades saturated pixels (e.g. orange wood -> walnut), "lo" the rest (e.g. bright steel -> darker)"""
+    im = Image.open(path).convert('RGB'); hsv = np.asarray(im.convert('HSV'), np.float32)
+    h, s, v = hsv[..., 0], hsv[..., 1] / 255, hsv[..., 2] / 255
+    w = np.clip((s - g.get('sat_min', 0.35)) / 0.1 + 0.5, 0, 1)          # soft split between the two grades
+    hs, sm, vm = g.get('hi', [0, 1, 1]); lsm, lvm = g.get('lo', [1, 1])
+    h2 = (h + w * hs * 255 / 360) % 255
+    s2 = s * (w * sm + (1 - w) * lsm); v2 = v * (w * vm + (1 - w) * lvm)
+    out = np.stack([h2, np.clip(s2, 0, 1) * 255, np.clip(v2, 0, 1) * 255], -1).astype(np.uint8)
+    Image.fromarray(out, 'HSV').convert('RGB').save(path)
 
 def build(cfg):
     name, sub, out = cfg['name'], cfg['sub'], cfg['out']
@@ -85,6 +97,11 @@ def build(cfg):
                     m = comp == c; vb = p.V[np.unique(p.F[m])]
                     if vb[:,0].min()>x0 and vb[:,0].max()<x1 and vb[:,1].min()>y0 and vb[:,1].max()<y1 and vb[:,2].min()>z0 and vb[:,2].max()<z1: inb[m] = True
             if rule.get('drop'): keepf[inb] = False; print(f"  rule drop         {p.name:<10} faces {inb.sum()}"); continue
+            if rule.get('rotx'):   # [deg, y, z]: rotate the selected faces' vertices about an X-parallel axis through (y, z); +90 turns +Z to -Y
+                vs = np.unique(p.F[inb]); a, cy, cz = rule['rotx']; t = np.radians(a); c, s = np.cos(t), np.sin(t)
+                dy, dz = p.V[vs, 1] - cy, p.V[vs, 2] - cz
+                p.V[vs, 1] = cy + dy*c - dz*s; p.V[vs, 2] = cz + dy*s + dz*c
+                ny, nz = p.N[vs, 1].copy(), p.N[vs, 2].copy(); p.N[vs, 1] = ny*c - nz*s; p.N[vs, 2] = ny*s + nz*c
             if rule.get('move'):   # translate/rotate the selected faces' vertices (vertices unique to them)
                 vs = np.unique(p.F[inb]); mv = rule['move']
                 if rule.get('rot180z'):   # rotate 180 deg about a vertical axis at (cx, cy) first
@@ -156,9 +173,11 @@ def build(cfg):
         from material import make_material
         for k in np.unique(scopemask[scopemask >= 10]) - 10:
             mname = re.sub(r'[^a-z0-9]+', '_', (g['materials'][k].get('name') or f'mat{k}').lower())
-            tex = glbmesh.export_textures(g, gb, int(k), f'/tmp/gltex_{name}', mname)
-            make_material(out, sub, f'{name}_{mname}', tex, size=cfg.get('texsize', 2048), flip_green=cfg.get('flip_green', False))
-            gl_mtl[10 + k] = f'materials/{sub}/{name}_{mname}.vmat'; print('  material', k, mname, list(tex))
+            vname = cfg.get('material_names', {}).get(str(int(k)), f'{name}_{mname}')   # fixed vmat name, e.g. to overwrite a replaced model's files
+            tex = glbmesh.export_textures(g, gb, int(k), os.path.join(tempfile.gettempdir(), f'gltex_{name}'), mname)
+            if 'grade' in cfg and 'color' in tex: grade_color(tex['color'], cfg['grade'])
+            make_material(out, sub, vname, tex, size=cfg.get('texsize', 2048), flip_green=cfg.get('flip_green', False))
+            gl_mtl[10 + k] = f'materials/{sub}/{vname}.vmat'; print('  material', k, mname, '->', vname, list(tex))
 
     # body mesh (includes mag faces bound to clip); scope faces get their own material
     MATS = {0: mtl, 1: 'materials/models/weapons/ww1/scope/scope.vmat', 2: 'materials/models/weapons/ww1/scope/brass.vmat', 3: 'materials/models/weapons/ww1/scope/glass.vmat', **gl_mtl}

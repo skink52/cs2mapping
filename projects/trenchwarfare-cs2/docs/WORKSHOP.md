@@ -35,12 +35,13 @@ of `out/step10/deploy_files.txt` instead of overwriting it.
 
 From [WORKSHOP_COMPLIANCE.md](WORKSHOP_COMPLIANCE.md) "Steps for a Workshop build". Tick each one and record what was decided, here or in that file.
 
-- [ ] **Gewehr 98 (`weapon_awp`) must be replaced.** The current model is a rip from another game. Replacement: the CC BY "Gewehr 98 (ww1)"
-      by janovich3D (or lawlordp / vburnashev) from Sketchfab. The download needs skink52's account. Steps are in [ASSETS.md](ASSETS.md) "Gewehr 98
-      replacement plan" (GLB into `C:\source2\projects\trenchwarfare\Gewehr98\`, `tools/weapons/gewehr.json` to `glb`, re-fit against the
-      stock AWP, rebuild). Then credit it.
-- [ ] **Luger P08 (`weapon_glock`): CC BY-ND 4.0.** An adapted version may not be shared. Replace it with a CC BY Luger, or get FSkala's written
-      permission and keep the note here.
+- [ ] **Gewehr 98 (`weapon_awp`) must be replaced.** The deployed model is a rip from another game. **Replacement built, test-compiled
+      (0 failed) and credited (12 Nov 2026, step 11):** "Free Mauser Gewehr 98" by lawlordp, CC BY 4.0, via Objaverse
+      ([ASSETS.md](ASSETS.md#weapon-replacements-step-11); janovich3D's was rejected: its author did not model it). Left: deploy
+      `out/step11/deploy_files.txt`, force-compile the four vmdls it names, look at it in game. Tick when that is done.
+- [ ] **Luger P08 (`weapon_glock`): CC BY-ND 4.0.** An adapted version may not be shared. **Replacement built, test-compiled (0 failed)
+      and credited (step 11):** "Luger - Game ready asset" by Burdock, CC BY 4.0. Left: the same deploy and compile, and delete the old
+      `luger_p08_bullet*` / `luger_p08_material*` materials (CC BY-ND content) from both addon roots, as the deploy list says. Tick then.
 - [ ] **Lee-Enfield SMLE (`weapon_ssg08`): author unknown.** Find the CGTrader page and author and record them. Check that its royalty-free licence
       allows shipping the model inside a free game addon; if it does not, replace the model.
 - [ ] **Mondragón M1908 (`weapon_g3sg1`): source unverified.** Most likely DilanMendozaHer on Sketchfab, CC BY. Confirm the source and credit it, or replace the model.
@@ -51,7 +52,7 @@ From [WORKSHOP_COMPLIANCE.md](WORKSHOP_COMPLIANCE.md) "Steps for a Workshop buil
         `tools/patch_models.py` and the chain.
 - [ ] **Credits filled in.** Update `out/step10/addon/CREDITS.txt` and the [CREDITS.txt](#creditstxt) copy below:
       - the Canon de 75 line;
-      - the replacement Gewehr 98 and Luger;
+      - the replacement Gewehr 98 and Luger (done 12 Nov 2026 in CREDITS, the copy below and the description);
       - the Lee-Enfield and Mondragón authors;
       - drop the "being sorted out" notes.
       In the description, replace the `<<FILL IN BEFORE UPLOAD ...>>` line with the same credits, then redeploy.
@@ -59,7 +60,8 @@ From [WORKSHOP_COMPLIANCE.md](WORKSHOP_COMPLIANCE.md) "Steps for a Workshop buil
       the map does not use them, and drop their CREDITS line.
 - [ ] **Stray files in both addon roots.** Remove these by hand; the deploy tools never delete:
       - any `models/tw/ext/gm_*` and `materials/models/tw/ext/gm_*` other than `gm_canon75`;
-      - the old weapon `_c` files once the weapons are replaced;
+      - the old weapon `_c` files once the weapons are replaced (step 11 overwrites same-named files; the old Luger's
+        `luger_p08_bullet*` / `luger_p08_material*` materials and any older `gewehr98_*` / `luger_p08_*` `.vtex_c` stay behind);
       - the unused tw1-tw35 HUD pictures and wavs listed in `out/step8/deploy_files.txt`.
 - [ ] **CREDITS.txt, LICENSE and LICENSE-CC-BY-NC-4.0.txt** are in the game addon root (step 10's deploy list puts them there).
 - [ ] **No other game's names, logos or screenshots** in the title, tags, description or images. Mention real equipment only
@@ -142,9 +144,9 @@ Source: https://github.com/skink52/cs2mapping (projects/trenchwarfare-cs2)
 [h2]Credits[/h2]
 Map, script and original assets: skink52.
 
-Models from Sketchfab under CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), converted for CS2: "Mortier de 58 mm type 2" by mrpolarbear; "A7V 'Wotan' tank" by IvanKoliada; "Renault FT 1917 game-ready model" by kraytay; "75mm Field Gun" by kisotsu; "Bl 8 Artillery Howitzer MkV" by Zanderart; "Army Stretcher" by 4mecharmi; "British WW1 Military Helmet (Broken and New)" by noodlepirate; "German Stahlhelm m16 (ww1)" by janovich3D; "German Field Telephone" by rayferric; "Burnt Stump" by dunathan; "Vintage petrol can" by jkillgore; "Spad S VII" and "Dr1" by manilov.ap; "Lewis Mk1" by MaX3Dd; Colt M1911 by Ole Gunnar Isager.
+Models from Sketchfab under CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), converted for CS2: "Mortier de 58 mm type 2" by mrpolarbear; "A7V 'Wotan' tank" by IvanKoliada; "Renault FT 1917 game-ready model" by kraytay; "75mm Field Gun" by kisotsu; "Bl 8 Artillery Howitzer MkV" by Zanderart; "Army Stretcher" by 4mecharmi; "British WW1 Military Helmet (Broken and New)" by noodlepirate; "German Stahlhelm m16 (ww1)" by janovich3D; "German Field Telephone" by rayferric; "Burnt Stump" by dunathan; "Vintage petrol can" by jkillgore; "Spad S VII" and "Dr1" by manilov.ap; "Lewis Mk1" by MaX3Dd; Colt M1911 by Ole Gunnar Isager; "Free Mauser Gewehr 98" by lawlordp; "Luger - Game ready asset" by Burdock.
 
-<<FILL IN BEFORE UPLOAD (docs/WORKSHOP.md checklist): the Canon de 75 credit (original Sketchfab author, licence, link; converted via Steam Workshop item 3576805717 by soap), the replacement Gewehr 98 and Luger credits, and the Lee-Enfield and Mondragon authors. Delete this line.>>
+<<FILL IN BEFORE UPLOAD (docs/WORKSHOP.md checklist): the Canon de 75 credit (original Sketchfab author, licence, link; converted via Steam Workshop item 3576805717 by soap), and the Lee-Enfield and Mondragon authors. Delete this line.>>
 
 Foliage, ground materials, particles and weapon animations are Counter-Strike 2 stock assets (Valve). All other art, sound and code is original.
 
@@ -177,6 +179,12 @@ Third-party models (Sketchfab, CC BY 4.0 - https://creativecommons.org/licenses/
 - "Dr1" by manilov.ap
 - "Lewis Mk1" by MaX3Dd (weapon model, CT streak weapon on weapon_scar20)
 - Colt M1911 by Ole Gunnar Isager (weapon model, CT pistol on weapon_hkp2000)
+- "Free Mauser Gewehr 98" by lawlordp (shown as Milantique, now Foolish Me Studios),
+  https://sketchfab.com/3d-models/free-mauser-gewehr-98-a4a6399f343143c883e090362bd6222d
+  (weapon model, T rifle on weapon_awp; wood and steel re-coloured, bolt handle turned to the closed position, period scope added)
+- "Luger - Game ready asset" by Burdock,
+  https://sketchfab.com/3d-models/luger-game-ready-asset-365c3bfd19494dfea145fb4e5d15d0bc
+  (weapon model, T pistol on weapon_glock; a magazine block added inside the grip for the reload)
 Changes: converted to CS2 models, re-scaled, rigged as weapons where listed, LOD meshes added to some.
 Stock CS2 foliage, ground materials and sounds by Valve.
 Stock CS2 textures re-used on the procedural props (boards, rust, mud, maple bark) by Valve.
@@ -187,10 +195,8 @@ Canon de 75 field gun (models/tw/ext/gm_canon75):
   being confirmed; this credit will be completed before a public release. Converted to a CS2 static prop with new LODs.
 
 Other weapon models (licences being sorted out before a public release):
-- Luger P08 (weapon_glock) by FSkala, Sketchfab, CC BY-ND 4.0.
 - Lee-Enfield SMLE (weapon_ssg08) from a CGTrader royalty-free download; author to be recorded.
 - Mondragon M1908 (weapon_g3sg1): most likely "Mondragon M1908" by DilanMendozaHer, Sketchfab, CC BY 4.0; to be confirmed.
-- Gewehr 98 (weapon_awp): source not cleared; it will be replaced by a Creative Commons model before a public release.
 
 Original to this addon: terrain, trenches, mine galleries and the procedural props; the four soldier player models (generated
 with Tripo, rigged by this project's tools); HUD art, radar, plotting-board maps, loading slides and map icon; the game script.

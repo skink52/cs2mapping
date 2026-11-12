@@ -32,6 +32,12 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   0 out of memory. Logs copied to `out/step9/`. `docs/BUILD_LOG_1.md` filled: nav **10,269 areas** (tw34 44,160; target < 5,000;
   the ~1,470 estimate was 7x off), 24,718 meshes / 1.40 M charts at 2048, vpk 519.9 MB. 4 stale models (wire, ladder) recompiled;
   check_world now fails only on the user's duplicate info_map_parameters.
+- 12 Nov ~22:15: weapon replacements built (not deployed): Gewehr 98 -> "Free Mauser Gewehr 98" by lawlordp (CC BY 4.0, Sketchfab
+  a4a6399f343143c883e090362bd6222d), Luger -> "Luger - Game ready asset" by Burdock (CC BY 4.0, 365c3bfd19494dfea145fb4e5d15d0bc),
+  both via Objaverse (no login). Bolt closed, walnut grade, period scope; same model/vmat paths (vdata + script unchanged). Scale
+  56.0 u vs 56.3 old (Luger 9.3 vs 9.0). Test-compiled in scratch addon `tw_weapontest` (4 compiled, 0 failed). Staged
+  `out/step11/` (34 files; force-compile the 4 vmdls incl. the `_mag` ones; delete the old CC BY-ND `luger_p08_*` materials).
+  Builder: `tools/weapons/build_weapon.py` (material_names, grade, rotx), `compare.py`. Seam fix running in parallel.
 - 12 Nov ~20:57: map compile 3 done: OK 33.1 min, 0 errors, 0 entity DELETED, nav 4,376, check_world clean. **This is the current
   compiled build; level reached: compiled.** Next: the user's in-game `docs/TESTING.md`; optional sap seam rebuild (REVIEW_WORLD_2).
 - 12 Nov 20:22: decisions applied and deployed (map + script; js force-compiled). (simulated, chain final CRC32 784ddc7b, gate PASS): id 7 `info_map_parameters` (Hammer defaults:

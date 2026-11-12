@@ -1,55 +1,27 @@
 {
  "name": "gewehr98",
  "sub": "models/weapons/ww1/gewehr98",
- "out": "C:/source2/projects/trenchwarfare/build_out",
- "fbx": "C:/source2/projects/trenchwarfare/Gewehr98/source/Gewehr98_Sketchfab.fbx",
- "axes": "zxy",
+ "out": "C:/source1/cs2mapping/projects/trenchwarfare-cs2/out/step11/build",
+ "glb": "C:/source1/gmod_assets/trenchwarfare/weapons/objaverse/gewehr_lawlordp/a4a6399f343143c883e090362bd6222d.glb",
+ "source": "\"Free Mauser Gewehr 98\" by lawlordp (Foolish Me Studios), Sketchfab a4a6399f343143c883e090362bd6222d, CC BY 4.0, via Objaverse 1.0 glbs/000-127",
+ "scale": 0.128,
+ "axes": "Yxz",
  "stock": "awp",
- "shift_wo": [
-  -3.0,
-  0.14,
-  -2.06
- ],
- "bore_wo": [
-  0.16,
-  -0.06
- ],
- "part_bone": {},
+ "shift_wo": [11.0, 0.16, -8.01],
+ "bore_wo": [0.16, -0.06],
+ "grade": {"sat_min": 0.35, "hi": [-6, 0.8, 0.5], "lo": [1.0, 0.72]},
+ "material_names": {"0": "gewehr98"},
  "rules": [
-  {
-   "bone": "bolt_action",
-   "mode": "components",
-   "box": [
-    0.8,
-    4.9,
-    -3.4,
-    1.2,
-    1.2,
-    2.65
-   ]
-  },
-  {
-   "bone": "trigger",
-   "mode": "components",
-   "box": [
-    1.8,
-    2.8,
-    -0.5,
-    0.5,
-    -2.2,
-    -0.5
-   ]
-  }
+  {"mode": "components", "box": [-13.3, -4.1, -1.36, 0.34, 7.5, 10.9], "rotx": [90, -0.01, 7.95], "bone": "bolt_action"},
+  {"mode": "components", "box": [-12.3, -11.6, -0.15, 0.15, 4.0, 5.6], "bone": "trigger"}
  ],
  "scope": {
   "style": "axis",
   "x0": -1.5,
   "y": 1.15,
-  "mounts": [
-   0.8,
-   7.0
-  ],
+  "mounts": [0.8, 7.0],
   "y_post": 0.16,
   "clear": 0.45
  }
 }
+

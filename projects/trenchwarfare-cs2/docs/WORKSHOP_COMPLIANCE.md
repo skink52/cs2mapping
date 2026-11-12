@@ -6,10 +6,15 @@ Asset detail and turntable notes: [ASSETS.md](ASSETS.md).
 
 ## Verdict
 
-**Not publishable as the files stand**, for three weapon models, not the map:
+**Not publishable as the deployed files stand**, for three weapon models, not the map:
 1. The Gewehr 98 (`models/weapons/ww1/gewehr98`, on `weapon_awp`) is a Battlefield 1 rip (its source FBX names "BF1 All weapons").
+   **Replacement built (step 11, 12 Nov 2026), staged, not deployed:** "Free Mauser Gewehr 98" by lawlordp, CC BY 4.0.
 2. The Luger P08 (`luger_p08`, on `weapon_glock`) is CC BY-ND 4.0: sharing an adapted version (ours is rigged and reassembled) is not allowed.
+   **Replacement built (step 11), staged, not deployed:** "Luger - Game ready asset" by Burdock, CC BY 4.0.
 3. The Mondragón M1908 (`mondragon_m1908`, on `weapon_g3sg1`) has no recorded author or licence.
+
+Once `out/step11/deploy_files.txt` is deployed and compiled and the stray old Luger materials it lists are deleted from both addon
+roots, items 1 and 2 are cleared; item 3 (and the Lee-Enfield author, the Canon de 75 licence) remain.
 
 The map's props are original (generated), CC BY Sketchfab models with credit, or CS2 stock, plus one Workshop-sourced gun (the Canon de
 75, below) whose Creative Commons variant must be confirmed. No game-ripped prop is in the map. A private-server build is fine as it is.
@@ -33,9 +38,11 @@ The map's props are original (generated), CC BY Sketchfab models with credit, or
 
 | Weapon | Class | Source | Licence | Rip | Workshop action |
 |---|---|---|---|---|---|
-| Gewehr 98 | weapon_awp | Battlefield 1 extraction | none | **RIP (DICE)** | replace: CC BY "Gewehr 98 (ww1)" by janovich3D (or lawlordp / vburnashev) via `tools/weapons/` (ASSETS.md "Gewehr 98 replacement plan") |
+| Gewehr 98 (deployed) | weapon_awp | Battlefield 1 extraction | none | **RIP (DICE)** | replaced by the row below: deploy step 11 |
+| **Gewehr 98 (step 11)** | weapon_awp | "Free Mauser Gewehr 98" by lawlordp (Milantique / Foolish Me Studios), sketchfab.com/3d-models/free-mauser-gewehr-98-a4a6399f343143c883e090362bd6222d, via Objaverse 1.0 (glbs/000-127) | **CC BY 4.0** (Sketchfab page, Objaverse metadata and the GLB's own asset record agree) | no (no game names; the author's uploads are original work) | credited in `CREDITS.txt`; deploy, compile, ship |
 | Lee-Enfield SMLE | weapon_ssg08 | CGTrader download | royalty-free (assumed) | no | record the CGTrader page and author |
-| Luger P08 | weapon_glock | Sketchfab, FSkala | **CC BY-ND 4.0** | no | replace with a CC BY Luger, or get FSkala's written permission |
+| Luger P08 (deployed) | weapon_glock | Sketchfab, FSkala | **CC BY-ND 4.0** | no | replaced by the row below: deploy step 11, delete the old `luger_p08_bullet*` / `luger_p08_material*` materials |
+| **Luger P08 (step 11)** | weapon_glock | "Luger - Game ready asset" by Burdock, sketchfab.com/3d-models/luger-game-ready-asset-365c3bfd19494dfea145fb4e5d15d0bc, via Objaverse 1.0 (glbs/000-083) | **CC BY 4.0** (all three records agree) | no ("modelled in Blender, textured in Substance Painter"; no game names) | credited in `CREDITS.txt`; deploy, compile, ship |
 | Colt M1911 | weapon_hkp2000 | Sketchfab, Ole Gunnar Isager | CC BY 4.0 | no | add to `CREDITS.txt` |
 | Lewis Mk I | weapon_scar20 | Sketchfab, MaX3Dd | CC BY 4.0 | no | add to `CREDITS.txt` |
 | Mondragón M1908 | weapon_g3sg1 | Blockbench GLB, no metadata (likely DilanMendozaHer, Sketchfab, CC BY) | unverified | unlikely | confirm the source, then credit; else replace |
@@ -56,9 +63,11 @@ other `gm_*` folders into the addon.
 
 ## Steps for a Workshop build
 
-1. Resolve the three weapons above (replace the Gewehr 98 and the Luger; confirm the Mondragón) and rebuild them with `tools/weapons/`.
-2. Confirm the Canon de 75 licence (or deploy the fallback), then update `CREDITS.txt`: add the Lewis Mk I, Colt M1911, the Canon de 75
-   and whichever replacement weapons are used.
+1. Resolve the three weapons above. Gewehr 98 and Luger: done in step 11 (rebuilt with `tools/weapons/`, test-compiled, staged; deploy
+   `out/step11/deploy_files.txt`, force-compile the two vmdls, delete the stray old Luger materials it lists). Mondragón: confirm.
+   Selection, rip checks and the licence reasoning: [ASSETS.md](ASSETS.md#weapon-replacements-step-11).
+2. Confirm the Canon de 75 licence (or deploy the fallback), then update `CREDITS.txt`: the Lewis Mk I, Colt M1911 and the two
+   replacement weapons are in the staged `out/step10/addon/CREDITS.txt`; the Canon de 75 is still to add.
 3. Check both addon roots (`content\csgo_addons\mg_trenchwarfare`, `game\csgo_addons\mg_trenchwarfare`) for any `models/tw/ext/gm_*`
    other than `gm_canon75`, and for the old weapon `_c` files once replaced. The deploy tools never delete: remove by hand.
 4. Keep `CREDITS.txt` and both licence files in the published addon; credit line in the description.
@@ -72,7 +81,8 @@ other `gm_*` folders into the addon.
 
 ## Residual risk
 
-- **As the files stand: high** (one ripped weapon from a current franchise, one ND-licensed weapon).
+- **As the deployed files stand: high** (one ripped weapon from a current franchise, one ND-licensed weapon). With step 11 deployed
+  and the stray files removed, both are gone.
 - **After the weapon steps: low.** Original generated content, credited CC BY models, CS2 stock. Not audited: the template sounds, and
   whether the stock texture copies in `materials/models/tw/stock/` count as redistributing Valve content outside CS2 (they ship only
   inside a CS2 addon, as Valve's own content).

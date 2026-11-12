@@ -52,6 +52,12 @@ Modules: `fbxparse.py`/`fbxmesh.py` (binary FBX 7.4), `glbmesh.py`, `dmx.py` (bi
 - Enable `F_METALNESS_TEXTURE 1` in the vmat when a metalness map exists.
 - Physics hull = small convex hull, never the full mesh. Pistol mag models have no skeleton; sniper mags have a `clip` bone.
 - Model refs in vdata use `resource_name:"models/…vmdl"`; mesh material paths are addon-root relative (`materials/models/…vmat`).
+- Compile the `_mag.vmdl` on its own: the weapon vmdl names it only in an animation event (`AE_CL_EJECT_MAG`, `magazine_model`), so
+  `resourcecompiler -i <weapon>.vmdl` compiles the weapon, its vmats and textures but not the magazine (mg_trenchwarfare step 11).
+- Licence-clean sources without a Sketchfab login: Objaverse 1.0 (`allenai/objaverse` on Hugging Face) holds CC-licensed Sketchfab GLBs
+  with per-object licence and author (also in the GLB's `asset.extras`). Read the model's page anyway: a CC BY label does not prove
+  the uploader made it ("I did not do the modelling for this item"), nor that it isn't a copy of a game's design. Fit, compare and
+  scale-check with `tools/weapons/compare.py` (mg_trenchwarfare `docs/ASSETS.md` "Weapon replacements (step 11)").
 
 ## Also learned (from the weapons chats)
 

@@ -109,20 +109,85 @@ First-person scale is the stock weapon's (the model hangs off the same `weapon_o
 
 | Class | Ours | Source / licence | Length vs stock | Look | Verdict |
 |---|---|---|---|---|---|
-| `weapon_awp` (T rifle) | `gewehr98` 7.9k | **BF1 rip** (FBX object "BF1 All weapons.002") | 56.3 vs AWP 53.7 u | good | must be replaced before any Workshop upload; options below |
+| `weapon_awp` (T rifle) | `gewehr98` 7.9k | **BF1 rip** (FBX object "BF1 All weapons.002") | 56.3 vs AWP 53.7 u | good | **replaced in step 11** (staged, not deployed): "Free Mauser Gewehr 98" by lawlordp, CC BY 4.0, 13.1k tris, 56.0 u; see [Weapon replacements](#weapon-replacements-step-11) |
 | `weapon_g3sg1` (T streak) | `mondragon_m1908` 19.3k, procedural scope / wood materials | Blockbench GLB, Spanish node names, no metadata; most likely "Mondragón M1908" by DilanMendozaHer on Sketchfab (CC BY, 24.7k faces): **to verify** | 48.0 vs G3SG1 42.8 u (+12 %, real rifle is longer; no giant model) | blocky source, large wood-grain stripes | keep; only Workshop alternative is BF1 (853036866, rip). Confirm the author and add the credit |
 | `weapon_scar20` (CT streak) | `lewis_mk1` 10.6k | "Lewis Mk1" by MaX3Dd, Sketchfab, **CC BY 4.0** (GLB metadata) | 51.2 vs SCAR-20 42.5 u (drum forward; grip and butt at stock positions) | good: drum, cooling shroud, bipod, wood | keep; WW1 Source Lewis (281700167) 4.0k, mod asset, worse. **Credit missing from CREDITS.txt** |
-| `weapon_glock` | `luger_p08` | FSkala, Sketchfab, **CC BY-ND 4.0**: no adaptations may be shared; ours is rigged / reassembled | | | licence problem: replace (CC BY Luger) or ask FSkala |
+| `weapon_glock` | `luger_p08` 23.6k | FSkala, Sketchfab, **CC BY-ND 4.0**: no adaptations may be shared; ours is rigged / reassembled | 9.0 vs Glock 7.9 u | good | **replaced in step 11** (staged, not deployed): "Luger - Game ready asset" by Burdock, CC BY 4.0, 37.3k tris, 9.3 u; see [Weapon replacements](#weapon-replacements-step-11) |
 | `weapon_hkp2000` | `colt_m1911` | Ole Gunnar Isager, Sketchfab, CC BY 4.0 | | | keep; credit missing from CREDITS.txt |
 | `weapon_ssg08` | `lee_enfield` | CGTrader ("cgtrader_optimized_lee_enfield_mk1.FBX"), royalty-free licence assumed, author not recorded | | | record the CGTrader page / author |
 
-**Gewehr 98 replacement plan.** Every GMod Gewehr is Verdun / BF1 (2667468843, 1124304947, 786984611, 1128980556) or a low-poly mod
-asset (WW1 Source 2.9k, Iron Europe 2.1k: both below ours in `weapon_gewehr98.png`). Sketchfab has CC BY ones (API search, 12 Nov):
-"Gewehr 98 (ww1)" by janovich3D (6.9k faces; the same author as our credited Stahlhelm), "Free Mauser Gewehr 98" by lawlordp (6.1k),
-"Gewehr 98" by vburnashev (4.1k). A Sketchfab download needs the user's account: download janovich3D's GLB into
-`C:\source2\projects\trenchwarfare\Gewehr98\`, switch `tools/weapons/gewehr.json` from `fbx` to `glb` (axes per the handover:
-`Yxz`/`XYz` for Sketchfab GLBs), re-fit `shift_wo` / `bore_wo` against the stock AWP from the debug overlays, rebuild, add the credit.
-No clear safe winner was downloadable here, so the weapon pipeline is unchanged.
+**Gewehr 98 replacement plan (step 6, superseded).** Every GMod Gewehr is Verdun / BF1 (2667468843, 1124304947, 786984611, 1128980556)
+or a low-poly mod asset (WW1 Source 2.9k, Iron Europe 2.1k). The plan named janovich3D's "Gewehr 98 (ww1)" first; step 11 found that
+its page says the author did not model it (below), and built lawlordp's instead, downloaded through Objaverse without an account.
+
+## Weapon replacements (step 11)
+
+12 Nov 2026. The two models that blocked a Workshop upload are rebuilt from CC BY 4.0 sources with `tools/weapons/` (configs
+`gewehr.json`, `luger.json`), at the same model and material paths, so `weapons.vdata`, the script and the vdata classes are unchanged.
+Staged in `out/step11/addon/` with `out/step11/deploy_files.txt`. Provenance (Sketchfab API record, Objaverse metadata, the GLB's own
+`asset.extras` author / licence / source, sha256): `out/step11/sources.json`. Renders: `out/step11/renders/`.
+
+**Licence rule** ([docs/creation/workshop.md](../../../docs/creation/workshop.md#licence)): the addon is free and non-commercial
+(PolyForm NC for code, CC BY-NC 4.0 for our art), with an extra permission for donation / VIP servers; third-party parts keep their own
+licence and are credited. Accepted: CC0, CC BY, CC BY-SA (allow adapted copies in any use; BY-SA parts would stay BY-SA). CC BY-NC
+would be compatible with the free release but not clearly with the donation / VIP-server permission, so only as a last resort (not
+needed). Rejected: any ND (we re-scale, re-rig and regroup, which is an adaptation), "Standard" / editorial / no licence.
+
+**Route.** Objaverse 1.0 (Hugging Face `allenai/objaverse`, CC-licensed Sketchfab uploads with per-object licence and author): all 160
+metadata shards streamed and searched (names and tags: gewehr, mauser, gew 98, k98, luger, p08, parabellum, pistole, c96,
+reichsrevolver; 294 hits), plus the public Sketchfab search API to read each candidate's current page (licence, description, the
+author's other uploads). GLBs downloaded from Objaverse into `C:\source1\gmod_assets\trenchwarfare\weapons\objaverse\<name>\`, read
+only with `python -I`. Objaverse had clean candidates for both, so the later routes (Poly Pizza, OpenGameArt, Smithsonian, Workshop
+originals) and a procedural build were not needed.
+
+| Candidate (Objaverse shard) | Author | Licence | Size | Rip check | Verdict |
+|---|---|---|---|---|---|
+| "Free Mauser Gewehr 98" (000-127) | lawlordp (Milantique, now Foolish Me Studios) | CC BY 4.0 | 12.0k tris, 1k PBR | no description; tags fps / free; the author's other uploads are original characters and props (Candy Cove NPCs, Galreth, Dracarybell ...), no game names | **chosen** |
+| "Gewehr 98 (ww1)" (000-023) | janovich3D | CC BY 4.0 | 6.9k | page says "I did not do the modelling for this item. I've updated the UV's and Textured it": mesh author unknown | rejected (licence chain broken) |
+| "Gewehr98" (000-060) | IMPULSE_SLY | CC BY 4.0 | 2.3k | original low poly | rejected: flat palette colours |
+| "Mauser2" / "LE GEWEHR" / "mauser" (000-007 / 146 / 067) | ClementParisotCaso / bfif / halflife1and2 | CC BY | 5-8k | untextured Kar98 / flat colours / a C96 | rejected (quality, wrong gun) |
+| "Gewehr 98" (Sketchfab only) | vburnashev | CC BY | 4.1k | student project | not in Objaverse; Sketchfab download needs an account |
+| "Kar 98" (Sketchfab only) | buh-late | CC BY | 16.1k | Gew 98 per its text | not in Objaverse (2022) |
+| "Luger - Game ready asset" (000-083) | Burdock | CC BY 4.0 | 37.3k tris, 1k PBR + AO | "Modelled in blender and textured with Substance Painter"; the author's only upload; no game names | **chosen**: truest P08 shape, blued steel, walnut grips |
+| "luger handgun" (000-059) | DorianDabrav | CC BY 4.0 | 8.0k | school assignment (Howest DAE game asset course) | runner-up (in-the-white finish, scene parts rotated) |
+| "Luger" (000-017) | emelyarules | CC BY 4.0 | 5.9k | prolific original author | runner-up |
+| "Luger" (000-133) | 3DDomino | CC BY 4.0 | 75.5k | no description | heavy, not needed |
+| "Red Baron's P08" (000-009) | seaneisenhardt | CC BY 4.0 | 16.8k | own modelling, but "recreate the Luger pistol shown in the game Battlefield 1 as close as possible" | rejected (copies a BF1 design) |
+| "Luger p08" (000-070) | kemicalfx | CC BY 4.0 | 115.7k | the file is an untextured C96 | rejected |
+| I_Live, zdani98, WolvenBolt, Freddan755, TheAlchatrazGuy, TylerEdlen, cet321boom Lugers | | CC BY | 3.7-88k | | rejected: lower detail, untextured, silencer or flat colours |
+| FSkala "Luger P08" (current), leondp, virtualcurationlab P.08 scan | | CC BY-ND / BY-NC-ND | | | excluded (ND) |
+
+Period alternative: not needed. The Luger is the German infantry pistol (`INF_PISTOL` T = `weapon_glock` in `src/modules/00_config.js`);
+the P08 was the standard German sidearm from 1908, and clean CC BY P08s exist. CC BY Mauser C96s (twilightfox, maxencerouillet,
+ArnaudLescure) and a Reichsrevolver M1879 (emelyarules) are in Objaverse if a second sidearm is ever wanted.
+
+**What the build changed** (allowed adaptations under CC BY, listed in CREDITS): Gewehr: scale 0.128, the bolt (modelled open, handle
+straight up) turned 90 degrees to the closed position about its own axis (new builder rule `rotx`), the orange wood re-graded to walnut
+and the steel darkened (`grade`), the period Axis scope added, bolt and trigger bound to the AWP's `bolt_action` / `trigger`. Internal
+magazine as before (invisible stub mag). Luger: scale 0.00177, toggle, receiver and barrel on the Glock's `slide` (the toggle
+translates like a slide, as before), trigger on `trigger`, and a steel magazine block inside the grip on `magazine` (the source has no
+separate magazine), as the Colt does. Both keep their vmat names (`gewehr98.vmat`, `luger_p08_body.vmat`), so a deploy overwrites the
+old files.
+
+**Scale check** (`python -I tools/weapons/compare.py built ...`, `out/step11/renders/weapon_gewehr98.png`, `weapon_luger_p08.png`:
+current / new / stock, side, 3/4, shoulder and an approximate first-person camera, plus side overlays on the stock):
+
+| Model | Length | Bounds (weapon_offset) | Current | Stock |
+|---|---|---|---|---|
+| gewehr98 (new) | 56.0 u | x -16.9..39.1, z -7.6..2.5 | 56.3 u, x -16.0..40.3, z -8.1..2.5 | AWP 53.7 u |
+| luger_p08 (new) | 9.3 u | x -4.0..5.3, z -4.1..1.1 | 9.0 u, x -4.4..4.6, z -4.5..1.1 | Glock 7.9 u (real P08 / G17 = 1.19, so ~9.4 u) |
+
+Both sit where the in-game-verified models sat (grip at the stock hand bone, bore on the stock bolt / slide axis), so no giant
+first-person weapon: the model hangs off the stock `weapon_offset` bone and is the same size as the one it replaces.
+
+**Test compile (12 Nov 2026, level: compiled):** in a scratch addon `tw_weapontest` (content + game `csgo_addons\tw_weapontest`,
+the staged files plus a copy of the addon's shared `scope/` materials; mg_trenchwarfare untouched), `resourcecompiler -f -i` per vmdl
+under the watchdog: `gewehr98.vmdl` 1 compiled, 0 failed (6 s); `luger_p08.vmdl` 1 compiled, 0 failed; `gewehr98_mag.vmdl` +
+`luger_p08_mag.vmdl` 2 compiled, 0 failed. No warning or error line in the logs (`out/step11/compile_*_watch.log`). The magazine
+vmdls are named only in an animation event (`AE_CL_EJECT_MAG`), so compiling the weapon does not compile them: compile all four.
+The compiled colour textures (`*_color_png_*.vtex_c`) were decoded back and rendered on the bodies
+(`out/step11/renders/compiled_textures*.png`). Not yet seen in Hammer or in game: after the deploy, check in game that the Gewehr's
+bolt and the Luger's toggle move with the shoot / reload animations and that both sit in the hands like the old models (TESTING.md).
 
 ## Every Workshop candidate looked at
 

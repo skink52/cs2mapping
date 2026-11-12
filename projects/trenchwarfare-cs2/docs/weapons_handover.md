@@ -7,8 +7,8 @@ Status 25 Oct 2026. A separate Claude session (the weapons session) keeps buildi
 | Weapon | Side | Replaces vdata entry | Model | Notes |
 |---|---|---|---|---|
 | Lee-Enfield SMLE | CT | `weapon_ssg08` | `models/weapons/ww1/lee_enfield/lee_enfield.vmdl` | 10 rd, 5 spare mags, Allied (Periscopic Prism style) offset scope, brass fittings |
-| Gewehr 98 | T | `weapon_awp` (stat-for-stat SSG08 clone, 5 rd, 6 spare) | `models/weapons/ww1/gewehr98/gewehr98.vmdl` | Axis (Goerz/Oigee style) scope. Mesh is a BF1 rip ("BF1 All weapons") — replace before Workshop |
-| Luger P08 | T | `weapon_glock` (8 rd, burst off) | `models/weapons/ww1/luger_p08/luger_p08.vmdl` | from `luger_p08.glb` |
+| Gewehr 98 | T | `weapon_awp` (stat-for-stat SSG08 clone, 5 rd, 6 spare) | `models/weapons/ww1/gewehr98/gewehr98.vmdl` | Axis (Goerz/Oigee style) scope. Deployed mesh is a BF1 rip; **12 Nov 2026 rebuilt at the same path from "Free Mauser Gewehr 98" by lawlordp (CC BY 4.0, Objaverse)**, staged in `projects/trenchwarfare-cs2/out/step11/` (not in game yet) |
+| Luger P08 | T | `weapon_glock` (8 rd, burst off) | `models/weapons/ww1/luger_p08/luger_p08.vmdl` | deployed mesh from FSkala's CC BY-ND `luger_p08.glb`; **12 Nov 2026 rebuilt at the same path from "Luger - Game ready asset" by Burdock (CC BY 4.0, Objaverse)**, staged in step 11 (not in game yet) |
 | Colt M1911 | CT | `weapon_hkp2000` (7 rd) | `models/weapons/ww1/colt_m1911/colt_m1911.vmdl` | from `colt_m1911.glb` (display model reassembled) |
 | Lewis Mk I | CT | `weapon_scar20` | `lewis_mk1.glb` | **in progress in the weapons session — do not duplicate** |
 | Mondragón M1908 | T | `weapon_g3sg1` | `mondragon-m1908/` | **in progress in the weapons session (new weathered wood/steel textures)** |
@@ -54,6 +54,13 @@ analysis), `part_bone`/`part_bone_idx`, `rules` (box selections of faces or whol
 for reassembling display models), `mag_parts`, `part_moves`, `drop_parts`, `boxes` (generated geometry), `scope` (`style` allied|axis,
 `x0`, `y`, `y_post`, `mounts`, `clear` — seats itself on the receiver and clears the lifted bolt handle automatically).
 
+Added 12 Nov 2026 (step 11): `material_names` (glTF material index → fixed vmat name, so a rebuilt model overwrites the old files),
+`grade` (saturation-split colour grade of the base colour: orange wood → walnut, bright steel darker), the rule key `rotx: [deg, y, z]`
+(rotate selected components about an X-parallel axis: the Gewehr's bolt was modelled open), `source` (provenance note), and
+`compare.py` (candidate contact sheet; built body vs current vs stock from side, 3/4, shoulder and an approximate first-person camera
+with side-view scale overlays). GLB textures now go to the system temp folder (was `/tmp`). The current `gewehr.json` / `luger.json`
+build into `projects/trenchwarfare-cs2/out/step11/build` from GLBs under `C:\source1\gmod_assets\trenchwarfare\weapons\objaverse\`.
+
 Modules: `fbxparse.py`/`fbxmesh.py` (binary FBX 7.4), `glbmesh.py`, `dmx.py` (binary DMX 9 / model 22 read+write, byte-exact round trip),
 `dmxmodel.py` (mesh/hull DMX in S2V layout), `hull.py` (convex hulls, ~50 verts — the full mesh as a hull crashed on weapon drop),
 `scope2.py` (period scopes: lathe profiles, turrets, lens ends, bracket mounts), `weather.py` (procedural weathered steel/brass textures),
@@ -66,3 +73,10 @@ Modules: `fbxparse.py`/`fbxmesh.py` (binary FBX 7.4), `glbmesh.py`, `dmx.py` (bi
 - Enable `F_METALNESS_TEXTURE 1` in the vmat when a metalness map exists.
 - Physics hull = small convex hull, never the full mesh. Pistol mag models have no skeleton; sniper mags have a `clip` bone.
 - Model refs in vdata use `resource_name:"models/…vmdl"`; mesh material paths are addon-root relative (`materials/models/…vmat`).
+- Fitting a new mesh to a stock skeleton (step 11): put the bolt / barrel axis on `bore_wo` (find it from the bolt component's slice
+  centres, not the muzzle, which can sit off-axis), then match the overall bounds of the in-game-verified model it replaces; that keeps
+  the grip on the hand bone and the first-person size right. Select moving parts as whole components (`mode: components`) after
+  listing them with their bounding boxes; a single-mesh GLB is usually several disconnected components.
+- Read the source page before using a "CC BY" model: janovich3D's Gewehr says "I did not do the modelling for this item", and a
+  "Red Baron's P08" recreates the Battlefield 1 pistol: both fail the rip / author check despite the licence label.
+- A pistol source without a magazine gets a steel `boxes` block inside the grip on `mag` (Colt, Burdock Luger), so the reload shows one.
