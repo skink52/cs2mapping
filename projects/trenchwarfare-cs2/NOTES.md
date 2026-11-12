@@ -1,4 +1,4 @@
-# Working notes (AI session log)
+﻿# Working notes (AI session log)
 
 Read this first when resuming. Newest state at the top.
 
@@ -32,7 +32,7 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   0 out of memory. Logs copied to `out/step9/`. `docs/BUILD_LOG_1.md` filled: nav **10,269 areas** (tw34 44,160; target < 5,000;
   the ~1,470 estimate was 7x off), 24,718 meshes / 1.40 M charts at 2048, vpk 519.9 MB. 4 stale models (wire, ladder) recompiled;
   check_world now fails only on the user's duplicate info_map_parameters.
-- 12 Nov ~20:40: decisions applied (simulated, chain final CRC32 784ddc7b, gate PASS): id 7 `info_map_parameters` (Hammer defaults:
+- 12 Nov 20:22: decisions applied and deployed (map + script; js force-compiled); map compile 3 running. (simulated, chain final CRC32 784ddc7b, gate PASS): id 7 `info_map_parameters` (Hammer defaults:
   buying 0, dm spawn keys 0) deleted, `tw_params` kept; bench 72 (exact duplicate of 71, 1 u apart) dropped; all other benches kept.
   Sap roof NOT raised: the user's upper benches set the ceiling (57-62 u over the step benches), so entry stays crouched; proper
   seam fix (portal ramp, lintel, ground cap, roof to floor + 80) proposed in REVIEW_WORLD_2. check_play T9 probes each sap mouth
@@ -102,7 +102,7 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   `C:\source1\gmod_assets\trenchwarfare` (outside the repo), catalog `tools/tw_gmod_catalog.json`. Only swap: `gun_75mm` -> Canon de 75
   (3576805717, `tools/patch_models.py` -> `out/mg_trenchwarfare_models.vmap`, guard: 1 change). Ours beat every other low-risk pack;
   all WW1 soldier and BF1/Verdun/etc packs are rips. LODs added to 5 props; `tools/fill_holes.py` tw_de_a 167 -> 154 open edges (rest
-  needs a re-weld in soldiers.py). Lewis + Mondragón stay (scale fine). Licence issues for the user (docs/WORKSHOP_COMPLIANCE.md):
+  needs a re-weld in soldiers.py). Lewis + MondragÃ³n stay (scale fine). Licence issues for the user (docs/WORKSHOP_COMPLIANCE.md):
   Gewehr 98 confirmed BF1 rip (CC BY Sketchfab candidates need the user's account), Luger is CC BY-ND (replace/ask), Lewis + Colt
   missing from CREDITS.txt, Lee-Enfield author unknown, Canon de 75 exact licence to confirm. Deploy list `out/step6/deploy_files.txt`
   (after step 5; never copy other `gm_*` staging folders). libsync DIFFERS on monsoon check_mesh/vmesh are the other session's edits.
