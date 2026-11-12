@@ -53,7 +53,9 @@ Steps 1+2 run together, then 3 alone (it owns `src/`), then 4+5, 6+7, 8+9, 10.
 - Radar alignment: unconfirmed; needs the restaged `radar_region.json` and a `!pos` check in game.
 - Mortar crew dying on firing: cause unknown; user explosions ruled out (> 2300 u from pits). Step 3 adds a scenario; in-game needs the `[tw] blocked` console line.
 - Mortar assist credit: in the script, unconfirmed in game.
-- Giant first-person weapons: not re-checked since per-player uniforms returned (tw25). TESTING item.
+- Giant first-person weapons: cause confirmed by the user (12 Nov): the player was set to an invalid/unloaded model (a CS2 model chosen
+  in Hammer, which lacked the game assets). Every player model the map or script sets must be compiled in the addon (or stock and
+  loaded); check_contract covers the script's models. Still a TESTING item.
 - Monsoon's own lesson: its map has never been compiled or played; copy its offline rigour, and say "simulated" until CS2 confirms.
 
 ## Progress

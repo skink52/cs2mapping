@@ -27,6 +27,9 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
+- 12 Nov: **giant first-person weapons, cause (from the user):** the player character was set to an invalid/unloaded model (a CS2
+  model picked in Hammer, which didn't have the game assets); Mario Party had the same symptom loading Octodad before it was ported.
+  Only ever set compiled-in-addon (or stock, loaded) player models. Recorded in docs/reference/cs2-gotchas.md.
 - 12 Nov ~15:30: step 5 done offline, NOT deployed. `python tools/patch_world_1.py` -> `out/mg_trenchwarfare_patched.vmap`
   (guarded by `tools/patch_guard.py --strict`: 24 declared nodes, nothing else), `tools/dyn_models.py` builds `_dyn` model twins
   into `out/addon`. Fixed H4 (mortars `prop_dynamic mortar_<tg>_K` with idle/fire anims), H2 (blockers on `_dyn` models), H3 (woods
