@@ -4,6 +4,8 @@ Method from projects/monsoon-cs2/tools/sounds.py (loops from noise that is perio
 markers, no crossfade; a numeric listen-check that reads every wav back from disk).
 
 usage: sounds.py <addon content out> <template soundevents_addon.vsndevts> [--no-check] [--pending DIR]
+       sounds.py --template-wavs <addon content out>    only the synthesised stand-ins for the addon template's sounds/bird_01-06,
+                                                        interior_01, vent_01 (same names; step 12), checked; events untouched
   writes  <addon>/sounds/tw/*.wav                        16-bit PCM 44.1 kHz; loops carry smpl + cue markers
           <addon>/soundevents/soundevents_addon.vsndevts  the template (the live addon file, read only) with our block replaced
           ../out/sounds_report.json                       the listen-check (peak, RMS, DC, loop seam, spectrum, length)
@@ -491,6 +493,90 @@ def build():
     add('whistle_attack', make_whistle_attack(R(102)), centroid=(1800, 4500), high=(0.5, 2000, 8000))
 
 
+# ================================================================ template wav replacements (remaster step 12)
+# The addon was started from CS2's addon_template, whose soundevents_addon.vsndevts names sounds/bird_01-06, interior_01 and vent_01
+# (events ambient_example.*: the map never plays them, but the compiler compiles every vsnd an event names). Those wavs are Valve's
+# template files (bird_01 tagged by a Valve sound designer; interior_01 carries a commercial sound-library label), so their
+# redistribution terms outside CS2 are unknown. These are synthesised stand-ins with the SAME names and the same channel layout
+# and roughly the same lengths, so nothing else changes: --template-wavs DIR writes DIR/sounds/<name>.wav (no events touched).
+BIRD_LEN = [4.01, 3.27, 2.38, 1.02, 1.24, 1.24]       # the template files' lengths (s)
+
+
+def make_bird(rng, v, dur):
+    """a skylark-like song over open fields: runs of fast trilled syllables, 2.5-6.5 kHz, a weak 2nd harmonic, a light outdoor
+    tail. v picks the phrase pattern (long songs for 1-3, single calls for 4-6)"""
+    n = int(SR * dur); out = np.zeros(n)
+    t0 = 0.04; end = dur - 0.25
+    while t0 < end:
+        syl = rng.uniform(0.03, 0.11) if v < 3 else rng.uniform(0.05, 0.16)
+        if t0 + syl > end: break
+        m = int(SR * syl); t = np.arange(m) / SR
+        f0 = rng.uniform(2600, 5200); f1 = f0 * rng.uniform(0.75, 1.35)
+        trill = rng.uniform(25, 70); depth = rng.uniform(150, 700)
+        f = f0 + (f1 - f0) * t / syl + depth * np.sin(2 * np.pi * trill * t + rng.uniform(0, 6.28))
+        ph = 2 * np.pi * np.cumsum(f) / SR
+        a = np.sin(np.pi * t / syl) ** 1.5 * rng.uniform(0.5, 1.0)
+        s = a * (np.sin(ph) + 0.18 * np.sin(2 * ph + 0.5))
+        place(out, s, t0)
+        t0 += syl + (rng.uniform(0.01, 0.05) if v < 3 else rng.uniform(0.06, 0.2))
+        if v >= 3 and rng.uniform() < 0.25: t0 += rng.uniform(0.1, 0.25)
+    out = hp(out, 1800, 2)
+    w = reverb(out, 0.5, rng, 0.12, 0.25, lo=1500, hi=8000, pre=0.02)[:n]
+    return fade_out(w, 0.2)
+
+
+def make_room_tone(rng, sec):
+    """stereo loop: inside a timbered dugout: low earth rumble, a faint far-off barrage pressure, a paraffin lamp's soft hiss.
+    Periodic noise and whole-cycle tones only, so the file loops with no seam"""
+    n = int(SR * sec); ch = []
+    for c in range(2):
+        r = np.random.RandomState(rng.randint(1 << 30))
+        low = shaped_noise(n, r, band(25, 220, 0.4)) * 1.0
+        mid = shaped_noise(n, r, band(200, 900, 0.5)) * 0.12
+        hiss = shaped_noise(n, r, band(2500, 7000, 0.5)) * 0.03
+        k = np.arange(n) / n
+        slow = 1 + 0.25 * np.sin(2 * np.pi * 3 * k + c) + 0.15 * np.sin(2 * np.pi * 7 * k + 2 * c)   # whole cycles over the file
+        ch.append(circ_lp(low * slow + mid, 900) + hiss)
+    return np.stack(ch, 1)
+
+
+def make_vent(rng, sec):
+    """stereo loop: air drawn through a dugout's ventilation shaft: band noise with a slow periodic swell, a low duct resonance"""
+    n = int(SR * sec); ch = []; k = np.arange(n) / n
+    for c in range(2):
+        r = np.random.RandomState(rng.randint(1 << 30))
+        air = shaped_noise(n, r, band(250, 2600, 0.45))
+        duct = shaped_noise(n, r, band(70, 160, 0.15)) * 0.5
+        swell = 1 + 0.3 * np.sin(2 * np.pi * 2 * k + 0.7 * c) + 0.12 * np.sin(2 * np.pi * 5 * k)
+        ch.append(air * swell + duct)
+    return np.stack(ch, 1)
+
+
+def build_template():
+    R = np.random.RandomState
+    for v, d in enumerate(BIRD_LEN):
+        add('bird_%02d' % (v + 1), make_bird(R(200 + v), v, d), centroid=(2000, 7000), high=(0.6, 2000, 8000), dur=(d - 0.05, d + 0.05))
+    add('interior_01', make_room_tone(R(210), 9.19), loop=True, centroid=(30, 400), low=(0.7, 15, 500))
+    add('vent_01', make_vent(R(211), 7.43), loop=True, centroid=(300, 2000))
+
+
+def main_template(out):
+    """write the replacement template wavs to <out>/sounds/ and their listen-check to <out>/../template_sounds_report.json"""
+    SOUNDS.clear(); build_template()
+    d = os.path.join(out, 'sounds'); os.makedirs(d, exist_ok=True)
+    report, bad = {}, []
+    for name, (x, loop, expect, ship) in SOUNDS.items():
+        row, prob = write_and_check(os.path.join(d, name + '.wav'), name, x, loop, expect)
+        report[name] = row; bad += ['%s: %s' % (name, p) for p in prob]
+        print('%-12s %5.2f s %d ch  peak %6.2f dB  rms %6.2f dB  centroid %5d Hz%s' % (name, row['seconds'], row['channels'], row['peak_dbfs'],
+              row['rms_dbfs'], row['centroid_hz'], ('  seam %.2f %.2f %+.2f' % (row['seam_step_vs_p999'], row['seam_kink_vs_p999'], row['seam_level_db'])) if loop else ''))
+    rp = os.path.join(os.path.dirname(os.path.abspath(out)), 'template_sounds_report.json')
+    json.dump(dict(sounds=report, problems=bad), open(rp, 'w'), indent=1)
+    if bad:
+        print('\n'.join('SOUND: ' + b for b in bad)); sys.exit(1)
+    print('template wavs: %d written to %s, checks clean (report %s)' % (len(report), d, rp))
+
+
 # ================================================================ numeric listen-check (monsoon's)
 def analyse(name, x, loop, expect):
     mono = x if x.ndim == 1 else x.mean(axis=1)
@@ -648,6 +734,8 @@ def write_and_check(path, name, x, loop, expect):
 
 
 def main(argv):
+    if '--template-wavs' in argv:
+        return main_template(argv[argv.index('--template-wavs') + 1])
     args = [a for a in argv if not a.startswith('--')]
     if len(args) < 2: sys.exit(__doc__)
     out, template = args[0], args[1]

@@ -6,12 +6,12 @@ Status 25 Oct 2026. A separate Claude session (the weapons session) keeps buildi
 
 | Weapon | Side | Replaces vdata entry | Model | Notes |
 |---|---|---|---|---|
-| Lee-Enfield SMLE | CT | `weapon_ssg08` | `models/weapons/ww1/lee_enfield/lee_enfield.vmdl` | 10 rd, 5 spare mags, Allied (Periscopic Prism style) offset scope, brass fittings |
+| Lee-Enfield SMLE | CT | `weapon_ssg08` | `models/weapons/ww1/lee_enfield/lee_enfield.vmdl` | 10 rd, 5 spare mags, Allied (Periscopic Prism style) offset scope, brass fittings. Deployed mesh is TurboSquid editorial-only; **12 Nov 2026 rebuilt at the same path from "Lee Enfield MKIII" by Moony_State (CC BY 4.0, Objaverse; config `lee.json`)**, staged in `projects/trenchwarfare-cs2/out/step12/` (not in game yet) |
 | Gewehr 98 | T | `weapon_awp` (stat-for-stat SSG08 clone, 5 rd, 6 spare) | `models/weapons/ww1/gewehr98/gewehr98.vmdl` | Axis (Goerz/Oigee style) scope. Deployed mesh is a BF1 rip; **12 Nov 2026 rebuilt at the same path from "Free Mauser Gewehr 98" by lawlordp (CC BY 4.0, Objaverse)**, staged in `projects/trenchwarfare-cs2/out/step11/` (not in game yet) |
 | Luger P08 | T | `weapon_glock` (8 rd, burst off) | `models/weapons/ww1/luger_p08/luger_p08.vmdl` | deployed mesh from FSkala's CC BY-ND `luger_p08.glb`; **12 Nov 2026 rebuilt at the same path from "Luger - Game ready asset" by Burdock (CC BY 4.0, Objaverse)**, staged in step 11 (not in game yet) |
 | Colt M1911 | CT | `weapon_hkp2000` (7 rd) | `models/weapons/ww1/colt_m1911/colt_m1911.vmdl` | from `colt_m1911.glb` (display model reassembled) |
 | Lewis Mk I | CT | `weapon_scar20` | `lewis_mk1.glb` | **in progress in the weapons session — do not duplicate** |
-| Mondragón M1908 | T | `weapon_g3sg1` | `mondragon-m1908/` | **in progress in the weapons session (new weathered wood/steel textures)** |
+| Mondragón M1908 | T | `weapon_g3sg1` | `mondragon-m1908/` | from "Mondragón M1908" by DilanMendozaHer (Sketchfab, CC BY 4.0; source confirmed 12 Nov 2026, step 12), procedural wood/steel |
 
 Shared materials: `materials/models/weapons/ww1/scope/{scope,brass,glass}.vmat` (procedural weathered steel/brass, dark glass).
 

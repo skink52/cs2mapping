@@ -32,6 +32,12 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   0 out of memory. Logs copied to `out/step9/`. `docs/BUILD_LOG_1.md` filled: nav **10,269 areas** (tw34 44,160; target < 5,000;
   the ~1,470 estimate was 7x off), 24,718 meshes / 1.40 M charts at 2048, vpk 519.9 MB. 4 stale models (wire, ladder) recompiled;
   check_world now fails only on the user's duplicate info_map_parameters.
+- 12 Nov ~23:30: licence items (step 12, staged, not deployed): Lee-Enfield was TurboSquid 1907112 (editorial-only licence) ->
+  replaced by "Lee Enfield MKIII" by Moony_State / Giuliano.Sgroi (CC BY 4.0, Sketchfab f6a2160daf134071a84e3cae5f831875; 46.5 u vs
+  45.9 old). Mondragón confirmed DilanMendozaHer CC BY 4.0 (2cfae8885fe747feaeb6068133f5fb38). Canon de 75 confirmed
+  DopamineWarlock CC BY 4.0 (eb6c4b6b18324e64992615e04b60d2ab). Template wavs (Valve addon_template copies) replaced by synthesised
+  ones (`tools/sounds.py --template-wavs`). `out/step12/deploy_files.txt` (39 files); after deploy force-compile lee_enfield.vmdl,
+  lee_enfield_mag.vmdl, sounds/*.wav. Credits + Steam description complete. Objaverse index: C:\source1\gmod_assets\trenchwarfare\weapons\objaverse_index\.
 - 12 Nov ~22:15: weapon replacements built (not deployed): Gewehr 98 -> "Free Mauser Gewehr 98" by lawlordp (CC BY 4.0, Sketchfab
   a4a6399f343143c883e090362bd6222d), Luger -> "Luger - Game ready asset" by Burdock (CC BY 4.0, 365c3bfd19494dfea145fb4e5d15d0bc),
   both via Objaverse (no login). Bolt closed, walnut grade, period scope; same model/vmat paths (vdata + script unchanged). Scale

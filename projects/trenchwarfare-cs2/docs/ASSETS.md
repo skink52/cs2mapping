@@ -12,8 +12,8 @@ machine-readable result: `out/gmod_models.json`. Written 12 Nov 2026.
 **Licence position.** Almost every WW1 pack on the GMod Workshop is a port from Battlefield 1, Verdun / Tannenberg / Isonzo, Day of
 Infamy, Men of War, World of Tanks or War Thunder: rip risk high, never shipped. The few originals (ROCK MAN, Performance_Anna,
 n00buss) are far below our props in detail. One pack beat our prop and is not a game rip: the Canon de 75 (a credited Sketchfab
-original), swapped in for `gun_75mm`. Its exact Creative Commons variant still has to be read off the Sketchfab page before a Workshop
-upload ([WORKSHOP_COMPLIANCE.md](WORKSHOP_COMPLIANCE.md)).
+original), swapped in for `gun_75mm`. Its original is "France M1897 75mm Cannon(Custom modified)" by DopamineWarlock, CC BY 4.0
+(confirmed in step 12, [below](#licence-replacements-step-12)).
 
 ## Pipeline
 
@@ -110,11 +110,11 @@ First-person scale is the stock weapon's (the model hangs off the same `weapon_o
 | Class | Ours | Source / licence | Length vs stock | Look | Verdict |
 |---|---|---|---|---|---|
 | `weapon_awp` (T rifle) | `gewehr98` 7.9k | **BF1 rip** (FBX object "BF1 All weapons.002") | 56.3 vs AWP 53.7 u | good | **replaced in step 11** (staged, not deployed): "Free Mauser Gewehr 98" by lawlordp, CC BY 4.0, 13.1k tris, 56.0 u; see [Weapon replacements](#weapon-replacements-step-11) |
-| `weapon_g3sg1` (T streak) | `mondragon_m1908` 19.3k, procedural scope / wood materials | Blockbench GLB, Spanish node names, no metadata; most likely "Mondragón M1908" by DilanMendozaHer on Sketchfab (CC BY, 24.7k faces): **to verify** | 48.0 vs G3SG1 42.8 u (+12 %, real rifle is longer; no giant model) | blocky source, large wood-grain stripes | keep; only Workshop alternative is BF1 (853036866, rip). Confirm the author and add the credit |
+| `weapon_g3sg1` (T streak) | `mondragon_m1908` 19.3k, procedural scope / wood materials | Blockbench GLB, Spanish node names, no metadata: **confirmed in step 12** as a re-export of "Mondragón M1908" by DilanMendozaHer, Sketchfab, **CC BY 4.0** (24,674 faces = ours, 16 materials / 16 textures, same parts layout) | 48.0 vs G3SG1 42.8 u (+12 %, real rifle is longer; no giant model) | blocky source, large wood-grain stripes | keep (only Workshop alternative is BF1 853036866, a rip); credited |
 | `weapon_scar20` (CT streak) | `lewis_mk1` 10.6k | "Lewis Mk1" by MaX3Dd, Sketchfab, **CC BY 4.0** (GLB metadata) | 51.2 vs SCAR-20 42.5 u (drum forward; grip and butt at stock positions) | good: drum, cooling shroud, bipod, wood | keep; WW1 Source Lewis (281700167) 4.0k, mod asset, worse. **Credit missing from CREDITS.txt** |
 | `weapon_glock` | `luger_p08` 23.6k | FSkala, Sketchfab, **CC BY-ND 4.0**: no adaptations may be shared; ours is rigged / reassembled | 9.0 vs Glock 7.9 u | good | **replaced in step 11** (staged, not deployed): "Luger - Game ready asset" by Burdock, CC BY 4.0, 37.3k tris, 9.3 u; see [Weapon replacements](#weapon-replacements-step-11) |
 | `weapon_hkp2000` | `colt_m1911` | Ole Gunnar Isager, Sketchfab, CC BY 4.0 | | | keep; credit missing from CREDITS.txt |
-| `weapon_ssg08` | `lee_enfield` | CGTrader ("cgtrader_optimized_lee_enfield_mk1.FBX"), royalty-free licence assumed, author not recorded | | | record the CGTrader page / author |
+| `weapon_ssg08` (CT rifle) | `lee_enfield` 11.4k | TurboSquid 1907112 "Lee Enfield MK1 Low-poly PBR Free" (our `cgtrader_optimized_...` file is a Blender re-export of it), **editorial use only** | 45.9 vs SSG 08 51.1 u | good | **replaced in step 12** (staged, not deployed): "Lee Enfield MKIII" by Moony_State, CC BY 4.0, 17.1k tris, 46.5 u; see [Licence replacements](#licence-replacements-step-12) |
 
 **Gewehr 98 replacement plan (step 6, superseded).** Every GMod Gewehr is Verdun / BF1 (2667468843, 1124304947, 786984611, 1128980556)
 or a low-poly mod asset (WW1 Source 2.9k, Iron Europe 2.1k). The plan named janovich3D's "Gewehr 98 (ww1)" first; step 11 found that
@@ -189,6 +189,59 @@ The compiled colour textures (`*_color_png_*.vtex_c`) were decoded back and rend
 (`out/step11/renders/compiled_textures*.png`). Not yet seen in Hammer or in game: after the deploy, check in game that the Gewehr's
 bolt and the Luger's toggle move with the shoot / reload animations and that both sit in the hands like the old models (TESTING.md).
 
+## Licence replacements (step 12)
+
+12 Nov 2026. The three Workshop-checklist items left after step 11, and the template wavs. Provenance (Sketchfab API records,
+Objaverse metadata, GLB asset records, sha256, the matching evidence): `out/step12/sources.json`. Renders: `out/step12/renders/`.
+Staged in `out/step12/addon/` with `out/step12/deploy_files.txt`. Route as in step 11, plus a full compact index of all 798,759
+Objaverse 1.0 objects (name, user, licence, faces, tags; `C:\source1\gmod_assets\trenchwarfare\weapons\objaverse_index\index.jsonl`,
+outside the repo, 160 shards in about 20 min) so any later search is a local grep.
+
+| Item | Finding | Result |
+|---|---|---|
+| Lee-Enfield (`weapon_ssg08`) | Our source `lee_enfield_mk1.obj/.FBX` (3ds Max 2018, "File Created: 04.06.2022", no author anywhere) has exactly 10,337 faces: TurboSquid 1907112 "Lee Enfield MK1 Low-poly PBR Free" (published 4 Jun 2022, FBX, 10,337 polygons), **editorial use only**. Not in Objaverse (no 10,337-face model) | **replaced**: "Lee Enfield MKIII" by Moony_State (formerly Giuliano.Sgroi), CC BY 4.0 |
+| Mondragón M1908 (`weapon_g3sg1`) | Sketchfab 2cfae8885fe747feaeb6068133f5fb38 by DilanMendozaHer, CC BY 4.0, published 20 Aug 2026 (too new for Objaverse): 24,674 faces, 16 materials, 16 textures; our Blockbench 5.1.6 GLB: 24,674 triangles, 16 / 16, Spanish part names; the Sketchfab thumbnail and our render (`mondragon_source_glb.png`) show the same parts layout (two drums floating above, a magazine under the receiver and one mid-stock, two cartridges). The author's three uploads are low-poly originals | **confirmed**, credited; no change (`mondragon_deployed_vs_stock.png`: the deployed build keeps one magazine, adds the scope, procedural wood) |
+| Canon de 75 (`gm_canon75`) | soap's item links sketchfab.com/3d-models/france-m1897-75mm-cannoncustom-modified-eb6c4b6b18324e64992615e04b60d2ab: "France M1897 75mm Cannon(Custom modified)" by DopamineWarlock, CC BY 4.0, 14 Jun 2022, Objaverse 000-105 (`by`); 24,552 faces = our LOD0's 24,552 triangles, one material, same shield / wheels / paint in the thumbnail. Ara_my45yt's copy (15 Jun 2022, same faces) is a re-upload | **confirmed** (the shipped variant), credited; no swap, no map change |
+| Template wavs `sounds/bird_01-06`, `interior_01`, `vent_01` | Byte-identical to CS2's `content/csgo_addons/addon_template/sounds/` (Valve's Workshop Tools template); `bird_01`'s RIFF INFO names a Valve sound designer (2015); `interior_01` carries the library description "MACHINERY - MISC - ELECTRICITY: NEON LIGHT HUM LOOP" (commercial sound-library audio, terms outside CS2 unknown). Only the template's `ambient_example.*` events name them; no map (the user's or the chain's) plays `ambient_example` | **replaced** by synthesised wavs of the same names, lengths and channel layout: `python tools/sounds.py --template-wavs out/step12/addon` (skylark-like song phrases 2.5-6.5 kHz; a dugout room tone loop; a ventilation-shaft air loop; loops periodic with smpl + cue markers). Listen-check clean (`out/step12/template_sounds_report.json`, seams 0.50 / 0.40 x p99.9) |
+
+**Lee-Enfield candidates** (Objaverse index + Sketchfab search API; contact sheet `out/step12/renders/lee_candidates.png`):
+
+| Candidate (Objaverse shard) | Author | Licence | Size | Rip check | Verdict |
+|---|---|---|---|---|---|
+| "Lee Enfield MKIII" (000-019) | Moony_State (the GLB's record: Giuliano.Sgroi, the same account renamed) | CC BY 4.0 | 20.6k (17.1k built, with our scope), 7 materials, 4K PBR | "a reproduction of the iconic British rifle of the Great War ... modeled in Blender and textured in Substance Painter"; no game names; 340 likes | **chosen**: the WW1 SMLE Mk III (the old model was a Mk I), the most detailed and best-rated clean one |
+| "Lee Enfield MKIII" (000-090) | 1514112 | CC BY | 20.6k | same face count, published 3 months later | rejected: a re-upload of the above |
+| "Lee Enfield MK1 303" (000-153) | art3mis44 | CC BY 4.0 | 16.5k, 1 material | student project | runner-up (orange wood, less detail) |
+| "Lee Enfield SMLE MKIII" (000-038) | skaveria | CC BY 4.0 | 22.5k | no description | runner-up (very dark, flat wood) |
+| "Lee Enfield Rifle (Game-Ready)" (000-050) | toxcrewproductions | CC BY 4.0 | 8.5k | "Modelled for a commission. Client only hired me to model" | rejected (rights may sit with the client; low texture effort) |
+| "Lee Enfield w/ Bayonet & British .303" (000-004) | EdSwinbourne | CC BY 4.0 | 74.9k | uni project, a 1920s hunting conversion with a modern scope and stand | rejected (wrong configuration) |
+| "Lawrence of Arabia's SMLE" (000-103) | seaneisenhardt | CC BY | 26.5k | copies a Battlefield 1 design (as his P08 did) | rejected |
+| "SMLE Mk III (Enlisted)" (Sketchfab only) | KojfDiscord | CC BY | 33.5k | named after the game it comes from | rejected (rip) |
+| TastyTony, 1514112 "Low poly", RVKE, AxelAvez, threefruits, dbksbvjkbkv | | CC BY | 0.2-9.2k | | rejected: flat colours or untextured |
+| ciprian.adumitroaei, statusqu0 | | CC BY | 9-13k | | not in Objaverse (Sketchfab download needs an account); not needed |
+
+**What the build changed** (`tools/weapons/lee.json`, allowed adaptations under CC BY, listed in CREDITS): scale 0.0786, axes `Yxz`
+(muzzle to +X); the bayonet, the sling and a loose cartridge dropped (`drop_parts`); the bolt (the source's "Mechanic" mesh: bolt,
+handle, cocking piece) on the SSG 08's `bolt` bone; the trigger blade cut out of the receiver mesh by a face box onto `trigger`; the
+detachable magazine on `clip` (it leaves with the reload animation, as the old model's did); textures 4K -> 2048; the period Allied
+offset scope as before. Four materials: the wood keeps the old name `lee_enfield.vmat` (its five pngs overwrite the old ones), plus
+`lee_enfield_steel`, `lee_enfield_bolt`, `lee_enfield_magazine`. The anim DMX files and `lee_enfield_mag.vmdl` come out byte-identical
+to the deployed ones; the vmdl differs only in the muzzle attachment (30.92 -> 30.90) and the hitbox.
+
+**Scale check** (`python -I tools/weapons/compare.py built ...`, `out/step12/renders/weapon_lee_enfield.png`, current / new / stock):
+
+| Model | Length | Bounds (weapon_offset) | Current | Stock |
+|---|---|---|---|---|
+| lee_enfield (new) | 46.5 u | x -15.4..31.1, z -7.1..3.6 | 45.9 u, x -14.8..31.1, z -6.8..3.5 | SSG 08 51.1 u |
+
+Same muzzle, bore (y 0.4, z 0.55) and butt position as the in-game-verified model, so no giant first-person weapon.
+
+**Test compile (12 Nov 2026, level: compiled):** scratch addon `tw_weapontest` (content + game), mg_trenchwarfare untouched,
+`resourcecompiler -f -i` under the watchdog: `lee_enfield.vmdl` 1 compiled, 0 failed (24 s, with its four vmats and textures);
+`lee_enfield_mag.vmdl` 1 / 0; `sounds/*.wav` (the 8 replacements) 8 / 0. Logs `out/step12/compile_*_watch.log`. The compiled texture
+names (`lee_enfield_color_png_b0b5d5f.vtex_c` ...) are the same as the deployed ones (the hash is path-based), so a deploy compile
+overwrites them and leaves nothing stale. Not yet seen in Hammer or in game: after the deploy, check that the bolt cycles with the shoot
+animation, the magazine leaves and returns with the reload, and the rifle sits in the hands like the old one (TESTING.md).
+
 ## Every Workshop candidate looked at
 
 Status: converted = items made and turntabled; candidate = description read, not downloaded (rip stated or no slot). Full notes per
@@ -196,7 +249,7 @@ pack in `tools/tw_gmod_catalog.json`.
 
 | Id | Title | Author | Status | Quality notes | Rip risk |
 |---|---|---|---|---|---|
-| 3576805717 | WW1 French Canon de 75mm 1897 | soap | **converted, swapped in** (`gm_canon75`) | 24.6k, best gun on the Workshop | low (Sketchfab original, CC family per Objaverse; variant to verify) |
+| 3576805717 | WW1 French Canon de 75mm 1897 | soap | **converted, swapped in** (`gm_canon75`) | 24.6k, best gun on the Workshop | low: original is DopamineWarlock's CC BY 4.0 Sketchfab model, the exact shipped variant (step 12) |
 | 3295824204 | [LVS] Renault FT Series | Kalamari | converted (`gm_ft_female`), not used | 29.9k, good | medium (Sketchfab, licence unstated) |
 | 3469424955 | [LVS] WW1 Great Britain Aviation Pack | Ryuunosuke | converted (`gm_camel`), rejected | 19.3k Camel, good | high (unknown source; no-modification clause) |
 | 1315182127 | [WAC] SPAD XIII | Gredwitch | converted (`gm_spad13`), rejected | 8.7k | high ("did not make the models") |

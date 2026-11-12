@@ -3,8 +3,9 @@
 AI-generated (Claude) for skink52. Remaster step 10 (12 Nov 2026). Shape from [docs/creation/workshop.md](../../../docs/creation/workshop.md).
 Licence and IP detail: [WORKSHOP_COMPLIANCE.md](WORKSHOP_COMPLIANCE.md); the models and their sources: [ASSETS.md](ASSETS.md).
 
-**State: not uploaded, and not uploadable yet.** The [checklist](#pre-upload-checklist) below has open licence items (three weapon
-models, the Canon de 75's licence), and nothing of the remaster has been compiled or played yet ([TESTING.md](TESTING.md)).
+**State: not uploaded, and not uploadable yet.** Every licence question now has an answer (steps 11 and 12, 12 Nov 2026), but the
+three replacement weapons and the replacement template sounds are staged, not deployed, and the remaster has not been played yet
+([TESTING.md](TESTING.md)); the [checklist](#pre-upload-checklist) says what is left.
 A private-server build is fine as it is.
 
 ## Files
@@ -27,7 +28,7 @@ of `out/step10/deploy_files.txt` instead of overwriting it.
 - **Visibility:** private or friends-only for the first upload, until TESTING.md sections A-T pass on the uploaded item.
 - **Preview image:** 1024 x 1024 under 1 MB, of this addon only and taken after the weapon replacements. Use `python3 ../../create/loading.py workshop <in.png> <out.jpg>`.
   Before in-game captures exist, the loading slides (`panorama/images/map_icons/screenshots/1080p/mg_trenchwarfare*.png`) are the gallery, labelled as renders.
-- **Description:** below, about 7,400 of Steam's 8,000 characters. The credits still to fill in must fit. Shorten "Server requirements" first if they don't.
+- **Description:** below, 7,436 of Steam's 8,000 characters with every credit filled in (step 12). Shorten "Server requirements" first if more is added.
 - **Change notes:** the first upload's notes are the "What's new in the remaster" list. Paste what was posted, exactly, under
   [Change notes as posted](#change-notes-as-posted).
 
@@ -42,22 +43,26 @@ From [WORKSHOP_COMPLIANCE.md](WORKSHOP_COMPLIANCE.md) "Steps for a Workshop buil
 - [ ] **Luger P08 (`weapon_glock`): CC BY-ND 4.0.** An adapted version may not be shared. **Replacement built, test-compiled (0 failed)
       and credited (step 11):** "Luger - Game ready asset" by Burdock, CC BY 4.0. Left: the same deploy and compile, and delete the old
       `luger_p08_bullet*` / `luger_p08_material*` materials (CC BY-ND content) from both addon roots, as the deploy list says. Tick then.
-- [ ] **Lee-Enfield SMLE (`weapon_ssg08`): author unknown.** Find the CGTrader page and author and record them. Check that its royalty-free licence
-      allows shipping the model inside a free game addon; if it does not, replace the model.
-- [ ] **Mondragón M1908 (`weapon_g3sg1`): source unverified.** Most likely DilanMendozaHer on Sketchfab, CC BY. Confirm the source and credit it, or replace the model.
-- [ ] **Canon de 75 (`models/tw/ext/gm_canon75`): licence to confirm.** It came through GMod Workshop 3576805717 by soap, who credits the original
-      Sketchfab modeller ("France M1897 75mm cannon"). Open the Sketchfab page and record the author, link and licence.
-      - CC BY, CC BY-SA, CC0 or CC BY-NC: credit it.
-      - ND or no licence: deploy the fallback. In `tools/tw_models.py`, set the `SWAPS` entry `gun_75mm` to `ext/gun_75mm`, then rerun
-        `tools/patch_models.py` and the chain.
-- [ ] **Credits filled in.** Update `out/step10/addon/CREDITS.txt` and the [CREDITS.txt](#creditstxt) copy below:
-      - the Canon de 75 line;
-      - the replacement Gewehr 98 and Luger (done 12 Nov 2026 in CREDITS, the copy below and the description);
-      - the Lee-Enfield and Mondragón authors;
-      - drop the "being sorted out" notes.
-      In the description, replace the `<<FILL IN BEFORE UPLOAD ...>>` line with the same credits, then redeploy.
-- [ ] **Template sounds.** Check the origin of `sounds/bird_01-06`, `interior_01` and `vent_01` (from the addon template). Delete them by hand if
-      the map does not use them, and drop their CREDITS line.
+- [ ] **Lee-Enfield SMLE (`weapon_ssg08`) must be replaced.** The deployed mesh is TurboSquid 1907112 "Lee Enfield MK1 Low-poly PBR
+      Free" (same date and the exact 10,337 faces), licensed for editorial use only, which rules out a game. **Replacement built,
+      test-compiled (0 failed) and credited (12 Nov 2026, step 12):** "Lee Enfield MKIII" by Moony_State, CC BY 4.0, via Objaverse
+      ([ASSETS.md](ASSETS.md#licence-replacements-step-12)). Left: deploy `out/step12/deploy_files.txt`, force-compile
+      `lee_enfield.vmdl` and `lee_enfield_mag.vmdl`, look at it in game. Tick when that is done.
+- [x] **Mondragón M1908 (`weapon_g3sg1`): source confirmed (step 12).** "Mondragón M1908" by DilanMendozaHer, Sketchfab
+      2cfae8885fe747feaeb6068133f5fb38, CC BY 4.0: same 24,674 faces, 16 materials / 16 textures and the same parts layout as our
+      Blockbench file. No model change; the credit is in CREDITS.txt and the description.
+- [x] **Canon de 75 (`models/tw/ext/gm_canon75`): licence confirmed (step 12).** "France M1897 75mm Cannon(Custom modified)" by
+      DopamineWarlock, Sketchfab eb6c4b6b18324e64992615e04b60d2ab (Objaverse 000-105), CC BY 4.0: the page soap's item links, and the
+      shipped variant (24,552 faces = our LOD0). No swap; credited. (The fallback route, if ever needed: `tools/tw_models.py` `SWAPS`
+      `gun_75mm` -> `ext/gun_75mm`, rerun `tools/patch_models.py` and the chain.)
+- [ ] **Credits filled in.** Done in `out/step10/addon/CREDITS.txt`, the [CREDITS.txt](#creditstxt) copy below and the description
+      (12 Nov 2026, step 12: every weapon, the Canon de 75, the sounds note; the `<<FILL IN ...>>` line is gone). Left: redeploy
+      (step 10's list carries both files). Tick then.
+- [ ] **Template sounds.** `sounds/bird_01-06`, `interior_01` and `vent_01` are Valve's CS2 addon template files (byte-identical;
+      `interior_01` carries a commercial sound-library label), so their terms outside CS2 are unknown. The map never plays them, but the
+      template's `ambient_example.*` events name them, so they compile into the addon. **Replaced by synthesised wavs of the same names**
+      (`python tools/sounds.py --template-wavs out/step12/addon`, test-compiled 8 / 0 failed), staged in step 12. Left: deploy and
+      force-compile `sounds/*.wav`. Tick then.
 - [ ] **Stray files in both addon roots.** Remove these by hand; the deploy tools never delete:
       - any `models/tw/ext/gm_*` and `materials/models/tw/ext/gm_*` other than `gm_canon75`;
       - the old weapon `_c` files once the weapons are replaced (step 11 overwrites same-named files; the old Luger's
@@ -144,9 +149,7 @@ Source: https://github.com/skink52/cs2mapping (projects/trenchwarfare-cs2)
 [h2]Credits[/h2]
 Map, script and original assets: skink52.
 
-Models from Sketchfab under CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), converted for CS2: "Mortier de 58 mm type 2" by mrpolarbear; "A7V 'Wotan' tank" by IvanKoliada; "Renault FT 1917 game-ready model" by kraytay; "75mm Field Gun" by kisotsu; "Bl 8 Artillery Howitzer MkV" by Zanderart; "Army Stretcher" by 4mecharmi; "British WW1 Military Helmet (Broken and New)" by noodlepirate; "German Stahlhelm m16 (ww1)" by janovich3D; "German Field Telephone" by rayferric; "Burnt Stump" by dunathan; "Vintage petrol can" by jkillgore; "Spad S VII" and "Dr1" by manilov.ap; "Lewis Mk1" by MaX3Dd; Colt M1911 by Ole Gunnar Isager; "Free Mauser Gewehr 98" by lawlordp; "Luger - Game ready asset" by Burdock.
-
-<<FILL IN BEFORE UPLOAD (docs/WORKSHOP.md checklist): the Canon de 75 credit (original Sketchfab author, licence, link; converted via Steam Workshop item 3576805717 by soap), and the Lee-Enfield and Mondragon authors. Delete this line.>>
+Models from Sketchfab under CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), converted for CS2: "Mortier de 58 mm type 2" by mrpolarbear; "A7V 'Wotan' tank" by IvanKoliada; "Renault FT 1917 game-ready model" by kraytay; "75mm Field Gun" by kisotsu; "Bl 8 Artillery Howitzer MkV" by Zanderart; "Army Stretcher" by 4mecharmi; "British WW1 Military Helmet (Broken and New)" by noodlepirate; "German Stahlhelm m16 (ww1)" by janovich3D; "German Field Telephone" by rayferric; "Burnt Stump" by dunathan; "Vintage petrol can" by jkillgore; "Spad S VII" and "Dr1" by manilov.ap; "Lewis Mk1" by MaX3Dd; Colt M1911 by Ole Gunnar Isager; "Free Mauser Gewehr 98" by lawlordp; "Luger - Game ready asset" by Burdock; "Lee Enfield MKIII" by Moony_State; "Mondragon M1908" by DilanMendozaHer; "France M1897 75mm Cannon(Custom modified)" by DopamineWarlock (the Canon de 75, reached through soap's Garry's Mod conversion, Steam Workshop item 3576805717).
 
 Foliage, ground materials, particles and weapon animations are Counter-Strike 2 stock assets (Valve). All other art, sound and code is original.
 
@@ -158,7 +161,7 @@ Not affiliated with or endorsed by Valve.
 ## CREDITS.txt
 
 The same text as the staged `out/step10/addon/CREDITS.txt`. It keeps every line of the addon's earlier CREDITS.txt and adds the weapon
-models, the Canon de 75 and the synthesised-sound note.
+models, the Canon de 75 and the synthesised-sound notes (step 12: every licence answered).
 
 ```
 mg_trenchwarfare by skink52. Map generator, procedural props/textures, HUD and scripts were written by an AI (Claude).
@@ -185,24 +188,27 @@ Third-party models (Sketchfab, CC BY 4.0 - https://creativecommons.org/licenses/
 - "Luger - Game ready asset" by Burdock,
   https://sketchfab.com/3d-models/luger-game-ready-asset-365c3bfd19494dfea145fb4e5d15d0bc
   (weapon model, T pistol on weapon_glock; a magazine block added inside the grip for the reload)
+- "Lee Enfield MKIII" by Moony_State (formerly Giuliano.Sgroi),
+  https://sketchfab.com/3d-models/lee-enfield-mkiii-f6a2160daf134071a84e3cae5f831875
+  (weapon model, CT rifle on weapon_ssg08; bayonet, sling and loose cartridge left out, textures reduced to 2048, period
+  telescopic sight added)
+- "Mondragon M1908" by DilanMendozaHer,
+  https://sketchfab.com/3d-models/mondragon-m1908-2cfae8885fe747feaeb6068133f5fb38
+  (weapon model, T streak weapon on weapon_g3sg1; drum magazines, spare magazine and cartridges left out, procedural wood
+  and steel materials, period telescopic sight added)
+- "France M1897 75mm Cannon(Custom modified)" by DopamineWarlock,
+  https://sketchfab.com/3d-models/france-m1897-75mm-cannoncustom-modified-eb6c4b6b18324e64992615e04b60d2ab
+  (the Canon de 75 field gun, models/tw/ext/gm_canon75; reached through soap's Garry's Mod conversion, Steam Workshop
+  item 3576805717 "WW1 French Canon de 75mm 1897", which credits this model; converted to a CS2 static prop with new LODs)
 Changes: converted to CS2 models, re-scaled, rigged as weapons where listed, LOD meshes added to some.
 Stock CS2 foliage, ground materials and sounds by Valve.
 Stock CS2 textures re-used on the procedural props (boards, rust, mud, maple bark) by Valve.
 
-Canon de 75 field gun (models/tw/ext/gm_canon75):
-- "WW1 French Canon de 75mm 1897" from Steam Workshop item 3576805717 (Garry's Mod) by soap, who credits the original
-  Sketchfab modeller ("France M1897 75mm cannon"). The original author and the exact Creative Commons licence are still
-  being confirmed; this credit will be completed before a public release. Converted to a CS2 static prop with new LODs.
-
-Other weapon models (licences being sorted out before a public release):
-- Lee-Enfield SMLE (weapon_ssg08) from a CGTrader royalty-free download; author to be recorded.
-- Mondragon M1908 (weapon_g3sg1): most likely "Mondragon M1908" by DilanMendozaHer, Sketchfab, CC BY 4.0; to be confirmed.
-
 Original to this addon: terrain, trenches, mine galleries and the procedural props; the four soldier player models (generated
 with Tripo, rigged by this project's tools); HUD art, radar, plotting-board maps, loading slides and map icon; the game script.
 Sounds: every file in sounds/tw/ (mortars, impacts, aircraft, whistles, rain on tin, the front's ambience) is synthesised by this
-project's code from noise and tones, with no recorded samples. sounds/bird_01-06, interior_01 and vent_01 came with the addon
-template the map was started from (believed to be Valve's; origin being checked). Other sounds are Counter-Strike 2 stock.
+project's code from noise and tones, with no recorded samples, and so are sounds/bird_01-06, interior_01 and vent_01 (stand-ins
+for the CS2 addon template's files of the same names). Other sounds are Counter-Strike 2 stock.
 
 Licence: free for non-commercial use, including game servers (donation / VIP servers are fine) as long as the map itself is not
 sold or paywalled. Code: PolyForm Noncommercial 1.0.0 (LICENSE). Art, models, sounds and maps made for this project:

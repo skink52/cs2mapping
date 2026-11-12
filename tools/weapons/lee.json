@@ -1,48 +1,26 @@
 {
  "name": "lee_enfield",
  "sub": "models/weapons/ww1/lee_enfield",
- "out": "C:/source2/projects/trenchwarfare/build_out",
- "fbx": "C:/source2/projects/trenchwarfare/lee enfield/cgtrader_optimized_lee_enfield_mk1.FBX",
- "axes": "zxy",
+ "out": "C:/source1/cs2mapping/projects/trenchwarfare-cs2/out/step12/build",
+ "glb": "C:/source1/gmod_assets/trenchwarfare/weapons/objaverse/lee_moonystate/f6a2160daf134071a84e3cae5f831875.glb",
+ "source": "\"Lee Enfield MKIII\" by Moony_State (formerly Giuliano.Sgroi), Sketchfab f6a2160daf134071a84e3cae5f831875, CC BY 4.0, via Objaverse 1.0 glbs/000-019. Replaces the TurboSquid 1907112 'Lee Enfield MK1 Low-poly PBR Free' (editorial use only) of the first build",
+ "scale": 0.0786,
+ "axes": "Yxz",
  "stock": "ssg08",
- "shift_wo": [
-  9.5,
-  0.43,
-  -7.4
- ],
- "bore_wo": [
-  0.4,
-  0.55
- ],
- "part_bone": {
-  "Bolt 1": "bolt",
-  "FirePin": "bolt",
-  "Trigger": "trigger",
-  "Follower": "clip"
- },
+ "shift_wo": [9.7, 0.4, -2.09],
+ "bore_wo": [0.4, 0.55],
+ "drop_parts": [0, 1, 6],
+ "mag_parts": [2],
+ "part_bone_idx": {"4": "bolt"},
+ "material_names": {"6": "lee_enfield", "4": "lee_enfield_steel", "3": "lee_enfield_bolt", "2": "lee_enfield_magazine"},
  "rules": [
-  {
-   "bone": "clip",
-   "part": "Body",
-   "box": [
-    -8.3,
-    -4.3,
-    -9,
-    9,
-    4.1,
-    6.12
-   ],
-   "mag": true
-  }
+  {"part": 5, "box": [-10.0, -9.05, -0.3, 0.3, -0.7, 0.72], "bone": "trigger"}
  ],
  "scope": {
   "style": "allied",
   "x0": -1.0,
   "y": 1.45,
-  "mounts": [
-   1.2,
-   7.4
-  ],
+  "mounts": [1.2, 7.4],
   "y_post": 0.45
  }
 }

@@ -11,13 +11,20 @@ Asset detail and turntable notes: [ASSETS.md](ASSETS.md).
    **Replacement built (step 11, 12 Nov 2026), staged, not deployed:** "Free Mauser Gewehr 98" by lawlordp, CC BY 4.0.
 2. The Luger P08 (`luger_p08`, on `weapon_glock`) is CC BY-ND 4.0: sharing an adapted version (ours is rigged and reassembled) is not allowed.
    **Replacement built (step 11), staged, not deployed:** "Luger - Game ready asset" by Burdock, CC BY 4.0.
-3. The Mondragón M1908 (`mondragon_m1908`, on `weapon_g3sg1`) has no recorded author or licence.
+3. The Lee-Enfield (`lee_enfield`, on `weapon_ssg08`) is TurboSquid 1907112 "Lee Enfield MK1 Low-poly PBR Free", licensed for
+   editorial use only (not in a game). **Replacement built (step 12, 12 Nov 2026), staged, not deployed:** "Lee Enfield MKIII" by
+   Moony_State, CC BY 4.0.
 
-Once `out/step11/deploy_files.txt` is deployed and compiled and the stray old Luger materials it lists are deleted from both addon
-roots, items 1 and 2 are cleared; item 3 (and the Lee-Enfield author, the Canon de 75 licence) remain.
+Resolved without a file change (step 12): the Mondragón M1908 is "Mondragón M1908" by DilanMendozaHer (CC BY 4.0) and the Canon de 75
+is "France M1897 75mm Cannon(Custom modified)" by DopamineWarlock (CC BY 4.0); both credited. The addon template's bird / interior /
+vent wavs are replaced by synthesised ones of the same names (staged in step 12).
+
+Once `out/step11/deploy_files.txt` and `out/step12/deploy_files.txt` are deployed and compiled, CREDITS.txt and the description
+(step 10's list) redeployed, and the stray old Luger materials deleted from both addon roots, all three items are cleared and every
+third-party model in the addon has a named author and a CC BY licence.
 
 The map's props are original (generated), CC BY Sketchfab models with credit, or CS2 stock, plus one Workshop-sourced gun (the Canon de
-75, below) whose Creative Commons variant must be confirmed. No game-ripped prop is in the map. A private-server build is fine as it is.
+75, below; its CC BY original confirmed in step 12). No game-ripped prop is in the map. A private-server build is fine as it is.
 
 ## What is in the addon
 
@@ -29,27 +36,32 @@ The map's props are original (generated), CC BY Sketchfab models with credit, or
   Renault FT 1917 (kraytay), 75mm Field Gun (kisotsu, now the fallback only), Bl 8 Howitzer MkV (Zanderart), Army Stretcher (4mecharmi),
   British WW1 helmet (noodlepirate), Stahlhelm m16 (janovich3D), German Field Telephone (rayferric), Burnt Stump (dunathan), Vintage
   petrol can (jkillgore), Spad S VII and Dr1 (manilov.ap). LOD meshes added in step 6 are adaptations: allowed under CC BY with credit.
-- **Canon de 75 mle 1897** (`models/tw/ext/gm_canon75`, swapped in for `gun_75mm`): GMod Workshop 3576805717 by soap, who credits "the
-  original modeller" on Sketchfab ("france-m1897-75mm-cannon..."); the model is listed in Objaverse 1.0, which only takes Creative-Commons
-  Sketchfab models. **Before a Workshop upload:** open the Sketchfab page, record author and licence. CC BY / CC BY-SA / CC0: add the
-  credit to `CREDITS.txt`. CC BY-NC: compatible with this addon's non-commercial licence, credit it. ND or no licence: deploy the fallback
-  (`tools/tw_models.py` SWAPS `gun_75mm` chosen -> `ext/gun_75mm`, rerun `tools/patch_models.py`).
+- **Canon de 75 mle 1897** (`models/tw/ext/gm_canon75`, swapped in for `gun_75mm`): GMod Workshop 3576805717 by soap, whose page links
+  "the original modeller": **"France M1897 75mm Cannon(Custom modified)" by DopamineWarlock, CC BY 4.0**, Sketchfab
+  eb6c4b6b18324e64992615e04b60d2ab (published 14 Jun 2022; Objaverse 1.0 000-105 lists it as `by`). Confirmed 12 Nov 2026 (step 12):
+  the Sketchfab record's 24,552 faces equal our converted LOD0's 24,552 triangles, one material, and the thumbnail shows the same shield,
+  wheels and paint. A copy uploaded the next day by Ara_my45yt (c6d755bb...) is a re-upload, not the source. Credited in `CREDITS.txt`
+  and the description; no swap needed. Residual note: the title says "Custom modified" and the page names no earlier source.
 - **Weapons** (`models/weapons/ww1/*`, vdata overrides):
 
 | Weapon | Class | Source | Licence | Rip | Workshop action |
 |---|---|---|---|---|---|
 | Gewehr 98 (deployed) | weapon_awp | Battlefield 1 extraction | none | **RIP (DICE)** | replaced by the row below: deploy step 11 |
 | **Gewehr 98 (step 11)** | weapon_awp | "Free Mauser Gewehr 98" by lawlordp (Milantique / Foolish Me Studios), sketchfab.com/3d-models/free-mauser-gewehr-98-a4a6399f343143c883e090362bd6222d, via Objaverse 1.0 (glbs/000-127) | **CC BY 4.0** (Sketchfab page, Objaverse metadata and the GLB's own asset record agree) | no (no game names; the author's uploads are original work) | credited in `CREDITS.txt`; deploy, compile, ship |
-| Lee-Enfield SMLE | weapon_ssg08 | CGTrader download | royalty-free (assumed) | no | record the CGTrader page and author |
+| Lee-Enfield (deployed) | weapon_ssg08 | TurboSquid 1907112 "Lee Enfield MK1 Low-poly PBR Free" (4 Jun 2022, 10,337 faces = ours; no author in the files) | **editorial use only** | no | replaced by the row below: deploy step 12 |
+| **Lee-Enfield SMLE Mk III (step 12)** | weapon_ssg08 | "Lee Enfield MKIII" by Moony_State (formerly Giuliano.Sgroi), sketchfab.com/3d-models/lee-enfield-mkiii-f6a2160daf134071a84e3cae5f831875, via Objaverse 1.0 (glbs/000-019) | **CC BY 4.0** (Sketchfab page, Objaverse metadata and the GLB's asset record agree) | no ("modeled in Blender and textured in Substance Painter"; no game names) | credited in `CREDITS.txt`; deploy, compile, ship |
 | Luger P08 (deployed) | weapon_glock | Sketchfab, FSkala | **CC BY-ND 4.0** | no | replaced by the row below: deploy step 11, delete the old `luger_p08_bullet*` / `luger_p08_material*` materials |
 | **Luger P08 (step 11)** | weapon_glock | "Luger - Game ready asset" by Burdock, sketchfab.com/3d-models/luger-game-ready-asset-365c3bfd19494dfea145fb4e5d15d0bc, via Objaverse 1.0 (glbs/000-083) | **CC BY 4.0** (all three records agree) | no ("modelled in Blender, textured in Substance Painter"; no game names) | credited in `CREDITS.txt`; deploy, compile, ship |
-| Colt M1911 | weapon_hkp2000 | Sketchfab, Ole Gunnar Isager | CC BY 4.0 | no | add to `CREDITS.txt` |
-| Lewis Mk I | weapon_scar20 | Sketchfab, MaX3Dd | CC BY 4.0 | no | add to `CREDITS.txt` |
-| Mondragón M1908 | weapon_g3sg1 | Blockbench GLB, no metadata (likely DilanMendozaHer, Sketchfab, CC BY) | unverified | unlikely | confirm the source, then credit; else replace |
+| Colt M1911 | weapon_hkp2000 | Sketchfab, Ole Gunnar Isager | CC BY 4.0 | no | credited in `CREDITS.txt` |
+| Lewis Mk I | weapon_scar20 | Sketchfab, MaX3Dd | CC BY 4.0 | no | credited in `CREDITS.txt` |
+| Mondragón M1908 | weapon_g3sg1 | "Mondragón M1908" by DilanMendozaHer, sketchfab.com/3d-models/mondragon-m1908-2cfae8885fe747feaeb6068133f5fb38 (published 20 Aug 2026, so not in Objaverse); our file is a Blockbench re-export of it (24,674 faces, 16 materials / 16 textures, same parts layout) | **CC BY 4.0** | no (the author's three low-poly originals; historical description) | **confirmed (step 12)**, credited in `CREDITS.txt`; no change |
 
 - **Player models:** four Tripo-generated soldiers (`models/tw/players/*`, ours), template rig from mg_mario_party (ours). Every
   uniform the script sets ships compiled in this addon (a missing player model gave the giant first-person weapons).
-- **Sounds:** 3 synthesised (`sounds/tw/*`); the rest CS2 stock sound events. Template bird / interior / vent wavs: check their origin.
+- **Sounds:** synthesised (`sounds/tw/*`); the rest CS2 stock sound events. The template's `sounds/bird_01-06`, `interior_01`,
+  `vent_01` were Valve's CS2 addon_template files (byte-identical; `interior_01` carries a commercial sound-library label, so the terms
+  outside CS2 are unknown); the map never plays them but the template's `ambient_example.*` events make them compile. **Step 12:
+  replaced by synthesised wavs of the same names** (`tools/sounds.py --template-wavs`), staged.
 - **Code:** written for this project (AI-written, directed by skink52). PolyForm Noncommercial; assets CC BY-NC 4.0.
 
 ## Workshop packs: what was looked at and what ships
@@ -63,11 +75,13 @@ other `gm_*` folders into the addon.
 
 ## Steps for a Workshop build
 
-1. Resolve the three weapons above. Gewehr 98 and Luger: done in step 11 (rebuilt with `tools/weapons/`, test-compiled, staged; deploy
-   `out/step11/deploy_files.txt`, force-compile the two vmdls, delete the stray old Luger materials it lists). Mondragón: confirm.
-   Selection, rip checks and the licence reasoning: [ASSETS.md](ASSETS.md#weapon-replacements-step-11).
-2. Confirm the Canon de 75 licence (or deploy the fallback), then update `CREDITS.txt`: the Lewis Mk I, Colt M1911 and the two
-   replacement weapons are in the staged `out/step10/addon/CREDITS.txt`; the Canon de 75 is still to add.
+1. Deploy the weapon replacements. Gewehr 98 and Luger: step 11 (deploy `out/step11/deploy_files.txt`, force-compile the four vmdls,
+   delete the stray old Luger materials it lists). Lee-Enfield and the template wavs: step 12 (deploy `out/step12/deploy_files.txt`,
+   force-compile `lee_enfield.vmdl`, `lee_enfield_mag.vmdl` and `sounds/*.wav`). Mondragón: confirmed, nothing to deploy.
+   Selection, rip checks and the licence reasoning: [ASSETS.md](ASSETS.md#weapon-replacements-step-11),
+   [ASSETS.md](ASSETS.md#licence-replacements-step-12).
+2. Redeploy step 10's CREDITS.txt and description: every third-party model is credited there (step 12 added the Lee-Enfield, the
+   Mondragón and the Canon de 75's original author).
 3. Check both addon roots (`content\csgo_addons\mg_trenchwarfare`, `game\csgo_addons\mg_trenchwarfare`) for any `models/tw/ext/gm_*`
    other than `gm_canon75`, and for the old weapon `_c` files once replaced. The deploy tools never delete: remove by hand.
 4. Keep `CREDITS.txt` and both licence files in the published addon; credit line in the description.
@@ -81,8 +95,8 @@ other `gm_*` folders into the addon.
 
 ## Residual risk
 
-- **As the deployed files stand: high** (one ripped weapon from a current franchise, one ND-licensed weapon). With step 11 deployed
-  and the stray files removed, both are gone.
-- **After the weapon steps: low.** Original generated content, credited CC BY models, CS2 stock. Not audited: the template sounds, and
-  whether the stock texture copies in `materials/models/tw/stock/` count as redistributing Valve content outside CS2 (they ship only
-  inside a CS2 addon, as Valve's own content).
+- **As the deployed files stand: high** (one ripped weapon from a current franchise, one ND-licensed weapon, one editorial-only
+  weapon). With steps 11 and 12 deployed and the stray files removed, all three are gone.
+- **After the weapon steps: low.** Original generated content, credited CC BY models, CS2 stock. Left: whether the stock texture copies
+  in `materials/models/tw/stock/` count as redistributing Valve content outside CS2 (they ship only inside a CS2 addon, as Valve's own
+  content), and the Canon de 75's "Custom modified" title (its page names no earlier source; the author's licence is CC BY).
