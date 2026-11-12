@@ -149,6 +149,18 @@ Exact bounds, LOD triangle counts and credits: `out/gmod_models.json`. Per-model
   The nearest is "Yukon's Predator Ruins+Foliage Prop Pack" (2563105503, 1.75 GB, not downloaded: more than a third of the disk
   budget for unknown content). Statuary is better sourced as CC-BY scans (Sketchfab has photogrammetry of Khmer lions, nagas
   and devatas) through `create/glb2cs2_multi.py`, which this task did not cover.
+- **Searched again for playtest 1, finding 18 (13 Nov 2026, batch P):** CS2's own files first (pak01 index: `models/anubis/structures/statue01`
+  is Egyptian, `models/generic/stone_statue_01` and `de_venice` loggetta statues are European, de_ancient has carved reliefs but no
+  free-standing statuary), then the Workshop (searches: lion statue, guardian lion, komainu, naga statue, temple statue, asian statue,
+  ruins props, Tomb Raider / Uncharted props; item details read through the Steam Web API). Nearest hits, all rejected: 2526479526
+  "Snake Statue" (a Greek-columned snake, 5 MB), 2075052913 "Battlefield 1: statues" (European lion), 2563105503 "Yukon's Predator
+  Ruins" (Mesoamerican temple props, 1.7 GB), 1135459046 "Lion" (an animal ragdoll). Nothing was downloaded or converted. The lion
+  and the naga are now SDF sculpts (`tools/sculpt.py`, `p_temple.singha_sdf` / `naga_sdf`): weathered, mossy and broken, same
+  model paths and hulls.
+- **Hay (finding 17):** no Workshop conversion needed: the rice-straw stack (`haystack`) and the rice basket (`rice_basket`) are
+  rebuilt procedurally on CS2's own photo-sourced materials (de_ancient thatch and thatch edge, de_anubis hay pile strands, de_dust
+  grain basket weave), referenced from the game files. Western hay bales (de_inferno `hay_bale_a`) were not used: rice straw
+  stacked round a pole fits a Vietnamese village.
 - **Vietnamese hooches / stilt huts, sampan, steel truss bridge, C-123 / C-130 hulk, Grad-P single-rail launcher, M102, wheeled
   DShK, bamboo fence, camo net, oil drums better than ours**: nothing usable found. Keep `hooch_*`, `sampan`, `truss_span`,
   `c123_*`, `rocket_rail` / `rocket_tripod`, `drum_*`.
@@ -229,3 +241,23 @@ Already converted there: `nva_soldier`, `vietcong_soldier`, `soldier2_woodland`,
   "by ?" for some packs; `out/gmod_models.json` has the right credit.
 - Disk: `out/gmod` holds the kept extracts (materials of every converted addon) so a re-convert works; `prune` after the catalog
   settles, or delete `out/gmod/<id>/x` by hand to reclaim it.
+
+## Weapons (playtest 1 batch G, 13 Nov 2026; docs/WEAPONS.md)
+
+Era weapons are stock CS2 weapon classes with stats (and, for three, models) from the addon's `scripts/weapons.vdata`
+(`tools/mv_weapons.py`). Remodels are built by the repo's `tools/weapons/build_weapon.py` onto the stock weapon skeletons, so the stock
+animations drive them; configs `tools/weapons_mv/*.json`. Level reached: built and looked at in software renders
+(`out/weapons/<name>_compare.png`); compile: FIX_PT1_G.md G8. Not seen in game.
+
+| Model | Class (US / NVA) | Source | Licence / rip | Path |
+|---|---|---|---|---|
+| M1911A1 | `weapon_hkp2000` (US pistol) | "Colt M1911" by Ole Gunnar Isager, Sketchfab; the mg_trenchwarfare build (`tools/weapons/colt.json`, in-game verified there), rebuilt at the monsoon path | CC BY 4.0 (credit needed) | `models/weapons/mv/m1911/` |
+| M14 | `weapon_scar20` (US marksman) | M14 of GMod Workshop 740797619 "Bad Company 2 models: Vietnam pack" (already converted here as the prop `w_m14`), turned into a GLB by `tools/mv_weapon_glb.py` | RIP: Battlefield Bad Company 2 Vietnam (DICE / EA): private build only, like the other BC2 props | `models/weapons/mv/m14/` |
+| M21 | `weapon_g3sg1` (US sniper upgrade) | the same BC2 M14 mesh + a procedural period scope (`tools/weapons/scope2.py`, axis style) | as the M14; the scope is ours | `models/weapons/mv/m21/` |
+| period scope materials | (M21) | `materials/models/weapons/ww1/scope/{scope,glass}.vmat` + PNGs copied from mg_trenchwarfare (procedural, `tools/weapons/weather.py`); `brass.vmat` here is a copy of `scope.vmat` (blued, not brass; unused by the axis-style scope, kept for a later style that has brass bands) | ours | `materials/models/weapons/ww1/scope/` |
+
+Every other era weapon (M16A1, AK-47, M60, RPD, SKS, TT-33, XM177E2, K-50M, Ithaca 37, Mosin PU) is vdata stats on the stock model:
+nothing is taken. Candidates for the next remodels (none downloaded; each download needs skink52's yes): GMod 108432322 "Black Ops
+M16A1/M16A2 Pack" (RIP), 2377172653 "[TFA] Rising Storm 2: Vietnam Rifles 1" (RIP), 2798978081 "RS2 RPG-7" (RIP), and the Objaverse
+CC index (`C:\source1\gmod_assets\trenchwarfare\weapons\objaverse_index`): M16 243, SKS 726 (most are not the rifle), M60 52, RPD 40,
+RPG-7 39, M79 51, TT-33 29, SVD 90, Mosin 79 hits by name. Each also needs its stock skeleton exported (WEAPONS.md "Next").

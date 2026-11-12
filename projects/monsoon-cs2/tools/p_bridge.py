@@ -203,10 +203,16 @@ def _tin(ctx):
     return out
 
 
+# large surfaces on tiling materials (playtest 1, finding 16): concrete on CS2's weathered hr_conc_d (exported, darkened), deck and checkpoint timbers on
+# the exported de_train boards, sandbags on the exported CS2 cloth; steel, paint and stripes stay on the baked atlas
+PSTOCK = {'conc': 'concrete_aged', 'wood': ['boards_warm_box', 'boards_dark_box'], 'plank': ['boards_dark_box', 'boards_warm_box'],
+          'burlap': ['hessian', 'hessian', 'hessian_b', 'hessian_c']}
+
+
 def _spec(fn, size=2048, surface='concrete', metal=False, ground=0.0, **kw):
     r = fn(lod=0, **kw)
     m, hulls = r[0], r[1]
-    return dict(lods=[m], single_lod=True, size=size, decal_size=512, ground=ground, surface=surface, metal=metal, shaders=_sh(), stock={},
+    return dict(lods=[m], single_lod=True, size=size, decal_size=512, ground=ground, surface=surface, metal=metal, shaders=_sh(), stock=PSTOCK,
                 decal_imgs=r[2] if len(r) > 2 else {}, hulls=hulls)
 
 

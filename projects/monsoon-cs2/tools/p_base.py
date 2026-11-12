@@ -496,32 +496,40 @@ def _sh():
             'seat': M.seat_canvas}
 
 
-def _two(fn, size=1024, hulls=None, ground=0.0, thr=30.0, surface='default', metal=False, cut=False, **kw):
+# chart material -> tiling material for the big firebase surfaces (playtest 1, finding 16): timbers on CS2's de_train boards
+# (box projected, 40 u per tile), sandbags on the exported CS2 cloth (hessian), the GP tent on olive-drab
+# canvas. Painted steel, PSP, rubber and the small parts stay on the baked atlas (sized by texel density).
+BSTOCK = {'wood_dark': 'boards_dark_box', 'wood': ['boards_warm_box', 'boards_dark_box'], 'burlap': ['hessian', 'hessian', 'hessian_b', 'hessian_c'],
+          'tent': 'canvas_od'}      # earth stays baked: de_ancient mud read grey against the valley's red-brown soil
+BSTOCK_PROPS = {'bunker_large', 'bunker_small', 'fdc_bunker', 'guard_tower', 'culvert_bunker', 'checkpoint', 'gp_tent', 'fuel_bladder', 'latrine'}
+
+
+def _two(fn, size=1024, hulls=None, ground=0.0, thr=30.0, surface='default', metal=False, cut=False, stock=None, **kw):
     a = fn(lod=0, **kw); b = fn(lod=1, **kw)
     imgs = {}
     if isinstance(a, tuple): a, imgs = a; b = b[0]
     lo, hi = a.bounds()
     spec = dict(lods=[a, b], lod_thresholds=[0.0, thr], size=size, decal_size=512, ground=ground, surface=surface, metal=metal, shaders=_sh(),
-                decal_imgs=imgs, stock={}, hulls=hulls or [MG.pts_box(lo[0], lo[1], lo[2], hi[0], hi[1], hi[2])])
+                decal_imgs=imgs, stock=stock or {}, hulls=hulls or [MG.pts_box(lo[0], lo[1], lo[2], hi[0], hi[1], hi[2])])
     return spec
 
 
 def specs():
     return {
-        'bunker_large': lambda: _two(bunker, 2048, hulls=[MG.pts_box(-100, -77, -26, 100, 77, 110), MG.pts_box(100, -85, -2, 142, 85, 40), MG.pts_box(-150, -126, -2, 150, 126, 24)], kind='large', gun=True),
-        'bunker_small': lambda: _two(bunker, 2048, hulls=[MG.pts_box(-75, -62, -26, 75, 62, 104), MG.pts_box(75, -70, -2, 118, 70, 40), MG.pts_box(-120, -110, -2, 120, 110, 24)], kind='small', gun=False, seed=62),
-        'fdc_bunker': lambda: _two(fdc_bunker, 2048, hulls=[MG.pts_box(-120, -52, 0, 44, 52, 92), MG.pts_box(40, -66, 0, 176, -50, 96), MG.pts_box(40, 50, 0, 176, 66, 96), MG.pts_box(36, -68, 88, 176, 68, 96)], metal=True),
+        'bunker_large': lambda: _two(bunker, 2048, hulls=[MG.pts_box(-100, -77, -26, 100, 77, 110), MG.pts_box(100, -85, -2, 142, 85, 40), MG.pts_box(-150, -126, -2, 150, 126, 24)], kind='large', gun=True, stock=BSTOCK),
+        'bunker_small': lambda: _two(bunker, 2048, hulls=[MG.pts_box(-75, -62, -26, 75, 62, 104), MG.pts_box(75, -70, -2, 118, 70, 40), MG.pts_box(-120, -110, -2, 120, 110, 24)], kind='small', gun=False, seed=62, stock=BSTOCK),
+        'fdc_bunker': lambda: _two(fdc_bunker, 2048, hulls=[MG.pts_box(-120, -52, 0, 44, 52, 92), MG.pts_box(40, -66, 0, 176, -50, 96), MG.pts_box(40, 50, 0, 176, 66, 96), MG.pts_box(36, -68, 88, 176, 68, 96)], metal=True, stock=BSTOCK),
         'psp_pad': lambda: _two(psp_pad, 2048, hulls=[MG.pts_box(-300, -300, 0, 300, 300, 1.6)], metal=True),
         'windsock': lambda: _two(windsock, 512, metal=True, hulls=[MG.pts_box(-3, -3, 0, 3, 3, 130)]),
-        'gp_tent': lambda: _two(gp_tent, 2048, hulls=[MG.pts_box(-160, -100, 0, 160, 100, 60), MG.pts_box(-160, -60, 60, 160, 60, 150)]),
+        'gp_tent': lambda: _two(gp_tent, 2048, hulls=[MG.pts_box(-160, -100, 0, 160, 100, 60), MG.pts_box(-160, -60, 60, 160, 60, 150)], stock=BSTOCK),
         'conex': lambda: _two(conex, 1024, metal=True),
-        'guard_tower': lambda: _two(guard_tower, 2048, hulls=tower_hulls()),
-        'fuel_bladder': lambda: _two(fuel_bladder, 1024, hulls=[MG.pts_box(-75, -55, 0, 75, 55, 34), MG.pts_box(-100, -84, 0, 100, 84, 12)]),
+        'guard_tower': lambda: _two(guard_tower, 2048, hulls=tower_hulls(), stock=BSTOCK),
+        'fuel_bladder': lambda: _two(fuel_bladder, 1024, hulls=[MG.pts_box(-75, -55, 0, 75, 55, 34), MG.pts_box(-100, -84, 0, 100, 84, 12)], stock=BSTOCK),
         'drum_od': lambda: _two(drum, 512, metal=True, mat='od'),
         'drum_rust': lambda: _two(drum, 512, metal=True, mat='rust', seed=70),
         'drum_stack': lambda: _two(drum_stack, 1024, metal=True, hulls=[MG.pts_box(-26, -12, 0, 38, 56, 34), MG.pts_box(28, 24, 0, 74, 48, 24)]),
         'water_trailer': lambda: _two(water_trailer, 1024, metal=True, hulls=[MG.pts_box(-70, -34, 18, 70, 34, 90), MG.pts_box(-30, -52, 0, 10, 52, 36), MG.pts_box(70, -6, 10, 130, 6, 26)]),
-        'latrine': lambda: _two(latrine, 1024, hulls=[MG.pts_box(-30, -22, 0, 30, 22, 34), MG.pts_box(-46, -42, 0, 46, -38, 90), MG.pts_box(-46, 38, 0, 46, 42, 90), MG.pts_box(-46, -42, 0, -42, 42, 90)]),
+        'latrine': lambda: _two(latrine, 1024, hulls=[MG.pts_box(-30, -22, 0, 30, 22, 34), MG.pts_box(-46, -42, 0, 46, -38, 90), MG.pts_box(-46, 38, 0, 46, 42, 90), MG.pts_box(-46, -42, 0, -42, 42, 90)], stock=BSTOCK),
         'antenna_mast': lambda: _two(antenna_mast, 512, metal=True, hulls=[MG.pts_box(-3, -3, 0, 3, 3, 420)]),
         'ammo_can': lambda: _two(ammo_can, 256, metal=True),
         'ammo_crate': lambda: _two(ammo_crate, 512),
@@ -534,6 +542,6 @@ def specs():
         'mines_sign': lambda: _two(mines_sign, 256, hulls=[MG.pts_box(-2, -2, 0, 2, 2, 60)]),
         'fsb_sign': lambda: _two(fsb_sign, 1024, hulls=[MG.pts_box(-4, -84, 0, 4, 84, 130)]),
         'lz_sign': lambda: _two(lz_sign, 512, hulls=[MG.pts_box(-2, -2, 0, 2, 2, 66)]),
-        'culvert_bunker': lambda: _two(culvert_bunker, 2048, hulls=[MG.pts_box(-90, -64, 0, 90, 64, 70), MG.pts_box(-120, -60, 0, -90, 60, 30), MG.pts_box(90, -60, 0, 120, 60, 30)]),
+        'culvert_bunker': lambda: _two(culvert_bunker, 2048, hulls=[MG.pts_box(-90, -64, 0, 90, 64, 70), MG.pts_box(-120, -60, 0, -90, 60, 30), MG.pts_box(90, -60, 0, 120, 60, 30)], stock=BSTOCK),
         'cot': lambda: _two(cot, 256),
     }

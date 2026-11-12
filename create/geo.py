@@ -92,11 +92,20 @@ def frame(R=None, o=(0, 0, 0), **kw):
 
 
 def surface(P, mat, part=None, closed_u=False, closed_v=False, w=None, h=None, N=None, flip=False):
-    """P: (nu+1, nv+1, 3) grid of points. Faces wind so the normal is du x dv (flip reverses)."""
+    """P: (nu+1, nv+1, 3) grid of points. Faces wind so the normal is du x dv (flip reverses).
+    UVs follow arc length (mean over the other axis), not the grid index: with index UVs a rounded box (rbox, seg=1) gave its
+    0.3-unit edge bands two thirds of each chart axis and the face one third, so a face got about 1/9 of its chart's texels and the
+    bands showed as smeared streaks (mg_monsoon playtest 1, finding 16)."""
     P = np.asarray(P, float)
     nu, nv = P.shape[0] - 1, P.shape[1] - 1
     m = Mesh()
-    uu, vv = np.meshgrid(np.linspace(0, 1, nu + 1), np.linspace(0, 1, nv + 1), indexing='ij')
+
+    def _arc(lens, n):
+        s = np.concatenate([[0.0], np.cumsum(lens)])
+        return s / s[-1] if s[-1] > 1e-9 else np.linspace(0, 1, n + 1)
+    su = _arc(np.linalg.norm(np.diff(P, axis=0), axis=2).mean(1), nu) if nu > 0 else np.zeros(1)
+    sv = _arc(np.linalg.norm(np.diff(P, axis=1), axis=2).mean(0), nv) if nv > 0 else np.zeros(1)
+    uu, vv = np.meshgrid(su, sv, indexing='ij')
     m.V = P.reshape(-1, 3)
     m.T = np.stack([uu.ravel(), vv.ravel()], 1)
     idx = np.arange((nu + 1) * (nv + 1)).reshape(nu + 1, nv + 1)

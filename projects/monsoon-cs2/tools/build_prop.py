@@ -1,7 +1,9 @@
 """Bakes and writes one prop: LOD meshes (same chart layout), atlas textures, vmat, vmdl, physics hulls, preview.
 Settings (toolkit.json next to this file, see modelio.CONF; env vars otherwise): out_env (env var naming the output dir, default
 CS2_ADDON_OUT), model_prefix ($CS2_MODEL_PREFIX, default props), preview_dir ($CS2_PREVIEW_DIR), stock_preview_dir
-($STOCK_PREVIEW_DIR), tag (prefixed to the vmat comment). Relative paths in toolkit.json are relative to this folder.
+($STOCK_PREVIEW_DIR), tag (prefixed to the vmat comment), texel_density ({"px_per_unit", "min", "max"}: every opaque atlas is
+sized from its charts' area for that density instead of the spec's 'size'; see atlas_size). Relative paths in toolkit.json are
+relative to this folder.
 
 From trenchwarfare-cs2/tools/build_prop.py (MIT), made project-neutral.
 """
@@ -19,11 +21,34 @@ ROOT = CONF.get('model_prefix') or os.environ.get('CS2_MODEL_PREFIX', 'props')
 TAG = CONF.get('tag', '')
 
 
+TEXEL = CONF.get('texel_density') or {}   # {"px_per_unit": 12.8, "min": 256, "max": 2048}; empty = sizes as the specs give them
+
+
+def atlas_size(charts, g, spec):
+    """atlas edge in px for one group: from the project's texel density target (toolkit.json "texel_density") when set, else the
+    spec's size. Alpha-card groups (g['alpha']) keep their size: their texels are leaf/decal images, not surface detail.
+    The target is reached up to the cap (spec 'atlas_max' or the project max); a prop that hits the cap is a candidate for tiling
+    (stock) materials on its large surfaces."""
+    size = g.get('size', spec.get('size', 1024))
+    if not TEXEL or g.get('alpha') is not None or g.get('fixed'):
+        return size
+    d = float(TEXEL.get('px_per_unit', 12.8))
+    area = sum(c['w'] * c['h'] for c in charts)
+    need = np.sqrt(area * d * d / g.get('fill', 0.8)) * 1.06          # gutters and shelf waste
+    lo, hi = int(TEXEL.get('min', 256)), int(spec.get('atlas_max', TEXEL.get('max', 2048)))
+    # the smallest power of two that reaches 1/1.4 of the target's linear density: always rounding up cost up to 4x the texels
+    # (a 5 m2 water jar got 2048^2 for 1293 px of need), this keeps every atlas within ~0.71..1.41x of the target
+    slack = float(TEXEL.get('slack', 1.4))
+    s = lo
+    while s * slack < need and s < hi: s *= 2
+    return s
+
+
 def build(name, spec, preview=True, cam=None):
     t0 = time.time()
     lods = spec['lods']
     m0 = lods[0]
-    groups = dict(spec.get('atlases') or {'main': dict(size=spec.get('size', 1024))})
+    groups = {k: dict(v) for k, v in (spec.get('atlases') or {'main': dict(size=spec.get('size', 1024))}).items()}
     shaders = dict(spec['shaders'])
     if any(c['mat'] == 'decal' for c in m0.charts):
         groups['decal'] = dict(size=spec.get('decal_size', 512), alpha=lambda b: b['metal'], metal=False, fill=0.92)
@@ -40,6 +65,7 @@ def build(name, spec, preview=True, cam=None):
     for key, g in groups.items():
         ids = [i for i, a in enumerate(chart_atlas) if a == key]
         if not ids: continue
+        g['size'] = atlas_size([m0.charts[i] for i in ids], g, spec)
         sub = submesh(m0, ids)
         baked = bake.bake(sub, shaders, size=g['size'], res=spec.get('res'), ground=spec.get('ground'),
                           fill=g.get('fill', 0.8), normal_strength=spec.get('normal_strength', 1.0))
@@ -72,6 +98,7 @@ def build(name, spec, preview=True, cam=None):
     # SMDs: one material name per atlas, one per stock material (tiling uv per face corner)
     meshes = []
     skeys = sorted({k for c in m0.charts if c['mat'] in smap for k in (smap[c['mat']] if isinstance(smap[c['mat']], (list, tuple)) else [smap[c['mat']]])})
+    stock.ensure(OUT, [stock.STOCK[sk]['vmat'] for sk in skeys])   # before the previews: generated tiling materials must exist
     for li, m in enumerate(lods):
         fuv = uvs[li][m.F]
         groups_ = []
@@ -165,10 +192,11 @@ def stock_preview(m, fsel, fuv, key):
     """(mesh, uv, textures) for the turntable: stock faces unshared so each corner keeps its own uv"""
     import geo
     if key not in _STOCK_PREV:
+        nrm = rough = alpha = None
         p = os.path.join(HERE, CONF['stock_preview_dir'], key + '.png') if 'stock_preview_dir' in CONF else \
             os.path.join(os.environ.get('STOCK_PREVIEW_DIR', os.path.join(__import__('tempfile').gettempdir(), 'stockprev')), key + '.png')
         try:
-            if not os.path.exists(p):
+            if not os.path.exists(p) or stock.STOCK[key]['vmat'] in stock.GENERATORS:
                 import vtexread as V
                 os.makedirs(os.path.dirname(p), exist_ok=True)
                 vm = stock.STOCK[key]['vmat']
@@ -177,18 +205,43 @@ def stock_preview(m, fsel, fuv, key):
                     txt = open(os.path.join(OUT, vm)).read()
                     tc = re.search(r'TextureColor "([^"]+)"', txt).group(1)
                     tn = re.search(r'g_vColorTint "\[([\d. ]+)\]"', txt)
-                    im = np.asarray(Image.open(os.path.join(OUT, tc)).convert('RGB').resize((512, 512)), np.float32)
+                    src = Image.open(os.path.join(OUT, tc)).convert('RGB')
+                    im = np.asarray(src.resize((min(1024, src.size[0]), min(1024, src.size[1]))), np.float32)
                     if tn: im = im * np.array([float(v) for v in tn.group(1).split()[:3]])
                     Image.fromarray(im.clip(0, 255).astype(np.uint8)).save(p)
+                    tnm = re.search(r'TextureNormal "([^"]+)"', txt)
+                    if tnm and os.path.isfile(os.path.join(OUT, tnm.group(1))):   # our PNG normals: tangent-space RGB (OpenGL)
+                        a = np.asarray(Image.open(os.path.join(OUT, tnm.group(1))).convert('RGB').resize(im.shape[1::-1]), np.float32) / 127.5 - 1
+                        np.save(p[:-4] + '_n.npy', a.astype(np.float32))
                 else:
-                    r = [x for x in V.refs(V.vpk_read(vm + '_c')) if '_color' in x][0]
-                    V.decode_vtex(V.vpk_read(r + '_c'), 1).convert('RGB').save(p)
-            col = np.asarray(Image.open(p).convert('RGB'), np.float32) / 255.0
+                    refs = V.refs(V.vpk_read(vm + '_c'))
+                    r = [x for x in refs if '_color' in x][0]
+                    V.decode_vtex(V.vpk_read(r + '_c'), 1).save(p)      # RGBA: alpha = translucency of alpha-tested materials
+                    nr = [x for x in refs if '_normal' in x or '_nrm' in x]
+                    if nr: V.decode_vtex(V.vpk_read(nr[0] + '_c'), 1).convert('RGBA').save(p[:-4] + '_n.png')
+            im = Image.open(p)
+            col = np.asarray(im.convert('RGB'), np.float32) / 255.0
+            if stock.STOCK[key].get('alpha') and im.mode == 'RGBA':
+                alpha = np.asarray(im, np.float32)[..., 3] / 255.0
+            if os.path.exists(p[:-4] + '_n.npy'):
+                nrm = np.load(p[:-4] + '_n.npy')
+                if nrm.shape[:2] != col.shape[:2]: nrm = None
+            elif os.path.exists(p[:-4] + '_n.png'):
+                # CS2 compiled normal maps: hemi-octahedral normal in RG (OpenGL, +Y up the image), roughness in B (checked
+                # 13 Nov 2026 against de_ancient height maps: hemi-oct correlates 0.50/0.45 with the height gradient, plain xy 0.37/0.31)
+                a = np.asarray(Image.open(p[:-4] + '_n.png').convert('RGBA').resize(col.shape[1::-1]), np.float32) / 255.0
+                x, y = a[..., 0] * 2 - 1, a[..., 1] * 2 - 1
+                tx, ty = (x + y) / 2, (x - y) / 2
+                nz = 1 - np.abs(tx) - np.abs(ty)
+                nrm = np.stack([tx, ty, nz], -1); nrm /= np.linalg.norm(nrm, axis=-1, keepdims=True) + 1e-9
+                rough = a[..., 2]
         except Exception as ex:      # no exported copy and no VPK access: grey stand-in, say why
             print('preview: %s shown grey (%s: %s)' % (key, type(ex).__name__, ex))
             col = np.full((4, 4, 3), 0.5)
         h, w = col.shape[:2]
-        _STOCK_PREV[key] = dict(color=col, normal=np.tile([0, 0, 1.0], (h, w, 1)), rough=np.full((h, w), 0.8), ao=np.ones((h, w)), metal=np.zeros((h, w)))
+        _STOCK_PREV[key] = dict(color=col, normal=nrm if nrm is not None else np.tile([0, 0, 1.0], (h, w, 1)),
+                                rough=rough if rough is not None else np.full((h, w), 0.8), ao=np.ones((h, w)), metal=np.zeros((h, w)))
+        if alpha is not None: _STOCK_PREV[key]['alpha'] = alpha
     F = m.F[fsel]
     s = geo.Mesh(); s.V = m.V[F].reshape(-1, 3); s.N = m.N[F].reshape(-1, 3); s.T = np.zeros((len(s.V), 2))
     s.F = np.arange(len(s.V)).reshape(-1, 3)
@@ -201,7 +254,11 @@ def write_multi_smd(path, mesh, uv, groups):
     if uv.ndim == 2: uv = uv[mesh.F]
     lines = ["version 1", "nodes", '0 "root" -1', "end", "skeleton", "time 0", "0 0 0 0 0 0 0", "end", "triangles"]
     fmt = "0 %.4f %.4f %.4f %.4f %.4f %.4f %.5f %.5f"
+    # zero-area triangles (welded slivers of the generators) add nothing and fail the prop lint: leave them out
+    A = np.linalg.norm(np.cross(V[mesh.F[:, 1]] - V[mesh.F[:, 0]], V[mesh.F[:, 2]] - V[mesh.F[:, 0]]), axis=1) / 2 if len(mesh.F) else np.zeros(0)
+    live = A >= 1e-6
     for matname, fsel in groups:
+        fsel = np.asarray(fsel) & live
         for f, fu in zip(mesh.F[fsel], uv[fsel]):
             lines.append(matname)
             for i, t in zip(f, fu):

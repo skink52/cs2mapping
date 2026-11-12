@@ -5,7 +5,7 @@ Source: https://github.com/skink52/cs2mapping (folder `projects/monsoon-cs2`).
 
 Original to this project: the terrain, karst towers and water, the procedural props (bunkers, guns, howitzers, rocket launchers,
 huts, bridge, temple, wrecks, sandbags, foliage cards, and the procedural Mi-8 that public builds use) with their baked textures,
-the HUD, radar, board map, loading slides and icon, every sound (all synthesised, no samples), the 3D skybox terrain, and the game
+the period rifle scope and its materials (procedural), the HUD, radar, board map, loading slides and icon, every sound (all synthesised, no samples), the 3D skybox terrain, and the game
 script. Which build you have: a private-server build also contains the converted models and player models listed below; a public
 Steam Workshop build must not.
 The code was written by an AI coding agent (Claude, by Anthropic) under skink52's direction; the models, textures, sounds and
@@ -31,6 +31,11 @@ If you use this 3D model in your project be sure to copy paste this credit where
 This work is based on "AH-64E Apache "Guardian"" (https://sketchfab.com/3d-models/ah-64e-apache-guardian-9eb641f9179d413e87367ebd9b96347a) by Jeyhun1985 (https://sketchfab.com/Jeyhun1985) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
 ```
 
+### M1911A1 pistol (the CT sidearm weapon model)
+
+"Colt M1911" by Ole Gunnar Isager (Sketchfab), licensed under CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/).
+Converted for CS2 (playtest 1 batch G, 13 Nov 2026).
+
 ### Garry's Mod Workshop model packs (converted; private-server builds only)
 
 These packs were converted to CS2 models and are in the addon's files under `models/mv/ext/`. Since 12 Nov 2026 the map
@@ -47,7 +52,7 @@ the Workshop item id (`https://steamcommunity.com/sharedfiles/filedetails/?id=<i
 | [LFS] Vietnam Helicopter Pack | Gredwitch | 2125035846 | Mi-24A (`hind_upper`, `hind_rotor`, `hind_tail`) | commercial game assets, same statement |
 | Gredwitch's Emplacement Pack | Gredwitch | 1391460275 | **`m101`, `m101_gun`, `m2_tripod`, `m2_gun`, `dshk_tripod`, `dshk_gun`**, `m60_gun`, `mortar_m1` | several commercial games |
 | COD4 Vehicle props | Kally | 127682564 | **`bm21`, `ural`, `zpu4`**, `rocket_grad` | Call of Duty 4 |
-| Bad Company 2 models: Vietnam pack | Moon. | 740797619 | **`pbr`, `t54`, `m151`, `gaz69`, `comm_station`, `nva_ammo_case`**, `nva_ammo_case_open`, `w_ak47`, `w_rpg7`, `w_m14`, `w_m79`, `w_m60` | Battlefield: Bad Company 2 Vietnam |
+| Bad Company 2 models: Vietnam pack | Moon. | 740797619 | **`pbr`, `t54`, `m151`, `gaz69`, `comm_station`, `nva_ammo_case`**, `nva_ammo_case_open`, `w_ak47`, `w_rpg7`, `w_m14`, `w_m79`, `w_m60`, and the `m14` and `m21` weapon models (batch G) | Battlefield: Bad Company 2 Vietnam |
 | Military Conflict: Vietnam - Boat and Emplacement Props | GenericName | 3677941897 | `m114_howitzer`, `m40_rr`, `pbr_mcv`, `lssc_boat` | Military Conflict: Vietnam |
 | [simfphys] Vietnam Vehicles Pack | Zackrovich | 1671748726 | **`m35`** | Call of Duty: Black Ops, Battlefield: Bad Company 2 Vietnam |
 | [LVS] M113 pack | Ryuunosuke | 3366544842 | **`m113`** | not stated (likely a commercial game) |
@@ -83,8 +88,13 @@ Ancient ground blend materials, river and shallow water materials, stock particl
 waterfall), tool materials, the sky material, the CS2 weapons the kits hand out and their sounds, CS2 agents and bots, the HUD font
 Stratum2, and the addon template's post-processing and base sound events.
 
+Since playtest 1 (13 Nov 2026) the procedural props also map their large surfaces onto CS2 materials referenced from the game
+(not copied): de_ancient roof thatch and thatch edge, reed ceiling panels, wall stone (moss and grey), wall plaster and ground mud;
+the `hr_bamboo_01` slats; the de_anubis market hay pile (loose straw on the rice-straw stacks); the de_dust grain basket (the woven
+rice baskets).
+
 Copied into the addon from the game files: the `default_cloth001` colour and normal textures (`materials/models/mv/stock/`, tinted
-for the sandbag hessian and tent canvas) and, with the player models, the CS2 agent's first-person arms, sleeves and preview meshes
+for the sandbag hessian and tent canvas, and since playtest 1 the olive-drab GP tent canvas), the de_train floor boards (timbers), the `hr_conc_d` weathered concrete (darkened; bridge pier, French bunker) and, with the player models, the CS2 agent's first-person arms, sleeves and preview meshes
 (`models/player/gmod/shared/`).
 
 ## Licence
@@ -92,7 +102,7 @@ for the sandbag hessian and tent canvas) and, with the player models, the CS2 ag
 Code, scripts, tools and docs: PolyForm Noncommercial 1.0.0. Art, models, textures, sounds and the map made for this project:
 CC BY-NC 4.0, attribution "mg_monsoon (monsoon-cs2) by skink52". Game-server use is allowed, including servers that take
 donations, as long as the work itself is not sold or paywalled. See `LICENSE` and `LICENSE-CC-BY-NC-4.0.txt` (shipped next to
-this file). Not covered by those: the Apache model (CC-BY-4.0, above), the Garry's Mod Workshop packs and player models (no
+this file). Not covered by those: the Apache model and the M1911A1 model (CC-BY-4.0, above), the Garry's Mod Workshop packs and player models (no
 licence granted), and Valve's files.
 
 Not affiliated with or endorsed by Valve, or by the authors or publishers of any work named above.

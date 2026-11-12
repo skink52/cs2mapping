@@ -96,6 +96,27 @@ mg_trenchwarfare's props (sandbags, revetments, duckboards, wire, shattered tree
 
 Example: `build_prop.build('sandbags', p_sandbag.spec(0))`.
 
+**Texel density** (mg_monsoon playtest 1, 13 Nov 2026: "hut textures blurry and smeared"). Three causes, all fixed in the shared code:
+1. `geo.surface` spaced UVs by grid index, not arc length: an `rbox` face (seg=1) gave its 0.3-unit rounded edge bands two thirds of
+   each chart axis, so the face itself got ~1/9 of its texels and the bands baked as streaks. Now arc length (a hut on the same 2048
+   atlas: median 34 -> 103 px/m). Measure with the area-weighted **median** density, not the mean (the mean hides this);
+   `projects/monsoon-cs2/tools/tex_budget.py` reports it per prop and material, plus texture memory from the compiled `vtex_c` headers.
+2. A fixed atlas size per prop: `build_prop.atlas_size` now sizes each opaque atlas from toolkit.json `texel_density`
+   (`px_per_unit`, `min`, `max`); mg_monsoon uses 12.8 px/u (512 px/m at 40 u/m), 256..2048.
+3. One unique atlas cannot reach that on a 250-1000 m² prop (a hut, a temple tower) without 4-8K textures. Large surfaces go to
+   **tiling materials** through `stock.py`: CS2's own (`v_*` keys: de_ancient thatch / thatch-edge fringe / reed panels / wall stone /
+   plaster, `hr_bamboo_01`, de_anubis hay pile, de_dust basket; csgo_environment vmats work on props, Valve's de_ancient thatch roof
+   model uses them) or project-generated ones (`stock.GENERATORS[vmat] = fn(outdir)`, e.g. monsoon's `mv_tiles.py`: bamboo culm,
+   jointless sandstone, laterite, built from periodic value noise so they tile). `cyl` mode now takes one axis per connected piece.
+- CS2's compiled normal maps store a **hemi-octahedral** normal in RG (OpenGL, +Y up the image) and **roughness in B** (checked
+  against de_ancient height maps: hemi-oct decode correlates 0.50 / 0.45 with the height gradient, plain xy 0.37 / 0.31).
+  `stock.export_custom` and the turntable preview decode it that way since 13 Nov 2026.
+- Thatch that reads as thatch: courses as overlapping slabs with proud butts, alpha-tested fringe cards (CS2's thatch-edge texture,
+  uv laid by the prop, stock mode `uv`) under each course line, the eave, the verges and the ridge (`p_village.thatch_roof`).
+- Organic sculpture (statues): signed-distance sculpting with smooth unions, surface-nets meshing, Taubin smoothing, SDF-gradient
+  normals and a planar per-axis unwrap so the normal baker paints it (`projects/monsoon-cs2/tools/sculpt.py`); run `lod_decimate.py`
+  on the result (50-80k triangles at 0.7-0.9 u cells).
+
 **LODs** (mg_trenchwarfare): thresholds ×16 (`modelio.LOD_SCALE`; at ×1 and ×4 the swaps were visible at ~300 u). Measure each prop's LOD0-vs-LOD1 deviation
 as the **p95 of the nearest-surface distance** between the two meshes: shattered trees 20–48 u, tunnel set 10, hangar 9, stumps 7–8, log 6,
 shelter/wire coil/wrecked tank ~2, revetments 1.2–1.7, sandbags 0.7, crates 0.1. Props at **≥ ~2 u** shipped LOD0 only (`CS2_SINGLE_LOD` /

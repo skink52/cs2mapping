@@ -224,8 +224,76 @@ def naga_head(base, up, out, size, seed, sp):
     return h
 
 
+def naga_sdf(P, seed=143):
+    """Angkor naga balustrade as a signed distance: the serpent body a scaled rail along x (diamond scales on the back, banded
+    belly), rearing at +x into the seven-headed hood: a fan of cobra heads on necks radiating from one root, the middle head
+    largest, snouts thrust forward, a flame-edged aureole behind them. Weathered: eroded, the outer right head broken off,
+    chips. Units 40 u/m; rail top ~z 42, hood to ~z 98."""
+    import sculpt as K
+    sm, ell, cone, sph = K.smin, K.ell, K.cone, K.sph
+    xs = np.linspace(-66, 46, 12)
+    pts = [(x, 1.4 * np.sin(x * 0.07), 33 + 0.8 * np.sin(x * 0.11 + 1.0)) for x in xs] + [(52, 0, 37), (56, 0, 46), (58, 0, 55)]
+    rad = [6.2, 7.6, 8.4] + [8.6] * (len(pts) - 6) + [8.6, 8.4, 8.0]
+    body = K.chain(P, pts, rad, 1.5)
+    # scales: diamond lattice on the upper body, bands on the belly (by height relative to the rail axis)
+    along = P[:, 0] / 3.2; around = np.arctan2(P[:, 1], P[:, 2] - 33.0) / (2 * np.pi) * 18
+    fu = (along + around) - np.floor(along + around) - 0.5; fv = (along - around) - np.floor(along - around) - 0.5
+    scale = np.clip(1 - 2.2 * np.maximum(np.abs(fu), np.abs(fv)), 0, 1)
+    belly = (P[:, 2] < 29.5).astype(float)
+    band = 0.5 + 0.5 * np.cos(P[:, 0] * 2 * np.pi / 4.0)
+    body = body - 0.55 * scale * (1 - belly) - 0.35 * band * belly
+    d = body
+    hc = np.array([60.0, 0.0, 66.0])
+    # the aureole: a thick fan plate behind the heads with a scalloped flame edge
+    ang = np.arctan2(P[:, 2] - hc[2], P[:, 1]); rr = np.hypot(P[:, 1], P[:, 2] - hc[2])
+    edge = 30.0 + 2.5 * np.cos(ang * 21.0) * (ang > -0.35) * (ang < np.pi + 0.35)
+    fan = np.maximum(np.abs(P[:, 0] - (hc[0] - 2.5)) - 2.6, rr - edge)
+    fan = np.maximum(fan, -(P[:, 2] - (hc[2] - 10.0)) - 0.5 * np.abs(P[:, 1]))            # open at the bottom: a fan, not a disc
+    d = sm(d, fan, 1.5)
+    d = sm(d, ell(P, (59.0, 0, 58.0), (7.0, 10.0, 12.0)), 3.0)                             # the swelling throat into the hood
+    lobes = 7; a0, a1 = np.radians(-8), np.radians(188)
+    for k in range(lobes):
+        am = a0 + (a1 - a0) * (k + 0.5) / lobes; mid = k == lobes // 2
+        s_ = 1.3 if mid else (1.08 if k in (2, 4) else 1.0)
+        rdir = np.array([0.0, np.cos(am), np.sin(am)])
+        root = hc + rdir * 6.0 + np.array([0.5, 0, 0])
+        tip = hc + rdir * 21.0 * s_ + np.array([5.5, 0, 0])
+        d = sm(d, cone(P, root, tip, 3.6 * s_, 3.0 * s_), 1.2)                               # neck
+        # head: skull swelling behind, snout forward (+x) and out
+        hdir = np.array([0.75, 0, 0]) + rdir * 0.66; hdir /= np.linalg.norm(hdir)
+        side = np.cross(hdir, rdir); side /= np.linalg.norm(side)
+        R = np.stack([hdir, side, np.cross(hdir, side)], 1)
+        hp = tip + hdir * 2.5 * s_
+        d = sm(d, ell(P, hp, (6.2 * s_, 4.3 * s_, 3.3 * s_), R=R), 1.0)
+        d = sm(d, ell(P, hp + hdir * 4.5 * s_ - R[:, 2] * 0.6 * s_, (3.2 * s_, 2.8 * s_, 2.2 * s_), R=R), 0.8)   # snout
+        for sy in (-1, 1):
+            d = sm(d, sph(P, hp + hdir * 1.8 * s_ + side * sy * 2.9 * s_ + R[:, 2] * 1.6 * s_, 1.25 * s_), 0.3)   # eyes
+        d = K.cut(d, cone(P, hp + hdir * 3.0 * s_ - R[:, 2] * 1.4 * s_, hp + hdir * 8.5 * s_ - R[:, 2] * 1.6 * s_, 0.45 * s_, 0.6 * s_), 0.2)  # mouth line
+    d = K.cut(d, sph(P, hc + np.array([5.0, np.cos(a0 + (a1 - a0) * 0.5 / lobes), np.sin(a0 + (a1 - a0) * 0.5 / lobes)]) * 1.0
+                     + np.array([0, 22.0 * np.cos(a0 + (a1 - a0) * 0.5 / lobes), 22.0 * np.sin(a0 + (a1 - a0) * 0.5 / lobes)]), 6.0), 0.8)  # a head broken off
+    d = K.cut(d, sph(P, (-20.0, 7.5, 38.0), 3.2), 0.6)                                      # chips out of the rail
+    d = K.cut(d, sph(P, (14.0, -8.0, 37.0), 2.6), 0.6)
+    up = np.clip((P[:, 2] - 40.0) / 50.0, 0, 1)
+    d = d + 0.45 * K.noise3(P, 0.15, 3, seed) + (0.15 + 0.12 * up) * K.noise3(P, 0.7, 2, seed + 1)
+    return d
+
+
 def naga_balustrade(lod=0, seed=143):
-    """128 u of naga rail along x: a smooth serpent body (scaled, banded belly) on three moulded posts, rearing at +x into a
+    """128 u of naga rail along x on three moulded posts, rearing at +x into a seven-headed hood: an SDF sculpt (naga_sdf) meshed
+    with surface nets, replacing the ellipsoid 'mushroom' hood (playtest 1, finding 18)"""
+    import sculpt as K
+    m = geo.Mesh()
+    for k, x in enumerate((-52, -6, 38)):
+        m.add(blk(x - 9.5, -8.5, 0, x + 9.5, 8.5, 5, seed + k, r=1.4, mono=1.0))
+        m.add(geo.lathe([(0, 0), (7.6, 0), (7.6, 2), (6.4, 4), (6.0, 17), (7.2, 19), (8.0, 23), (7.0, 25.5), (0, 25.5)], sides=4, mat='stone',
+                        part=geo.frame(seed=seed + 3 + k, mono=1.0)).transform(geo.rot('z', 45), (x, 0, 5)))
+    sp = geo.frame(seed=seed + 6, mono=1.0)
+    m.add(K.mesh_sdf(lambda P: naga_sdf(P, seed), (-76, -36, 22.0), (80, 36, 104.0), 0.9, smooth=2, mat='lion', part=sp))
+    return m, [MG.pts_box(-66, -10, 0, 52, 10, 43), MG.pts_box(52, -34, 30, 74, 34, 99)]
+
+
+def naga_balustrade_blobs(lod=0, seed=143):
+    """(before playtest 1) 128 u of naga rail along x: a smooth serpent body (scaled, banded belly) on three moulded posts, rearing at +x into a
     seven-headed hood (a scalloped fan with sculpted cobra heads, the middle one larger)"""
     m = geo.Mesh()
     for k, x in enumerate((-52, -6, 38)):
@@ -295,8 +363,95 @@ def naga_balustrade_old(lod=0, seed=143):
     return m, [MG.pts_box(-64, -9, 0, 52, 9, 42), MG.pts_box(52, -32, 30, 72, 32, 98)]
 
 
+def singha_sdf(P, seed=144, broken=True):
+    """Khmer (Angkor-style) singha as a signed distance: seated bolt upright on its haunches, facing +x, forelegs straight as
+    columns, a big square head with round bulging eyes under a heavy brow, a broad flat nose and a wide open grin with teeth
+    and fangs, a mane of tight snail curls framing the face, a beaded collar, the tail curled up the back. Weathered: eroded
+    by noise, the left ear and the tail tip broken off, chips out of the jaw and a paw, a crack across the chest. Units: 40 u = 1 m;
+    the lion stands on z 24 (top of the pedestal) and reaches z ~102."""
+    import sculpt as K
+    sm, ell, cone, rb, sph = K.smin, K.ell, K.cone, K.rbox, K.sph
+    d = ell(P, (-12, 0, 35), (12, 13, 10))                                                     # rump
+    for sy in (-1, 1):
+        d = sm(d, ell(P, (-7, sy * 11, 37), (15, 9.5, 12.5), R=geo.rot('y', -15)), 3.0)        # haunches
+        d = sm(d, ell(P, (8, sy * 14.5, 27.6), (9.5, 5.2, 3.6)), 2.0)                          # hind paws tucked forward
+    d = sm(d, cone(P, (-8, 0, 38), (7, 0, 70), 13.0, 10.5), 4.0)                               # torso up the spine
+    d = sm(d, ell(P, (11, 0, 60), (9, 11.5, 13), R=geo.rot('y', -10)), 4.0)                    # chest thrust out
+    for sy in (-1, 1):
+        d = sm(d, cone(P, (10, sy * 8.6, 66), (18, sy * 9.6, 30), 6.0, 4.4), 2.5)              # forelegs, straight columns
+        d = sm(d, ell(P, (22, sy * 9.6, 27.3), (6.8, 5.2, 3.3)), 1.5)                          # fore paws
+        for k in (-1, 1):                                                                      # toe grooves
+            d = K.cut(d, rb(P, (26.5, sy * 9.6 + k * 1.75, 27.5), (3.0, 0.32, 2.2), 0.2), 0.4)
+    d = sm(d, cone(P, (8, 0, 70), (12, 0, 82), 11.0, 10.0), 3.0)                               # neck
+    # mane: a collar of curls behind and round the head (displaced below), framing the face
+    mane = ell(P, (8.5, 0, 84), (9.5, 15.5, 15.5))
+    # snail curls: a lattice in (angle round the x axis, x); each curl a dome with concentric grooves
+    ang = np.arctan2(P[:, 1], P[:, 2] - 84.0); xs = P[:, 0]
+    au = ang / (2 * np.pi) * 14.0; xu = (xs - 2.0) / 4.2
+    shift = 0.5 * (np.floor(xu) % 2)
+    fu = (au + shift) - np.floor(au + shift) - 0.5; fx = xu - np.floor(xu) - 0.5
+    rr = np.sqrt(fu * fu + fx * fx) * 2.0
+    curl = np.clip(1 - rr ** 2, 0, 1) * (0.78 + 0.22 * np.cos(rr * 9.0 + np.arctan2(fu, fx)))
+    mane = mane - 1.6 * curl
+    d = sm(d, mane, 1.5)
+    # head
+    hd = rb(P, (15.5, 0, 89), (8.5, 11.0, 9.0), 4.6)
+    hd = sm(hd, ell(P, (21.6, 0, 86.5), (5.5, 9.0, 5.2)), 2.0)                                  # muzzle and cheeks
+    hd = sm(hd, cone(P, (21.5, -8.2, 95.2), (21.5, 8.2, 95.2), 2.7, 2.7), 1.2)                 # heavy brow
+    for sy in (-1, 1):
+        hd = sm(hd, sph(P, (23.0, sy * 5.4, 92.4), 3.1), 0.6)                                   # round bulging eyes
+        hd = K.cut(hd, sph(P, (26.0, sy * 5.4, 92.4), 0.9), 0.3)                                # drilled pupils
+        hd = sm(hd, ell(P, (12.5, sy * 11.2, 97.5), (2.4, 2.0, 4.0)), 1.0)                      # ears
+    hd = sm(hd, ell(P, (25.6, 0, 88.6), (2.7, 4.8, 2.7)), 1.0)                                 # broad flat nose
+    hd = K.cut(hd, rb(P, (26.0, 0, 83.6), (4.6, 7.0, 1.7), 0.8), 0.5)                          # the open grin
+    hd = sm(hd, ell(P, (19.5, 0, 80.6), (6.0, 8.0, 2.6)), 1.2)                                 # lower jaw
+    for y in np.arange(-5.0, 5.1, 2.0):                                                        # upper teeth
+        hd = sm(hd, rb(P, (24.4, y, 84.7), (0.9, 0.75, 1.1), 0.3), 0.2)
+    for sy in (-1, 1):                                                                         # fangs
+        hd = sm(hd, cone(P, (24.6, sy * 5.6, 85.3), (25.0, sy * 5.8, 82.3), 1.0, 0.35), 0.2)
+    d = sm(d, hd, 2.0)
+    # beaded collar round the neck in front
+    for k in range(11):
+        a = np.radians(-75 + 15 * k)
+        d = sm(d, sph(P, (9.5 + 9.8 * np.cos(a), 11.0 * np.sin(a), 73.5 - 1.5 * np.cos(a)), 1.6), 0.3)
+    # tail: from the rump up the back, curling
+    tail = K.chain(P, [(-22, 6, 29), (-25, 11, 40), (-21, 12.5, 52), (-15, 11, 61), (-11, 9, 66)], [3.0, 2.9, 2.7, 2.6, 2.4], 1.0)
+    d = sm(d, tail, 1.2)
+    if broken:
+        d = K.cut(d, sph(P, (12.5, -11.5, 99.5), 4.6), 0.8)                                    # left ear gone
+        d = K.cut(d, sph(P, (-10.5, 9.5, 68.5), 4.0), 0.6)                                     # tail tip snapped
+        d = K.cut(d, sph(P, (24.0, 8.5, 80.0), 2.8), 0.5)                                      # chip out of the jaw
+        d = K.cut(d, rb(P, (26.5, -9.0, 26.5), (2.6, 3.6, 3.0), 0.6, R=geo.rot('z', 25)), 0.4)  # broken toes, front left
+        crack = np.abs((P - np.array([13.0, 0, 62.0])) @ np.array([0.25, 0.42, 0.87])) - 0.28
+        crack = np.maximum(crack, -(K.noise3(P, 0.12, 2, seed + 3) + 0.05) * 6.0)             # only along part of the chest
+        d = K.cut(d, crack, 0.15)
+    # erosion: soft large-scale wear plus fine pitting, stronger on exposed tops
+    up = np.clip((P[:, 2] - 60.0) / 40.0, 0, 1)
+    d = d + 0.55 * K.noise3(P, 0.14, 3, seed) + (0.18 + 0.15 * up) * K.noise3(P, 0.7, 2, seed + 1)
+    return d
+
+
 def guardian_statue(lod=0, seed=144):
-    """Khmer singha: a lion sitting upright on its haunches on a moulded pedestal, chest thrust out, forelegs straight, the head
+    """Khmer singha on a moulded pedestal, faces +x, 100 u tall: an SDF sculpt (singha_sdf), meshed with surface nets at 0.7 u and
+    unwrapped into planar charts, baked with the mossy sandstone shader (moss and grime collect in the curls and hollows from the
+    baker's cavity and AO masks). Replaces the ellipsoid lion (playtest 1, finding 18: 'cute, wrong vibe'); no Khmer lion exists
+    in CS2's files or on the GMod Workshop (docs/ASSETS.md), so this is the procedural last resort the brief allows."""
+    import sculpt as K
+    m = geo.Mesh()
+    m.add(blk(-25, -31, 0, 27, 31, 6, seed, r=1.6, mono=1.0))
+    m.add(blk(-23, -29, 6, 25, 29, 10, seed + 1, mono=1.0, r=2.0))
+    m.add(blk(-20, -26, 10, 22, 26, 19, seed + 2, mono=1.0, r=1.2))
+    m.add(blk(-22.5, -28.5, 19, 24.5, 28.5, 24, seed + 3, mono=1.0, r=1.8))
+    for f in (-1, 1): m.add(panel(-16, 11.5, 18, 18, f * 26, seed + 4 + f, face=f))
+    sp = geo.frame(seed=seed + 5, mono=1.0)
+    lion = K.mesh_sdf(lambda P: np.maximum(singha_sdf(P, seed), 23.6 - P[:, 2]), (-30, -22, 23.0), (33, 22, 104.0), 0.7 if lod == 0 else 1.4,
+                      smooth=2, mat='lion', part=sp)
+    m.add(lion)
+    return m, [MG.pts_box(-25, -31, 0, 27, 31, 24), MG.pts_box(-28, -19, 24, 32, 19, 102)]
+
+
+def guardian_statue_blobs(lod=0, seed=144):
+    """(before playtest 1) Khmer singha: a lion sitting upright on its haunches on a moulded pedestal, chest thrust out, forelegs straight, the head
     turned a little, a mane of tight stone curls, the jaw open, the tail curled up its flank; sculpted from lofted ellipses and
     ellipsoids and eroded by noise. Faces +x, 100 u tall."""
     m = geo.Mesh()
@@ -556,13 +711,41 @@ def paving_slabs(lod=0, seed=154, size=192.0):
 
 # ---------------------------------------------------------------- specs
 def _sh():
-    return {'stone': M.khmer_stone, 'laterite': M.laterite, 'lion': lambda c: M.khmer_stone(c, tone=S._c(0.43, 0.41, 0.35), moss=1.0),
-            'root': M.jungle_bark}
+    return {'stone': M.khmer_stone, 'stone_carved': M.khmer_stone, 'laterite': M.laterite,
+            'lion': lambda c: M.khmer_stone(c, tone=S._c(0.43, 0.41, 0.35), moss=1.0), 'root': M.jungle_bark}
+
+
+# chart material -> tiling material (playtest 1, finding 16). Before, the tower's 987 m2 shared one 2048 atlas (median 18 px/m).
+#   stone        coursed masonry (wall slabs, tiers: parts without a 'mono' tag): CS2's de_ancient wall stone, joints in the
+#                texture, mossy twice as often as grey (546 px/m)
+#   stone_mono   single blocks (blk/rbox parts tagged mono or carve 0): mv_tiles sandstone without joints, the variant picked per
+#                block so neighbours differ (640 px/m)
+#   laterite_mono single laterite blocks: mv_tiles laterite (vesicular red-brown); coursed laterite stays baked
+#   stone_carved relief panels (carve 1) and the lion stay on the baked atlas: their detail comes from the shader / the sculpt
+TSTOCK = {'stone': ['v_stone_moss3', 'v_stone_moss3', 'v_stone_grey3'],
+          'stone_mono': ['mv_sandstone_moss', 'mv_sandstone_dark', 'mv_sandstone_lichen', 'mv_sandstone_moss', 'mv_sandstone_dark'],
+          'laterite_mono': 'mv_sandstone_laterite'}
+
+
+def route(m):
+    """rename each 'stone' / 'laterite' chart by its part's tags: carve -> stone_carved (atlas), mono >= 0.5 -> <mat>_mono
+    (jointless tile), else unchanged: stone -> jointed CS2 tile, laterite -> baked atlas with the shader's courses"""
+    for c in range(len(m.charts)):
+        mat = m.charts[c]['mat']
+        if mat not in ('stone', 'laterite'): continue
+        f = np.nonzero(m.FC == c)[0]
+        if not len(f): continue
+        p = m.parts[m.FP[f[0]]]
+        if p.get('carve', 0.0) > 0: m.charts[c]['mat'] = 'stone_carved' if mat == 'stone' else mat
+        elif p.get('mono', 0.0) >= 0.5: m.charts[c]['mat'] = mat + '_mono'
+        # mono 0: coursed masonry; stone -> jointed CS2 wall stone, laterite stays baked (its joints are drawn by the shader)
+    return m
 
 
 def _spec(fn, size=2048, **kw):
+    import mv_tiles  # noqa: F401  (registers the sandstone / laterite tiles)
     a, hulls = fn(lod=0, **kw)
-    return dict(lods=[a], single_lod=True, size=size, ground=0.0, surface='concrete', metal=False, shaders=_sh(), stock={}, hulls=hulls)
+    return dict(lods=[route(a)], single_lod=True, size=size, ground=0.0, surface='concrete', metal=False, shaders=_sh(), stock=TSTOCK, hulls=hulls)
 
 
 def specs():

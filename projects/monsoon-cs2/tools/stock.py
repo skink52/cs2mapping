@@ -60,7 +60,7 @@ STOCK = {
     'boards_dark_box': dict(vmat='materials/models/' + PREFIX + '/stock/boards_dark.vmat', mode='box', S=40.0),     # timbers without a grain frame
     'boards_warm_box': dict(vmat='materials/models/' + PREFIX + '/stock/boards_warm.vmat', mode='box', S=40.0),
     'canvas_od': dict(vmat='materials/models/' + PREFIX + '/stock/canvas_od.vmat', mode='chart', S=64.0),          # olive-drab tentage
-    'v_concrete': dict(vmat='materials/concrete/hr_c/hr_conc_d.vmat', mode='box', S=80.0),                     # weathered, 2 m, 512 px/m
+    'concrete_aged': dict(vmat='materials/models/' + PREFIX + '/stock/concrete_aged.vmat', mode='box', S=80.0),  # CS2 hr_conc_d, darkened: 2 m, 512 px/m
     'v_hay': dict(vmat='materials/de_anubis/models/market/hay_pile.vmat', mode='uv', alpha=True),                   # straw strands (1024 px)
     'v_basket': dict(vmat='materials/models/props/de_dust/hr_dust/dust_grain_basket/dust_grain_basket_color.vmat', mode='uv'),
 }
@@ -78,6 +78,7 @@ CUSTOM = {
     'paint_white': dict(c=_HULL, n=_MB_N, paint=(0.66, 0.65, 0.60), rough=0.5, chip=True),
     'canvas': dict(c='materials/pbr_defaults/default_cloth001_color_psd_e8be67f8', n='materials/pbr_defaults/default_cloth001_normal_psd_a04b35dd', tint=(0.78, 0.76, 0.64), rough=0.93),
     'canvas_dark': dict(c='materials/pbr_defaults/default_cloth001_color_psd_e8be67f8', n='materials/pbr_defaults/default_cloth001_normal_psd_a04b35dd', tint=(0.52, 0.51, 0.43), rough=0.93),
+    'concrete_aged': dict(c='materials/concrete/hr_c/hr_conc_d_color_psd_47c48100', n='materials/concrete/hr_c/hr_conc_d_normals_normal_psd_a5276a8f', tint=(0.66, 0.64, 0.58), rough=0.88),
     'canvas_od': dict(c='materials/pbr_defaults/default_cloth001_color_psd_e8be67f8', n='materials/pbr_defaults/default_cloth001_normal_psd_a04b35dd', tint=(0.42, 0.44, 0.30), rough=0.94),
     'paint_feldgrau': dict(c=_HULL, n=_MB_N, paint=(0.27, 0.29, 0.25), rough=0.62, chip=True),
     'paint_khaki': dict(c=_HULL, n=_MB_N, paint=(0.31, 0.28, 0.20), rough=0.62, chip=True),

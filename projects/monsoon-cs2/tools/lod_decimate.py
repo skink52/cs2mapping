@@ -121,6 +121,11 @@ def share_corners(NF, CH, N, UV, area):
 
 def write_smd(path, head, mats, P, N, UV, fmat):
     out = list(head)
+    # atlas materials (not build_prop's tiling 'stock_*' ones): a cluster corner re-projected through its face's mapping can land a
+    # little outside 0..1 and would wrap to the far side of the atlas; clamp it to the edge (13 Nov 2026, up to 0.02 at LOD4)
+    UV = np.array(UV, float)
+    atlas = np.array([not str(mats[m]).startswith('stock_') for m in fmat], bool) if len(fmat) else np.zeros(0, bool)
+    if atlas.any(): UV[atlas] = np.clip(UV[atlas], 0.0, 1.0)
     for f in range(len(P)):
         out.append(mats[fmat[f]])
         for k in range(3):

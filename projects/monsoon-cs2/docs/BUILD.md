@@ -50,8 +50,9 @@ placed. vine_drape (playtest 1) is a single-LOD card prop.
 
 Step 1, texture size (playtest 1 batch P, 13 Nov 2026): atlas sizes come from `toolkit.json` `texel_density` (512 px/m, 256..2048), not
 from the specs; big surfaces use tiling materials (CS2's own, or `tools/mv_tiles.py`, written into `materials/models/mv/tile/` on first
-use in a run, which adds about 2 min). `python tools/tex_budget.py [names]` reports texel density per prop and texture memory
-(docs/FIX_PT1_P.md).
+use in a run, which adds about 2 min). `python tools/tex_budget.py [names]` reports texel density per prop and texture memory,
+`python tools/prop_lint.py [names]` checks the written SMDs, vmats and textures (0 bad expected; `check_mesh.py` reads vmaps only),
+`python tools/atlas_fit.py [names]` halves atlases that are bigger than the density rule needs without re-baking (docs/FIX_PT1_P.md).
 
 Step 4, first run and later runs: the first run takes `out/template.vmap` (a copy of
 `content\csgo_addons\addon_template\maps\xxx_mapname_xxx.vmap`). Once the map has been opened and edited in Hammer, pass the

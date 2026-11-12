@@ -1,6 +1,6 @@
 """Writes baked meshes as Source 2 content: SMD render/physics meshes, csgo_complex .vmat + PNGs, .vmdl.
 CONF: optional toolkit.json next to this file with project settings for modelio, build_prop, build_all_props, fx_models, make_skybox
-(model_prefix, tag, preview_dir, stock_preview_dir, single_lod, props, fx, skybox); none = project-neutral defaults.
+(model_prefix, tag, preview_dir, stock_preview_dir, single_lod, props, fx, skybox, texel_density, ao_scale); none = project-neutral defaults.
 
 From trenchwarfare-cs2/tools/modelio.py (MIT), made project-neutral.
 """
@@ -65,6 +65,10 @@ def write_textures(outdir, rel, name, baked, metal=False, size=None):
         return '%s/%s_%s.png' % (rel, name, suffix)
     t = dict(color=save(baked['color'], 'color'), normal=save(baked['normal'] * 0.5 + 0.5, 'normal'),
              rough=save(baked['rough'], 'rough'), ao=save(baked['ao'], 'ao'))
+    sc = float(CONF.get('ao_scale', 1.0))      # AO is low-frequency (voxel AO at ~1 u): toolkit.json "ao_scale": 0.5 halves it
+    if sc < 1.0:
+        p = os.path.join(d, '%s_ao.png' % name); im = Image.open(p)
+        im.resize((max(4, int(im.size[0] * sc)), max(4, int(im.size[1] * sc))), Image.LANCZOS).save(p, optimize=True)
     if metal: t['metal'] = save(baked['metal'], 'metal')
     return t
 

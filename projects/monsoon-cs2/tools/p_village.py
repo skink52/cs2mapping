@@ -7,6 +7,7 @@ import geo
 import mv_geo as MG
 import mv_shaders as M
 import shaders as S
+import mv_tiles  # noqa: F401  (registers the generated tiling materials, e.g. mv_bamboo)
 from noise import fbm
 
 
@@ -14,21 +15,83 @@ def bamboo_pole(p0, p1, r, seed, sides=8):
     return geo.tube([p0, ((np.asarray(p0) + np.asarray(p1)) / 2).tolist(), p1], r, sides=sides, mat='bamboo', part=geo.frame(seed=seed, tone=np.random.RandomState(int(abs(seed)) % (2 ** 31)).uniform(0.2, 0.9)))
 
 
-def thatch_roof(L, W, ridge_z, eave_z, part, overhang=18, hip=False, lod=0):
-    """gabled (or hipped) thatch roof as two thick slabs; thatch shader rows run down the slope (part x = slope direction)"""
+FRINGE_S = 96.0      # units along the eave per tile of the CS2 thatch-edge texture (2048 x 512): a card is FRINGE_S / 4 deep
+
+
+def fringe_card(p0, p1, down, depth, seed, nseg=None, face=None):
+    """alpha-tested thatch-edge card hanging from the line p0-p1 along `down` (unit-ish), `depth` deep; uv laid for stock key
+    v_thatch_edge (u along the edge at FRINGE_S units per tile, v 0 at the attached edge -> 1 at the straw tips); the tips sag"""
+    p0 = np.asarray(p0, float); p1 = np.asarray(p1, float); dn = np.asarray(down, float); dn = dn / np.linalg.norm(dn)
+    Lx = float(np.linalg.norm(p1 - p0))
+    n = nseg or max(2, int(Lx / 24))
+    t = np.linspace(0, 1, n + 1)
+    P = np.zeros((n + 1, 3, 3))
+    rng = np.random.RandomState(int(abs(seed)) % (2 ** 31))
+    wob = fbm(t * Lx * 0.05, seed * 0.37, 0.0, 2, seed=int(abs(seed)) % 997)
+    for j, f in enumerate((0.0, 0.5, 1.0)):
+        P[:, j] = p0[None] + (p1 - p0)[None] * t[:, None] + dn[None] * depth * f * (1 + 0.12 * wob[:, None])
+    m = geo.surface(P, 'thatch_fringe', geo.frame(seed=seed))
+    if face is not None and (m.face_normals().sum(0) @ np.asarray(face, float)) < 0:   # front face toward the viewer side
+        m.F = m.F[:, ::-1]; m.N = -m.N
+    ou = rng.rand()
+    m.T = np.stack([np.repeat(t * Lx / FRINGE_S + ou, 3), np.tile([0.0, 0.5, 0.995], n + 1)], 1)
+    return m
+
+
+def thatch_roof(L, W, ridge_z, eave_z, part, overhang=18, hip=False, lod=0, courses=4):
+    """gabled thatch roof built the way it is laid: `courses` overlapping bundles of straw per slope, each tilted a little steeper
+    than the roof so its butt end stands proud of the course below (a stepped silhouette), with a fringe of straw (alpha cards,
+    CS2's de_ancient thatch edge) under every course line and the eaves, and a round ridge bundle. Surfaces use CS2's tiling thatch
+    (stock key v_thatch, 1140 px/m) instead of the baked atlas (playtest 1, finding 16: 'flat brown plane')."""
     m = geo.Mesh()
+    sd = part['seed']
+    span = W / 2 + overhang
+    rise = ridge_z - eave_z
+    slope_len = float(np.hypot(span, rise))
     for s in (-1, 1):
-        y0 = s * (W / 2 + overhang); y1 = 0.0
-        # slope slab from the eave up to the ridge; thickness 7
-        u = np.array([L + 2 * overhang, 0, 0]); v = np.array([0, y1 - y0, ridge_z - eave_z])
-        slab = MG.plate((-L / 2 - overhang, y0, eave_z), u, v, 'thatch', geo.frame(R=np.stack([v / np.linalg.norm(v), u / np.linalg.norm(u), np.cross(v, u) / np.linalg.norm(np.cross(v, u))], 1), seed=part['seed'] + s), thick=7.0)
-        # sag the eave line a little and roughen
-        sag = fbm(slab.V[:, 0] * 0.03, slab.V[:, 1] * 0.03, 0.0, 3, seed=part['seed'] + 3)
-        slab.V[:, 2] += 2.0 * sag
-        slab.recompute_normals()
-        m.add(slab)
-    # ridge cap: a bundle along the ridge
-    m.add(geo.tube([(-L / 2 - overhang, 0, ridge_z + 4), (0, 0, ridge_z + 5), (L / 2 + overhang, 0, ridge_z + 4)], 6.0, sides=10, mat='thatch', part=geo.frame(R=geo.rot('z', 90), seed=part['seed'] + 9)))
+        y0 = s * span
+        down = np.array([0.0, s * span, -rise]) / slope_len            # down the slope, toward the eave
+        u_ax = np.array([1.0, 0, 0])
+        nrm = np.cross(u_ax, -down); nrm = nrm if nrm[2] > 0 else -nrm   # outward, up
+        # courses from the ridge down: course c spans [c, c+1] / courses of the slope plus an overlap under the course above
+        cl = (slope_len - 8.0) / courses                           # 8 u short: the proud butts and the fringe keep the old footprint
+        for c in range(courses):
+            top_d = max(0.0, c * cl - 10.0); bot_d = (c + 1) * cl
+            lift = 3.0 + 2.5 * (c / max(courses - 1, 1))              # butt end stands proud of the course below
+            top = np.array([0.0, 0.0, ridge_z]) + down * top_d + nrm * (0.5 * c)
+            bot = np.array([0.0, 0.0, ridge_z]) + down * bot_d + nrm * (0.5 * c + lift)
+            v = bot - top
+            sub = 4 if c == courses - 1 else 3
+            u = np.array([L + 2 * overhang, 0, 0])
+            org = top - u / 2
+            fr = geo.frame(R=np.stack([v / np.linalg.norm(v), u_ax, np.cross(v, u_ax) / np.linalg.norm(np.cross(v, u_ax))], 1), seed=sd + 17 * c + s)
+            th = 5.0 + 1.5 * c
+            slab = MG.plate(org, u, v, 'thatch', fr, thick=th)
+            if np.dot(np.cross(u, v), nrm) < 0:      # plate extrudes along u x v: keep it on the outside
+                slab = MG.plate(org + u, -u, v, 'thatch', fr, thick=th)
+            sag = fbm(slab.V[:, 0] * 0.03, slab.V[:, 1] * 0.03 + c, 0.0, 3, seed=sd + 3 + c)
+            slab.V[:, 2] += 1.6 * sag * (0.3 + 0.7 * c / max(courses - 1, 1))
+            slab.recompute_normals()
+            m.add(slab)
+            # straw butts under the course line: two staggered cards hanging steeply from the course's lower edge
+            e0 = bot - u / 2 + nrm * (th - 0.5); e1 = bot + u / 2 + nrm * (th - 0.5)
+            # course lines: the straw lies along the slope over the butt of the course below; eave: cut ends hang steeper
+            hang = (down * 0.25 + np.array([0, 0, -0.95])) if c == courses - 1 else (down * 0.95 - nrm * 0.12)
+            depth = FRINGE_S / 4 * (0.8 if c == courses - 1 else 0.7)
+            m.add(fringe_card(e0, e1, hang, depth, sd * 31 + c * 7 + s, face=nrm))
+            if c == courses - 1:                                         # the eave gets a second, deeper layer for volume
+                m.add(fringe_card(e0 - nrm * 3.0, e1 - nrm * 3.0, hang, depth * 1.1, sd * 37 + s, face=nrm))
+        # rake (gable) edges: a short fringe down each verge
+        for sx in (-1, 1):
+            xg = sx * (L / 2 + overhang - 1)
+            r0 = np.array([xg, 0.0, ridge_z + 4]); r1 = np.array([xg, y0, eave_z])
+            m.add(fringe_card(r0, r1, (sx * 0.25, 0, -1.0), FRINGE_S / 4 * 0.5, sd * 41 + sx + 3 * s, nseg=6, face=(sx, 0, 0)))
+    # ridge cap: a round bundle along the ridge, straw wrapped over it, with a fringe each side
+    m.add(geo.tube([(-L / 2 - overhang, 0, ridge_z + 6), (0, 0, ridge_z + 8), (L / 2 + overhang, 0, ridge_z + 6)], 9.0, sides=12,
+                   mat='thatch_ridge', part=geo.frame(R=geo.rot('z', 90), seed=sd + 9)))
+    for s in (-1, 1):
+        m.add(fringe_card((-L / 2 - overhang, s * 6, ridge_z + 9), (L / 2 + overhang, s * 6, ridge_z + 9),
+                          (0, s * 0.8, -0.6), FRINGE_S / 4 * 0.7, sd * 43 + s, face=(0, s * 0.6, 0.8)))
     return m
 
 
@@ -229,10 +292,53 @@ def bamboo_fence(lod=0, seed=96, length=128):
     return m
 
 
+# CS2's de_dust grain basket texture (1024 px atlas, materials/models/props/de_dust/hr_dust/dust_grain_basket): the side weave
+# strip (rim band at the top) and the woven spiral of the base, in image uv (v from the top)
+BASKET_SIDE = (588 / 1024, 1016 / 1024, 244 / 1024, 1018 / 1024)     # u0, u1, v_rim, v_bottom (inside the strip's border)
+BASKET_BASE = (770 / 1024, 112 / 1024, 180 / 1024)                  # centre u, v, radius
+
+
+def woven_lathe(profile, segs=6, per=4, mat='basket', part=None, seed=0):
+    """a lathe in `segs` separate segments, each mapping the full width of the basket side strip once (the weave repeats round
+    the basket at about its own scale instead of one stretched copy); v follows the profile, rim at the top of the strip"""
+    pr = np.asarray(profile, float)
+    plen = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(pr, axis=0), axis=1))]); plen /= plen[-1]
+    u0, u1, vr, vb = BASKET_SIDE
+    m = geo.Mesh()
+    ph = np.random.RandomState(seed).uniform(0, 2 * np.pi)
+    for k in range(segs):
+        th = ph + np.linspace(k, k + 1, per + 1) * 2 * np.pi / segs
+        P = np.zeros((per + 1, len(pr), 3))
+        P[..., 0] = np.cos(th)[:, None] * pr[None, :, 0]; P[..., 1] = np.sin(th)[:, None] * pr[None, :, 0]; P[..., 2] = pr[None, :, 1]
+        s = geo.surface(P, mat, part or geo.frame(seed=seed))
+        fn = s.face_normals(); cen = s.V[s.F].mean(1); radial = cen.copy(); radial[:, 2] = 0
+        if np.einsum('ij,ij->i', fn, radial).mean() < 0: s.F = s.F[:, ::-1]
+        uu, vv = np.meshgrid(np.linspace(u0, u1, per + 1), vb + (vr - vb) * plen, indexing='ij')
+        s.T = np.stack([uu.ravel(), vv.ravel()], 1)
+        m.add(s)
+    return m
+
+
 def rice_basket(lod=0, seed=97):
+    """round woven rice basket (thung) with a rolled rim, heaped with paddy: CS2's photo-sourced basket weave (de_dust grain
+    basket texture) instead of the procedural wicker (playtest 1, finding 17)"""
     p = geo.frame(seed=seed)
-    m = geo.lathe([(0, 0), (14, 0), (18, 10), (20, 22), (18, 30), (0, 30)], sides=14, mat='wicker', part=p)
-    m.add(geo.disk((0, 0, 28), [(16 * np.cos(a), 16 * np.sin(a), 28) for a in np.linspace(0, 2 * np.pi, 14, endpoint=False)], (0, 0, 1), 'rice', p))
+    rng = np.random.RandomState(seed)
+    prof = [(13, 0.5), (16, 3), (18.5, 10), (20, 20), (20.3, 27), (21.2, 29.5), (20.6, 31.2), (19.2, 31)]
+    m = woven_lathe(prof, segs=6, per=4, part=p, seed=seed)
+    m.recompute_normals(angle=60)
+    # woven base (the spiral of the texture)
+    cu, cv, cr = BASKET_BASE
+    ring = [(13 * np.cos(a), 13 * np.sin(a), 0.5) for a in np.linspace(0, 2 * np.pi, 16, endpoint=False)]
+    base = geo.disk((0, 0, 0.0), ring, (0, 0, -1), 'basket', p)
+    base.T = np.stack([cu + base.V[:, 0] / 13 * cr, cv + base.V[:, 1] / 13 * cr], 1)
+    m.add(base)
+    # paddy heaped a little above the rim, uneven
+    h = 2.0 + rng.uniform(0, 3)
+    dome = geo.lathe([(19.4, 29.5), (17, 30.5 + h * 0.5), (11, 31 + h * 0.85), (4, 31 + h), (0, 31 + h)], sides=18, mat='rice', part=geo.frame(seed=seed + 1))
+    dome.V[:, 2] += 0.6 * fbm(dome.V[:, 0] * 0.3, dome.V[:, 1] * 0.3, 0.0, 2, seed=seed)
+    dome.recompute_normals(angle=70)
+    m.add(dome)
     return m
 
 
@@ -259,13 +365,67 @@ def drying_rack(lod=0, seed=99):
     return m
 
 
+def straw_card(c, w, h, yaw, tilt, seed, z0=0.0):
+    """one loose-straw card (CS2's de_anubis hay pile strands, alpha-tested): w wide, h tall, standing at c, leaning `tilt` deg
+    outward from vertical toward yaw"""
+    rng = np.random.RandomState(int(abs(seed)) % (2 ** 31))
+    P = np.zeros((3, 3, 3))
+    a = np.radians(yaw); out = np.array([np.cos(a), np.sin(a), 0.0]); side = np.array([-np.sin(a), np.cos(a), 0.0])
+    up = np.array([0, 0, 1.0]) * np.cos(np.radians(tilt)) + out * np.sin(np.radians(tilt))
+    for i, s in enumerate((-0.5, 0.0, 0.5)):
+        for j, t in enumerate((0.0, 0.5, 1.0)):
+            P[i, j] = np.asarray(c, float) + side * s * w + up * t * h + out * (0.15 * h * t * t) + np.array([0, 0, z0])
+    m = geo.surface(P, 'straw', geo.frame(seed=seed))
+    if m.face_normals().sum(0) @ out < 0: m.F = m.F[:, ::-1]; m.N = -m.N
+    u0 = rng.uniform(0, 0.5); v0 = rng.uniform(0, 0.3)
+    uu, vv = np.meshgrid([u0, u0 + 0.25, u0 + 0.5], [v0 + 0.7, v0 + 0.35, v0], indexing='ij')
+    m.T = np.stack([uu.ravel(), vv.ravel()], 1)
+    return m
+
+
 def haystack(lod=0, seed=100):
+    """Vietnamese rice-straw stack (cay rom): straw built up round a bamboo pole into a shaggy dome, laid in courses with the
+    straw running down so the rain sheds, a straw top-knot round the pole, loose straw at the foot. Surfaces: CS2's thatch
+    (straw running down the profile) and thatch-edge fringes per course, de_anubis hay-pile strands at the foot (playtest 1,
+    finding 17: the old one was a smooth noise-shaded lathe). Same footprint as before (r 48-52, about 100 tall)."""
     p = geo.frame(seed=seed)
-    m = geo.lathe([(0, 0), (46, 0), (48, 30), (36, 60), (14, 84), (0, 88)], sides=18, mat='hay', part=p)
-    n = fbm(m.V[:, 0] * 0.08, m.V[:, 1] * 0.08, m.V[:, 2] * 0.08, 3, seed=seed)
-    m.V += m.N * n[:, None] * 4.0
+    rng = np.random.RandomState(seed)
+    m = geo.Mesh()
+    prof = [(0, 0), (43, 0), (47, 10), (48, 26), (46, 42), (41, 58), (33, 72), (22, 84), (11, 92), (4, 96), (0, 97)]
+    body = geo.lathe(prof, sides=22, mat='straw_body', part=p)
+    lump = fbm(body.V[:, 0] * 0.05, body.V[:, 1] * 0.05, body.V[:, 2] * 0.05, 3, seed=seed)
+    lean = np.clip(body.V[:, 2] / 97.0, 0, 1) ** 2 * rng.uniform(2, 5)          # a slight lean, the top settles to one side
+    body.V += body.N * (lump * 3.0)[:, None]
+    body.V[:, 0] += lean
+    body.recompute_normals(angle=70)
+    m.add(body)
+
+    def rz(z):            # radius of the profile at height z
+        zs = [q[1] for q in prof]; rs = [q[0] for q in prof]
+        return float(np.interp(z, zs[1:], rs[1:]))
+    # a straw fringe under each course line, hanging down over the course below
+    for k, z in enumerate((30.0, 50.0, 68.0, 82.0)):
+        r = rz(z) + 1.0; n = 9
+        a0 = rng.uniform(0, 2 * np.pi)
+        for i in range(n):
+            a1, a2 = a0 + i * 2 * np.pi / n, a0 + (i + 1.08) * 2 * np.pi / n
+            q1 = (r * np.cos(a1), r * np.sin(a1), z); q2 = (r * np.cos(a2), r * np.sin(a2), z)
+            mid = 0.5 * (a1 + a2)
+            dn = (0.15 * np.cos(mid), 0.15 * np.sin(mid), -1.0)
+            m.add(fringe_card(q1, q2, dn, FRINGE_S / 4 * (0.75 - 0.08 * k), seed * 13 + k * 31 + i, nseg=2, face=(np.cos(mid), np.sin(mid), 0)))
+    # pole and top-knot
+    m.add(bamboo_pole((0, 0, -4), (rng.uniform(-1, 1), rng.uniform(-1, 1), 104), 2.0, seed + 5))
+    knot = geo.lathe([(0, 90), (9, 90), (8, 94), (5, 98), (2.5, 100.5), (0, 101)], sides=12, mat='straw_body', part=geo.frame(seed=seed + 6))
+    m.add(knot)
+    for i in range(6):
+        a1, a2 = i * np.pi / 3, (i + 1.1) * np.pi / 3
+        m.add(fringe_card((8 * np.cos(a1), 8 * np.sin(a1), 97), (8 * np.cos(a2), 8 * np.sin(a2), 97), (0.5 * np.cos(a1 + 0.5), 0.5 * np.sin(a1 + 0.5), -1), 12.0, seed * 17 + i, nseg=1, face=(np.cos(a1 + 0.5), np.sin(a1 + 0.5), 0)))
+    # loose straw at the foot
+    for i in range(14):
+        a = rng.uniform(0, 360)
+        c = (37 * np.cos(np.radians(a)), 37 * np.sin(np.radians(a)), 0.0)
+        m.add(straw_card(c, rng.uniform(16, 24), rng.uniform(9, 12), a, rng.uniform(25, 45), seed * 19 + i))
     m.recompute_normals(angle=60)
-    m.add(MG.cyl((0, 0, 0), (0, 0, 100), 2.0, 'wood_dark', p, sides=6))
     return m
 
 
@@ -303,7 +463,7 @@ def ox_cart(lod=0, seed=102):
             m.add(MG.cyl((0, s * 36, 36), (33 * np.cos(a), s * 36, 36 + 33 * np.sin(a)), 1.2, 'wood', p, sides=5))
         m.add(MG.cyl((0, s * 33, 36), (0, s * 40, 36), 5.0, 'wood_dark', p, sides=10))
     m.add(MG.cyl((0, -34, 36), (0, 34, 36), 2.6, 'wood_dark', p, sides=8))
-    hay = geo.rbox(100, 50, 30, r=10, seg=2, mat='hay', part=p, div=(3, 2, 1), center=(-5, 0, 76))
+    hay = geo.rbox(100, 50, 30, r=10, seg=2, mat='straw_body', part=p, div=(3, 2, 1), center=(-5, 0, 76))
     hay.V += hay.N * fbm(hay.V[:, 0] * 0.1, hay.V[:, 1] * 0.1, hay.V[:, 2] * 0.1, 2, seed=seed)[:, None] * 3
     hay.recompute_normals(angle=60); m.add(hay)
     m.recompute_normals(angle=50)
@@ -450,7 +610,7 @@ def _sh():
             'shutter': lambda c: S.painted_steel(c, S._c(0.22, 0.42, 0.45), chip=0.35), 'tin': lambda c: _tin(c), 'blackboard': lambda c: dict(color=np.full((c.n, 3), 0.1, np.float32), rough=np.full(c.n, 0.7, np.float32)),
             'paint_red': lambda c: S.painted_steel(c, S._c(0.62, 0.12, 0.10), chip=0.3), 'tile': lambda c: M.concrete(c, tone=S._c(0.45, 0.28, 0.22), damage=0.2),
             'brass': M.brass, 'stone': lambda c: M.concrete(c, tone=S._c(0.50, 0.50, 0.46), damage=0.5), 'water_dark': lambda c: dict(color=np.full((c.n, 3), 0.08, np.float32), rough=np.full(c.n, 0.1, np.float32)),
-            'gunsteel': M.gun_steel, 'rope': M.rope, 'wicker': lambda c: _wicker(c), 'rice': lambda c: dict(color=np.tile(S._c(0.82, 0.74, 0.52), (c.n, 1)) * (0.9 + 0.2 * np.random.RandomState(1).rand(c.n, 1)), rough=np.full(c.n, 0.9, np.float32)),
+            'gunsteel': M.gun_steel, 'rope': M.rope, 'wicker': lambda c: _wicker(c), 'rice': lambda c: _rice(c),
             'clay': lambda c: M.concrete(c, tone=S._c(0.48, 0.30, 0.22), damage=0.2), 'cloth': lambda c: S.canvas(c, base=S._c(0.55, 0.45, 0.55), mud_top=0.0, stains=0.3),
             'hay': lambda c: _hay(c), 'mud': M.earth, 'tarp_blue': lambda c: M.tarp(c, base=S._c(0.18, 0.30, 0.52)), 'charred': lambda c: S.rust_steel(c, burnt=1.0),
             'net': lambda c: M.grass_card(c, NET_IMG)}
@@ -493,6 +653,19 @@ def _wicker(ctx):
     return dict(color=np.clip(S.ao_tint(col, ctx, 0.6), 0, 1), rough=np.full(ctx.n, 0.88, np.float32), height=0.2 * over - 0.3 * gap)
 
 
+def _rice(ctx):
+    """unhusked paddy heaped in a basket: grains about 0.3 u (8 mm), golden to grey-brown per grain, husk sheen"""
+    from noise import cells, hash01
+    P = ctx.P * 3.4
+    f1, f2, cid = cells(P[:, 0], P[:, 1], P[:, 2], seed=7)
+    t = hash01(cid, 3)
+    col = S.mix(S._c(0.78, 0.64, 0.36), S._c(0.62, 0.50, 0.30), t) * (0.75 + 0.25 * np.clip(f2 - f1, 0, 1) * 2)[:, None]
+    n = fbm(ctx.P[:, 0] * 0.15, ctx.P[:, 1] * 0.15, ctx.P[:, 2] * 0.15, 2, seed=9)
+    col = col * (0.9 + 0.1 * n)[:, None]
+    h = 0.12 * np.clip(f2 - f1, 0, 0.5)
+    return dict(color=np.clip(S.ao_tint(col, ctx, 0.7), 0, 1), rough=np.clip(0.62 + 0.2 * f1, 0, 1).astype(np.float32), height=h)
+
+
 def _hay(ctx):
     P = ctx.P
     n = fbm(P[:, 0] * 0.4, P[:, 1] * 0.4, P[:, 2] * 0.4, 3, seed=311)
@@ -500,13 +673,19 @@ def _hay(ctx):
     return dict(color=np.clip(S.ao_tint(col, ctx, 0.7), 0, 1), rough=np.full(ctx.n, 0.95, np.float32), height=0.3 * n)
 
 
-def _two(fn, size=1024, hulls=None, ground=0.0, thr=30.0, surface='wood', cut=False, **kw):
+# chart material -> CS2 tiling material (stock.py keys) for the large surfaces (playtest 1, finding 16): roofs, wall panels,
+# floors and plaster at CS2's own texel density; poles, posts and small pieces stay on the baked atlas
+VSTOCK = {'thatch': 'v_thatch', 'thatch_ridge': 'v_thatch_cyl', 'thatch_fringe': 'v_thatch_edge', 'wattle': 'v_reed',
+          'bamboo_floor': 'v_bamboo', 'plaster': 'v_plaster', 'straw': 'v_hay', 'straw_body': 'v_thatch', 'basket': 'v_basket', 'bamboo': 'mv_bamboo'}
+
+
+def _two(fn, size=1024, hulls=None, ground=0.0, thr=30.0, surface='wood', cut=False, stock=None, **kw):
     a = fn(lod=0, **kw); b = fn(lod=1, **kw)
     imgs = {}
     if isinstance(a, tuple): a, imgs = a; b = b[0]
     lo, hi = a.bounds()
     spec = dict(lods=[a, b], lod_thresholds=[0.0, thr], size=size, decal_size=512, ground=ground, surface=surface, metal=False, shaders=_sh(),
-                decal_imgs=imgs, stock={}, hulls=hulls if hulls is not None else [MG.pts_box(lo[0], lo[1], lo[2], hi[0], hi[1], hi[2])])
+                decal_imgs=imgs, stock=VSTOCK if stock is None else stock, hulls=hulls if hulls is not None else [MG.pts_box(lo[0], lo[1], lo[2], hi[0], hi[1], hi[2])])
     if cut: spec['atlases'] = {'main': dict(size=size), 'cut': dict(size=512, alpha=lambda b: b['metal'], metal=False, fill=0.9, backfaces=True)}
     return spec
 

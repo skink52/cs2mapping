@@ -5,7 +5,8 @@
  "preview_dir": "../preview",
  "stock_preview_dir": "../out/stockprev",
  "single_lod": [],
- "texel_density": {"px_per_unit": 12.8, "min": 256, "max": 2048, "why": "512 px/m at 40 u/m (playtest 1, finding 16): CS2's own hr_ props are 10-20 px/u; atlases above 2048 cost 4x VRAM, so large surfaces use tiling CS2 materials (stock.py)"},
+ "ao_scale": 0.5,
+ "texel_density": {"px_per_unit": 12.8, "min": 256, "max": 2048, "slack": 1.65, "why": "512 px/m at 40 u/m (playtest 1, finding 16): CS2's own hr_ props are 10-20 px/u; atlases above 2048 cost 4x VRAM, so large surfaces use tiling CS2 materials (stock.py)"},
  "props": {
   "modules": ["p_heli", "p_arty", "p_guns", "p_base", "p_village", "p_jungle", "p_wreck", "p_bridge", "p_temple", "p_sandbag_mv"],
   "calls": {
