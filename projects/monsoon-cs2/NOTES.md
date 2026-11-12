@@ -2,7 +2,26 @@
 
 Read this first when resuming. Newest state at the top. Design: [docs/DESIGN.md](docs/DESIGN.md).
 
-## Resume here (12 Nov 2026, after world review pass 2)
+## Resume here (12 Nov 2026, after build stage 2: the map compiled)
+
+**State in one line:** `mg_monsoon.vpk` is **compiled** (final build, 65.8 min, 0 failed, 0 DELETED) and in
+`game\csgo_addons\mg_monsoon\maps\` with the 3D skybox's own `mg_monsoon_3dskybox.vpk`; **never launched, not opened in Hammer**.
+Not committed. Full record: [docs/BUILD_LOG_1.md](docs/BUILD_LOG_1.md) "Stage 2".
+
+- Two generator faults made the compiler spin for ever on one core (no error, no log line); both fixed and now caught offline by
+  `tools/check_mesh.py`:
+  1. map load hung on the tunnel mesh's 6 "pinch" vertices (two open cells meeting at a corner): `vmesh.split_pinches()`;
+  2. lightmap charting crawled on the 47,912-face `toolslightmapres` shell: `mv_terrain.build_lmres` now 256-u cells, 3,170 faces.
+- Stats: vis 4,096 clusters (19 min); lightmap 2048 x 2048, 270,837 charts, no OOM (lighting 14.5 min); **nav 33,661 areas**
+  ("Compute Approach areas" alone 26 min); vpk 183 MB.
+- The skybox map needs its own build line: `build_maps.ps1 final "mg_monsoon mg_monsoon_3dskybox"` (one quoted argument).
+- Offline checks after the fixes: check_mesh 0 bad, check_world clean, check_play clean (9), mock 32 x 300 PASS.
+
+**Next:** skink52 launches it (docs/BUILD.md "Local test with bots": tools mode, `map mg_monsoon`, `version`) and works through
+TESTING_MONSOON.md. Watch FPS with bots (nav area count near the sibling's 44k that cost FPS) and VRAM (elephant grass is 109 MB of
+206 MB aggregate vertex data; the 3D skybox is 16.2 M triangles and a 420 MB vpk, bigger than the map: likely the first thing to thin). Before committing: `create/libsync.py pull` for `vmesh.py` and `check_mesh.py` (the only two it lists as DIFFERS).
+
+## Earlier: after world review pass 2 (12 Nov 2026)
 
 **State in one line:** world review pass 2 is done and every offline check is clean (check_play 0 stuck pockets, check_world incl.
 the new prop_dynamic archetype check, check_mesh, mock PASS); **nothing compiled from this pass, not opened in Hammer, not run in CS2**.

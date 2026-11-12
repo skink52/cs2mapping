@@ -327,8 +327,11 @@ def build_edge_clips(group):
 
 
 # ---------------------------------------------------------------- lightmap player space
-def build_lmres(group, cell=64.0):
-    """toolslightmapres shell over the walkable band: the valley within 3400 of the river plus the bases"""
+def build_lmres(group, cell=256.0, samples=8):
+    """toolslightmapres shell over the walkable band: the valley within 3400 of the river plus the bases.
+    Coarse cells on purpose: at 64-u cells the shell had 47,912 faces and the compiler's lightmap charting ("Charting N unique
+    meshes") ran for 26+ minutes on one core without finishing (first map compile, 12 Nov 2026); without the shell the same
+    meshes chart in 0.2 s. 256-u cells, sampled every 32 u for the ground range, keep it to a few thousand faces."""
     x0, y0 = -L.MAP_X, -L.MAP_Y
     nx, ny = int(2 * L.MAP_X / cell), int(2 * L.MAP_Y / cell)
     CX = x0 + (np.arange(nx) + 0.5) * cell; CY = y0 + (np.arange(ny) + 0.5) * cell
@@ -337,5 +340,5 @@ def build_lmres(group, cell=64.0):
     occ |= np.hypot(CX - L.CT_BASE[0], CY - L.CT_BASE[1]) < L.CT_FOOT_R
     occ |= np.hypot(CX - L.T_BASE[0], CY - L.T_BASE[1]) < L.T_FOOT_R
     occ &= L.karst_dist(CX, CY) > -20.0
-    G.lmres_terrain(occ, x0, y0, cell, L.height, below=8.0, above=160.0, samples=2, group=group)
+    G.lmres_terrain(occ, x0, y0, cell, L.height, below=8.0, above=160.0, samples=samples, group=group)
     return int(occ.sum())

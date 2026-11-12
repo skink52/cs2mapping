@@ -3,11 +3,9 @@
 AI-generated (Claude) for skink52. The terse command sheet is [../tools/build_monsoon.md](../tools/build_monsoon.md); this page says why
 each step is there and what to look for.
 
-**How far this is checked (12 Nov 2026).** Steps 1-8 (generation) have been run on this PC; their outputs are **simulated** or
-checked offline only (mesh check, world check, mock engine, HUD layout check, numeric sound check). Step 9 (`deploy_monsoon.py`)
-has been run as a dry run against the real addon folders and as a real copy into a temp folder (**unit tested** by hand, no test file).
-Steps 10-12 (compile, launch) have **never been run for this map**: nothing here is compiled, Hammer verified or in-game verified.
-Times for steps 10-11 are estimates from the sibling maps, not measurements.
+**How far this is checked (12 Nov 2026).** Steps 1-11 have been run on this PC. The assets and the map are **compiled**
+(resourcecompiler, no errors; records in [BUILD_LOG_1.md](BUILD_LOG_1.md)): `maps/mg_monsoon.vpk` (final build, 66 min) and the 3D
+skybox `maps/mg_monsoon_3dskybox.vpk`. Nothing is Hammer verified or in-game verified: step 12 (launch) has not been run.
 
 ## Before you start
 
@@ -30,14 +28,14 @@ Times for steps 10-11 are estimates from the sibling maps, not measurements.
 | 1c | LODs | `python lod_decimate.py ../out/addon ../out/addon mv/<name> ...` | 1-2 min | after any rebuild of the 15 props in the list below; prints charts per LOD |
 | 2 | Apache (CC-BY, US helicopters) | `python apache_setup.py ../out/addon` | under 1 min | `out/apache.json`; 60 MB under `models/vehicles/apache` |
 | 3 | GMod conversions | `python -I gmod_assets.py fetch`, `convert`, `view`, `report` | fetch: download speed (several GB); convert about 30 s per model, 53 models | `out/gmod_models.json`; `out/gmod/view/_sheet*.png` |
-| 4 | Map | `python -u make_map.py <template or live .vmap> ../out/addon/maps/mg_monsoon.vmap ../out/addon [<previous generated .vmap>]` | 3-8 min (last run 181 s) | last line `vmap: N entities ...`; then `python check_mesh.py <vmap>` (0 bad) and `python check_world.py <vmap>` (exit 0) |
+| 4 | Map | `python -u make_map.py <template or live .vmap> ../out/addon/maps/mg_monsoon.vmap ../out/addon [<previous generated .vmap>]` | 10-14 min (12 Nov 2026: 588 s and 823 s) | last line `vmap: N entities ...`; then `python check_mesh.py <vmap>` (0 bad: it also catches the two faults that hang the map compile) and `python check_world.py <vmap>` (exit 0) |
 | 5 | Sounds | `python sounds.py ../out/addon "C:/source1/links/content_addons/addon_template/soundevents/soundevents_addon.vsndevts"` | 8 s | exit 0; `out/sounds_report.json` |
 | 6 | Radar, board, slides, skybox | `python make_radar.py ../out/addon ../out/game`; `python render_board.py ../out/addon`; `python make_sky.py` | 1-2.5 min, 2 min, 1 min | `out/radar_preview.png`; `out/sky.json`, check_mesh 0 bad |
 | 7 | HUD | `python mv_hud.py ../out/addon` | 1 min | exit 0 (contract + `hud_check.py` gate); `out/hud/hud_<state>.png` |
 | 8 | Script + tests | from the project folder: `node tools/build_script.mjs`; `node test/mock.mjs 32 600`; `node test/mock.mjs 4 600`; `tsc -p test/tsconfig.json`; from `cs2mapping`: `python create/test/api.py --strict --check projects/monsoon-cs2/out/addon/maps/scripts/mg_monsoon.js` | under 2 min | both mock runs PASS, nothing invalid or deprecated |
 | 9 | Deploy | from the project folder: `python -I tools/deploy_monsoon.py` then `--apply` | dry run seconds; first apply about 1.2 GB copied, 1-3 min | see "Deploy" |
 | 10 | Compile assets, HUD, script | see "Compile" | first time 9 min (measured 12 Nov 2026) | `logs\mg_monsoon_assets.log` |
-| 11 | Compile the map | `build_maps.ps1 final mg_monsoon` under the watchdog | 45-60 min (estimate) | see "What to read in the build log" |
+| 11 | Compile the map, then the 3D skybox map | `build_maps.ps1 final mg_monsoon`, then `build_maps.ps1 final "mg_monsoon mg_monsoon_3dskybox"`, each under the watchdog | 66 min + skybox (measured 12 Nov 2026) | see "What to read in the build log" |
 | 12 | Launch | see "Local test with bots" | | TESTING_MONSOON.md |
 
 Order matters in three places: the map (4) needs the props, Apache and `out/props.json`; the HUD (7) preloads the slides and the board
@@ -141,14 +139,20 @@ From Git Bash quote the script path in single quotes (`'C:\source1\cs2port\build
 - **Probe-lit foliage.** `mv_places.py` writes `bakelighting 0` for foliage, wire, cards and every prop under 40 units (`probed()`),
   as the sibling does since its tw12 build stalled charting 26,669 meshes. If a build stalls in "Charting" or "Packing", the first
   thing to check is that foliage did not end up lightmapped.
-- Expected time: 45-60 min. This is an estimate, never measured: mg_trenchwarfare final 19 min, mg_ironframe_dunes full builds
-  22-37 min, and this map is larger (6,388 entities, 5,743 static props, 55 MB vmap, a 13 MB 3D skybox map). Threads default to
-  logical cores minus 2.
-- The 3D skybox map (`maps/mg_monsoon_3dskybox.vmap`) has no queue line of its own: the main map's `skybox_reference` pulls it in,
-  as mg_trenchwarfare's did. Not yet confirmed for this map: check the log names it.
-- Checking on it: report elapsed against 60 min, whether CPU or the build log moved since the last look, and the last log line.
+- **Measured 12 Nov 2026: 65.8 min** with 10 threads (7,526 entities, 6,860 static props, 57 MB vmap). Where the time goes: vis
+  19.4 min (121,116 regions, 152,878 clusters merged to 4,096), lighting 14.5 min (charting 2 min, GPU lightmapping 10 min),
+  nav + CSGO AI data about 28 min, of which "Compute Approach areas" alone is 26 min on one core with no log line until it ends,
+  Steam Audio + bomb damage about 3 min. CPU at one core with a quiet log during approach areas is normal.
+- **The 3D skybox map needs its own build** (the main map's compile does not include it; its vpk holds no skybox world):
+  `build_maps.ps1 final "mg_monsoon mg_monsoon_3dskybox"`, addon and map in **one quoted argument**, after the main map. Its log
+  warns "No lightmap resolution volumes set": expected for a skybox map.
+- Checking on it: report elapsed against 66 min, whether CPU or the build log moved since the last look, and the last log line.
   No CPU, disk or log movement for 15 minutes = hung: stop it (and after stopping, `taskkill /PID <pid> /T /F` any
-  `resourcecompiler.exe` this build left behind; never another session's).
+  `resourcecompiler.exe` this build left behind; never another session's). Two compiles of 12 Nov looked alive (one core at 100 %)
+  but were stuck for good: in the map load (log stops at `Forced dmxconvert - Finished`, no "Settling physics objects" within a
+  minute) and in "Charting N unique meshes" (no "Done" after 3 min). Both are generator faults, now caught by `check_mesh.py`
+  (pinch vertices; a `toolslightmapres` shell over 8,000 faces): see BUILD_LOG_1.md "Stage 2".
+- Never run two lighting bakes at once: they share `game\csgo_addons\mg_monsoon\_vrad3` and the second fails.
 
 ### What to read in the build log
 
@@ -169,21 +173,25 @@ From Git Bash quote the script path in single quotes (`'C:\source1\cs2port\build
 | `could not move ... (is the map loaded in CS2 or Hammer?)` | the vpk is still in the temp outroot | close the map, build again |
 | nav lines (`-nav`): area count | the nav mesh | mg_trenchwarfare lost FPS with 44k areas; the NONAV boxes are meant to keep this far lower. A count near that means `func_nav_markup` did not apply |
 
-Record after the first compile, in NOTES.md and in this file: the CS2 build number (`version` in the console), the measured
-times for steps 10 and 11, the chart counts, the nav area count.
+First compile, 12 Nov 2026 (BUILD_LOG_1.md "Stage 2"): charting 1,830 unique meshes in 120 s, 270,837 UV charts into 2048 x 2048,
+no out-of-memory; nav 33,661 areas (`Nav mesh (v36/1) loaded with 33661 nav areas`); vis 4,096 clusters; 0 DELETED, 0 missing
+models or materials. Compiler build `pc64 Nov 11 2026` (from the log). The CS2 game build number (`version` in the console) is
+still to be recorded at the first launch.
 
 ## Local test with bots (step 12)
 
 skink52 starts the game; an agent must not launch it (a game window takes focus, and windows opened by tools start minimised
 and inactive). After the game is closed again, deploys are allowed.
 
-1. Start CS2 in tools mode on the addon:
-   `"...\game\bin\win64\cs2.exe" -addon mg_monsoon -tools -steam -retail -insecure -noassetbrowser -vulkan`
-   (or pick `mg_monsoon` in the Workshop Tools launcher).
-2. Console: `map mg_monsoon`.
+1. Start CS2 in tools mode on the addon (one line, from any folder):
+   ```
+   "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\bin\win64\cs2.exe" -addon mg_monsoon -tools -steam -retail -insecure -noassetbrowser -vulkan
+   ```
+   (or pick `mg_monsoon` in the Workshop Tools launcher). This is a local listen server; the script adds the bots itself.
+2. Console: `map mg_monsoon`. Then `version` and note the build number in NOTES.md.
 3. Expect in the console, in this order (none of this has been seen yet):
-   - `[mv] mg_monsoon script mv-0.1 (11 Nov 2026) - flags 5, bots on (quota 10)`
-   - `[mv] round 1 start (mv-0.1 (11 Nov 2026))`
+   - `[mv] mg_monsoon script mv-0.3 (12 Nov 2026, review pass 1) - flags 5, bots on (quota 10)`
+   - `[mv] round 1 start (mv-0.3 (12 Nov 2026, review pass 1))`
    - `[mv] points: spawns 16/16, helicopters 3/3, guns 4/3, mounts 8, uniforms cached N`
    - no `[mv] missing entity <name>` and no `[mv] error in ...` line
    - once a minute: `[mv] script time X ms/tick avg, Y max over N ticks, P players, errors 0`

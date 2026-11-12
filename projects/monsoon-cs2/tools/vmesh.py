@@ -7,8 +7,49 @@ from vmaplib import stream, data_array, node_head, node_tail
 TEX_SIZE = {}   # material -> (w, h) pixels; default 1024
 
 
+def split_pinches(verts, faces, paint=None, tint=None):
+    """Give each face fan around a vertex its own vertex. A vertex where two fans only touch (two open cells meeting at a corner,
+    two holes sharing a corner) cannot be written as a half-edge mesh: two boundary half-edges would get the same 'next', and
+    resourcecompiler's map load then spins forever on the mesh (mg_monsoon tunnel, 12 Nov 2026). The copies sit at the same
+    position, so nothing changes visually. Returns (verts, faces, paint, tint, number of vertices added)."""
+    verts = np.asarray(verts, float)
+    parent = {}
+    def find(c):
+        while parent[c] != c:
+            parent[c] = parent[parent[c]]; c = parent[c]
+        return c
+    by_edge = {}
+    for f, loop in enumerate(faces):
+        n = len(loop)
+        for k in range(n):
+            c = (f, k); parent[c] = c
+            v = loop[k]
+            for x in (loop[k - 1], loop[(k + 1) % n]):
+                by_edge.setdefault((v, min(v, x), max(v, x)), []).append(c)
+    for cs in by_edge.values():
+        for c in cs[1:]:
+            a, b = find(cs[0]), find(c)
+            if a != b: parent[b] = a
+    fans = {}
+    for f, loop in enumerate(faces):
+        for k, v in enumerate(loop):
+            fans.setdefault(v, {}).setdefault(find((f, k)), []).append((f, k))
+    new = [list(l) for l in faces]; extra = []
+    for v, groups in fans.items():
+        for g in list(groups.values())[1:]:
+            nv = len(verts) + len(extra); extra.append(v)
+            for f, k in g: new[f][k] = nv
+    if not extra: return verts, faces, paint, tint, 0
+    verts = np.vstack([verts, verts[extra]])
+    if paint is not None: paint = np.vstack([np.asarray(paint), np.asarray(paint)[extra]])
+    if tint is not None: tint = np.vstack([np.asarray(tint), np.asarray(tint)[extra]])
+    return verts, new, paint, tint, len(extra)
+
+
 def polymesh_open(verts, faces, face_mats, scale=0.25, tex_axes=None, paint=None, tint=None):
-    """verts (n,3); faces: list of index loops CCW seen from the visible side; open boundaries allowed (manifold)."""
+    """verts (n,3); faces: list of index loops CCW seen from the visible side; open boundaries allowed (manifold edges; vertices
+    where face fans only touch are split by split_pinches)."""
+    verts, faces, paint, tint, _ = split_pinches(verts, faces, paint, tint)
     verts = np.asarray(verts, float)
     mats = sorted(set(face_mats))
     for m in mats:

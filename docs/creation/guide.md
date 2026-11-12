@@ -121,7 +121,8 @@ Checks before handing a map over: `create/check_mesh.py <vmap>` (half-edge valid
   and Low only in the lobby rooms, Lower (`hintType` 8) for big volumes, Medium only around very complex meshes.
   Sky shells around sealed rooms: Exclude from Vis.
 - **Lighting:** enough stationary lights that weapons aren't black; one `env_combined_light_probe_volume` per room/arena (`vmapgen.probe_volume`) that fully covers every static func_breakable / func_brush (check with `tools/probecover.py` via `stage_d.py … probes`);
-  `toolslightmapres` shells over the player space (`vmapgen.lmres_*`: 64-grid occupancy, floor −8 to +128); probe-lit (`bakelighting 0`) foliage and small props;
+  `toolslightmapres` shells over the player space (`vmapgen.lmres_*`: 64-grid occupancy, floor −8 to +128; on a big open map use a
+  coarser grid, since a shell over about 8,000 faces makes lightmap charting crawl: mg_monsoon's 47,912-face shell never finished, its 256-grid one has 3,170 faces); probe-lit (`bakelighting 0`) foliage and small props;
   ≤ 4 shadowed lights overlapping. Probe sizes and lamp keys: [cs2-gotchas, lighting](../reference/cs2-gotchas.md#lighting-materials-and-rendering).
 - **Lobby + pawn booth:** a lobby room (join by chat command or automatically; Hellmatch dropped its join pads), a sealed booth where parked pawns wait,
   a model cache room, and a `func_nav_markup` WALKABLESEED for bots.
