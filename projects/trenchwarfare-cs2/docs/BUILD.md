@@ -1,4 +1,4 @@
-# mg_trenchwarfare: chain, deploy, compile
+﻿# mg_trenchwarfare: chain, deploy, compile
 
 AI-generated (Claude) for skink52. Remaster step 9 ([REMASTER_PLAN.md](REMASTER_PLAN.md)). The same shape as monsoon's
 [BUILD.md](../../monsoon-cs2/docs/BUILD.md); the difference is that trench never regenerates the map: the user's Hammer map is patched.
@@ -169,7 +169,7 @@ Save a copy of each log into `out/step9/logs/` (the build overwrites them).
 | `shaders_pc.vpk ... invalid` FATAL | Valve's shader pack failed to open once (monsoon) | rerun before chasing; Steam verify if it repeats |
 | `Charting N unique meshes`, `Packing N UV charts` | lightmap load | tw34: 24,754 meshes, 1.37 M charts in 2048. The terrain patch re-gridded 47 tiles (+80k tris): expect more; several million = stop and cut charts |
 | `OUT OF MEMORY`, vrad3 `FATAL`, "Welding seams" as the last line | bake out of memory | fewer charts; never raise the resolution |
-| nav: the generated area count | the nav mesh | tw34: 44,160 (the hitch every 0.5 s). Target < 5,000; `patch_nav` estimate about 1,470 (factor ~2). Near 44k = the NONAV boxes did not apply |
+| nav: the generated area count | the nav mesh | tw34: 44,160 (the hitch every 0.5 s). Target < 5,000; first compile 10,269; nav pass 2 measured 4,377 with `tools/navtest.py` (3-min nav-only test compile). Near 44k = the NONAV boxes did not apply |
 | `OK in N min - mg_trenchwarfare.vpk moved` | a vpk was built | level **compiled**, nothing more; record N |
 | `no new mg_trenchwarfare.vpk (exit code N)` | compile failed | the lines above it |
 

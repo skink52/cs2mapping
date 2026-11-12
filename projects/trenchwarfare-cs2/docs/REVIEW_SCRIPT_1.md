@@ -313,3 +313,60 @@ scenarios, invariants, bot coverage rows, shuffled rate model, two set pieces ma
 `tools/check_contract.py` (`--stage`, SetModel check, bot quota rows, mortar models); `docs/SCRIPT.md`, `docs/CONTRACT.md`, this section.
 Outputs in `out/`: `nav_input_user.vmap` / `nav_input_step5.vmap` (copies), `nav_patched_user.*` / `nav_patched_step5.*` (map, targets,
 guard report, nav report), `nav_check9_step5.json`, `nav_*_run.log`, `nav_gate_*.txt`.
+
+## Nav 2: the nav measured and cut under 5,000 (12 Nov 2026)
+
+**Where the 10,269 areas were.** The compiled `maps/mg_trenchwarfare.nav` (extracted read only from the game addon's vpk into
+`out/nav2/`) is readable: CS2 nav v36 holds a corner table (u32 count + xyz floats) and one polygon per area (u8 corner count, u32
+indices, i32); `out/nav2/navread.py` reads it, `classify.py` labels each area against check_play's open walk graph. Of 10,269 areas
+4,553 were on in-play ground and 5,403 on walkable ground no play world reaches; the generator covers nearly all walkable ground
+the NONAV boxes leave (its jumps and drops cross trench walls that the 16-u walk graph cannot), which is why the seed-flood estimate
+(1,470) was 7x low. By region: ground on top of the two trench bands (parapets, between fire and support trench, dugout roofs) 3,098;
+woods 2,400 (731 + 257 of it outside the clearing fence); mine galleries 1,815 (14-u areas: the tunnel frames every 45 u); the
+terrain over the galleries 1,055; no man's land 325; rear 281; trench floors 1,256; briefing room 39. The old patch left every 256-u
+square with in-play ground at the same level alone, so the whole trench-band surface kept its nav.
+
+**The patch change (`tools/patch_nav.py`).** NONAV is now z-aware: per 128-u square a box starts 40 u (`--clear`) over the highest
+in-play ground of the square (+48 u margin), so the trench-band surface, dugout roofs, the terrain over the galleries and over the
+briefing room go; squares with no in-play ground get a box from their lowest ground - 48 as before; squares merge into rectangles
+(up to 32 x 32) while the merged box still takes 97 % of their nodes. Plus `BOT_SKIP` (in-play ground no bot needs): the southern
+of the two parallel mine galleries and its cross passages (x 320..1950 each side, y < -3320); the northern gallery, both landings
+and the chamber keep their nav. No bot is sent into the galleries (`undergroundopen` is not in `CONFIG.BOTS.AREAS`); if the user
+opens them (`--user-h1`) the northern gallery still joins landing, chamber and landing. New refusals (nothing written): an in-play
+node under a box or within 32 u under it, a play world that no longer reaches what it reached before. 326 boxes (was 89); guard
+PASS --strict (652 declared nodes). `--estimate` now projects from the walkable nodes outside the boxes (`NAV_CAL`, two measured
+pairs) instead of the seed flood: 4,703 projected for the 4,377 measured.
+
+**Measured, not estimated.** `out/nav2/navtest.py <vmap> <tag> [--full]` copies the map to a new file
+`content\...\mg_trenchwarfare\maps\_navtest\<tag>.vmap`, runs `resourcecompiler -world -phys -nav` (no light, no vis) from
+`C:\source1\cs2port` with its own `-outroot` (`out/nav2/outroot`, never the game addon), stops at NAVGEN's `IslandRemoval ...
+produced N polys` (= the nav area count) and removes the test map and outroot. About **3 minutes** against the 50-min final; one
+compile at a time (it waits for another resourcecompiler). Calibration: the deployed map gave **10,270** (the final: 10,269).
+The new chain map: **4,377** (stage 4 of NAVGEN removed 17k input triangles, stage 10 kept 11,446 of 30,631 Recast polys).
+`--full` builds the AI data too: "Compute Approach areas" took **148 s** at 4,377 areas (1,071 s at 10,269 in the final).
+
+| region | final 12 Nov | Nav 2 test compile |
+|---|---|---|
+| trench floors (fire / support band) | 799 / 457 | 748 / 455 |
+| ground on top of the trench bands | 3,098 | 9 |
+| woods (clearing side / beyond x 1450) | 2,071 / 329 | 1,771 / 191 |
+| mine galleries | 1,815 | 1,110 |
+| terrain over the galleries, no man's land, rear | 1,055 / 325 / 281 | 77 / 0 / 0 |
+| briefing room | 39 | 16 |
+| **total** | **10,269** | **4,377** |
+
+In-play nav kept: 3,284 m2 of 3,344. Coverage (`out/nav2/navcheck.py`, adjacency by shared corners and T-junctions; ladder and jump
+links not read): every fire / support trench post of both sides, both sap-head landings and the chamber are in one piece (2,408
+areas); the woods points of both sides in another (1,850 areas, joined to the trench by the ladders); the briefing room's own 16
+areas. Not new: the six dressing stations (`heal_*`, x +-2214) stand inside the solid shelter hulls (REVIEW_WORLD_2 W2); the nav
+nearest them is the trench floor 50-70 u away (the final had 1-5 stray areas on the hull tops there, joined to nothing).
+
+**Chain and dry run.** `tools/deploy_tw.py --chain` refused to start: the addon's map is now the 16:33 deploy's output, not the base.
+`deploy_tw.py` now reads the base from that deploy's backup when the addon map is exactly what the last deploy wrote (hash-checked as
+before), and the merge accepts that state. Chain: all 5 stages guard PASS, final `out/step9/chain/5_nav.vmap` CRC32 9ef30db0
+(90.9 MB), radar re-made, check_radar clean.
+Gate **PASS** (`out/step9/gate.json`): check_world / check_play no failure the baseline did not have (check 9: 25 seeds on the walkable
+world, 326 NONAV boxes over 0 protected points, both ladder volumes with ground at both ends), contract 86/86, api 0, tscheck OK, mock
+32 / bots / 13 of 13 scenarios. Dry run against the deployed state: **one file changes**, `content/maps/mg_trenchwarfare.vmap`
+(86.7 MB, replaces what the 16:33 deploy wrote, backed up first); the other 116 are the same. Not done: `--apply` and the final
+compile (the user's). After the compile, the build log's nav line should read about 4,377; "Compute Approach areas" about 2.5 min.

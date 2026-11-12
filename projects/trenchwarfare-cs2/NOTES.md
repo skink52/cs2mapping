@@ -31,8 +31,13 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   0 failed. Map `final`: OK in 49.7 min, 407 compiled, 0 failed, vpk moved; log greps: 0 `DELETED`, 0 `RESOURCE COMPILE ERROR`,
   0 out of memory. Logs copied to `out/step9/`. `docs/BUILD_LOG_1.md` filled: nav **10,269 areas** (tw34 44,160; target < 5,000;
   the ~1,470 estimate was 7x off), 24,718 meshes / 1.40 M charts at 2048, vpk 519.9 MB. 4 stale models (wire, ladder) recompiled;
-  check_world now fails only on the user's duplicate info_map_parameters. Nav pass 2 (tighter NONAV) in progress; after it: chain,
-  `--apply`, final recompile. Then the user's in-game `docs/TESTING.md`.
+  check_world now fails only on the user's duplicate info_map_parameters.
+- 12 Nov ~18:50: nav pass 2: `tools/patch_nav.py` height-aware NONAV (326 boxes; cuts trench tops, dugout roofs, ground over the
+  galleries, woods outside the clearing, and the southern mine gallery, which no bot is sent to). Measured **4,377 areas** with
+  `tools/navtest.py <map> <tag>` (nav-only test compile with its own outroot, ~3 min; calibrated 10,270 vs the final's 10,269);
+  `tools/navread.py` reads a .nav (v36), `tools/navcheck.py` checks every post/landing/chamber is in one connected piece.
+  `deploy_tw.py --chain` now accepts an addon map that is exactly the last deploy's output (base read from that deploy's backup).
+  Dry run: only the vmap changes. Next: `--apply`, final map recompile, expect ~4,377 in the NAVGEN line.
 - 12 Nov 16:33: **deployed** with `tools/deploy_tw.py --apply` (gate PASS; 86 created, 29 replaced, 148 MB). The addon's vmap is now
   the chained map (89.8 MB); the user's 29 Oct save is in `backups\deploy_20261112_163314\` and `backups\remaster_20261112\`.
   Record `out/step9/deploy/mg_trenchwarfare_deploy_20261112_163314.json`. The chain's base hash is the user's save (2e3f90d0): to

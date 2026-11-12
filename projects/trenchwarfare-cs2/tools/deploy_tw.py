@@ -66,6 +66,30 @@ def rel(p):
     return os.path.relpath(p, PROJ).replace('\\', '/')
 
 
+def deploy_map_entries():
+    """(record, map entry) of every deploy record that wrote the map, newest first"""
+    out = []
+    for rp in sorted(glob.glob(os.path.join(STEP9, 'deploy', 'mg_trenchwarfare_deploy_*.json')), reverse=True):
+        try:
+            with open(rp, encoding='utf-8') as f: recd = json.load(f)
+        except (OSError, ValueError): continue
+        out += [(os.path.basename(rp), e) for e in recd.get('files', []) if e.get('rel', '').endswith(MAP_REL)]
+    return out
+
+
+def last_deployed_map(sha):
+    """the newest deploy's map entry when the addon map is still exactly what it wrote, else None"""
+    ents = deploy_map_entries()
+    return ents[0] if ents and ents[0][1].get('after') == sha else None
+
+
+def base_backup():
+    """a deploy backup of the base map (the chain checks its hash), or None"""
+    for _, e in deploy_map_entries():
+        if e.get('before') == BASE['sha256'] and os.path.isfile(e.get('backup', '')): return e['backup']
+    return None
+
+
 def hashes(path, chunk=1 << 20):
     h, c, n = hashlib.sha256(), 0, 0
     with open(path, 'rb') as f:
@@ -189,7 +213,15 @@ def chain(a):
         return stop('the user\'s vmap is missing: %s' % USER_VMAP)
     src = os.path.join(CHAIN, '0_user.vmap')
     tmp = src + '.part'
-    shutil.copyfile(USER_VMAP, tmp)
+    base_from = USER_VMAP
+    # the addon map is exactly what the last deploy wrote (the chain output, not a Hammer save): the base is read from a deploy backup
+    cur = hashes(USER_VMAP)
+    if cur['sha256'] != BASE['sha256'] and last_deployed_map(cur['sha256']):
+        bk = base_backup()
+        if bk:
+            base_from = bk
+            print('  the addon map is the last deploy\'s output (CRC32 %s); base read from its backup %s' % (cur['crc32'], bk))
+    shutil.copyfile(base_from, tmp)
     h0 = hashes(tmp)
     if h0['sha256'] != BASE['sha256']:
         os.remove(tmp)
@@ -197,7 +229,7 @@ def chain(a):
                     'replaced) since the patches were written. Nothing was patched. Re-read the patches\' target tables from the new '
                     'map\'s digest, then update BASE in tools/deploy_tw.py.' % (h0['crc32'], h0['size'], BASE['crc32'], BASE['size']))
     os.replace(tmp, src)
-    rec['input'] = dict(path=USER_VMAP, copy=rel(src), **h0)
+    rec['input'] = dict(path=base_from, copy=rel(src), **h0)
     print('  user map = base (CRC32 %s, %d bytes); copied to %s' % (h0['crc32'], h0['size'], rel(src)))
     flags = []
     if a.user_h1: flags += ['--user-h1', a.user_h1]
@@ -551,13 +583,14 @@ def main(argv=None):
     if not os.path.isfile(fin) or hashes(fin)['sha256'] != ch['final']['sha256']:
         print('the chain\'s final map is missing or changed since the chain ran: run --chain again'); return 1
     cur = hashes(USER_VMAP) if os.path.isfile(USER_VMAP) else None
-    if cur and cur['sha256'] not in (BASE['sha256'], ch['final']['sha256']):
+    if cur and cur['sha256'] not in (BASE['sha256'], ch['final']['sha256']) and not last_deployed_map(cur['sha256']):
         print('the addon\'s map changed since the chain ran (CRC32 %s; base %s, chain output %s): saved in Hammer? Nothing deployed.'
               % (cur['crc32'], BASE['crc32'], ch['final']['crc32']))
         return 1
     print('chain: base CRC32 %s -> final %s (%s, %.1f MB), flags %s; addon map now: %s'
           % (ch['input']['crc32'], ch['final']['crc32'], ch['final']['path'], ch['final']['size'] / 1048576.0, ch['flags'],
-             'base' if cur and cur['sha256'] == BASE['sha256'] else 'the chain output (already deployed)' if cur else 'missing'))
+             'base' if cur and cur['sha256'] == BASE['sha256'] else 'the chain output (already deployed)' if cur and cur['sha256'] == ch['final']['sha256']
+             else 'the last deploy\'s output (%s)' % last_deployed_map(cur['sha256'])[0] if cur else 'missing'))
     for st in ch['stages']:
         if st.get('skipped'):
             print('  %-10s %s' % (st['stage'], st['skipped']))

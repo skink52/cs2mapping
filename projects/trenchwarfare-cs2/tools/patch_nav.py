@@ -2,11 +2,11 @@
 Reads the input map (never writes it); writes the patched copy, the guard's target list and a report under out/.
 
 usage: python tools/patch_nav.py --in <map.vmap> [--out out/nav_patched.vmap] [--targets out/nav_patch.targets.json]
-                                 [--report out/nav_report.json] [--estimate] [--cell 256] [--margin 96] [--stage DIR]
+                                 [--report out/nav_report.json] [--estimate] [--cell 128] [--margin 48] [--clear 40] [--stage DIR]
   --in        a COPY of the user's vmap in out/ (cp content\\...\\maps\\mg_trenchwarfare.vmap out/nav_input_user.vmap), or the output of
               tools/patch_world_1.py (it moves the woods seeds inside the fence): this patch is independent of it and runs after it
   --out       must be under out/ and not the input
-  --estimate  also rebuild the scene of the output and print the nav estimate before -> after (create/check_play.py's flood, see below)
+  --estimate  also rebuild the scene of the output and print the nav estimate before -> after (see below)
   then:       python tools/patch_guard.py <in> <out> out/nav_patch.targets.json
 
 What it adds. Everything comes from the input map's own walk graph (the neutral create/check_play.py through the trench adapter
@@ -15,20 +15,23 @@ tools/check_play.py: 16-u grid, step 18 u, drops, ladder volumes, the blockers r
             pits, the briefing room, the woods clearing and the mine galleries. Plus a margin (--margin, xy) around each, every
             WALKABLESEED box and every post / station (check_play's nav_protect points).
   NONAV     func_nav_markup (navProperty_NavGen NONAV, a closed toolsnavattribute box child; the same entity monsoon's
-            mv_entities.nav_markup() makes) over every --cell square that has walkable ground but none of it in play: no man's land
-            beyond the wire (not walkable for either side: check_play T5), the forest outside the clearing fence, the airfields, the
-            terrain to the bounds. A square whose in-play ground lies more than 160 u below its other ground (the briefing room under
-            the map, the galleries under no man's land) gets a box that starts 100 u over the in-play ground; a square with in-play
-            ground at the same level is left alone. Squares are merged into rectangles (at most 8 x 8) with one z range.
+            mv_entities.nav_markup() makes) over the walkable ground no play world reaches, z-aware (Nav 2, 12 Nov 2026): per --cell
+            square, a box starts --clear u over the highest in-play ground of the square, so the ground on top of the trench bands,
+            dugout roofs, the terrain over the galleries and over the briefing room go as well as no man's land, the forest outside
+            the clearing fence, the airfields and the terrain to the bounds; a square with no in-play ground gets a box from its lowest
+            ground - 48. Squares merge into rectangles (at most 32 x 32) while the merged box still takes 97 % of their nodes.
+            Plus BOT_SKIP: in-play ground no bot is sent to or needs (the southern of the two parallel mine galleries).
+            Refuses (nothing written) when a box covers a protected point / seed, an in-play node lies under a box or within --clear - 8
+            u under it, or a play world no longer reaches what it reached before (outside the boxes) from its start nodes.
   Copies of the first WALKABLESEED markup of vis group tw_nav (entity + mesh, new node ids), named tw_nav_no_N, vis group tw_nav.
   A re-run replaces the tw_nav_no_N of the input (declared removals).
 Nothing else is touched; tools/patch_guard.py checks that.
 
-The estimate (simulated, not a nav build): create/check_play.py check 9 floods the open walk graph from the WALKABLESEED boxes.
-Here the nodes inside NONAV boxes are taken out of the graph first (nav generation makes no area there and cannot cross it), and
-the flood starts from the seeds and the spawns. Cells -> nav areas uses the one measured pair: the tw34 compile of the user's map
-(29 Oct, = the current vmap) reported 44160 nav areas; its flood here is the denominator. Areas are merged rectangles of very
-different sizes, so the area count is an estimate within a factor of about 2; the cell count is the solid number.
+The estimate (simulated, not a nav build). The 12 Nov compile showed the generator covers nearly all walkable ground the boxes leave
+(its jumps and drops cross trench walls the walk graph cannot): 10,269 areas where the old seed-flood estimate said 1,470. So the
+projection is now linear in the walkable 16-u nodes outside the NONAV boxes (NAV_CAL, the measured pair); the seed flood is still
+printed. Area density differs by region (the galleries' tunnel frames make 14-u areas, open ground 60-u ones): within a factor of
+about 1.5. The real number: a nav-only test compile of the output (docs/REVIEW_SCRIPT_1.md "Nav 2": about 3 minutes).
 Ladders: reported (bottom / top walkable nodes, gap to the floor), never changed: the woods ladders are the user's (REVIEW_WORLD_1 M4).
 """
 import argparse, json, math, os, sys, time, zlib
@@ -51,6 +54,20 @@ GROUP = 'tw_nav'
 PREFIX = 'tw_nav_no_'
 TW34_AREAS = 44160            # nav areas the tw34 compile reported (NOTES tw34, 29 Oct) for the map that is the user's vmap today
 CTX_STATE = 'open'
+# measured: nav areas (NAVGEN IslandRemoval / "Nav mesh loaded with N nav areas") against the walkable 16-u nodes outside the NONAV
+# boxes of the same map (Nav 2, docs/REVIEW_SCRIPT_1.md). The generator covers nearly all walkable ground the boxes leave (its jumps
+# and drops cross what check_play's walk graph cannot), so this, not the seed flood, is what the area count follows.
+NAV_CAL = [dict(map='12 Nov final (step 5 seeds + 89 NONAV boxes)', areas=10269, walkable_outside=83480),
+           dict(map='Nav 2 test compile (326 boxes, 12 Nov)', areas=4377, walkable_outside=38236)]
+# in-play ground no bot is sent to or needs, cut on purpose (name, box x0 y0 z0 x1 y1 z1, why). Bots are placed at posts and opened-area
+# points (85_ai.js) and walk only a short way from them.
+BOT_SKIP = [
+    ('south gallery T', (-1950.0, -3600.0, -340.0, -320.0, -3320.0, -100.0),
+     'the southern of the two parallel mine galleries and its cross passages (west half). The northern gallery (y -3300..-3244) joins both '
+     'landings and the chamber; it keeps its nav. No bot is sent into the galleries (undergroundopen is not in CONFIG.BOTS.AREAS: the '
+     "user's sap benches seal them, REVIEW_WORLD_2 W1); 1,812 tiny areas (tunnel frames every 45 u) were 18 % of the nav"),
+    ('south gallery CT', (320.0, -3600.0, -340.0, 1950.0, -3320.0, -100.0), 'the same, east half'),
+]
 
 
 class Mismatch(Exception): pass
@@ -121,8 +138,12 @@ def estimate(ctx):
             seeds += [n for n in ctx.G.nodes_near(e['o'][0], e['o'][1], e['o'][2] - 8, 24.0, 24.0) if not no[n]]
     fl = CP.reach(g, sorted(set(seeds))) if seeds else np.zeros(len(Z), bool)
     nseed = sum(1 for p, n, b in ctx.sc['navboxes'] if p == 'WALKABLESEED')
+    wk = walkable(ctx) & np.isfinite(Z)
+    left = int((wk & ~no).sum())
+    cal = NAV_CAL[-1]
     return dict(flood_cells=int(fl.sum()), nonav_boxes=sum(1 for p, n, b in ctx.sc['navboxes'] if p == 'NONAV'), nonav_nodes=int(no.sum()),
-                seeds=nseed, walkable_nodes=int(walkable(ctx).sum()))
+                seeds=nseed, walkable_nodes=int(wk.sum()), walkable_outside=left,
+                areas_projected=int(round(left * cal['areas'] / cal['walkable_outside'])), calibration=cal['map'])
 
 
 def ladders(ctx):
@@ -137,7 +158,12 @@ def ladders(ctx):
 
 
 # ---------------------------------------------------------------- where the NONAV boxes go
-def plan_boxes(ctx, cell, margin):
+def plan_boxes(ctx, cell, margin, clear=40.0, maxsq=32, loss=0.03):
+    """NONAV boxes over every walkable node no play world reaches, z-aware: a square (cell x cell) with in-play ground gets a box that
+    starts `clear` u over the highest in-play ground of the square (+ margin in xy): the ground above the trenches, dugout roofs, the
+    terrain over the galleries and the briefing room; a square with none gets a box from its lowest ground - 48. Squares are merged
+    into rectangles (at most maxsq x maxsq) while the merged box (its floor = the highest floor of its squares) still covers all but
+    `loss` of their out-of-play nodes. Plus BOT_SKIP: in-play ground no bot is sent to or needs (below)."""
     X, Y, Z = node_arrays(ctx)
     walk = walkable(ctx) & np.isfinite(Z)
     play, per = in_play(ctx)
@@ -148,67 +174,81 @@ def plan_boxes(ctx, cell, margin):
     nx, ny = int(math.ceil((x1e - x0e) / cell)), int(math.ceil((y1e - y0e) / cell))
     ci = np.floor((X - x0e) / cell).astype(int); cj = np.floor((Y - y0e) / cell).astype(int)
     ok = walk & (ci >= 0) & (ci < nx) & (cj >= 0) & (cj < ny)
-    # in-play z per square, the margin applied in xy: each in-play node marks the squares within `margin` of it
-    pz = {}
+    # highest in-play z per square, the margin applied in xy (each in-play node / protected point marks the squares within `margin`)
+    phi = np.full((nx, ny), -np.inf)
     ip = np.nonzero(ok & play)[0]
-    for dx in (-margin, 0, margin):
-        for dy in (-margin, 0, margin):
-            a = np.floor((X[ip] + dx - x0e) / cell).astype(int); b = np.floor((Y[ip] + dy - y0e) / cell).astype(int)
-            for i, j, z in zip(a, b, Z[ip]):
-                if 0 <= i < nx and 0 <= j < ny:
-                    k = (i, j); lo, hi = pz.get(k, (1e9, -1e9)); pz[k] = (min(lo, z), max(hi, z))
+    offs = [(dx, dy) for dx in (-margin, 0, margin) for dy in (-margin, 0, margin)]
+    for dx, dy in offs:
+        a = np.floor((X[ip] + dx - x0e) / cell).astype(int); b = np.floor((Y[ip] + dy - y0e) / cell).astype(int)
+        m = (a >= 0) & (a < nx) & (b >= 0) & (b < ny)
+        np.maximum.at(phi, (a[m], b[m]), Z[ip][m])
     for (x, y, z) in keep:
-        for dx in (-margin, 0, margin):
-            for dy in (-margin, 0, margin):
-                i, j = int((x + dx - x0e) // cell), int((y + dy - y0e) // cell)
-                if 0 <= i < nx and 0 <= j < ny: lo, hi = pz.get((i, j), (1e9, -1e9)); pz[(i, j)] = (min(lo, z), max(hi, z))
-    # out-of-play ground per square
-    oz = {}
+        for dx, dy in offs:
+            i, j = int((x + dx - x0e) // cell), int((y + dy - y0e) // cell)
+            if 0 <= i < nx and 0 <= j < ny: phi[i, j] = max(phi[i, j], z)
     op = np.nonzero(ok & ~play)[0]
-    order = np.lexsort((Z[op], cj[op], ci[op]))
-    for n in op[order]:
-        k = (ci[n], cj[n]); lo, hi = oz.get(k, (1e9, -1e9)); oz[k] = (min(lo, Z[n]), max(hi, Z[n]))
-    cells = {}
-    skipped = 0
-    for k, (olo, ohi) in oz.items():
-        req = -1e9
-        if k in pz:
-            plo, phi = pz[k]
-            if phi < olo - 160: req = phi + 100.0                  # in-play ground well below (briefing room, galleries): box starts above it
-            else: skipped += 1; continue                           # in-play ground at this level: nav stays
-        cells[k] = (olo, ohi, req)
-    # merge into rectangles: one z range per box, every square's ground inside it, never down to an in-play floor below
-    done = set(); boxes = []
-    def fits(ks):
-        lo = min(cells[k][0] for k in ks); hi = max(cells[k][1] for k in ks); req = max(cells[k][2] for k in ks)
-        z0 = max(lo - 48.0, req)
-        return (z0 <= min(cells[k][0] for k in ks) - 8.0), z0, hi + 200.0
+    olo = np.full((nx, ny), np.inf); np.minimum.at(olo, (ci[op], cj[op]), Z[op])
+    has_p = np.isfinite(phi)
+    z0s = np.where(has_p, phi + clear, olo - 48.0)                   # the lowest a box may start in each square
+    tgt = Z[op] >= z0s[ci[op], cj[op]] + 8.0                          # out-of-play nodes a box can take (others stay: same level as play)
+    t_i, t_j, t_z = ci[op][tgt], cj[op][tgt], Z[op][tgt]
+    cnt = np.zeros((nx, ny), int); np.add.at(cnt, (t_i, t_j), 1)
+    thi = np.full((nx, ny), -np.inf); np.maximum.at(thi, (t_i, t_j), t_z)
+    order = np.lexsort((t_z, t_j, t_i)); t_i, t_j, t_z = t_i[order], t_j[order], t_z[order]
+    key = t_i * ny + t_j
+    starts = np.searchsorted(key, np.arange(nx * ny)); ends = np.searchsorted(key, np.arange(nx * ny), side='right')
+    def kept(i, j, z0):
+        s, e = starts[i * ny + j], ends[i * ny + j]
+        return int(e - np.searchsorted(t_z[s:e], z0 + 8.0) - s) if e > s else 0
+    cand = cnt > 0
+    done = np.zeros((nx, ny), bool); boxes = []
+    def score(i0, i1, j0, j1):
+        if not cand[i0:i1 + 1, j0:j1 + 1].all() or done[i0:i1 + 1, j0:j1 + 1].any(): return None
+        z0 = z0s[i0:i1 + 1, j0:j1 + 1].max()
+        return z0, sum(kept(a, b, z0) for a in range(i0, i1 + 1) for b in range(j0, j1 + 1)), int(cnt[i0:i1 + 1, j0:j1 + 1].sum())
     for i in range(nx):
         for j in range(ny):
-            k = (i, j)
-            if k not in cells or k in done: continue
+            if not cand[i, j] or done[i, j]: continue
             j1 = j
-            while j1 + 1 < ny and (i, j1 + 1) in cells and (i, j1 + 1) not in done and j1 + 1 - j < 8 and fits([(i, q) for q in range(j, j1 + 2)])[0]: j1 += 1
+            while j1 + 1 < ny and j1 + 1 - j < maxsq:
+                r = score(i, i, j, j1 + 1)
+                if r is None or r[1] < (1 - loss) * r[2]: break
+                j1 += 1
             i1 = i
-            while i1 + 1 < nx and i1 + 1 - i < 8:
-                col = [(i1 + 1, q) for q in range(j, j1 + 1)]
-                if not all(c in cells and c not in done for c in col): break
-                if not fits([(a, q) for a in range(i, i1 + 2) for q in range(j, j1 + 1)])[0]: break
+            while i1 + 1 < nx and i1 + 1 - i < maxsq:
+                r = score(i, i1 + 1, j, j1)
+                if r is None or r[1] < (1 - loss) * r[2]: break
                 i1 += 1
-            ks = [(a, q) for a in range(i, i1 + 1) for q in range(j, j1 + 1)]
-            okf, z0, z1 = fits(ks)
-            if not okf: z0 = max(cells[k][0] - 48.0, cells[k][2]); ks = [k]; i1, j1 = i, j; z1 = cells[k][1] + 200.0
-            done.update(ks)
-            boxes.append((x0e + i * cell, y0e + j * cell, round(z0, 1), x0e + (i1 + 1) * cell, y0e + (j1 + 1) * cell, round(z1, 1)))
-    info = dict(in_play_nodes=int(play.sum()), worlds=per, squares_with_ground=len(oz), squares_cut=len(cells), squares_kept_level=skipped,
-                walkable_nodes=int(walk.sum()))
-    # safety: no box over a protected point or a seed (re-checked here, whatever the merge did)
+            z0, cov, tot = score(i, i1, j, j1)
+            done[i:i1 + 1, j:j1 + 1] = True
+            boxes.append((x0e + i * cell, y0e + j * cell, round(float(z0), 1), x0e + (i1 + 1) * cell, y0e + (j1 + 1) * cell,
+                          round(float(thi[i:i1 + 1, j:j1 + 1].max()) + 200.0, 1)))
+    nplain = len(boxes)
+    boxes += [tuple(float(v) for v in b) for (nm, b, why) in BOT_SKIP]
+    skip = nonav_mask(ctx, X, Y, Z, [b for (nm, b, why) in BOT_SKIP]) & ok & play
+    info = dict(in_play_nodes=int(play.sum()), worlds=per, squares_with_ground=int((np.isfinite(olo) | has_p).sum()), squares_cut=int(cand.sum()),
+                squares_kept_level=int((np.isfinite(olo) & ~cand).sum()), walkable_nodes=int(walk.sum()), out_of_play_nodes=int(len(op)),
+                out_of_play_reachable_by_a_box=int(cnt.sum()), boxes_out_of_play=nplain, boxes_bot_skip=len(BOT_SKIP),
+                in_play_nodes_bot_skip=int(skip.sum()), cell=cell, margin=margin, clear=clear)
+    # safety: no box over a protected point or a seed (re-checked here, whatever the merge did), no in-play node under a box but BOT_SKIP's
     bad = [(x, y, z) for (x, y, z) in keep for b in boxes if b[0] < x < b[3] and b[1] < y < b[4] and b[2] - 36 < z < b[5]]
     if bad: raise Mismatch('a NONAV box covers a protected point / seed: %s' % bad[:3])
-    Xp, Yp, Zp = X[ip], Y[ip], Z[ip]
-    cover = nonav_mask(ctx, Xp, Yp, Zp, boxes)
+    cover = nonav_mask(ctx, X[ip], Y[ip], Z[ip], boxes[:nplain]) | nonav_mask(ctx, X[ip], Y[ip], Z[ip] + clear - 8.0, boxes[:nplain])
     info['in_play_nodes_covered'] = int(cover.sum())
-    if cover.any(): raise Mismatch('%d in-play nodes inside the planned NONAV boxes' % int(cover.sum()))
+    if cover.any(): raise Mismatch('%d in-play nodes inside (or within %d u under) the planned NONAV boxes' % (int(cover.sum()), clear - 8))
+    # every play world still one piece: from its start nodes, with the nodes in the boxes taken out, it reaches all it reached before
+    # (outside the boxes); BOT_SKIP may strand nothing but its own box
+    from scipy import sparse
+    no = nonav_mask(ctx, X, Y, Z, boxes)
+    D = sparse.diags((~no).astype(np.float32)); g = (D @ ctx.graph(CTX_STATE) @ D).tocsr(); g.eliminate_zeros()
+    lost = {}
+    for w, home in ctx.home.items():
+        before = ctx.reach_of(w, CTX_STATE)
+        after = CP.reach(g, [n for n in home if not no[n]]) if home else np.zeros_like(before)
+        n_lost = int((before & ~no & ~after).sum())
+        if n_lost: lost[w] = n_lost
+    info['stranded_nodes'] = lost
+    if any(v > 40 for v in lost.values()): raise Mismatch('the NONAV boxes cut a play world in pieces (nodes no longer reached: %s)' % lost)
     return boxes, info
 
 
@@ -257,8 +297,9 @@ def main(argv=None):
     ap.add_argument('--targets', default=None)
     ap.add_argument('--report', default=None)
     ap.add_argument('--estimate', action='store_true')
-    ap.add_argument('--cell', type=float, default=256.0)
-    ap.add_argument('--margin', type=float, default=96.0)
+    ap.add_argument('--cell', type=float, default=128.0)
+    ap.add_argument('--margin', type=float, default=48.0)
+    ap.add_argument('--clear', type=float, default=40.0, help='a box starts this far over the highest in-play ground of its square')
     ap.add_argument('--stage', default=None, help='staging folder (e.g. out/addon) searched for models before the content addon')
     a = ap.parse_args(argv)
     if a.stage: STAGE[:] = [os.path.abspath(a.stage)]
@@ -281,7 +322,7 @@ def main(argv=None):
         ctx, A = scene(inp)
         before = estimate(ctx)
         lad = ladders(ctx) if hasattr(ctx.G, 'ladder_nodes') else []
-        boxes, info = plan_boxes(ctx, a.cell, a.margin)
+        boxes, info = plan_boxes(ctx, a.cell, a.margin, a.clear)
     except Mismatch as ex:
         sys.exit('patch_nav: TARGET MISMATCH, nothing written: %s' % ex)
     # ---- apply: drop the last run's boxes, add the new ones
@@ -309,11 +350,16 @@ def main(argv=None):
     T['output'] = outp
     json.dump(T, open(tp, 'w'), indent=1)
     area = lambda b: (b[3] - b[0]) * (b[4] - b[1])
-    print('patch_nav: %d NONAV boxes (%.1f km2 of ground; %d squares cut, %d left for in-play ground at the same level), %d old ones replaced'
-          % (len(boxes), sum(area(b) for b in boxes) * 0.0254 ** 2 / 1e6, info['squares_cut'], info['squares_kept_level'], len(old)))
+    print('patch_nav: %d NONAV boxes (%d out of play + %d BOT_SKIP; %.1f km2; %d of %d squares with out-of-play ground cut), %d old ones replaced'
+          % (len(boxes), info['boxes_out_of_play'], info['boxes_bot_skip'], sum(area(b) for b in boxes) * 0.0254 ** 2 / 1e6, info['squares_cut'],
+             info['squares_cut'] + info['squares_kept_level'], len(old)))
+    print('  out-of-play walk nodes %d, %d of them over the in-play ground + %d u (a box can take them); in-play nodes cut by BOT_SKIP %d; '
+          'stranded play nodes %s' % (info['out_of_play_nodes'], info['out_of_play_reachable_by_a_box'], a.clear, info['in_play_nodes_bot_skip'],
+                                       info['stranded_nodes'] or 'none'))
     print('  in play: %d walk nodes (%s)' % (info['in_play_nodes'], ', '.join('%s %d' % kv for kv in sorted(info['worlds'].items()))))
     print('  wrote %s (%d bytes), targets %s' % (outp, n, tp))
-    rep = dict(input=inp, output=outp, cell=a.cell, margin=a.margin, boxes=[list(b) for b in boxes], plan=info, before=before, ladders=lad)
+    rep = dict(input=inp, output=outp, cell=a.cell, margin=a.margin, clear=a.clear, boxes=[list(b) for b in boxes], plan=info, before=before, ladders=lad,
+               bot_skip=[dict(name=nm, box=list(b), why=why) for (nm, b, why) in BOT_SKIP])
     ratio = TW34_AREAS / before['flood_cells'] if before['nonav_boxes'] == 0 and before['flood_cells'] else None
     if a.estimate:
         print('patch_nav: building the walk graph of the output ...', flush=True)
@@ -324,8 +370,10 @@ def main(argv=None):
     for k in ('before', 'after'):
         if k not in rep: continue
         e = rep[k]
-        print('  %-6s seeds %d, NONAV boxes %d, nodes inside NONAV %d, flood %d cells (%.0f m2)' % (k, e['seeds'], e['nonav_boxes'], e['nonav_nodes'], e['flood_cells'],
-              e['flood_cells'] * CP.CELL * CP.CELL * 0.0254 ** 2))
+        print('  %-6s seeds %d, NONAV boxes %d, nodes inside NONAV %d, flood %d cells (%.0f m2); walkable nodes outside NONAV %d -> about %d nav areas'
+              ' (linear from the %s compile; the area density differs by region: within a factor of about 1.5)'
+              % (k, e['seeds'], e['nonav_boxes'], e['nonav_nodes'], e['flood_cells'], e['flood_cells'] * CP.CELL * CP.CELL * 0.0254 ** 2,
+                 e['walkable_outside'], e['areas_projected'], e['calibration']))
     for l in lad:
         print('  ladder volume %s (%s): bottom nodes %d (volume starts %s u above the floor), top nodes %d' % (l['box'], l['vg'], l['bottom_nodes'], l['gap_bottom'], l['top_nodes']))
     json.dump(rep, open(rp, 'w'), indent=1)
