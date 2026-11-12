@@ -19,6 +19,8 @@ contact sheets `out/gmod/view/_sheet1..3.png`). Not compiled with resourcecompil
 for the private server; it is a blocker for a Steam Workshop release of the map. The "rip" column says which. Only the
 Neiremberg props (tent, tower) and the small helicopter wreck have no stated commercial source, and none of them carries an
 explicit licence. For a Workshop release keep the procedural props, or ask the authors.
+**Risk rating per asset** (do not ship / attribution needed / ok, the GMod player models included) and what `MV_NO_EXT=1` does and
+does not remove: [WORKSHOP_COMPLIANCE.md](WORKSHOP_COMPLIANCE.md#rip-risk-per-asset) (12 Nov 2026; the map now places 35 of these).
 
 ## Pipeline
 

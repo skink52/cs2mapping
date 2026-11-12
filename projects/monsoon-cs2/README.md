@@ -3,8 +3,19 @@
 > **AI-generated code.** Everything here (map generator, procedural props and textures, HUD and the cs_script) is being written by an AI
 > agent (Claude) for skink52's mg_monsoon addon, the second map of the series that started with mg_trenchwarfare.
 
-Status: **in progress, paused** (9 Nov 2026). Resume from [NOTES.md](NOTES.md) ("Resume here"); the design is [docs/DESIGN.md](docs/DESIGN.md).
-Nothing has been compiled or tested in CS2 yet.
+Status (12 Nov 2026): the map, its 3D skybox and the assets are **compiled**; the script (mv-0.5) is **simulated** on the mock
+engine. Nothing has been opened in Hammer or loaded in CS2, so nothing is in-game verified. Resume from [NOTES.md](NOTES.md)
+("Resume here"); the design is [docs/DESIGN.md](docs/DESIGN.md); build and first launch: [docs/BUILD.md](docs/BUILD.md).
+
+**Not ready for the public Steam Workshop.** The current build places models converted from Garry's Mod Workshop packs (mostly
+commercial-game rips) and four GMod player models: fine for skink52's private server, not for a public upload. What to drop or swap,
+and what `MV_NO_EXT=1` does and does not remove: [docs/WORKSHOP_COMPLIANCE.md](docs/WORKSHOP_COMPLIANCE.md).
+
+Release docs (the first four ship in both addon folders through `tools/deploy_monsoon.py`): [docs/README_MONSOON.md](docs/README_MONSOON.md)
+(setup and how it plays), [docs/TESTING_MONSOON.md](docs/TESTING_MONSOON.md) (the in-game checklist), [docs/CREDITS.md](docs/CREDITS.md),
+[LICENSE](LICENSE) + [LICENSE-CC-BY-NC-4.0.txt](LICENSE-CC-BY-NC-4.0.txt); the Workshop text
+[docs/WORKSHOP_DESCRIPTION.txt](docs/WORKSHOP_DESCRIPTION.txt) (copied to `mg_monsoon STEAM DESCRIPTION.txt` in the content addon);
+[docs/SERVER_ISSUES.md](docs/SERVER_ISSUES.md).
 
 Needs Python 3 with numpy, scipy, Pillow; Node 18+ for the tests. Run tools from `tools/` (`cd tools`).
 
@@ -21,7 +32,7 @@ Layout constants (river, bases, flags, karst, roads, paddies) live in `tools/lay
 
 ## Licence
 
-Free for non-commercial use: copy, change, share and run it, including on game servers (donation/VIP servers are fine). Not to be sold, paywalled or built into a paid product or service. Code: [PolyForm Noncommercial 1.0.0](LICENSE). Art, models, sounds and maps: [CC BY-NC 4.0](LICENSE-CC-BY-NC-4.0.txt). See [LICENSE](LICENSE) for third-party parts that keep their own terms (the CC-BY Apache model planned for the US helicopters must be credited as its CREDITS.txt says).
+Free for non-commercial use: copy, change, share and run it, including on game servers (donation/VIP servers are fine). Not to be sold, paywalled or built into a paid product or service. Code: [PolyForm Noncommercial 1.0.0](LICENSE). Art, models, sounds and maps: [CC BY-NC 4.0](LICENSE-CC-BY-NC-4.0.txt). See [LICENSE](LICENSE) for third-party parts that keep their own terms: the CC-BY Apache model flown by the US side must be credited as [docs/CREDITS.md](docs/CREDITS.md) says, and the converted Garry's Mod Workshop models and player models are not licensed to anyone by this repo.
 
 ## Shared files
 

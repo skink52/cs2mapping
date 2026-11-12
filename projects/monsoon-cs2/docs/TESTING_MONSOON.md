@@ -1,14 +1,72 @@
 # mg_monsoon CS2 test: what to check
 
 Each line says what to do and what to expect. **Only report what fails** (what you saw, where, the console lines if any):
-anything you don't mention counts as passed. Version under test: **mv-0.1 (11 Nov 2026)**.
+anything you don't mention counts as passed. Version under test: **mv-0.5 (12 Nov 2026, review pass 3: bot balance)**, map
+build stage 3 (15,033 nav areas) and the 3D skybox after its triangle cut (1.93 M triangles, was 16.2 M).
 
-This is the first time any of it meets CS2. Until now: map, models, HUD and sounds checked offline; the script **simulated**
-on a mock engine. Every item below is an assumption until you tick it. The order is the order to test in: a failure early
-(build, script start) makes the later sections meaningless, so stop and report.
+This is the first time any of it meets CS2. Until now: the map, the 3D skybox and the assets are **compiled** (no errors), the
+script is **simulated** on a mock engine, the rest was checked offline. **NOT YET TESTED IN CS2**: every item below is an
+assumption until you tick it. The order is the order to test in: a failure early (build, script start) makes the later sections
+meaningless, so stop and report.
+
+Which build: a **private-server build** has the converted Garry's Mod Workshop models (T Mi-8s, howitzers, M2 / DShK, vehicles,
+Rising Storm foliage) and four GMod player models as team uniforms. A **public build** (`MV_NO_EXT=1`, no uniforms;
+`docs/WORKSHOP_COMPLIANCE.md` in the source repository) has our procedural Mi-8, M102, mounts and wrecks instead, and players wear
+CS2 agents. Say which one you tested; sections E, F, G and L differ between them.
 
 Useful: `!pos` in chat prints your position and grid square: quote it for anything about a place. Console filter: every script
 line starts `[mv]`. After copying new files: `disconnect`, then `map mg_monsoon` again.
+
+## Check these first (new since mv-0.1, none of it seen in CS2)
+
+Script (review pass 2 and round 3; only CS2 can settle these):
+- [ ] Console on load: `[mv] mg_monsoon script mv-0.5 (12 Nov 2026, review pass 3: bot balance) - flags 5, bots on (quota 10)`.
+      An older version string means a stale `.vjs_c`: recompile the `.js`.
+- [ ] `[mv] points: ... uniforms cached 4` in a private build (0 in a public build). Private build: T players wear the NVA / Viet Cong
+      soldiers, CT the woodland / US soldiers; first-person arms look normal; `!uniform` switches you back to the CS2 agent. Report
+      two-handed weapons clipping into the chest (the conversions' torsos are bulkier than a CS2 agent's).
+- [ ] Once a minute: `[mv] perf: X ms/tick avg, Y ms max, N ticks, H HUD calls/tick, P players (h human), F flying, ...,
+      errors 0`. (The old `[mv] script time ...` wording is gone.) Send the line at the highest player count you reach.
+- [ ] **Leaving players (`IsConnected`).** With bots on and an AI pilot flying, kick that bot (`bot_kick <name>`) or lower the quota.
+      Expect another bot to take the AI pilot role within a few seconds, and nobody "owning" the empty helicopter for the rest
+      of the round. Also: a bot that dies and respawns keeps its AI role (its helicopter / gun is not handed round every death).
+      A human who disconnects from a gun or helicopter: the seat is free again for others.
+- [ ] **Joining mid-round (`OnPlayerActivate`).** Join a running round (second client, or `retry`). Expect the briefing card and the
+      whole HUD on screen once loaded, no empty boxes. After a round ends and restarts: no empty banner, toast or info panel left.
+- [ ] **Bot takeover (`OnBotControl`), take and release.** Spectate a bot that is flying, gunning or crewing a battery and take
+      it over, if CS2 offers it on this server. Expect: the bot's body full size and free to move, you play it as infantry where it
+      stands, its helicopter / gun / board seat free. When that body dies (or the round ends), you are back to your own player
+      and the bot rejoins normally. Report a shrunk or frozen body, a view stuck in the helicopter, or the takeover not offered.
+- [ ] **Bots follow the flag plan.** Bot-only match (`!bots 24`, you spectating): bots of both teams spread over several flags
+      rather than all running to one; CT bots go for B and C as well as D / E; every flag changes hands at least once in a round.
+      Send the five flag owners at 5 and at 10 minutes. (The plan's own counters, `__mvDebug.stats.botGoals`, exist only on the
+      mock engine; nothing prints them in CS2, so this check is by watching.)
+- [ ] **Hot rotor on the pad.** An AI helicopter back on its pad for repair keeps its rotor turning and its engine sound running,
+      then lifts off about 4 s after the repair with part of its rockets.
+- [ ] **Pilotless helicopter over the river.** Bail out (or let a bot pilot be kicked) over the river: the empty helicopter
+      should hold height and creep toward its pad, not drop into the water.
+- [ ] **Helicopter fetched home.** Get killed in the air, redeploy on your pad: the empty helicopter that landed in the field
+      comes back to your pad after about 3 s.
+- [ ] **Helicopter handed over in the field.** Say `!air` while an AI pilot holds every helicopter, then walk out into the
+      field. You are told the helicopter is yours and waiting on its pad; you are **not** teleported to it.
+- [ ] **`!bots` vote.** With two or more humans, one `!bots 0` only starts a vote (`votes !bots 0: 1/2 ...`); bots stay until a
+      majority agrees within 30 s.
+
+Map (world passes 2 and 3, compiled, never looked at):
+- [ ] Bots on the nav: bots walk the bases, flags, roads and the two routes (the west ford from the T camp to the paddies; CT's
+      route down the north-west flank and across the river to the temple). Bots standing still in the jungle, the marsh, on karst
+      tops or behind the waterfall should be re-deployed after about 20 s. Report a bot stuck longer, with `!pos`.
+- [ ] Temple ghat: the landing and the two flights of steps from the river up to the temple's south stair are walkable both ways.
+- [ ] Temple court: four balustrades, four lions, the supply crate in the south-east corner by the DShK.
+- [ ] Village: the market lane with three stalls, two climbable drying platforms, no hut roof you can stand on. The one known
+      small pocket at about (-1064, 1976): you can jump out.
+- [ ] Firebase gate: the culvert bunker and the M113 outside the wire: you cannot climb onto the M113 and get stuck.
+- [ ] FPS at 64 players: on a server with 64 (or the most you can get; bots alone stop at 24), `cl_showfps 1` looking across the
+      valley from the firebase. Send the number and the `[mv] perf` line. VRAM if you can see it: the elephant grass is 109 MB of
+      the map's 206 MB of aggregate vertex data.
+- [ ] 3D skybox in game: the skyline from the CT firebase, the bridge, and a helicopter at the map edge. Is the front row of trees
+      thick enough, do the far tree cards read as jungle (not flat billboards), is every karst tower base visible, no dark hedge
+      line floating in the air? FPS looking at the valley sides compared with looking at the ground.
 
 ## A. Build log (before launching)
 
@@ -21,8 +79,9 @@ line starts `[mv]`. After copying new files: `disconnect`, then `map mg_monsoon`
 - [ ] Search for `Error loading resource`, `missing material`, `ERROR`. Send the lines that name a `.vmdl` or `.vmat`.
 - [ ] Send the numbers from `Charting N unique meshes` and `Packing N UV charts`, and say whether the bake stayed at 2048.
 - [ ] No `OUT OF MEMORY` / `FATAL ERROR`. If there is, send the 20 lines before it.
-- [ ] Send the nav mesh area count if the log prints one.
-- [ ] Does the log mention `mg_monsoon_3dskybox`? (Is the skybox map built with the main map?)
+- [ ] Nav mesh area count (`Nav mesh (v36/1) loaded with N nav areas`): expect about 15,033. Send N.
+- [ ] The 3D skybox is built by its own line, `build_maps.ps1 final "mg_monsoon mg_monsoon_3dskybox"`: its log ends
+      `OK in N min - mg_monsoon_3dskybox.vpk moved`, about 56 MB.
 
 ## B. Hammer
 
@@ -31,17 +90,20 @@ line starts `[mv]`. After copying new files: `disconnect`, then `map mg_monsoon`
 - [ ] `mv_script` (point_script) and `mv_hud` (custom_hud_layout): the file fields are not red.
 - [ ] No ERROR models, no pink materials in the 3D view. Fly over both bases and the five flags.
 - [ ] Double-sided sheets, each from both sides (black speckle or one side missing = fail): the flags on the flag poles,
-      camouflage nets over the Mi-8 stands, parachute silk at the crash site, the big tents, vine curtains, the supply crate tarps.
+      parachute silk at the crash site, the big tents, vine curtains, the supply crate tarps.
 - [ ] Terrain under the six firebase bunkers: holes were cut for their floors. No gap you can see through from outside.
 - [ ] The three tunnel mouths (camp, toward the paddies, toward the village): ramp meets ground, no see-through crack, about a 6-unit step.
 - [ ] The Apaches on the firebase pads: standing on the pad, not sunk or floating, not wider than the pad by much. Send a screenshot.
-- [ ] The Mi-8s under the nets: rotor and tail rotor props sit on the hubs.
+- [ ] The Mi-8s on the T pads (no nets over them now): rotor and tail rotor props sit on the hubs; wheels on the ground; on pad 2
+      the tail boom overhangs lower ground (known).
+- [ ] Private build: the M101 tubes sit on their trunnions, the M2 / DShK guns on their pintles behind the sandbag horseshoes, the
+      M35 sits on its axles (it has no wheels, by design), the PBR floats at the marsh.
 
 ## C. First run, alone (`map mg_monsoon`, then `!bots 0` in chat)
 
-- [ ] Console: `[mv] mg_monsoon script mv-0.1 (11 Nov 2026) - flags 5, bots on (quota 10)`.
-- [ ] Console: `[mv] round 1 start (...)` then `[mv] points: spawns 16/16, helicopters 3/3, guns 4/3, mounts 8, uniforms cached N`.
-      Send the line if any number differs.
+- [ ] Console: `[mv] mg_monsoon script mv-0.5 (12 Nov 2026, review pass 3: bot balance) - flags 5, bots on (quota 10)`.
+- [ ] Console: `[mv] points: spawns 16/16, helicopters 3/3, guns 4/3, mounts 8, uniforms cached N` (N 4 private, 0 public)
+      and `[mv] round 1 start (...)`. Send the line if any number differs.
 - [ ] No `[mv] missing entity <name>` lines. Send every one.
 - [ ] No `[mv] error in ...` lines, ever, in any section. Send every one with what you were doing.
 - [ ] You spawn in the briefing room with a card: role, three lines, `DEPLOY: BASE  [R] next`, a countdown from 10.
@@ -52,7 +114,7 @@ line starts `[mv]`. After copying new files: `disconnect`, then `map mg_monsoon`
       the kill feed (top right).
 - [ ] The radar shows the valley and your arrow is where you are (stand on the bridge: the arrow is on the bridge).
 - [ ] Loading screen showed the map's own slides (three) and the map icon.
-- [ ] After a minute: `[mv] script time X ms/tick avg, Y max over N ticks, 1 players, errors 0`. Send the line.
+- [ ] After a minute: `[mv] perf: X ms/tick avg, Y ms max, ... 1 players (1 human), ... errors 0`. Send the line.
 - [ ] `!roles` shows the role card on the right; `!pos` prints a position and a grid square in chat.
 
 ## D. Infantry
@@ -78,7 +140,11 @@ line starts `[mv]`. After copying new files: `disconnect`, then `map mg_monsoon`
 Do the CT Apache first, then switch team and do the T Mi-8.
 
 - [ ] You deploy at a pad and sit in the helicopter; the view is a chase camera behind and above it; your own player model is not visible.
-- [ ] Rotors: Apache blades start turning (animation); Mi-8 rotor and tail rotor props spin and stay on their hubs.
+- [ ] Rotors: Apache blades start turning (animation); Mi-8 rotor and tail rotor props spin and stay on their hubs, on the pad
+      as well as in flight.
+- [ ] Mi-8 seats (they were measured from the model, never seen with a player): the pilot in the left cockpit seat, the door
+      gunner at the open left door, riders on the cabin floor; nobody sticking out of the fuselage. Gunship (pad 3): rockets
+      leave from the six pods on the outriggers.
 - [ ] SPACE lifts off. Releasing everything holds a steady hover (no drift up or down after 2 s).
 - [ ] Mouse turns the nose; W tilts the nose **down** and moves forward; A / D roll **toward** the side you move to.
       Report a tilt that goes the wrong way (which key, which way).
@@ -162,7 +228,7 @@ in the temple courtyard.
 - [ ] Bot gunners fire at enemies from helicopters and mounted guns; bot battery crew fires at your marks and at groups of enemies.
 - [ ] `!air`: you get a helicopter although the bot had one (the bot gives it up at your next deploy).
 - [ ] FPS with 14 and with 24 bots (`cl_showfps 1`), looking across the valley from the firebase. Send both numbers and the
-      script-time line. (The sibling map lost FPS with a huge nav mesh.)
+      `[mv] perf` line. (The sibling map lost FPS with 44k nav areas; this one has 15,033.)
 - [ ] Bots capture flags and tickets drain: a round can end with only bots playing.
 
 ## J. HUD details (the constructions with no earlier in-game example)
@@ -189,7 +255,7 @@ in the temple courtyard.
 - [ ] Lightning: a faint flash now and then. Is it also visible in the tunnels and the briefing room? (Expected, tell us if it is distracting.)
 - [ ] Fog: thick on the valley floor, clear on the hills; you can still see a helicopter across the valley.
 - [ ] 3D skybox: jungle hills and far karst towers continue past the terrain edge with no gap or seam. Frame time looking at
-      the valley sides (banyans at skybox scale have no cheap far model).
+      the valley sides (the skybox's banyans have no cheap far model; past the front row they are 8-triangle tree cards now).
 - [ ] Waterfall at the west end: water sheets, foam, sound; cannot walk through the rock.
 - [ ] Props floating or sunk on slopes: note the worst ones with `!pos`.
 - [ ] Foliage cards with a straight bottom edge showing on steep ground: where it is bad.
@@ -202,7 +268,7 @@ in the temple courtyard.
 - [ ] Kill credit in the kill feed for: rifle, mounted gun, helicopter rocket, door gun, shell, anti-tank rocket, helicopter crash
       (the last attacker within 10 s gets it).
 - [ ] 64 spawns: nobody spawns inside another player in the briefing room.
-- [ ] `[mv] script time` line at the highest player count you reach. Under about 5 ms is comfortable.
+- [ ] `[mv] perf` line at the highest player count you reach. Under about 5 ms is comfortable.
 
 ## N. Engine questions only a real run can answer
 
@@ -220,9 +286,19 @@ Answered items stay here (the -> lines), so a problem that comes back can be che
 10. **Is the damage share shown as an assist for the loader and the observer?** Section F.
 11. **AI flight over real terrain**: altitude holds over hills and karst, no ground strikes. Section I.
 12. **Do `func_nav_markup` NONAV boxes (key `navProperty_NavGen NONAV`) cut the nav mesh?** Build log area count, section I.
+    -> COMPILED 12 Nov 2026 (not in-game): 243 boxes took the compile from 33,661 to 15,033 nav areas, so the markup acts at
+    nav generation. How bots move on it is still section I.
 13. **Does the invisible ladder volume on the guard tower and temple tower work?** Section D.
 14. **Do multi-hull converted models and SMD material names ending in `.vmat` compile?** Build log (only matters for the converted models).
-15. **Is the lightmap chart count within 2048?** Build log.
+    -> COMPILED 12 Nov 2026: asset run 4 had 0 errors and 0 warnings. Whether the hulls collide as meant is section L.
+15. **Is the lightmap chart count within 2048?** Build log. -> COMPILED 12 Nov 2026: the bake stayed at 2048 x 2048 with no OOM.
+16. **Does `Instance.OnBotControl` fire on take and on release, and do `GetControlledBotPawn` / `GetOriginalPlayerController`
+    answer as assumed?** "Check these first".
+17. **Does a departed controller report `IsConnected()` false, and a dead bot between lives `true`?** "Check these first".
+18. **Does `OnPlayerActivate` fire after the client's HUD is ready, and does `ResetForPlayer` clear dialog variables?** "Check
+    these first" (mid-round join, round restart).
+19. **Does the helicopter's ground trace see the river as water** (it tests "the trace ends below `water_z`")? "Check these first",
+    pilotless helicopter over the river.
 
 ## Known unknowns (only CS2 can answer)
 
@@ -235,3 +311,9 @@ Answered items stay here (the -> lines), so a problem that comes back can be che
   wider than its parent, `overflow: clip` on bar tracks, quoted `@keyframes`.
 - Server cost of the script and of the nav mesh with bots: the 0.1 ms per tick figure is from the mock.
 - Not driven even on the mock: Beehive, the marksman kit, a human repairing a gun, several fire missions or flashes on the board at once.
+- Bot-only balance: the mock's T win rate is 49 % over 80 rounds, but the plan acts only through deploy points and real CS2 bots
+  do not walk to flags the way the mock's stand-ins do. Flags C and D are the weak ones in the mock (taken by both sides in 55-65 %
+  of bot rounds).
+- Route balance: the C-E routes are 1.11 to 1 against CT (the CT deploy point sits behind gun pit 1); whether players feel it.
+- The full list of script calls not yet seen in CS2: `docs/SCRIPT.md` "Not yet tested in CS2" and `docs/REVIEW_SCRIPT_2.md`
+  sections 6 and "Round 3" 4, in the source repository.

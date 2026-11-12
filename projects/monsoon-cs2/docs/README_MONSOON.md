@@ -4,11 +4,16 @@ Conquest in a monsoon river valley, 1968. Two teams fight over five flags with i
 a howitzer battery against a rocket battery, and emplaced heavy machine guns. Bots fill the empty roles when few people play.
 Up to 64 players. Runs entirely inside the map's own script (`cs_script`): no plugins.
 
-AI-generated (Claude) for skink52. Version `mv-0.1 (11 Nov 2026)`.
+AI-generated (Claude) for skink52. Version `mv-0.5 (12 Nov 2026, review pass 3: bot balance)`.
 
-**Status: not yet compiled, not yet loaded in CS2.** Everything below describes what the script and map are written to do. The
-rules were run on a mock engine (**simulated**); the map, models, HUD and sounds were checked offline only. Nothing in this file
-is in-game verified. The checklist that turns "written" into "verified" is `TESTING_MONSOON.md`.
+**Status: compiled, not yet loaded in CS2.** The map, its 3D skybox and the assets compiled without errors on 12 Nov 2026; nobody
+has opened them in Hammer or played them. Everything below describes what the script and map are written to do. The rules were run
+on a mock engine (**simulated**); the map, models, HUD and sounds were checked offline and compiled. Nothing in this file is in-game
+verified. The checklist that turns "written" into "verified" is `TESTING_MONSOON.md`.
+
+**Which build is this?** A private-server build contains models converted from Garry's Mod Workshop packs and four GMod player
+models (`CREDITS.md`); those must not be uploaded to the public Steam Workshop. A public build uses only this project's own models,
+the credited Apache and CS2 stock, and players wear CS2 agents.
 
 ## 1. Install
 
@@ -21,13 +26,16 @@ and back up `maps\mg_monsoon.vmap` if it exists. On skink52's PC `python -I tool
 
 1. Open `maps/mg_monsoon.vmap` in Hammer. The `point_script` `mv_script` (`cs_script` = `maps/scripts/mg_monsoon.vjs`) and the
    `custom_hud_layout` `mv_hud` (`panorama/layout/custom_game/mg_monsoon.vxml`) fields must not be red.
-2. Build with lightmaps at 2048 (command line: `build_maps.ps1 final mg_monsoon`). Foliage and small props are probe-lit on
-   purpose; do not switch them to baked lighting (the lightmap bake runs out of memory on charts).
+2. Build with lightmaps at 2048 (command line: `build_maps.ps1 final mg_monsoon`), then the 3D skybox map with its own line
+   (`build_maps.ps1 final "mg_monsoon mg_monsoon_3dskybox"`, one quoted argument). Foliage and small props are probe-lit on
+   purpose; do not switch them to baked lighting (the lightmap bake runs out of memory on charts). The full map build took 42-66 min
+   on skink52's PC.
 3. Compile these directly as well, every time they change (a failed layout is ignored silently):
    `game\bin\win64\resourcecompiler.exe -f -i content\csgo_addons\mg_monsoon\<file>` for
    `panorama/layout/custom_game/mg_monsoon.xml`, `panorama/styles/custom_game/mg_monsoon.css`, `maps/scripts/mg_monsoon.js`.
-4. `map mg_monsoon`. The console should print `[mv] mg_monsoon script mv-0.1 (11 Nov 2026) - flags 5, bots on (quota 10)`,
-   then `[mv] points: spawns 16/16, helicopters 3/3, guns 4/3, mounts 8, uniforms cached N`, and no `[mv] missing entity` line.
+4. `map mg_monsoon`. The console should print `[mv] mg_monsoon script mv-0.5 (12 Nov 2026, review pass 3: bot balance) - flags 5,
+   bots on (quota 10)`, then `[mv] points: spawns 16/16, helicopters 3/3, guns 4/3, mounts 8, uniforms cached N` (N = 4 in a
+   private-server build, 0 in a public one), and no `[mv] missing entity` line.
 
 ## 3. How it plays
 
@@ -125,7 +133,8 @@ whoever gets there): E to man, mouse aims inside a cone, MOUSE1 fires, E leaves.
 ### Chat commands (`!` or `/`)
 
 `!infantry` `!artillery` `!air` `!rifle` `!mg` `!at` `!roles` (the role card, also `!help`) `!swap` `!spawn <a-e|base>`
-`!pos` (prints your position and map grid square) `!uniform` (toggle the team uniform model) `!bots <0-24>`.
+`!pos` (prints your position and map grid square) `!uniform` (toggle the team uniform model, when the build has one) `!bots <0-24>`
+(a vote: more than half of the humans on the server must ask for the same number within 30 s; alone you decide).
 
 ### Bots
 
@@ -153,7 +162,7 @@ then recompile the `.js`). The ones a mapper or server is likely to change:
 | `HELI_MODELS`, `HELI_KINDS` | | seats, gun and rocket positions per model; which model is on which pad |
 | `ARTY`, `BOARD` | | shell damage and radius, spread, flight time, laying speed, silence / repair times, mission limits |
 | `MOUNT` | | heavy gun damage, cone, heat |
-| `UNIFORMS_ON`, `UNIFORMS` | true | team uniform player models; only used when the map caches the model (none are shipped in this version, so players keep CS2 agents) |
+| `UNIFORMS_ON`, `UNIFORMS` | true | team uniform player models; only used when the map caches the model (a private-server build ships four GMod player models; a public build ships none, so players keep CS2 agents: set `UNIFORMS_ON` false there) |
 | `POOL` | | effect pool sizes; must match the map |
 | `PERF_LOG` | 60 | seconds between script-time lines in the console |
 
@@ -167,10 +176,14 @@ then recompile the `.js`). The ones a mapper or server is likely to change:
 - The script parks players (frozen, hidden, tiny) while they sit in a helicopter, on a mounted gun or at the plotting board,
   moves them every tick, and gives them a custom camera. AFK managers that look at position, anti-stuck, noblock, third-person
   and loadout plugins are the likely conflicts. `SERVER_ISSUES.md` in the source repository lists them.
-- Script time: about 0.1 ms per tick at 32 players **on the mock engine** (its traces are stand-ins). No server measurement
-  exists. The console prints `[mv] script time X ms/tick avg, Y max over N ticks, P players, errors E` once a minute.
-- Size: the content addon is about 1.15 GB of sources before compiling (over 500 MB of that is converted third-party models the
-  map does not currently place).
+- Script time: about 0.1 ms per tick at 32 to 64 players **on the mock engine** (its traces are stand-ins). No server measurement
+  exists. Once a minute the console prints `[mv] perf: X ms/tick avg, Y ms max, N ticks, H HUD calls/tick, P players (h human),
+  F flying, R rockets, S shells, tickets T/CT, errors E`.
+- Size: the compiled map is about 176 MB (`mg_monsoon.vpk`) plus the 3D skybox (`mg_monsoon_3dskybox.vpk`, about 56 MB). The content
+  addon of a private-server build is about 1.2 GB of sources, over 500 MB of which are the converted third-party models.
+- Bots: navigation is kept to the bases, flags, roads and two walking routes (15,033 nav areas); a bot that wanders off it is
+  re-deployed after standing still 20 s. A human can take over a bot (CS2's bot takeover): the bot gives up any helicopter, gun or
+  battery seat first.
 
 ## Troubleshooting
 
@@ -183,9 +196,10 @@ then recompile the `.js`). The ones a mapper or server is likely to change:
 | No HUD | `mv_hud` must point at `panorama/layout/custom_game/mg_monsoon.vxml`; a layout that fails to compile is ignored |
 | Silent helicopters or guns | events missing from `soundevents_addon.vsndevts` (block `mg_monsoon`), or the `point_soundevent` is missing |
 | Script not running | `mv_script` must use `maps/scripts/mg_monsoon.vjs`; look for a JavaScript error line |
-| Round never ends / never restarts | see the three console lines in TESTING_MONSOON.md section F |
-| FPS drops with bots | nav mesh too large: check the NONAV volumes took effect (nav area count in the build log) |
+| Round never ends / never restarts | see the three console lines in TESTING_MONSOON.md section H |
+| FPS drops with bots | nav mesh too large: check the NONAV volumes took effect (nav area count in the build log: 15,033 on 12 Nov 2026) |
 
 ## Credits
 
-See `CREDITS.md`. The US helicopter is "AH-64E Apache "Guardian"" by Jeyhun1985, CC-BY-4.0.
+See `CREDITS.md`. The US helicopter is "AH-64E Apache "Guardian"" by Jeyhun1985, CC-BY-4.0. A private-server build also contains
+converted Garry's Mod Workshop models and player models, credited there by pack, author and Workshop id.

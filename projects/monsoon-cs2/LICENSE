@@ -13,8 +13,10 @@ Extra permission (on top of both licences): running this work on a game server i
 including community servers that take donations or sell perks (VIP, skins, etc.), as long as
 access to this work itself is not sold or paywalled and the work is not resold.
 
-Not covered: Valve's own CS2 files and any third-party models the map uses (listed in the addon's
-CREDITS.txt) keep their own terms.
+Not covered: Valve's own CS2 files and the third-party models the addon contains keep their own
+terms. They are listed in CREDITS.md (shipped next to this file): the AH-64 Apache (CC-BY-4.0, credit
+required) and, in private-server builds only, models converted from Garry's Mod Workshop packs and
+four GMod player models, for which no licence is granted to anyone by this file.
 
 Required Notice: Copyright (c) 2026 skink52 (https://github.com/skink52)
 

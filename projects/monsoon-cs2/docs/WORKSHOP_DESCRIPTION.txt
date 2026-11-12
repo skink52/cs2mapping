@@ -2,7 +2,7 @@
 
 A river valley in the monsoon season, 1968. Two bases, five flags, and three ways to fight: on foot, in the air, or on the guns. Up to 64 players, with bots that fill the empty roles when the server is quiet. Everything runs inside the map's own script: [b]no plugins needed[/b].
 
-[i]Status: version mv-0.1, an early build. The rules were developed on a test harness; this version has not been through a public playtest yet. Expect rough edges and please report them.[/i]
+[i]Status: version mv-0.5, an early test build. The rules were developed on a test harness; this version has not been through a public playtest yet. Expect rough edges and please report them.[/i]
 
 [h2]The valley[/h2]
 [list]
@@ -33,19 +33,18 @@ Each team starts with 400 tickets. A death costs one. Hold three or more flags a
 !swap                          next seat in a helicopter / next kit at a rack
 !roles                         the role card
 !pos                           your position and grid square
-!uniform                       toggle the team uniform
-!bots <0-24>                   bot quota[/code]
+!bots <0-24>                   vote for a bot quota[/code]
 / works as well as !
 
 [h2]Bots[/h2]
-Bots play as infantry. When a team has fewer than four humans, bots also fly a helicopter, man guns and crew one battery gun; they always give the seat up to a human who asks for the role. Default quota 10; change it with [b]!bots[/b].
+Bots play as infantry. When a team has fewer than four humans, bots also fly a helicopter, man guns and crew one battery gun; they always give the seat up to a human who asks for the role, and a player who takes over a bot gets it on foot. Default quota 10; change it with [b]!bots[/b]: more than half of the players on the server must ask for the same number within 30 seconds (alone, you decide).
 
 [h2]Server requirements[/h2]
 [list]
 [*]Map name [b]mg_monsoon[/b], game type Custom. [code]host_workshop_map <id>[/code]
 [*]The map sets its own cvars when it loads: respawn on death for both teams, no freeze time, no buying or money, [b]mp_ignore_round_win_conditions 1[/b] (the script ends the round), [b]mp_respawn_immunitytime 0[/b], [b]mp_autoteambalance 1[/b], [b]bot_quota_mode fill[/b]. They are one list (CVARS) at the top of the script.
 [*]The script parks players (frozen and hidden) while they sit in a helicopter, on a gun or at the plotting board, and gives them a custom camera. Plugins likely to conflict: AFK managers that judge by position, anti-stuck / noblock, third-person or FOV changers, loadout givers, no-respawn modes, spawn protection, team-kill punishment, and anything that blocks scripted damage.
-[*]Server load has not been measured on a live server yet. The console prints [b][mv] script time ... ms/tick[/b] once a minute; under about 5 ms is comfortable.
+[*]Server load has not been measured on a live server yet. The console prints [b][mv] perf: ... ms/tick avg[/b] once a minute; under about 5 ms is comfortable. Bot navigation is kept to the bases, flags, roads and routes to keep the nav mesh small.
 [*]The US helicopter is a modern AH-64 in a 1968 setting. We know. It is a good model with a licence that lets us use it.
 [/list]
 
@@ -59,7 +58,7 @@ Map, script and original assets: skink52.
 
 This work is based on "AH-64E Apache "Guardian"" (https://sketchfab.com/3d-models/ah-64e-apache-guardian-9eb641f9179d413e87367ebd9b96347a) by Jeyhun1985 (https://sketchfab.com/Jeyhun1985) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
 
-Jungle foliage, ground materials, water, particles and weapons are Counter-Strike 2 stock assets (Valve). All other art, sound and code is original.
+Jungle trees and foliage, the skybox tree cards, ground materials, water, particles, weapons and player agents are Counter-Strike 2 stock assets (Valve). All other art, sound and code is original. Full credits: CREDITS.md in the addon folder.
 
 Licence: free for non-commercial use, including community servers (donation and VIP servers are fine) as long as the map itself is not sold or paywalled. Code: PolyForm Noncommercial 1.0.0. Art, sounds and map: CC BY-NC 4.0, "mg_monsoon by skink52".
 
