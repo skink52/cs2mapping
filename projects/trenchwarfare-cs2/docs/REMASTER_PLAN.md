@@ -59,3 +59,4 @@ Steps 1+2 run together, then 3 alone (it owns `src/`), then 4+5, 6+7, 8+9, 10.
 ## Progress
 
 - 12 Nov: reminders set for each usage reset to Sat 13:00; vmap backed up; research done (TW_STATE, MONSOON_STANDARD); this plan.
+- 12 Nov: step 1 done (restage_out.py, mock green on Windows, CONTRACT.md + check_contract.py 76/77, 1 known missing).

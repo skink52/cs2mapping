@@ -2,3 +2,4 @@ out/
 preview/
 __pycache__/
 *.pyc
+test/_run.mjs

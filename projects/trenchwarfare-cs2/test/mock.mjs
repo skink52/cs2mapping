@@ -4,7 +4,9 @@
 // usage: node test/mock.mjs [players=24] [seconds=180]
 import fs from 'node:fs';
 import path from 'node:path';
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+import { fileURLToPath, pathToFileURL } from 'node:url';
+// inputs in out/ come from tools/restage_out.py (or a fresh build); file URL <-> path via node:url so Windows paths work
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MODELS = path.join(root, 'out/addon');
 const N = +(process.argv[2] || 24), SECONDS = +(process.argv[3] || 180);
 let seed = 7; Math.random = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
@@ -94,7 +96,7 @@ const src = fs.readFileSync(path.join(root, 'src/mg_trenchwarfare.js'), 'utf8')
   .replace(/import \{([^}]*)\} from "cs_script\/point_script";/, 'const {$1} = globalThis.__cs;');
 globalThis.__cs = { Instance, CSInputs: IN, CSMoveType: { NONE: 0, WALK: 2 }, CSDamageTypes: { BLAST: 64 }, CustomCameraMode: { DISABLED: 0, CONTROLLED: 1, CONTROLLED_POSITION: 2, FOLLOW_POSITION: 3 } };
 const tmp = path.join(root, 'test/_run.mjs'); fs.writeFileSync(tmp, src);
-await import(tmp);
+await import(pathToFileURL(tmp).href);
 for (let s = 0; s < N; s++) ctls.push(new Ctl(s, s % 2 ? 3 : 2, s % 3 === 2));
 hooks.activate(); hooks.round && hooks.round();
 for (const c of ctls) spawn(c);

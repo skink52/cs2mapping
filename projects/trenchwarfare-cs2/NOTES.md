@@ -8,7 +8,14 @@ Remaster to the mg_monsoon standard: rules in [docs/REMASTER_PROMPT.md](docs/REM
 [docs/REMASTER_PLAN.md](docs/REMASTER_PLAN.md), evidence in `docs/research/`. Map changes are guarded delta patches only (no generated
 baseline exists for EditKeeper). User vmap backed up to `content\csgo_addons\mg_trenchwarfare\backups\remaster_20261112\`.
 Working on branch `ironframe-test` (the remaster prompt's commit); do not commit the unrelated uncommitted monsoon edits.
-- 12 Nov ~12:20: research and plan done. Next: plan steps 1 (restage `out/`, mock, CONTRACT) and 2 (world-check tools) as two agents.
+- 12 Nov ~12:20: research and plan done.
+- 12 Nov ~12:50: step 1 done. `python tools/restage_out.py` rebuilds `out/` from the vmap + addon (8 s); `node test/mock.mjs 32 120`
+  green on Windows (50 kills, 0 errors, simulated); `docs/CONTRACT.md` + `tools/check_contract.py` (76/77 OK, known missing `mortar_<tg>_K`).
+  Not restageable: `radar_clean.png` (step 8 regenerates), `user_edits.json`/`gen_twN.vmap` (no baseline), `ext_src/`+`ext_full/`.
+  **Gotcha:** with `ext_src/`/`ext_full/` missing, `weather_ext.py` and `split_props.py` take the already weathered/split addon files as
+  source: never rerun them before restoring real sources. Tools importing repo readers must drop project `tools/` from `sys.path`
+  (its `dmx.py` shadows the repo one). Linux paths remain in vtexread, preview_scene, toolkit.json, sync_repo.sh, fp.sh.
+  Step 2 (world checks) running.
 
 ## State 2026-10-26 ~13:15 ACDT (tw8_content_01.zip radar, tw8_game.zip overview)
 
