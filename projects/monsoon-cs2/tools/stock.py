@@ -71,13 +71,15 @@ def _vtex(key, maxsize):
     return im
 
 
-def export_custom(outdir, maxsize=1024):
-    """decode the game textures named in CUSTOM and write csgo_complex vmats (+ derived colour/roughness PNGs) into materials/models/<PREFIX>/stock"""
+def export_custom(outdir, maxsize=1024, only=None):
+    """decode the game textures named in CUSTOM (or only the names in `only`) and write csgo_complex vmats (+ derived colour/roughness
+    PNGs) into materials/models/<PREFIX>/stock"""
     from PIL import Image
     rel = 'materials/models/%s/stock' % PREFIX
     d = os.path.join(outdir, rel); os.makedirs(d, exist_ok=True)
     nrm_done = {}
     for name, c in CUSTOM.items():
+        if only is not None and name not in only: continue
         col = np.asarray(_vtex(c['c'], maxsize).convert('RGB'), np.float32) / 255.0
         rough = None
         if c.get('chip'):
@@ -110,6 +112,20 @@ def export_custom(outdir, maxsize=1024):
         lines.append('}')
         open(os.path.join(d, name + '.vmat'), 'w', newline='\n').write('\n'.join(lines) + '\n')
     return sorted(CUSTOM)
+
+
+def ensure(outdir, vmats):
+    """write the stock copies (export_custom / export_bark) when a vmat a prop uses under materials/models/<PREFIX>/stock is
+    missing from outdir. Before 12 Nov 2026 nothing called the exporters, so the sandbag props failed to compile
+    (missing material materials/models/mv/stock/hessian*.vmat, docs/BUILD_LOG_1.md)."""
+    rel = 'materials/models/%s/stock/' % PREFIX
+    need = [v for v in vmats if v.startswith(rel) and not os.path.isfile(os.path.join(outdir, v))]
+    if not need: return []
+    done = []
+    if any(v.endswith('/bark_maple.vmat') for v in need): export_bark(outdir); done.append('bark_maple')
+    names = [v[len(rel):-5] for v in need if not v.endswith('/bark_maple.vmat')]
+    if names: export_custom(outdir, only=names); done += names
+    return done
 
 
 # chart material -> stock key, per prop (prefix match on the prop name)

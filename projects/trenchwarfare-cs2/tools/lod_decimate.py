@@ -148,6 +148,7 @@ def vmdl_rewrite(text, name, rel_dir, meshes, thresholds):
                    '\t\t\t\t\t\tswitch_threshold = %.1f\n\t\t\t\t\t},\n') % (m, t)
     rml = '\t\t\t{\n\t\t\t\t_class = "RenderMeshList"\n\t\t\t\tchildren =\n\t\t\t\t[\n%s\t\t\t\t]\n\t\t\t},\n' % rmf
     lgl = '\t\t\t{\n\t\t\t\t_class = "LODGroupList"\n\t\t\t\tchildren =\n\t\t\t\t[\n%s\t\t\t\t]\n\t\t\t},\n' % groups
+    if len(meshes) < 2: lgl = ''   # one group draws the same and only earns "Only a single LOD group specified" (BUILD_LOG_1)
     blk = lambda cls: re.compile(r'\t\t\t\{\n\t\t\t\t_class = "%s"\n.*?\n\t\t\t\},\n' % cls, re.S)
     assert blk('RenderMeshList').search(text), 'no RenderMeshList in ' + name
     text = blk('LODGroupList').sub('', text)

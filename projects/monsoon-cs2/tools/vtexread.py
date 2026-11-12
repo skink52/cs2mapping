@@ -5,7 +5,8 @@ import numpy as np
 from PIL import Image
 
 LEGACY_DIR, LEGACY_IDX = '/mnt/user-data/uploads/game/csgo', '/tmp/claude-0/vpkidx.pkl'   # where earlier sessions staged them
-VPK_DIR = os.environ.get('CS2_VPK_DIR') or (LEGACY_DIR if os.path.isdir(LEGACY_DIR) else '')   # folder holding pak01_dir.vpk + needed chunks
+_PC_DIR = os.path.join(os.environ.get('CS2_ROOT', r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'), 'game', 'csgo')
+VPK_DIR = os.environ.get('CS2_VPK_DIR') or (LEGACY_DIR if os.path.isdir(LEGACY_DIR) else _PC_DIR if os.path.isdir(_PC_DIR) else '')   # folder holding pak01_dir.vpk + needed chunks
 VPK_INDEX = os.environ.get('CS2_VPK_INDEX') or LEGACY_IDX   # optional pickled vpkdir.read_dir() result, used when present
 _idx = None
 

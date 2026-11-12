@@ -277,9 +277,10 @@ def specs():
     return {
         'howitzer_m102': lambda: _two(m102_carriage, 2048, hulls=[MG.pts_box(-186, -12, 0, 24, 12, 50), MG.pts_box(-66, -64, 4, -14, 64, 56), MG.pts_box(-62, -62, 0, 62, 62, 6)]),
         'howitzer_m102_gun': lambda: _two(m102_gun, 1024, ground=None, hulls=[MG.pts_box(-52, -12, -14, 152, 12, 14)]),
-        'rocket_tripod': lambda: _two(rocket_tripod, 1024, hulls=[MG.pts_box(-20, -20, 0, 20, 20, 54), MG.pts_box(-70, -62, 0, 70, 62, 8)]),
-        'rocket_rail': lambda: _two(rocket_rail, 1024, ground=None, hulls=[MG.pts_box(-36, -10, -6, 100, 10, 14)]),
-        'rocket_122': lambda: _two(rocket_122, 512, ground=None, hulls=[MG.pts_box(-38, -3, -3, 38, 3, 3)]),
+        # placed only as script-moved prop_dynamic (mv_tube_*): model_archetype "" (BUILD_LOG_1)
+        'rocket_tripod': lambda: dict(_two(rocket_tripod, 1024, hulls=[MG.pts_box(-20, -20, 0, 20, 20, 54), MG.pts_box(-70, -62, 0, 70, 62, 8)]), dynamic=True),
+        'rocket_rail': lambda: dict(_two(rocket_rail, 1024, ground=None, hulls=[MG.pts_box(-36, -10, -6, 100, 10, 14)]), dynamic=True),
+        'rocket_122': lambda: dict(_two(rocket_122, 512, ground=None, hulls=[MG.pts_box(-38, -3, -3, 38, 3, 3)]), dynamic=True),
         'shell_105': lambda: _two(shell_105, 512, ground=None, hulls=[MG.pts_box(-16, -3, -3, 15, 3, 3)]),
         'ammo_rack_105': lambda: _two(ammo_rack_105, 1024, surface='wood', hulls=[MG.pts_box(-36, -32, 0, 36, 32, 60)]),
         'rocket_crate': lambda: _two(rocket_crate, 1024, surface='wood', hulls=[MG.pts_box(-42, -15, 0, 42, 15, 24), MG.pts_box(-42, 14, 0, 42, 26, 30)]),

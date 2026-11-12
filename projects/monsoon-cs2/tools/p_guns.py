@@ -189,7 +189,7 @@ def specs():
         'dshk_gun': lambda: _two(dshk_gun, 512, ground=None, hulls=[MG.pts_box(-39, -8, -4, 82, 8, 14)]),
         'dshk_mount': lambda: _two(dshk_mount, 512, hulls=[MG.pts_box(-48, -46, 0, 50, 46, 64)]),
         'quad50_mount': lambda: _two(quad50_mount, 1024, hulls=[MG.pts_box(-76, -66, 0, 76, 66, 24), MG.pts_box(-32, -32, 22, 24, 32, 74)]),
-        'quad50_gun': lambda: _two(quad50_gun, 1024, ground=None, hulls=[MG.pts_box(-30, -50, -14, 64, 50, 20)]),
+        'quad50_gun': lambda: dict(_two(quad50_gun, 1024, ground=None, hulls=[MG.pts_box(-30, -50, -14, 64, 50, 20)]), dynamic=True),   # script-moved prop_dynamic only (BUILD_LOG_1)
         'm60_gun': lambda: _two(m60_gun, 512, ground=None, hulls=[MG.pts_box(-30, -3, -3, 46, 10, 8)]),
         'pk_gun': lambda: _two(pk_gun, 512, ground=None, hulls=[MG.pts_box(-30, -3, -3, 46, 9, 7)]),
     }

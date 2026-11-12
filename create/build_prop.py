@@ -89,14 +89,19 @@ def build(name, spec, preview=True, cam=None):
         meshes.append(mn)
     for sk in skeys:
         vmats['~' + sk] = stock.STOCK[sk]['vmat']
+    stock.ensure(OUT, [stock.STOCK[sk]['vmat'] for sk in skeys])   # our stock copies (hessian ...) must exist or the vmdl fails to compile
     hull_names = []
     for k, pts in enumerate(spec.get('hulls', [])):
         hn = '%s_hull%d' % (name, k)
         modelio.write_hull_smd(os.path.join(OUT, rel_dir, hn + '.smd'), [pts])
         hull_names.append(hn)
     remaps = [(('stock_%s.vmat' % k[1:]) if k.startswith('~') else ('%s_%s.vmat' % (name, k)), v) for k, v in vmats.items()]
+    # spec 'dynamic': only ever placed as a prop_dynamic the script moves -> model_archetype "" (a static_prop_model on a
+    # prop_dynamic is what docs/BUILD.md warns gets DELETED by the map compile)
+    dyn = spec.get('dynamic', False)
     txt = modelio.vmdl_text(name, rel_dir, meshes, remaps, hull_names, surface=spec.get('surface', 'default'),
-                            lod_thresholds=spec.get('lod_thresholds'), entity='', single_lod=spec.get('single_lod'))
+                            lod_thresholds=spec.get('lod_thresholds'), entity='prop_dynamic' if dyn else '', single_lod=spec.get('single_lod'),
+                            **({'archetype': ''} if dyn else {}))
     open(os.path.join(OUT, rel_dir, name + '.vmdl'), 'w', newline='\n').write(txt)
     lo, hi = m0.bounds()
     info = dict(model='%s/%s.vmdl' % (rel_dir, name), tris=[int(m.tri_count()) for m in lods], mins=lo.round(1).tolist(), maxs=hi.round(1).tolist())

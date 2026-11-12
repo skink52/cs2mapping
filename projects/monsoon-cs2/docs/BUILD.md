@@ -36,7 +36,7 @@ Times for steps 10-11 are estimates from the sibling maps, not measurements.
 | 7 | HUD | `python mv_hud.py ../out/addon` | 1 min | exit 0 (contract + `hud_check.py` gate); `out/hud/hud_<state>.png` |
 | 8 | Script + tests | from the project folder: `node tools/build_script.mjs`; `node test/mock.mjs 32 600`; `node test/mock.mjs 4 600`; `tsc -p test/tsconfig.json`; from `cs2mapping`: `python create/test/api.py --strict --check projects/monsoon-cs2/out/addon/maps/scripts/mg_monsoon.js` | under 2 min | both mock runs PASS, nothing invalid or deprecated |
 | 9 | Deploy | from the project folder: `python -I tools/deploy_monsoon.py` then `--apply` | dry run seconds; first apply about 1.2 GB copied, 1-3 min | see "Deploy" |
-| 10 | Compile assets, HUD, script | see "Compile" | first time 20-40 min (estimate) | `logs\mg_monsoon_assets.log` |
+| 10 | Compile assets, HUD, script | see "Compile" | first time 9 min (measured 12 Nov 2026) | `logs\mg_monsoon_assets.log` |
 | 11 | Compile the map | `build_maps.ps1 final mg_monsoon` under the watchdog | 45-60 min (estimate) | see "What to read in the build log" |
 | 12 | Launch | see "Local test with bots" | | TESTING_MONSOON.md |
 
@@ -103,8 +103,9 @@ python C:\source1\cs2port\autoport\watchdog.py --label "mg_monsoon assets" --exp
   powershell -NoProfile -ExecutionPolicy Bypass -File C:\source1\cs2port\build_maps.ps1 assets mg_monsoon
 ```
 
-Expected: 20-40 min the first time (an estimate: about 1,100 model files and 1,400 material files, never compiled before);
-a few minutes afterwards, because only changed sources are rebuilt. Progress: the heartbeat's CPU and MB-written numbers and
+Measured 12 Nov 2026 ([BUILD_LOG_1.md](BUILD_LOG_1.md)): **9 min the first time** (332 materials 7 min, 193 models 1.5 min), about
+30-45 s afterwards, because only changed sources are rebuilt. The wrapper says "assets OK" even when models failed: grep the log for
+`RESOURCE COMPILE ERROR` and `compiled, N failed`. Progress: the heartbeat's CPU and MB-written numbers and
 `logs\mg_monsoon_assets.log` growing. `build_maps.ps1 -DryRun assets mg_monsoon` lists what it would compile and changes nothing.
 
 Then always, because a failed layout is ignored silently and the pre-pass has missed these before:
