@@ -27,6 +27,10 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
+- 12 Nov ~17:45: **compiled.** Assets: 13 models (all `_dyn` twins, Canon de 75, LODs, tw_de_a), 0 failed. Forced xml/css(30)/js/svg:
+  0 failed. Map `final`: OK in 49.7 min, 407 compiled, 0 failed, vpk moved; log greps: 0 `DELETED`, 0 `RESOURCE COMPILE ERROR`,
+  0 out of memory. Logs copied to `out/step9/`. NOT done yet: nav area count and lightmap/chart lines (grep the log, wording differs
+  from BUILD.md's patterns), fill `docs/BUILD_LOG_1.md`, post-compile `check_world` (stale models), then the in-game `docs/TESTING.md`.
 - 12 Nov 16:33: **deployed** with `tools/deploy_tw.py --apply` (gate PASS; 86 created, 29 replaced, 148 MB). The addon's vmap is now
   the chained map (89.8 MB); the user's 29 Oct save is in `backups\deploy_20261112_163314\` and `backups\remaster_20261112\`.
   Record `out/step9/deploy/mg_trenchwarfare_deploy_20261112_163314.json`. The chain's base hash is the user's save (2e3f90d0): to
