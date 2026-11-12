@@ -16,18 +16,25 @@ Trench checks:
   T1 depth      trench floor below the cover around it: each walkable floor node of t / ct (every 3rd cell) against the highest solid
                 ground within 128 u: a standing player's head (64 u eye) shows where that is < 60 u; plus enemy fire-step eyes -> eye
                 at the node (head exposure across no man's land)
-  T2 fire steps every firestep prop: a standing spot on top, in its side's walkable world, eye 64 u over it clears the parapet (a line to
-                ground 500 u out into no man's land)
+  T2 fire steps every firestep prop: a standing spot on top (the highest support under a 32 x 32 player box free 72 u up, 16.5-40 u out
+                from the wall, on the exact triangles), reached from the side's jump world (a node within 40 u and 54 u under it), and
+                the eye 64 u over it clears the parapet (the highest solid 16-112 u in front, best of five lines)
   T3 ladders    climb volumes (toolsinvisibleladder): walkable ground at the bottom (in the world once open) and at the top; decorative
                 ladder props without a volume are listed (the clips keep infantry in the trench by design)
-  T4 dugouts    each shelter has a walkable interior joined to its trench and >= 72 u headroom at the dressing station
+  T4 dugouts    each shelter's dressing station is walked into from the trench on the exact triangles (a player box, 4-u steps,
+                18-u step-ups; the 16-u grid cannot resolve the 30-u aisle between the stretchers) with >= 72 u over the floor there;
+                check 1 then joins the station to its world at the shelter's mouth
   T5 no man's land  no walkable node of t / ct inside no man's land (|x| < 1450, |y| < 2750, above the galleries) in either state;
                 wire props standing in a trench floor
   T6 mortar pits each pit's seats in one world, the pit closed off from both trench systems (crews are teleported), tube / table / box present
-  T7 runways    air spawns (plane_<tg>_N + 1100): nothing within 300 u, a clear 3000-u lane on the spawn heading; nothing over z 2900 in
-                the flight box (the script's ground trace starts at 3000); the flight box inside the sky shell; parked planes on flat ground,
-                clear of other solid props
-  T8 spawns     lobby: 64 spawns on the floor, >= 72 u headroom, >= 32 u apart; posts: headroom, >= 40 u apart, facing the enemy
+  T7 runways    air spawns (plane_<tg>_N + 1100): nothing within 300 u, a clear 3000-u lane on the spawn heading as wide as the side's
+                aircraft (wing tips from the parked model) with 90 u over everything in it; stock trees by their real crowns (LOD0 render
+                mesh read from the game's pak01 with create/s2/prop_mesh.mjs, cached), everything else from the visual grid; nothing
+                over z 2900 in the flight box (the script's ground trace starts at 3000); parked planes on flat ground, clear of solid props
+  T8 spawns     lobby: 64 spawns on the floor, >= 72 u headroom, >= 32 u apart; posts: headroom (a grid reading under 72 u is asked again
+                of the exact triangles with a standing player box), >= 40 u apart, facing the enemy
+  T9 sap mouths a player box walked through each sap mouth on the exact triangles (crouched / standing; planks in and out)
+Owner: the user's objects (vis group tw_user, or ungrouped) are listed by checks 6 and 7, never counted (Adapter.user_owned).
 """
 import os, sys, math, re
 import numpy as np
@@ -67,16 +74,28 @@ class Trench(CP.Adapter):
     foliage = ('foliage', 'weeds', 'grass', 'leaves', 'bush', 'shrub', 'dogwood', 'viburnum')
     trees = ('tree_poplar', 'maple_tree', 'tree_small_beech', 'tree_shattered')
     buildings = ('hangar', 'shelter')
-    water_ok = ('duckboard', 'wire_', 'stump', 'log_fallen', 'tree_shattered', 'casings', 'helmet', 'tl_')
+    water_ok = ('duckboard', 'wire_', 'stump', 'log_fallen', 'tree_shattered', 'casings', 'helmet', 'tl_', 'debris_metal')   # debris: sunk in a crater pool, out of sight
     floors = {}
 
     def skip_entity(self, e):
         return e['o'][2] < -3000.0                     # script pools and precache props under the lobby
 
+    def user_owned(self, p):
+        """the user's own objects (vis group tw_user, or ungrouped): the remaster never changes them, so check 6 / 7 list them only"""
+        return (p.get('vg') or '') in ('tw_user', '')
+
     def clip_tag(self, p):
         m = p['model']
         if any(k in m for k in ('revet_', 'firestep', 'tunnel_set', 'shelter', 'hangar')): return 'bury'      # set into the trench walls / the bank by design
         if any(k in m for k in ('stump_', 'helmet_', 'debris_metal', 'aztec_river_rock')): return 'bury'   # sunk into the churned mud as dressing
+        # the generator's scatter dressing sunk in the shell-torn ground (make_map scatter(): zoff -2..-4, tilt 3-8 on the origin's ground,
+        # blind to the crater it lands in): logs across flooded shell holes with their ends in the banks, shell piles, crates, a cart
+        # wheel and wire in the mud of no man's land; and the pit breastworks' sandbag courses bedded into the mound where it dips
+        # (renders out/review3/views/before_clip_*.png and their share of vertices under the ground: docs/REVIEW_WORLD_3.md "Clipping")
+        if '/log_fallen' in m: return 'bury'
+        if any(k in m for k in ('/shell_pile', '/casings')): return 'bury'          # a low heap: its box's corners stand in the slope it lies on
+        if abs(p['o'][0]) < NML_X + 50 and any(k in m for k in ('/wreck_wheel', '/crate_shells', '/wire_coil', '/wire_fence')): return 'bury'
+        if '/sandbag_' in m and abs(abs(p['o'][0]) - MORTAR_X) < 260 and abs(p['o'][1]) < 1900: return 'bury'
         if any(k in m for k in ('ladder', 'tl_lantern', '_prop.vmdl', 'tw_prop')): return 'float'   # leans on the wall / hangs from a frame / on the plane's nose
         return None
 
@@ -88,7 +107,9 @@ class Trench(CP.Adapter):
         sap_links(ctx)                                 # the sap mouths, proven on a fine grid, join the open walk graph (T9)
         w = {}
         for tg in ('t', 'ct'):
-            w[tg] = ctx.points(r'trench_%s_\d+' % tg) + ctx.points(r'heal_%s_\d+' % tg)
+            # a dressing station inside a shelter whose walk-in the fine probe proves (T4) joins its world at the shelter's mouth:
+            # the grid's 12-u widened blockers close the 30-u aisle between the two stretchers
+            w[tg] = ctx.points(r'trench_%s_\d+' % tg) + [heal_point(ctx, h) for h in ctx.points(r'heal_%s_\d+' % tg)]
             for k in range(1, 6): w['pit_%s_%d' % (tg, k)] = ctx.points(r'mortarcrew_%s_%d_[ab]' % (tg, k))
         w['lobby'] = [(e['cls'], e['o'][0], e['o'][1], e['o'][2]) for e in ctx.ents if e['cls'] in ('info_player_terrorist', 'info_player_counterterrorist')]
         # the two areas the unlocks open: the woods clearing (a point well inside each half) and the mine galleries (their nav seeds)
@@ -127,14 +148,26 @@ class Trench(CP.Adapter):
         return [('t->woods', 'ct->woods'), ('t->enemy woods', 'ct->enemy woods'), ('t->chamber', 'ct->chamber')]
 
     def firesteps(self, ctx):
-        """(side, prop, stand point (x, y, z) or None): the top of each firestep prop's hull at its centre"""
+        """(side, prop, stand point (x, y, z) or None): where a player stands to fire: the highest support under a 32 x 32 player box
+        that is free 72 u up, the box set 16.5 .. 40 u out from the wall face along the step's middle (the step's upper tier is only
+        16 u deep: a player stands on it with the box overhanging the lower tier). Was: the 16-u grid at the prop's box centre, which
+        on the CT side lands on the user's clip stair in front of the step 12 u under the tier (REVIEW_WORLD_1 M6, REVIEW_WORLD_3 T2)"""
+        key = id(ctx)
+        if _FS.get('key') == key: return _FS['out']
         out = []
         for p in ctx.props:
             if 'models/tw/firestep/' not in p['model']: continue
             tg = 't' if p['o'][0] < 0 else 'ct'
-            cx, cy = (p['lo'][0] + p['hi'][0]) / 2, (p['lo'][1] + p['hi'][1]) / 2
-            z = ctx.G.ground(cx, cy, p['hi'][2] + 4)
-            out.append((tg, p, (cx, cy, z) if np.isfinite(z) and z > p['lo'][2] - 30 else None))
+            yaw = math.radians(p['a'][1]); fx, fy = math.sin(yaw), -math.cos(yaw)     # local -y (toward the trench) in world space
+            best = None
+            for d in (16.5, 20.0, 24.0, 28.0, 32.0, 40.0):
+                x, y = p['o'][0] + fx * d, p['o'][1] + fy * d
+                z = exact_support(ctx, x, y, p['hi'][2] + 4.0)
+                if not np.isfinite(z) or z < p['lo'][2] - 30: continue
+                if not box_free(ctx, (x - 16.0, y - 16.0, z + 1.0), (x + 16.0, y + 16.0, z + 72.0)): continue
+                if best is None or z > best[2] + 0.5: best = (x, y, z)
+            out.append((tg, p, best))
+        _FS.update(key=key, out=out)
         return out
 
     def no_sight(self, ctx):
@@ -331,6 +364,52 @@ def t9_saps(ctx):
 
 
 A = Trench()
+_FS = {}
+_EX = {}
+
+
+def _exact(ctx):
+    """the scene's solid triangles (water left out, the removable blockers in: the round start) with their boxes, once per scene"""
+    if _EX.get('key') != id(ctx):
+        sc = ctx.sc; T = sc['tris']; m = sc['kinds'] != CP.K_WATER
+        T = T[m]
+        _EX.clear(); _EX.update(key=id(ctx), T=T, lo=T.min(1), hi=T.max(1), src=sc['srcs'][m])
+    return _EX
+
+
+def box_free(ctx, lo, hi, ignore=()):
+    """no solid triangle (and no stock tree trunk) intersects the box lo..hi"""
+    E = _exact(ctx)
+    mm = (E['hi'][:, 0] >= lo[0]) & (E['lo'][:, 0] <= hi[0]) & (E['hi'][:, 1] >= lo[1]) & (E['lo'][:, 1] <= hi[1]) & (E['hi'][:, 2] >= lo[2]) & (E['lo'][:, 2] <= hi[2])
+    idx = np.nonzero(mm)[0]
+    if len(ignore): idx = idx[~np.isin(E['src'][idx], list(ignore))]
+    if len(idx) and _tri_box(E['T'][idx], lo, hi).any(): return False
+    for (tx, ty, z0, z1, r, pi) in ctx.sc['trunks']:
+        if z0 < hi[2] and z1 > lo[2] and math.hypot(max(lo[0] - tx, 0, tx - hi[0]), max(lo[1] - ty, 0, ty - hi[1])) < r: return False
+    return True
+
+
+def exact_support(ctx, x, y, zfrom, half=15.5, step=3.875):
+    """the highest up-facing solid surface under a player footprint (x +- half, y +- half) at or below zfrom, from the exact triangles
+    on a 9 x 9 lattice"""
+    E = _exact(ctx)
+    mm = (E['hi'][:, 0] >= x - half) & (E['lo'][:, 0] <= x + half) & (E['hi'][:, 1] >= y - half) & (E['lo'][:, 1] <= y + half) & (E['lo'][:, 2] <= zfrom)
+    T = E['T'][mm]
+    if not len(T): return -np.inf
+    n = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0]); T = T[n[:, 2] > 1e-6]
+    if not len(T): return -np.inf
+    g = np.arange(-half, half + 1e-6, step)
+    X, Y = np.meshgrid(x + g, y + g, indexing='ij'); X = X.ravel(); Y = Y.ravel()
+    a, b, c = T[:, 0], T[:, 1], T[:, 2]
+    d = (b[:, 1] - c[:, 1]) * (a[:, 0] - c[:, 0]) + (c[:, 0] - b[:, 0]) * (a[:, 1] - c[:, 1])
+    d = np.where(np.abs(d) < 1e-9, 1e-9, d)
+    l1 = ((b[:, 1] - c[:, 1])[:, None] * (X[None] - c[:, 0][:, None]) + (c[:, 0] - b[:, 0])[:, None] * (Y[None] - c[:, 1][:, None])) / d[:, None]
+    l2 = ((c[:, 1] - a[:, 1])[:, None] * (X[None] - c[:, 0][:, None]) + (a[:, 0] - c[:, 0])[:, None] * (Y[None] - c[:, 1][:, None])) / d[:, None]
+    l3 = 1 - l1 - l2
+    Z = l1 * a[:, 2][:, None] + l2 * b[:, 2][:, None] + l3 * c[:, 2][:, None]
+    ok = (l1 >= -1e-6) & (l2 >= -1e-6) & (l3 >= -1e-6) & (Z <= zfrom + 0.01)
+    Z = np.where(ok, Z, -np.inf)
+    return float(Z.max())
 
 
 def _xyz(ctx, n): return ctx.node_xyz(n)
@@ -412,7 +491,9 @@ def t2_firesteps(ctx):
         tag = (round(p['o'][0]), round(p['o'][1]))
         if q is None: r['no_spot'].append(tag); continue
         x, y, z = q
-        ids = ctx.nodes(x, y, z, 24.0, 12.0, dz=0.0, state='closed')
+        # the tier is 16 u deep against the wall, too narrow for a 16-u grid node: the step counts as reached when a node of the side's
+        # jump world lies within 40 u of the stand point and no more than a jump (54 u) under it
+        ids = ctx.nodes(x, y, z, 40.0, 28.0, dz=-26.0, state='closed')
         W = ctx.world_mask(tg, 'closed'); J = jump_world(ctx, tg)
         if any(W[i] for i in ids): r['walk'] = r.get('walk', 0) + 1
         if not any(J[i] for i in ids): r['off_world'].append(tag + (round(z),))
@@ -469,27 +550,65 @@ def t3_ladders(ctx):
 
 
 # ---------------------------------------------------------------- T4 dugouts
-def t4_dugouts(ctx):
-    G = ctx.G; lines = []; fails = []; out = []
+_SH = {}
+
+
+def shelter_probe(ctx):
+    """the walk into each shelter on the exact triangles: a player box (31 x 31, 72 u standing, 18-u steps) moved 4 u at a time along
+    the shelter's axis, from 40 u outside the mouth (the support trench floor) to the dressing station inside, onto the highest support
+    under it each step (the stretchers' edges are 7-8 u up). -> {heal name: dict(ok, mouth (x, y, z), headroom, ...)}"""
+    if _SH.get('key') == id(ctx): return _SH['res']
+    res = {}
     for p in ctx.props:
         if 'models/tw/shelter/' not in p['model']: continue
         tg = 't' if p['o'][0] < 0 else 'ct'
-        W = ctx.world_mask(tg, 'closed')
-        cx, cy = (p['lo'][0] + p['hi'][0]) / 2, (p['lo'][1] + p['hi'][1]) / 2
-        ids = ctx.nodes(cx, cy, p['o'][2] + 8, 60.0, 30.0, state='closed')
-        inn = [i for i in ids if W[i]]
         heal = [e for e in ctx.ents if re.fullmatch(r'heal_%s_\d+' % tg, e['name']) and math.hypot(e['o'][0] - p['o'][0], e['o'][1] - p['o'][1]) < 160]
+        if not heal: continue
+        h = heal[0]
+        yaw = math.radians(p['a'][1]); ux, uy = math.cos(yaw), math.sin(yaw)              # local +x: into the shelter (its mouth is at -48)
+        lx_h = (h['o'][0] - p['o'][0]) * ux + (h['o'][1] - p['o'][1]) * uy
+        ly_h = -(h['o'][0] - p['o'][0]) * uy + (h['o'][1] - p['o'][1]) * ux
+        pt = lambda lx: (p['o'][0] + ux * lx - uy * ly_h, p['o'][1] + uy * lx + ux * ly_h)
+        x, y = pt(-88.0); z = exact_support(ctx, x, y, p['o'][2] + 40.0)
+        mouth = (x, y, z); ok = np.isfinite(z); worst = None; rise = 0.0
+        for lx in np.arange(-84.0, lx_h + 0.01, 4.0):
+            if not ok: break
+            x, y = pt(lx)
+            nz = exact_support(ctx, x, y, z + 18.0)
+            if not np.isfinite(nz) or nz < z - 60: ok = False; worst = ('no floor', round(lx)); break
+            if not box_free(ctx, (x - 15.5, y - 15.5, nz + 1.0), (x + 15.5, y + 15.5, nz + 72.0)): ok = False; worst = ('blocked', round(lx), round(nz, 1)); break
+            rise = max(rise, nz - mouth[2]); z = nz
         head = None
-        if heal:
-            h = heal[0]; c = CP.cell_of(h['o'][0], h['o'][1]); fz = G.ground(h['o'][0], h['o'][1], h['o'][2])
-            above = G.Z[:, c][np.isfinite(G.Z[:, c]) & (G.Z[:, c] > fz + 1)]
-            bl = G.b_lo[(G.b_cell == c) & (G.b_lo > fz + 1)]
-            cand = list(above) + list(bl)
-            head = round(float(min(cand) - fz), 1) if cand else 999.0
-        rec = dict(at=[round(p['o'][0]), round(p['o'][1]), round(p['o'][2])], side=tg, interior_nodes=len(ids), in_world=len(inn), heal=heal[0]['name'] if heal else None, headroom=head, vg=p['vg'])
+        if ok:
+            x, y = pt(lx_h); fz = z
+            head = 72.0
+            while head < 120 and box_free(ctx, (x - 15.5, y - 15.5, fz + 1.0), (x + 15.5, y + 15.5, fz + head + 1.0)): head += 1.0
+        res[h['name']] = dict(ok=bool(ok), mouth=mouth, shelter=[round(v) for v in p['o']], side=tg, headroom=head, floor_rise=round(rise, 1), stop=worst)
+    _SH.update(key=id(ctx), res=res)
+    return res
+
+
+def heal_point(ctx, pt):
+    """a dressing station's point for the walk graph: the shelter's mouth when the fine probe proves the walk in, else the station"""
+    r = shelter_probe(ctx).get(pt[0])
+    if r and r['ok']: return ('%s (mouth; walk-in proven by T4)' % pt[0], r['mouth'][0], r['mouth'][1], r['mouth'][2] + 8.0)
+    return pt
+
+
+def t4_dugouts(ctx):
+    """each shelter's dressing station can be walked into from its trench (T4 fine probe) with >= 72 u over the floor there, and the
+    shelter's mouth is in the side's walkable trench"""
+    lines = []; fails = []; out = []
+    for name, r in sorted(shelter_probe(ctx).items()):
+        tg = r['side']
+        W = ctx.world_mask(tg, 'closed')
+        ids = ctx.nodes(r['mouth'][0], r['mouth'][1], r['mouth'][2] + 8.0, 40.0, 30.0, state='closed') if np.isfinite(r['mouth'][2]) else []
+        inn = any(W[i] for i in ids)
+        rec = dict(heal=name, at=r['shelter'], side=tg, walk_in=r['ok'], mouth_in_trench=inn, headroom=r['headroom'], floor_rise=r['floor_rise'], stop=r['stop'])
         out.append(rec)
-        lines.append('shelter %s (%s): %d interior nodes, %d in the walkable trench; %s headroom %s u' % (rec['at'], tg, len(ids), len(inn), rec['heal'], head))
-        if not inn or (head is not None and head < 72): fails.append('shelter %s' % rec['at'][:2])
+        lines.append('shelter %s (%s): walk-in %s (floor rise %.0f u%s), mouth in the walkable trench %s; %s headroom %s u'
+                     % (rec['at'], tg, 'ok' if r['ok'] else 'BLOCKED', r['floor_rise'], (', stopped: %s' % (r['stop'],)) if r['stop'] else '', inn, name, r['headroom']))
+        if not r['ok'] or not inn or (r['headroom'] or 0) < 72: fails.append('shelter %s' % rec['at'][:2])
     return dict(result=out, lines=lines, fail=fails, summary='%d shelters' % len(out))
 
 
@@ -544,6 +663,65 @@ def t6_pits(ctx):
 
 
 # ---------------------------------------------------------------- T7 air
+_TM = {}
+_MESH_JS = r'''
+import fs from "node:fs"; import { pathToFileURL } from "node:url";
+const [repo, vpk, out, ...models] = process.argv.slice(2);
+const { extractProp } = await import(pathToFileURL(repo + "/create/s2/prop_mesh.mjs").href);
+const { readInput } = await import(pathToFileURL(repo + "/create/s2/vpk.mjs").href);
+const res = {};
+for (const m of models) {
+  try { const r = await extractProp(readInput(m + "_c", vpk)); const P = []; for (const me of r.meshes) for (const v of me.P) P.push(+v.toFixed(2)); res[m] = P; }
+  catch (e) { res[m] = { error: String(e && e.message || e).slice(0, 200) }; }
+}
+fs.writeFileSync(out, JSON.stringify(res));
+'''
+
+
+def tree_mesh(q):
+    """world-space vertices of a stock tree's LOD0 render mesh (create/s2/prop_mesh.mjs on the game's pak01, cached per model in the
+    cache folder), or None when it cannot be read"""
+    import json, subprocess, tempfile
+    mdl = q['model']
+    if mdl not in _TM:
+        cp = os.path.join(A.cache_dir, 'stock_mesh_%s.npy' % re.sub(r'[^A-Za-z0-9_]+', '_', mdl))
+        if not os.path.exists(cp):
+            try:
+                os.makedirs(A.cache_dir, exist_ok=True)
+                js = os.path.join(tempfile.gettempdir(), 'tw_tree_mesh.mjs'); open(js, 'w').write(_MESH_JS)
+                tmp = cp + '.json'
+                subprocess.run(['node', js, REPO.replace('\\', '/'), A.vpk_dir.replace('\\', '/'), tmp, mdl], capture_output=True, timeout=120,
+                               creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+                v = json.load(open(tmp))[mdl]; os.remove(tmp)
+                if isinstance(v, dict): raise RuntimeError(v.get('error'))
+                np.save(cp, np.array(v, np.float32).reshape(-1, 3))
+            except Exception as ex:
+                print('    T7: no mesh for %s (%s): its bounds stand in' % (mdl, str(ex)[:120]))
+                _TM[mdl] = None
+        if mdl not in _TM: _TM[mdl] = np.load(cp).astype(float)
+    P = _TM[mdl]
+    if P is None or not len(P): return None
+    return (P * np.array(q['s'])) @ CP.rot_matrix(q['a']).T + np.array(q['o'])
+
+
+def vis_without_trees(ctx):
+    """Sight.vis (the highest visual thing per cell) without the stock trees: their crowns are measured from their meshes"""
+    G = ctx.G
+    hs = np.where(G.terr > -1e8, G.terr, G.Z[0]); hs = np.where(np.isfinite(hs), hs, -1e5)
+    solid = hs.copy()
+    m = (G.s_kind == CP.K_WORLD) | (G.s_kind == CP.K_HULL); np.maximum.at(solid, G.s_cell[m], G.s_z[m])
+    m = (G.b_kind == CP.K_WORLD) | (G.b_kind == CP.K_HULL); np.maximum.at(solid, G.b_cell[m], G.b_hi[m])
+    vis = solid.copy()
+    for p in ctx.props:
+        if p['removable'] or (CP.has(p['model'], A.trees) and not p['ours']): continue
+        ex = max(p['hi'][0] - p['lo'][0], p['hi'][1] - p['lo'][1])
+        r = ex * (0.30 if CP.has(p['model'], A.trees) else 0.42)
+        cx, cy = (p['lo'][0] + p['hi'][0]) / 2, (p['lo'][1] + p['hi'][1]) / 2
+        c, _, _ = G.disc(cx, cy, max(r, CP.CELL * 0.6))
+        if len(c): np.maximum.at(vis, c, p['hi'][2])
+    return vis.reshape(CP.NX, CP.NY)
+
+
 def t7_air(ctx):
     G = ctx.G; SG = ctx.SG; lines = []; fails = []; warn = []; out = []
     NX, NY, X0, Y0, CELL = CP.NX, CP.NY, CP.X0, CP.Y0, CP.CELL
@@ -551,15 +729,44 @@ def t7_air(ctx):
     def vis_at(x, y):
         i = int((x - X0) // CELL); j = int((y - Y0) // CELL)
         return float(V[i, j]) if 0 <= i < NX and 0 <= j < NY else -1e9
+    # the lane: the spawn's 3000 u straight ahead, as wide as the side's aircraft (wing tip to wing tip, from the parked model's bounds),
+    # NOSE u of clearance over everything in it. Stock trees count with their real crowns (LOD0 render mesh from the game's pak01,
+    # tree_mesh()); the grid's stand-in for them (a disc of 0.3 x the bounds at the full height) put the whole box width at the crown
+    # top (REVIEW_WORLD_3 T7). Everything else is the visual grid (the highest surface or prop top per 16-u cell).
+    span = {}
+    for p in ctx.props:
+        mm = re.fullmatch(r'tw_plane_(t|ct)_\d+', p['name'] or '')
+        if mm: span[mm.group(1)] = max(span.get(mm.group(1), 0.0), abs(p['mhi'][1] - p['mlo'][1]) / 2.0 * p['s'][1])
+    VN = vis_without_trees(ctx)
+    def vn_at(x, y):
+        i = int((x - X0) // CELL); j = int((y - Y0) // CELL)
+        return float(VN[i, j]) if 0 <= i < NX and 0 <= j < NY else -1e9
+    stock_trees = [q for q in ctx.props if CP.has(q['model'], A.trees) and not q['ours']]
     for tg in ('t', 'ct'):
+        hw = span.get(tg, 160.0)
         for (n, x, y, z) in ctx.points(r'plane_%s_\d+' % tg):
             sz = z + SPAWN_ALT
             near = max(vis_at(x + dx, y + dy) for dx in np.arange(-300, 301, 32) for dy in np.arange(-300, 301, 32) if dx * dx + dy * dy <= 300 * 300)
             f = -1.0 if tg == 'ct' else 1.0
-            lv = [(vis_at(x + f * d, y), x + f * d) for d in np.arange(0, 3000, 16)]
-            lane, lx = max(lv)
-            who = [CP.short(q['model']) for q in ctx.props if q['hi'][2] >= lane - 1 and q['lo'][0] - 64 <= lx <= q['hi'][0] + 64 and q['lo'][1] - 64 <= y <= q['hi'][1] + 64][:3]
-            rec = dict(name=n, spawn_z=round(sz), clear_r300=round(sz - near), lane_clear=round(sz - lane - NOSE), lane_top=[round(lx), round(y), round(lane)], lane_by=who)
+            ax0, ax1 = (x, x + 3000.0) if f > 0 else (x - 3000.0, x)
+            lane, lx, ly, who = -1e9, x, y, []
+            for d in np.arange(0, 3000, 16):
+                for o in np.arange(-hw, hw + 1, 16):
+                    v = vn_at(x + f * d, y + o)
+                    if v > lane: lane, lx, ly, who = v, x + f * d, y + o, None
+            for q in stock_trees:
+                if q['hi'][2] < lane or q['hi'][0] < ax0 or q['lo'][0] > ax1 or q['hi'][1] < y - hw or q['lo'][1] > y + hw: continue
+                W = tree_mesh(q)
+                if W is None:                                        # no mesh: the grid's disc stands in
+                    W = np.array([[q['o'][0], q['o'][1], q['hi'][2]]])
+                sel = (W[:, 0] >= ax0) & (W[:, 0] <= ax1) & (np.abs(W[:, 1] - y) <= hw)
+                if sel.any():
+                    k = np.argmax(np.where(sel, W[:, 2], -1e9))
+                    if W[k, 2] > lane: lane, lx, ly, who = float(W[k, 2]), float(W[k, 0]), float(W[k, 1]), [CP.short(q['model']) + ' %d' % q['i']]
+            if who is None:
+                who = [CP.short(q['model']) for q in ctx.props if q['hi'][2] >= lane - 1 and q['lo'][0] - 64 <= lx <= q['hi'][0] + 64 and q['lo'][1] - 64 <= ly <= q['hi'][1] + 64][:3]
+            rec = dict(name=n, spawn_z=round(sz), clear_r300=round(sz - near), lane_clear=round(sz - lane - NOSE), lane_top=[round(lx), round(ly), round(lane)], lane_by=who,
+                       lane_half_width=round(hw))
             out.append(rec)
             if rec['clear_r300'] < 0 or rec['lane_clear'] < 0: fails.append('%s air spawn blocked' % n)
     hi = V.max()
@@ -570,7 +777,7 @@ def t7_air(ctx):
     sky_box = None
     for m in ctx.sc['meshes']:
         pass
-    lines.append('air spawns: ' + ', '.join('%s z %d (r300 clear by %d, lane clear by %d; highest under the lane %s %s)' % (r['name'], r['spawn_z'], r['clear_r300'], r['lane_clear'], r['lane_top'], r['lane_by']) for r in out))
+    lines.append('air spawns: ' + ', '.join('%s z %d (r300 clear by %d, lane +-%d u clear by %d; highest under the lane %s %s)' % (r['name'], r['spawn_z'], r['clear_r300'], r['lane_half_width'], r['lane_clear'], r['lane_top'], r['lane_by']) for r in out))
     lines.append('tallest thing in the flight box: %.0f at (%.0f, %.0f); %d cells over z %d (the script\'s ground trace starts at %d)'
                  % (hi, X0 + (i + 0.5) * CELL, Y0 + (j + 0.5) * CELL, over, GROUND_TRACE_Z - 100, GROUND_TRACE_Z))
     if over: fails.append('geometry over the ground-trace start')
@@ -608,7 +815,11 @@ def t8_spawns(ctx):
         above = G.Z[:, c][np.isfinite(G.Z[:, c]) & (G.Z[:, c] > fz + CP.BODY0)]
         bl = G.b_lo[(G.b_cell == c) & (G.b_hi > fz + CP.BODY0) & (G.b_lo < fz + 200)]
         cand = list(above) + [max(b, fz + CP.BODY0) for b in bl]
-        return fz, (min(cand) - fz) if cand else 999.0
+        h = (min(cand) - fz) if cand else 999.0
+        # the grid's blockers are widened 12 u (a barrel beside the post reads as over it): ask the exact triangles whether a standing
+        # player box (32 x 32, from step height to 72 u over the floor) fits on the post
+        if h < 72 and np.isfinite(fz) and box_free(ctx, (x - 16.0, y - 16.0, fz + CP.BODY0), (x + 16.0, y + 16.0, fz + 72.0)): h = 72.0
+        return fz, h
     out = {}
     for label, pts, gap, yaw in (('lobby', [(e['cls'], e['o'][0], e['o'][1], e['o'][2], e['a'][1]) for e in ctx.ents if e['cls'] in ('info_player_terrorist', 'info_player_counterterrorist')], 32.0, None),
                                  ('t posts', [(e['name'], e['o'][0], e['o'][1], e['o'][2], e['a'][1]) for e in ctx.ents if re.fullmatch(r'trench_t_\d+', e['name'])], 40.0, 0.0),

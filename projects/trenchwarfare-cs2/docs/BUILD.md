@@ -25,7 +25,7 @@ tw34 build's, not yet run for this delivery; times are from tw34 (29 Oct) and mo
 
 | # | Step | Command | Time | Check |
 |---|---|---|---|---|
-| 1 | Chain + gate + dry run | from the project folder: `python -u tools/deploy_tw.py --chain` (watchdog) | about 15 min with the seams stage (12 Nov: chain 11 min incl. seams 2.5-4 min, gate 3 min) | `out/step9/chain.json` `ok`, every stage `guard: RESULT: PASS`; `out/step9/gate.json` `ok`; the dry-run table |
+| 1 | Chain + gate + dry run | from the project folder: `python -u tools/deploy_tw.py --chain` (watchdog) | about 18 min (13 Nov: 1,102 s with seams 3.6 min, world_3 1.4 min, gate 4 min) | `out/step9/chain.json` `ok`, every stage `guard: RESULT: PASS`; `out/step9/gate.json` `ok`; the dry-run table |
 | 2 | Deploy | `python -u tools/deploy_tw.py --apply` (runs the gate again) | gate 3-5 min, copy under a minute | `deployed: ...`; record `out/step9/deploy/mg_trenchwarfare_deploy_<stamp>.json` |
 | 3 | Compile assets | `build_maps.ps1 assets mg_trenchwarfare` (watchdog, from `C:\source1\cs2port`) | monsoon's first: 9 min; trench has fewer new files: a few minutes (estimate) | the log, not the wrapper: see "What to read" |
 | 4 | Force HUD / script / icon | `resourcecompiler -f -i` on the xml, css, js | under a minute | each `compiled`, `0 failed` |
@@ -44,9 +44,12 @@ python C:\source1\cs2port\autoport\watchdog.py --label "tw chain" --expect 1000 
 `out/step9/chain/0_user.vmap` (a copy of the user's map, checked against the base) -> `1_world_1` (`patch_world_1.py`, step 5) ->
 `2_models` (`patch_models.py`, step 6) -> `3_terrain` (`patch_terrain.py`, step 7) -> `4_seams` (`patch_seams.py`: ground caps over the
 slot behind every generated revetment top, parapet sheet edges lowered onto the terrain, the sap mouths' floor ramp, lintel and ground
-cap; [REVIEW_WORLD_2.md](REVIEW_WORLD_2.md) "Seams") -> `5_sounds` (`patch_sounds.py`, step 8: the sound entities; skipped with a note
-while the tool does not exist) -> `6_nav` (`patch_nav.py --estimate`, step 4) = the map that ships. (Before 12 Nov 22:00 the chain had no
-seams stage and the stages were `4_sounds`, `5_nav`; old files of those names in `out/step9/chain/` are stale.)
+cap; [REVIEW_WORLD_2.md](REVIEW_WORLD_2.md) "Seams") -> `5_world_3` (`patch_world_3.py`: the four CT air-lane poplars scaled down by the
+minimum, pit_t_2's shell rack turned along the breastwork, the poplar out of its crater pool, 56 crater pool rims set onto the ground;
+[REVIEW_WORLD_3.md](REVIEW_WORLD_3.md)) -> `6_sounds` (`patch_sounds.py`, step 8: the sound entities; skipped with a note while the tool
+does not exist) -> `7_nav` (`patch_nav.py --estimate --stage out/addon`, step 4: it reads the staged models like the gate, so the rebuilt
+shelter of step 13 is walkable to it) = the map that ships. (Before 13 Nov the stages after the seams were `5_sounds`, `6_nav`; before
+12 Nov 22:00 there was no seams stage and they were `4_sounds`, `5_nav`. Old files of those names in `out/step9/chain/` are stale.)
 Each stage: its input must be the byte-exact output of the stage before; its output goes through `tools/patch_guard.py --strict` (only
 the declared nodes changed). With no opt-in flags the outputs are compared with the earlier steps' own maps
 (`out/mg_trenchwarfare_patched.vmap`, `_models`, `_terrain`): the same bytes means the patches are deterministic.
@@ -70,8 +73,9 @@ python -u tools/deploy_tw.py --apply      # copy (held while Hammer / cs2 -tools
 ```
 
 - **List**: `out/step9/deploy_files.txt`, merged from `out/step5..8/deploy_files.txt`, `out/step10/deploy_files.txt` (CREDITS, Steam
-  description, licence files), `out/step11/deploy_files.txt` (weapon replacements) and `out/step12/deploy_files.txt` (licence-replacement
-  assets), each when staged (5-7 from the chain run's side copies, 8 and 10-12 as written, their `# GAME addon` section to the game addon). One line per file; a later step wins. Every step's map line is replaced by the
+  description, licence files), `out/step11/deploy_files.txt` (weapon replacements), `out/step13/deploy_files.txt` (the rebuilt shelter: 44-u legs, 11 hull
+  pieces, walkable dressing stations; [REVIEW_WORLD_3.md](REVIEW_WORLD_3.md) W2) and `out/step12/deploy_files.txt` (licence-replacement
+  assets), each when staged (5-7 from the chain run's side copies, 8 and 10-13 as written, their `# GAME addon` section to the game addon). One line per file; a later step wins. Every step's map line is replaced by the
   chain's final map. The radar files the chain re-made are in it. A model -> material check runs on it: a material a listed model names
   must be in the list, in the addon or in the game's pak01 (the `stock.ensure` lesson: 5 monsoon props failed for stock copies nobody wrote).
 - **Gate** on the final map (`out/step9/gate.json`, logs in `out/step9/gate/`): `check_world` and `check_play` may not have a failure the
@@ -123,6 +127,10 @@ python C:\source1\cs2port\autoport\watchdog.py --label "tw assets" --expect 600 
   --log C:\source1\cs2port\logs\mg_trenchwarfare_assets_watch.log --watch C:\source1\cs2port\logs\mg_trenchwarfare_assets.log -- ^
   powershell -NoProfile -ExecutionPolicy Bypass -File C:\source1\cs2port\build_maps.ps1 assets mg_trenchwarfare
 ```
+
+13 Nov (step 13): `models/tw/shelter/shelter.vmdl` and its SMDs changed (taller iron, 11 hull pieces): the asset pass compiles it; check
+`shelter.vmdl` in the log (`1 compiled`), or force it with `resourcecompiler -f -i` on it. Test-compiled in the scratch addon
+`tw_weapontest`: 1 compiled, 0 failed. Compile assets **before** the map: the map's physics and nav take the shelter's compiled hulls.
 
 New this delivery: the `_dyn` mortar and blocker twins (with idle / fire anims), the Canon de 75, LOD rewrites of 7 models,
 `tw_de_a_body.dmx` (the T player model **must** recompile: a player model that fails to load gave the giant first-person weapons),
@@ -194,3 +202,12 @@ Chain about 6 min (stages 14 + 13 + 82 + 96 s, guards 15-30 s each, radar 140 s)
 CRC32 `a109a678` (89.8 MB); gate PASS; 110 files, 148 MB to write (80 new, 28 replaced, 2 unchanged), 70 MB backed up first.
 Details, the per-folder table and the first, refused gate run in [BUILD_LOG_1.md](BUILD_LOG_1.md) "Before the compile".
 Re-run the chain whenever a patch tool, the user's map or step 8's radar inputs change; the dry run says when the radar is stale.
+
+## Dry run of 13 Nov 2026 (REVIEW_WORLD_3)
+
+Chain 1,102 s with the gate and the dry run (stages 18 + 17 + 81 + 218 + 81 + 45 + 120 s, a guard of 19-28 s each, then the radar).
+The final map `out/step9/chain/7_nav.vmap` is CRC32 `56bff078` (96.9 MB). Gate **PASS**. check_play fails only on `sightlines`
+(REVIEW_WORLD_3 W9, a design call; the baseline has it). Nav test 4,394 areas.
+Dry run: 203 files, 98.3 MB to write (10 new, 7 changed, 186 the same). It changes the map, the 15 rebuilt shelter files and the radar
+png. After an `--apply`: compile the assets first (the shelter), then the map, then run `tools/navcheck.py` on the new nav (the
+dressing stations should be on the nav once the shelter's new hulls are compiled).

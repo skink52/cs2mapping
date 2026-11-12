@@ -32,8 +32,12 @@ of the graph ("open" state) and added back as extra blocked nodes ("closed" stat
  2 sightlines    point sets that must not see each other (Adapter.no_sight); hard = solid geometry only
  3 cover         head-height (>= 62 u) cover pieces within a radius of each cover site (Adapter.cover_sites), crouch-height listed
  6 clipping      props buried (> 35 % of their bounds under the ground / inside world geometry), floating (> 6 u over any support),
-                 tree crowns through buildings, non-solid dressing inside solid props, props under water that are not water props
- 7 water         sheet edges above the ground (visible edge), sheets overlapping at one height (z-fight), deep walkable spots
+                 tree crowns through buildings, non-solid dressing inside solid props, props under water that are not water props (a
+                 prop whose top is under the terrain at its own spot is in a room below the map, not in the pool over it). Props the
+                 adapter calls the map author's own (Adapter.user_owned) are listed apart and never fail the check
+ 7 water         sheet edges above the ground (visible edge; not counted where the lip lies inside a solid prop's hull standing in
+                 the edge, e.g. a revetment, or on a sheet Adapter.user_owned names: listed), sheets overlapping at one height
+                 (z-fight), deep walkable spots
  8 terrain       path slopes (Adapter.paths), ground through walk-in floors (Adapter.floors), terrain holes with nothing under them
  9 nav           WALKABLESEED boxes on walkable ground, NONAV boxes over no protected point (Adapter.nav_protect), ladder volumes
                  with walkable ground at the bottom and the top, and the walkable area the seeds flood (an estimate of the nav size).
@@ -153,6 +157,7 @@ class Adapter:
     def no_sight(self, ctx): return []
     def cover_sites(self, ctx): return []
     def clip_tag(self, p): return None
+    def user_owned(self, p): return False       # True: a prop the project never changes (the map author's own): check 6 lists it, never fails on it
     def paths(self, ctx): return []
     def nav_protect(self, ctx): return []
     # ---- nav estimate and gate (check 9; all optional, see the docstring)
@@ -1200,7 +1205,7 @@ def run(path, A, only=None, out_json=None, verbose=False, plot=None, box=None, n
 
     # ---------------------------------------------------------------- 6 prop clipping
     if want(6):
-        buried = []; floating = []; inwater = []; crown = []; inside = []; by_design = Counter()
+        buried = []; floating = []; inwater = []; crown = []; inside = []; by_design = Counter(); user_list = []
         bld = [p for p in props if has(p['model'], A.buildings) and p['solid']] if A.buildings else []
         solids = [p for p in props if p['solid'] and p['hull'] == 'tris' and not p['removable']]
         sgrid = defaultdict(list)
@@ -1240,16 +1245,22 @@ def run(path, A, only=None, out_json=None, verbose=False, plot=None, box=None, n
                 fr2, g2 = _refine(G, sc, props, sgrid, p, A)
                 fr = [fr2]; gaps = [g2]
             rec = (round(float(np.mean(fr)), 2), nm, round(p['o'][0]), round(p['o'][1]), round(p['o'][2]), p['i'], p['vg'])
+            own = A.user_owned(p)
             if np.mean(fr) > 0.35 and not fol and h >= A.bury_min_h:
                 if t and t not in ('float',): by_design['buried ' + t] += 1
+                elif own: user_list.append(('buried',) + rec)
                 else: buried.append(rec)
             if min(gaps) > 6.0:
                 rec = (round(min(gaps), 1),) + rec[1:]
                 if t and t not in ('bury',): by_design['floating ' + t] += 1
+                elif own: user_list.append(('floating',) + rec)
                 else: floating.append(rec)
             c = cell_of(p['o'][0], p['o'][1])
-            if 0 <= c < NC and G.water[c] > -1e8 and G.terr[c] > -1e8 and G.water[c] - max(G.terr[c], p['o'][2]) > 8.0 and not has(p['model'], A.water_ok) and t != 'water':
-                inwater.append((round(float(G.water[c] - G.terr[c]), 1), nm, round(p['o'][0]), round(p['o'][1]), round(p['o'][2]), p['i'], p['vg']))
+            # a prop whose top is under the ground at its own spot is in a room below the map (a gallery), not in the pool over it
+            under = 0 <= c < NC and G.terr[c] > -1e8 and zhi < G.terr[c] - 1.0
+            if 0 <= c < NC and G.water[c] > -1e8 and G.terr[c] > -1e8 and G.water[c] - max(G.terr[c], p['o'][2]) > 8.0 and not has(p['model'], A.water_ok) and t != 'water' and not under:
+                (user_list.append(('under water', round(float(G.water[c] - G.terr[c]), 1), nm, round(p['o'][0]), round(p['o'][1]), round(p['o'][2]), p['i'], p['vg'])) if own else
+                 inwater.append((round(float(G.water[c] - G.terr[c]), 1), nm, round(p['o'][0]), round(p['o'][1]), round(p['o'][2]), p['i'], p['vg'])))
             if bld and has(p['model'], A.trees) and '_roots' not in p['model']:
                 ex = 0.3 * max(p['mhi'][0] - p['mlo'][0], p['mhi'][1] - p['mlo'][1]) * p['s'][0]; cz0 = zlo + 0.4 * h
                 for b in bld:
@@ -1262,16 +1273,22 @@ def run(path, A, only=None, out_json=None, verbose=False, plot=None, box=None, n
                     if b is p or b['hi'][2] < p['o'][2] + 6 or b['lo'][2] > p['o'][2] + 0.5 * h: continue
                     if not (b['lo'][0] < p['o'][0] < b['hi'][0] and b['lo'][1] < p['o'][1] < b['hi'][1]): continue
                     if _in_hull(sc, hull_idx, b['_n'], p['o'][0], p['o'][1], p['o'][2] + min(10.0, 0.4 * h)):
-                        inside.append((nm, short(b['model']), round(p['o'][0]), round(p['o'][1]), round(p['o'][2]), p['i'], p['vg'])); break
+                        (user_list.append(('inside ' + short(b['model']), nm, round(p['o'][0]), round(p['o'][1]), round(p['o'][2]), p['i'], p['vg'])) if A.user_owned(p) else
+                         inside.append((nm, short(b['model']), round(p['o'][0]), round(p['o'][1]), round(p['o'][2]), p['i'], p['vg']))); break
         buried.sort(reverse=True); floating.sort(reverse=True)
         res['6'] = dict(buried=len(buried), floating=len(floating), in_water=len(inwater), crown_in_building=len(crown), dressing_inside_solid=len(inside),
-                        by_design=dict(by_design), buried_list=buried[:120], floating_list=floating[:120], in_water_list=inwater[:60], crown_list=crown[:40], inside_list=inside[:80])
+                        by_design=dict(by_design), buried_list=buried[:120], floating_list=floating[:120], in_water_list=inwater[:60], crown_list=crown[:40], inside_list=inside[:80],
+                        user_owned=len(user_list), user_list=user_list[:120])
         print('6 clipping: %d buried > 35 %%, %d floating > 6 u, %d under water, %d tree crowns through buildings, %d dressing props inside solids; by design (adapter tags): %s'
               % (len(buried), len(floating), len(inwater), len(crown), len(inside), dict(by_design) or 'none'))
         for label, lst in (('buried', buried), ('floating', floating), ('under water', inwater), ('crown', crown), ('inside', inside)):
             cnt = Counter(b[1] if label in ('buried', 'floating', 'under water') else b[0] + ' in ' + b[1] for b in lst)
             if cnt: print('    %s: %s' % (label, ', '.join('%s x%d' % kv for kv in cnt.most_common(10))))
             for b in lst[:6 if not verbose else 30]: print('       ', b)
+        if user_list:
+            cnt = Counter('%s %s' % (b[0], b[2]) for b in user_list)
+            print('    the map author\'s own props (listed, never changed, not counted): %s' % ', '.join('%s x%d' % kv for kv in cnt.most_common(10)))
+            for b in user_list[:6 if not verbose else 40]: print('       ', b)
         if buried or floating or inwater or crown or inside: fails.append('clipping')
         lap('6')
 
@@ -1285,7 +1302,20 @@ def run(path, A, only=None, out_json=None, verbose=False, plot=None, box=None, n
             if nz_ <= 1e-6: continue                        # the sheet's top only
             for k in range(3):
                 a = tuple(np.round(t[k], 1)); b = tuple(np.round(t[(k + 1) % 3], 1)); key = (min(a, b), max(a, b)); edges[key] += 1; eg[key] = G.T_src[ti]
-        exposed = []; npts = 0
+        exposed = []; npts = 0; hidden = 0; user_lips = []
+        # a lip that lies inside a solid prop's hull (a revetment or a fire step standing in the pool's edge) cannot be seen
+        o_h = np.argsort(sc['srcs'], kind='stable'); hidx = (o_h, sc['srcs'][o_h])
+        for n_, p in enumerate(props): p['_n'] = n_
+        wgrid = defaultdict(list)
+        for p in props:
+            if p['solid'] and p['hull'] == 'tris':
+                for i in range(int(p['lo'][0] // 256), int(p['hi'][0] // 256) + 1):
+                    for j in range(int(p['lo'][1] // 256), int(p['hi'][1] // 256) + 1): wgrid[(i, j)].append(p)
+        def lip_hidden(x, y, z, g):
+            for p in wgrid.get((int(x // 256), int(y // 256)), ()):
+                if not (p['lo'][0] - 1 <= x <= p['hi'][0] + 1 and p['lo'][1] - 1 <= y <= p['hi'][1] + 1 and p['lo'][2] - 1 <= z and p['hi'][2] >= g): continue
+                if _in_hull(sc, hidx, p['_n'], x, y, (z + g) / 2.0) and _in_hull(sc, hidx, p['_n'], x, y, z - 0.3): return True
+            return False
         for (a, b), n in edges.items():
             if n != 1: continue
             ln = math.hypot(b[0] - a[0], b[1] - a[1]); m_ = max(1, int(ln // 16))
@@ -1303,6 +1333,8 @@ def run(path, A, only=None, out_json=None, verbose=False, plot=None, box=None, n
                         if 0 <= cc < NC:
                             mm = G.w_cell == cc
                             if mm.any() and (np.abs(G.w_z[mm] - z) < 2).any() and (G.w_src[mm] != eg[(a, b)]).any(): cont = True; break
+                    if not cont and lip_hidden(x, y, z, g): hidden += 1; continue
+                    if not cont and A.user_owned(sc['meshes'][int(-1 - eg[(a, b)])]): user_lips.append((round(x), round(y), round(z, 1), round(float(z - g), 1), int(-1 - eg[(a, b)]))); continue
                     if not cont: exposed.append((round(x), round(y), round(z, 1), round(float(z - g), 1), int(-1 - eg[(a, b)])))
         o = np.lexsort((G.w_z, G.w_cell)); c = G.w_cell[o]; z = G.w_z[o]; s = G.w_src[o]
         zf = (c[1:] == c[:-1]) & (np.abs(z[1:] - z[:-1]) < 1.5) & (s[1:] != s[:-1])
@@ -1311,11 +1343,13 @@ def run(path, A, only=None, out_json=None, verbose=False, plot=None, box=None, n
         deep = int(((G.water - G.terr > 60.0) & (G.terr > -1e8) & (Rw.reshape(G.K, NC).any(0) if Rw is not None else True)).sum())
         ex_cl = _cluster([(e[0], e[1]) for e in exposed], 200.0)
         res['7'] = dict(edge_points=npts, exposed_points=len(exposed), exposed_places=len(ex_cl), zfight_cells=len(zcells), deep_walkable_cells=deep,
-                        exposed_list=[dict(x=round(cx), y=round(cy), n=n) for cx, cy, n in ex_cl[:40]], exposed_points_list=exposed[:80],
+                        hidden_in_props=hidden, user_owned_points=len(user_lips), user_owned_list=user_lips[:40],
+                        exposed_list=[dict(x=round(cx), y=round(cy), n=n) for cx, cy, n in ex_cl[:40]], exposed_points_list=exposed[:200],
                         zfight_list=[[round(v) for v in cell_xy(cc)] for cc in zcells[:20]])
-        print('7 water: %d sheet edge points, %d above the ground in %d places; %d cells where two sheets overlap at one height; %d walkable cells deeper than 60 u'
-              % (npts, len(exposed), len(ex_cl), len(zcells), deep))
+        print('7 water: %d sheet edge points, %d above the ground in %d places (%d more inside a solid prop standing in the edge); %d cells where two sheets overlap at one height; %d walkable cells deeper than 60 u'
+              % (npts, len(exposed), len(ex_cl), hidden, len(zcells), deep))
         for cx, cy, n in ex_cl[:10]: print('    exposed edge near (%d, %d): %d points' % (cx, cy, n))
+        if user_lips: print('    the map author\'s own sheets (listed, never changed, not counted): %d points, e.g. %s' % (len(user_lips), user_lips[:3]))
         for cc in zcells[:6]: print('    z-fight at', [round(v) for v in cell_xy(cc)])
         if exposed or zcells: fails.append('water')
         lap('7')

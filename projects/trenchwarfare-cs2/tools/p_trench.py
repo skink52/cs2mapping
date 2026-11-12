@@ -182,29 +182,56 @@ def tunnel_set(lod=0, seed=0, width=80.0, height=92.0):
     return m
 
 
-def shelter(lod=0, seed=0):
-    """elephant-iron shelter: corrugated half-arch, length along x (96), opening at -x, earth/sandbags over"""
+SHELTER_R0, SHELTER_L, SHELTER_X = 46.0, 96.0, (-48.0, 58.0)
+# Straight corrugated legs under the arch (13 Nov 2026, docs/REVIEW_WORLD_3.md W2): the plain half-arch was 42 u high inside, so the
+# dressing station under it could not be entered even crouched (54 u) and the shelter collided as one solid mound. With 44-u legs the
+# inside is 85.8 u at the crown and 83 u across a 32-u player box: room to stand on the stretchers' edges (the aisle between the two
+# stretchers is 30 u, so a player steps 7-8 u up onto one) under 72 u. The hull is 11 convex pieces round the free inside.
+SHELTER_LEG = 44.0
+
+
+def _shelter_profile(R, leg, nth, nleg):
+    """the iron's cross-section from the right leg's foot, over the arch, down the left leg: (y, z, arc length from the right spring)"""
+    out = []
+    if leg > 0:
+        for z in np.linspace(0.0, leg, nleg + 1)[:-1]: out.append((R, z, z - leg))
+    th = np.linspace(0, np.pi, nth + 1)
+    for t in th: out.append((R * np.cos(t), leg + R * np.sin(t) * 0.92, t * R))
+    if leg > 0:
+        for z in np.linspace(leg, 0.0, nleg + 1)[1:]: out.append((-R, z, np.pi * R + (leg - z)))
+    return np.array(out)
+
+
+def shelter(lod=0, seed=0, leg=None):
+    """elephant-iron shelter: corrugated arch on straight legs, length along x (96), opening at -x, earth/sandbags over"""
     import p_sandbag
+    leg = SHELTER_LEG if leg is None else leg
     rng = np.random.RandomState(seed)
     m = geo.Mesh()
-    R0 = 46.0; L = 96.0
+    R0 = SHELTER_R0; L = SHELTER_L
     nth = 24 if lod == 0 else 8
-    th = np.linspace(0, np.pi, nth + 1)
+    nleg = int(np.ceil(leg / 6.5)) if lod == 0 else max(1, int(np.ceil(leg / 20.0)))
+    prof = _shelter_profile(1.0, leg / R0, nth, nleg)          # unit profile: y and z scale with the corrugated radius below
+    ccz = leg * 0.5                                             # the arch's own centre height (its inside faces turn toward it)
     for k in range(3):
         x0 = -L / 2 + k * 31
         xs = np.linspace(x0, x0 + 34, (14 if lod == 0 else 4) + 1)
-        TH, X = np.meshgrid(th, xs, indexing='ij')
-        rr = R0 + 0.55 * np.sin(TH * R0 / 2.6 * 2) * 0 + 0.55 * np.sin(X * 2 * np.pi / 2.6) * 0
-        # corrugations run around the arch (ridges along the arc)
-        corr = 0.55 * np.sin(TH * R0 * 2 * np.pi / 2.6 / 1.0)
-        P = np.stack([X, (R0 + corr) * np.cos(TH), (R0 + corr) * np.sin(TH) * 0.92], -1)
+        S_, X = np.meshgrid(prof[:, 2], xs, indexing='ij')
+        # corrugations run around the arch (ridges along the arc), on into the legs
+        corr = 0.55 * np.sin(S_ * R0 * 2 * np.pi / 2.6 / 1.0)
+        on_leg = np.abs(prof[:, 0])[:, None] >= 0.999999
+        Ycs = np.where(on_leg, np.sign(prof[:, 0])[:, None] * (R0 + corr), (R0 + corr) * prof[:, 0][:, None])
+        th_ = np.clip(prof[:, 2], 0, np.pi)[:, None]
+        Zcs = np.where(on_leg, prof[:, 1][:, None] * R0, leg + (R0 + corr) * np.sin(th_) * 0.92)
+        P = np.stack([X, Ycs, Zcs], -1)
         inner = geo.surface(P, 'galv', geo.frame(seed=seed * 7 + k))
-        if (inner.face_normals() * np.stack([np.zeros(len(inner.F)), -inner.V[inner.F].mean(1)[:, 1], -inner.V[inner.F].mean(1)[:, 2]], 1)).sum(1).mean() < 0:
+        cen_ = inner.V[inner.F].mean(1)
+        if (inner.face_normals() * np.stack([np.zeros(len(inner.F)), -cen_[:, 1], -(cen_[:, 2] - ccz)], 1)).sum(1).mean() < 0:
             inner.F = inner.F[:, ::-1]
         inner.recompute_normals(angle=89)
         m.add(inner)
         outer = inner.copy()
-        outer.V = outer.V.copy(); outer.V[:, 1:] *= 1 + 0.5 / R0
+        outer.V = outer.V.copy(); outer.V[:, 1] *= 1 + 0.5 / R0; outer.V[:, 2] = ccz + (outer.V[:, 2] - ccz) * (1 + 0.5 / R0)
         outer.F = outer.F[:, ::-1].copy(); outer.recompute_normals(angle=89)
         m.add(outer)
     # earth mound over the arch, closed at the mouth and the back
@@ -212,20 +239,28 @@ def shelter(lod=0, seed=0):
     x_front, x_back = -L / 2, L / 2 + 10
     xs = np.linspace(x_front, x_back, nx + 1); a = np.linspace(-0.25, np.pi + 0.25, na + 1)
     A, X = np.meshgrid(a, xs, indexing='ij')
+    def lift(A):
+        """the legs raise the mound over the arch; its flanks still meet the floor at the ends of the section"""
+        s = lambda t: np.clip(t, 0, 1) ** 2 * (3 - 2 * np.clip(t, 0, 1))
+        return leg * s((A + 0.25) / 0.5) * s((np.pi + 0.25 - A) / 0.5)
     def mound_pt(X, A):
         Rm = R0 + 14 + 6 * fbm(X * 0.05, A * 2, 3, 3, seed=9)
-        return np.stack([X, Rm * np.cos(A) * 1.25, np.maximum(Rm * np.sin(A) * 0.9, -3)], -1)
+        return np.stack([X, Rm * np.cos(A) * 1.25, np.maximum(Rm * np.sin(A) * 0.9, -3) + lift(A)], -1)
     P = mound_pt(X, A)
     mound = geo.surface(P, 'earth', geo.frame(seed=seed))
     c = mound.V[mound.F].mean(1)
     if (mound.face_normals()[:, 2] * np.sign(c[:, 2] + 1e-3)).mean() < 0: mound.F = mound.F[:, ::-1]
     mound.recompute_normals()
     m.add(mound)
-    # mouth: earth face between the arch edge and the mound, facing -x
+    # mouth: earth face between the iron's edge (legs and arch) and the mound, facing -x
     th = np.linspace(-0.25, np.pi + 0.25, na + 1)
     outer_e = mound_pt(np.full(th.shape, x_front), th)
-    thc = np.clip(th, 0, np.pi)
-    inner_e = np.stack([np.full(th.shape, x_front + 0.3), (R0 + 0.6) * np.cos(thc), np.maximum((R0 + 0.6) * np.sin(thc) * 0.92, -3)], -1)
+    lr = leg / R0                                            # the legs in units of the arch angle
+    t = th * (np.pi + 2 * lr) / np.pi - lr                   # [0, pi] spread over leg, arch, leg
+    Ri = R0 + 0.6
+    iy = np.where(t < 0, Ri, np.where(t > np.pi, -Ri, Ri * np.cos(np.clip(t, 0, np.pi))))
+    iz = np.where(t < 0, leg + t * R0, np.where(t > np.pi, leg - (t - np.pi) * R0, leg + Ri * np.sin(np.clip(t, 0, np.pi)) * 0.92))
+    inner_e = np.stack([np.full(th.shape, x_front + 0.3), iy, np.maximum(iz, -3)], -1)
     inner_e[:, 2] = np.where((th < 0) | (th > np.pi), -3, inner_e[:, 2])
     cap = geo.surface(np.stack([inner_e, outer_e], 1), 'earth', geo.frame(seed=seed + 5))
     if cap.face_normals()[:, 0].mean() > 0: cap.F = cap.F[:, ::-1]
@@ -238,17 +273,35 @@ def shelter(lod=0, seed=0):
     capb.recompute_normals(angle=89); m.add(capb)
     # back wall of planks
     z = 0
-    while z < 42:
+    while z < leg + 42:
         w = rng.uniform(7, 8.5)
-        half = np.sqrt(max(R0 ** 2 - (z / 0.92) ** 2, 1))
+        half = R0 if z < leg else np.sqrt(max(R0 ** 2 - ((z - leg) / 0.92) ** 2, 1))
         m.add(geo.plank(2 * half + 4, w, 1.3, mat='wood', seg=2 if lod == 0 else 1, div=(6 if lod == 0 else 1, 1, 1), seed=seed + int(z),
                         R=geo.euler(90, 0, 90), t=(L / 2 + 2, 0, z + w / 2), tone=rng.rand()))
         z += w + 0.3
     # sandbag header over the mouth, bedded into the mound
     w, h = p_sandbag.wall(length=64, courses=2, lod=1 if lod else 0, seed=seed + 40, top=False)
-    w.transform(geo.euler(90, 0, 0), (-L / 2 + 23, 0, R0 * 0.92 + 9))
+    w.transform(geo.euler(90, 0, 0), (-L / 2 + 23, 0, R0 * 0.92 + 9 + leg))
     m.add(w)
     return m
+
+
+def shelter_hulls(leg=None, thick=14.0, nseg=8):
+    """convex collision pieces that leave the inside free: a slab per leg, nseg arch-shell sectors, the back wall. Each is the convex hull
+    of its points (PhysicsHullFile, SingleHull). The shell's inside face is the iron's trough (R0 - 0.6); a sector's chord stands at
+    most R0 (1 - cos(pi / 2 nseg)) = 0.9 u inside the arc."""
+    leg = SHELTER_LEG if leg is None else leg
+    R0 = SHELTER_R0; xf, xb = SHELTER_X; ri, ro = R0 - 0.6, R0 - 0.6 + thick
+    out = []
+    for s in (-1, 1):
+        out.append(np.array([[x, y, z] for x in (xf, xb) for y in (s * ri, s * ro) for z in (-3.0, leg)]))
+    th = np.linspace(0, np.pi, nseg + 1)
+    for a, b in zip(th[:-1], th[1:]):
+        out.append(np.array([[x, r * np.cos(t), leg + r * np.sin(t) * 0.92] for x in (xf, xb) for r in (ri, ro) for t in (a, b)]))
+    xw = SHELTER_L / 2 + 2 - 0.65                              # the back planks' front face
+    sec = [(ri, -3.0), (ri, leg)] + [(ri * np.cos(t), leg + ri * np.sin(t) * 0.92) for t in np.linspace(0, np.pi, 13)] + [(-ri, leg), (-ri, -3.0)]
+    out.append(np.array([[x, y, z] for x in (xw, xb) for (y, z) in sec]))
+    return out
 
 
 def specs():
@@ -282,6 +335,5 @@ def specs():
                              hulls=[np.array([[x, y, z] for x in (-4, 4) for y in (s * 31, s * 40) for z in (0, 88)]) for s in (-1, 1)])
     out['shelter'] = dict(lods=[shelter(0, 4), shelter(1, 4)], size=2048, ground=0.0, metal=True,
                           shaders={'wood': S.wood, 'earth': S.earth, 'galv': S.galvanised, 'burlap': S.burlap}, surface='dirt',
-                          hulls=[np.array([[x, 58 * np.cos(a) * 1.25, max(58 * np.sin(a) * 0.9, -3)] for x in (-48, 58)
-                                           for a in np.linspace(-0.25, np.pi + 0.25, 13)])])      # the earth mound (the arch is too low to stand in)
+                          hulls=shelter_hulls())      # 11 convex pieces round a walkable inside (was one hull over the mound: the old arch was too low to stand in)
     return out

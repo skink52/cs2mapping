@@ -32,6 +32,12 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   0 out of memory. Logs copied to `out/step9/`. `docs/BUILD_LOG_1.md` filled: nav **10,269 areas** (tw34 44,160; target < 5,000;
   the ~1,470 estimate was 7x off), 24,718 meshes / 1.40 M charts at 2048, vpk 519.9 MB. 4 stale models (wire, ladder) recompiled;
   check_world now fails only on the user's duplicate info_map_parameters.
+- 13 Nov ~02:00: world pass 3 (docs/REVIEW_WORLD_3.md): dressing-station shelter rebuilt in `tools/p_trench.py` (85.8 u crown,
+  11 convex hulls; staged `out/step13/`), new chain stage `tools/patch_world_3.py` after seams (shell rack turned, 4 CT poplars
+  scaled 1.6-7.6 % to clear plane lanes, a poplar moved out of a pool, 56 crater-pool rims reset / 38 water levels lowered).
+  Checker artefacts fixed (T2 fire steps, T8, water inside revetments, wing-span lanes). check_play clean except W9 sightlines
+  (CT crews ~4x more exposed at 4,900-6,600 u: proposal one more sandbag course on the pit breastworks - user's call). Revetment
+  121040 has Hammer's float signature: treated as the user's, listed. Nav 4,394. Deploy: assets before the map.
 - 13 Nov 00:27: **deployed + compiled** seams, sap portal fix, Gewehr/Luger/Lee-Enfield replacements, template wavs, full credits.
   Assets 0 failed; map compile 4 OK 39.4 min, 0 errors, 0 entity DELETED, nav 4,397; check_world clean. Old CC BY-ND Luger files
   moved out of the addon to `C:\source1\gmod_assets\trenchwarfare\retired\`. **Current build; level: compiled, not loaded in CS2.**
