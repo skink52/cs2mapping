@@ -32,6 +32,12 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   0 out of memory. Logs copied to `out/step9/`. `docs/BUILD_LOG_1.md` filled: nav **10,269 areas** (tw34 44,160; target < 5,000;
   the ~1,470 estimate was 7x off), 24,718 meshes / 1.40 M charts at 2048, vpk 519.9 MB. 4 stale models (wire, ladder) recompiled;
   check_world now fails only on the user's duplicate info_map_parameters.
+- 13 Nov ~00:00: seams fixed offline: `tools/check_seams.py` (selftest on planted gaps) + guarded stage `tools/patch_seams.py`
+  (chain world_1 -> models -> terrain -> seams -> sounds -> nav). Generated seams 164 -> 0 (siding_top 100: an 11-u slot behind every
+  revetment top; holes 9; standing-eye cracks 55); 8 user-owned niche cracks listed, not changed. Sap: floor ramp, lintel, ground
+  cap built; entry stays crouched (the user's upper benches set 57-62 u head room); all 23 benches unmoved. Nav 4,397. Gate PASS,
+  dry run 188 files. For the user: generated revetment 121040 at (-1892, 144) faces backwards (maybe a Hammer edit; not rotated).
+  Follow-up: patch_terrain gives a different output CRC per run from the same input (guard passes) - make it deterministic.
 - 12 Nov 23:22: licence items (step 12, staged, not deployed): Lee-Enfield was TurboSquid 1907112 (editorial-only licence) ->
   replaced by "Lee Enfield MKIII" by Moony_State / Giuliano.Sgroi (CC BY 4.0, Sketchfab f6a2160daf134071a84e3cae5f831875; 46.5 u vs
   45.9 old). Mondragón confirmed DilanMendozaHer CC BY 4.0 (2cfae8885fe747feaeb6068133f5fb38). Canon de 75 confirmed

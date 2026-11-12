@@ -141,3 +141,87 @@ points of both sides in one piece (2,408 areas) with the trenches; woods in thei
 from nav: `heal_*_3` (66-67 u; inside the shelter hulls, W2, not new). Dry run: 117 files, **2 change**: `maps/mg_trenchwarfare.vmap`
 (86.8 MB, replaces what the 16:33 deploy wrote, backed up first) and `maps/scripts/mg_trenchwarfare.js` (the bot area points); 115 the
 same. Not done: `--apply` and the final compile.
+
+## Seams (12 Nov 2026, late: the user's report)
+
+**The user:** "fix the sap seam. Some of the seams from the top of the wood siding to the ground in no man's land / between trenches and
+mortars aren't connected too: have a look for all of the instances." Offline and **simulated** like the rest of this file; the renders
+below are our software renderer (`tools/render.py`, back faces culled as the engine does), not CS2.
+
+**Cause.** The trench walls are props (`revet_*`, a 3-u one-sided earth backing at local y 3.2 under a plank or iron face, top at local
+z 100); the ground over the banks is the 16-u parapet / parados sheet, which the generator only lays from where its grid is >= 2 layout
+units from the wall, i.e. **16 u behind the wall face**, while the terrain under it is carved down to the trench floor up to 40 u behind
+the wall. So behind every wall whose top had no sandbags (support trenches, communication trenches, sap, dugout niches, fire-trench corners)
+there was an **11-u slot, 72 u deep** between the top of the siding and the ground, and through it the one-sided earth backing showed
+the trench from behind (the "unconnected" seam the user saw toward the mortar pits). Separately, the parapet sheets' **outer edges stood
+1-5 u over the terrain** they end on (the bank profile ends at -2.5 + noise, the terrain under it at -4): a slit you see under from
+low angles all along both fronts (no man's land) and the rear banks (the mortar side). At each **sap mouth** the trench floor (terrain) ended
+12 u above the tunnel floor with no riser, and over the mouth the terrain was cut down to the tunnel roof with 14-16 u of nothing between
+the roof's portal edge and the parapet (the user's benches bridged both).
+
+**Tools.** `tools/check_seams.py` (read only; `--selftest` plants an 11-u slot behind a revetment, a flush revetment, a 32-u bank hole, a
+3-u crack between sheets, a welded pair, a 2.5-u lip and a sheet edge buried 1 u under the terrain: all found or passed as built, and
+measured within 1 u; the slot, crack and lip are also seen by its sightline rays) and `tools/patch_seams.py` (a guarded stage of the
+chain, world_1 -> models -> terrain -> **seams** -> sounds -> nav). check_seams classes: `siding_top` (a profile every 4 u along every
+revetment top on a 1-u raster of the real geometry: meshes from the vmap, props from their LOD0 SMDs), `hole` (any bank cell 0.5-112 u
+behind a wall 8 u under the bank base), `mesh_crack` (open edges of the visible world meshes within 0.05-16 u of another mesh, not
+welded, not buried; counted only when a standing eye sees into it: back-face-culled rays from 4 low eyes). Owner: generated (tw_gen /
+tw_nav) or user (tw_user / ungrouped; a crack seen only past the top of one of the user's revetments is the user's). It is in the deploy
+gate (`check_seams <final> --no-sight` must say `RESULT: clean`).
+
+**The patch (generated geometry only; no user object changed).**
+- Siding caps: a ground strip from 1 u behind each revetment face, 1 u under its top, to the parapet sheet's inner edge, welded to the
+  sheet's boundary vertices (same positions), one cap mesh per sheet (16, 4,555 faces), the sheet's material, paint and planar UV. It
+  follows the siding's own frame (two revetments at the sap end stand 4-8 u off the wall line). Where two tops of different height meet
+  (dog-legs, traverses) a step face closes the opening under the higher cap edge; sheet vertices pinched against a wall corner (178) are
+  raised to the cap edge and welded. Behind the user's static, unnamed revetments (the dressing-station niches; 158 strips) the cap was
+  also laid: it is new generated ground, the revetments are untouched. Not behind removable blockers (the user's `undergroundopen`
+  planks, the woods blockers).
+- Sheet lips: 2,964 outer-edge vertices of the 16 parapet sheets lowered 0.3 u under the terrain (exact terrain triangles; every sheet
+  sharing a vertex alike). Terrain tiles are not touched at all, so step 7's protect mask (trench floors, posts, pits, spawns, runways)
+  stays exact by construction.
+- Plugs: what the caps left (wall ends, corners, the niche mouths; 24 + 26 holes) gets a 2-u heightfield patch 0.4 u under the ground
+  meshes around it, its outer ring 6 u lower where it overlaps ground so its edge lies under it; never over the dug trench or on a prop.
+- Sap mouths (REVIEW_WORLD_2's proposal): the tunnel floor rows at the portal ramp up to the trench floor (portal row welded onto the
+  terrain's floor edge, then 3/4, 1/2, 1/4 of the 11.6-12.7 u rise: the riser is gone); a lintel face from the roof's portal edge up to the
+  ground; a 4-u ground cap over the terrain cut (|x| 2080-2208, y -2880..-2816) 0.3 u over the parapet, coming out from under it at its
+  rim. **The roof is not lifted: entry stays crouched.** The user's upper benches (70-81) set the head room (57-62 u over the steps), and
+  T9 on the final map still finds the standing box blocked and the crouched box through both ways on both sides, so lifting the
+  generated roof or the portal timber would gain nothing while they stand.
+- The user's 23 sap benches (24 placed, the exact duplicate 72 dropped by `--user-w5`) are where they were. Against the new geometry (`out/seams/benches.json`, share of each bench inside the earth
+  before -> after): the upper row is now 54-92 % inside the new ground cap (8-42 % before; their lower edges still hang 3-5 u under the
+  tunnel roof), the low row 36-74 % bedded in the ramp (6-54 % before; tops 3-6 u proud of the new floor). None is fully buried, none floats.
+- Left for the user: generated revetment **121040** (`revet_iron_128`, T comm trench at (-1892, 144)) faces the earth: its open side
+  is toward the trench (a Hammer edit? the generator mirrors it the other way); not rotated. The two `revet_planks_broken_dyn` blockers
+  at the sap portals face the earth too (by design: they go at the unlock).
+
+**Results (final chain `out/step9/chain/6_nav.vmap`, CRC32 72f14e1d, 97,148,441 B, `out/step9/chain.json`; before = the 19:37 chain `5_nav.vmap`, 784ddc7b).**
+
+| check_seams (same code both sides) | before: generated / user | after: generated / user |
+|---|---|---|
+| siding_top (open stretches; open length) | 100 / 13 (32,632 u generated, 1,376 u user) | **0 / 0** (0 u) |
+| hole | 9 / 1 | **0 / 0** |
+| mesh_crack seen by a standing eye | 55 / 0 (+13 nobody sees, 2 at the reversed revetment) | **0** / 8 (+36 nobody sees, 4 at the reversed revetment) |
+
+The 8 user-owned cracks after are all at the dressing-station niches the user lined with `revet_planks_a_128` / `revet_iron_128`
+(tw_user) set 8-12 u off the generator's wall line: a 2-15 u step between the new ground and the back / front of those revetments, seen
+only past their tops from inside the niche. They are the user's walls; moving them onto the wall line (or saying so) would close them.
+`out/seams/check_before_final.json`, `check_after_final.json`; renders `out/seams/views_before/` (the worst instances before) and
+`out/seams/views_class/<view>_{before,after}.png` (each class: support and comm trench tops from the bank and the trench, the T support
+trench, the parapet lip in no man's land and toward the mortars, both sap mouths from above and from the trench, a niche mouth, a
+dog-leg corner). Looked at: from the bank the planks' backs no longer show through the slot; the berm now runs up to every revetment
+top (steeper where a rear wall stands 12 u over the bank; dog-leg corners read as a mound behind the taller wall); the sap lintel and cap
+close the mouth, the user's blocker planks and benches stand as before. Cosmetic, open: the plugs at the six niche mouths are a 2-u heightfield and read lumpy from close up (a smoother fill there, or the user's niche revetments moved onto the wall line, would tidy it).
+
+| Other checks on the final map | Result |
+|---|---|
+| patch_guard --strict, every stage | PASS (4_seams: 37 declared targets: 16 parapet sheets + the tunnel mesh modified, 20 new meshes) |
+| deploy gate (`tools/deploy_tw.py`) | **PASS**: check_world clean; check_play no new failure against the step 7 baseline; check_seams clean; contract 86/86; api 0; tscheck OK; mock 32 / bots / 13 of 13 scenarios |
+| T9 sap mouths | crouched in and out both sides once open, closed while the planks stand; standing blocked (the user's benches) |
+| navtest `chain_seams --full` | **4,397 nav areas** (was 4,376; target < 5,000) |
+| navcheck | as before: every post, both landings, gallery and chamber points in one piece (2,408 areas), woods in theirs (1,867); `heal_*_2` in their own small pieces and `heal_*_3` over 64 u from nav, unchanged (W2) |
+| dry run | 188 files (step 11 weapons and step 12 merged when present): 18 new, 42 changed, 128 same, 117 MB; the map replaces what the last deploy wrote (784ddc7b, backed up first) |
+
+Not done: `--apply`, the map compile, anything in CS2 (the seams are "simulated" until a compile and a look in game). Note: the chain's
+`3_terrain` came out CRC32 226d2ac9 and then 05776c14 in two runs tonight from the same input (62cf29e4 at 19:34): patch_terrain is
+guarded (PASS each time) but not byte-deterministic across runs; worth a look by its owner. The seams stage reads whatever it gets.

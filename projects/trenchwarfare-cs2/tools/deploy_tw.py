@@ -11,8 +11,9 @@ usage (from the project folder):
            --no-user-m2 / --no-user-w5 (leave those out of the chain; they are on by default, see "Opt-in flags" below)
 
 (a) chain   out/step9/chain/0_user.vmap (a copy of content\\...\\maps\\mg_trenchwarfare.vmap) -> 1_world_1 (patch_world_1, step 5)
-            -> 2_models (patch_models, step 6) -> 3_terrain (patch_terrain, step 7) -> 4_sounds (patch_sounds, step 8: the sound
-            entities; skipped with a note while tools/patch_sounds.py does not exist) -> 5_nav (patch_nav, step 4) = the final map.
+            -> 2_models (patch_models, step 6) -> 3_terrain (patch_terrain, step 7) -> 4_seams (patch_seams: siding-top caps, sheet
+            lips, sap mouths; docs/REVIEW_WORLD_2.md "Seams") -> 5_sounds (patch_sounds, step 8: the sound entities; skipped with a note
+            while tools/patch_sounds.py does not exist) -> 6_nav (patch_nav, step 4) = the final map.
             Then the radar is re-made from the final map (tools/make_radar.py --vmap <final>, tools/check_radar.py; outputs are
             step 8's staging in out/addon + out/game, their hashes recorded so a later re-make is noticed).
             Before stage 1 the user's map must be the recorded BASE (CRC32 2e3f90d0, the tw34 delivery the patches' target tables were
@@ -29,12 +30,14 @@ usage (from the project folder):
               --user-h1 unlock|remove (OFF; do not use on this map): the 24 sap benches are the user's seam bridges, kept as placed.
             Decided by the user 12 Nov 2026: sap tunnels "do what's best for gameplay", duplicate info_map_parameters deleted if safe,
             then the correction that the benches are bridges (keep them; drop only the exact duplicate).
-(b) list    out/step5..8/deploy_files.txt (5-7 from this chain run's side copies; 8 when present) and out/step10/deploy_files.txt
-            (release docs: CREDITS, licences, Steam description; when present), merged into out/step9/deploy_files.txt
+(b) list    out/step5..8/deploy_files.txt (5-7 from this chain run's side copies; 8 when present), out/step10/deploy_files.txt
+            (release docs: CREDITS, licences, Steam description; when present), out/step11/deploy_files.txt (weapon replacements,
+            staged by the weapons work) and out/step12/deploy_files.txt (licence-replacement assets) (each when present; a later step
+            wins), merged into out/step9/deploy_files.txt
             (one line per file, last step wins, map = the chain's final vmap) + a model -> material check (a material a deployed model
             names must be in the list, in the addon or in the game's pak01: the "stock.ensure" gotcha).
-(c) gate    on the final map: check_world, check_play (no failure that the step 7 baseline did not have), check_contract --vmap --stage
-            (exit 0), and the script gate of docs/SCRIPT.md without perf: api.py --strict --check, tscheck, mock 32 300, mock 16 300
+(c) gate    on the final map: check_world, check_play (no failure that the step 7 baseline did not have), check_seams --no-sight
+            (0 open seams in the generated geometry; user-owned ones are listed, not counted), check_contract --vmap --stage (exit 0), and the script gate of docs/SCRIPT.md without perf: api.py --strict --check, tscheck, mock 32 300, mock 16 300
             fill=1 humans=4, mock scenario=all. Logs in out/step9/gate/, result out/step9/gate.json. A new failure refuses --apply.
 (d) deploy  python -I create/deploy_addon.py --addon mg_trenchwarfare --list out/step9/deploy_files.txt --record-dir out/step9/deploy
             --vmap-base <BASE sha256> --vmap-base 2e3f90d0 --strict-vmap [--apply]. The addon's map is replaced only while it is still
@@ -61,7 +64,7 @@ MAP_REL = 'maps/mg_trenchwarfare.vmap'
 BASE = dict(crc32='2e3f90d0', size=67206918, sha256='9fb68e43ff31e7f87b129909489b0c1a594c2e83e66eaa07440ed6da0da5f73f')
 # earlier steps' own outputs (default flags), for the determinism comparison
 REFS = {'1_world_1': 'mg_trenchwarfare_patched.vmap', '2_models': 'mg_trenchwarfare_models.vmap', '3_terrain': 'mg_trenchwarfare_terrain.vmap'}
-STEP_LISTS = (5, 6, 7, 8, 10)   # 8 and 10 are optional (a note when missing); 10 = release docs (CREDITS, licences, Steam description)
+STEP_LISTS = (5, 6, 7, 8, 10, 11, 12)   # 8, 10-12 optional (a note when missing); 10 = release docs (CREDITS, licences, Steam description), 11 = weapons, 12 = licence-replacement assets
 PY = sys.executable
 OLD_BAT_LOG = r'C:\source1\cs2port\logs\mg_trenchwarfare_applied.txt'
 OLD_ZIPS = r'C:\source1\cs2port\assets\tw'
@@ -130,8 +133,9 @@ SIDE_FILES = {   # what each patch tool writes into an earlier step's folder bes
     '1_world_1': ['step5/deploy_files.txt', 'step5/deploy_files_optin.txt'],
     '2_models': ['step6/patch_models.targets.json', 'step6/user_owned.txt', 'step6/deploy_files.txt'],
     '3_terrain': ['step7/patch_terrain.report.json', 'step7/terrain_layers.npz', 'step7/deploy_files.txt'],
-    '4_sounds': [],
-    '5_nav': [],
+    '4_seams': [],
+    '5_sounds': [],
+    '6_nav': [],
 }
 SOUNDS_TOOL = os.path.join(HERE, 'patch_sounds.py')
 # step 8's radar is drawn from the map: re-made from the final chained map (its outputs are step 8's staging: out/addon, out/game)
@@ -245,22 +249,24 @@ def chain(a):
         ('1_world_1', [PY, '-u', 'tools/patch_world_1.py', '--targets', os.path.join(CHAIN, '1_world_1.targets.json')] + flags, '1_world_1.targets.json'),
         ('2_models', [PY, '-u', 'tools/patch_models.py', '--no-guard'], None),
         ('3_terrain', [PY, '-u', 'tools/patch_terrain.py', '--targets', os.path.join(CHAIN, '3_terrain.targets.json')], '3_terrain.targets.json'),
-        ('4_sounds', [PY, '-u', 'tools/patch_sounds.py'], None),
-        ('5_nav', [PY, '-u', 'tools/patch_nav.py', '--estimate', '--targets', os.path.join(CHAIN, '5_nav.targets.json'),
-                   '--report', os.path.join(CHAIN, '5_nav.report.json')], '5_nav.targets.json'),
+        ('4_seams', [PY, '-u', 'tools/patch_seams.py', '--no-guard', '--targets', os.path.join(CHAIN, '4_seams.targets.json'),
+                     '--report', os.path.join(CHAIN, '4_seams.report.json')], '4_seams.targets.json'),
+        ('5_sounds', [PY, '-u', 'tools/patch_sounds.py'], None),
+        ('6_nav', [PY, '-u', 'tools/patch_nav.py', '--estimate', '--targets', os.path.join(CHAIN, '6_nav.targets.json'),
+                   '--report', os.path.join(CHAIN, '6_nav.report.json')], '6_nav.targets.json'),
     ]
     prev = dict(path=src, **h0)
     for name, cmd, tfile in stages:
         print('chain %s:' % name, flush=True)
-        if name == '4_sounds':
+        if name == '5_sounds':
             if not os.path.isfile(SOUNDS_TOOL):
                 note = 'skipped: tools/patch_sounds.py does not exist yet (the 3 new sound entities are not in this map)'
                 rec['stages'].append(dict(stage=name, skipped=note)); save()
                 print('  ' + note)
                 continue
             if '--targets' in open(SOUNDS_TOOL, encoding='utf-8', errors='replace').read():
-                cmd = cmd + ['--targets', os.path.join(CHAIN, '4_sounds.targets.json')]
-                tfile = '4_sounds.targets.json'
+                cmd = cmd + ['--targets', os.path.join(CHAIN, '5_sounds.targets.json')]
+                tfile = '5_sounds.targets.json'
         t_start = time.time()
         now = hashes(prev['path'])
         if now['sha256'] != prev['sha256']:
@@ -274,13 +280,13 @@ def chain(a):
         if name == '2_models':                                  # its targets file has no option: take this run's copy
             shutil.copyfile(os.path.join(SIDE, 'step6_patch_models.targets.json'), os.path.join(CHAIN, '2_models.targets.json'))
             tfile = '2_models.targets.json'
-        if name == '4_sounds' and tfile is None:
+        if name == '5_sounds' and tfile is None:
             found = find_targets(outp, t_start)
             if found:
-                shutil.copyfile(found, os.path.join(CHAIN, '4_sounds.targets.json')); tfile = '4_sounds.targets.json'
+                shutil.copyfile(found, os.path.join(CHAIN, '5_sounds.targets.json')); tfile = '5_sounds.targets.json'
             else:
                 rec['stages'].append(dict(stage=name, exit=code)); save()
-                return stop('4_sounds: no target list found for the guard (<out>.targets.json or out/**/*sounds*targets*.json)')
+                return stop('5_sounds: no target list found for the guard (<out>.targets.json or out/**/*sounds*targets*.json)')
         st = dict(stage=name, cmd=' '.join(cmd), input=rel(prev['path']), input_sha256=prev['sha256'], input_crc32=prev['crc32'],
                   exit=code, seconds=round(secs, 1), side=side, summary=last_line(text, r'patched map|patch_nav: \d+ NONAV|wrote '))
         rec['stages'].append(st); save()
@@ -361,7 +367,7 @@ def merge_lists(ch):
         cands.append(os.path.join(OUT, 'step%d' % k, 'deploy_files%s.txt' % ('_optin' if (k == 5 and optin) else '')))
         path = next((c for c in cands if os.path.isfile(c)), None)
         if not path:
-            (notes if k in (8, 10) else problems).append('step %d deploy list not found (%s)' % (k, ', '.join(rel(c) for c in cands)))
+            (notes if k in (8, 10, 11, 12) else problems).append('step %d deploy list not found (%s)' % (k, ', '.join(rel(c) for c in cands)))
             continue
         used.append(dict(step=k, path=rel(path)))
         for r in parse_list(path):
@@ -500,6 +506,7 @@ def gate(final):
     for name, cmd, cwd in (
             ('check_world', [PY, '-u', 'tools/check_world.py', fin, '--stage', stage, '--json', os.path.join(GATE, 'check_world.json')], PROJ),
             ('check_play', [PY, '-u', 'tools/check_play.py', fin, '--stage', stage, '--json', os.path.join(GATE, 'check_play.json')], PROJ),
+            ('check_seams', [PY, '-u', 'tools/check_seams.py', fin, '--stage', stage, '--no-sight', '--json', os.path.join(GATE, 'check_seams.json')], PROJ),
             ('check_contract', [PY, '-u', 'tools/check_contract.py', '--vmap', fin, '--stage', stage], PROJ),
             ('api_strict', [PY, 'create/test/api.py', '--strict', '--check', js], REPO),
             ('tscheck', [bash() or 'sh', 'create/test/tscheck.sh', js.replace('\\', '/')], REPO),
@@ -519,6 +526,9 @@ def gate(final):
                 new = [f for f in fails if f not in known]
                 c.update(fails=fails, new=new, fixed=sorted(known - set(fails)), ok=not new)
                 if new: c['why'] = 'new failures: %s' % ', '.join(new)
+        elif name == 'check_seams':
+            c['result'] = last_line(text, r'^RESULT')
+            c['ok'] = code == 0 and c['result'].startswith('RESULT: clean')
         elif name == 'check_contract':
             c['result'] = last_line(text, r'(?i)missing|result|ok') or (text.strip().splitlines() or [''])[-1]
             c['ok'] = code == 0

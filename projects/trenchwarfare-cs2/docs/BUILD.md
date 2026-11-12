@@ -25,7 +25,7 @@ tw34 build's, not yet run for this delivery; times are from tw34 (29 Oct) and mo
 
 | # | Step | Command | Time | Check |
 |---|---|---|---|---|
-| 1 | Chain + gate + dry run | from the project folder: `python -u tools/deploy_tw.py --chain` (watchdog) | about 10 min (measured below) | `out/step9/chain.json` `ok`, every stage `guard: RESULT: PASS`; `out/step9/gate.json` `ok`; the dry-run table |
+| 1 | Chain + gate + dry run | from the project folder: `python -u tools/deploy_tw.py --chain` (watchdog) | about 15 min with the seams stage (12 Nov: chain 11 min incl. seams 2.5-4 min, gate 3 min) | `out/step9/chain.json` `ok`, every stage `guard: RESULT: PASS`; `out/step9/gate.json` `ok`; the dry-run table |
 | 2 | Deploy | `python -u tools/deploy_tw.py --apply` (runs the gate again) | gate 3-5 min, copy under a minute | `deployed: ...`; record `out/step9/deploy/mg_trenchwarfare_deploy_<stamp>.json` |
 | 3 | Compile assets | `build_maps.ps1 assets mg_trenchwarfare` (watchdog, from `C:\source1\cs2port`) | monsoon's first: 9 min; trench has fewer new files: a few minutes (estimate) | the log, not the wrapper: see "What to read" |
 | 4 | Force HUD / script / icon | `resourcecompiler -f -i` on the xml, css, js | under a minute | each `compiled`, `0 failed` |
@@ -37,13 +37,16 @@ tw34 build's, not yet run for this delivery; times are from tw34 (29 Oct) and mo
 
 ```
 cd C:\source1\cs2mapping\projects\trenchwarfare-cs2
-python C:\source1\cs2port\autoport\watchdog.py --label "tw chain" --expect 600 --heartbeat 60 --stall 600 --max 1800 ^
+python C:\source1\cs2port\autoport\watchdog.py --label "tw chain" --expect 1000 --heartbeat 120 --stall 600 --max 3000 ^
   --log out\step9\deploy_tw_chain_run.log -- python -u tools/deploy_tw.py --chain
 ```
 
 `out/step9/chain/0_user.vmap` (a copy of the user's map, checked against the base) -> `1_world_1` (`patch_world_1.py`, step 5) ->
-`2_models` (`patch_models.py`, step 6) -> `3_terrain` (`patch_terrain.py`, step 7) -> `4_sounds` (`patch_sounds.py`, step 8: the sound
-entities; skipped with a note while the tool does not exist) -> `5_nav` (`patch_nav.py --estimate`, step 4) = the map that ships.
+`2_models` (`patch_models.py`, step 6) -> `3_terrain` (`patch_terrain.py`, step 7) -> `4_seams` (`patch_seams.py`: ground caps over the
+slot behind every generated revetment top, parapet sheet edges lowered onto the terrain, the sap mouths' floor ramp, lintel and ground
+cap; [REVIEW_WORLD_2.md](REVIEW_WORLD_2.md) "Seams") -> `5_sounds` (`patch_sounds.py`, step 8: the sound entities; skipped with a note
+while the tool does not exist) -> `6_nav` (`patch_nav.py --estimate`, step 4) = the map that ships. (Before 12 Nov 22:00 the chain had no
+seams stage and the stages were `4_sounds`, `5_nav`; old files of those names in `out/step9/chain/` are stale.)
 Each stage: its input must be the byte-exact output of the stage before; its output goes through `tools/patch_guard.py --strict` (only
 the declared nodes changed). With no opt-in flags the outputs are compared with the earlier steps' own maps
 (`out/mg_trenchwarfare_patched.vmap`, `_models`, `_terrain`): the same bytes means the patches are deterministic.
@@ -66,12 +69,14 @@ python -u tools/deploy_tw.py --show       # the same, every file listed
 python -u tools/deploy_tw.py --apply      # copy (held while Hammer / cs2 -tools / a compile of this addon is running)
 ```
 
-- **List**: `out/step9/deploy_files.txt`, merged from `out/step5..8/deploy_files.txt` and `out/step10/deploy_files.txt` (CREDITS, Steam
-  description, licence files) (5-7 from the chain run's side copies, 8 and 10 as written, their `# GAME addon` section to the game addon). One line per file; a later step wins. Every step's map line is replaced by the
+- **List**: `out/step9/deploy_files.txt`, merged from `out/step5..8/deploy_files.txt`, `out/step10/deploy_files.txt` (CREDITS, Steam
+  description, licence files), `out/step11/deploy_files.txt` (weapon replacements) and `out/step12/deploy_files.txt` (licence-replacement
+  assets), each when staged (5-7 from the chain run's side copies, 8 and 10-12 as written, their `# GAME addon` section to the game addon). One line per file; a later step wins. Every step's map line is replaced by the
   chain's final map. The radar files the chain re-made are in it. A model -> material check runs on it: a material a listed model names
   must be in the list, in the addon or in the game's pak01 (the `stock.ensure` lesson: 5 monsoon props failed for stock copies nobody wrote).
 - **Gate** on the final map (`out/step9/gate.json`, logs in `out/step9/gate/`): `check_world` and `check_play` may not have a failure the
-  step 7 baseline did not have (`out/step9/gate_baseline.json`, frozen from `out/step7/check_*_after.log` on first use); `check_contract
+  step 7 baseline did not have (`out/step9/gate_baseline.json`, frozen from `out/step7/check_*_after.log` on first use); `check_seams
+  <final> --no-sight` must report `RESULT: clean` (no open seam in the generated geometry; user-owned ones are listed only); `check_contract
   --vmap <final> --stage out/addon` exit 0; the script gate of [SCRIPT.md](SCRIPT.md) without perf (`api.py --strict --check`, `tscheck`,
   mock 32 300, mock 16 300 fill=1 humans=4, mock scenario=all). A new failure refuses `--apply` (exit 6).
 - **Copy**: `python -I ../../create/deploy_addon.py --addon mg_trenchwarfare --list out/step9/deploy_files.txt --record-dir out/step9/deploy
