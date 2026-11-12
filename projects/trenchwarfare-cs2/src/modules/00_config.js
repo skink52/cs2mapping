@@ -4,7 +4,7 @@
 // Roles: INFANTRY (fire trench, respawn, bolt rifle + pistol + knife, 3-kill streak -> Mondragon / Lewis gun, dressing stations heal),
 //        MORTAR (5 crews x 2 per side: plot at the map table, fetch a bomb, load, fire; simulated shells with spread),
 //        AIR (5 biplanes per side, arcade flight in third person; pilots posted on respawn or by !air, AIR_LIVES lives, then back to the ground).
-// Bots are always infantry. Everyone spawns in the briefing room and is sent to their post after a short delay.
+// Bots are infantry; with few humans on a side the script runs some of them as pilots and mortar crews (85_ai). Everyone spawns in the briefing room and is sent to their post after a short delay.
 //
 // Map entities this script uses (all made by tools/make_map.py):
 //   trench_<t|ct>_N (info_teleport_destination) infantry posts, facing the enemy
@@ -90,12 +90,42 @@ const CONFIG = {
   ],
   CVARS: ["mp_respawn_on_death_t 1", "mp_respawn_on_death_ct 1", "mp_respawn_immunitytime 0", "mp_freezetime 0",
           "mp_roundtime 60", "mp_buy_anywhere 0", "mp_buytime 0", "mp_death_drop_gun 0", "mp_weapons_allow_map_placed 1",
-          "mp_free_armor 0", "mp_solid_teammates 1", "bot_quota_mode normal", "mp_give_player_c4 0"],
-  // bots (infantry only; the map's nav seeds cover the lobby, trenches, woods clearings and tunnels): a bot that hangs around a
-  // still-closed area's blocker (woodsopen / undergroundopen) for LEASH_TIME is sent back to a fire-trench post
-  BOTS: { LEASH: 170, LEASH_Z: 160, LEASH_TIME: 3, LEASH_AVOID: 400 },   // LEASH_AVOID: the leash's post is at least this far from a closed blocker
-  // off by default (their pathing over the 44k-area nav gave a frame hitch every ~0.5 s on a listen server); true = keep the server's bot_quota
-  BOTS_ON: false,
+          "mp_free_armor 0", "mp_solid_teammates 1", "mp_give_player_c4 0"],
+  // ---- bots for low population (85_ai.js; docs/REVIEW_SCRIPT_1.md "Step 4"). CS2 bots are players: the script cannot steer their legs,
+  // so infantry bots are PLACED (deploy targets, a leash) and the pilot / mortar roles are run by the script while the bot's pawn sits in
+  // the seat. ON by default: the low-population requirement needs them, and the tw35 frame hitch came with the 44k-area nav that step 5
+  // (woods seeds inside the fence) and tools/patch_nav.py (NONAV) cut down; false = bot_quota 0 + bot_kick (the tw35 behaviour).
+  BOTS_ON: true,
+  BOTS: {
+    FILL_PER_SIDE: 8,          // bot_quota_mode fill, bot_quota 2 x this: bots fill the server to 16 players and leave as humans join (0 at 16+ humans)
+    LEASH: 170, LEASH_Z: 160, LEASH_TIME: 3,   // a bot this close (dz) to a still-closed area's blocker for LEASH_TIME goes back to a post
+    LEASH_AVOID: 400,          // the leash's post is at least this far from a closed blocker
+    CHECK: 1.0,                // seconds between a bot's out-of-play checks
+    NML_X: 1450, NML_Y: 2750, NML_ZMIN: -150,   // no man's land (tools/check_play.py T5): |x| < NML_X, |y| < NML_Y, above the galleries
+    LOBBY_Z: -1500,            // a deployed bot below this is back in the briefing room
+    FAR: 1500,                 // farther than this from every post (both sides), dressing station and opened area point: out of play
+    OUT_TIME: 3,               // seconds out of play (no man's land, briefing room, far) before the bot goes back to a post
+    COMBAT_GRACE: 6,           // the "far" check waits while the bot hurt or was hurt this recently
+    FIRE_SHARE: 0.8,           // share of post deploys to the fire trench (the rest: the support trench)
+    AREA_SHARE: 0.35,          // once an area is open, this share of bot deploys go to it (its sap head / ladder post or inside it)
+    AREA_MAX: 4,               // at most this many bots of a side deployed into one opened area at a time
+    // inside the opened areas (CT side; T mirrors x): tools/layout.py ground + 8 (woods clearing, the step-5 seeds) and the tunnel landing
+    AREAS: {
+      woodsopen: [{ x: 605, y: 3930, z: 10 }, { x: 1110, y: 3700, z: 10 }, { x: 1110, y: 4150, z: 6 }],
+      undergroundopen: [{ x: 2120, y: -3296, z: -252 }],
+    },
+  },
+  AI: {
+    MIN_HUMANS: 4,             // a side with fewer active humans than this gets script-run pilots and mortar crews (AFK humans do not count)
+    PILOTS: 1, CREWS: 2,       // per side, bots permitting
+    MAX_SHARE: 0.5,            // at most this share of a side's bots leave the infantry
+    DIRECTOR_EVERY: 1.0,
+    // pilot: patrols over the enemy line, gun and bomb runs on enemy infantry; slow to react and inaccurate on purpose
+    CRUISE_ALT: 1000, MIN_ALT: 420, ARRIVE: 900, THINK: 0.25,
+    STRAFE_RANGE: 3600, GUN_MAX: 2600, AIM_CONE: 12, REACT: 1.2, AIM_ERR: 0.03, ATTACK_TIME: 16, ATTACK_COOLDOWN: 8, BOMB_ERR: 300,
+    // crew: one bot runs a tube alone at the table: plots a cluster of enemy infantry, "fetches and loads", fires
+    CREW_THINK: 3, CREW_LOAD: 9, CREW_SIGMA: 160, CLUSTER_R: 420,
+  },
   AFK: { PILOT: 60, CREW: 120 },   // seconds with no key, look or step: a pilot is brought down to the trench (infantry), a crew seat is freed
   ASSIST_MIN: 41,                  // the mortar loader's share of a hit is at least this much health damage when the victim can take it (assist)
   PERF_EVERY: 60,                  // seconds between "[tw] perf:" console lines (script time per tick, players, flights, shells, errors)

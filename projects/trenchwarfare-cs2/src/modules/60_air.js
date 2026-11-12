@@ -87,9 +87,15 @@ function farOutside(pos) {
   return Math.abs(pos.x) > A.BOX_X + F || Math.abs(pos.y) > A.BOX_Y + F || pos.z > A.ALT_MAX + F;
 }
 // the chase camera's position and view (the crosshair), rebuilt the way FOLLOW_POSITION places it: followed point + offset turned
-// by the eye angles; guns converge on what the crosshair covers, within GUN_GIMBAL of the nose
-function gunAim(a, pawn) {
+// by the eye angles; guns converge on what the crosshair covers, within GUN_GIMBAL of the nose. A script pilot (85_ai) has no
+// crosshair: steer.gunAt is the point it aims at (with its error already in it), held to the same gimbal
+function gunAim(a, pawn, steer) {
   const A = CONFIG.AIR, F = A.CAM_FOLLOW;
+  if (steer) {
+    const s = v3(a.pos.x + a.f.x * A.GUN_FROM, a.pos.y + a.f.y * A.GUN_FROM, a.pos.z + 40 + a.f.z * A.GUN_FROM);
+    const pt = steer.gunAt || vadd(s, a.f, A.SIGHT_DIST), want = vnorm(v3(pt.x - s.x, pt.y - s.y, pt.z - s.z)), g = A.GUN_GIMBAL * D2R;
+    return { s, dir: angleBetween(a.f, want) <= g ? want : rotateToward(a.f, want, g), dist: Math.max(200, Math.min(A.SIGHT_DIST * 3, dist3(pt, s))) };
+  }
   let e; try { e = pawn.GetEyeAngles(); } catch (err) {}
   const B = angleBasis({ pitch: e ? e.pitch : 0, yaw: e ? e.yaw : 0, roll: 0 });
   const back = a.camBack || -A.CAM_OFFSET.x;
@@ -114,7 +120,8 @@ function planeOfEntity(e) {
 function startFlight(p, pawn, dest) {
   const team = pawn.GetTeamNumber();
   const list = (points.aircraft[team] || []).filter(a => live(a.ent));
-  const ac = list.find(a => a.pilot === p.slot) || list.find(a => a.pilot < 0);
+  // a human takes one a script bot flies when none is free: the bot gives it up in this same call (aiYieldAircraft)
+  const ac = list.find(a => a.pilot === p.slot) || list.find(a => a.pilot < 0) || (p.bot ? undefined : aiYieldAircraft(team, p));
   if (!ac) { toast(p, "No aircraft free - back to the trenches", 4); return false; }
   ac.pilot = p.slot;
   const A = CONFIG.AIR;
@@ -130,11 +137,12 @@ function startFlight(p, pawn, dest) {
   hidePawn(pawn, true);                                 // the aircraft carries its own pilot figure; hits on the plane go to the pawn
   try { pawn.SetEyeAngles({ pitch: 0, yaw: team === CT ? 180 : 0, roll: 0 }); } catch (e) {}
   placePlane(p, pawn, true);
-  setView(p, pawn);
+  if (!p.bot) setView(p, pawn);                         // a bot has no screen: no camera
   const nm = ac.ent.GetEntityName(), tg = nm.slice("tw_plane_".length);
   for (const k of ["eng", "gun", "gun2", "gun3"]) fire("tw_plane_" + k + "_" + tg, "SetSourceEntity", nm);
   fire("tw_plane_eng_" + tg, "StartSound", undefined, 0.05);
   p.sortie = true; p.lastActive = now(); stats.flights++;
+  if (p.aiRole === "pilot") { stats.aiSorties++; p.aiFly = undefined; }
   return true;
 }
 function endFlight(p, pawn, crashed) {
@@ -201,13 +209,15 @@ function hitPilot(ac, damage, attackerPawn, src) {
   stats.planeHits++;
   hurt(vp, { damage, attacker: attackerPawn, inflictor: attackerPawn }, src || "shot_down");
 }
-function tickAir(p, pawn, dt, pressed, held) {
+// steer: a script pilot's inputs (85_ai aiSteer): { aim, held, pressed, gunAt } in place of the eye angles and the keys
+function tickAir(p, pawn, dt, pressed, held, steer) {
   const a = p.air, A = CONFIG.AIR, t = now();
   if (!live(a.ac.ent)) { endFlight(p, pawn, false); return ""; }
+  if (steer) { held = steer.held; pressed = steer.pressed; }
   if (held & CSInputs.FORWARD) a.throttle = Math.min(1, a.throttle + A.ACCEL * dt);
   if (held & CSInputs.BACK) a.throttle = Math.max(0, a.throttle - A.ACCEL * dt);
   // aim: where the pilot looks (raw, every tick); near the walls / ceiling blended toward home, nose down in a stall
-  let aim = dirOf(pawn.GetEyeAngles());
+  let aim = steer ? steer.aim : dirOf(pawn.GetEyeAngles());
   if (!finiteV(aim)) aim = a.f;
   let prompt = "";
   const bw = boundsWeight(a);
@@ -226,6 +236,7 @@ function tickAir(p, pawn, dt, pressed, held) {
   } else a.wallSide = 0;
   if (a.speed < A.V_STALL) { aim = vnorm(v3(aim.x, aim.y, Math.min(aim.z, -0.5))); prompt = "STALL - nose down"; }
   const gz = groundZ(a.pos.x, a.pos.y);
+  a.gz = gz;
   // look-ahead pull-up warning (trees, hangars, hills), a few planes per tick
   a.tick++;
   if ((a.tick + p.slot) % A.PULLUP_EVERY === 0) {
@@ -265,12 +276,12 @@ function tickAir(p, pawn, dt, pressed, held) {
   a.pos = np;
   placePlane(p, pawn, false);
   easeCamera(a, dt, t);
-  a.aim = gunAim(a, pawn);
+  a.aim = gunAim(a, pawn, steer);
   if (a.view === "cockpit") { const cam = a.cam; if (cam && live(cam)) { try { cam.Move({ position: cockpitPos(a) }); } catch (e) {} } }
   // guns (belt; a short re-arm when empty)
   if (a.ammo <= 0 && t >= a.reloadAt) { a.ammo = A.GUN_AMMO; }
   if ((held & CSInputs.ATTACK) && t >= a.nextGun && a.ammo > 0) {
-    a.nextGun = t + A.GUN_INTERVAL; stats.gunRounds++;
+    a.nextGun = t + A.GUN_INTERVAL; stats.gunRounds++; if (steer) stats.aiGunRounds++;
     if (--a.ammo <= 0) { a.reloadAt = t + A.GUN_RELOAD; toast(p, "Belt empty - re-arming", 2); }
     if ((a.ammo % A.GUN_SOUND_EVERY) === 0) {
       const gk = ["gun", "gun2", "gun3"][a.ac.si++ % 3];
@@ -297,12 +308,12 @@ function tickAir(p, pawn, dt, pressed, held) {
   // bombs
   if (a.bombs < A.BOMBS && t >= a.rearmAt) { a.bombs++; a.rearmAt = t + A.BOMB_REARM; }
   let bombKey = (pressed & CSInputs.ATTACK2) !== 0;
-  try { bombKey = bombKey || pawn.WasInputJustPressed(CSInputs.ATTACK2); } catch (e) {}
+  if (!steer) { try { bombKey = bombKey || pawn.WasInputJustPressed(CSInputs.ATTACK2); } catch (e) {} }   // a bot's own brain must not drop bombs
   if (bombKey && a.bombs > 0) {
     a.bombs--; if (a.rearmAt < t) a.rearmAt = t + A.BOMB_REARM;
     const be = a.ac.bombEnts.find(e => !bombs.some(b => b.ent === e));
     bombs.push({ pos: v3(a.pos.x, a.pos.y, a.pos.z - 20), vel: v3(a.f.x * a.speed, a.f.y * a.speed, a.f.z * a.speed), team: pawn.GetTeamNumber(), slot: p.slot, gen: p.gen, ent: be, ac: a.ac });
-    stats.bombs++;
+    stats.bombs++; if (steer) stats.aiBombs++;
     toast(p, "Bomb away!", 1.5);
   }
   const smoking = pawn.GetHealth() <= CONFIG.AIR.SMOKE_HP;

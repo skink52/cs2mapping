@@ -27,6 +27,14 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
+- 12 Nov ~18:00: step 4 done (simulated). Bots in `src/modules/85_ai.js`: infantry placed at fire/support posts with a leash; a side
+  with < 4 active humans gets 1 AI pilot + 2 AI mortar crews, handed to a human on request in the same call. `BOTS_ON: true`,
+  `bot_quota_mode fill`, `bot_quota 16` - **only valid with the patched map** (nav seeds + NONAV); on the old compile set BOTS_ON false.
+  `tools/patch_nav.py --in --out` (~90 NONAV boxes, guarded) runs last in the chain world_1 -> models -> terrain -> nav; nav estimate
+  ~1,470 areas (target < 5,000 after compile). Gate: 12/12 scenarios, balance T 51 % (32 humans) / 52 % (4 humans + 12 bots), perf
+  0.09 ms/tick with 58 bots; the 8 ms perf max failed only while another session's resourcecompiler held the CPU: re-run the perf
+  gate on a quiet PC. `check_contract.py --vmap --stage` checks the patched map (80/80) and every SetModel model. Never rerun the old
+  `tools/patch_bots.py`: it deletes the whole tw_nav visgroup, NONAV boxes included.
 - 12 Nov ~17:00: step 6 done offline, NOT deployed. 339 WW1 Workshop titles screened, 13 packs downloaded to
   `C:\source1\gmod_assets\trenchwarfare` (outside the repo), catalog `tools/tw_gmod_catalog.json`. Only swap: `gun_75mm` -> Canon de 75
   (3576805717, `tools/patch_models.py` -> `out/mg_trenchwarfare_models.vmap`, guard: 1 change). Ours beat every other low-risk pack;

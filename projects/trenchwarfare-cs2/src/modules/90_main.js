@@ -10,10 +10,12 @@ function keys(pawn) {
 // ------------------------------------------------------------------ per tick
 let lastTick = 0, tickN = 0;
 let errAt = -99;
-let perfMs = 0, perfMax = 0, perfTicks = 0, perfAt = -1;
+let perfMs = 0, perfMax = 0, perfTicks = 0, perfAt = -1, gapMax = 0, wallLast = -1;
 function logErr(where, e) { stats.errors++; const t = now(); if (t - errAt > 2) { errAt = t; Console.Log("[tw] error in " + where + ": " + e + (e && e.stack ? " " + e.stack : "")); } }
 function think() {
   const c0 = clock();
+  if (wallLast >= 0 && c0 - wallLast > gapMax) gapMax = c0 - wallLast;   // wall time between thinks: a server hitch shows here (tw35)
+  wallLast = c0;
   const t = now(); let dt = t - lastTick; lastTick = t; tickN++;
   if (!(dt > 0) || dt > 0.1) dt = 1 / 64;
   Instance.SetNextThink(t);                 // scheduled first: an exception below can't stop the script for the rest of the round
@@ -34,11 +36,12 @@ function perfLine(t, ms) {
   perfMs += ms; perfTicks++; if (ms > perfMax) perfMax = ms;
   if (perfAt < 0) perfAt = t;
   if (t - perfAt < CONFIG.PERF_EVERY) return;
-  let n = 0, humans = 0, flying = 0;
-  for (const q of players.values()) { n++; if (!q.bot) humans++; if (q.air) flying++; }
+  let n = 0, humans = 0, flying = 0, aiP = 0, aiC = 0;
+  for (const q of players.values()) { n++; if (!q.bot) humans++; if (q.air) flying++; if (q.aiRole === "pilot") aiP++; if (q.aiRole === "crew") aiC++; }
   Console.Log("[tw] perf: " + (perfMs / Math.max(1, perfTicks)).toFixed(3) + " ms/tick avg, " + perfMax.toFixed(2) + " ms max, " + perfTicks + " ticks, " +
-              n + " players (" + humans + " human), " + flying + " flying, " + shells.length + " shells, " + bombs.length + " bombs, errors " + stats.errors);
-  stats.perfLines++; perfMs = 0; perfMax = 0; perfTicks = 0; perfAt = t;
+              n + " players (" + humans + " human, AI pilots " + aiP + ", AI crews " + aiC + "), " + flying + " flying, " + shells.length + " shells, " + bombs.length +
+              " bombs, longest gap between thinks " + gapMax.toFixed(0) + " ms, errors " + stats.errors);
+  stats.perfLines++; perfMs = 0; perfMax = 0; perfTicks = 0; perfAt = t; gapMax = 0;
 }
 // a slot whose player is gone (disconnect, or the controller vanished without the event): seat, aircraft and HUD are freed
 function dropPlayer(p) {
@@ -47,7 +50,8 @@ function dropPlayer(p) {
   players.delete(p.slot);
 }
 // AFK: no key, no turn of the view and no step for CONFIG.AFK seconds. A pilot is brought down to the trench as infantry (his
-// aircraft goes home), a mortar crewman gives up his seat. Humans only (bots are infantry; step 4's AI will have its own rules).
+// aircraft goes home), a mortar crewman gives up his seat. Humans only: script-run bots never idle, and an
+// AFK human does not count toward a side's humans for the AI roles (85_ai humansOn).
 function tickAfk(p, pawn, t, held) {
   if (held) { p.lastActive = t; return; }
   if (((tickN + p.slot) & 31) !== 0) return;
@@ -103,7 +107,8 @@ function thinkPlayer(s, t, dt) {
       return;
     }
     if (p.air) {
-      const pr = tickAir(p, pawn, dt, pressed, held);
+      if (p.bot && p.aiRole !== "pilot") { endFlight(p, pawn, false); return; }        // only a script pilot flies a bot
+      const pr = tickAir(p, pawn, dt, pressed, held, p.aiRole === "pilot" ? aiSteer(p, p.air, t) : undefined);
       hText(p, "tw_prompt_text", pr); hClass(p, "tw_prompt", "show", !!pr);
       hClass(p, "tw_toast", "show", t < p.toastUntil); hClass(p, "tw_banner", "show", t < p.bannerUntil);
       return;
@@ -161,7 +166,9 @@ function thinkPlayer(s, t, dt) {
 // ------------------------------------------------------------------ events
 Instance.OnActivate(() => {
   for (const c of CONFIG.CVARS) Console.ServerCommand(c);
-  if (!CONFIG.BOTS_ON) { Console.ServerCommand("bot_quota 0"); Console.ServerCommand("bot_kick"); }
+  // bots fill the server to 2 x FILL_PER_SIDE players and leave as humans join (bot_quota_mode fill); off: none (the tw35 setting)
+  if (CONFIG.BOTS_ON) { Console.ServerCommand("bot_quota_mode fill"); Console.ServerCommand("bot_quota " + 2 * CONFIG.BOTS.FILL_PER_SIDE); }
+  else { Console.ServerCommand("bot_quota 0"); Console.ServerCommand("bot_kick"); }
   points = null; lastTick = now();
   Instance.SetThink(think);
   Instance.SetNextThink(now());
@@ -175,8 +182,10 @@ Instance.OnRoundStart(() => {
     p.air = undefined; p.sortie = false;
     if (pw) sanitise(p, pw);
   }
-  for (const team of [T, CT]) for (const c of crews[team]) { c.loaded = false; c.loader = -1; c.loaderGen = 0; c.target = null; c.impacts = []; c.cooldown = 0; }
-  for (const p of players.values()) { p.deployed = false; p.deployAt = now() + CONFIG.LOBBY_RESPAWN; p.inSight = false; p.carrying = false; p.stowFrom = undefined; p.leashT = 0; }
+  for (const team of [T, CT]) for (const c of crews[team]) { c.loaded = false; c.loader = -1; c.loaderGen = 0; c.target = null; c.impacts = []; c.cooldown = 0; c.ai = undefined; }
+  for (const p of players.values()) { p.deployed = false; p.deployAt = now() + CONFIG.LOBBY_RESPAWN; p.inSight = false; p.carrying = false; p.stowFrom = undefined; p.leashT = 0;
+                                      p.outT = 0; p.aiFly = undefined; p.anchor = undefined; }
+  directorAt = 0;
   hudEnt = undefined;
   for (const p of players.values()) p.hud.clear();
   Instance.SetThink(think); Instance.SetNextThink(now());
@@ -233,6 +242,7 @@ Instance.OnModifyPlayerDamage((ev) => {
   const p = players.get(vs); if (!p) return;
   const ap = toPawn(ev.attacker);
   let enemy = false; try { enemy = !!(ap && ap !== v && ap.GetTeamNumber() !== v.GetTeamNumber()); } catch (e) {}
+  if (enemy) { aiCombat(vs); aiCombat(slotOfPawn(ap)); }
   let why = "", d = -1;
   if (p.air && !p.crashing && !enemy) why = "pilot";
   else if (p.role === "mortar" && p.crew >= 0 && !enemy && points) {   // points is null for the first tick of a round (threw here before)
@@ -333,7 +343,7 @@ if (typeof Instance.OnScriptReload === "function") {
 }
 // test seam (test/mock.mjs set pieces; harmless in game): a few internals and the current points
 try {
-  Object.assign(globalThis.__twDebug, { fireMortar, impact, radarSquare, worldToSight, sightToWorld, pitPos, pickTrench });
+  Object.assign(globalThis.__twDebug, { fireMortar, impact, radarSquare, worldToSight, sightToWorld, pitPos, pickTrench, humansOn, aiWanted });
   Object.defineProperty(globalThis.__twDebug, "points", { get: () => points, configurable: true });
   Object.defineProperty(globalThis.__twDebug, "unlocked", { get: () => unlocked, configurable: true });
   Object.defineProperty(globalThis.__twDebug, "roundKills", { get: () => roundKills, configurable: true });

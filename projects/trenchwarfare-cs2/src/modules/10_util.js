@@ -66,7 +66,7 @@ function angleBetween(a, b) { return Math.acos(clampN(vdot(a, b), -1, 1)); }
 function rotateToward(f, d, maxRad) {
   let th = angleBetween(f, d);
   if (th < 1e-5) return d;
-  if (th > 3.1) { d = vnorm(vadd(d, v3(-f.y * 0.1, f.x * 0.1, 0), 1)); th = angleBetween(f, d); }
+  if (th > 3.1) { d = vnorm(vadd(d, Math.hypot(f.x, f.y) > 1e-3 ? v3(-f.y * 0.1, f.x * 0.1, 0) : v3(0.1, 0, 0), 1)); th = angleBetween(f, d); }   // (a vertical f has no side: any)
   const t = Math.min(1, maxRad / th), s = Math.sin(th);
   return vnorm(vadd(vscale(f, Math.sin((1 - t) * th) / s), d, Math.sin(t * th) / s));
 }

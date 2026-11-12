@@ -6,7 +6,10 @@
 // usage: node test/mock.mjs [players=32] [seconds=120] [key=value ...]
 //   seed=<n>         random seed (the script's Math.random too); default 7
 //   humans=<n>       how many players are human (default 2 x round(players / 3), split evenly between the sides; the rest bots)
-//   scenario=<name>  one bug class: round | churn | crew | air | reload | edge   (all = every one, each in its own process)
+//   scenario=<name>  one bug class: round | churn | crew | air | reload | edge, or a bot case: bots | lopsided | full | yield |
+//                    threshold | botround   (all = every one, each in its own process)
+//   fill=1           bots come and go through the script's bot_quota / bot_quota_mode (CS2's "fill"): only humans are created, split
+//                    by split=<T>,<CT> (default humans / 2 each); the bot scenarios always run this way
 //   mode=balance     one round window with the real CONFIG, a JSON result line (test/sim_balance via create/sim_balance.mjs); json=1 only that
 //   perf=<avg>,<max> fail when the script's think time (ms per tick) is over these
 //   script=<file>    run this build of the script instead of src/mg_trenchwarfare.js (no stale check)
@@ -26,7 +29,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2), posArgs = argv.filter((a) => !a.includes('=')), opt = Object.fromEntries(argv.filter((a) => a.includes('=')).map((a) => { const i = a.indexOf('='); return [a.slice(0, i), a.slice(i + 1)]; }));
 const N = Math.min(64, +(posArgs[0] || 32)), SECONDS = +(posArgs[1] || 120);
 const SCEN = opt.scenario || '', BAL = opt.mode === 'balance', JSONONLY = opt.json === '1';
-const SCENARIOS = ['round', 'churn', 'crew', 'air', 'reload', 'edge'];
+const SCENARIOS = ['round', 'churn', 'crew', 'air', 'reload', 'edge', 'bots', 'lopsided', 'full', 'yield', 'threshold', 'botround'];
+// the bot scenarios: humans per side (T, CT); bots join through the script's bot_quota (fill)
+const FILLSCEN = { bots: [2, 2], lopsided: [4, 0], full: [32, 32], yield: [2, 2], threshold: [2, 2], botround: [2, 2] };
+const FILL = opt.fill === '1' || !!FILLSCEN[SCEN];
 
 if (SCEN === 'all') {                      // every scenario in its own process (fresh module state), pass / total
   let ok = 0; const lines = [];
@@ -34,7 +40,7 @@ if (SCEN === 'all') {                      // every scenario in its own process 
     const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), String(N), String(SECONDS), 'scenario=' + s, ...(opt.seed ? ['seed=' + opt.seed] : []), ...(opt.script ? ['script=' + opt.script] : [])], { encoding: 'utf8' });
     const last = (r.stdout || '').trim().split('\n').filter((l) => /^RESULT|^FAIL/.test(l));
     if (r.status === 0) ok++;
-    lines.push((r.status === 0 ? 'pass ' : 'FAIL ') + s.padEnd(7) + ' ' + (last.slice(0, 4).join(' | ') || (r.stderr || '').slice(-300)));
+    lines.push((r.status === 0 ? 'pass ' : 'FAIL ') + s.padEnd(9) + ' ' + (last.slice(0, 4).join(' | ') || (r.stderr || '').slice(-300)));
   }
   for (const l of lines) console.log(l);
   console.log('scenarios: ' + ok + ' / ' + SCENARIOS.length + ' pass');
@@ -213,7 +219,7 @@ function spawn(c) {
 let curSrc = '';
 function hurt(v, d) {
   if (!d || !(d.damage > 0) || !Number.isFinite(d.damage)) { fail('TakeDamage needs a finite damage > 0: ' + JSON.stringify(d && d.damage)); return 0; }
-  if (v.hp <= 0) return 0;
+  if (v.hp <= 0 || v.ctl.god) return 0;          // god: a set piece's test subject the rate model must not kill mid-test
   let dmg = d.damage, flags = d.damageFlags || 0, types = d.damageTypes || 0;
   if (hooks.mod) {
     const r = hooks.mod({ player: v, damage: dmg, damageTypes: types, damageFlags: flags, hitGroup: 0, attacker: d.attacker, inflictor: d.inflictor, weapon: d.weapon });
@@ -299,12 +305,35 @@ const Console = strict('Console', {
   Log: (msg) => { const s = String(msg); stats.msgs.push(s); if (stats.msgs.length > 4000) stats.msgs.splice(0, 1000); if (process.env.MOCK_LOG) console.log(time.toFixed(2), s); },
   ServerCommand: (c) => {
     const w = String(c).split(' ')[0]; stats.cmds[w] = (stats.cmds[w] || 0) + 1;
+    if (w === 'bot_quota') quota = +String(c).split(' ')[1]; if (w === 'bot_quota_mode') quotaMode = String(c).split(' ')[1];
+    if (w === 'bot_kick') kickAll = true;
     if (!/^(mp_|bot_|say$)/.test(w)) fail('server command outside mp_ / bot_ / say: ' + c);
     if (/[;\n]/.test(c)) fail('unsafe characters in a server command: ' + c);
     if (w === 'say') stats.says = (stats.says || []).concat([String(c).slice(4)]).slice(-50);
   },
 });
 globalThis.__cs = { Instance, Entities, Console, ...ENUMS };
+// CS2's bot quota as the mock plays it (fill=1 / the bot scenarios): bots = quota - humans in "fill" mode, quota in "normal"; a new bot
+// joins the smaller side, a kicked one leaves the larger side; bot_kick removes them all
+let quota = 0, quotaMode = 'normal', kickAll = false, fillTie = 2;
+function fillBots() {
+  if (!FILL) return;
+  const size = (t) => everyone().filter((c) => c.team === t).length;
+  if (kickAll) { kickAll = false; for (const b of everyone().filter((c) => c.bot)) disconnect(b, 'bot_kick'); }
+  const humans = everyone().filter((c) => !c.bot).length;
+  const want = quotaMode === 'fill' ? Math.max(0, quota - humans) : quota;
+  const bots = everyone().filter((c) => c.bot);
+  while (bots.length > want) {
+    const big = size(2) > size(3) ? 2 : 3, i = bots.map((c) => c.team).lastIndexOf(big);
+    disconnect(bots.splice(i >= 0 ? i : bots.length - 1, 1)[0], 'quota kick');
+  }
+  while (bots.length < want) {
+    const slot = ctls.findIndex((c) => !c); if (slot < 0) break;
+    const other = 5 - fillTie, team = size(other) < size(fillTie) ? other : fillTie;
+    if (size(2) === size(3)) fillTie = 5 - fillTie;
+    bots.push(connect(slot, team, true)); stats.botsAdded = (stats.botsAdded || 0) + 1;
+  }
+}
 const dbg = () => globalThis.__twDebug;
 let loads = 0;
 async function loadScript() {
@@ -316,9 +345,14 @@ async function loadScript() {
 // ------------------------------------------------------------------ start
 buildWorld();
 await loadScript();
-const HUMANS = opt.humans !== undefined ? +opt.humans : 2 * Math.round(N / 3);
-// slots: team by slot parity; within each team the humans first take the places not 2 mod 3, so both sides get the same mix
-{
+const SPLIT = FILL ? (opt.split ? opt.split.split(',').map(Number) : FILLSCEN[SCEN] || [Math.ceil(+(opt.humans || 4) / 2), Math.floor(+(opt.humans || 4) / 2)]) : null;
+const HUMANS = FILL ? SPLIT[0] + SPLIT[1] : opt.humans !== undefined ? +opt.humans : 2 * Math.round(N / 3);
+// fill: the humans only (T first), bots come with the quota. Otherwise slots: team by slot parity; within each team the humans first
+// take the places not 2 mod 3, so both sides get the same mix
+// (interleaved like the default slots: whichever side holds the low slots wins more of the mock's fights - 61 % / 41 % over 150 bot runs
+// with T / CT first - so neither side may: humans T, CT, T, CT ... while both have some left, bots join with the tie going to each side in turn)
+if (FILL) { let s = 0; const left = { 2: SPLIT[0], 3: SPLIT[1] }; let tm = 2; while (left[2] + left[3] > 0) { if (!left[tm]) tm = 5 - tm; ctls[s] = new Ctl(s, tm, false); s++; left[tm]--; tm = 5 - tm; } }
+else {
   const want = { 2: Math.ceil(HUMANS / 2), 3: Math.floor(HUMANS / 2) }, idx = { 2: [], 3: [] };
   for (let s = 0; s < N; s++) idx[s % 2 ? 3 : 2].push(s);
   for (const team of [2, 3]) {
@@ -328,6 +362,7 @@ const HUMANS = opt.humans !== undefined ? +opt.humans : 2 * Math.round(N / 3);
 }
 hooks.activate();
 hooks.round && hooks.round(); stats.rounds++;
+fillBots();
 const CFG = dbg().CONFIG;
 
 // ------------------------------------------------------------------ helpers for drivers / set pieces
@@ -421,6 +456,9 @@ function drivePilot(c, pr) {
 const FIGHT = { ENGAGE: +(opt.engage || 4200), TTK: +(opt.ttk || 30), REF: 3300, PLANE_R: 2600, PLANE_P: +(opt.planep || 0.006) };
 function fightModel() {
   const D = dbg(), list = everyone().filter(onGround);
+  // in a random order: in slot order the lower slots shoot first and win more duels (fill=1 gives T the lower slots: T won 61 % of 150
+  // bot runs, 2 kills a window ahead, before this shuffle)
+  for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const x = list[i]; list[i] = list[j]; list[j] = x; }
   const flyers = everyone().filter((c) => alive(c) && PR(c.slot) && PR(c.slot).air);
   for (const c of list) {
     const pr = D.players.get(c.slot); if (!pr || pr.role !== 'infantry' || !pr.deployed) continue;
@@ -467,9 +505,22 @@ function invariants() {
     if (p.hp > 0 && !pr.air && time - p.spawnedAt > 0.05) {
       if (p.scale !== 1) fail('live pawn left shrunk out of an aircraft (slot ' + s + ')');
       if (p.cam && p.cam.mode !== CAM.DISABLED) fail('live pawn left on a camera out of an aircraft (slot ' + s + ')');
-      if (!pr.inSight && p.mt === MT.NONE) fail('live pawn left frozen outside the sight (slot ' + s + ')');
+      if (!pr.inSight && p.mt === MT.NONE && !(pr.aiRole === 'crew' && pr.deployed)) fail('live pawn left frozen outside the sight (slot ' + s + ')');
     }
     if (p.hp > 0 && !fin(p.pos)) fail('non-finite pawn position');
+    // the script roles (85_ai): bots only, each in its own seat; a script crew runs its tube alone; only a script pilot flies a bot
+    if (pr.aiRole && !c.bot) fail('a human has a script role (' + pr.aiRole + ', slot ' + s + ')');
+    if (pr.aiRole === 'pilot' && pr.role !== 'air') fail('AI pilot without the air role (slot ' + s + ')');
+    if (pr.aiRole === 'crew') {
+      const cr = D.crews[pr.team] && D.crews[pr.team][pr.crew];
+      if (pr.role !== 'mortar' || !cr || cr.a !== s) fail('AI crewman not in seat a of his crew (slot ' + s + ')');
+      else if (cr.b >= 0) fail('a player shares a tube with a script bot (crew ' + tagOf(pr.team) + '_' + (pr.crew + 1) + ')');
+    }
+    if (pr.air && c.bot && pr.aiRole !== 'pilot') fail('a bot flies without the AI pilot role (slot ' + s + ')');
+  }
+  if (pts) for (const team of [2, 3]) for (const ac of pts.aircraft[team] || []) {
+    let n = 0; for (const pr of D.players.values()) if (pr.air && pr.air.ac === ac) n++;
+    if (n > 1) fail('two players fly aircraft ' + ac.ent.name);
   }
 }
 
@@ -566,6 +617,9 @@ if (SCEN === 'crew') {
     const victims = everyone().filter((c) => onGround(c) && PR(c.slot) && PR(c.slot).role === 'mortar' && PR(c.slot).crew >= 0);
     const v = victims[0]; if (!v) { fail('crew scenario: no crew to shell'); return; }
     const enemyCrew = everyone().filter((c) => c.team !== v.team && alive(c) && PR(c.slot) && PR(c.slot).role === 'mortar' && PR(c.slot).crew >= 0);
+    // a firer whose crew has a mate (for the loader piece), when one exists
+    const paired = (c) => { const cr = D.crews[c.team][PR(c.slot).crew]; return cr.a >= 0 && cr.b >= 0 && PR(cr.a) && PR(cr.b); };
+    enemyCrew.sort((x, y) => paired(y) - paired(x));
     const f = enemyCrew[0]; if (!f) { fail('crew scenario: no enemy crew'); return; }
     const k0 = stats.killsTeam[f.team];
     v.pawn.hp = 40; v.pawn.armor = 0;
@@ -576,14 +630,16 @@ if (SCEN === 'crew') {
     piece('enemy shell kills a crewman (credited, logged)');
     // (d) loader assist: loader and firer differ, the victim has armour: the loader lands at least 41 health damage
     const tgt = everyone().find((c) => c.team !== f.team && onGround(c) && c !== v);
-    const mates = D.crews[f.team][PR(f.slot).crew], ls = mates.a === f.slot ? mates.b : mates.a;
+    const mates = D.crews[f.team][PR(f.slot).crew];
+    let ls = mates.a === f.slot ? mates.b : mates.a;
+    if (!(ls >= 0)) { const ok = (c) => c.team === f.team && c !== f && alive(c) && PR(c.slot); const o = everyone().find((c) => ok(c) && PR(c.slot).role === 'mortar') || everyone().find(ok); ls = o ? o.slot : -1; }   // no crewmate this seed: a team-mate stands in as the loader
     if (tgt && ls >= 0 && PR(ls)) {
       tgt.pawn.hp = 100; tgt.pawn.armor = 100; tgt.pawn.dmgBy = new Map();
-      const a0 = stats.mortarAssists;
+      const a0 = stats.assists;
       D.impact({ team: f.team, k: PR(f.slot).crew, firerSlot: f.slot, firerGen: PR(f.slot).gen, loaderSlot: ls, loaderGen: PR(ls).gen, src: 'mortar', x: tgt.pawn.pos.x, y: tgt.pawn.pos.y, z: tgt.pawn.pos.z });
       const fromLoader = tgt.pawn.dmgBy.get(ctls[ls]) || 0;
       if (fromLoader < 41) fail('the loader\'s share was ' + fromLoader + ' health damage through armour (assist needs 41)');
-      if (tgt.pawn.hp <= 0 && stats.mortarAssists === a0) fail('a mortar kill with a loader gave no assist');
+      if (tgt.pawn.hp <= 0 && stats.assists === a0) fail('a mortar kill with a loader gave no assist');
       piece('loader assist share (' + fromLoader + ' hp through armour)');
     } else fail('crew scenario: no loader for the assist piece');
     // (e) the firer changes sides before the shell lands: no kill credited to him (or to his new side)
@@ -642,7 +698,7 @@ if (SCEN === 'air') {
       hooks.bullet({ weapon: new Weapon('weapon_awp', hitter.pawn), position: { ...a.pos }, hitEntity: a.ac.ent });
       const k0 = stats.killsTeam[hitter.team];
       if (leave) { disconnect(hitter, 'hitter left'); connect(hitter.slot, hitter.team, false); }
-      a.pos = { x: a.pos.x, y: a.pos.y, z: groundAt(a.pos.x, a.pos.y) + 5 }; a.f = { x: 0, y: 0, z: -1 };   // into the ground
+      a.pos = { x: a.pos.x, y: a.pos.y, z: groundAt(a.pos.x, a.pos.y) + 5 }; a.f = { x: 0.5, y: 0, z: -0.866 };   // into the ground (a 60-degree dive: the flight never points straight down)
       const under = everyone().find((q) => q.team === hitter.team && onGround(q) && q !== hitter);
       if (under) { under.pawn.pos = { x: a.pos.x + 40, y: a.pos.y, z: a.pos.z - 5 }; under.pawn.hp = 20; under.pawn.armor = 0; }   // the wreck lands on him
       tickOnce();
@@ -739,7 +795,216 @@ if (SCEN === 'edge') {
   });
 }
 
+// ------------------------------------------------------------------ bot scenarios (85_ai)
+const aiBots = (team, role) => [...dbg().players.values()].filter((q) => q.team === team && q.aiRole === role && ctls[q.slot] && ctls[q.slot].bot);
+const aiFlying = (team) => aiBots(team, 'pilot').filter((q) => q.air);
+const aiSeated = (team) => aiBots(team, 'crew').filter((q) => q.deployed && alive(ctls[q.slot]));
+const botsOf = (team) => everyone().filter((c) => c.bot && (!team || c.team === team));
+const postsOf = (team) => ENTS.filter((e) => e.name && e.name.startsWith('trench_' + tagOf(team) + '_')).map((e) => ({ x: e.origin[0], y: e.origin[1], z: e.origin[2] }));
+const nearPost = (c, r) => postsOf(c.team).some((q) => Math.hypot(c.pawn.pos.x - q.x, c.pawn.pos.y - q.y) < (r || 60));
+const areaPts = (team, name) => (CFG.BOTS.AREAS[name] || []).map((a) => ({ x: (team === 3 ? 1 : -1) * a.x, y: a.y, z: a.z }));
+// poll a condition every `every` s until it holds (then ok()) or `secs` pass (then fail(msg))
+function poll(cond, secs, ok, msg, every) {
+  const t0 = time;
+  const step = () => { let r; try { r = cond(); } catch (e) { fail(msg + ' (threw ' + e + ')'); return; } if (r) { if (ok) ok(r); return; } if (time - t0 > secs) { fail(msg); return; } when(time + (every || 0.25), step); };
+  when(time + (every || 0.25), step);
+}
+// a deployed infantry bot put out of play (kind: nml | lobby | far): the leash must bring it back to one of its posts
+function leashPiece(kind, place) {
+  const D = dbg(), B = CFG.BOTS;
+  const b = everyone().find((c) => c.bot && onGround(c) && PR(c.slot) && PR(c.slot).role === 'infantry' && PR(c.slot).deployed && !c.god && !c.leashUsed);
+  if (!b) { fail('no deployed infantry bot for the ' + kind + ' leash'); return; }
+  b.leashUsed = true; b.god = true; const life = b.pawn.spawnedAt, n0 = D.stats.botLeash[kind];
+  b.pawn.pos = place(b);
+  poll(() => b.pawn.spawnedAt !== life || !b.connected || (D.stats.botLeash[kind] > n0 && nearPost(b)), B.OUT_TIME + B.CHECK + B.COMBAT_GRACE + 3,
+       () => { b.god = false; piece('leash: ' + kind + (b.pawn.spawnedAt === life ? '' : ' (respawned first)')); },
+       'the ' + kind + ' leash left a bot out of play at ' + JSON.stringify(b.pawn.pos));
+}
+function leashPieces(t0) {
+  when(t0, () => leashPiece('nml', () => ({ x: 0, y: 500, z: 0 })));
+  when(t0 + 2, () => leashPiece('lobby', () => ({ ...lobbyT[0] ? { x: lobbyT[0].origin[0], y: lobbyT[0].origin[1], z: lobbyT[0].origin[2] } : { x: 0, y: -3000, z: -2892 } })));
+  when(t0 + 4, () => leashPiece('far', (b) => ({ x: (b.team === 3 ? 1 : -1) * 6000, y: 0, z: 0 })));
+}
+// both sides have their script pilot up and their script crews at the table
+const aiUp = (team) => aiFlying(team).length >= Math.min(1, CFG.AI.PILOTS) && aiSeated(team).length >= CFG.AI.CREWS;
+function aiAtSeats(team) {
+  for (const q of aiSeated(team)) { const c = ctls[q.slot], sa = one('mortarcrew_' + tagOf(team) + '_' + (q.crew + 1) + '_a'); if (!sa || Math.hypot(c.pawn.pos.x - sa.pos.x, c.pawn.pos.y - sa.pos.y) > 40 || c.pawn.mt !== MT.NONE) return false; }
+  return true;
+}
+if (SCEN === 'bots') {
+  when(2, () => {
+    const b = botsOf(), want = Math.max(0, 2 * CFG.BOTS.FILL_PER_SIDE - HUMANS);
+    if (b.length !== want) fail('quota fill: ' + b.length + ' bots for ' + HUMANS + ' humans (want ' + want + ')');
+    else if (botsOf(2).length !== botsOf(3).length) fail('quota fill: uneven bots ' + botsOf(2).length + ' / ' + botsOf(3).length);
+    else piece('quota fill: ' + b.length + ' bots for ' + HUMANS + ' humans');
+  });
+  poll(() => aiUp(2) && aiUp(3) && aiAtSeats(2) && aiAtSeats(3), 30, () => piece('AI pilot flying and AI crews at the table, both sides'), 'bots: the AI roles did not come up on both sides in 30 s');
+  when(60, () => {
+    let n = 0;
+    for (const c of botsOf()) {
+      const pr = PR(c.slot); if (!pr || pr.role !== 'infantry' || !pr.deployed || !onGround(c) || c.leashUsed) continue;
+      n++;
+      const o = c.pawn.pos, B = CFG.BOTS;
+      if (Math.abs(o.x) < B.NML_X && Math.abs(o.y) < B.NML_Y && o.z > B.NML_ZMIN) fail('an infantry bot stands in no man\'s land');
+      if (o.z < B.LOBBY_Z) fail('a deployed infantry bot stands in the briefing room');
+      if (!nearPost(c, 80)) fail('an infantry bot deployed away from every post: ' + JSON.stringify(o));
+    }
+    if (!n) fail('bots: no deployed infantry bot to check'); else piece('infantry bots at their posts (' + n + ')');
+  });
+  leashPieces(40);
+  when(70, () => { CFG.UNLOCKS[0].kills = 0; piece('woods opened'); });
+  for (let t = 72; t < 104; t += 2) when(t, () => { for (const c of botsOf()) { const pr = PR(c.slot); if (pr && pr.role === 'infantry' && pr.deployed && alive(c) && !c.god && rnd() < 0.5) c.pawn.TakeDamage({ damage: 999, damageTypes: DT.BULLET }); } });
+  for (let t = 74; t < 120; t += 3) when(t, () => {
+    for (const team of [2, 3]) {
+      const inArea = [...dbg().players.values()].filter((q) => q.team === team && q.bot && q.deployed && q.anchor && q.anchor.area === 'woodsopen');
+      if (inArea.length > CFG.BOTS.AREA_MAX) fail('more than AREA_MAX bots of one side sent into the woods');
+      for (const q of inArea) {
+        const c = ctls[q.slot]; if (!alive(c) || c.leashUsed) continue;
+        const ok = areaPts(team, 'woodsopen').some((a) => Math.hypot(c.pawn.pos.x - a.x, c.pawn.pos.y - a.y) < 60) || nearPost(c, 60);
+        if (!ok) fail('a bot sent to the woods is neither at a woods point nor at the ladder post: ' + JSON.stringify(c.pawn.pos));
+      }
+    }
+  });
+  when(125, () => {
+    const S = dbg().stats;
+    if (!(S.botDeploys.area > 0)) fail('bots: no deploy into the opened woods'); else piece('bots deployed into the opened woods x' + S.botDeploys.area);
+    if (!(S.aiShots > 0)) fail('bots: the AI crews fired nothing'); else piece('AI crew shots x' + S.aiShots);
+    if (!(S.aiGunRounds + S.aiBombs > 0)) fail('bots: the AI pilots fired nothing'); else piece('AI pilot gun rounds / bombs ' + S.aiGunRounds + ' / ' + S.aiBombs);
+  });
+}
+if (SCEN === 'lopsided') {
+  when(3, () => {
+    const t2 = everyone().filter((c) => c.team === 2), t3 = everyone().filter((c) => c.team === 3);
+    if (botsOf().length !== 12 || t2.length !== 8 || t3.length !== 8) fail('lopsided: want 4 humans + 4 bots vs 8 bots, got T ' + t2.length + ' (' + botsOf(2).length + ' bots), CT ' + t3.length);
+    else piece('4 humans (all T) + 12 bots: T 4 + 4, CT 8 bots');
+  });
+  poll(() => aiUp(3) && aiAtSeats(3), 30, () => {
+    if (aiBots(2, 'pilot').length || aiBots(2, 'crew').length) fail('lopsided: the side with 4 humans got script roles');
+    if (dbg().aiWanted(2, time) || !dbg().aiWanted(3, time)) fail('lopsided: aiWanted wrong (T ' + dbg().aiWanted(2, time) + ', CT ' + dbg().aiWanted(3, time) + ')');
+    piece('the all-bot side runs its pilot and crews; the side at the threshold does not');
+  }, 'lopsided: the all-bot side got no AI pilot / crews in 30 s');
+  when(130, () => { if (!(dbg().stats.aiShots > 0)) fail('lopsided: the all-bot side\'s crews fired nothing'); else piece('CT AI crew shots x' + dbg().stats.aiShots); });
+}
+if (SCEN === 'full') {
+  for (const t of [5, 60, 140]) when(t, () => {
+    const b = botsOf().length, D = dbg();
+    if (b) fail('full server: ' + b + ' bots joined with ' + HUMANS + ' humans');
+    if ([...D.players.values()].some((q) => q.aiRole)) fail('full server: a script role was handed out');
+    if (D.stats.aiPilots || D.stats.aiCrews) fail('full server: AI roles counted');
+    piece('32v32 humans: no bots, no script roles');
+  });
+  when(1, () => { if (!(stats.cmds.bot_quota > 0) || quotaMode !== 'fill') fail('the script set no bot_quota / fill'); else piece('bot_quota ' + quota + ' (' + quotaMode + ')'); });
+}
+if (SCEN === 'yield') {
+  const T_ = 2;
+  when(1, () => { CFG.AI.PILOTS = 5; CFG.AI.CREWS = 0; CFG.AI.MAX_SHARE = 1; });
+  poll(() => dbg().points && dbg().points.aircraft[T_].every((a) => a.pilot >= 0 && PR(a.pilot) && PR(a.pilot).aiRole === 'pilot'), 40, () => {
+    piece('all 5 T aircraft flown by script pilots');
+    // (a) mid-flight: a human asks for the air in the field (waits for his next deploy), dies, and at the deploy takes a bot's aircraft
+    const h = humansOf(T_).find((c) => alive(c) && PR(c.slot).deployed && !PR(c.slot).air);
+    if (!h) { fail('yield: no T human on the ground'); return; }
+    const held = new Map(dbg().points.aircraft[T_].map((a) => [a, a.pilot]));
+    say(h, '!air'); h.pawn.TakeDamage({ damage: 999, damageTypes: DT.BULLET });
+    poll(() => PR(h.slot) && PR(h.slot).air, 10, () => {
+      const ac = PR(h.slot).air.ac, was = held.get(ac), q = PR(was), c = ctls[was];
+      if (ac.pilot !== h.slot) fail('yield: the aircraft does not point at the human');
+      if (!q || !c || !c.bot) { fail('yield: the human got an aircraft no bot held'); return; }
+      if (q.air || q.aiRole || q.role !== 'infantry') fail('yield: the bot still flies / keeps its role');
+      if (alive(c) && (c.pawn.scale !== 1 || c.pawn.mt !== MT.WALK || !q.deployed || !nearPost(c))) fail('yield: the bot was not put back on its feet at a post');
+      if (dbg().stats.yields.air !== 1) fail('yield: ' + dbg().stats.yields.air + ' aircraft hand-overs counted');
+      if (aiFlying(T_).length !== 4) fail('yield: ' + aiFlying(T_).length + ' script pilots still flying (want 4)');
+      piece('human takes a bot-held aircraft mid-flight (same tick)');
+      when(time + 3, groundPiece);
+    }, 'yield: the human who asked for the air got no aircraft', 1 / 64);
+  }, 'yield: the script pilots never held all 5 T aircraft');
+  // (b) on the ground: a script pilot is shot down; while he waits in the briefing room his aircraft stands at its park and a human
+  //     who asked takes it; the bot, finding none free, deploys as infantry
+  function groundPiece() {
+    // wait for a script pilot in the air and the second T human alive on the ground (the rate model may have just shot him)
+    const ready = () => aiFlying(T_)[0] && humansOf(T_).find((c) => alive(c) && PR(c.slot) && PR(c.slot).deployed && !PR(c.slot).air);
+    if (!ready()) { poll(ready, 20, groundPiece, 'yield (ground): no script pilot / no second T human on the ground for 20 s'); return; }
+    const b = aiFlying(T_)[0], h2 = humansOf(T_).find((c) => alive(c) && PR(c.slot) && PR(c.slot).deployed && !PR(c.slot).air);
+    const bc = ctls[b.slot], ac = b.air.ac, killer = everyone().find((c) => c.team !== T_ && alive(c)), life2 = h2.pawn.spawnedAt;
+    say(h2, '!air'); h2.pawn.TakeDamage({ damage: 999, damageTypes: DT.BULLET, attacker: killer && killer.pawn });
+    when(time + 0.5, () => {
+      const lifeB = bc.pawn.spawnedAt;
+      bc.pawn.TakeDamage({ damage: 999, damageTypes: DT.BULLET, attacker: killer && killer.pawn });
+      if (bc.pawn.hp > 0) { fail('yield (ground): the script pilot could not be shot down'); return; }
+      // both back from the briefing room: the human deploys first (he died 0.5 s earlier) and takes the parked aircraft
+      poll(() => h2.pawn.spawnedAt !== life2 && bc.pawn.spawnedAt !== lifeB && PR(h2.slot).deployed && PR(b.slot) && PR(b.slot).deployed, 10, () => {
+        const q = PR(b.slot);
+        if (!PR(h2.slot).air) fail('yield (ground): the human who asked did not fly');
+        if (q.air && q.air.ac === PR(h2.slot).air.ac) fail('yield (ground): two players on one aircraft');
+        if (q.aiRole === 'pilot' && q.air) fail('yield (ground): the bot flies again while a human waited');
+        if (PR(h2.slot).air && PR(h2.slot).air.ac !== ac) fail('yield (ground): the human did not get the parked aircraft of the bot');
+        if (!q.air && (q.aiRole || q.role !== 'infantry')) fail('yield (ground): the bot without an aircraft kept its pilot role');
+        piece('human takes a bot\'s parked aircraft (bot ' + (q.air ? 'flies another' : 'deploys as infantry') + ')');
+        when(time + 2, seatPiece);
+      }, 'yield (ground): no hand-over within 10 s', 1 / 64);
+    });
+  }
+  // (c) a mortar seat: script crews in all five T pits; a human asks for the mortar and takes a seat a bot ran, the same tick
+  function seatPiece() {
+    CFG.AI.PILOTS = 0; CFG.AI.CREWS = 5;
+    poll(() => dbg().crews[T_].every((c) => { const q = c.a >= 0 ? PR(c.a) : undefined; return q && q.aiRole === 'crew'; }), 20, () => {
+      piece('all 5 T crews run by script bots');
+      const h = humansOf(T_).find((c) => alive(c)); if (!h) { fail('yield (seat): no T human'); return; }
+      const before = new Map(dbg().crews[T_].map((c, k) => [k, c.a]));
+      const foe = everyone().find((c) => c.team !== T_ && alive(c));          // a pilot in the air only takes enemy damage (the guard)
+      say(h, '!mortar'); h.pawn.TakeDamage({ damage: 999, damageTypes: DT.BULLET, attacker: foe && foe.pawn });
+      poll(() => PR(h.slot) && PR(h.slot).role === 'mortar', 12, () => {
+        const pr = PR(h.slot), k = pr.crew, cr = dbg().crews[T_][k], was = before.get(k), q = PR(was), c = ctls[was];
+        if (cr.a !== h.slot && cr.b !== h.slot) fail('yield (seat): the crew does not point at the human');
+        if (cr.a >= 0 && cr.b >= 0) fail('yield (seat): the human shares the tube with the bot');
+        if (q && (q.aiRole || q.role === 'mortar' || q.crew >= 0)) fail('yield (seat): the bot kept the seat or its role');
+        if (c && alive(c) && q && q.deployed && c.pawn.mt === MT.NONE) fail('yield (seat): the bot was left frozen at the table');
+        if (cr.ai) fail('yield (seat): the crew kept the bot\'s AI state');
+        if (dbg().stats.yields.seat !== 1) fail('yield (seat): ' + dbg().stats.yields.seat + ' seat hand-overs counted');
+        piece('human takes a bot-held mortar seat (same tick)');
+      }, 'yield (seat): the human who asked never got a seat', 1 / 64);
+    }, 'yield (seat): the script crews never held all 5 T pits');
+  }
+}
+if (SCEN === 'threshold') {
+  const T_ = 2, added = [];
+  poll(() => aiUp(T_) && aiUp(3), 30, () => {
+    piece('T and CT run script roles with 2 humans each');
+    const flyer = aiFlying(T_)[0], seated = aiSeated(T_).map((q) => q.slot);
+    for (let i = 0; i < 2; i++) { const s = ctls.findIndex((c) => !c); added.push(connect(s, T_, false)); }
+    fillBots();
+    poll(() => !aiBots(T_, 'pilot').length && !aiBots(T_, 'crew').length, 6, () => {
+      const D = dbg();
+      if (flyer && PR(flyer.slot) && PR(flyer.slot).air) fail('threshold: the script pilot still flies');
+      for (const ac of D.points.aircraft[T_]) if (ac.pilot >= 0 && ctls[ac.pilot] && ctls[ac.pilot].bot) fail('threshold: a T aircraft still held by a bot');
+      for (const c of D.crews[T_]) for (const s of [c.a, c.b]) if (s >= 0 && ctls[s] && ctls[s].bot) fail('threshold: a T pit still held by a bot');
+      for (const s of seated) { const c = ctls[s]; if (c && alive(c) && c.pawn.mt === MT.NONE) fail('threshold: a released crew bot left frozen'); }
+      if (!aiUp(3)) fail('threshold: CT (2 humans) lost its script roles');
+      piece('T reached 4 humans: its script roles released (' + D.stats.aiReleased.humans + ')');
+      when(time + 5, () => {
+        for (const c of added) disconnect(c, 'left');
+        fillBots();
+        poll(() => aiUp(T_), 25, () => piece('T back to 2 humans: script roles again'), 'threshold: the script roles did not come back after the humans left');
+      });
+    }, 'threshold: T kept its script roles with 4 humans');
+  }, 'threshold: the script roles did not come up');
+}
+if (SCEN === 'botround') {
+  const restart = (order, next) => poll(() => aiUp(2) && aiUp(3) && aiAtSeats(2) && aiAtSeats(3), 40, () => {
+    const D = dbg(), shots0 = D.stats.aiShots, sorties0 = D.stats.aiSorties;
+    roundRestart(order);
+    for (const pr of D.players.values()) if (pr.air) fail('restart left a script pilot flying');
+    for (const team of [2, 3]) for (const c of D.crews[team]) if (c.ai) fail('restart left a crew\'s AI state');
+    piece('restart (order ' + order + ') with script pilots up and crews at the table');
+    poll(() => aiUp(2) && aiUp(3) && aiAtSeats(2) && aiAtSeats(3) && D.stats.aiSorties > sorties0, 20, () => {
+      piece('script roles back after the restart (order ' + order + ')');
+      poll(() => D.stats.aiShots > shots0, 40, () => { piece('script crews fire again (order ' + order + ')'); if (next) next(); }, 'botround: no AI crew shot after the restart');
+    }, 'botround: the script roles did not come back after the restart');
+  }, 'botround: the script roles were not up before the restart');
+  when(1, () => restart(0, () => restart(1)));
+}
+
 // default runs (no scenario): small set pieces so every guard shows in the coverage table
+if (!SCEN && !BAL && botsOf().length + (FILL ? 1 : 0)) leashPieces(150);
 if (!SCEN && !BAL) {
   when(5, () => forceAir(3));
   when(100, () => {
@@ -790,6 +1055,10 @@ function tickOnce() {
   }
   for (const c of everyone()) { const pr = D.players.get(c.slot); if (pr) pr.lastPrompt = undefined; }
   if (tick % 16 === 0) invariants();
+  if (tick % 64 === 5) {
+    fillBots();
+    if (botsOf().length) { stats.botsSeen = true; if ([2, 3].some((t) => D.aiWanted(t, time))) stats.aiSeen = true; }
+  }
 }
 for (let step = 0; step < SECONDS * 64; step++) {
   for (let i = at.length - 1; i >= 0; i--) if (at[i].t <= time) { const a = at[i]; at.splice(i, 1); try { await a.fn(); } catch (e) { fail('set piece ' + (a.name || '') + ' threw: ' + (e && e.stack ? e.stack.split('\n').slice(0, 3).join(' ') : e)); } }
@@ -810,6 +1079,7 @@ if (BAL) {
   const k2 = stats.killsTeam[2], k3 = stats.killsTeam[3];
   const out = { seed: +(opt.seed || 7), secs: SECONDS, players: N, humans: HUMANS, kills: { t: k2, ct: k3 }, winner: k2 > k3 ? 2 : k3 > k2 ? 3 : 0, killsBy, deaths: stats.kills,
                 killsTeamBy: (() => { const o = {}; for (const t of [2, 3]) { o[t] = { ...(stats.killsTeamBy[t] || {}) }; for (const [k, v] of Object.entries(S.killsByTeam[t] || {})) o[t][k] = (o[t][k] || 0) + v; } return o; })(), flights: S.flights, crashes: S.crashes, flightLife: (stats.flightLife || []).map((x) => Math.round(x)), shots: S.shots, bombs: S.bombs, assists: stats.mortarAssists, unlocks: S.unlocks, unlockAt: stats.unlockAt || [],
+                bots: botsOf().length, aiShots: S.aiShots, aiSorties: S.aiSorties, aiAttacks: S.aiAttacks || 0, aiGunRounds: S.aiGunRounds, aiBombs: S.aiBombs,
                 perf: P_, errors: errs.length + fails.length, fails: fails.slice(0, 5) };
   console.log(JSON.stringify(out));
   process.exit(out.errors ? 1 : 0);
@@ -831,10 +1101,20 @@ if (!SCEN) {
     'uniforms set': S.uniforms, 'ambient bursts': S.ambient, 'damage blocked at the pit / pilot': S.blocked, 'field role requests deferred': S.deferred,
     '!pos / !roles / !uniform': (stats.chats['!pos'] || 0) + (stats.chats['!roles'] || 0) + (stats.chats['!uniform'] || 0), 'per-minute perf line': S.perfLines,
   };
-  if (BAL || N < 16) delete table['air: AFK pilot taken home'];
+  if (BAL || N < 16 || HUMANS < 16) delete table['air: AFK pilot taken home'];   // few humans: the AFK pilot may be shot down first
   const need = N >= 16 && SECONDS >= 300;
-  console.log('coverage (feature -> times exercised)' + (need ? '' : ' (not enforced: runs of 16+ players and 300+ s only)') + ':');
-  for (const [k, v] of Object.entries(table)) { console.log('  ' + String(v).padStart(6) + '  ' + k); if (need && !(v > 0)) fail('coverage: "' + k + '" was never exercised'); }
+  // fill=1 runs check the bot rows below; with 4 humans the human-pair rows (a loader beside a firer) may stay at 0
+  console.log('coverage (feature -> times exercised)' + (need && !FILL ? '' : FILL ? ' (not enforced in fill=1 runs: the bot rows are)' : ' (not enforced: runs of 16+ players and 300+ s only)') + ':');
+  for (const [k, v] of Object.entries(table)) { console.log('  ' + String(v).padStart(6) + '  ' + k); if (need && !FILL && !(v > 0)) fail('coverage: "' + k + '" was never exercised'); }
+  // bots (85_ai): enforced when bots played (the deploy and leash rows) and when a side was under the human threshold (the AI rows)
+  const L = S.botLeash, bd = S.botDeploys;
+  const botRows = [['bots: deploys to the fire trench', bd.fire, 'bots'], ['bots: deploys to the support trench', bd.support, 'bots'], ['bots: deploys into opened areas', bd.area, 'bots'],
+    ['bots: leash, no man\'s land / briefing room / far / blocker (' + L.nml + ' / ' + L.lobby + ' / ' + L.far + ' / ' + L.lock + ')', L.nml && L.lobby && L.far ? L.nml + L.lobby + L.far + L.lock : 0, 'bots'],
+    ['AI: pilots assigned / sorties (' + S.aiPilots + ' / ' + S.aiSorties + ')', S.aiPilots && S.aiSorties, 'ai'], ['AI: pilot gun rounds', S.aiGunRounds, 'ai'], ['AI: pilot bombs', S.aiBombs, 'ai'],
+    ['AI: crews assigned', S.aiCrews, 'ai'], ['AI: crew shots', S.aiShots, 'ai']];
+  const botNeed = { bots: need && stats.botsSeen, ai: need && stats.aiSeen };
+  console.log('bots (enforced: ' + (botNeed.bots ? 'bot rows' : 'no bot rows') + ', ' + (botNeed.ai ? 'AI rows' : 'no AI rows: no side under ' + CFG.AI.MIN_HUMANS + ' humans with bots') + '):');
+  for (const [k, v, kind] of botRows) { console.log('  ' + String(+v || 0).padStart(6) + '  ' + k); if (botNeed[kind] && !(v > 0)) fail('coverage: "' + k + '" was never exercised'); }
 }
 console.log('script time: ' + P_.avg.toFixed(3) + ' ms/tick avg, p50 ' + P_.p50.toFixed(3) + ', p99 ' + P_.p99 + ', max ' + P_.max + ' ms over ' + P_.ticks + ' ticks, ' + P_.over1 + ' over 1 ms, ' + P_.over8 +
   ' over 8 ms; per tick ' + P_.hud + ' HUD calls, ' + P_.traces + ' traces (the stand-in engine\'s own time is included)');

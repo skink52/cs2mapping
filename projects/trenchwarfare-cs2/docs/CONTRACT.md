@@ -7,8 +7,15 @@ comes from and whether the current map and addon have it. Change a name here fir
 **Checked by** `python tools/check_contract.py` (from the project folder): it reads the script, the map digest (`out/digest.json` from
 `tools/restage_out.py`, or a fresh `tools/mapdigest.py` read of the vmap) and the content + game addon folders, and exits 1 on any
 MISSING row not listed under [Known missing](#known-missing), on a script lookup that no row covers (UNLISTED), on a row whose name has
-left the script (STALE), or on a shipped script older than its modules (STALE build). `--markdown` prints the tables below. The tables were generated on 12 Nov 2026 from the user's vmap (tw34
-delivery, 67,206,918 B, CRC32 2e3f90d0) and the addon as it stood that day. Level: a read of the files; nothing here is in-game verified.
+left the script (STALE), or on a shipped script older than its modules (STALE build), and on a `SetModel` whose argument is not a
+`CONFIG.UNIFORMS` model or the pawn's own (UNCHECKED SetModel). `--markdown` prints the tables below. The tables were generated on 12 Nov 2026 from the user's vmap (tw34
+delivery, 67,206,918 B, CRC32 2e3f90d0) and the addon as it stood that day; rows changed by remaster steps 4 (bots) and 5 (world patch)
+were updated the same day. Level: a read of the files; nothing here is in-game verified.
+
+**Two states.** By default the check reads the deployed map (`out/digest.json` from `tools/restage_out.py`): 77 of 78 rows OK, the
+known missing `mortar_<tg>_K`. Step 5's patched map: `python tools/check_contract.py --vmap out/mg_trenchwarfare_patched.vmap --stage out/addon`
+(also `out/nav_patched_step5.vmap`, step 5 + `tools/patch_nav.py`): 80 of 80 OK. `--stage` lets a model on a map entity that is only
+staged (`out/addon`, not compiled yet) count as OK, "staged, not compiled yet"; never a model the script sets on a pawn.
 
 ## Files
 - Script: `src/modules/NN_*.js`, joined by `node ../../create/build_script.mjs src/build.json` into `src/mg_trenchwarfare.js` (the
@@ -31,7 +38,7 @@ plus the few entities it depends on without looking them up. "Count" is how many
 
 | Name | Class | Count in the vmap | Made by | Status | Notes |
 |---|---|---|---|---|---|
-| `trench_<tg>_N` | info_teleport_destination | 20 / 20 (t / ct; script reads 1..64) | make_map.py | OK | infantry posts (deploy, and the bot leash: a post 400+ u from a closed blocker) |
+| `trench_<tg>_N` | info_teleport_destination | 20 / 20 (t / ct; script reads 1..64) | make_map.py | OK | infantry posts (deploy, and the bot leash: a post 400+ u from a closed blocker). Bots: \|x\| < 1900 = fire trench (1..15), else support trench (16..20); the post within 600 u of an opened blocker is that area's sap head / ladder post |
 | `heal_<tg>_N` | info_target | 3 / 3 (t / ct; script reads 1..16) | make_map.py | OK | dressing stations |
 | `plane_<tg>_N` | info_teleport_destination | 5 / 5 (t / ct; script reads 1..16) | make_map.py | OK | air-spawn points |
 | `tw_plane_<tg>_N` | prop_dynamic | 5 / 5 (t / ct; script reads 1..16) | make_map.py | OK | the aircraft (CT SPAD VII, T Dr.I) |
@@ -50,22 +57,25 @@ plus the few entities it depends on without looking them up. "Count" is how many
 | `mortarcrew_<tg>_K_b` | info_teleport_destination | 10 of 10 | make_map.py | OK | seat b: ammunition box |
 | `tw_launch_snd_<tg>_K` | point_soundevent | 10 of 10 | make_map.py | OK | StartSound on firing |
 | `tw_launch_fx_<tg>_K` | info_particle_system | 10 of 10 | make_map.py | OK | Stop/Start on firing |
-| `mortar_<tg>_K` | prop_dynamic | 0 of 10 | nobody (the mortars are prop_static) | MISSING (known) | looked up per round; SetAnimation fire by ent.FireInput when present (fireMortar), and the fallback for a missing mortarpit_ |
+| `mortar_<tg>_K` | prop_dynamic | 0 of 10 deployed; 10 of 10 in step 5's patched map | patch_world_1.py (step 5; prop_static in the deployed map) | MISSING (known) in the deployed map; OK patched | looked up per round; SetAnimation fire by ent.FireInput when present (fireMortar), and the fallback for a missing mortarpit_. Patched: on `minenwerfer_dyn.vmdl` / `mortar_58mm_dyn.vmdl` (anims idle + fire = CONFIG.MORTAR_FIRE_ANIM) |
 | `tw_boom_fx_1..12` | info_particle_system | 12 of 12 | make_map.py | OK | effect pool (POOL 12), Teleport + Stop/Start |
 | `tw_dirt_fx_1..12` | info_particle_system | 12 of 12 | make_map.py | OK | effect pool (POOL 12), Teleport + Stop/Start |
 | `tw_boom_snd_1..12` | point_soundevent | 12 of 12 | make_map.py | OK | effect pool (POOL 12), Teleport + StartSound |
 | `tw_whistle_snd_1..12` | point_soundevent | 12 of 12 | make_map.py | OK | effect pool (POOL 12), Teleport + StartSound |
 | `tw_shake_1..12` | env_shake | 12 of 12 | make_map.py | OK | effect pool (POOL 12), Teleport + StartShake |
 | `tw_hud` | custom_hud_layout | 1 of 1 | make_map.py | OK | CONFIG.HUD |
-| `woodsopen` | prop_dynamic | 1 of 1 (2 entities) | the user (blockers), made prop_dynamic by patch_unlocks.py | OK | Entities.FindByName (both); Remove + effects when the area opens (CONFIG.UNLOCKS) |
-| `undergroundopen` | prop_dynamic | 1 of 1 (2 entities) | the user (blockers), made prop_dynamic by patch_unlocks.py | OK | Entities.FindByName (both); Remove + effects when the area opens (CONFIG.UNLOCKS) |
+| `woodsopen` | prop_dynamic | 1 of 1 (2 entities) | the user (blockers), made prop_dynamic by patch_unlocks.py | OK | Entities.FindByName (both); Remove + effects when the area opens (CONFIG.UNLOCKS); positions: the bot leash and the bots' ladder post. Step 5: model `revet_planks_broken_128_dyn.vmdl` |
+| `undergroundopen` | prop_dynamic | 1 of 1 (2 entities) | the user (blockers), made prop_dynamic by patch_unlocks.py | OK | Entities.FindByName (both); Remove + effects when the area opens (CONFIG.UNLOCKS); positions: the bot leash and the bots' sap-head post. Step 5: model `revet_planks_broken_dyn.vmdl` |
 | `tw_script` | point_script | 1 of 1 | make_map.py | OK | runs the script (not looked up by it) |
 | `tw_uniform_1..4` | prop_dynamic | 4 of 4 | patch_uniforms.py | OK | hidden precache props for the uniform models (not looked up by the script) |
 | `info_player_terrorist / _counterterrorist` | spawns | 32 / 32 | make_map.py | OK | lobby spawns (the script teleports from there; not looked up) |
 
 ## Models
 Models the script sets (`SetModel`; each also needs a precache prop in the map), then the models on the prop_dynamics the script moves.
-On `!uniform` the script sets the player's own stock agent model back (read from the pawn, not listed).
+On `!uniform` the script sets the player's own stock agent model back (read from the pawn, not listed). Rule (12 Nov, from the user):
+the giant first-person weapons came from a pawn set to a model the game could not load (picked in Hammer without its assets), so
+every model the script sets on a pawn must be compiled in the game addon (`.vmdl_c`) or be the pawn's own; `check_contract.py` fails
+on any other `SetModel` argument and on a uniform model without its `.vmdl_c` (a compile older than the `.vmdl` is noted).
 
 | Model | Use | Made by | Status | Notes |
 |---|---|---|---|---|
@@ -83,6 +93,15 @@ On `!uniform` the script sets the player's own stock agent model back (read from
 | `models/tw/fx/tw_tracer/tw_tracer.vmdl` | on tw_tracer_<tg>_N | map (prop_dynamic model key) | OK | content yes, game vmdl_c yes |
 | `models/tw/revet_planks_broken/revet_planks_broken.vmdl` | on undergroundopen | map (prop_dynamic model key) | OK | content yes, game vmdl_c yes |
 | `models/tw/revet_planks_broken_128/revet_planks_broken_128.vmdl` | on woodsopen | map (prop_dynamic model key) | OK | content yes, game vmdl_c yes |
+
+In step 5's patched map (`--vmap out/mg_trenchwarfare_patched.vmap --stage out/addon`), staged by `tools/dyn_models.py`, not compiled yet:
+
+| Model | Use | Made by | Status | Notes |
+|---|---|---|---|---|
+| `models/tw/minenwerfer/minenwerfer_dyn.vmdl` | on mortar_t_K | tools/dyn_models.py, patch_world_1.py | OK (staged) | anims idle + fire |
+| `models/tw/ext/mortar_58mm/mortar_58mm_dyn.vmdl` | on mortar_ct_K | tools/dyn_models.py, patch_world_1.py | OK (staged) | anims idle + fire |
+| `models/tw/revet_planks_broken/revet_planks_broken_dyn.vmdl` | on undergroundopen | tools/dyn_models.py, patch_world_1.py | OK (staged) | dynamic archetype twin (REVIEW_WORLD_1 H2) |
+| `models/tw/revet_planks_broken_128/revet_planks_broken_128_dyn.vmdl` | on woodsopen | tools/dyn_models.py, patch_world_1.py | OK (staged) | dynamic archetype twin (H2) |
 
 ## Sound events
 The script plays no sound by name: it fires `StartSound` / `StopSound` at named `point_soundevent`s, whose `soundName` is listed here.
@@ -136,18 +155,30 @@ are not validated offline.
 | `mp_weapons_allow_map_placed 1` | script OnActivate | OK | CONFIG.CVARS |
 | `mp_free_armor 0` | script OnActivate | OK | CONFIG.CVARS |
 | `mp_solid_teammates 1` | script OnActivate | OK | CONFIG.CVARS |
-| `bot_quota_mode normal` | script OnActivate | OK | CONFIG.CVARS |
 | `mp_give_player_c4 0` | script OnActivate | OK | CONFIG.CVARS |
+| `bot_quota_mode fill` | script OnActivate | OK | when CONFIG.BOTS_ON (default true, step 4): bots fill the server and leave as humans join (was `bot_quota_mode normal` in CONFIG.CVARS) |
+| `bot_quota <2 x FILL_PER_SIDE>` | script OnActivate | OK | when CONFIG.BOTS_ON: 16 (CONFIG.BOTS.FILL_PER_SIDE 8) |
 | `bot_quota 0` | script OnActivate | OK | only when CONFIG.BOTS_ON is false |
 | `bot_kick` | script OnActivate | OK | only when CONFIG.BOTS_ON is false |
 | `say <text>` | script say() | OK | chat announcements (unlocks, roles) |
 
 ## Known missing
 Rows that are MISSING on purpose or until a later remaster step; `tools/check_contract.py` lets exactly these through.
-- `mortar_<tg>_K`: the 10 mortars are `prop_static` (`models/tw/ext/mortar_58mm` x5 CT, `models/tw/minenwerfer` x5 T). Since step 3
-  the script looks the name up once per round (`points.mortar`) and fires `SetAnimation fire` at the entity only when it exists, so
-  nothing is fired at a missing name. The lookup is also the fallback when `mortarpit_<tg>_K` is missing, which it is not. Remaster
-  step 5 makes them named `prop_dynamic` (dynamic archetype, with a `fire` sequence); no script change is needed then.
+- `mortar_<tg>_K`: in the deployed map the 10 mortars are `prop_static` (`models/tw/ext/mortar_58mm` x5 CT, `models/tw/minenwerfer` x5 T).
+  Since step 3 the script looks the name up once per round (`points.mortar`) and fires `SetAnimation fire` at the entity only when it
+  exists, so nothing is fired at a missing name. The lookup is also the fallback when `mortarpit_<tg>_K` is missing, which it is not.
+  Step 5 (`tools/patch_world_1.py`, in `out/` until deployed) makes them `prop_dynamic` `mortar_<tg>_K` on the `_dyn` twins with idle
+  + fire: with `--vmap out/mg_trenchwarfare_patched.vmap --stage out/addon` the row is OK. Drop this entry once that map is deployed.
+
+## Bots (remaster step 4)
+No new entity names: bots use the posts, the blockers, the crew seats and the aircraft above. CONFIG names the script and the map share:
+- `CONFIG.BOTS.AREAS`: points inside the opened areas (CT side; T mirrors x): woods clearing (605, 3930), (1110, 3700), (1110, 4150)
+  at `tools/layout.py` ground + 8 (the last two = step 5's moved woods seeds), tunnel landing (2120, -3296, -252) (`layout.TUN_LANDING`,
+  `TUN_FLOOR` + 8). Moved geometry there needs these moved too.
+- `CONFIG.BOTS.NML_*` = `tools/check_play.py` `NML_X / NML_Y / NML_ZMIN` (no man's land box), `LOBBY_Z` -1500 (the briefing room is at z -2892).
+- Map: `func_nav_markup` `tw_nav_no_N` (navProperty_NavGen NONAV, vis group tw_nav), made by `tools/patch_nav.py`; the WALKABLESEED
+  markup of vis group tw_nav (made by `tools/patch_bots.py`, the woods four moved by step 5) is its template. Re-running the old
+  `patch_bots.py` would delete every tw_nav node, the NONAV boxes too.
 
 ## Chat commands (script, not checked by the tool)
 `!infantry` / `!rifle`, `!mortar` / `!artillery`, `!air` / `!pilot`, `!roles`, `!swap` (also SHIFT+E), `!pos`, `!uniform`, `!random`.

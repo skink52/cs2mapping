@@ -7,11 +7,17 @@ covers (UNLISTED), and on a row whose name no longer appears in the script (STAL
 The script is the shipped build src/mg_trenchwarfare.js (src/modules/NN_*.js joined by create/build_script.mjs, config src/build.json);
 a build older than its modules is a failure (STALE build), so the names checked are the modules' names.
 
-usage: python tools/check_contract.py [--digest out/digest.json | --vmap V] [--addon A] [--game G] [--script JS] [--markdown]
+usage: python tools/check_contract.py [--digest out/digest.json | --vmap V] [--stage DIR] [--addon A] [--game G] [--script JS] [--markdown]
   --digest   the map digest (tools/restage_out.py writes out/digest.json); default: that file, else a fresh digest of --vmap
+  --vmap     check this map instead (a fresh digest), e.g. out/mg_trenchwarfare_patched.vmap (step 5) or out/nav_patched_step5.vmap
+  --stage    a staging folder (e.g. out/addon): a model on a map entity that is only there counts as OK, "staged, not compiled yet".
+             Never for a model the script SetModels on a pawn: that one must be compiled in the game addon (or be the pawn's own
+             stock model), because a pawn set to a model the game cannot load is what gave the giant first-person weapons
   --markdown print the tables for docs/CONTRACT.md instead of the plain report (same rows, same statuses)
 Defaults: --addon C:/source1/links/content_addons/mg_trenchwarfare, --game C:/source1/links/game_addons/mg_trenchwarfare,
-          --vmap <addon>/maps/mg_trenchwarfare.vmap. Level: a read of the files ("untested" in game).
+          out/digest.json (the deployed map as restaged), no stage. Level: a read of the files ("untested" in game).
+Every SetModel call in the script is checked: its argument must be a CONFIG.UNIFORMS model (each one compiled in the game addon and
+precached by a map prop) or the pawn's own model read back from it (p.stockModel); any other argument fails (UNCHECKED SetModel).
 """
 import argparse, json, os, re, subprocess, sys
 
@@ -45,6 +51,7 @@ def main():
     ap.add_argument('--digest'); ap.add_argument('--vmap')
     ap.add_argument('--addon', default='C:/source1/links/content_addons/mg_trenchwarfare')
     ap.add_argument('--game', default='C:/source1/links/game_addons/mg_trenchwarfare')
+    ap.add_argument('--stage', help='staging folder searched for map-entity models not yet deployed (never for SetModel models)')
     ap.add_argument('--markdown', action='store_true')
     ap.add_argument('--script', default=SCRIPT, help='the script to check (default src/mg_trenchwarfare.js)')
     a = ap.parse_args()
@@ -114,7 +121,7 @@ def main():
     ent_row('mortarcrew_<tg>_K_b', ['"mortarcrew_"'], 'info_teleport_destination', crew('mortarcrew_%s_%d_b'), 'make_map.py', 'seat b: ammunition box')
     ent_row('tw_launch_snd_<tg>_K', ['"tw_launch_snd_"'], 'point_soundevent', crew('tw_launch_snd_%s_%d'), 'make_map.py', 'StartSound on firing')
     ent_row('tw_launch_fx_<tg>_K', ['"tw_launch_fx_"'], 'info_particle_system', crew('tw_launch_fx_%s_%d'), 'make_map.py', 'Stop/Start on firing')
-    ent_row('mortar_<tg>_K', ['"mortar_"'], 'prop_dynamic', crew('mortar_%s_%d'), 'nobody (the mortars are prop_static)',
+    ent_row('mortar_<tg>_K', ['"mortar_"'], 'prop_dynamic', crew('mortar_%s_%d'), 'patch_world_1.py (step 5; prop_static in the deployed map)',
             'looked up per round; SetAnimation fire by ent.FireInput when present (fireMortar), and the fallback for a missing mortarpit_')
     for p, cls, inp in (('tw_boom_fx_', 'info_particle_system', 'Stop/Start'), ('tw_dirt_fx_', 'info_particle_system', 'Stop/Start'),
                         ('tw_boom_snd_', 'point_soundevent', 'StartSound'), ('tw_whistle_snd_', 'point_soundevent', 'StartSound'),
@@ -123,7 +130,7 @@ def main():
     ent_row('tw_hud', ['"tw_hud"'], 'custom_hud_layout', ['tw_hud'], 'make_map.py', 'CONFIG.HUD')
     for u in ('woodsopen', 'undergroundopen'):
         ent_row(u, ['"%s"' % u], 'prop_dynamic', [u], 'the user (blockers), made prop_dynamic by patch_unlocks.py',
-                'Entities.FindByName (both); Remove + effects when the area opens (CONFIG.UNLOCKS)')
+                'Entities.FindByName (both); Remove + effects when the area opens (CONFIG.UNLOCKS); positions: the bot leash and the bots\' sap-head / ladder posts')
     ent_row('tw_script', [], 'point_script', ['tw_script'], 'make_map.py', 'runs the script (not looked up by it)')
     nu = len(set(re.findall(r'"(models/tw/players/[^"]+\.vmdl)"', js)))
     ent_row('tw_uniform_1..%d' % nu, [], 'prop_dynamic', ['tw_uniform_%d' % i for i in range(1, nu + 1)], 'patch_uniforms.py',
@@ -151,21 +158,32 @@ def main():
     def mdl_status(m):
         c = os.path.exists(os.path.join(a.addon, m)); g = os.path.exists(os.path.join(a.game, m + '_c'))
         return c, g
+    def staged(m): return bool(a.stage) and os.path.exists(os.path.join(a.stage, m))
+    # SetModel on a pawn: every call's argument must be a CONFIG.UNIFORMS model or the pawn's own model read back (p.stockModel)
+    uni = re.search(r'UNIFORMS:\s*\{(.*?)\n\s*\},', js, re.S)
+    uni_models = set(re.findall(r'"(models/[^"]+\.vmdl)"', uni.group(1) if uni else ''))
+    if not uni_models: problems.append('STALE: CONFIG.UNIFORMS not found / no models in it')
+    for arg in re.findall(r'\.SetModel\(([^)]*)\)', js):
+        if arg.strip() not in ('m', 'p.stockModel'): problems.append('UNCHECKED SetModel(%s): only CONFIG.UNIFORMS models (via m) or p.stockModel are verified' % arg.strip())
+    if 'const m = list[p.slot % list.length]' not in js: problems.append('STALE: uniform() no longer picks m from CONFIG.UNIFORMS')
     for m in sorted(set(re.findall(r'"(models/[^"]+\.vmdl)"', js))):
         c, g = mdl_status(m)
         pre = [e.get('name', '#%d' % e['i']) for e in ents if (e.get('keys') or {}).get('model') == m]
+        stale = c and g and os.path.getmtime(os.path.join(a.addon, m)) > os.path.getmtime(os.path.join(a.game, m + '_c'))
         ok = c and g and pre
-        row('model', m, 'OK' if ok else 'MISSING', 'SetModel (CONFIG.UNIFORMS)', '', 'tools/soldiers.py (+ arms tools)',
-            'content %s, game vmdl_c %s, precache %s' % ('yes' if c else 'NO', 'yes' if g else 'NO', ', '.join(pre) or 'NONE'))
+        row('model', m, 'OK' if ok else 'MISSING', 'SetModel (CONFIG.UNIFORMS)' if m in uni_models else 'script literal', '', 'tools/soldiers.py (+ arms tools)',
+            'content %s, game vmdl_c %s%s, precache %s' % ('yes' if c else 'NO', 'yes' if g else 'NO', ' (older than the .vmdl: recompile)' if stale else '',
+                                                         ', '.join(pre) or 'NONE'))
     driven = {}
-    rx = re.compile(r'^(tw_plane_(t|ct)_\d+|tw_prop_.*|tw_bomb_.*|tw_tracer_.*|tw_bombsight_.*|tw_gunsight_.*|woodsopen|undergroundopen)$')
+    rx = re.compile(r'^(tw_plane_(t|ct)_\d+|tw_prop_.*|tw_bomb_.*|tw_tracer_.*|tw_bombsight_.*|tw_gunsight_.*|woodsopen|undergroundopen|mortar_(t|ct)_\d+)$')
     for e in ents:
         m = (e.get('keys') or {}).get('model')
         if m and e.get('name') and rx.match(e['name']): driven.setdefault(m, set()).add(re.sub(r'_(t|ct)_\d+(_\d+)?$', '_<tg>_N', e['name']))
     for m in sorted(driven):
         c, g = mdl_status(m)
-        row('model', m, 'OK' if c and g else 'MISSING', 'on ' + ', '.join(sorted(driven[m])), '', 'map (prop_dynamic model key)',
-            'content %s, game vmdl_c %s' % ('yes' if c else 'NO', 'yes' if g else 'NO'))
+        st = not (c and g) and staged(m)
+        row('model', m, 'OK' if (c and g) or st else 'MISSING', 'on ' + ', '.join(sorted(driven[m])), '', 'map (prop_dynamic model key)',
+            ('staged in %s, not compiled yet' % a.stage) if st else 'content %s, game vmdl_c %s' % ('yes' if c else 'NO', 'yes' if g else 'NO'))
 
     # ---------------------------------------------------------------- sounds
     vs = os.path.join(a.addon, 'soundevents', 'soundevents_addon.vsndevts')
@@ -245,6 +263,10 @@ def main():
     cv = re.search(r'CVARS:\s*\[(.*?)\]', js, re.S)
     for c in re.findall(r'"([^"]+)"', cv.group(1) if cv else ''):
         row('console', c, 'OK', '', '', 'script OnActivate', 'CONFIG.CVARS')
+    if '"bot_quota_mode fill"' in js and '"bot_quota " + 2 * CONFIG.BOTS.FILL_PER_SIDE' in js:
+        row('console', 'bot_quota_mode fill', 'OK', '', '', 'script OnActivate', 'when CONFIG.BOTS_ON (default true): bots fill the server, leave as humans join')
+        row('console', 'bot_quota <2 x FILL_PER_SIDE>', 'OK', '', '', 'script OnActivate', 'when CONFIG.BOTS_ON: %d (FILL_PER_SIDE %d)' % (2 * cfg_num(js, 'FILL_PER_SIDE'), cfg_num(js, 'FILL_PER_SIDE')))
+    else: problems.append('STALE: the bot quota commands (bot_quota_mode fill / bot_quota) changed in the script')
     for c in ('bot_quota 0', 'bot_kick'):
         if '"%s"' % c in js: row('console', c, 'OK', '', '', 'script OnActivate', 'only when CONFIG.BOTS_ON is false')
     if '"say "' in js: row('console', 'say <text>', 'OK', '', '', 'script say()', 'chat announcements (unlocks, roles)')

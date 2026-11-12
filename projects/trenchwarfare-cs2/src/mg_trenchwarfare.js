@@ -9,7 +9,7 @@ import { CSDamageFlags, CSDamageTypes, CSGearSlot, CSInputs, CSMoveType, Console
 // Roles: INFANTRY (fire trench, respawn, bolt rifle + pistol + knife, 3-kill streak -> Mondragon / Lewis gun, dressing stations heal),
 //        MORTAR (5 crews x 2 per side: plot at the map table, fetch a bomb, load, fire; simulated shells with spread),
 //        AIR (5 biplanes per side, arcade flight in third person; pilots posted on respawn or by !air, AIR_LIVES lives, then back to the ground).
-// Bots are always infantry. Everyone spawns in the briefing room and is sent to their post after a short delay.
+// Bots are infantry; with few humans on a side the script runs some of them as pilots and mortar crews (85_ai). Everyone spawns in the briefing room and is sent to their post after a short delay.
 //
 // Map entities this script uses (all made by tools/make_map.py):
 //   trench_<t|ct>_N (info_teleport_destination) infantry posts, facing the enemy
@@ -95,12 +95,42 @@ const CONFIG = {
   ],
   CVARS: ["mp_respawn_on_death_t 1", "mp_respawn_on_death_ct 1", "mp_respawn_immunitytime 0", "mp_freezetime 0",
           "mp_roundtime 60", "mp_buy_anywhere 0", "mp_buytime 0", "mp_death_drop_gun 0", "mp_weapons_allow_map_placed 1",
-          "mp_free_armor 0", "mp_solid_teammates 1", "bot_quota_mode normal", "mp_give_player_c4 0"],
-  // bots (infantry only; the map's nav seeds cover the lobby, trenches, woods clearings and tunnels): a bot that hangs around a
-  // still-closed area's blocker (woodsopen / undergroundopen) for LEASH_TIME is sent back to a fire-trench post
-  BOTS: { LEASH: 170, LEASH_Z: 160, LEASH_TIME: 3, LEASH_AVOID: 400 },   // LEASH_AVOID: the leash's post is at least this far from a closed blocker
-  // off by default (their pathing over the 44k-area nav gave a frame hitch every ~0.5 s on a listen server); true = keep the server's bot_quota
-  BOTS_ON: false,
+          "mp_free_armor 0", "mp_solid_teammates 1", "mp_give_player_c4 0"],
+  // ---- bots for low population (85_ai.js; docs/REVIEW_SCRIPT_1.md "Step 4"). CS2 bots are players: the script cannot steer their legs,
+  // so infantry bots are PLACED (deploy targets, a leash) and the pilot / mortar roles are run by the script while the bot's pawn sits in
+  // the seat. ON by default: the low-population requirement needs them, and the tw35 frame hitch came with the 44k-area nav that step 5
+  // (woods seeds inside the fence) and tools/patch_nav.py (NONAV) cut down; false = bot_quota 0 + bot_kick (the tw35 behaviour).
+  BOTS_ON: true,
+  BOTS: {
+    FILL_PER_SIDE: 8,          // bot_quota_mode fill, bot_quota 2 x this: bots fill the server to 16 players and leave as humans join (0 at 16+ humans)
+    LEASH: 170, LEASH_Z: 160, LEASH_TIME: 3,   // a bot this close (dz) to a still-closed area's blocker for LEASH_TIME goes back to a post
+    LEASH_AVOID: 400,          // the leash's post is at least this far from a closed blocker
+    CHECK: 1.0,                // seconds between a bot's out-of-play checks
+    NML_X: 1450, NML_Y: 2750, NML_ZMIN: -150,   // no man's land (tools/check_play.py T5): |x| < NML_X, |y| < NML_Y, above the galleries
+    LOBBY_Z: -1500,            // a deployed bot below this is back in the briefing room
+    FAR: 1500,                 // farther than this from every post (both sides), dressing station and opened area point: out of play
+    OUT_TIME: 3,               // seconds out of play (no man's land, briefing room, far) before the bot goes back to a post
+    COMBAT_GRACE: 6,           // the "far" check waits while the bot hurt or was hurt this recently
+    FIRE_SHARE: 0.8,           // share of post deploys to the fire trench (the rest: the support trench)
+    AREA_SHARE: 0.35,          // once an area is open, this share of bot deploys go to it (its sap head / ladder post or inside it)
+    AREA_MAX: 4,               // at most this many bots of a side deployed into one opened area at a time
+    // inside the opened areas (CT side; T mirrors x): tools/layout.py ground + 8 (woods clearing, the step-5 seeds) and the tunnel landing
+    AREAS: {
+      woodsopen: [{ x: 605, y: 3930, z: 10 }, { x: 1110, y: 3700, z: 10 }, { x: 1110, y: 4150, z: 6 }],
+      undergroundopen: [{ x: 2120, y: -3296, z: -252 }],
+    },
+  },
+  AI: {
+    MIN_HUMANS: 4,             // a side with fewer active humans than this gets script-run pilots and mortar crews (AFK humans do not count)
+    PILOTS: 1, CREWS: 2,       // per side, bots permitting
+    MAX_SHARE: 0.5,            // at most this share of a side's bots leave the infantry
+    DIRECTOR_EVERY: 1.0,
+    // pilot: patrols over the enemy line, gun and bomb runs on enemy infantry; slow to react and inaccurate on purpose
+    CRUISE_ALT: 1000, MIN_ALT: 420, ARRIVE: 900, THINK: 0.25,
+    STRAFE_RANGE: 3600, GUN_MAX: 2600, AIM_CONE: 12, REACT: 1.2, AIM_ERR: 0.03, ATTACK_TIME: 16, ATTACK_COOLDOWN: 8, BOMB_ERR: 300,
+    // crew: one bot runs a tube alone at the table: plots a cluster of enemy infantry, "fetches and loads", fires
+    CREW_THINK: 3, CREW_LOAD: 9, CREW_SIGMA: 160, CLUSTER_R: 420,
+  },
   AFK: { PILOT: 60, CREW: 120 },   // seconds with no key, look or step: a pilot is brought down to the trench (infantry), a crew seat is freed
   ASSIST_MIN: 41,                  // the mortar loader's share of a hit is at least this much health damage when the victim can take it (assist)
   PERF_EVERY: 60,                  // seconds between "[tw] perf:" console lines (script time per tick, players, flights, shells, errors)
@@ -179,7 +209,7 @@ function angleBetween(a, b) { return Math.acos(clampN(vdot(a, b), -1, 1)); }
 function rotateToward(f, d, maxRad) {
   let th = angleBetween(f, d);
   if (th < 1e-5) return d;
-  if (th > 3.1) { d = vnorm(vadd(d, v3(-f.y * 0.1, f.x * 0.1, 0), 1)); th = angleBetween(f, d); }
+  if (th > 3.1) { d = vnorm(vadd(d, Math.hypot(f.x, f.y) > 1e-3 ? v3(-f.y * 0.1, f.x * 0.1, 0) : v3(0.1, 0, 0), 1)); th = angleBetween(f, d); }   // (a vertical f has no side: any)
   const t = Math.min(1, maxRad / th), s = Math.sin(th);
   return vnorm(vadd(vscale(f, Math.sin((1 - t) * th) / s), d, Math.sin(t * th) / s));
 }
@@ -301,7 +331,8 @@ function P(slot) {
     p = { slot, gen: genNext++, role: null, team: 0, crew: -1, seat: "", deployAt: 0, deployed: false, first: true, streak: 0, kills: 0, upgraded: false,
           pref: "", carrying: false, inSight: false, u: 0.5, v: 0.3, prevKeys: 0, lives: 0, merit: 0, flown: 0, toastUntil: 0, bannerUntil: 0, infoUntil: 0,
           healing: false, mortarKills: 0, hud: new Map(), uniformAt: 0, uniformDone: false, noUniform: false, stockModel: "",
-          bot: false, sane: false, lastActive: 0, lastEye: undefined, sortie: false, firedAt: -99 };
+          bot: false, sane: false, lastActive: 0, lastEye: undefined, sortie: false, firedAt: -99,
+          aiRole: "", aiFly: undefined, anchor: undefined, outT: 0, checkAt: 0, lastCombat: -99 };
     players.set(slot, p);
     hudReset(p);             // a slot that changed hands must not keep the last player's HUD classes
   }
@@ -311,7 +342,7 @@ const crews = { [T]: [], [CT]: [] };
 function resetCrews() {
   for (const team of [T, CT]) {
     crews[team] = [];
-    for (let k = 0; k < CONFIG.CREWS; k++) crews[team].push({ a: -1, b: -1, loaded: false, loader: -1, loaderGen: 0, target: null, cooldown: 0, impacts: [] });
+    for (let k = 0; k < CONFIG.CREWS; k++) crews[team].push({ a: -1, b: -1, loaded: false, loader: -1, loaderGen: 0, target: null, cooldown: 0, impacts: [], ai: undefined });
   }
 }
 resetCrews();
@@ -319,7 +350,11 @@ const shells = [];           // in flight
 // counters: the per-minute perf line, the mock's coverage table and the balance report read them (globalThis.__twDebug)
 const stats = { killsBy: {}, killsByTeam: {}, deploys: { infantry: 0, mortar: 0, air: 0 }, shots: 0, impacts: 0, assistShares: 0, bombs: 0, crashes: 0, unlocks: 0,
                 heals: 0, upgrades: 0, swaps: 0, leash: 0, uniforms: 0, ambient: 0, deferred: 0, afk: 0, sanitised: 0, reloads: 0, blocked: 0,
-                crewDeaths: 0, perfLines: 0, errors: 0, sightLocks: 0, loads: 0, planeHits: 0, teamLeft: 0, flights: 0, stows: 0, gunHits: 0, gunRounds: 0 };
+                crewDeaths: 0, perfLines: 0, errors: 0, sightLocks: 0, loads: 0, planeHits: 0, teamLeft: 0, flights: 0, stows: 0, gunHits: 0, gunRounds: 0,
+                // bots (85_ai): where infantry bots were sent, why the out-of-play leash moved one, the script-run roles and hand-overs
+                botDeploys: { fire: 0, support: 0, area: 0 }, botLeash: { nml: 0, lobby: 0, far: 0, lock: 0 },
+                aiPilots: 0, aiSorties: 0, aiGunRounds: 0, aiBombs: 0, aiCrews: 0, aiShots: 0, aiReleased: { humans: 0, yield: 0, trim: 0, lives: 0, lost: 0 },
+                yields: { air: 0, seat: 0 } };
 try { globalThis.__twDebug = { players, crews, shells, stats, CONFIG }; } catch (e) {}
 let poolIdx = 0;
 
@@ -386,19 +421,26 @@ function banner(p, title, sub, secs) { hText(p, "tw_banner_title", title); hText
 // 50_roles: roles: crew seats, role choice and requests, loadouts, deploy, uniforms, the streak rifle swap
 
 // ------------------------------------------------------------------ roles
-function seatFree(team) {
-  for (const c of crews[team]) if (c.a < 0 || c.b < 0) return true;
+// a crew a bot runs for the script (85_ai): the bot holds seat a, seat b stays empty (a human never shares a tube with a script bot)
+function aiCrew(c) { const q = c && c.a >= 0 ? players.get(c.a) : undefined; return !!(q && q.aiRole === "crew"); }
+// human: a crew a script bot runs counts as free (the bot gives the seat up when the human takes it); without it, it does not
+function seatFree(team, human) {
+  for (const c of crews[team]) {
+    if (aiCrew(c)) { if (human) return true; continue; }
+    if (c.a < 0 || c.b < 0) return true;
+  }
   return false;
 }
-function takeSeat(p, team) {
-  // fill half-empty crews first so pairs form, then a random empty one
+function takeSeat(p, team, human) {
+  // fill half-empty crews first so pairs form, then a random empty one; a human last takes over a crew a script bot runs (same tick)
   const list = crews[team];
   let pick = -1;
-  for (let k = 0; k < list.length; k++) if ((list[k].a < 0) !== (list[k].b < 0)) { pick = k; break; }
+  for (let k = 0; k < list.length; k++) if (!aiCrew(list[k]) && (list[k].a < 0) !== (list[k].b < 0)) { pick = k; break; }
   if (pick < 0) {
     const empty = []; for (let k = 0; k < list.length; k++) if (list[k].a < 0 && list[k].b < 0) empty.push(k);
     if (empty.length) pick = empty[Math.floor(Math.random() * empty.length)];
   }
+  if (pick < 0 && human) { const k = list.findIndex(aiCrew); if (k >= 0 && aiYieldSeat(team, k)) pick = k; }
   if (pick < 0) return false;
   const c = list[pick];
   if (c.a < 0) { c.a = p.slot; p.seat = "a"; } else { c.b = p.slot; p.seat = "b"; }
@@ -414,42 +456,47 @@ function leaveSeat(p) {
 }
 function setRole(p, role, team) {
   if (p.role === "mortar" && role !== "mortar") leaveSeat(p);
-  if (role === "mortar" && (p.role !== "mortar" || p.crew < 0)) { if (!takeSeat(p, team)) role = "infantry"; }
+  if (role === "mortar" && (p.role !== "mortar" || p.crew < 0)) { if (!takeSeat(p, team, !p.bot)) role = "infantry"; }
   p.role = role;
   if (role === "air") { p.lives = CONFIG.AIR_LIVES; p.flown++; }
 }
 function chooseRole(p, pawn, team) {
-  if (isBot(pawn)) { if (p.role !== "infantry") setRole(p, "infantry", team); return; }
+  if (p.bot || isBot(pawn)) { p.bot = true; aiChooseRole(p, team); return; }
   // a pilot keeps flying while lives last, unless he asked for a ground role (it waits for this respawn, see requestRole)
   if (p.role === "air" && p.lives > 0 && (!p.pref || p.pref === "air")) return;
   if (p.role === "air") {
     if (p.pref === "infantry") setRole(p, "infantry", team);
-    else if (p.pref === "mortar") setRole(p, seatFree(team) ? "mortar" : "infantry", team);
+    else if (p.pref === "mortar") setRole(p, seatFree(team, true) ? "mortar" : "infantry", team);
     else setRole(p, Math.random() < 0.5 && seatFree(team) ? "mortar" : "infantry", team);
     return;
   }
   if (!p.role) {
-    if (p.pref === "air" && airFree(team)) setRole(p, "air", team);
-    else if (p.pref === "mortar" && seatFree(team)) setRole(p, "mortar", team);
+    if (p.pref === "air" && airFree(team, true)) setRole(p, "air", team);
+    else if (p.pref === "mortar" && seatFree(team, true)) setRole(p, "mortar", team);
     else if (p.pref === "infantry") setRole(p, "infantry", team);
     else setRole(p, Math.random() < CONFIG.MORTAR_CHANCE && seatFree(team) ? "mortar" : "infantry", team);
     return;
   }
-  if (p.pref === "air" && airFree(team)) { setRole(p, "air", team); return; }
+  if (p.pref === "air" && airFree(team, true)) { setRole(p, "air", team); return; }
   if (p.pref !== "infantry" && p.pref !== "mortar" && airFree(team) &&
       Math.random() < CONFIG.AIR_CHANCE + 0.03 * Math.min(5, p.merit) + (p.flown === 0 ? 0.08 : 0)) { setRole(p, "air", team); p.merit = 0; return; }
-  if (p.pref && p.pref !== "air" && p.pref !== p.role && (p.pref !== "mortar" || seatFree(team))) { setRole(p, p.pref, team); return; }
+  if (p.pref && p.pref !== "air" && p.pref !== p.role && (p.pref !== "mortar" || seatFree(team, true))) { setRole(p, p.pref, team); return; }
   if (!p.pref && Math.random() < CONFIG.ROTATE_CHANCE) {
     if (p.role === "infantry" && seatFree(team)) setRole(p, "mortar", team);
     else if (p.role === "mortar") setRole(p, "infantry", team);
   }
 }
 
-// aircraft: posted on respawn (chooseRole) or by !air; nobody is pulled out of the fight mid-life
-function airFree(team) {
+// aircraft: posted on respawn (chooseRole) or by !air; nobody is pulled out of the fight mid-life. human: a human who ASKED (a preference
+// or !air) counts the aircraft script bots fly, or are about to fly, as free: one is handed over when he deploys (startFlight ->
+// aiYieldAircraft). A random posting (human false) never takes an aircraft from a bot.
+function airFree(team, human) {
   if (!CONFIG.AIR_ENABLED) return false;
-  let n = 0; for (const q of players.values()) if (q.team === team && q.role === "air") n++;
-  return n < CONFIG.AIR_SLOTS && (!points || (points.aircraft[team] || []).some(a => live(a.ent) && a.pilot < 0));
+  let n = 0, ai = 0;
+  for (const q of players.values()) if (q.team === team && q.role === "air") { if (q.aiRole === "pilot") ai++; else n++; }
+  const free = !points || (points.aircraft[team] || []).some(a => live(a.ent) && a.pilot < 0);
+  if (human) return n < CONFIG.AIR_SLOTS && (ai > 0 || (n + ai < CONFIG.AIR_SLOTS && free));
+  return n + ai < CONFIG.AIR_SLOTS && free;
 }
 // chat role request (the chat command has already made it the preference): in the briefing room it changes the role now if it is
 // open; out in the field it waits for the next deploy, as the role cards say (switching at once was a free teleport out of any fight
@@ -458,7 +505,7 @@ function requestRole(p, role) {
   const team = p.team;
   if (p.role === role) return;
   if (p.deployed) { stats.deferred++; return; }
-  const open = role === "air" ? airFree(team) : role === "mortar" ? seatFree(team) : true;
+  const open = role === "air" ? airFree(team, true) : role === "mortar" ? seatFree(team, true) : true;
   if (!open) { toast(p, role === "air" ? "All aircraft are up - you're next in line" : "Mortar crews are full - you're next in line", 4); return; }
   setRole(p, role, team);
 }
@@ -466,6 +513,7 @@ function requestRole(p, role) {
 function leaveTeam(p, pawn) {
   if (p.air) endFlight(p, pawn, false);
   if (p.inSight) leaveSight(p, pawn);
+  if (p.aiRole) aiDrop(p, pawn);
   leaveSeat(p);
   p.role = null; p.deployed = false; p.sortie = false;
   stats.teamLeft++;
@@ -485,11 +533,12 @@ function equip(p, pawn) {
   }
   p.upgraded = false;
 }
-function pickTrench(team, pawn, awayFromLocks) {
+function pickTrench(team, pawn, awayFromLocks, only) {
   const list = points.trench[team];
   if (!list || !list.length) return undefined;
   let best, bestScore = -1e9;
   for (const s of list) {
+    if (only && !only(s)) continue;
     if (awayFromLocks && nearLock(s.pos, CONFIG.BOTS.LEASH_AVOID)) continue;   // the leash must not send a bot to a post beside the blocker
     let crowd = 0;
     for (const q of players.values()) {
@@ -501,7 +550,7 @@ function pickTrench(team, pawn, awayFromLocks) {
     const score = -crowd - s.used * 40 + Math.random() * 60;
     if (score > bestScore) { bestScore = score; best = s; }
   }
-  if (!best) return awayFromLocks ? pickTrench(team, pawn, false) : undefined;
+  if (!best) return only ? pickTrench(team, pawn, awayFromLocks) : awayFromLocks ? pickTrench(team, pawn, false) : undefined;
   best.used++;
   return best;
 }
@@ -511,11 +560,12 @@ function deploy(p, pawn) {
   let dest;
   if (p.role === "mortar") {
     // don't man a tube alone while another crew is also one short: join them
+    // (a script bot's crew is neither joined nor left: it runs its tube alone, 85_ai)
     const mine = crews[team][p.crew];
-    if (mine && (mine.a < 0 || mine.b < 0)) {
+    if (mine && !p.aiRole && (mine.a < 0 || mine.b < 0)) {
       for (let k = 0; k < crews[team].length; k++) {
         const c = crews[team][k];
-        if (k === p.crew || !((c.a < 0) !== (c.b < 0))) continue;
+        if (k === p.crew || aiCrew(c) || !((c.a < 0) !== (c.b < 0))) continue;
         leaveSeat(p);
         if (c.a < 0) { c.a = p.slot; p.seat = "a"; } else { c.b = p.slot; p.seat = "b"; }
         p.crew = k; break;
@@ -524,13 +574,15 @@ function deploy(p, pawn) {
     dest = (p.seat === "a" ? points.seatA : points.seatB)[team][p.crew];
   }
   else if (p.role === "air") { const l = points.plane[team]; dest = l.length ? l[Math.floor(Math.random() * l.length)] : undefined; }
+  if (!dest && p.bot && p.role === "infantry") dest = aiPost(p, team, pawn);
   if (!dest) dest = pickTrench(team, pawn);
   if (dest) {
     pawn.Teleport({ position: v3(dest.pos.x, dest.pos.y, dest.pos.z + 4), angles: dest.ang, velocity: v3(0, 0, 0) });
     try { pawn.SetEyeAngles(dest.ang); } catch (e) {}
   }
-  p.deployed = true; p.deployedAt = now(); p.lastActive = now();
-  if (p.role === "air" && !startFlight(p, pawn, dest)) { setRole(p, "infantry", team); deploy(p, pawn); return; }
+  if (p.aiRole === "crew") { try { pawn.SetMoveType(CSMoveType.NONE); } catch (e) {} }   // the script runs the tube; the bot stays at the table
+  p.deployed = true; p.deployedAt = now(); p.lastActive = now(); p.outT = 0;
+  if (p.role === "air" && !startFlight(p, pawn, dest)) { if (p.aiRole) aiDrop(p, pawn, "lost"); setRole(p, "infantry", team); deploy(p, pawn); return; }
   stats.deploys[p.role] = (stats.deploys[p.role] || 0) + 1;
   const sub = p.role === "infantry" ? "Hold the fire trench. Dressing stations heal you." :
               p.role === "mortar" ? "Crew " + (p.crew + 1) + ": plot at the table, fetch bombs, load and fire." :
@@ -682,9 +734,15 @@ function farOutside(pos) {
   return Math.abs(pos.x) > A.BOX_X + F || Math.abs(pos.y) > A.BOX_Y + F || pos.z > A.ALT_MAX + F;
 }
 // the chase camera's position and view (the crosshair), rebuilt the way FOLLOW_POSITION places it: followed point + offset turned
-// by the eye angles; guns converge on what the crosshair covers, within GUN_GIMBAL of the nose
-function gunAim(a, pawn) {
+// by the eye angles; guns converge on what the crosshair covers, within GUN_GIMBAL of the nose. A script pilot (85_ai) has no
+// crosshair: steer.gunAt is the point it aims at (with its error already in it), held to the same gimbal
+function gunAim(a, pawn, steer) {
   const A = CONFIG.AIR, F = A.CAM_FOLLOW;
+  if (steer) {
+    const s = v3(a.pos.x + a.f.x * A.GUN_FROM, a.pos.y + a.f.y * A.GUN_FROM, a.pos.z + 40 + a.f.z * A.GUN_FROM);
+    const pt = steer.gunAt || vadd(s, a.f, A.SIGHT_DIST), want = vnorm(v3(pt.x - s.x, pt.y - s.y, pt.z - s.z)), g = A.GUN_GIMBAL * D2R;
+    return { s, dir: angleBetween(a.f, want) <= g ? want : rotateToward(a.f, want, g), dist: Math.max(200, Math.min(A.SIGHT_DIST * 3, dist3(pt, s))) };
+  }
   let e; try { e = pawn.GetEyeAngles(); } catch (err) {}
   const B = angleBasis({ pitch: e ? e.pitch : 0, yaw: e ? e.yaw : 0, roll: 0 });
   const back = a.camBack || -A.CAM_OFFSET.x;
@@ -709,7 +767,8 @@ function planeOfEntity(e) {
 function startFlight(p, pawn, dest) {
   const team = pawn.GetTeamNumber();
   const list = (points.aircraft[team] || []).filter(a => live(a.ent));
-  const ac = list.find(a => a.pilot === p.slot) || list.find(a => a.pilot < 0);
+  // a human takes one a script bot flies when none is free: the bot gives it up in this same call (aiYieldAircraft)
+  const ac = list.find(a => a.pilot === p.slot) || list.find(a => a.pilot < 0) || (p.bot ? undefined : aiYieldAircraft(team, p));
   if (!ac) { toast(p, "No aircraft free - back to the trenches", 4); return false; }
   ac.pilot = p.slot;
   const A = CONFIG.AIR;
@@ -725,11 +784,12 @@ function startFlight(p, pawn, dest) {
   hidePawn(pawn, true);                                 // the aircraft carries its own pilot figure; hits on the plane go to the pawn
   try { pawn.SetEyeAngles({ pitch: 0, yaw: team === CT ? 180 : 0, roll: 0 }); } catch (e) {}
   placePlane(p, pawn, true);
-  setView(p, pawn);
+  if (!p.bot) setView(p, pawn);                         // a bot has no screen: no camera
   const nm = ac.ent.GetEntityName(), tg = nm.slice("tw_plane_".length);
   for (const k of ["eng", "gun", "gun2", "gun3"]) fire("tw_plane_" + k + "_" + tg, "SetSourceEntity", nm);
   fire("tw_plane_eng_" + tg, "StartSound", undefined, 0.05);
   p.sortie = true; p.lastActive = now(); stats.flights++;
+  if (p.aiRole === "pilot") { stats.aiSorties++; p.aiFly = undefined; }
   return true;
 }
 function endFlight(p, pawn, crashed) {
@@ -796,13 +856,15 @@ function hitPilot(ac, damage, attackerPawn, src) {
   stats.planeHits++;
   hurt(vp, { damage, attacker: attackerPawn, inflictor: attackerPawn }, src || "shot_down");
 }
-function tickAir(p, pawn, dt, pressed, held) {
+// steer: a script pilot's inputs (85_ai aiSteer): { aim, held, pressed, gunAt } in place of the eye angles and the keys
+function tickAir(p, pawn, dt, pressed, held, steer) {
   const a = p.air, A = CONFIG.AIR, t = now();
   if (!live(a.ac.ent)) { endFlight(p, pawn, false); return ""; }
+  if (steer) { held = steer.held; pressed = steer.pressed; }
   if (held & CSInputs.FORWARD) a.throttle = Math.min(1, a.throttle + A.ACCEL * dt);
   if (held & CSInputs.BACK) a.throttle = Math.max(0, a.throttle - A.ACCEL * dt);
   // aim: where the pilot looks (raw, every tick); near the walls / ceiling blended toward home, nose down in a stall
-  let aim = dirOf(pawn.GetEyeAngles());
+  let aim = steer ? steer.aim : dirOf(pawn.GetEyeAngles());
   if (!finiteV(aim)) aim = a.f;
   let prompt = "";
   const bw = boundsWeight(a);
@@ -821,6 +883,7 @@ function tickAir(p, pawn, dt, pressed, held) {
   } else a.wallSide = 0;
   if (a.speed < A.V_STALL) { aim = vnorm(v3(aim.x, aim.y, Math.min(aim.z, -0.5))); prompt = "STALL - nose down"; }
   const gz = groundZ(a.pos.x, a.pos.y);
+  a.gz = gz;
   // look-ahead pull-up warning (trees, hangars, hills), a few planes per tick
   a.tick++;
   if ((a.tick + p.slot) % A.PULLUP_EVERY === 0) {
@@ -860,12 +923,12 @@ function tickAir(p, pawn, dt, pressed, held) {
   a.pos = np;
   placePlane(p, pawn, false);
   easeCamera(a, dt, t);
-  a.aim = gunAim(a, pawn);
+  a.aim = gunAim(a, pawn, steer);
   if (a.view === "cockpit") { const cam = a.cam; if (cam && live(cam)) { try { cam.Move({ position: cockpitPos(a) }); } catch (e) {} } }
   // guns (belt; a short re-arm when empty)
   if (a.ammo <= 0 && t >= a.reloadAt) { a.ammo = A.GUN_AMMO; }
   if ((held & CSInputs.ATTACK) && t >= a.nextGun && a.ammo > 0) {
-    a.nextGun = t + A.GUN_INTERVAL; stats.gunRounds++;
+    a.nextGun = t + A.GUN_INTERVAL; stats.gunRounds++; if (steer) stats.aiGunRounds++;
     if (--a.ammo <= 0) { a.reloadAt = t + A.GUN_RELOAD; toast(p, "Belt empty - re-arming", 2); }
     if ((a.ammo % A.GUN_SOUND_EVERY) === 0) {
       const gk = ["gun", "gun2", "gun3"][a.ac.si++ % 3];
@@ -892,12 +955,12 @@ function tickAir(p, pawn, dt, pressed, held) {
   // bombs
   if (a.bombs < A.BOMBS && t >= a.rearmAt) { a.bombs++; a.rearmAt = t + A.BOMB_REARM; }
   let bombKey = (pressed & CSInputs.ATTACK2) !== 0;
-  try { bombKey = bombKey || pawn.WasInputJustPressed(CSInputs.ATTACK2); } catch (e) {}
+  if (!steer) { try { bombKey = bombKey || pawn.WasInputJustPressed(CSInputs.ATTACK2); } catch (e) {} }   // a bot's own brain must not drop bombs
   if (bombKey && a.bombs > 0) {
     a.bombs--; if (a.rearmAt < t) a.rearmAt = t + A.BOMB_REARM;
     const be = a.ac.bombEnts.find(e => !bombs.some(b => b.ent === e));
     bombs.push({ pos: v3(a.pos.x, a.pos.y, a.pos.z - 20), vel: v3(a.f.x * a.speed, a.f.y * a.speed, a.f.z * a.speed), team: pawn.GetTeamNumber(), slot: p.slot, gen: p.gen, ent: be, ac: a.ac });
-    stats.bombs++;
+    stats.bombs++; if (steer) stats.aiBombs++;
     toast(p, "Bomb away!", 1.5);
   }
   const smoking = pawn.GetHealth() <= CONFIG.AIR.SMOKE_HP;
@@ -1225,10 +1288,17 @@ function tickAmbient() {
 }
 
 // ---- 85_ai.js
-// 85_ai: bots. The seam for the bot AI (remaster step 4: infantry deploy targets + leash, script-driven pilots and mortar crews that
-// yield to humans). Today: bots are always infantry (chooseRole) and are leashed away from a still-closed area's blocker.
-// Entry points the main loop calls: isBot(pawn) when a role is chosen, tickBot(p, pawn, team, dt) every tick for a live deployed bot,
-// aiThink(t, dt) once per tick before the players (empty until step 4).
+// 85_ai: bots for low population (remaster step 4; docs/REVIEW_SCRIPT_1.md "Step 4: bots").
+// CS2 bots are players with their own legs and guns; a script cannot path them. So:
+//  - infantry bots are PLACED: each deploy sends a bot to a useful post (the fire trench mostly, the support trench, and once an area
+//    is blown open its sap head / ladder post or a point inside it), and a leash sends back a bot that stands beside a still-closed
+//    blocker, is found in no man's land or back in the briefing room, or has wandered far from every post;
+//  - when a side has fewer active humans than AI.MIN_HUMANS, some of its bots get a role the script runs while the pawn sits in the
+//    seat: AI pilot (patrol over the enemy line, gun and bomb runs on enemy infantry) and AI mortar crew (one bot at the table plots a
+//    cluster of enemy infantry, "loads" and fires). Slow and inaccurate on purpose. A human who asks for the role takes the aircraft or
+//    the seat at once (aiYieldAircraft / aiYieldSeat, the same tick); a side that reaches the threshold gets its bots back as infantry.
+// Entry points: chooseRole -> aiChooseRole (bots), deploy -> aiPost (infantry bots), startFlight -> aiYieldAircraft, takeSeat ->
+// aiYieldSeat, leaveTeam / deploy -> aiDrop, thinkPlayer -> tickBot (infantry bots) and aiSteer (AI pilots), think -> aiThink (once per tick).
 
 function isBot(pawn) { try { return pawn.GetPlayerController().IsBot(); } catch (e) { return false; } }
 // within r (default LEASH) of a blocker of an area that is still closed
@@ -1241,16 +1311,282 @@ function nearLock(o, r) {
   }
   return false;
 }
-function tickBot(p, pawn, team, dt) {
-  if (p.role !== "infantry" || !nearLock(pawn.GetAbsOrigin())) { p.leashT = 0; return; }
-  p.leashT = (p.leashT || 0) + dt;
-  if (p.leashT < CONFIG.BOTS.LEASH_TIME) return;
-  p.leashT = 0;
-  const dest = pickTrench(team, pawn, true);
-  if (dest) { pawn.Teleport({ position: v3(dest.pos.x, dest.pos.y, dest.pos.z + 4), angles: dest.ang, velocity: v3(0, 0, 0) }); stats.leash++; }
+
+// ------------------------------------------------------------------ who gets the script roles
+// humans on a side who are not AFK (an AFK human must not keep the AI out of the seats). Read from the controllers, not the records:
+// a human who just joined (or every human, in the first second of the map) has no record with a side yet
+function humansOn(team, t) {
+  let n = 0;
+  for (let s = 0; s < 64; s++) {
+    const c = Instance.GetPlayerController(s); if (!c) continue;
+    try { if (c.IsBot() || c.GetTeamNumber() !== team) continue; } catch (e) { continue; }
+    const q = players.get(s);
+    if (q && q.deployed && t - (q.lastActive || t) > CONFIG.AFK.PILOT) continue;
+    n++;
+  }
+  return n;
 }
-// step 4 fills this in (AI pilots / crews, deploy targets); called once per tick from think()
-function aiThink(t, dt) {}
+function aiWanted(team, t) { return CONFIG.BOTS_ON && humansOn(team, t) < CONFIG.AI.MIN_HUMANS; }
+// a bot's role at (re)spawn: an AI pilot keeps flying while his lives last, an AI crewman keeps his seat; every other bot is infantry
+function aiChooseRole(p, team) {
+  if (p.aiRole === "pilot" && p.role === "air" && p.lives > 0) return;
+  if (p.aiRole === "crew" && p.role === "mortar" && p.crew >= 0) return;
+  if (p.aiRole) aiDrop(p, pawnOf(p.slot), p.aiRole === "pilot" ? "lives" : "lost");
+  if (p.role !== "infantry") setRole(p, "infantry", team);
+}
+// the script role's own state is dropped (seat and aircraft are the caller's business: leaveTeam, setRole, endFlight)
+function aiDrop(p, pawn, why) {
+  const was = p.aiRole; if (!was) return;
+  p.aiRole = ""; p.aiFly = undefined;
+  if (was === "crew") {
+    const c = (p.team === T || p.team === CT) && p.crew >= 0 ? crews[p.team][p.crew] : undefined;
+    if (c) c.ai = undefined;
+    if (pawn) { try { if (pawn.GetMoveType() === CSMoveType.NONE && !p.inSight) pawn.SetMoveType(CSMoveType.WALK); } catch (e) {} }
+  }
+  if (why) stats.aiReleased[why] = (stats.aiReleased[why] || 0) + 1;
+}
+// the bot leaves its script role now: the aircraft goes home, the seat is freed, the bot (if alive out there) deploys as infantry
+function aiRelease(p, why) {
+  const pawn = pawnOf(p.slot);
+  if (p.air) endFlight(p, pawn, false);
+  aiDrop(p, pawn, why);
+  setRole(p, "infantry", p.team);                       // leaves the crew seat
+  let alive = false; try { alive = !!pawn && pawn.IsAlive(); } catch (e) {}
+  if (alive && p.deployed) deploy(p, pawn);
+}
+// a human who asked for the air and found no aircraft free: one a script bot holds is handed over in the same call
+function aiYieldAircraft(team, h) {
+  if (!points) return undefined;
+  for (const ac of points.aircraft[team] || []) {
+    if (!live(ac.ent) || ac.pilot < 0) continue;
+    const q = players.get(ac.pilot);
+    if (!q || !q.bot || q.aiRole !== "pilot") continue;
+    aiRelease(q, "yield");
+    if (ac.pilot >= 0) continue;
+    stats.yields.air++;
+    toast(h, "A bot pilot handed his aircraft over to you", 4);
+    return ac;
+  }
+  return undefined;
+}
+// a human takes the seat of crew k, which a script bot runs: the bot leaves first (same tick); true when both seats are free now
+function aiYieldSeat(team, k) {
+  const c = crews[team][k], q = c && c.a >= 0 ? players.get(c.a) : undefined;
+  if (!q || q.aiRole !== "crew") return false;
+  aiRelease(q, "yield");
+  if (c.a >= 0 || c.b >= 0) return false;
+  stats.yields.seat++;
+  return true;
+}
+
+// ------------------------------------------------------------------ the director (once a second) and the crews (every tick, cheap)
+let directorAt = 0;
+function aiThink(t, dt) {
+  if (!points) return;
+  for (const team of [T, CT]) for (let k = 0; k < crews[team].length; k++) if (aiCrew(crews[team][k])) tickAICrew(team, k, t);
+  if (t < directorAt) return;
+  directorAt = t + CONFIG.AI.DIRECTOR_EVERY;
+  for (const team of [T, CT]) direct(team, t);
+}
+function direct(team, t) {
+  const A = CONFIG.AI, bots = [], have = { pilot: [], crew: [] };
+  for (const q of players.values()) if (q.bot && q.team === team && q.role) { bots.push(q); if (q.aiRole) have[q.aiRole].push(q); }
+  const wanted = aiWanted(team, t), want = { pilot: wanted ? A.PILOTS : 0, crew: wanted ? A.CREWS : 0 };
+  // too many: the side reached the human threshold (or CONFIG changed): released at once, in the air or at the table too
+  for (const r of ["pilot", "crew"]) {
+    const l = have[r].sort((a, b) => (a.deployed ? 1 : 0) - (b.deployed ? 1 : 0));
+    while (l.length > want[r]) aiRelease(l.shift(), wanted ? "trim" : "humans");
+  }
+  if (!wanted) return;
+  const cap = Math.floor(bots.length * A.MAX_SHARE);
+  let total = have.pilot.length + have.crew.length;
+  // a bot in the briefing room first; else one out in the field (bots are exempt from the field role rule: it stops human teleports)
+  const free = () => bots.find((q) => !q.aiRole && q.role === "infantry" && !q.deployed) || bots.find((q) => !q.aiRole && q.role === "infantry");
+  while (have.pilot.length < want.pilot && total < cap && airFree(team, false)) {
+    const q = free(); if (!q) break;
+    q.aiRole = "pilot"; setRole(q, "air", team);
+    have.pilot.push(q); total++; stats.aiPilots++; aiStart(q);
+  }
+  while (have.crew.length < want.crew && total < cap) {
+    const k = crews[team].findIndex((c) => c.a < 0 && c.b < 0), q = free();
+    if (k < 0 || !q) break;
+    const c = crews[team][k];
+    c.a = q.slot; c.ai = undefined; q.seat = "a"; q.crew = k; q.carrying = false; q.role = "mortar"; q.aiRole = "crew";
+    have.crew.push(q); total++; stats.aiCrews++; aiStart(q);
+  }
+}
+function aiStart(q) {
+  const pawn = pawnOf(q.slot); let alive = false;
+  try { alive = !!pawn && pawn.IsAlive(); } catch (e) {}
+  if (alive && q.deployed) deploy(q, pawn);
+}
+
+// ------------------------------------------------------------------ AI mortar crew: one bot runs a tube alone, slowly
+function tickAICrew(team, k, t) {
+  const A = CONFIG.AI, c = crews[team][k], q = players.get(c.a);
+  if (!q || !q.deployed || c.b >= 0) return;
+  const st = c.ai || (c.ai = { state: "plot", at: t + A.CREW_THINK });
+  if (t < st.at) return;
+  const pawn = pawnOf(q.slot); let alive = false;
+  try { alive = !!pawn && pawn.IsAlive(); } catch (e) {}
+  if (!alive) { st.at = t + 1; return; }
+  if (st.state === "plot") {
+    const g = aiCrewTarget(team);
+    if (!g) { st.at = t + A.CREW_THINK; return; }
+    const E = CONFIG.TARGET_EXT - 1;
+    c.target = { x: clampN(g.x + gauss() * A.CREW_SIGMA, -E, E), y: clampN(g.y + gauss() * A.CREW_SIGMA, -E, E) };
+    st.state = c.loaded ? "fire" : "load"; st.at = t + (c.loaded ? 1 : A.CREW_LOAD * (0.8 + 0.4 * Math.random()));
+  } else if (st.state === "load") {
+    c.loaded = true; c.loader = -1; c.loaderGen = 0;
+    st.state = "fire"; st.at = t + 1;
+  } else {
+    if (fireMortar(team, k, q.slot)) stats.aiShots++;
+    st.state = "plot"; st.at = t + A.CREW_THINK + Math.random() * 3;
+  }
+}
+// enemy infantry or crews out in the field (not flying, not in the briefing room): the one with the most others near him, as he stands now
+function aiCrewTarget(team) {
+  const A = CONFIG.AI, en = [];
+  for (const q of players.values()) {
+    if (q.team === team || !q.deployed || q.air || (q.role !== "infantry" && q.role !== "mortar")) continue;
+    const pw = pawnOf(q.slot); if (!pw) continue;
+    try { if (!pw.IsAlive()) continue; const o = pw.GetAbsOrigin(); if (o.z > CONFIG.BOTS.LOBBY_Z && Math.abs(o.x) < CONFIG.TARGET_EXT && Math.abs(o.y) < CONFIG.TARGET_EXT) en.push(o); } catch (e) {}
+  }
+  let best, bs = -1;
+  for (const o of en) {
+    let n = Math.random() * 0.5;
+    for (const r of en) if (dist2(o, r) < A.CLUSTER_R) n++;
+    if (n > bs) { bs = n; best = o; }
+  }
+  return best;
+}
+
+// ------------------------------------------------------------------ AI pilot: the stick for this tick (tickAir does the flying)
+function aiStrafeTarget(a, enemy) {
+  let best = -1, bd = CONFIG.AI.STRAFE_RANGE;
+  for (const q of players.values()) {
+    if (q.team !== enemy || !q.deployed || q.air) continue;
+    const pw = pawnOf(q.slot); if (!pw) continue;
+    try { if (!pw.IsAlive()) continue; const o = pw.GetAbsOrigin(); if (o.z < CONFIG.BOTS.LOBBY_Z) continue; const d = dist2(o, a.pos); if (d < bd) { bd = d; best = q.slot; } } catch (e) {}
+  }
+  return best;
+}
+function aiSteer(p, a, t) {
+  const A = CONFIG.AI, enemy = enemyOf(p.team), side = enemy === CT ? 1 : -1;      // the enemy's trenches lie at x = side * 1649
+  const ai = p.aiFly || (p.aiFly = { state: "patrol", wp: undefined, tgt: -1, tpos: undefined, until: 0, next: t + 3, think: 0, reactAt: 0, bombAt: 0 });
+  if (t >= ai.think) {
+    ai.think = t + A.THINK;
+    if (ai.state === "attack") {
+      const q = pawnOf(ai.tgt); let ok = false;
+      try { ok = !!q && q.IsAlive() && q.GetTeamNumber() === enemy; if (ok) ai.tpos = q.GetAbsOrigin(); } catch (e) { ok = false; }
+      const past = ai.tpos && (ai.tpos.x - a.pos.x) * a.f.x + (ai.tpos.y - a.pos.y) * a.f.y < 0 && dist2(a.pos, ai.tpos) > 700;
+      if (!ok || t > ai.until || past) { ai.state = "patrol"; ai.next = t + A.ATTACK_COOLDOWN; ai.wp = undefined; }
+    }
+    if (ai.state === "patrol") {
+      if (!ai.wp || dist2(a.pos, ai.wp) < A.ARRIVE) ai.wp = v3(side * (1500 + Math.random() * 900), (Math.random() * 2 - 1) * 2600, 0);
+      if (t >= ai.next) {
+        const s = aiStrafeTarget(a, enemy), pw = s >= 0 ? pawnOf(s) : undefined;
+        if (pw) { stats.aiAttacks = (stats.aiAttacks || 0) + 1; ai.state = "attack"; ai.tgt = s; ai.tpos = pw.GetAbsOrigin(); ai.until = t + A.ATTACK_TIME; ai.reactAt = t + A.REACT; }
+        else ai.next = t + 1;
+      }
+    }
+  }
+  const alt = a.pos.z - (a.gz === undefined ? 0 : a.gz);
+  let aim, held = 0, pressed = 0, gunAt;
+  if (ai.state === "attack" && ai.tpos) {
+    // the mock pilots' attack profile: cruise, a shallow dive from 2200 u out, pull out low or once past him
+    const q = ai.tpos, dx = q.x - a.pos.x, dy = q.y - a.pos.y, dz = q.z + 40 - a.pos.z, h = Math.hypot(dx, dy) || 1;
+    const diving = h < 2200 && alt > 550 && -dz < h * 0.7 && a.f.x * dx + a.f.y * dy > 0;
+    aim = diving ? v3(dx, dy, dz) : v3(dx, dy, clampN((A.CRUISE_ALT - alt) / 1500, -0.25, 0.35) * h);
+    if (alt < 550 && !diving) aim = v3(dx, dy, h * 0.5);
+    const d3 = Math.hypot(h, dz), cosA = vdot(a.f, vnorm(aim));
+    if (t >= ai.reactAt && cosA > Math.cos(A.AIM_CONE * D2R) && d3 < A.GUN_MAX && alt > 200) {
+      held |= CSInputs.ATTACK;
+      const e = A.AIM_ERR * d3;
+      gunAt = v3(q.x + gauss() * e, q.y + gauss() * e, q.z + 36 + gauss() * e * 0.5);
+    }
+    if (a.land && t >= ai.bombAt && Math.hypot(a.land.x - q.x, a.land.y - q.y) < A.BOMB_ERR) { pressed |= CSInputs.ATTACK2; ai.bombAt = t + 2.5; }
+  } else {
+    const w = ai.wp || v3(side * 1800, 0, 0), dx = w.x - a.pos.x, dy = w.y - a.pos.y, h = Math.hypot(dx, dy) || 1;
+    aim = v3(dx, dy, clampN((A.CRUISE_ALT - alt) / 1500, -0.25, 0.35) * h);
+  }
+  if (alt < A.MIN_ALT || a.pullUp) aim = v3(a.f.x, a.f.y, 0.9);
+  if (a.throttle < 0.7) held |= CSInputs.FORWARD;
+  return { aim: vnorm(aim), held, pressed, gunAt };
+}
+
+// ------------------------------------------------------------------ infantry bots: where they deploy, the leash
+// the deploy target of an infantry bot: an opened area (its sap head / ladder post, or a point inside it) for AREA_SHARE of the
+// deploys while it has room, else a post: the fire trench (FIRE_SHARE) or the support trench, never beside a still-closed blocker
+function aiPost(p, team, pawn) {
+  const B = CONFIG.BOTS, sg = team === CT ? 1 : -1, yaw = team === CT ? 180 : 0;
+  const open = CONFIG.UNLOCKS.filter((u) => unlocked.has(u.name) && B.AREAS[u.name]);
+  if (open.length && Math.random() < B.AREA_SHARE) {
+    const u = open[Math.floor(Math.random() * open.length)];
+    let n = 0;
+    for (const q of players.values()) if (q.bot && q.team === team && q.deployed && q !== p && q.anchor && q.anchor.area === u.name) n++;
+    if (n < B.AREA_MAX) {
+      let dest;
+      const lock = (points.locks[u.name] || []).find((o) => Math.sign(o.x) === sg);
+      if (lock && Math.random() < 0.5) dest = pickTrench(team, pawn, false, (s) => dist2(s.pos, lock) < 600);
+      if (!dest || dist2(dest.pos, lock) >= 600) {
+        const l = B.AREAS[u.name], a = l[Math.floor(Math.random() * l.length)];
+        dest = { pos: v3(sg * a.x, a.y, a.z), ang: { pitch: 0, yaw, roll: 0 } };
+      }
+      p.anchor = { area: u.name, pos: dest.pos }; stats.botDeploys.area++;
+      return dest;
+    }
+  }
+  const fire = Math.random() < B.FIRE_SHARE;
+  const dest = pickTrench(team, pawn, true, (s) => (Math.abs(s.pos.x) < 1900) === fire);
+  if (dest) { p.anchor = { area: "", pos: dest.pos }; stats.botDeploys[Math.abs(dest.pos.x) < 1900 ? "fire" : "support"]++; }
+  return dest;
+}
+// near a post (either side: a raid on the enemy trench is play), a dressing station or a point of an opened area
+function nearAnchor(o) {
+  const F = CONFIG.BOTS.FAR;
+  for (const team of [T, CT]) {
+    for (const s of points.trench[team] || []) if (dist2(o, s.pos) < F) return true;
+    for (const h of points.heal[team] || []) if (dist2(o, h) < F) return true;
+  }
+  for (const u of CONFIG.UNLOCKS) {
+    if (!unlocked.has(u.name)) continue;
+    for (const a of CONFIG.BOTS.AREAS[u.name] || []) if (Math.hypot(Math.abs(o.x) - a.x, o.y - a.y) < F) return true;
+  }
+  return false;
+}
+function outOfPlay(p, o, t) {
+  const B = CONFIG.BOTS;
+  if (o.z < B.LOBBY_Z) return "lobby";
+  if (Math.abs(o.x) < B.NML_X && Math.abs(o.y) < B.NML_Y && o.z > B.NML_ZMIN) return "nml";
+  if (t - p.lastCombat < B.COMBAT_GRACE) return "";
+  return nearAnchor(o) ? "" : "far";
+}
+function leashBack(p, pawn, team, why) {
+  const dest = pickTrench(team, pawn, true);
+  if (!dest) return;
+  pawn.Teleport({ position: v3(dest.pos.x, dest.pos.y, dest.pos.z + 4), angles: dest.ang, velocity: v3(0, 0, 0) });
+  p.anchor = { area: "", pos: dest.pos };
+  stats.leash++; stats.botLeash[why]++;
+}
+// every tick for a live deployed bot out of the air: the blocker leash (cheap, per tick) and, once a CHECK, the out-of-play leash
+function tickBot(p, pawn, team, dt) {
+  if (p.role !== "infantry") { p.leashT = 0; p.outT = 0; return; }
+  const o = pawn.GetAbsOrigin(), B = CONFIG.BOTS;
+  if (nearLock(o)) {
+    p.leashT = (p.leashT || 0) + dt;
+    if (p.leashT >= B.LEASH_TIME) { p.leashT = 0; leashBack(p, pawn, team, "lock"); return; }
+  } else p.leashT = 0;
+  const t = now();
+  if (t < p.checkAt) return;
+  p.checkAt = t + B.CHECK;
+  const why = outOfPlay(p, o, t);
+  if (!why) { p.outT = 0; return; }
+  p.outT += B.CHECK;
+  if (p.outT >= B.OUT_TIME) { p.outT = 0; leashBack(p, pawn, team, why); }
+}
+// a bot that hurt or was hurt by an enemy is "in combat" for COMBAT_GRACE (the far leash waits)
+function aiCombat(slot) { const q = players.get(slot); if (q && q.bot) q.lastCombat = now(); }
 
 // ---- 90_main.js
 // 90_main: think loop, per-player tick, engine events, chat
@@ -1265,10 +1601,12 @@ function keys(pawn) {
 // ------------------------------------------------------------------ per tick
 let lastTick = 0, tickN = 0;
 let errAt = -99;
-let perfMs = 0, perfMax = 0, perfTicks = 0, perfAt = -1;
+let perfMs = 0, perfMax = 0, perfTicks = 0, perfAt = -1, gapMax = 0, wallLast = -1;
 function logErr(where, e) { stats.errors++; const t = now(); if (t - errAt > 2) { errAt = t; Console.Log("[tw] error in " + where + ": " + e + (e && e.stack ? " " + e.stack : "")); } }
 function think() {
   const c0 = clock();
+  if (wallLast >= 0 && c0 - wallLast > gapMax) gapMax = c0 - wallLast;   // wall time between thinks: a server hitch shows here (tw35)
+  wallLast = c0;
   const t = now(); let dt = t - lastTick; lastTick = t; tickN++;
   if (!(dt > 0) || dt > 0.1) dt = 1 / 64;
   Instance.SetNextThink(t);                 // scheduled first: an exception below can't stop the script for the rest of the round
@@ -1289,11 +1627,12 @@ function perfLine(t, ms) {
   perfMs += ms; perfTicks++; if (ms > perfMax) perfMax = ms;
   if (perfAt < 0) perfAt = t;
   if (t - perfAt < CONFIG.PERF_EVERY) return;
-  let n = 0, humans = 0, flying = 0;
-  for (const q of players.values()) { n++; if (!q.bot) humans++; if (q.air) flying++; }
+  let n = 0, humans = 0, flying = 0, aiP = 0, aiC = 0;
+  for (const q of players.values()) { n++; if (!q.bot) humans++; if (q.air) flying++; if (q.aiRole === "pilot") aiP++; if (q.aiRole === "crew") aiC++; }
   Console.Log("[tw] perf: " + (perfMs / Math.max(1, perfTicks)).toFixed(3) + " ms/tick avg, " + perfMax.toFixed(2) + " ms max, " + perfTicks + " ticks, " +
-              n + " players (" + humans + " human), " + flying + " flying, " + shells.length + " shells, " + bombs.length + " bombs, errors " + stats.errors);
-  stats.perfLines++; perfMs = 0; perfMax = 0; perfTicks = 0; perfAt = t;
+              n + " players (" + humans + " human, AI pilots " + aiP + ", AI crews " + aiC + "), " + flying + " flying, " + shells.length + " shells, " + bombs.length +
+              " bombs, longest gap between thinks " + gapMax.toFixed(0) + " ms, errors " + stats.errors);
+  stats.perfLines++; perfMs = 0; perfMax = 0; perfTicks = 0; perfAt = t; gapMax = 0;
 }
 // a slot whose player is gone (disconnect, or the controller vanished without the event): seat, aircraft and HUD are freed
 function dropPlayer(p) {
@@ -1302,7 +1641,8 @@ function dropPlayer(p) {
   players.delete(p.slot);
 }
 // AFK: no key, no turn of the view and no step for CONFIG.AFK seconds. A pilot is brought down to the trench as infantry (his
-// aircraft goes home), a mortar crewman gives up his seat. Humans only (bots are infantry; step 4's AI will have its own rules).
+// aircraft goes home), a mortar crewman gives up his seat. Humans only: script-run bots never idle, and an
+// AFK human does not count toward a side's humans for the AI roles (85_ai humansOn).
 function tickAfk(p, pawn, t, held) {
   if (held) { p.lastActive = t; return; }
   if (((tickN + p.slot) & 31) !== 0) return;
@@ -1358,7 +1698,8 @@ function thinkPlayer(s, t, dt) {
       return;
     }
     if (p.air) {
-      const pr = tickAir(p, pawn, dt, pressed, held);
+      if (p.bot && p.aiRole !== "pilot") { endFlight(p, pawn, false); return; }        // only a script pilot flies a bot
+      const pr = tickAir(p, pawn, dt, pressed, held, p.aiRole === "pilot" ? aiSteer(p, p.air, t) : undefined);
       hText(p, "tw_prompt_text", pr); hClass(p, "tw_prompt", "show", !!pr);
       hClass(p, "tw_toast", "show", t < p.toastUntil); hClass(p, "tw_banner", "show", t < p.bannerUntil);
       return;
@@ -1416,7 +1757,9 @@ function thinkPlayer(s, t, dt) {
 // ------------------------------------------------------------------ events
 Instance.OnActivate(() => {
   for (const c of CONFIG.CVARS) Console.ServerCommand(c);
-  if (!CONFIG.BOTS_ON) { Console.ServerCommand("bot_quota 0"); Console.ServerCommand("bot_kick"); }
+  // bots fill the server to 2 x FILL_PER_SIDE players and leave as humans join (bot_quota_mode fill); off: none (the tw35 setting)
+  if (CONFIG.BOTS_ON) { Console.ServerCommand("bot_quota_mode fill"); Console.ServerCommand("bot_quota " + 2 * CONFIG.BOTS.FILL_PER_SIDE); }
+  else { Console.ServerCommand("bot_quota 0"); Console.ServerCommand("bot_kick"); }
   points = null; lastTick = now();
   Instance.SetThink(think);
   Instance.SetNextThink(now());
@@ -1430,8 +1773,10 @@ Instance.OnRoundStart(() => {
     p.air = undefined; p.sortie = false;
     if (pw) sanitise(p, pw);
   }
-  for (const team of [T, CT]) for (const c of crews[team]) { c.loaded = false; c.loader = -1; c.loaderGen = 0; c.target = null; c.impacts = []; c.cooldown = 0; }
-  for (const p of players.values()) { p.deployed = false; p.deployAt = now() + CONFIG.LOBBY_RESPAWN; p.inSight = false; p.carrying = false; p.stowFrom = undefined; p.leashT = 0; }
+  for (const team of [T, CT]) for (const c of crews[team]) { c.loaded = false; c.loader = -1; c.loaderGen = 0; c.target = null; c.impacts = []; c.cooldown = 0; c.ai = undefined; }
+  for (const p of players.values()) { p.deployed = false; p.deployAt = now() + CONFIG.LOBBY_RESPAWN; p.inSight = false; p.carrying = false; p.stowFrom = undefined; p.leashT = 0;
+                                      p.outT = 0; p.aiFly = undefined; p.anchor = undefined; }
+  directorAt = 0;
   hudEnt = undefined;
   for (const p of players.values()) p.hud.clear();
   Instance.SetThink(think); Instance.SetNextThink(now());
@@ -1488,6 +1833,7 @@ Instance.OnModifyPlayerDamage((ev) => {
   const p = players.get(vs); if (!p) return;
   const ap = toPawn(ev.attacker);
   let enemy = false; try { enemy = !!(ap && ap !== v && ap.GetTeamNumber() !== v.GetTeamNumber()); } catch (e) {}
+  if (enemy) { aiCombat(vs); aiCombat(slotOfPawn(ap)); }
   let why = "", d = -1;
   if (p.air && !p.crashing && !enemy) why = "pilot";
   else if (p.role === "mortar" && p.crew >= 0 && !enemy && points) {   // points is null for the first tick of a round (threw here before)
@@ -1588,7 +1934,7 @@ if (typeof Instance.OnScriptReload === "function") {
 }
 // test seam (test/mock.mjs set pieces; harmless in game): a few internals and the current points
 try {
-  Object.assign(globalThis.__twDebug, { fireMortar, impact, radarSquare, worldToSight, sightToWorld, pitPos, pickTrench });
+  Object.assign(globalThis.__twDebug, { fireMortar, impact, radarSquare, worldToSight, sightToWorld, pitPos, pickTrench, humansOn, aiWanted });
   Object.defineProperty(globalThis.__twDebug, "points", { get: () => points, configurable: true });
   Object.defineProperty(globalThis.__twDebug, "unlocked", { get: () => unlocked, configurable: true });
   Object.defineProperty(globalThis.__twDebug, "roundKills", { get: () => roundKills, configurable: true });

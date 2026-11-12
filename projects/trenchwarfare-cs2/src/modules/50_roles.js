@@ -1,19 +1,26 @@
 // 50_roles: roles: crew seats, role choice and requests, loadouts, deploy, uniforms, the streak rifle swap
 
 // ------------------------------------------------------------------ roles
-function seatFree(team) {
-  for (const c of crews[team]) if (c.a < 0 || c.b < 0) return true;
+// a crew a bot runs for the script (85_ai): the bot holds seat a, seat b stays empty (a human never shares a tube with a script bot)
+function aiCrew(c) { const q = c && c.a >= 0 ? players.get(c.a) : undefined; return !!(q && q.aiRole === "crew"); }
+// human: a crew a script bot runs counts as free (the bot gives the seat up when the human takes it); without it, it does not
+function seatFree(team, human) {
+  for (const c of crews[team]) {
+    if (aiCrew(c)) { if (human) return true; continue; }
+    if (c.a < 0 || c.b < 0) return true;
+  }
   return false;
 }
-function takeSeat(p, team) {
-  // fill half-empty crews first so pairs form, then a random empty one
+function takeSeat(p, team, human) {
+  // fill half-empty crews first so pairs form, then a random empty one; a human last takes over a crew a script bot runs (same tick)
   const list = crews[team];
   let pick = -1;
-  for (let k = 0; k < list.length; k++) if ((list[k].a < 0) !== (list[k].b < 0)) { pick = k; break; }
+  for (let k = 0; k < list.length; k++) if (!aiCrew(list[k]) && (list[k].a < 0) !== (list[k].b < 0)) { pick = k; break; }
   if (pick < 0) {
     const empty = []; for (let k = 0; k < list.length; k++) if (list[k].a < 0 && list[k].b < 0) empty.push(k);
     if (empty.length) pick = empty[Math.floor(Math.random() * empty.length)];
   }
+  if (pick < 0 && human) { const k = list.findIndex(aiCrew); if (k >= 0 && aiYieldSeat(team, k)) pick = k; }
   if (pick < 0) return false;
   const c = list[pick];
   if (c.a < 0) { c.a = p.slot; p.seat = "a"; } else { c.b = p.slot; p.seat = "b"; }
@@ -29,42 +36,47 @@ function leaveSeat(p) {
 }
 function setRole(p, role, team) {
   if (p.role === "mortar" && role !== "mortar") leaveSeat(p);
-  if (role === "mortar" && (p.role !== "mortar" || p.crew < 0)) { if (!takeSeat(p, team)) role = "infantry"; }
+  if (role === "mortar" && (p.role !== "mortar" || p.crew < 0)) { if (!takeSeat(p, team, !p.bot)) role = "infantry"; }
   p.role = role;
   if (role === "air") { p.lives = CONFIG.AIR_LIVES; p.flown++; }
 }
 function chooseRole(p, pawn, team) {
-  if (isBot(pawn)) { if (p.role !== "infantry") setRole(p, "infantry", team); return; }
+  if (p.bot || isBot(pawn)) { p.bot = true; aiChooseRole(p, team); return; }
   // a pilot keeps flying while lives last, unless he asked for a ground role (it waits for this respawn, see requestRole)
   if (p.role === "air" && p.lives > 0 && (!p.pref || p.pref === "air")) return;
   if (p.role === "air") {
     if (p.pref === "infantry") setRole(p, "infantry", team);
-    else if (p.pref === "mortar") setRole(p, seatFree(team) ? "mortar" : "infantry", team);
+    else if (p.pref === "mortar") setRole(p, seatFree(team, true) ? "mortar" : "infantry", team);
     else setRole(p, Math.random() < 0.5 && seatFree(team) ? "mortar" : "infantry", team);
     return;
   }
   if (!p.role) {
-    if (p.pref === "air" && airFree(team)) setRole(p, "air", team);
-    else if (p.pref === "mortar" && seatFree(team)) setRole(p, "mortar", team);
+    if (p.pref === "air" && airFree(team, true)) setRole(p, "air", team);
+    else if (p.pref === "mortar" && seatFree(team, true)) setRole(p, "mortar", team);
     else if (p.pref === "infantry") setRole(p, "infantry", team);
     else setRole(p, Math.random() < CONFIG.MORTAR_CHANCE && seatFree(team) ? "mortar" : "infantry", team);
     return;
   }
-  if (p.pref === "air" && airFree(team)) { setRole(p, "air", team); return; }
+  if (p.pref === "air" && airFree(team, true)) { setRole(p, "air", team); return; }
   if (p.pref !== "infantry" && p.pref !== "mortar" && airFree(team) &&
       Math.random() < CONFIG.AIR_CHANCE + 0.03 * Math.min(5, p.merit) + (p.flown === 0 ? 0.08 : 0)) { setRole(p, "air", team); p.merit = 0; return; }
-  if (p.pref && p.pref !== "air" && p.pref !== p.role && (p.pref !== "mortar" || seatFree(team))) { setRole(p, p.pref, team); return; }
+  if (p.pref && p.pref !== "air" && p.pref !== p.role && (p.pref !== "mortar" || seatFree(team, true))) { setRole(p, p.pref, team); return; }
   if (!p.pref && Math.random() < CONFIG.ROTATE_CHANCE) {
     if (p.role === "infantry" && seatFree(team)) setRole(p, "mortar", team);
     else if (p.role === "mortar") setRole(p, "infantry", team);
   }
 }
 
-// aircraft: posted on respawn (chooseRole) or by !air; nobody is pulled out of the fight mid-life
-function airFree(team) {
+// aircraft: posted on respawn (chooseRole) or by !air; nobody is pulled out of the fight mid-life. human: a human who ASKED (a preference
+// or !air) counts the aircraft script bots fly, or are about to fly, as free: one is handed over when he deploys (startFlight ->
+// aiYieldAircraft). A random posting (human false) never takes an aircraft from a bot.
+function airFree(team, human) {
   if (!CONFIG.AIR_ENABLED) return false;
-  let n = 0; for (const q of players.values()) if (q.team === team && q.role === "air") n++;
-  return n < CONFIG.AIR_SLOTS && (!points || (points.aircraft[team] || []).some(a => live(a.ent) && a.pilot < 0));
+  let n = 0, ai = 0;
+  for (const q of players.values()) if (q.team === team && q.role === "air") { if (q.aiRole === "pilot") ai++; else n++; }
+  const free = !points || (points.aircraft[team] || []).some(a => live(a.ent) && a.pilot < 0);
+  if (human) return n < CONFIG.AIR_SLOTS && (ai > 0 || (n + ai < CONFIG.AIR_SLOTS && free));
+  return n + ai < CONFIG.AIR_SLOTS && free;
 }
 // chat role request (the chat command has already made it the preference): in the briefing room it changes the role now if it is
 // open; out in the field it waits for the next deploy, as the role cards say (switching at once was a free teleport out of any fight
@@ -73,7 +85,7 @@ function requestRole(p, role) {
   const team = p.team;
   if (p.role === role) return;
   if (p.deployed) { stats.deferred++; return; }
-  const open = role === "air" ? airFree(team) : role === "mortar" ? seatFree(team) : true;
+  const open = role === "air" ? airFree(team, true) : role === "mortar" ? seatFree(team, true) : true;
   if (!open) { toast(p, role === "air" ? "All aircraft are up - you're next in line" : "Mortar crews are full - you're next in line", 4); return; }
   setRole(p, role, team);
 }
@@ -81,6 +93,7 @@ function requestRole(p, role) {
 function leaveTeam(p, pawn) {
   if (p.air) endFlight(p, pawn, false);
   if (p.inSight) leaveSight(p, pawn);
+  if (p.aiRole) aiDrop(p, pawn);
   leaveSeat(p);
   p.role = null; p.deployed = false; p.sortie = false;
   stats.teamLeft++;
@@ -100,11 +113,12 @@ function equip(p, pawn) {
   }
   p.upgraded = false;
 }
-function pickTrench(team, pawn, awayFromLocks) {
+function pickTrench(team, pawn, awayFromLocks, only) {
   const list = points.trench[team];
   if (!list || !list.length) return undefined;
   let best, bestScore = -1e9;
   for (const s of list) {
+    if (only && !only(s)) continue;
     if (awayFromLocks && nearLock(s.pos, CONFIG.BOTS.LEASH_AVOID)) continue;   // the leash must not send a bot to a post beside the blocker
     let crowd = 0;
     for (const q of players.values()) {
@@ -116,7 +130,7 @@ function pickTrench(team, pawn, awayFromLocks) {
     const score = -crowd - s.used * 40 + Math.random() * 60;
     if (score > bestScore) { bestScore = score; best = s; }
   }
-  if (!best) return awayFromLocks ? pickTrench(team, pawn, false) : undefined;
+  if (!best) return only ? pickTrench(team, pawn, awayFromLocks) : awayFromLocks ? pickTrench(team, pawn, false) : undefined;
   best.used++;
   return best;
 }
@@ -126,11 +140,12 @@ function deploy(p, pawn) {
   let dest;
   if (p.role === "mortar") {
     // don't man a tube alone while another crew is also one short: join them
+    // (a script bot's crew is neither joined nor left: it runs its tube alone, 85_ai)
     const mine = crews[team][p.crew];
-    if (mine && (mine.a < 0 || mine.b < 0)) {
+    if (mine && !p.aiRole && (mine.a < 0 || mine.b < 0)) {
       for (let k = 0; k < crews[team].length; k++) {
         const c = crews[team][k];
-        if (k === p.crew || !((c.a < 0) !== (c.b < 0))) continue;
+        if (k === p.crew || aiCrew(c) || !((c.a < 0) !== (c.b < 0))) continue;
         leaveSeat(p);
         if (c.a < 0) { c.a = p.slot; p.seat = "a"; } else { c.b = p.slot; p.seat = "b"; }
         p.crew = k; break;
@@ -139,13 +154,15 @@ function deploy(p, pawn) {
     dest = (p.seat === "a" ? points.seatA : points.seatB)[team][p.crew];
   }
   else if (p.role === "air") { const l = points.plane[team]; dest = l.length ? l[Math.floor(Math.random() * l.length)] : undefined; }
+  if (!dest && p.bot && p.role === "infantry") dest = aiPost(p, team, pawn);
   if (!dest) dest = pickTrench(team, pawn);
   if (dest) {
     pawn.Teleport({ position: v3(dest.pos.x, dest.pos.y, dest.pos.z + 4), angles: dest.ang, velocity: v3(0, 0, 0) });
     try { pawn.SetEyeAngles(dest.ang); } catch (e) {}
   }
-  p.deployed = true; p.deployedAt = now(); p.lastActive = now();
-  if (p.role === "air" && !startFlight(p, pawn, dest)) { setRole(p, "infantry", team); deploy(p, pawn); return; }
+  if (p.aiRole === "crew") { try { pawn.SetMoveType(CSMoveType.NONE); } catch (e) {} }   // the script runs the tube; the bot stays at the table
+  p.deployed = true; p.deployedAt = now(); p.lastActive = now(); p.outT = 0;
+  if (p.role === "air" && !startFlight(p, pawn, dest)) { if (p.aiRole) aiDrop(p, pawn, "lost"); setRole(p, "infantry", team); deploy(p, pawn); return; }
   stats.deploys[p.role] = (stats.deploys[p.role] || 0) + 1;
   const sub = p.role === "infantry" ? "Hold the fire trench. Dressing stations heal you." :
               p.role === "mortar" ? "Crew " + (p.crew + 1) + ": plot at the table, fetch bombs, load and fire." :
