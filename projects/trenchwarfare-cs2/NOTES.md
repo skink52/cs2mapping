@@ -2,6 +2,14 @@
 
 Read this first when resuming. Newest state at the top.
 
+## Resume here (remaster, started 12 Nov 2026)
+
+Remaster to the mg_monsoon standard: rules in [docs/REMASTER_PROMPT.md](docs/REMASTER_PROMPT.md), plan and step table in
+[docs/REMASTER_PLAN.md](docs/REMASTER_PLAN.md), evidence in `docs/research/`. Map changes are guarded delta patches only (no generated
+baseline exists for EditKeeper). User vmap backed up to `content\csgo_addons\mg_trenchwarfare\backups\remaster_20261112\`.
+Working on branch `ironframe-test` (the remaster prompt's commit); do not commit the unrelated uncommitted monsoon edits.
+- 12 Nov ~12:20: research and plan done. Next: plan steps 1 (restage `out/`, mock, CONTRACT) and 2 (world-check tools) as two agents.
+
 ## State 2026-10-26 ~13:15 ACDT (tw8_content_01.zip radar, tw8_game.zip overview)
 
 - Radar: `tools/make_radar.py <vmap> <addon> <game>` - 1024 px, pos -4300/4700, scale 8.40 (was: 2048 px painted trench map of x,y +-6800, scale
