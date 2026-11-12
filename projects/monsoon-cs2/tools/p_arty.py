@@ -282,6 +282,8 @@ def specs():
         'rocket_rail': lambda: dict(_two(rocket_rail, 1024, ground=None, hulls=[MG.pts_box(-36, -10, -6, 100, 10, 14)]), dynamic=True),
         'rocket_122': lambda: dict(_two(rocket_122, 512, ground=None, hulls=[MG.pts_box(-38, -3, -3, 38, 3, 3)]), dynamic=True),
         'shell_105': lambda: _two(shell_105, 512, ground=None, hulls=[MG.pts_box(-16, -3, -3, 15, 3, 3)]),
+        # the script's rounds (mv_shell_*, the cache list) are prop_dynamic: a static_prop_model there is deleted by the map compile
+        'shell_105_dyn': lambda: dict(_two(shell_105, 512, ground=None, hulls=[MG.pts_box(-16, -3, -3, 15, 3, 3)]), dynamic=True),
         'ammo_rack_105': lambda: _two(ammo_rack_105, 1024, surface='wood', hulls=[MG.pts_box(-36, -32, 0, 36, 32, 60)]),
         'rocket_crate': lambda: _two(rocket_crate, 1024, surface='wood', hulls=[MG.pts_box(-42, -15, 0, 42, 15, 24), MG.pts_box(-42, 14, 0, 42, 26, 30)]),
         'plot_table': lambda: _two(plot_table, 1024, surface='wood', hulls=[MG.pts_box(-48, -30, 0, 48, 30, 40)], side='ct'),

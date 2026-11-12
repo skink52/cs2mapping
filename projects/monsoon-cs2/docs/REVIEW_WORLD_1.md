@@ -138,3 +138,100 @@ missing; **low** = cosmetic or check noise.
 1. Re-plan the village yard so the shrine and stalls get room (the road keep-outs are 70 u wide through it).
 2. Place the windsock outside each pad's cylinder; true (hull) footprints for the temple court dressing.
 3. Compile and look at it in Hammer.
+
+## Pass 2 (12 Nov 2026): the leftovers, the temple, the dynamic shell
+
+Offline only, as above. Five map builds (`out/logs/wd_map3.log`; the fifth was allowed by the coordinator); the fifth is the current
+`out/addon/maps/mg_monsoon.vmap`. Numbers below are from the fifth build (table at the end).
+
+### Stuck pockets (12 -> 0)
+| Pocket (pass 1) | Cause found | Fix |
+|---|---|---|
+| Firebase pit corners, quad .50 ring (6) | The staggered courses leave an 18-u step at every wall end: players walked up onto the wall tops and dropped into the gaps between rings | `World.cap()`: a player clip over every sandbag wall (`bag_arc`, `bag_line`), from 16 u to 200 u over the ground, inside the bags' own footprint (a wider one closed gaps and made new pockets in build 1; a 70-u one let a latrine roof be the step onto the caps in build 2) |
+| Rocket / AA pit berms at the camp (2) | Same thing on the berm crests (a crate or a rucksack as the step) | `berm_arc` gets the same clip over its crest |
+| Pig pens at the farm and the village (3) | Step in over the trough, no way out | `World.clip_footprint()`: every `pig_pen` gets a clip box over its footprint (nobody goes in) |
+| Tunnel stub at (-3176, 2280) (1) | Floor vertices took their height from the nearest gallery sample, so where the stub leaves the junction two galleries 32 u apart in depth met in one 16-u cell | `tunnel_plan`: the floor grade between neighbouring vertices is limited to 0.75 (min-plus relaxation, the chamber stays flat) |
+| Garden corner at the village (pass 1 list) | Gone with the yard re-plan | - |
+| Firebase south-west, builds 1-3: a 22 000 u2 yard between the quad .50 ring, pit 2 and the south-west bunker, three single cells | Entered only by dropping off the bunker's parapet; the way out was closed by a drum cluster (the clutter moved when the sign rings were randomised) | `POCKET_FILL` in `firebase()`: those cells (check_play's stuck cells of build 3, column runs inset 6 u) are clipped off. Build 4 left 5 small ones round the quad .50: the mount's 24-u base was the other drop-off point, so its top is clipped from 20 u up (the gunner works it from the seat behind) and the remnant cells were added to the fill. The firebase uses its own RandomState, so the cells stay put; re-derive after any change to `firebase()` |
+
+### Village yard
+Yard pieces now go in right after the designed huts and before the extra ones, at designed spots: the spirit house on the open
+north side between the school and the west road, market stalls along the road edges (a market street on the temple road), the ox cart
+by the west road; three cook fires in front of huts (one with a smoke column). The second climbable platform did not fit beside a hut:
+the platform search now also tries free-standing spots on rings out to r 715 (slope up to 12 deg, posts follow the ground). Result:
+9 huts, shrine, 2 market stalls (a third finds no spot), 3 cook fires, 2 platforms (waypoints `village platform 1/2` reachable). The
+terrace radius was not changed.
+
+### Temple
+- Props (`p_temple.py`, rebuilt + `lod_decimate.py`): `guardian_statue` is a sculpted singha (ellipsoid haunches, rump, ribs, chest
+  and shoulders, round forelegs, paws with toes, a turned head with muzzle, open jaw, tongue, brow, bulging eyes, ears, three rows of
+  mane curls, a curled tail; fbm erosion over all of it) on a moulded pedestal; `naga_balustrade` is a smooth banded serpent (14-sided
+  tube, scale ridges, belly flattening) on moulded posts rearing into a fan of seven petal lobes with sculpted cobra heads (the middle
+  one larger). Hull boxes unchanged in size, so placement did not move.
+- New props: `khmer_pillar` / `khmer_pillar_broken` (square gallery pillar, carved panels, stepped capital; the broken one snapped with
+  splinters standing and its capital at its foot), `enclosure_wall` / `enclosure_wall_ruin` (laterite, coping, collapsed in steps with
+  spilled blocks), `root_wall` (a wall split by a strangler fig: blocks pushed apart and tilted, roots over the top and down both faces,
+  aerial roots), `paving_slabs` (worn slabs of uneven size and height, a few missing or tilted; walk-over, non-solid).
+- Placement: paving over the court and the upper terrace (stretched to the strips round the tower terrace, never inside it: build 1
+  read 14 tiles as buried), a pillared east gallery with an architrave, lions at the foot of the tower stair and at the foot of the
+  north / east / west stairs (8 lions in all), naga balustrades flanking the north causeway, porticos of pillars with architraves at
+  the three enclosure openings, laterite enclosure walls on the knoll top, rubble fields as clusters where walls fell, banyan root
+  masses over the platform corners and the gate (as before).
+- Left: the knoll falls at 26-40 deg beyond r 420 (measured), so an outer enclosure ring on the slope is not possible without a new
+  terrace in layout; the enclosure stands on the knoll top only where it fits. `root_wall` and `enclosure_wall_ruin` are built but
+  not placed: their roots and rubble reach over the court edge where the balustrades stand (build 3: roots through a portico pillar,
+  check_world overlaps), and on the knoll foot no spot has under 44 u of relief for a 210 x 145 footprint. They need the outer terrace.
+
+### Firebase
+- Wind sock: placed by a scan round the pad cluster, outside every rotor cylinder and off the approach lanes (`rotor_ok`); check 4: 0 pads
+  with an obstacle, every pad 3+ lanes.
+- The six items world review 1 dropped, re-tried with `World.scan()` (the whole wire disc, 30-u grid, four yaws, vectorised slope): the
+  water trailer fits; the second latrine fitted but its roof was the step onto the wall caps (build 2 pockets), so it is left out
+  again; antenna mast, culvert bunker, GP crew tent and the M113 find no spot (no free 262 x 227 / 266 x 201 / 360 x 240 / 200 x 105 spot
+  between the rotor cylinders, the pits and the track).
+- Signs: the claymore / mines signs stood every 24 / 45 deg on exact rings; now uneven spacing, some missing, in / out and off square.
+
+### Repetition and pattern review (zoomed view_world / vmap_preview renders, `out/review/p2/`)
+| Seen | Where | Fix / left |
+|---|---|---|
+| Sign rings at exact angle steps | firebase | randomised (above) |
+| Haystacks on the exact cell centres, a symmetric 8-point pattern | flag A cells | +-40 u jitter |
+| Rubber trees in straight rows | crash site | left: a plantation is planted in rows (the slide cuts a swath through them) |
+| Rice clumps on a 50-u lattice | paddies | left: jittered +-12 u and transplanted rice does stand in rows |
+| Blocky lion / naga | temple | rebuilt (above) |
+| Bare court and knoll | temple | paving, statuary, porticos, walls, root walls, rubble clusters (above) |
+
+### shell_105 as a prop_dynamic (asset compile note)
+`mv_shell_*` and the cache list used `shell_105` (a `static_prop_model`), which the map compile deletes on a prop_dynamic. New
+`shell_105_dyn` (`p_arty.py`, spec `dynamic: True`: `model_archetype ""`, `primary_associated_entity "prop_dynamic"`), built; the
+entities point at it. Audit of every prop_dynamic model the generator writes: 24 models, only shell_105 was wrong. `check_world.py`
+check 7b now fails on any prop_dynamic of ours whose .vmdl archetype is not "" or `animated_model` (it caught shell_105 on the old map).
+
+### Noticed, not changed
+- The make_map "water" stage now takes ~180-300 s (was 7 s): `mv_terrain.mesh_low` calls `layout.height` point by point (14 k calls,
+  20 ms each). Not caused by this pass's files; worth vectorising.
+
+### Results on the fifth build
+| Check | Pass 1 final | Pass 2 final |
+|---|---|---|
+| check_play 1 stuck pockets (no jump out) | 12 (0), 28 416 u2 | **0 (0)** |
+| check_play 1 targets unreachable | 0 of 120 | 0 of 121 (both village platforms are waypoints) |
+| check_play 1b mirror balance A-D / C-E / B | 1.09 / 1.06 / 1.04 | 1.15 / 1.10 / 1.06 (under the 15 % warning) |
+| check_play 3 head-height cover A/B/C/D/E (min 14) | 14 / 17 / 20 / 20 / 42 | 14 / 17 / 21 / 31 / 42 |
+| check_play 4 pads with an obstacle / < 3 lanes | 0 of 6 | 0 of 6 (wind sock placed) |
+| check_play 6 buried / floating / under water / crowns / inside solids | 0 / 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 / 0 |
+| check_play 7, 8, 9 | clean | clean |
+| check_world (incl. new 7b archetypes) | clean | clean (24 prop_dynamic models, 0 wrong; 0 overlaps) |
+| check_mesh | 1095 meshes 0 bad | 1184 meshes 0 bad |
+| map | 71.3 MB, 7489 entities, 6826 prop_static | 72.4 MB, 7526 entities |
+
+Builds: 1 caps 3 u wider than the bags (closed gaps: new pockets), paving read as buried, ferns in root walls; 2 a latrine roof stepped
+onto the 70-u caps; 3 drums closed the way out of the south-west yard, root walls overlapped a pillar / balustrade; 4 quad .50 base
+drop-offs; 5 clean.
+
+### Changed files (pass 2)
+`tools/mv_places.py` (caps, pen clips, scan, tunnel grade, firebase scans / wind sock / signs / pocket fill / quad .50 clip, village
+yard, temple dressing, haystack jitter, vectorised slope in `park`), `tools/p_temple.py` (lion, naga, 6 new props), `tools/p_arty.py`
+(`shell_105_dyn`), `tools/mv_entities.py` (shells and the cache list on the dynamic twin), `tools/check_world.py` (7b). Props built:
+guardian_statue, naga_balustrade, khmer_pillar(_broken), enclosure_wall(_ruin), root_wall, paving_slabs (+ LODs), shell_105_dyn.
+`docs/CONTRACT.md` not edited (entity names unchanged).

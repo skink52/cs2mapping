@@ -2,7 +2,44 @@
 
 Read this first when resuming. Newest state at the top. Design: [docs/DESIGN.md](docs/DESIGN.md).
 
-## Resume here (12 Nov 2026, after world review 1)
+## Resume here (12 Nov 2026, after world review pass 2)
+
+**State in one line:** world review pass 2 is done and every offline check is clean (check_play 0 stuck pockets, check_world incl.
+the new prop_dynamic archetype check, check_mesh, mock PASS); **nothing compiled from this pass, not opened in Hammer, not run in CS2**.
+Not committed. Full record: [docs/REVIEW_WORLD_1.md](docs/REVIEW_WORLD_1.md) "Pass 2".
+
+- Map `out/addon/maps/mg_monsoon.vmap`: 72.4 MB, 7526 entities, 1184 meshes (5 builds this pass; a build takes ~9 min, of which the
+  "water" stage is now 3-5 min: `mv_terrain.mesh_low` calls `layout.height` per point, worth vectorising).
+- Stuck pockets 12 -> 0: player clips over every sandbag wall and berm crest (`World.cap`, 16..200 u, inside the bags' footprint), pig
+  pens clipped, tunnel floor grade limited, `POCKET_FILL` + a clip over the quad .50 base in `firebase()` (derived from check_play
+  cells; the firebase uses its own RandomState, so re-derive them after any change to `firebase()`).
+- Village: yard pieces right after the designed huts; 9 huts, shrine, 2 stalls, 3 cook fires, 2 climbable platforms.
+- Temple: sculpted lion and naga rebuilt; new khmer_pillar(_broken), enclosure_wall(_ruin), root_wall, paving_slabs; paving, 8 lions,
+  causeway nagas, porticos with architraves, east gallery, 5 enclosure walls, rubble clusters. root_wall / enclosure_wall_ruin built but
+  not placed (no room clear of the court-edge balustrades; the knoll falls 26-40 deg past r 420: needs an outer terrace in layout).
+- Firebase: wind sock placed clear of the rotor cylinders and lanes; water trailer placed; antenna mast, culvert bunker, crew tent,
+  M113 still find no spot; a second latrine fitted but made a pocket (its roof stepped onto the wall caps), so it stays out.
+- `shell_105_dyn` (dynamic twin, archetype "") for `mv_shell_*` and the cache list; `check_world.py` 7b fails on any prop_dynamic of ours
+  with a static_prop_model .vmdl.
+
+Checks (from `tools/`): `check_play.py`, `check_world.py`, `check_mesh.py` on `../out/addon/maps/mg_monsoon.vmap`: clean / clean / 0 bad;
+`make_radar.py`, `render_board.py` rerun; `node tools/build_script.mjs && node test/mock.mjs 32 300` (project folder): PASS.
+
+**Next:** redeploy (dry run first; the deploy + asset compile record is the next section and `docs/BUILD_LOG_1.md`), compile the new and
+rebuilt props (guardian_statue, naga_balustrade, khmer_pillar(_broken), enclosure_wall(_ruin), root_wall, paving_slabs, shell_105_dyn),
+then the map compile (step 11); look at the temple and the clips in Hammer; vectorise `mesh_low`. The shell_105 open point below is done.
+
+## Earlier: after build stage 1, deploy + asset compile (12 Nov 2026)
+
+**Deployed and assets compiled; the map is not compiled yet.** `deploy_monsoon.py --apply` created both addon folders (3114 files,
+1242 MB). `build_maps.ps1 assets mg_monsoon` took 9 min the first time; run 1 had 5 sandbag models failing (missing stock hessian
+materials: nothing called `stock.export_custom`), 3 single-LOD warnings and one transient shader-pack error; after generator fixes
+(`stock.ensure`, `vtexread` PC default, `lod_decimate` one-group, `build_prop` spec `dynamic` for quad50_gun / rocket_122 / _rail /
+_tripod) run 4 is 0 errors, 0 warnings, and the forced xml / css / js / svg compiles pass. Open: `shell_105` is both prop_static and
+prop_dynamic (`mv_shell_*`) and needs a `_dyn` twin in `mv_entities.py`; libsync lists 4 changed shared tools to pull into `create/`.
+Next: redeploy the polished vmap, then step 11 (map compile). Full record: [docs/BUILD_LOG_1.md](docs/BUILD_LOG_1.md).
+
+## Earlier: after world review 1 (12 Nov 2026)
 
 **State in one line:** the map is regenerated after a gameplay / clipping review and passes every offline check, including the new
 `tools/check_play.py`; **nothing has been compiled, opened in Hammer or run in CS2**. Nothing is committed or deployed.

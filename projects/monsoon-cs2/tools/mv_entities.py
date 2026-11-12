@@ -21,7 +21,7 @@ DIRT_FX = 'particles/ambient_fx/impact_dirt.vpcf'
 DUST = 'particles/ambient_fx/copter_land_loop_1_dust_low.vpcf'
 FX = lambda n: 'models/mv/fx/mv_%s/mv_%s.vmdl' % (n, n)
 # models the script may SetModel to (uniforms): add paths to out/cache_models.json (a list) when the player models are copied in
-CACHE_DEFAULT = [S.mv('rocket_122'), S.mv('shell_105')]            # + the crash hulks (mv_models.static('wreck_*'))
+CACHE_DEFAULT = [S.mv('rocket_122'), S.mv('shell_105_dyn')]            # + the crash hulks (mv_models.static('wreck_*'))
 
 
 def nav_markup(box, prop='NONAV', name='', group=''):
@@ -161,7 +161,7 @@ def build(d, group, out, T, clone):
     for k in range(10): dyn('mv_marker_%d' % (k + 1), FX('mission_ring'), (-700.0 + 260.0 * (k % 5), 300.0 + 300.0 * (k // 5), pz - 400.0))
     for k in range(6): fx('mv_smoke_fx_%d' % (k + 1), (-700.0 + 90.0 * k, -700.0, pz), PL.SMOKESTACK)
     for k in range(12): dyn('mv_pip_%d' % (k + 1), FX('gunpip'), (-700.0 + 150.0 * k, -900.0, pz))
-    for k in range(12): dyn('mv_shell_%d' % (k + 1), S.mv('shell_105'), (-700.0 + 60.0 * k, -1100.0, pz))
+    for k in range(12): dyn('mv_shell_%d' % (k + 1), S.mv('shell_105_dyn'), (-700.0 + 60.0 * k, -1100.0, pz))
     cj = os.path.join(os.path.dirname(os.path.abspath(out)), 'cache_models.json')
     cache = [M.static('wreck_t'), M.static('wreck_ct')] + list(CACHE_DEFAULT) + (json.load(open(cj)) if os.path.exists(cj) else [])
     for k, m in enumerate(dict.fromkeys(cache)):

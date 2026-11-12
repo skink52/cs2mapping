@@ -10,7 +10,8 @@ usage: check_world.py <map.vmap> [--plot out.png [x0,y0,x1,y1]]
 5 every flag reachable in principle: slope along the straight line from the nearest road stays under 40 degrees
 6 counts per class
 7 every entity model exists: models/mv, models/vehicles, models/player as a .vmdl under out/addon; stock models as <path>_c in
-  out/vpk_index/cs2_index.pkl
+  out/vpk_index/cs2_index.pkl; 7b every prop_dynamic of ours names a .vmdl whose model_archetype is "" or animated_model (a
+  static_prop_model on a prop_dynamic is deleted by the map compile)
 --plot draws a top-down picture (terrain shade, roads, prop footprints, spawns) of the whole map or a box, to look at.
 Exit code 1 when a check fails.
 """
@@ -209,6 +210,25 @@ def main(path, plot=None, box=None):
     print('7 models: %d of ours (.vmdl under out/addon), %d stock (%s); %d missing' % (n_own, n_stock, 'pak01 index' if stock_idx is not None else 'NO INDEX: not checked', len(missing)))
     for m, c_ in missing.most_common(20): print('    %4d x %s' % (c_, m))
     if missing: fails.append('models')
+    # 7b archetypes: a prop_dynamic whose own .vmdl says model_archetype "static_prop_model" is DELETED by the map compile (docs/BUILD.md);
+    # it must be "" or "animated_model". A prop_static on a dynamic-only model is reported too (it would not be baked as static)
+    arch_bad = Counter()
+    arch_of = {}
+    for r in rows:
+        m = r['model']
+        if r['cls'] not in ('prop_dynamic', 'prop_static') or not m.startswith(OWN) or not m.endswith('.vmdl'): continue
+        if m not in arch_of:
+            p_ = os.path.join(OUT, 'addon', m.replace('/', os.sep)); a_ = None
+            if os.path.isfile(p_):
+                mm = re.search(r'model_archetype\s*=\s*"([^"]*)"', open(p_, encoding='utf-8', errors='ignore').read())
+                a_ = mm.group(1) if mm else ''
+            arch_of[m] = a_
+        a_ = arch_of[m]
+        if a_ is None: continue
+        if r['cls'] == 'prop_dynamic' and a_ not in ('', 'animated_model'): arch_bad['prop_dynamic on %s (%s)' % (m, a_)] += 1
+    print('7b archetypes: %d prop_dynamic models checked, %d wrong' % (len({r['model'] for r in rows if r['cls'] == 'prop_dynamic' and r['model'] in arch_of}), len(arch_bad)))
+    for k_, c_ in arch_bad.most_common(20): print('    %4d x %s' % (c_, k_))
+    if arch_bad: fails.append('archetypes')
     unused = M.unused_ext(seen_m, os.path.join(OUT, 'addon'))
     if unused: print('  converted models not used by the map: ' + ', '.join(f for f, _ in unused))
     # ---- 6 counts
