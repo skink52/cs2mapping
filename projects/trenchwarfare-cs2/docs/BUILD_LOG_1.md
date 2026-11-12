@@ -59,6 +59,7 @@ Old route: all zips in `cs2port\assets\tw` are in the unpack bat's applied list 
 | 4 | Asset compile | `watchdog --label "tw assets" ... build_maps.ps1 assets mg_trenchwarfare` | ~16:35-16:50 (waited for mg_monsoon's compile) | wrapper "assets OK"; the log agrees: every block `0 failed`, 0 `RESOURCE COMPILE ERROR`; 13 models compiled (all `_dyn` twins, gm_canon75, gun_75mm, howitzer_bl8, plane_dr1 + dyn, plane_spad7 + dyn, tank_a7v, tw_de_a); 31 sound files; log `out/step9/mg_trenchwarfare_assets.log` |
 | 5 | Forced xml / css / js / svg | `resourcecompiler -f -i ...` from `C:\source1\cs2port` | ~16:51 | 1 / 30 / 1 / 1 compiled, 0 failed each |
 | 6 | Map compile | `watchdog --label "tw final" ... build_maps.ps1 final mg_trenchwarfare` | ~16:52-17:41 (49.7 min) | `OK in 49.7 min - mg_trenchwarfare.vpk moved`; 407 compiled, 0 failed; log `out/step9/mg_trenchwarfare_build.log` |
+| 8 | Nav pass 2 deploy + map compile 2 | `deploy_tw.py --apply` (map only) then `build_maps.ps1 final` | 18:52 deploy; compile 34.2 min | 0 compile errors, 0 entity DELETED (2 Steam Audio cache-file lines only); **nav 4,376 areas**; same 24,718 meshes / 1.40 M charts; log `out/step9/mg_trenchwarfare_build_run2.log` |
 | 7 | Stale models | `resourcecompiler -f -i` wire_coil, wire_fence_a, wire_fence_b, ladder | after the map | 4 compiled, 0 failed; check_world check 7 now 0 stale |
 
 CS2 tools mode closed throughout: yes (only the dedicated server `C:\cs2server` cs2.exe ran). Working folder `C:\source1\cs2port`: yes.
@@ -71,7 +72,7 @@ CS2 tools mode closed throughout: yes (only the dedicated server `C:\cs2server` 
 | Lightmap resolution | 2048 | 2048 (`final` preset; the packer did not ask for more) | packer lines |
 | Charting N unique meshes | 24,754 | 24,718 | `Charting` |
 | Packing N UV charts | 1.37 M | 1.40 M | `Packing` |
-| Nav areas | 44,160 | **10,269** (Recast 27,179 polys; NONAV removed ~5.6k; IslandRemoval 14,682 -> 10,269) | `>>NAVGEN` near line 20419 |
+| Nav areas | 44,160 | run 1: 10,269; **run 2 (nav pass 2): 4,376** (target < 5,000 met) | `>>NAVGEN ... IslandRemoval` |
 | DELETED entities | ? | 0 | `DELETED` |
 | vpk size | 525 MB | 519.9 MB | game addon `maps/mg_trenchwarfare.vpk` |
 
@@ -86,7 +87,7 @@ CS2 tools mode closed throughout: yes (only the dedicated server `C:\cs2server` 
 | sounds (wav -> vsnd) | 0 failed | 31 wavs + soundevents | clean |
 | `DELETED` at map compile | 0 | mortars, blockers, smoke, rain all kept | clean |
 | lightmap / vrad3 | 0 errors | 1.40 M charts in 2048 | clean |
-| nav | `ClipPolysToHullClearanceInternal - too many non-reducing passes` (1) | 10,269 areas: 77 % fewer than tw34 but over the 5,000 target | being tightened (patch_nav pass 2) |
+| nav | `ClipPolysToHullClearanceInternal - too many non-reducing passes` (1) | run 1 10,269 areas; run 2 4,376 | fixed (patch_nav pass 2, height-aware NONAV) |
 | wrapper exit status vs the log | agree | | |
 | harmless noise | `scripts/detail_prop_types.vdata_c` not found | every build | ignore |
 
@@ -94,11 +95,11 @@ CS2 tools mode closed throughout: yes (only the dedicated server `C:\cs2server` 
 
 - check_play scene cache served a no-stage scene to a `--stage` run (false `separation` failure): `create/check_play.py` keys on path,
   mtime_ns, code, adapter, grid and model roots.
+- Nav 10,269 -> 4,376 areas: patch_nav pass 2 (height-aware NONAV, measured first with tools/navtest.py).
 - 4 stale model compiles (wire_coil, wire_fence_a/b, ladder) recompiled after the map compile.
 
 ## Remains
 
-- Nav at 10,269 areas (target < 5,000): the offline estimate (~1,470) was off by 7x; patch_nav pass 2 and a recompile.
 - check_world `singletons`: the user's duplicate `info_map_parameters` (M2 opt-in, waiting for the user).
 - Everything in [TESTING.md](TESTING.md): nothing has been loaded in CS2.
 
