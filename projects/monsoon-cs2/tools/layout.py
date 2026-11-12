@@ -21,7 +21,12 @@ PARK_Z = -4200                       # parked effect props (tracers, rockets, ma
 WATER_Z = -30.0          # river and marsh water level
 RIVER_HW = 150.0         # water half width
 BANK_W = 260.0           # distance from the centre line where the bank meets the floodplain
-BED_Z = -62.0
+BED_Z = -62.0            # (before playtest 1: the whole bed, 32 u under the water at the centre)
+# playtest 1: a real river. A shallow margin (12 u at the water's edge) drops to a channel CHANNEL_D under the water line (deep enough
+# to swim: a standing player is 72 u); three fords stay knee deep (FORD_D) where the routes cross; through the marsh the channel shoals
+CHANNEL_D = 120.0
+FORD_D = 18.0
+FORDS = [(360.0, 260.0), (-2650.0, 260.0), (2250.0, 250.0)]    # (x centre, half length): east of the bridge, the west ford, the temple
 FALL_X = -5600.0         # the waterfall: the river upstream (x < FALL_X) is 110 higher
 FALL_H = 110.0
 UPPER_WATER_Z = WATER_Z + FALL_H
@@ -317,7 +322,12 @@ def carved(x, y, roads=True):
     # river bed: upstream of the fall the whole channel is FALL_H higher; a plunge pool right below the fall
     up = smoothstep(FALL_X + 24.0, FALL_X - 24.0, x) * FALL_H
     pool = -22.0 * smoothstep(FALL_X + 330.0, FALL_X + 40.0, x) * smoothstep(FALL_X - 20.0, FALL_X + 20.0, x)
-    bed = BED_Z + 20.0 * (np.minimum(a, RIVER_HW) / RIVER_HW) ** 2 + up + pool
+    deep = 12.0 + (CHANNEL_D - 12.0) * (1.0 - smoothstep(30.0, 135.0, a))
+    deep = deep * (1.0 - 0.6 * smoothstep(MARSH_X0, MARSH_X0 + 800.0, x))
+    ford = 6.0 + (FORD_D - 6.0) * (1.0 - smoothstep(60.0, 150.0, a))
+    wf = np.zeros(np.shape(x))
+    for (fx, fh) in FORDS: wf = np.maximum(wf, 1.0 - smoothstep(fh - 70.0, fh + 50.0, np.abs(x - fx)))
+    bed = WATER_Z - (deep * (1.0 - wf) + ford * wf) + up + pool
     bank = smoothstep(RIVER_HW, BANK_W, a)
     hb = np.maximum(h, bed + 22.0 + up * 0)       # the floodplain never sits below the bank top
     hr = bed * (1 - bank) + hb * bank

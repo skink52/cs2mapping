@@ -4,6 +4,8 @@ Faces on these charts skip the atlas bake and get real-scale tiling UVs (per fac
 modes: plank  - board parts (part frame x = length, y = width, z = thickness) mapped onto one board strip of a boards texture
        box    - model-space box projection, S units per texture tile
        cyl    - around the part's long axis (posts, trunks), S units per tile
+       uv     - the mesh's own per-vertex uv (mesh.T, image convention: v from the top), e.g. each sandbag mapped onto one bag of a
+                bag-unwrap texture (mg_monsoon playtest 1); a key with this mode is registered by the prop module that lays the uvs out
 
 From trenchwarfare-cs2/tools/stock.py (MIT), made project-neutral.
 """
@@ -38,6 +40,29 @@ STOCK = {
     'steel': dict(vmat='materials/models/' + PREFIX + '/stock/steel.vmat', mode='box', S=48.0),
     'rope': dict(vmat='materials/models/' + PREFIX + '/stock/rope.vmat', mode='cyl', S=6.0, swap=True),
     'rust_heavy': dict(vmat='materials/shared_base/metal/metal_rust_001.vmat', mode='box', S=64.0),
+    # CS2's own tiling materials used as they are (csgo_environment; Valve's de_ancient thatch roof models use these vmats on a
+    # model, so they work on props). Added for mg_monsoon playtest 1 (finding 16): large surfaces at CS2's own texel density instead
+    # of one unique atlas per prop. S = units per 2048-px tile, chosen from the texture's physical content (straw length, reed
+    # width, block height) at 40 u/m; the resulting density is in the comment. alpha=True: alpha-tested (preview cuts it out).
+    'v_thatch': dict(vmat='materials/de_ancient/hr_ancient_roof_thatch_01_base.vmat', mode='chart', S=72.0),         # 1.8 m, 1140 px/m
+    'v_thatch_cyl': dict(vmat='materials/de_ancient/hr_ancient_roof_thatch_01_base.vmat', mode='cyl', S=72.0, swap=True),
+    'v_thatch_edge': dict(vmat='materials/de_ancient/hr_ancient_roof_thatch_01_edge_base.vmat', mode='uv', alpha=True),  # fringe cards, uv laid by the prop
+    'v_reed': dict(vmat='materials/de_ancient/hr_ancient_ceiling_wood_01_base.vmat', mode='chart', S=64.0),          # reed panels, 1.6 m, 1280 px/m
+    'v_reed_box': dict(vmat='materials/de_ancient/hr_ancient_ceiling_wood_01_base.vmat', mode='box', S=64.0),
+    'v_bamboo': dict(vmat='materials/wood/hr_w/hr_bamboo_01.vmat', mode='chart', S=48.0),                          # slats, 1.2 m, 1700 px/m
+    'v_bamboo_box': dict(vmat='materials/wood/hr_w/hr_bamboo_01.vmat', mode='box', S=48.0),
+    # stone: the _base variants (the moss_wet ones carry F_WETNESS puddles and rain, which need the map's weather set-up)
+    'v_stone_moss3': dict(vmat='materials/de_ancient/hr_ancient_wall_stone_03_moss_base.vmat', mode='box', S=150.0),  # 3.75 m, 546 px/m
+    'v_stone_grey3': dict(vmat='materials/de_ancient/hr_ancient_wall_stone_03_grey_base.vmat', mode='box', S=150.0),
+    'v_stone_grey1': dict(vmat='materials/de_ancient/hr_ancient_wall_stone_01_base.vmat', mode='box', S=150.0),
+    'v_stone_grey4': dict(vmat='materials/de_ancient/hr_ancient_wall_stone_04_base.vmat', mode='box', S=150.0),
+    'v_plaster': dict(vmat='materials/de_ancient/hr_ancient_wall_plaster_01_base.vmat', mode='box', S=128.0),       # 3.2 m, 640 px/m
+    'boards_dark_box': dict(vmat='materials/models/' + PREFIX + '/stock/boards_dark.vmat', mode='box', S=40.0),     # timbers without a grain frame
+    'boards_warm_box': dict(vmat='materials/models/' + PREFIX + '/stock/boards_warm.vmat', mode='box', S=40.0),
+    'canvas_od': dict(vmat='materials/models/' + PREFIX + '/stock/canvas_od.vmat', mode='chart', S=64.0),          # olive-drab tentage
+    'v_concrete': dict(vmat='materials/concrete/hr_c/hr_conc_d.vmat', mode='box', S=80.0),                     # weathered, 2 m, 512 px/m
+    'v_hay': dict(vmat='materials/de_anubis/models/market/hay_pile.vmat', mode='uv', alpha=True),                   # straw strands (1024 px)
+    'v_basket': dict(vmat='materials/models/props/de_dust/hr_dust/dust_grain_basket/dust_grain_basket_color.vmat', mode='uv'),
 }
 
 # custom vmats built from the game's textures (their own vmats use foliage/blend/trim shaders or are untinted):
@@ -53,6 +78,7 @@ CUSTOM = {
     'paint_white': dict(c=_HULL, n=_MB_N, paint=(0.66, 0.65, 0.60), rough=0.5, chip=True),
     'canvas': dict(c='materials/pbr_defaults/default_cloth001_color_psd_e8be67f8', n='materials/pbr_defaults/default_cloth001_normal_psd_a04b35dd', tint=(0.78, 0.76, 0.64), rough=0.93),
     'canvas_dark': dict(c='materials/pbr_defaults/default_cloth001_color_psd_e8be67f8', n='materials/pbr_defaults/default_cloth001_normal_psd_a04b35dd', tint=(0.52, 0.51, 0.43), rough=0.93),
+    'canvas_od': dict(c='materials/pbr_defaults/default_cloth001_color_psd_e8be67f8', n='materials/pbr_defaults/default_cloth001_normal_psd_a04b35dd', tint=(0.42, 0.44, 0.30), rough=0.94),
     'paint_feldgrau': dict(c=_HULL, n=_MB_N, paint=(0.27, 0.29, 0.25), rough=0.62, chip=True),
     'paint_khaki': dict(c=_HULL, n=_MB_N, paint=(0.31, 0.28, 0.20), rough=0.62, chip=True),
     'paint_dark': dict(c=_HULL, n=_MB_N, paint=(0.16, 0.17, 0.16), rough=0.55, chip=True),
@@ -105,23 +131,33 @@ def export_custom(outdir, maxsize=1024, only=None):
             nfile = '%s/%s.png' % (rel, c['n'].split('/')[-1].split('_tga_')[0].split('_psd_')[0])
             if nfile not in nrm_done:
                 a = np.asarray(_vtex(c['n'], maxsize).convert('RGBA'), np.float32) / 255.0
+                # CS2's compiled normals are hemi-octahedral in RG (13 Nov 2026, checked against de_ancient height maps); before
+                # that date this read RG as plain xy, which turned the detail about 45 degrees
                 x, y = a[..., 0] * 2 - 1, a[..., 1] * 2 - 1
-                z = np.sqrt(np.clip(1 - x * x - y * y, 0, 1))
-                Image.fromarray((np.stack([x, y, z], -1) * 127.5 + 127.5).clip(0, 255).astype(np.uint8)).save(os.path.join(outdir, nfile)); nrm_done[nfile] = 1
+                tx, ty = (x + y) / 2, (x - y) / 2
+                n3 = np.stack([tx, ty, 1 - np.abs(tx) - np.abs(ty)], -1); n3 /= np.linalg.norm(n3, axis=-1, keepdims=True) + 1e-9
+                Image.fromarray((n3 * 127.5 + 127.5).clip(0, 255).astype(np.uint8)).save(os.path.join(outdir, nfile)); nrm_done[nfile] = 1
             lines.append('\tTextureNormal "%s"' % nfile)
         lines.append('}')
         open(os.path.join(d, name + '.vmat'), 'w', newline='\n').write('\n'.join(lines) + '\n')
     return sorted(CUSTOM)
 
 
+GENERATORS = {}      # vmat path -> fn(outdir) writing it and its textures (procedural tiling materials of a project)
+_GENERATED = set()   # written by this process (regenerated once per run so a changed generator takes effect)
+
+
 def ensure(outdir, vmats):
     """write the stock copies (export_custom / export_bark) when a vmat a prop uses under materials/models/<PREFIX>/stock is
     missing from outdir. Before 12 Nov 2026 nothing called the exporters, so the sandbag props failed to compile
     (missing material materials/models/mv/stock/hessian*.vmat, docs/BUILD_LOG_1.md)."""
-    rel = 'materials/models/%s/stock/' % PREFIX
-    need = [v for v in vmats if v.startswith(rel) and not os.path.isfile(os.path.join(outdir, v))]
-    if not need: return []
     done = []
+    for v in vmats:          # project-generated tiling materials (a prop module registers GENERATORS[vmat] = fn(outdir))
+        if v in GENERATORS and (not os.path.isfile(os.path.join(outdir, v)) or v not in _GENERATED):
+            GENERATORS[v](outdir); _GENERATED.add(v); done.append(v)
+    rel = 'materials/models/%s/stock/' % PREFIX
+    need = [v for v in vmats if v.startswith(rel) and v not in GENERATORS and not os.path.isfile(os.path.join(outdir, v))]
+    if not need: return done
     if any(v.endswith('/bark_maple.vmat') for v in need): export_bark(outdir); done.append('bark_maple')
     names = [v[len(rel):-5] for v in need if not v.endswith('/bark_maple.vmat')]
     if names: export_custom(outdir, only=names); done += names
@@ -181,6 +217,20 @@ def _rng_off(k, salt):
     return r.rand(), r.rand(), r.randint(1 << 16)
 
 
+def _components(F):
+    """connected components of faces F (k,3) sharing vertices -> list of index arrays into F (welded by vertex index)"""
+    if len(F) == 0: return []
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+    nf = len(F); vi, inv = np.unique(F.ravel(), return_inverse=True)
+    rows = np.repeat(np.arange(nf), 3); cols = nf + inv
+    n = nf + len(vi)
+    g = coo_matrix((np.ones(len(rows)), (rows, cols)), shape=(n, n))
+    _, lab = connected_components(g, directed=False)
+    lf = lab[:nf]
+    return [np.nonzero(lf == l)[0] for l in np.unique(lf)]
+
+
 def uv_for(mesh, fsel, key):
     """per-corner uv (n,3,2) in image convention (v from the top) for the selected faces"""
     cfg = STOCK[key]
@@ -193,6 +243,9 @@ def uv_for(mesh, fsel, key):
         part = mesh.parts[p]
         R = np.asarray(part['R'], float); o = np.asarray(part['o'], float)
         ou, ov, ri = _rng_off(int(p), len(mesh.V))
+        if cfg['mode'] == 'uv':
+            out[sel] = mesh.T[F[sel]]
+            continue
         if cfg['mode'] == 'plank' and 'grain' in part:
             L = (P[sel] - o) @ R                           # local coords per corner
             nl = N[sel] @ R
@@ -209,17 +262,22 @@ def uv_for(mesh, fsel, key):
             u = np.where(ax[:, None] == 0, (L[..., 2] - lo[2]) * us + ou, u)
             out[sel] = np.stack([u, v], -1)
         elif cfg['mode'] == 'cyl':
-            Q = P[sel].reshape(-1, 3)
-            c = Q.mean(0); _, _, vt = np.linalg.svd(Q - c, full_matrices=False); a = vt[0]
-            b1 = np.cross(a, [0, 0, 1.0] if abs(a[2]) < 0.9 else [1.0, 0, 0]); b1 /= np.linalg.norm(b1); b2 = np.cross(a, b1)
-            D = P[sel] - c
-            h = D @ a; ang = np.arctan2(D @ b2, D @ b1)
-            r = np.sqrt((D @ b1) ** 2 + (D @ b2) ** 2).mean()
-            # unwrap per face so no face straddles the seam
-            ang = np.where(ang - ang[:, :1] > np.pi, ang - 2 * np.pi, np.where(ang - ang[:, :1] < -np.pi, ang + 2 * np.pi, ang))
-            S = cfg['S']
-            uvc = np.stack([ang * max(r, 2.0) / S + ou, h / S + ov], -1)
-            out[sel] = uvc[..., ::-1] if cfg.get('swap') else uvc
+            # one axis per connected piece of the part (several cylinders can share a part frame: ladder rungs, stakes)
+            isel = np.nonzero(sel)[0]
+            for comp in _components(F[sel]):
+                ss = isel[comp]
+                Q = P[ss].reshape(-1, 3)
+                c = Q.mean(0); _, _, vt = np.linalg.svd(Q - c, full_matrices=False); a = vt[0]
+                b1 = np.cross(a, [0, 0, 1.0] if abs(a[2]) < 0.9 else [1.0, 0, 0]); b1 /= np.linalg.norm(b1); b2 = np.cross(a, b1)
+                D = P[ss] - c
+                h = D @ a; ang = np.arctan2(D @ b2, D @ b1)
+                r = np.sqrt((D @ b1) ** 2 + (D @ b2) ** 2).mean()
+                # unwrap per face so no face straddles the seam
+                ang = np.where(ang - ang[:, :1] > np.pi, ang - 2 * np.pi, np.where(ang - ang[:, :1] < -np.pi, ang + 2 * np.pi, ang))
+                S = cfg['S']
+                ou2, ov2 = (ou + 0.37 * len(ss) % 1.0, ov + 0.61 * ss[0] % 1.0)
+                uvc = np.stack([ang * max(r, 2.0) / S + ou2, h / S + ov2], -1)
+                out[ss] = uvc[..., ::-1] if cfg.get('swap') else uvc
         elif cfg['mode'] == 'chart':
             # the chart's own unwrap (0..1 over w x h units) at real scale
             S = cfg['S']

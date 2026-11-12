@@ -412,6 +412,42 @@ def vine_curtain(lod=0, seed=26, W=150.0, H=200.0):
     return m
 
 
+def vine_drape(lod=0, seed=29, W=96.0, H=160.0, depth=14.0):
+    """playtest 1 (p7): vine_curtain hangs from its own sagging liana bar, so placed against the temple it read as vines on a bent
+    pole floating in the air. This one has no bar: the strands start on TOP of a wall, coping or cornice (lying on it for `depth` u),
+    turn over the front edge and hang down the face, a little proud of it, swaying out lower down. Origin = the front top edge
+    (place it on the edge, z = the top of the stone); the edge runs along x, the face looks toward +y, the strands hang to z = -H.
+    Scale x to change the width, z to change the hang. A few bare aerial roots run the same way."""
+    rng = np.random.RandomState(seed)
+    m = geo.Mesh()
+    n_ = max(3, int(round(W / 30.0)))
+    xs = np.linspace(-W / 2, W / 2, n_ + 1)
+    for k in range(n_ + 1 if W > 60 else n_):
+        w = rng.uniform(30.0, 42.0); x0 = float(np.clip(xs[k] + rng.uniform(-8, 8), -W / 2 + w / 2 - 6, W / 2 - w / 2 + 6))
+        h = H * rng.uniform(0.55, 1.0) if k % 3 else H * rng.uniform(0.85, 1.0)
+        d0 = depth * rng.uniform(0.6, 1.0); f0 = rng.uniform(1.0, 2.6)                   # how far back on the top, how far proud of the face
+        sway = rng.uniform(-6.0, 6.0); out = rng.uniform(2.0, 7.0)                       # sideways drift and outward bow lower down
+        # the strand path in (y, z) from the hanging end (t = 0) to the back of the top (t = 1): down the face, round the edge, over the top
+        path = [(f0 + out * (1 - s) ** 1.5 + 1.2 * np.sin(s * 5.0 + k), -h * (1 - s), sway * (1 - s) ** 2) for s in np.linspace(0.0, 1.0, 7)]
+        path += [(f0 * 0.6, 1.0, 0.0), (-d0 * 0.45, 1.6, 0.0), (-d0, 1.3, 0.0)]
+        nu = 2
+        P = np.zeros((nu + 1, len(path), 3))
+        for j, (y, z, dx) in enumerate(path):
+            for i in range(nu + 1):
+                P[i, j] = (x0 - w / 2 + w * i / nu + dx, y + 0.8 * np.sin(i * 2.1 + k), z)
+        lens = np.linalg.norm(np.diff(P[nu // 2], axis=0), axis=1).sum()
+        c = geo.surface(P, 'card', geo.frame(seed=seed + k, tone=rng.rand(), img=k % 2, foot=0.0))
+        c.charts[0]['atlas'] = 'cut'; c.charts[0]['w'] = float(w); c.charts[0]['h'] = float(lens)
+        nn = c.N * 0.85 + np.array([0, 0.15, 0.1]); c.N = nn / (np.linalg.norm(nn, axis=1, keepdims=True) + 1e-9)
+        m.add(c)
+    for k in range(4 if lod == 0 else 2):
+        x = rng.uniform(-W / 2 + 6, W / 2 - 6); L_ = H * rng.uniform(0.4, 0.95); f0 = rng.uniform(1.5, 3.0)
+        pts = np.array([(x + rng.uniform(-3, 3), -depth * 0.7, 1.2), (x, f0 * 0.5, 1.4), (x + rng.uniform(-2, 2), f0 + 0.5, -4.0),
+                        (x + rng.uniform(-6, 6), f0 + rng.uniform(1, 5), -L_ * 0.5), (x + rng.uniform(-10, 10), f0 + rng.uniform(2, 8), -L_)])
+        m.add(geo.tube(pts, [1.3, 1.2, 1.1, 0.8, 0.5], sides=5, mat='bark', part=geo.frame(seed=seed + 50 + k)))
+    return m
+
+
 # ---------------------------------------------------------------- flag pole, supply crates
 FLAG_COL = dict(n=(0.86, 0.85, 0.80), t=(0.70, 0.09, 0.07), ct=(0.10, 0.22, 0.56))
 
@@ -526,6 +562,7 @@ def specs():
         'log_fallen': lambda: _spec(log_fallen, size=1024, lod1=True, hulls=[B(-112, -13, 0, 118, 13, 24), B(-134, -30, 0, -108, 30, 44)]),
         'dead_tree': lambda: _spec(dead_tree, size=1024, lod1=True, hulls=[B(-13, -13, 0, 15, 12, 190), B(0, -16, 190, 22, 6, 380)]),
         'vine_curtain': lambda: _spec(vine_curtain, [vine_img(12), vine_img(13)], size=512, cut=1024),
+        'vine_drape': lambda: _spec(vine_drape, [vine_img(14), vine_img(15)], size=512, cut=1024),
         'root_tangle': lambda: _spec(root_tangle, size=1024, lod1=True, hulls=[B(-16, -16, 0, 18, 16, 50), B(-52, -52, 0, 52, 52, 9)]),
         'flag_pole_n': lambda: _spec(flag_pole, size=1024, flag='n', team='n', hulls=[B(-3, -3, 0, 3, 3, 200), B(-16, -16, 0, 16, 16, 10)]),
         'flag_pole_t': lambda: _spec(flag_pole, size=1024, flag='t', team='t', hulls=[B(-3, -3, 0, 3, 3, 200), B(-16, -16, 0, 16, 16, 10)]),

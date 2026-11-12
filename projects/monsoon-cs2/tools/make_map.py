@@ -46,6 +46,10 @@ def main(src, out_vmap, out_addon, prev=None):
     T = TER.build_terrain(GROUP, holes_extra=holes)
     stamp('karst'); karst = TER.build_karst(GROUP)
     stamp('water'); TER.build_water(GROUP)
+    # the underwater post-processing the river's volumes name (tools/postprocess_filmic_underwater.vpost, from ba_jail_seaside)
+    import shutil
+    vp = os.path.join(OUT, TER.UNDERWATER_VPOST.replace('/', os.sep)); os.makedirs(os.path.dirname(vp), exist_ok=True)
+    shutil.copyfile(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'tools', 'postprocess_filmic_underwater.vpost')), vp)
     TER.build_sky_shell(GROUP); TER.build_edge_clips(GROUP)
     stamp('lightmap shells'); TER.build_lmres(GROUP)
 
@@ -64,11 +68,16 @@ def main(src, out_vmap, out_addon, prev=None):
     clone('post_processing_volume', (256, 0, 3000), postprocessing='postprocess/%s.vpost' % NAME, master='1', minexposure='0.55', maxexposure='1.7',
           enableexposure='1', fadetime='1.0', spawnflags='4097')
     # light probes: the valley (64), the bases (48), far slopes (108), the lobby (48); tunnels/bunkers come with the places
-    clone('env_combined_light_probe_volume', (0, 0, 300), box_mins='-6500 -3400 -200', box_maxs='6500 3400 1200', voxel_size='64.0', targetname='valley_probe')
+    # playtest 1 (p2, p5): this volume was centred at z 300 with box -200..1200, so it covered z 100..1500 only. Everything probe-lit
+    # below z 100 (grass, palms, slim trees, sandbags near the river: the ground there is -30..60) sat outside every volume and was lit
+    # by the fallback: a pale band on the lower trunks and a hard horizontal line across the grass at z 100. It now reaches from under
+    # the deepest river bed to above the highest valley ground; check_world.py check 8 fails on any probe-lit prop outside a volume.
+    clone('env_combined_light_probe_volume', (0, 0, 840), box_mins='-6500 -3400 -1160', box_maxs='6500 3400 1160', voxel_size='64.0', targetname='valley_probe')
     for name, c, r, z0, z1 in (('ct_probe', L.CT_BASE, 1100, L.CT_Z - 420, L.CT_Z + 700), ('t_probe', L.T_BASE, L.T_PLATEAU_R + 50, L.T_Z - 300, L.T_Z + 900)):
         clone('env_combined_light_probe_volume', (c[0], c[1], (z0 + z1) / 2), box_mins='%g %g %g' % (-r, -r, -(z1 - z0) / 2), box_maxs='%g %g %g' % (r, r, (z1 - z0) / 2),
               voxel_size='48.0', targetname=name, indoor_outdoor_level='1')
-    for k, (x0, y0, x1, y1) in enumerate(((-7200, 3400, 7200, 6200), (-7200, -6200, 7200, -3400), (-7200, -3400, -6500, 3400), (6500, -3400, 7200, 3400))):
+    # playtest 1 (check_world check 8): out to the sky shell (7424 x 6400), so the banyans past the play space are inside one too
+    for k, (x0, y0, x1, y1) in enumerate(((-7424, 3400, 7424, 6400), (-7424, -6400, 7424, -3400), (-7424, -3400, -6500, 3400), (6500, -3400, 7424, 3400))):
         clone('env_combined_light_probe_volume', ((x0 + x1) / 2, (y0 + y1) / 2, 900), box_mins='%g %g -1100' % (-(x1 - x0) / 2, -(y1 - y0) / 2),
               box_maxs='%g %g 1100' % ((x1 - x0) / 2, (y1 - y0) / 2), voxel_size='108.0', targetname='far_probe_%d' % k, indoor_outdoor_level='-1')
     for kk in karst:   # the tower tops (landable or not) sit above the valley probe

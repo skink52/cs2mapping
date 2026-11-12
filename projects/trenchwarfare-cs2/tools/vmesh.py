@@ -46,9 +46,11 @@ def split_pinches(verts, faces, paint=None, tint=None):
     return verts, new, paint, tint, len(extra)
 
 
-def polymesh_open(verts, faces, face_mats, scale=0.25, tex_axes=None, paint=None, tint=None):
+def polymesh_open(verts, faces, face_mats, scale=0.25, tex_axes=None, paint=None, tint=None, uvs=None):
     """verts (n,3); faces: list of index loops CCW seen from the visible side; open boundaries allowed (manifold edges; vertices
-    where face fans only touch are split by split_pinches)."""
+    where face fans only touch are split by split_pinches). uvs: optional per face a list of (u, v) per corner, in texture repeats
+    (the default is a world-aligned planar projection per face, which seams wherever the dominant axis changes: on an organic mesh
+    such as a cave wall give your own); the tangent then follows the uv's u direction."""
     verts, faces, paint, tint, _ = split_pinches(verts, faces, paint, tint)
     verts = np.asarray(verts, float)
     mats = sorted(set(face_mats))
@@ -115,13 +117,31 @@ def polymesh_open(verts, faces, face_mats, scale=0.25, tex_axes=None, paint=None
         else: u, v = (1.0, 0.0, 0.0), (0.0, 0.0, -1.0)
         fn.append(tuple(nrm)); fu.append(u); fv.append(v)
     tex = np.zeros((nhe, 2)); nrm_ = np.zeros((nhe, 3)); tan = np.zeros((nhe, 4))
+    if uvs is not None:
+        he_uv = np.zeros((nfh, 2))
+        for f, loop in enumerate(faces):
+            n = len(loop)
+            for k in range(n): he_uv[face_first[f] + k] = uvs[f][(k + 1) % n]       # half-edge k ends at corner k + 1
+        ftan = []
+        for f, loop in enumerate(faces):                                           # the uv's u direction in 3D, per face
+            p = verts[loop[:3]]; t_ = np.asarray(uvs[f][:3], float)
+            e1, e2 = p[1] - p[0], p[2] - p[0]; d1, d2 = t_[1] - t_[0], t_[2] - t_[0]
+            det = d1[0] * d2[1] - d2[0] * d1[1]
+            tv = (e1 * d2[1] - e2 * d1[1]) / det if abs(det) > 1e-12 else np.array(fu[f])
+            tv = tv - np.dot(tv, fn[f]) * np.array(fn[f]); l = np.linalg.norm(tv)
+            ftan.append(tuple(tv / l) if l > 1e-9 else fu[f])
     for i in range(nhe):
         f = E_face[i]
         if f < 0: continue
         p = verts[E_dest[i]]
         tw, th = TEX_SIZE.get(face_mats[f], (1024, 1024))
-        tex[i] = (np.dot(p, fu[f]) / (tw * scale), np.dot(p, fv[f]) / (th * scale))
         nrm_[i] = fn[f]
+        if uvs is not None:
+            tex[i] = he_uv[order[i]]
+            w = -1.0 if np.dot(np.cross(fn[f], ftan[f]), fv[f]) < 0 else 1.0
+            tan[i] = tuple(ftan[f]) + (w,)
+            continue
+        tex[i] = (np.dot(p, fu[f]) / (tw * scale), np.dot(p, fv[f]) / (th * scale))
         w = -1.0 if np.dot(np.cross(fn[f], fu[f]), fv[f]) < 0 else 1.0
         tan[i] = fu[f] + (w,)
     nf = len(faces)

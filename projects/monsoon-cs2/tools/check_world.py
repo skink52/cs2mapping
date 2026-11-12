@@ -31,7 +31,9 @@ OK_PAIR = [('sandbag', 'sandbag'), ('truss_span', ''), ('psp_pad', ''), ('camo_n
            ('roots', ''), ('bridge_pier', ''), ('m2_gun', ''), ('dshk_gun', ''), ('quad50_gun', ''), ('howitzer_m102', 'howitzer_m102_gun'),
            ('rocket_tripod', 'rocket_rail'), ('rocket_122', ''), ('rotor_hip', 'rotor_hip'), ('hip_rotor', ''), ('hip_tail', ''), ('m101', 'm101_gun'),
            ('m2_tripod', 'sandbag'), ('dshk_tripod', 'sandbag'), ('nva_ammo_case', 'nva_ammo_case'), ('camo_net', ''), ('heli_hip', 'rotor_hip'), ('heli_hip', 'tailrotor_hip'), ('heli_hip_gun', 'rotor_hip'),
-           ('heli_hip_gun', 'tailrotor_hip'), ('flag_pole', 'sandbag'), ('khmer_tower', 'stone_stairs')]
+           ('heli_hip_gun', 'tailrotor_hip'), ('flag_pole', 'sandbag'), ('khmer_tower', 'stone_stairs'),
+           ('guard_tower', 'sandbag_a'),     # playtest 1: gun pit 3's ring and the tower's bounds box (its platform bag rows): hulls measured 24 u apart
+           ('camp_hut', 'water_jar')]        # playtest 1: a jar under the T FDC hut's eaves, 36 u from its hull
 
 
 def expected(n_mounts):
@@ -73,7 +75,8 @@ def main(path, plot=None, box=None):
     for c in ents:
         ep = c.get('entity_properties')
         rows.append(dict(cls=ep.get('classname'), name=ep.get('targetname') or '', model=ep.get('model') or '', o=tuple(c.get('origin')), a=tuple(c.get('angles')),
-                         s=tuple(c.get('scales') or (1, 1, 1)), solid=ep.get('solid') or '', msg=ep.get('message') or ''))
+                         s=tuple(c.get('scales') or (1, 1, 1)), solid=ep.get('solid') or '', msg=ep.get('message') or '', bake=ep.get('bakelighting') or '',
+                         bmin=ep.get('box_mins') or '', bmax=ep.get('box_maxs') or ''))
     # ---- 1 contract names
     names = Counter(r['name'] for r in rows if r['name'])
     cls_of = {r['name']: r['cls'] for r in rows if r['name']}
@@ -139,6 +142,8 @@ def main(path, plot=None, box=None):
         else:
             f = PLc.footprint(m, r['o'][0], r['o'][1], r['o'][2], r['a'][1], r['s'])
             f['z'] = (f['z'][0] + 1.0, f['z'][1] - 1.0)
+            if nm_.startswith(('sandbag_w_', 'sandbag_a')):       # playtest 1: a wall segment's core (80 u x 34, the toothed end bags belong to the
+                f['c'] = (r['o'][0], r['o'][1]); f['h'] = (40.0 * r['s'][0], 17.0)      # joint with the next one); its full bounds box a curved one
         f['name'] = r['name']
         PLc.add(f)
     short = lambda m: m.split('/')[-1][:-5]
@@ -162,8 +167,8 @@ def main(path, plot=None, box=None):
         probe = dict(c=(x, y), h=(16.0, 16.0), a=0.0, z=(feet + 2.0, feet + 80.0), model='probe')
         hit = PLc.hits(probe)
         zs = [float(L.height(np.array([x]), np.array([y]))[0])] + [zt for (x0, y0, x1, y1, zt) in surf if x0 <= x <= x1 and y0 <= y <= y1]
-        if len(tp) and r['name'].startswith('mv_tunnel'):
-            zs.append(float(tf[int(np.hypot(tp[:, 0] - x, tp[:, 1] - y).argmin())]))
+        if len(tp) and r['name'].startswith('mv_tunnel'):       # on the entrance shaft (39 deg): any floor within 24 u is under the hull
+            zs += [float(v) for v in tf[np.hypot(tp[:, 0] - x, tp[:, 1] - y) < 24.0]] or [float(tf[int(np.hypot(tp[:, 0] - x, tp[:, 1] - y).argmin())])]
         on = any(-3.0 <= feet - zc <= 14.0 for zc in zs)
         if hit is not None: bad_sp.append((r['name'], 'inside ' + short(hit['model'])))
         elif not on: bad_sp.append((r['name'], 'feet %.0f, surfaces %s' % (feet, [round(v) for v in zs])))
@@ -231,6 +236,31 @@ def main(path, plot=None, box=None):
     if arch_bad: fails.append('archetypes')
     unused = M.unused_ext(seen_m, os.path.join(OUT, 'addon'))
     if unused: print('  converted models not used by the map: ' + ', '.join(f for f, _ in unused))
+    # ---- 8 probe-lit props inside a light probe volume. Playtest 1 (12 Nov 2026, p2 / p5): the valley volume stopped at z 100, so the
+    # lower part of every probe-lit plant and trunk near the river was lit by the fallback (a pale band on trunks, a hard horizontal line
+    # across the grass). Every corner of the bounds of a bakelighting 0 prop must lie in some env_combined_light_probe_volume.
+    vols = []
+    for r in rows:
+        if r['cls'] != 'env_combined_light_probe_volume' or not r['bmin']: continue
+        lo_ = np.array([float(v) for v in r['bmin'].split()]); hi_ = np.array([float(v) for v in r['bmax'].split()])
+        vols.append((np.array(r['o']) + lo_, np.array(r['o']) + hi_))
+    VL = np.array([v[0] for v in vols]); VH = np.array([v[1] for v in vols])
+    outside = Counter(); worst_out = []; n_probed = 0
+    for r in rows:
+        if r['cls'] != 'prop_static' or r['bake'] != '0' or not r['model'].endswith('.vmdl') or r['o'][2] < L.LOBBY_Z + 1000: continue
+        n_probed += 1
+        lo, hi = PLc.bounds(r['model']); sc = np.array(r['s'], float)
+        yw = math.radians(r['a'][1]); cy_, sy_ = math.cos(yw), math.sin(yw)
+        C = np.array([(x, y, z) for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2])], float) * sc
+        C = np.stack([C[:, 0] * cy_ - C[:, 1] * sy_, C[:, 0] * sy_ + C[:, 1] * cy_, C[:, 2]], 1) + np.array(r['o'])
+        ins = ((C[:, None, :] >= VL[None, :, :] - 0.5) & (C[:, None, :] <= VH[None, :, :] + 0.5)).all(2).any(1)
+        if not ins.all():
+            outside[short(r['model'])] += 1
+            if len(worst_out) < 8: worst_out.append((short(r['model']), [round(v) for v in r['o']], round(float(C[~ins][:, 2].min()))))
+    print('8 probes: %d volumes, %d probe-lit props, %d with a corner outside every volume' % (len(vols), n_probed, sum(outside.values())))
+    for m_, c_ in outside.most_common(10): print('    %4d x %s' % (c_, m_))
+    for w_ in worst_out: print('    e.g. %s at %s (corner z %d)' % w_)
+    if outside: fails.append('probe coverage')
     # ---- 6 counts
     cc = Counter(r['cls'] for r in rows)
     print('6 classes: ' + ', '.join('%s %d' % kv for kv in cc.most_common()))

@@ -49,13 +49,19 @@ def blocked(W, x, y, z, r=17.0, h=80.0):
     return False
 
 
-def stand(W, x, y, tries=((0, 0), (40, 0), (-40, 0), (0, 40), (0, -40), (60, 60), (-60, 60), (60, -60), (-60, -60), (100, 0), (-100, 0), (0, 100), (0, -100),
-                          (150, 0), (-150, 0), (0, 150), (0, -150))):
-    """a clear spot to stand at or near (x, y): -> (x, y, z of the surface)"""
+STAND_TRIES = [(0, 0)] + [(r * math.cos(math.radians(a)), r * math.sin(math.radians(a))) for r in (24, 40, 60, 80, 100, 130, 160)
+                          for a in range(0, 360, 30)]
+
+
+def stand(W, x, y, tries=STAND_TRIES):
+    """a clear spot to stand at or near (x, y): -> (x, y, z of the surface). Playtest 1: the props' footprints were the only test, so
+    a T spawn stood in a rocket pit's berm clip and four flag D spawns in the temple's terrace walls and stairs. Now a 32 x 32 player
+    hull from 1 u over the surface to 74 u (the teleport puts the feet 8 u up) must also miss every solid world mesh and player clip
+    (W.hull_hits), nearest spot first."""
     for dx, dy in tries:
         px, py = x + dx, y + dy
         z = max(PL.surf_z(px, py), W.T.surf_z(px, py, pad=16.0))
-        if not blocked(W, px, py, z) and float(L.slope(px, py)) < 30.0: return px, py, z
+        if not blocked(W, px, py, z) and float(L.slope(px, py)) < 30.0 and not W.hull_hits(px, py, z + 1.0, z + 82.0, r=17.0): return px, py, z
     print('WARNING no clear standing spot near (%.0f, %.0f)' % (x, y))
     return x, y, PL.surf_z(x, y)
 
@@ -75,8 +81,8 @@ def build(d, group, out, T, clone):
     def fx(name, pos, effect):
         return E('info_particle_system', pos, targetname=name, effect_name=effect, start_active='0')
     spawn_log = []
-    def tele(name, x, y, yaw):
-        px, py, z = stand(W, x, y)
+    def tele(name, x, y, yaw, tries=STAND_TRIES):
+        px, py, z = stand(W, x, y, tries)
         spawn_log.append([name, px, py, z])
         return E('info_teleport_destination', (px, py, z + 8.0), (0, yaw, 0), targetname=name)
 
@@ -94,7 +100,7 @@ def build(d, group, out, T, clone):
     for l, name, c in L.FLAGS:
         px, py, pz, pyaw = S_['flagpole'][l]
         E('info_target', (px, py, pz), targetname='mv_flag_' + l)
-        dyn('mv_flagpole_' + l, S.mv('flag_pole'), (px, py, pz), pyaw, solid='6')
+        dyn('mv_flagpole_' + l, S.mv('flag_pole'), (px, py, pz), pyaw, solid='6', IdleAnim='flag_00', IdleAnimationLoopMode='ANIM_LOOP_MODE_LOOPING')
         snd('mv_flag_snd_' + l, (px, py, pz + 120.0), 'mv.capture')
         for k, p in enumerate(L.flag_spawns(l)):
             tele('mv_flagspawn_%s_%d' % (l, k + 1), p[0], p[1], math.degrees(math.atan2(c[1] - p[1], c[0] - p[0])) + 180.0)
@@ -109,7 +115,7 @@ def build(d, group, out, T, clone):
             E('info_target', (px, py, pz), (0, yaw, 0), targetname='mv_pad_%s_%d' % (tg, i))
             wreck = M.static('wreck_' + tg); wyaw = 90.0 if M.is_ext(wreck) else 0.0
             if tg == 'ct':
-                dyn('mv_heli_ct_%d' % i, S.APACHE['model'], (px, py, pz), yaw + nose, solid='6', DefaultAnim=apache.get('default_anim', 'idle'))
+                dyn('mv_heli_ct_%d' % i, S.APACHE['model'], (px, py, pz), yaw + nose, solid='6', IdleAnim=apache.get('default_anim', 'idle'), IdleAnimationLoopMode='ANIM_LOOP_MODE_LOOPING')
                 dyn('mv_wreck_ct_%d' % i, wreck, (-600.0 + 700.0 * k, 600.0, L.PARK_Z), wyaw, solid='6')
             else:
                 h = M.pick(M.HELI_ON_PAD['t'][k])                 # body + the two rotor props on their hubs (model table)
@@ -146,7 +152,7 @@ def build(d, group, out, T, clone):
     for k, m in enumerate(S_['mounts']):
         i = k + 1; x, y, z = m['pos']
         dyn('mv_mount_%d' % i, M.pick(m['kind'])['gun'], (x, y, z), m['yaw'])
-        tele('mv_mountseat_%d' % i, m['seat'][0], m['seat'][1], m['yaw'])
+        tele('mv_mountseat_%d' % i, m['seat'][0], m['seat'][1], m['yaw'], tries=[t for t in STAND_TRIES if math.hypot(*t) <= 40.0])   # the gunner stays behind his gun
         snd('mv_mount_snd_%d' % i, (x, y, z + 10.0), 'mv.mount_gun')
         E('info_target', (x, y, z + 20.0), (0, m['yaw'], 0), targetname='mv_mountinfo_%d' % i, message='%s:%s' % (m['kind'], m['team']))
     json.dump([dict(n=k + 1, kind=m['kind'], team=m['team'], x=round(m['pos'][0], 1), y=round(m['pos'][1], 1), z=round(m['pos'][2], 1), yaw=round(m['yaw'] % 360.0, 1))
@@ -289,7 +295,11 @@ def nonav_boxes(W, cell=NAV_CELL, sites=None):
     karst = L.karst_dist(CX, CY) < -cell * 0.45
     bridge = (np.abs(CX - L.BRIDGE_X) < cell * 0.5 + 110.0) & (np.abs(CY - L.BRIDGE_Y) < L.BRIDGE_LEN / 2 + L.BRIDGE_RAMP + cell * 0.5)
     play = nav_play_mask(CX, CY, sites)
-    water &= ~ford & ~bridge                 # 12 Nov review: the river boxes swallowed the bridge deck (bots could not cross)
+    # playtest 1: the deeper channel made the cells under the bridge "steep", and a steep box rises 260 u over the ground: through the
+    # deck (bots lost flag B). The bridge is never steep; the water under it gets the water-only box, whose top (WATER_Z + 30, below)
+    # is far under the deck (56). 12 Nov review: before that cap, the river boxes swallowed the deck.
+    steep &= ~bridge
+    water &= ~ford
     no = ~play | steep | water | edge | karst
     wateronly = water & play & ~(steep | edge | karst)
     zlo = Z.min((2, 3)); zhi = Z.max((2, 3))

@@ -30,6 +30,8 @@ and a directed walk graph is built over it (step up 18 u per cell, drops allowed
                  spawn, flag spawn, kit, rack, board seat, mount seat and tunnel portal on that nav; bots route from both spawn rings to
                  every flag and back on it (fails otherwise); warns over NAV_TARGET areas or a nav route NAV_DETOUR x the walking one
     --nav-plan   check 9 with the NONAV boxes mv_entities.nonav_boxes() would write now instead of the vmap's (before a regenerate)
+10 spawn hull    every teleport destination (base and flag spawns, tunnel portals, board and mount seats): a 32 x 32 x 72 player hull
+                 from 0.5 u over its origin touches no terrain, world mesh, player clip, solid prop hull or trunk (playtest 1)
 Exit code 1 when a check fails. Numbers go to out/check_play.json (before / after tables in docs/REVIEW_WORLD_*.md).
 """
 import os, sys, json, math, glob, re, time, pickle
@@ -47,6 +49,7 @@ ADDON = os.path.join(OUT, 'addon')
 CELL = 16.0
 PADW = 12.0                    # blockers are widened by this (player half width 16, a little slack for doorways)
 STEP, JUMP, BODY0, BODY1 = 18.0, 54.0, 18.5, 68.0
+SWIM = 40.0                     # water deeper than this over a node: the player swims (check 1's walk graph lets him climb out at the surface)
 LANE_GLIDE = 30.0               # approach lanes: nothing within 40 u of a line rising this steeply from 60 u over the pad
 MOUNT_CONE = 30.0               # CONFIG.MOUNT.CONE in src/00_config.js: a mounted gun traverses this far either side of its rest yaw
 MARG = 320.0
@@ -312,6 +315,8 @@ class Grid:
         ti, cl, zc, _, _ = raster(T[wt], 0.0)
         self.water = np.full(NC, -1e9); np.maximum.at(self.water, cl, zc)
         self.w_cell, self.w_z, self.w_src = cl, zc, srcs[np.nonzero(wt)[0][ti]]
+        self.w_up = nzu[np.nonzero(wt)[0][ti]] > 0.9                    # the tops of the water volumes (the rest is nodraw)
+        self.w_dn = nzu[np.nonzero(wt)[0][ti]] < -0.9                   # their bottoms
         # terrain top per cell (the mesh, not layout.height)
         self.terr = np.full(NC, -1e9); tm = self.s_kind == K_TERRAIN
         np.maximum.at(self.terr, self.s_cell[tm], self.s_z[tm])
@@ -343,6 +348,15 @@ class Grid:
                 cz = self.exists[k] & (d > BODY0) & (d < BODY1)
                 bl[k] |= cz; self.blk_src[k][cz & (self.blk_src[k] == -10 ** 9)] = self.src[j][cz & (self.blk_src[k] == -10 ** 9)]
         self.blocked = bl
+        # the water surface over each node that is IN water: of the water faces above it in its cell, the nearest is a volume's top
+        # (not a bottom: the shelf behind the waterfall is under the lip's thin water, not in it)
+        self.wsurf = np.full((K, NC), -np.inf)
+        wct, wzt = self.w_cell[self.w_up], self.w_z[self.w_up]; wcb, wzb = self.w_cell[self.w_dn], self.w_z[self.w_dn]
+        for k in range(K):
+            tt = np.full(NC, np.inf); tb = np.full(NC, np.inf)
+            zn = self.Z[k, wct]; ok_ = np.isfinite(zn) & (wzt >= zn - 1.0); np.minimum.at(tt, wct[ok_], wzt[ok_])
+            zn = self.Z[k, wcb]; ok_ = np.isfinite(zn) & (wzb >= zn - 1.0); np.minimum.at(tb, wcb[ok_], wzb[ok_])
+            self.wsurf[k] = np.where(np.isfinite(tt) & (tt < tb), tt, -np.inf)
         self.walk = self.graph(STEP); self.jump = None
         blj = np.zeros((K, NC), bool)                    # for the jump graph: only what a 54-u jump cannot clear blocks
         for k in range(K):
@@ -363,16 +377,20 @@ class Grid:
         sl_s = (slice(max(0, -di), NX - max(0, di)), slice(max(0, -dj), NY - max(0, dj)))
         sl_t = (slice(max(0, di), NX - max(0, -di)), slice(max(0, dj), NY - max(0, -dj)))
         zs = Zs[sl_s]
+        # playtest 1 (a deep river): a player in water deeper than SWIM swims up to the surface and climbs out onto anything within the
+        # step of the water line (CS2's water jump), so from such a node the reach is the surface + up, not the bed + up
+        wd = (self.wsurf[k1].reshape(NX, NY)[sl_s] - zs)
+        upz = np.where(np.isfinite(zs) & (wd > SWIM), wd + up, up)
         t = np.full(zs.shape, -1, np.int64); ztt = np.full(zs.shape, -np.inf)
         for k2 in range(K):
             z2 = self.Z[k2].reshape(NX, NY)[sl_t]
-            m = (t < 0) & (z2 <= zs + up) & np.isfinite(z2)
+            m = (t < 0) & (z2 <= zs + upz) & np.isfinite(z2)
             t[m] = k2; ztt[m] = z2[m]
         bl = np.zeros(zs.shape, bool)
         for k2 in range(K): bl |= (t == k2) & self.blocked[k2].reshape(NX, NY)[sl_t]
         for k2 in range(K):                              # a surface in the way at body height (a step too high to take) stops the move: no falling through it
             z2 = self.Z[k2].reshape(NX, NY)[sl_t]
-            bl |= (z2 > zs + up) & (z2 < zs + BODY1)
+            bl |= (z2 > zs + upz) & (z2 < zs + np.maximum(BODY1, upz + 1.0))
         ok = (t >= 0) & ~bl & np.isfinite(zs) & ~self.blocked[k1].reshape(NX, NY)[sl_s] & (zs - ztt < 2500.0)
         valid = np.zeros((NX, NY), bool); valid[sl_s] = ok; tgt[sl_s] = t
         return valid, tgt
@@ -629,7 +647,9 @@ def main(path, only=None, out_json=None, verbose=False, nav_plan=False):
                 x = X0 + (com[k][0] + 0.5) * CELL; y = Y0 + (com[k][1] + 0.5) * CELL
                 if not inplay(x, y): continue
                 c = cell_of(x, y)
-                pockets.append(dict(x=round(x), y=round(y), z=round(float(G.Z[0, c])) if np.isfinite(G.Z[0, c]) else None, area=int(sizes[k] * CELL * CELL), no_jump_out=int(hs[k] * CELL * CELL)))
+                ci_, cj_ = np.nonzero(labp == k + 1)                 # the pocket's own 16-u cells (x0, y0): mv_places.POCKET_FILL is derived from these
+                pockets.append(dict(x=round(x), y=round(y), z=round(float(G.Z[0, c])) if np.isfinite(G.Z[0, c]) else None, area=int(sizes[k] * CELL * CELL), no_jump_out=int(hs[k] * CELL * CELL),
+                                    cells=[[int(X0 + i_ * CELL), int(Y0 + j_ * CELL)] for i_, j_ in zip(ci_, cj_)]))
         pockets.sort(key=lambda p: -p['area'])
         big = [p for p in pockets if p['area'] > 200]
         hard = [p for p in big if p['no_jump_out'] > 200]
@@ -752,7 +772,7 @@ def main(path, only=None, out_json=None, verbose=False, nav_plan=False):
                 # stacked sandbag courses count as one wall piece per 96 u of length (the staggered courses fall in one column)
                 if 'sandbag' in p['model']:        # a stacked wall: measure the whole column (each course stands on the one below)
                     key = ('bag', round(cx / 96), round(cy / 96)); b0, b1 = bags.get(key, (1e9, -1e9))
-                    bags[key] = (min(b0, support(p, cx, cy, p['lo'][2] + 6.0)), max(b1, p['hi'][2])); continue
+                    bags[key] = (min(b0, support(p, cx, cy, p['lo'][2] + footing(p) + 6.0)), max(b1, p['hi'][2])); continue
                 key = pi
                 top = p['hi'][2] - base
                 if top >= 62.0: head.add(key)
@@ -912,7 +932,7 @@ def main(path, only=None, out_json=None, verbose=False, nav_plan=False):
         so_ = np.argsort(G.s_cell, kind='stable'); s_c = G.s_cell[so_]; s_zz = G.s_z[so_]; s_sr = G.s_src[so_]
         for p in props:
             if p['cls'] != 'prop_static': continue
-            nm = short(p['model']); zlo, zhi = p['lo'][2], p['hi'][2]; h = max(zhi - zlo, 1.0)
+            nm = short(p['model']); zlo, zhi = p['lo'][2] + footing(p), p['hi'][2]; h = max(zhi - zlo, 1.0)
             cx, cy = (p['lo'][0] + p['hi'][0]) / 2, (p['lo'][1] + p['hi'][1]) / 2
             px = np.array(p['poly']); c0 = px.mean(0)
             samp = [tuple(c0)] + [tuple(c0 + (q - c0) * 0.6) for q in px]
@@ -951,7 +971,7 @@ def main(path, only=None, out_json=None, verbose=False, nav_plan=False):
                     d = 0.0 if _inside(p['o'][0], p['o'][1], bx) else min(_seg_d(p['o'][0], p['o'][1], bx[k], bx[(k + 1) % 4]) for k in range(4))
                     if d < ex * 0.8: crown.append((short(p['model']), short(b['model']), round(p['o'][0]), round(p['o'][1]), round(d)))
             # non-solid dressing whose origin is inside a solid prop's hull box (not just touching)
-            if not p['solid'] and h > 12:
+            if not p['solid'] and h > 12 and 'vine_drape' not in nm:          # playtest 1: vine_drape lies on a wall top by design
                 for b in sgrid.get((int(p['o'][0] // 256), int(p['o'][1] // 256)), ()):
                     if b is p or b['hi'][2] < p['o'][2] + 6 or b['lo'][2] > p['o'][2] + 0.5 * h: continue
                     if any(k in b['model'] for k in ('truss_span', 'camo_net', 'c123_fuselage', 'checkpoint', 'school', 'camp_hut', 'french_bunker', 'khmer', 'guard_tower')): continue
@@ -971,6 +991,9 @@ def main(path, only=None, out_json=None, verbose=False, nav_plan=False):
     # ---------------------------------------------------------------- 7 water
     if want(7):
         T = sc['tris']; wt = np.nonzero(sc['kinds'] == K_WATER)[0]
+        # playtest 1: water is a closed volume now (the top in the water material, nodraw sides and bottom): only the top faces' edges
+        # can show (where a top edge stands above the ground, the invisible side face under it leaves the sheet hanging)
+        nw_ = np.cross(T[wt, 1] - T[wt, 0], T[wt, 2] - T[wt, 0]); wt = wt[nw_[:, 2] > 0.9 * np.maximum(np.linalg.norm(nw_, axis=1), 1e-12)]
         edges = defaultdict(int); eg = {}
         for ti in wt:
             t = T[ti]
@@ -996,8 +1019,9 @@ def main(path, only=None, out_json=None, verbose=False, nav_plan=False):
                             mm = G.w_cell == cc
                             if mm.any() and (np.abs(G.w_z[mm] - z) < 2).any() and (G.w_src[mm] != eg[(a, b)]).any(): cont = True; break
                     if not cont: exposed.append((round(x), round(y), round(z, 1), round(float(z - g), 1)))
-        # z-fight: cells covered by two different sheets within 1.5 u of each other
-        o = np.lexsort((G.w_z, G.w_cell)); c = G.w_cell[o]; z = G.w_z[o]; s = G.w_src[o]
+        # z-fight: cells covered by two different sheets (water tops) within 1.5 u of each other
+        top_ = G.w_up
+        o = np.lexsort((G.w_z[top_], G.w_cell[top_])); c = G.w_cell[top_][o]; z = G.w_z[top_][o]; s = G.w_src[top_][o]
         zf = (c[1:] == c[:-1]) & (np.abs(z[1:] - z[:-1]) < 1.5) & (s[1:] != s[:-1])
         zcells = np.unique(c[1:][zf]); zcells = [cc for cc in zcells if G.terr[cc] < G.water[cc] - 0.5]
         deep = int(((G.water - G.terr > 60.0) & (G.terr > -1e8) & R.reshape(G.K, NC).any(0)).sum())
@@ -1171,11 +1195,66 @@ def main(path, only=None, out_json=None, verbose=False, nav_plan=False):
         if detour: warn.append('bot nav detours over %.2f x the walking route: %s' % (NAV_DETOUR, '; '.join(detour)))
         if ne['areas'] and ne['areas'] > NAV_TARGET: warn.append('nav estimate ~%d areas (target under %d)' % (ne['areas'], NAV_TARGET))
 
+    # ---------------------------------------------------------------- 10 spawn hull clearance
+    if want(10):
+        # playtest 1 (12 Nov 2026): a T spawn stood in a rocket pit's berm clip; check 1 joins a spawn to any walk node within 40 u, so
+        # a point whose own hull is inside a wall still passed. Every teleport destination the script uses (base and flag spawns, the
+        # tunnel portals, board and mount seats) gets a standing player hull: 32 x 32 from 0.5 u over the teleport origin (the feet,
+        # 8 u over the surface) to 72 u, tested triangle by triangle against the terrain mesh, world meshes, player clips, solid props'
+        # physics hulls and tree trunks
+        T_ = sc['tris']; K_ = sc['kinds']; S_ = sc['srcs']; tmin = T_.min(1); tmax = T_.max(1)
+        kname = {K_TERRAIN: 'terrain', K_WORLD: 'world', K_CLIP: 'clip', K_HULL: 'hull', K_TRUNK: 'trunk'}
+        stuck = []; n_pts = 0
+        for e in ents:
+            if not (re.fullmatch(r'mv_(spawn|flagspawn|tunnel|boardseat|mountseat)_.+', e['name']) and e['cls'] == 'info_teleport_destination'): continue
+            n_pts += 1
+            x, y, z = e['o']
+            lo = np.array([x - 16.0, y - 16.0, z + 0.5]); hi = np.array([x + 16.0, y + 16.0, z + 72.0])
+            cand = np.nonzero((tmax >= lo).all(1) & (tmin <= hi).all(1) & (K_ != K_WATER))[0]
+            hit = cand[tri_box(T_[cand], lo, hi)] if len(cand) else cand
+            what = set()
+            for i in hit:
+                s_ = int(S_[i])
+                what.add(short(props[s_]['model']) if s_ >= 0 else '%s %s' % (kname.get(int(K_[i]), '?'), sc['meshes'][-1 - s_]['mat'].split('/')[-1][:-5]))
+            for (tx, ty, z0, z1, r, pi) in sc['trunks']:
+                if z0 < hi[2] and z1 > lo[2] and math.hypot(max(abs(tx - x) - 16.0, 0.0), max(abs(ty - y) - 16.0, 0.0)) < r: what.add('trunk ' + short(props[pi]['model']))
+            if what: stuck.append((e['name'], [round(v) for v in e['o']], sorted(what)))
+        res['10'] = dict(points=n_pts, stuck=stuck)
+        print('10 spawn hull: %d teleport destinations, %d with a 32 x 32 x 72 player hull touching something solid' % (n_pts, len(stuck)))
+        for s_ in stuck[:20]: print('    %s at %s: %s' % (s_[0], s_[1], ', '.join(s_[2])))
+        if stuck: fails.append('spawn hull')
+
     res['fails'] = fails; res['warnings'] = warn
     for w in warn: print('WARNING ' + w)
     json.dump(res, open(out_json or os.path.join(OUT, 'check_play.json'), 'w'), indent=1, default=lambda o: o.item() if hasattr(o, 'item') else str(o))
-    print('RESULT: %s  (%.0f s)' % ('clean (9 checks)' if not fails else 'FAILED: ' + ', '.join(fails), time.time() - t0))
+    print('RESULT: %s  (%.0f s)' % ('clean (10 checks)' if not fails else 'FAILED: ' + ', '.join(fails), time.time() - t0))
     return 1 if fails else 0
+
+
+def footing(p):
+    """playtest 1: a sandbag wall segment (tools/p_sandbag_mv.py) has two footing courses 10 u under its base, buried by design (on
+    uneven ground nothing floats): the clipping and cover tests measure from its base"""
+    return 10.0 if short(p['model']).startswith(('sandbag_w_', 'sandbag_a')) else 0.0
+
+
+def tri_box(T, lo, hi):
+    """per triangle of T (N, 3, 3): does it intersect the box lo..hi (separating axis test: 3 box axes, the face normal, 9 edge
+    crosses). The same test as mv_places.tri_box (the generator's stand-spot test)."""
+    lo = np.asarray(lo, float); hi = np.asarray(hi, float)
+    c = (lo + hi) / 2; h = (hi - lo) / 2
+    V = np.asarray(T, float) - c
+    out = np.ones(len(V), bool)
+    for a in range(3): out &= ~((V[:, :, a].min(1) > h[a]) | (V[:, :, a].max(1) < -h[a]))
+    E = (V[:, 1] - V[:, 0], V[:, 2] - V[:, 1], V[:, 0] - V[:, 2])
+    n = np.cross(E[0], E[1])
+    out &= np.abs((n * V[:, 0]).sum(1)) <= (np.abs(n) * h).sum(1)
+    for e in E:
+        for a in range(3):
+            ax = np.zeros(3); ax[a] = 1.0
+            Lx = np.cross(ax, e)
+            p = (V * Lx[:, None, :]).sum(2); rr = (np.abs(Lx) * h).sum(1)
+            out &= ~((p.min(1) > rr) | (p.max(1) < -rr))
+    return out
 
 
 _TT = None

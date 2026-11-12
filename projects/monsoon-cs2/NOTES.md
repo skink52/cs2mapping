@@ -10,6 +10,13 @@ Read this first when resuming. Newest state at the top. Design: [docs/DESIGN.md]
 **Playtest 1 done (12 Nov 2026, 19 findings): the fix tracker is `docs/PLAYTEST_1.md`, which is the work list now.** Batch progress files:
 `docs/FIX_PT1_<batch>.md`. Resume by reading the tracker, then any batch file whose rows are not all closed.
 
+**Batch W (world, findings 8-15) done 13 Nov 2026, generated only** (`docs/FIX_PT1_W.md`; review `docs/REVIEW_WORLD_1.md` "Playtest 1
+fixes"): `out/addon/maps/mg_monsoon.vmap` regenerated (build 4) and every offline check clean; **not deployed, not compiled** (the lead
+compiles S + W together). New since pass 4: tunnels as a surface-nets field (`tools/snets.py`) with timber shoring; real water volumes
+(func_water, `rush_water_river_01a`, 120-u channel, 3 fords); full-height sandbag walls (`tools/p_sandbag_mv.py`, 8 models + LODs);
+`vine_drape`; valley probe volume down to z -320 (the trunk bands / grass line); spawn hull test (generator + check_play 10, check_world 8
+probes). The asset compile must include the 9 new props and `lighting/postprocessing/postprocess_filmic_underwater.vpost`.
+
 **Release decision (skink52, 12 Nov 2026): private use only.** Keep the current build with the GMod conversions and player models;
 no procedural-only public build. Do not publish to the public Workshop (docs/WORKSHOP_COMPLIANCE.md).
 Records: [docs/BUILD_LOG_1.md](docs/BUILD_LOG_1.md) "Stage 4", [docs/REVIEW_WORLD_1.md](docs/REVIEW_WORLD_1.md) "Pass 4".

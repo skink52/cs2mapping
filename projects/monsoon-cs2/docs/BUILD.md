@@ -45,8 +45,13 @@ picture from step 6; the script build (8) bakes in `out/layout.json` (written by
 Step 1c list (rebuilding one of these overwrites its vmdl, so re-run `lod_decimate.py` on it): bunker_large, bunker_small,
 cargo_pallet, checkpoint, culvert_bunker, fdc_bunker, fuel_bladder, gp_tent, guard_tower, truss_span, and the sandbag walls
 (`tools/p_sandbag_mv.py`, since playtest 1): sandbag_w_h1, sandbag_w_h2, sandbag_w_h3, sandbag_w_h4, sandbag_a118_h1, sandbag_a118_h2,
-sandbag_a232_h1, sandbag_a232_h2. The old sandbag_wall, sandbag_wall_b, sandbag_wall_128, sandbag_low, sandbag_low_128 are no longer
+sandbag_a232_h1, sandbag_a232_h2, and (playtest 1 batch P) the sculpted guardian_statue and naga_balustrade. The old sandbag_wall, sandbag_wall_b, sandbag_wall_128, sandbag_low, sandbag_low_128 are no longer
 placed. vine_drape (playtest 1) is a single-LOD card prop.
+
+Step 1, texture size (playtest 1 batch P, 13 Nov 2026): atlas sizes come from `toolkit.json` `texel_density` (512 px/m, 256..2048), not
+from the specs; big surfaces use tiling materials (CS2's own, or `tools/mv_tiles.py`, written into `materials/models/mv/tile/` on first
+use in a run, which adds about 2 min). `python tools/tex_budget.py [names]` reports texel density per prop and texture memory
+(docs/FIX_PT1_P.md).
 
 Step 4, first run and later runs: the first run takes `out/template.vmap` (a copy of
 `content\csgo_addons\addon_template\maps\xxx_mapname_xxx.vmap`). Once the map has been opened and edited in Hammer, pass the

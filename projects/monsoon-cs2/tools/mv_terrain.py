@@ -11,8 +11,12 @@ from noise import fbm, smoothstep
 # Valve blend materials (A = layer at weight 0, B = layer at weight 1)
 BLEND_VALLEY = 'materials/de_ancient/hr_ancient_blend_groundmud03-groundgrass_01_wet.vmat'     # A mud, B grass
 BLEND_ROCK = 'materials/de_ancient/hr_ancient_blend_groundrock01-groundmoss02-wet-b.vmat'        # A rock, B moss
-WATER = 'materials/de_nuke/hr_nuke/hr_river_water_001.vmat'
+# playtest 1: the river was hr_river_water_001, a de_nuke surface with no mapbuilder.water / mapbuilder.nonsolid attributes: a solid
+# floor at the water line over a 32-u bed. Rush's river water is csgo_water_fancy with both attributes (PhysicsSurfaceProperties water),
+# a murky tan-green fog (0.74 0.71 0.52, strength 3.1) and caustics; the paddies keep Aztec's shallow water (the same attributes).
+WATER = 'materials/rush_001/rush_water_river_01a.vmat'
 WATER_PADDY = 'materials/de_aztec/hr_aztec/hr_aztec_water_shallow.vmat'
+UNDERWATER_VPOST = 'lighting/postprocessing/postprocess_filmic_underwater.vpost'      # tools/ (from ba_jail_seaside), copied into the addon
 NODRAW = 'materials/tools/toolsnodraw.vmat'
 CLIP = 'materials/tools/toolsplayerclip.vmat'
 SKYBOX = 'materials/tools/toolsskybox.vmat'
@@ -189,10 +193,11 @@ def mesh_low(x, y):
     return out
 
 
-def strip_sheet(pts_xy, half_w, z, mat, group, step_t=None, cols=3, square=(), fit=False):
+def strip_sheet(pts_xy, half_w, z, mat, group, step_t=None, cols=3, square=(), fit=False, z_bot=None):
     """a flat water sheet along a polyline (centre line pts) of half width half_w. fit: each side widens (per vertex, up to 320 u more)
     until its edge lies 4 u under the ground (12 Nov review: a fixed width left edges hanging over the banks)"""
     P = np.asarray(pts_xy, float)
+    if z_bot is None: z_bot = z - 8.0
     seg = np.linalg.norm(np.diff(P, axis=0), axis=1); cum = np.concatenate([[0], np.cumsum(seg)])
     n = len(P)
     nr = []
@@ -228,18 +233,43 @@ def strip_sheet(pts_xy, half_w, z, mat, group, step_t=None, cols=3, square=(), f
     verts = np.asarray(verts, float)
     a, b, c = verts[faces[0][0]], verts[faces[0][1]], verts[faces[0][2]]
     if np.cross(b - a, c - a)[2] < 0: faces = [f[::-1] for f in faces]
-    m = vmesh.polymesh_open(verts, faces, [mat] * len(faces), scale=0.5)
-    vmesh.mesh_node(m, group, bake=False, shadows=False)
+    water_volume(verts, faces, z_bot, mat, group)
     return len(faces)
 
 
-def rect_sheet(x0, y0, x1, y1, z, mat, group, cell=256.0):
+def rect_sheet(x0, y0, x1, y1, z, mat, group, cell=256.0, z_bot=None):
     nx = max(1, int(round((x1 - x0) / cell))); ny = max(1, int(round((y1 - y0) / cell)))
     X, Y = np.meshgrid(np.linspace(x0, x1, nx + 1), np.linspace(y0, y1, ny + 1), indexing='ij')
     Z = np.full(X.shape, float(z))
     verts, faces, mats = vmesh.grid_sheet(X, Y, Z, lambda i, j: mat)
-    vmesh.mesh_node(vmesh.polymesh_open(verts, faces, mats, scale=0.5), group, bake=False, shadows=False)
+    water_volume(verts, faces, z - 8.0 if z_bot is None else z_bot, mat, group)
     return len(faces)
+
+
+WATER_BOXES = []          # (lo, hi, material) of every water volume made, for the probes
+
+
+def water_volume(verts, faces, z_bot, mat, group, name=None):
+    """playtest 1: water CS2 treats as water (wading, swimming, splashes, the underwater view) is a CLOSED volume in a func_water:
+    the sheet (faces CCW from above) is the top in the water material, the same faces at z_bot under it and the walls round its edge
+    are toolsnodraw (docs/reference/cs2-gotchas.md, water). The material must carry mapbuilder.water / mapbuilder.nonsolid (Valve's
+    water materials do; hr_river_water_001 does not and was a solid floor)."""
+    V = np.asarray(verts, float); n = len(V)
+    Vb = V.copy(); Vb[:, 2] = z_bot
+    allv = np.vstack([V, Vb])
+    used = {}
+    for f in faces:
+        for k in range(len(f)): used[(f[k], f[(k + 1) % len(f)])] = used.get((f[k], f[(k + 1) % len(f)]), 0) + 1
+    out_f = [list(f) for f in faces]; mats = [mat] * len(faces)
+    out_f += [[v + n for v in f[::-1]] for f in faces]; mats += [NODRAW] * len(faces)
+    for (a, b) in used:
+        if (b, a) in used: continue                                   # inner edge
+        out_f.append([a, a + n, b + n, b]); mats.append(NODRAW)       # a wall facing out of the volume
+    e = vmaplib.ent('func_water', ((V[:, 0].min() + V[:, 0].max()) / 2, (V[:, 1].min() + V[:, 1].max()) / 2, float(V[:, 2].max())), group=group,
+                    **({'targetname': name} if name else {}))
+    e.attr('children')[2].append(vmesh.mesh_node(vmesh.polymesh_open(allv, out_f, mats, scale=0.5), group, attach=False, bake=False, shadows=False))
+    WATER_BOXES.append((allv.min(0), allv.max(0), mat))
+    return e
 
 
 def build_water(group):
@@ -248,19 +278,20 @@ def build_water(group):
     MX = L.MARSH_X0 - 8.0          # the river / marsh seam on a 16-u cell edge, not through cell centres (check_play read it as a z-fight)
     xs = np.arange(L.FALL_X + 4.0, MX + 1e-6, 96.0)
     pts = [(float(x), float(L.river_y(x))) for x in xs] + [(MX, float(L.river_y(MX)))]
-    n += strip_sheet(pts, L.RIVER_HW + 50.0, L.WATER_Z, WATER, group, square=('end',), fit=True)        # 12 Nov review: its slanted end overlapped the marsh sheet (z-fight)
+    bot = L.WATER_Z - L.CHANNEL_D - 50.0                                                 # under the deepest bed and the plunge pool
+    n += strip_sheet(pts, L.RIVER_HW + 50.0, L.WATER_Z, WATER, group, square=('end',), fit=True, z_bot=bot)        # 12 Nov review: its slanted end overlapped the marsh sheet (z-fight)
     xs = np.arange(-L.TERRAIN_X, L.FALL_X - 4.0, 96.0)
     pts = [(float(x), float(L.river_y(x))) for x in xs] + [(L.FALL_X - 4.0, float(L.river_y(L.FALL_X - 4.0)))]
-    n += strip_sheet(pts, L.RIVER_HW + 50.0, L.UPPER_WATER_Z, WATER, group, fit=True)                   # fitted: a fixed +86 hung over the south bank
+    n += strip_sheet(pts, L.RIVER_HW + 50.0, L.UPPER_WATER_Z, WATER, group, fit=True, z_bot=bot + L.FALL_H)        # fitted: a fixed +86 hung over the south bank
     # the marsh: one wide sheet, the ground pokes through as islands; each long edge moves out until the ground along it is 4 u over the water
     xm = np.linspace(MX, L.TERRAIN_X, 160)
     ry = L.river_y(xm); yr0 = float(ry.min()) - 1080.0; yr1 = float(ry.max()) + 1080.0
     while yr0 > -L.TERRAIN_Y and not (L.height(xm, np.full(xm.shape, yr0)) >= L.WATER_Z + 4.0).all(): yr0 -= 32.0
     while yr1 < L.TERRAIN_Y and not (L.height(xm, np.full(xm.shape, yr1)) >= L.WATER_Z + 4.0).all(): yr1 += 32.0
     yr0 -= 64.0; yr1 += 64.0                                      # one mesh cell more: the 64-u mesh dips between the samples
-    n += rect_sheet(MX, yr0, L.TERRAIN_X, yr1, L.WATER_Z, WATER, group, cell=512.0)
+    n += rect_sheet(MX, yr0, L.TERRAIN_X, yr1, L.WATER_Z, WATER, group, cell=512.0, z_bot=bot)
     # the oxbow lake
-    n += strip_sheet(L.OXBOW, 86.0, L.WATER_Z, WATER, group, cols=2)
+    n += strip_sheet(L.OXBOW, 86.0, L.WATER_Z, WATER, group, cols=2, z_bot=L.WATER_Z - L.OXBOW_DEPTH - 30.0)
     # paddies: one sheet per cell, inset past the dike foot so the edge is buried in the rising floor
     for (x0, x1, yr0_, yr1_, cx, cy, rows_up, z0) in ((L.PADDY_X0, L.PADDY_X1, L.PADDY_YR0, L.PADDY_YR1, L.PADDY_CELL_X, L.PADDY_CELL_Y, -1, 14.0),
                                                      (L.PADDY2_X0, L.PADDY2_X1, L.PADDY2_YR0, L.PADDY2_YR1, L.PADDY2_CELL_X, L.PADDY2_CELL_Y, 1, 16.0)):
@@ -292,9 +323,24 @@ def build_water(group):
                 Yw = Y + L.river_y(X)
                 Z = np.full(X.shape, floor - 1.0)
                 verts, faces, mats = vmesh.grid_sheet(X, Yw, Z, lambda i, j: WATER_PADDY)
-                vmesh.mesh_node(vmesh.polymesh_open(verts, faces, mats, scale=0.5), group, bake=False, shadows=False)
+                water_volume(verts, faces, floor - 14.0, WATER_PADDY, group)
                 n += len(faces)
-    print('water: %d faces' % n)
+    # under the deep channel: the underwater post-processing (docs/porting/pipeline.md `water`: its top 80 u under the surface, since the
+    # volume tests the player's feet: the eyes are then under), one box per reach
+    for (x0_, x1_, wz) in ((L.FALL_X, L.MARSH_X0, L.WATER_Z), (-L.TERRAIN_X, L.FALL_X, L.UPPER_WATER_Z)):
+        xs_ = np.linspace(x0_, x1_, 64); ry_ = L.river_y(xs_)
+        lo_ = np.array([x0_, float(ry_.min()) - L.RIVER_HW - 40.0, wz - L.CHANNEL_D - 60.0]); hi_ = np.array([x1_, float(ry_.max()) + L.RIVER_HW + 40.0, wz - 80.0])
+        e = vmaplib.ent('post_processing_volume', tuple((lo_ + hi_) / 2), group=group, StartDisabled='0', spawnflags='4097', postprocessing=UNDERWATER_VPOST,
+                        master='0', minexposure='0', maxexposure='0.3', enableexposure='1', exposurespeedup='1', exposurespeeddown='1', fadetime='0.1')
+        e.attr('children')[2].append(vmesh.mesh_node(vmesh.box_mesh(*lo_, *hi_, NODRAW), group, attach=False, bake=False, shadows=False))
+    # a water surface crossed by several probe volumes shows each volume edge in its reflection (cs2-gotchas, waterprobe): the upper river
+    # and the marsh reach past x +-6500 (valley / far volumes) and get a thin volume of their own, one level above both
+    for (lo_, hi_, m_) in WATER_BOXES:
+        if m_ != WATER or (lo_[0] > -6500.0 and hi_[0] < 6500.0): continue
+        top = hi_[2]; mn = np.array([lo_[0] - 48.0, lo_[1] - 48.0, top - 200.0]); mx = np.array([hi_[0] + 48.0, hi_[1] + 48.0, top + 16.0]); o = (mn + mx) / 2
+        vmaplib.ent('env_combined_light_probe_volume', tuple(o), group=group, box_mins='%g %g %g' % tuple(mn - o), box_maxs='%g %g %g' % tuple(mx - o),
+                    voxel_size='48.0', indoor_outdoor_level='1', targetname='mv_water_probe')
+    print('water: %d faces in %d func_water volumes' % (n, len(WATER_BOXES)))
     return n
 
 

@@ -443,3 +443,73 @@ order and latrine rule, no inside culvert / M113 tries, `POCKET_FILL` re-derived
 No props rebuilt; `docs/CONTRACT.md` unchanged. Repo: `create/check_play.py` gained the nav estimate and gate (`nonav_nodes`,
 `nav_estimate`, `nav_gate`, Adapter `nav_cal` / `nav_target` / `nav_detour` / `nav_stations` / `nav_routes` / `nav_starts` /
 `nav_seed_ok` / `planned_navboxes`, `--nav-plan`).
+
+## Playtest 1 fixes, batch W: world geometry (12-13 Nov 2026)
+
+Findings 8-15 of [PLAYTEST_1.md](PLAYTEST_1.md); the per-item record (cause, fix, how verified) is [FIX_PT1_W.md](FIX_PT1_W.md). Offline only:
+regenerated (four builds, `out/logs/pt1_map1..4.log`), checked and rendered; **not compiled, not seen in CS2** (the lead compiles batch S
+and W together). The pre-fix map is kept as `out/review/pt1/mg_monsoon_before.vmap`; renders `out/review/pt1/<view>_before.png` /
+`_after.png` (same cameras, `out/review/pt1/renders.py`, flat-shaded `view_world.py`), the river section `river_section.png`.
+
+### What was wrong and what changed
+- **Probe-lit props below z 100 (11, 12).** The valley light probe volume covered z 100..1500 only. The lower part of every probe-lit plant,
+  trunk and sandbag near the river took the fallback light: the hard line across the grass (p2) and the pale trunk bands (p5) are both
+  z 100 in world space. Volume now z -320..2000 (the deepest bed to the tallest banyan crowns); the far volumes reach the sky shell. New
+  `check_world.py` check 8: every corner of a probe-lit prop's bounds inside a volume (old map: 2,980 of 6,512 outside; now 0).
+- **Spawns in solids (10).** `mv_entities.stand()` knew only the props' footprints. A T spawn stood in rocket pit 4's berm clip; the new
+  `check_play.py` check 10 (a 32 x 32 x 72 hull per teleport destination, triangle-exact) found 8 more on the old map (4 flag D spawns in
+  the temple terrace and stair, the temple DShK seat, the 3 tunnel leash points). The generator now keeps every solid world mesh and clip
+  as triangles (`W.solid_tris`) and `stand()` takes the nearest spot where the hull is clear (mount seats within 40 u).
+- **Temple vines (13).** `vine_curtain` hangs from its own bent bar; it had been placed 40-160 u off the stone. New `vine_drape` (no bar:
+  strands over a real edge) on measured edges of the tower, gate, architraves, enclosure copings and the platform edge.
+- **Sandbags (14).** Stacks of 19-u pieces of thin-edged pillows, each on the ground at its own centre. New `tools/p_sandbag_mv.py`:
+  full-height 80-u segments that interlock end to end, English bond, filled-bag shapes with tied ends, each bag settled on the course
+  below, battered face, buried footing, the GMod sandbag textures (2048, one bag image per bag); placed pitched to the ground.
+- **Tunnels (8, 9).** A 16-u voxel mesh with square sections, square holes cut in the terrain and free-standing arches. Now one smooth
+  field (ground + ovoid galleries with noise + chamber dome, blended at the mouths), meshed by surface nets (`tools/snets.py`); the
+  terrain cells it changes are cut and meshed with it, meeting the terrain exactly on 32-u lines. Steep entrance shafts with log treads,
+  timber frames that bear on floor, walls and roof (the section is cut flat to them), lagging and roof boards at the entrances, spoil
+  heaps, ferns, vines and roots at the lips. `mv_tunnel_*` keep their positions.
+- **Water (15).** The river was `hr_river_water_001`, which lacks `mapbuilder.water` / `nonsolid`: a solid sheet over a 32-u bed. Every
+  water body is now a closed volume in a `func_water` (water material on top, nodraw elsewhere), the river in Rush's river water; a
+  120-u channel, 18-u fords (east of the bridge, west, temple), 4-u paddies; underwater post-processing under the deep reaches; water
+  probe volumes where the river crosses probe volumes. Findings in `docs/reference/cs2-gotchas.md`.
+
+### Checks
+| Check | Pass 4 (before) | Playtest 1 fixes (build 4) |
+|---|---|---|
+| check_mesh | 1,377 meshes 0 bad | 1,397 meshes 0 bad |
+| check_world | clean (7 checks) | clean (8 checks) |
+| check_world 8 probes (new) | 2,980 of 6,512 probe-lit props outside | 0 of 6,471 |
+| check_play 1 pockets / unreachable | 0 / 0 | 0 (1 cell a jump gets out of) / 0 |
+| check_play 1b A-D / C-E / B | 1.00 / 1.05 / 1.04 | 1.02 / 1.05 / 1.06 |
+| check_play 3 cover A-E | 14 / 17 / 26 / 38 / 42 | 14 / 17 / 26 / 39 / 42 |
+| check_play 7 water | clean | clean (volume tops: 0 exposed edges, 0 z-fights) |
+| check_play 9 nav | ~11,823 est., 12,597 compiled | 248 boxes, 90,948 cells, ~12,615 est.; bot routes to all flags both ways |
+| check_play 10 spawn hull (new) | 9 stuck (old map) | 0 of 90 |
+| map | 57.9 MB, 7,663 entities | 67.0 MB, 7,641 entities, 6,791 prop_static |
+
+### check_play / check_world changes
+- check 7 reads the tops of water volumes only; the walk graph lets a player in water deeper than 40 u climb out at the surface (CS2's
+  water jump), from the nearest water face above (a node under a thin water volume, the waterfall shelf, is not in it).
+- check 1 lists each stuck pocket's cells (`pocket_list[].cells`): `POCKET_FILL` was extended from them (8 cells by the new walls).
+- A wall segment's footing courses (10 u under its base) are buried by design: checks 3 and 6 measure from its base.
+- `vine_drape` lies on wall tops by design (check 6 dressing test).
+- check_world 3 audits a wall segment by its core (80 x 34), not its toothed bounds; check_world 4 accepts a tunnel leash point standing on
+  the shaft's uphill floor.
+
+Side-by-side sheets: `compare_tunnels_a.png`, `compare_b.png`, `compare_c.png` (before left, after right).
+
+### Left / only CS2 can confirm
+See FIX_PT1_W.md "Only CS2 can confirm". The wall textures are the GMod conversion's (private build only; without the conversions the
+walls fall back to the stock hessian). One 256-u2 cell in the ammo yard a jump gets out of. `create/check_play.py` has the spawn hull
+check (H); the swim model and the volume-top water check are not ported to it yet (libsync still flags the fork).
+
+### Changed files (playtest 1, batch W)
+`tools/layout.py` (channel, fords), `tools/mv_terrain.py` (water volumes, post volume, water probes), `tools/mv_places.py` (tunnel
+field + mesh + timber, solids for hull tests, sandbag segment placement, vine drapes, ghat / shelf footings, bank foliage, POCKET_FILL),
+`tools/mv_entities.py` (stand() hull test, bridge NONAV; batch S's IdleAnim keys), `tools/make_map.py` (probe volumes, vpost copy),
+`tools/check_play.py` (check 10, swim model, water tops, pocket cells, footing), `tools/check_world.py` (check 8, wall audit, leash floor),
+new `tools/snets.py`, `tools/p_sandbag_mv.py`, `p_jungle.py` (vine_drape), `tools/toolkit.json` (module); repo `create/stock.py` (`uv`
+mode), `create/vmesh.py` (`uvs`), `create/check_play.py` (check H) pushed / ported; `docs/reference/cs2-gotchas.md` (water material
+attributes, probe coverage).

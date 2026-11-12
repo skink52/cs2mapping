@@ -69,6 +69,26 @@ def rot(yaw):
     return math.cos(a), math.sin(a)
 
 
+def tri_box(T, lo, hi):
+    """per triangle of T (N, 3, 3): does it intersect the box lo..hi (separating axis test: 3 box axes, the face normal, 9 edge
+    crosses). The same test as tools/check_play.py check 10."""
+    lo = np.asarray(lo, float); hi = np.asarray(hi, float)
+    c = (lo + hi) / 2; h = (hi - lo) / 2
+    V = np.asarray(T, float) - c
+    out = np.ones(len(V), bool)
+    for a in range(3): out &= ~((V[:, :, a].min(1) > h[a]) | (V[:, :, a].max(1) < -h[a]))
+    E = (V[:, 1] - V[:, 0], V[:, 2] - V[:, 1], V[:, 0] - V[:, 2])
+    n = np.cross(E[0], E[1])
+    out &= np.abs((n * V[:, 0]).sum(1)) <= (np.abs(n) * h).sum(1)
+    for e in E:
+        for a in range(3):
+            ax = np.zeros(3); ax[a] = 1.0
+            Lx = np.cross(ax, e)
+            p = (V * Lx[:, None, :]).sum(2); rr = (np.abs(Lx) * h).sum(1)
+            out &= ~((p.min(1) > rr) | (p.max(1) < -rr))
+    return out
+
+
 def local(x, y, yaw, lx, ly):
     """world position of the local point (lx, ly) of something at (x, y) turned by yaw"""
     c, s = rot(yaw)
@@ -83,6 +103,7 @@ class World:
         self.B = placer.Bounds(props_json=pj, out=out, prefix='mv', table=table)
         self.PL = placer.Placer(bounds=self.B)
         self.count = {}; self.skipped = {}; self.exc = []; self.missing = set(); self.big_skips = []; self.rotors = []; self.rotor_skips = {}; self.bld = []
+        self.solids = []; self._solid_cat = None
         self.sites = dict(kit={}, flagpole={}, mounts=[], racks=dict(ct=[], t=[]), board={}, guns=dict(ct=[], t=[]), pads=dict(ct=[], t=[]),
                           tunnels=[], surfaces=[], fires=[], nonav=[], seeds=[], waypoints=[], landing=[])
 
@@ -153,6 +174,7 @@ class World:
         self.count[model] = self.count.get(model, 0) + 1
         if stock is None and name not in self.built: self.missing.add(name)
         if tag: self.exc.append([model, round(x, 1), round(y, 1), round(z, 1), tag])
+        self.last_z = z
         return e
 
     def sprop(self, logical, x, y, z=None, yaw=0.0, **kw):
@@ -306,15 +328,33 @@ class World:
             self.prop(None, x, y, zz, yaw, stock=LADDER_MODEL, solid='0', reg=False, tag='platform'); zz += 128.0
         self.keep(x + c_ * 34.0, y + s_ * 34.0, 22.0, z=z0, name='ladder')
 
+    def hull_hits(self, x, y, z0, z1, r=16.0):
+        """does a player-sized box (x +- r, y +- r, z0..z1) touch any solid world mesh or player clip made so far"""
+        if self._solid_cat is None or self._solid_cat[1] != len(self.solids):
+            T = np.concatenate(self.solids) if self.solids else np.zeros((0, 3, 3))
+            self._solid_cat = (T, len(self.solids), T.min(1), T.max(1))
+        T, _, tmin, tmax = self._solid_cat
+        lo = np.array([x - r, y - r, z0]); hi = np.array([x + r, y + r, z1])
+        c = np.nonzero((tmax >= lo).all(1) & (tmin <= hi).all(1))[0]
+        return bool(len(c)) and bool(tri_box(T[c], lo, hi).any())
+
     def free(self, x, y, r=18.0, z=None, h=72.0):
         if z is None: z = gz(x, y)
         return self.PL.hits(dict(c=(x, y), h=(r, r), a=0.0, z=(z + 1.0, z + h), model='probe')) is None
 
     # ---------------------------------------------------------------- world geometry
+    def solid_tris(self, verts, faces):
+        """playtest 1 (T spawns in a rocket pit's berm clip): every solid world mesh and player clip is kept as triangles, so a spawn
+        or seat can be tested with a real player hull (mv_entities.stand; tools/check_play.py check 10 does the same on the vmap)"""
+        V = np.asarray(verts, float)
+        tri = [(V[f[0]], V[f[k]], V[f[k + 1]]) for f in faces for k in range(1, len(f) - 1)]
+        if tri: self.solids.append(np.array(tri, float))
+
     def shape(self, shape, bake=True, shadows=True, visexclude=False, paint=None, smoothing=40.0):
         probs = P.check(shape)
         if probs: raise ValueError('bad shape: ' + '; '.join(probs[:3]))
         v, f, m = shape
+        self.solid_tris(v, f)
         pa = ti = None
         if paint is not None:
             pa = np.array([[float(paint(p)), 0.0, 0.35, 0.0] for p in v]); ti = np.ones((len(v), 4))
@@ -338,51 +378,62 @@ class World:
                    color=color, range='%.0f' % rng_, directlight='3', castshadows='0', colormode='0', enabled='1', bouncescale='1.0', shape='0')
 
     # ---------------------------------------------------------------- sandbags
-    def bag_dims(self, model):
-        lo, hi = self.B(S.mv(model))
-        return (hi[0] - lo[0]), (lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, hi[2] - 1.0
+    # playtest 1 (p3): walls were 2-4 stacked 19-u props of loose pillows, each standing on the ground at its own centre (floating on
+    # slopes, gaps between pieces). A wall is now a row of full-height segments (p_sandbag_mv: 80 u long, interlocking end to end,
+    # battered, footing courses under z 0), each pitched along the ground and set on the lowest ground it covers.
+    SB_HEIGHT = {'sandbag_low': 14.0, 'sandbag_low_128': 14.0}            # old per-layer heights: layers x this = the wall height asked for
 
-    @staticmethod
-    def _bag_supported(done, k, i, n):
-        """a course rests on the bags under it: an odd course (half-bag stagger) on pieces i and i + 1 below, an even one on i - 1 and i
-        (12 Nov review: when the rotor guard dropped a bottom bag, the course above it floated)"""
-        if k == 0: return True
-        if k % 2: return all(done.get((k - 1, j), False) for j in (i, i + 1) if j < n)
-        return all(done.get((k - 1, j), False) for j in (i - 1, i) if 0 <= j < max(1, n - 1))
+    def sb_model(self, model, layers, radius=None):
+        """the wall class for an old (model, layers) request: h1 27, h2 38, h3 57, h4 76 u; arcs r 118 / 232 (straight past r 500)"""
+        ht = self.SB_HEIGHT.get(model, 19.0) * layers
+        h = min(((27.0, 'h1'), (38.0, 'h2'), (57.0, 'h3'), (76.0, 'h4')), key=lambda q: abs(q[0] - ht))[1]
+        if radius is None or radius >= 500.0: return 'sandbag_w_' + h
+        rc = min((118.0, 232.0), key=lambda r_: abs(r_ - radius))
+        if h in ('h3', 'h4'): h = 'h2'
+        return 'sandbag_a%d_%s' % (int(rc), h)
+
+    def sb_seg(self, name, x, y, yaw, z=None, sx=1.0, tag=None, length=80.0):
+        """one segment centred at (x, y): on the ground (z None) pitched to the ground along it (up to 8 deg; the footing takes the
+        rest) and set so its base is 1 u under the lowest ground of its footprint; or at z (a deck, a crown)"""
+        c, s_ = rot(yaw); L2 = length * sx / 2.0
+        pitch = 0.0
+        if z is None:
+            ss = np.linspace(-L2, L2, 7)
+            pts = [(x + c * t_ - s_ * w_, y + s_ * t_ + c * w_, t_) for t_ in ss for w_ in (-15.0, 0.0, 15.0)]
+            g = L.height(np.array([q[0] for q in pts]), np.array([q[1] for q in pts])); tt = np.array([q[2] for q in pts])
+            k_ = float(np.clip(np.polyfit(tt, g, 1)[0], -0.14, 0.14))         # rise per unit along the wall
+            z = float((g - tt * k_).min()) - 1.0
+            pitch = -math.degrees(math.atan(k_))
+            if tag is None and abs(z - gz(x, y)) > 6.0: tag = 'slope'
+        return self.prop(name, x, y, z, yaw, pitch=pitch, scale=(sx, 1.0, 1.0), tag=tag)
 
     def bag_arc(self, cx, cy, r, a0, a1, layers=2, model='sandbag_wall', z=None, seed_rng=None):
-        """sandbag wall along a circle arc (degrees, a0 < a1), the bags' long axis tangential; layers stacked with a half-bag stagger"""
-        ln, ox, oy, h = self.bag_dims(model)
-        dth = math.degrees((ln - 4.0) / r)
-        n = max(1, int(round((a1 - a0) / dth)))
-        done = {}
-        for k in range(layers):
-            for i in range(n if k % 2 == 0 else max(1, n - 1)):
-                if not self._bag_supported(done, k, i, n): continue
-                th = a0 + (i + 0.5 + (0.5 if k % 2 else 0.0)) * (a1 - a0) / n
-                c, s = rot(th); yaw = th + 90.0
-                # origin so that the bag's centre sits on the circle: local x offset ox (tangent), local y offset oy (points inward)
-                x = cx + r * c + ox * s + oy * c; y = cy + r * s - ox * c + oy * s
-                zz = (gz(cx + r * c, cy + r * s) if z is None else z) + k * h
-                if self.prop(model, x, y, zz, yaw + (seed_rng.uniform(-2, 2) if seed_rng is not None else 0.0), tag='stack' if k else ('platform' if z is not None else None)) is not None: done[(k, i)] = True
+        """sandbag wall along a circle arc (degrees, a0 < a1), its inner face toward the centre"""
+        name = self.sb_model(model, layers, r)
+        rc = None if name.startswith('sandbag_w_') else float(name.split('_a')[1].split('_')[0])
+        span = math.radians(a1 - a0) * r; n = max(1, int(round(span / 80.0)))
+        done = 0
+        for i in range(n):
+            th = a0 + (i + 0.5) * (a1 - a0) / n
+            c, s_ = rot(th)
+            sx = math.radians((a1 - a0) / n) * r / 80.0
+            # a straight piece stands on the chord's middle; an arc piece's origin is on its own centre line (the arc at radius r)
+            rr = r * math.cos(math.radians((a1 - a0) / n / 2.0)) if rc is None else r
+            if self.sb_seg(name, cx + rr * c, cy + rr * s_, th + 90.0, z, sx=sx, tag=None if z is None else 'platform') is not None: done += 1
         if done:
             n_ = max(2, int(math.ceil((a1 - a0) / 4.0)))
             self.cap([(cx + r * math.cos(math.radians(a0 + (a1 - a0) * j / n_)), cy + r * math.sin(math.radians(a0 + (a1 - a0) * j / n_))) for j in range(n_ + 1)],
-                     model, layers, z)
+                     name, layers, z)
 
     def bag_line(self, p, q, layers=2, model='sandbag_wall', z=None):
-        ln, ox, oy, h = self.bag_dims(model)
-        d = math.hypot(q[0] - p[0], q[1] - p[1]); n = max(1, int(round(d / (ln - 4.0))))
-        yaw = math.degrees(math.atan2(q[1] - p[1], q[0] - p[0])); c, s = rot(yaw)
-        done = {}
-        for k in range(layers):
-            for i in range(n if k % 2 == 0 else max(1, n - 1)):
-                if not self._bag_supported(done, k, i, n): continue
-                t = (i + 0.5 + (0.5 if k % 2 else 0.0)) / n
-                mx, my = p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t
-                x, y = mx - ox * c + oy * s, my - ox * s - oy * c
-                if self.prop(model, x, y, (gz(mx, my) if z is None else z) + k * h, yaw, tag='stack' if k else ('platform' if z is not None else None)) is not None: done[(k, i)] = True
-        if done: self.cap([p, q], model, layers, z)
+        name = self.sb_model(model, layers)
+        d = math.hypot(q[0] - p[0], q[1] - p[1]); n = max(1, int(round(d / 80.0)))
+        yaw = math.degrees(math.atan2(q[1] - p[1], q[0] - p[0]))
+        done = 0
+        for i in range(n):
+            t = (i + 0.5) / n
+            if self.sb_seg(name, p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, yaw, z, sx=d / (n * 80.0), tag=None if z is None else 'platform') is not None: done += 1
+        if done: self.cap([p, q], name, layers, z)
 
     def berm_arc(self, cx, cy, r, a0, a1, base=56.0, top=20.0, h=34.0, mat=DIRT, seg=14.0):
         """earth bank swept along an arc (world geometry): a trapezoid section, ends capped"""
@@ -460,6 +511,7 @@ def rotor_plan():
 # ================================================================ tunnels: the plan (also used for the terrain holes)
 _TUN = None
 TUN_H, TUN_CH_H, TUN_K = 104.0, 140.0, 0.47
+TUN_K_ENTRY, TUN_ENTRY = 0.8, 130.0          # the entrance shaft: 39 degrees (walkable: under 45) for its first 130 u
 
 
 def _dijkstra(n, adj, init, k=1.0):
@@ -475,8 +527,9 @@ def _dijkstra(n, adj, init, k=1.0):
 
 
 def tunnel_plan():
-    """galleries on a 16-u grid: occupied cells, floor / roof heights per grid vertex, the cells cut open to the sky at the portals
-    (32-u terrain cells left out of the terrain) and lamp spots. Depends on layout only."""
+    """the gallery plan: samples every 16 u with their floors (graded from the portals), a 16-u grid of occupied cells with floor /
+    roof heights (nav markup, checks); then tunnel_field() makes the mesh, the terrain cells it replaces, frames and lamps.
+    Depends on layout only."""
     global _TUN
     if _TUN is not None: return _TUN
     galleries_ext = []
@@ -512,9 +565,12 @@ def tunnel_plan():
     dp = _dijkstra(n, adj, [0.0 if i in portal_idx else 1e18 for i in range(n)])
     g = np.min([L.height(Pn[:, 0] + ox, Pn[:, 1] + oy) for ox, oy in ((0, 0), (40, 0), (-40, 0), (0, 40), (0, -40))], axis=0)
     cap = np.where(np.array(gal) == len(L.TUNNEL_GALLERIES) - 1, 240.0, 150.0)      # the stub runs on down so the chamber keeps its roof
-    target = g - np.minimum(cap, 8.0 + TUN_K * dp)
+    # playtest 1: the entrance is a steep stepped shaft (TUN_K_ENTRY for the first TUN_ENTRY u from each portal, log treads on it), so
+    # the roof starts about 140 u in instead of 250 (the old 25-degree ramp made a 100-u deep open cut most of a gallery long)
+    target = g - np.minimum(cap, 8.0 + np.minimum(dp, TUN_ENTRY) * TUN_K_ENTRY + np.maximum(dp - TUN_ENTRY, 0.0) * TUN_K)
     target = np.where(np.array(ext), g - 6.0, target)
-    f = _dijkstra(n, adj, list(target), k=TUN_K)
+    adj_k = [[(j, d * (TUN_K_ENTRY if max(dp[i], dp[j]) < TUN_ENTRY else TUN_K)) for j, d in adj[i]] for i in range(n)]
+    f = _dijkstra(n, adj_k, list(target), k=1.0)
     ch = np.array(L.TUNNEL_CHAMBER); f_ch = float(f[int(np.argmin(np.hypot(Pn[:, 0] - ch[0], Pn[:, 1] - ch[1])))])
     # grid
     R = L.TUNNEL_CHAMBER_R
@@ -551,51 +607,260 @@ def tunnel_plan():
         if np.abs(FZ - F0).max() < 0.01: break
     FZ = np.round(FZ * 2) / 2
     CZ = FZ + np.where(in_ch, TUN_CH_H, TUN_H)
-    # the terrain's 32 grid over the same box: where the roof would break the ground the 32-cell is cut open to the sky
-    H32 = np.asarray(L.height(VX[::2, ::2], VY[::2, ::2]), float)
-    nb = occ.reshape(nx // 2, 2, ny // 2, 2).any(axis=(1, 3))
-    gmin = np.minimum(np.minimum(H32[:-1, :-1], H32[1:, :-1]), np.minimum(H32[:-1, 1:], H32[1:, 1:]))
-    cmax = np.zeros(nb.shape)
-    for bi, bj in zip(*np.nonzero(nb)): cmax[bi, bj] = CZ[2 * bi:2 * bi + 3, 2 * bj:2 * bj + 3].max()
-    openb = nb & (cmax + 24.0 > gmin)
-    openc = np.repeat(np.repeat(openb, 2, axis=0), 2, axis=1)
-    occ = G.fix_pinches(occ | openc)
-    # terrain height at the 16 grid: exactly the terrain mesh along its 32-cell edges (mid points are the mean of the two corners)
-    TZ = np.zeros(VX.shape); TZ[::2, ::2] = H32
-    TZ[1::2, ::2] = (H32[:-1, :] + H32[1:, :]) / 2; TZ[::2, 1::2] = (H32[:, :-1] + H32[:, 1:]) / 2
-    TZ[1::2, 1::2] = (H32[:-1, :-1] + H32[1:, 1:] + H32[1:, :-1] + H32[:-1, 1:]) / 4
-    ov = np.zeros(VX.shape, bool)
-    for di in (0, 1):
-        for dj in (0, 1): ov[di:nx + di, dj:ny + dj] |= openc
-    FZ = np.where(ov, np.minimum(FZ, TZ - 6.0), FZ)
-    holes = set()
-    for bi, bj in zip(*np.nonzero(openb)):
-        holes.add((int(round(gx[2 * bi] / 32)), int(round(gy[2 * bj] / 32))))
-        bc = (gx[2 * bi] + 16, gy[2 * bj] + 16)
-        if min(math.hypot(bc[0] - p[0], bc[1] - p[1]) for p in L.TUNNEL_PORTALS) > 520.0:
-            print('WARNING tunnel breaks the surface away from a portal at (%.0f, %.0f)' % bc)
-    # lamps: every ~210 u along each gallery where it is roofed
-    lamps = []
-    for gi, gl in enumerate(L.TUNNEL_GALLERIES):
-        idx = [i for i in range(n) if gal[i] == gi]
-        for i in idx[6::13]:
-            ci = int((Pn[i, 0] - x0) // 16); cj = int((Pn[i, 1] - y0) // 16)
-            if 0 <= ci < nx and 0 <= cj < ny and occ[ci, cj] and not openc[ci, cj]: lamps.append((Pn[i, 0], Pn[i, 1], float(f[i]) + TUN_H - 14.0))
-    # per portal: the mouth (start of the gallery) and the first roofed sample (where the arch goes) with the gallery direction
-    mouths = []
-    for k, pi in enumerate(portal_idx):
-        chain = [i for i in range(n) if gal[i] == gal[pi]]
-        q = chain.index(pi); chain = chain[q:] if q < len(chain) / 2 else chain[:q + 1][::-1]
-        arch = None
-        for a, b in zip(chain[:-1], chain[1:]):
-            ci = int((Pn[b, 0] - x0) // 16); cj = int((Pn[b, 1] - y0) // 16)
-            if not openc[ci, cj]:
-                arch = (Pn[b, 0], Pn[b, 1], float(f[b]), math.degrees(math.atan2(Pn[b, 1] - Pn[a, 1], Pn[b, 0] - Pn[a, 0]))); break
-        j = chain[min(3, len(chain) - 1)]
-        mouths.append(dict(pos=(Pn[pi, 0], Pn[pi, 1], float(f[pi])), inside=(Pn[j, 0], Pn[j, 1], float(f[j])), arch=arch))
-    _TUN = dict(gx=gx, gy=gy, occ=occ, open=openc, FZ=FZ, CZ=CZ, TZ=TZ, holes=holes, lamps=lamps, mouths=mouths, f_ch=f_ch, samples=Pn, floor=f,
-                box=(x0, y0, float(FZ[ov | True].min()), x1, y1, float(CZ.max())))
+    # playtest 1 (p1, p6): the galleries, the chamber and the three mouths are one smooth field now (tunnel_field), meshed by surface
+    # nets; the plan above (samples, floors, the 16-u grid) is kept for the floors, the nav markup and the checks
+    CZ = FZ + np.where(in_ch, TUN_CH_H, TUN_TOP)
+    _TUN = dict(gx=gx, gy=gy, occ=occ, FZ=FZ, CZ=CZ, f_ch=f_ch, samples=Pn, floor=f, gal=np.array(gal), galleries=galleries_ext, portal_idx=portal_idx,
+                in_ch=in_ch)
+    tunnel_field(_TUN)
     return _TUN
+
+
+# ---------------------------------------------------------------- the tunnel field (playtest 1)
+# Cu Chi-style hand-dug galleries: an ovoid section (44 u half width at 46 u over the floor, roof at 102 over it, a 50-u flat floor),
+# walls displaced by noise, the floor nearly flat; a domed chamber; where the ground comes within ~14 u of the void the two blend
+# (smooth union), which opens the mouths as rounded cuts with a lip instead of square holes. Timber frames (posts touching the floor
+# and the wall, a cap beam against the roof) stand where the section is cut flat to fit them: three with lagging boards at each mouth,
+# single frames along the galleries and at the chamber door. Spoil heaps beside the mouths. One mesh for the earth under the ground
+# (dirt walls, mud floor, uvs that follow the gallery), one for the ground around the mouths (the valley blend material, painted).
+TUN_A, TUN_B, TUN_VC = 44.0, 56.0, 46.0
+TUN_TOP = TUN_VC + TUN_B
+CH_R, CH_B, CH_VC = 138.0, 104.0, 40.0
+FR_U, FR_TOP = 35.0, 94.0
+SN_H, SN_K = 8.0, 14.0
+TIMBER = 'materials/de_train/hr_train_s2/wood/hrts2_wood_timber_framing_01_wet.vmat'
+vmesh.TEX_SIZE[TIMBER] = (1024, 1024)
+
+
+def _smax(a, b, k):
+    h = np.clip(k - np.abs(a - b), 0.0, None) / k
+    return np.maximum(a, b) + h * h * k * 0.25
+
+
+def _gal_tables(t):
+    """per gallery: its polyline, the arc length and floor of its plan samples, where its frames stand"""
+    out = []
+    for gi, g in enumerate(t['galleries']):
+        idx = np.nonzero(t['gal'] == gi)[0]
+        P = t['samples'][idx]; seg = np.linalg.norm(np.diff(P, axis=0), axis=1)
+        poly = np.asarray(g, float); pl = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(poly, axis=0), axis=1))])
+        out.append(dict(gi=gi, idx=idx, P=P, cum=np.concatenate([[0.0], np.cumsum(seg)]), f=t['floor'][idx], poly=poly, pl=pl, frames=[], spans=[]))
+    return out
+
+
+def _gal_cols(G, X, Y):
+    """distance to the gallery's centre line, signed side, arc length, floor, the unit direction there"""
+    d, tn = L.seg_dist(X, Y, G['poly'])
+    s = tn * G['pl'][-1]
+    F = np.interp(s, G['cum'], G['f'])
+    k = np.clip(np.searchsorted(G['pl'], s) - 1, 0, len(G['poly']) - 2)
+    a = G['poly'][k]; b = G['poly'][k + 1]; dv = b - a; dv = dv / np.linalg.norm(dv, axis=-1, keepdims=True)
+    px = a[..., 0] + dv[..., 0] * (s - G['pl'][k]); py = a[..., 1] + dv[..., 1] * (s - G['pl'][k])
+    side = np.sign(dv[..., 0] * (Y - py) - dv[..., 1] * (X - px)); side = np.where(side == 0, 1.0, side)
+    return d, d * side, s, F, dv
+
+
+def _frame_w(G, s):
+    """1 at a timber frame (the section cut flat to it), 0 a little way off"""
+    w = np.zeros(np.shape(s))
+    for (sa, sb) in G['spans']:
+        dd = np.maximum(np.maximum(sa - s, s - sb), 0.0)
+        w = np.maximum(w, 1.0 - smoothstep(4.0, 20.0, dd))
+    for sc in G['frames']:
+        w = np.maximum(w, 1.0 - smoothstep(7.0, 22.0, np.abs(s - sc)))
+    return w
+
+
+def tunnel_field(t):
+    from scipy import ndimage
+    import snets
+    G_ = _gal_tables(t); t['gtab'] = G_
+    ch = np.array(L.TUNNEL_CHAMBER, float); fch = t['f_ch']
+    Pn = t['samples']
+    # terrain mesh heights (bilinear in its 32-u cells: the tiles round the portals are 32-u grids of layout.height)
+    gx0, gy0 = float(Pn[:, 0].min() - 320), float(Pn[:, 1].min() - 320)
+    gx32 = np.arange(math.floor(gx0 / 32) * 32, math.ceil((Pn[:, 0].max() + 320) / 32) * 32 + 1, 32.0)
+    gy32 = np.arange(math.floor(gy0 / 32) * 32, math.ceil((Pn[:, 1].max() + 320) / 32) * 32 + 1, 32.0)
+    H32 = np.asarray(L.height(*np.meshgrid(gx32, gy32, indexing='ij')), float)
+    def Hm(x, y):
+        u = (np.asarray(x, float) - gx32[0]) / 32.0; v = (np.asarray(y, float) - gy32[0]) / 32.0
+        i = np.clip(np.floor(u).astype(int), 0, len(gx32) - 2); j = np.clip(np.floor(v).astype(int), 0, len(gy32) - 2); fu = u - i; fv = v - j
+        return H32[i, j] * (1 - fu) * (1 - fv) + H32[i + 1, j] * fu * (1 - fv) + H32[i, j + 1] * (1 - fu) * fv + H32[i + 1, j + 1] * fu * fv
+    t['Hm'] = Hm
+    # ---- the mouths: where the roof starts (16 u of cover over the ovoid), the framed entrance from there 72 u in
+    juncs = []
+    for G in G_:
+        for q in G['poly']:
+            if sum(1 for H_ in G_ for r in H_['poly'] if abs(r[0] - q[0]) < 1 and abs(r[1] - q[1]) < 1) > 1: juncs.append(q)
+    mouths = []
+    for k, pi in enumerate(t['portal_idx']):
+        gi = int(t['gal'][pi]); G = G_[gi]; pos = int(np.nonzero(G['idx'] == pi)[0][0])
+        inward = 1 if pos < len(G['idx']) / 2 else -1
+        order = range(pos, len(G['idx'])) if inward > 0 else range(pos, -1, -1)
+        cover = Hm(G['P'][:, 0], G['P'][:, 1]) - (G['f'] + TUN_TOP)
+        sm = None
+        for q in order:
+            if cover[q] >= 16.0: sm = q; break
+        sm = pos if sm is None else sm
+        s_m = float(G['cum'][sm]); s_p = float(G['cum'][pos])
+        span = (s_m - 4.0, s_m + 72.0) if inward > 0 else (s_m - 72.0, s_m + 4.0)
+        G['spans'].append(span)
+        frames = [s_m + inward * o for o in (0.0, 36.0, 72.0)]
+        # inside: the leash target (mv_tunnel_N) stays where it was, 3 samples (48 u) in from the portal; its z stands clear of the shaft
+        # floor and the treads under a player there (the highest floor within 24 u along the gallery)
+        ins = min(max(pos + 3 * inward, 0), len(G['idx']) - 1)
+        near_ = np.abs(G['cum'] - G['cum'][ins]) <= 18.0
+        f_ins = float(G['f'][near_].max()) + 1.5            # a standing hull's uphill edge clears the shaft floor (check_play 10)
+        dvec = G['P'][min(max(sm + inward, 0), len(G['idx']) - 1)] - G['P'][sm]; dvec = dvec / max(np.linalg.norm(dvec), 1e-9)
+        mouths.append(dict(k=k, gi=gi, inward=inward, s_m=s_m, s_p=s_p, frames=frames, pos=(float(Pn[pi, 0]), float(Pn[pi, 1]), float(t['floor'][pi])),
+                           mouth=(float(G['P'][sm, 0]), float(G['P'][sm, 1]), float(G['f'][sm])), dir=(float(dvec[0]), float(dvec[1])),
+                           inside=(float(G['P'][ins, 0]), float(G['P'][ins, 1]), f_ins), arch=None))
+    # single frames along the galleries (every ~190 u, clear of the entrances, junctions and the lead-in), one at the chamber door
+    for G in G_:
+        Lg = float(G['cum'][-1])
+        for s in np.arange(120.0, Lg - 60.0, 120.0):
+            p = np.array([np.interp(s, G['cum'], G['P'][:, 0]), np.interp(s, G['cum'], G['P'][:, 1])])
+            if any(sa - 70.0 < s < sb + 70.0 for sa, sb in G['spans']): continue
+            if any(math.hypot(p[0] - q[0], p[1] - q[1]) < 150.0 for q in juncs): continue      # build 1: a post stood in the next gallery's mouth
+            k_ = np.clip(np.searchsorted(G['pl'], s) - 1, 0, len(G['poly']) - 2); dv_ = G['poly'][k_ + 1] - G['poly'][k_]; dv_ = dv_ / np.linalg.norm(dv_)
+            posts_ = [p + np.array([-dv_[1], dv_[0]]) * sg_ * FR_U for sg_ in (-1.0, 1.0)]
+            if any(_gal_cols(H_, np.array([q_[0]]), np.array([q_[1]]))[0][0] < TUN_A + 20.0 for H_ in G_ if H_ is not G for q_ in posts_): continue
+            if math.hypot(p[0] - ch[0], p[1] - ch[1]) < CH_R + 40.0: continue
+            if Hm(p[0], p[1]) - (float(np.interp(s, G['cum'], G['f'])) + TUN_TOP) < 20.0: continue     # only under a roof
+            G['frames'].append(float(s))
+    stub = G_[-1]; Ls = float(stub['cum'][-1])
+    stub['frames'].append(Ls - CH_R * 0.93 - 6.0)
+    # spoil: the earth dug out, heaped beside each mouth (a larger heap on one side, a smaller one across)
+    heaps = []
+    for m in mouths:
+        ox, oy = -m['dir'][0], -m['dir'][1]                      # outward
+        nx_, ny_ = -oy, ox
+        sd_ = 1.0 if m['k'] % 2 == 0 else -1.0
+        for (lat, out, along, across, hh) in ((96.0, 30.0, 70.0, 40.0, 13.0), (-88.0, 70.0, 46.0, 30.0, 7.0)):
+            cx_ = m['pos'][0] + nx_ * lat * sd_ + ox * out; cy_ = m['pos'][1] + ny_ * lat * sd_ + oy * out
+            heaps.append((cx_, cy_, ox, oy, along, across, hh))
+    def spoil(X, Y):
+        s_ = np.zeros(np.shape(X))
+        for (cx_, cy_, ox, oy, along, across, hh) in heaps:
+            dx, dy = X - cx_, Y - cy_
+            r2 = ((dx * ox + dy * oy) / along) ** 2 + ((-dx * oy + dy * ox) / across) ** 2
+            n_ = 1.0 + 0.18 * fbm(X / 30.0, Y / 30.0, 4.4, 2, seed=91)
+            s_ = np.maximum(s_, hh * n_ * np.clip(1 - r2, 0, 1) ** 2)
+        return s_
+    t['spoil'] = spoil
+    # ---- the sampling box (corners at 8k + 4 in x and y: cell centres fall on the 8-u lattice, so the terrain's 32-u lines are cell centres)
+    x0 = math.floor((Pn[:, 0].min() - 240) / 8) * 8 + 4.0; x1 = math.ceil((Pn[:, 0].max() + 240) / 8) * 8 + 4.0
+    y0 = math.floor((Pn[:, 1].min() - 240) / 8) * 8 + 4.0; y1 = math.ceil((Pn[:, 1].max() + 240) / 8) * 8 + 4.0
+    xs = np.arange(x0, x1 + 0.1, SN_H); ys = np.arange(y0, y1 + 0.1, SN_H)
+    XC, YC = np.meshgrid(xs, ys, indexing='ij')
+    Hc = Hm(XC, YC) + spoil(XC, YC)
+    z0 = math.floor((min(float(t['floor'].min()), fch) - 30.0) / 8) * 8 + 2.0; z1 = math.ceil((float(Hc.max()) + 30.0) / 8) * 8 + 2.0
+    zs = np.arange(z0, z1 + 0.1, SN_H)
+    Z = zs[None, None, :]
+    # ---- the void: each gallery's ovoid (or the frame's flat-sided section), the chamber's dome, smooth union, noise on the walls
+    sds = []; vv = []; ww = []
+    for G in G_:
+        d, ds_, s, F, _ = _gal_cols(G, XC, YC)
+        a = TUN_A * (1.0 + 0.07 * fbm(s / 160.0, G['gi'] * 3.1, 0.5, 2, seed=93))
+        v = Z - F[:, :, None]
+        e = (np.sqrt((d[:, :, None] / a[:, :, None]) ** 2 + ((v - TUN_VC) / TUN_B) ** 2) - 1.0) * min(TUN_A, TUN_B) * 0.92
+        sg = np.maximum(e, -v)
+        fr = np.maximum(np.maximum(np.abs(d)[:, :, None] - FR_U, v - FR_TOP), -v)
+        w = _frame_w(G, s)[:, :, None]
+        sds.append(sg * (1 - w) + fr * w); vv.append(v); ww.append(np.broadcast_to(w, v.shape))
+    rc = np.hypot(XC - ch[0], YC - ch[1])[:, :, None]; vc = Z - fch
+    e = (np.sqrt((rc / CH_R) ** 2 + ((vc - CH_VC) / CH_B) ** 2) - 1.0) * CH_B * 0.92
+    sds.append(np.maximum(e, -vc)); vv.append(np.broadcast_to(vc, e.shape)); ww.append(np.zeros(e.shape))
+    S_ = np.stack(sds, 0); sel = S_.argmin(0)
+    sd = S_[0]
+    for k_ in range(1, len(sds)): sd = -_smax(-sd, -S_[k_], 10.0)
+    vsel = np.take_along_axis(np.stack(vv, 0), sel[None], 0)[0]; wsel = np.take_along_axis(np.stack(ww, 0), sel[None], 0)[0]
+    near = np.abs(sd) < 26.0
+    X3 = np.broadcast_to(XC[:, :, None], sd.shape)[near]; Y3 = np.broadcast_to(YC[:, :, None], sd.shape)[near]; Z3 = np.broadcast_to(Z, sd.shape)[near]
+    nz_ = fbm(X3 / 30.0, Y3 / 30.0, Z3 / 30.0, 3, seed=88) + 0.7 * fbm(X3 / 95.0, Y3 / 95.0, Z3 / 95.0, 2, seed=89)
+    amp = 1.0 + 6.0 * smoothstep(3.0, 24.0, vsel[near])
+    sd[near] += amp * nz_ * (1.0 - wsel[near])
+    phi_t = Z - Hc[:, :, None]
+    phi = _smax(phi_t, -sd, SN_K)
+    # ---- the terrain cells the field changes near the surface (+ the spoil): cut from the terrain, meshed here instead
+    infl = (np.abs(phi - phi_t) > 0.02) & (np.abs(phi_t) < 20.0)          # the void (or its blend) changes the ground's own surface here
+    flag_col = (infl & (np.abs(phi_t) < 14.0)).any(2) | (spoil(XC, YC) > 0.01)
+    bx0 = int(math.floor(x0 / 32)); by0 = int(math.floor(y0 / 32))
+    nbx = int(math.floor(x1 / 32)) - bx0 + 1; nby = int(math.floor(y1 / 32)) - by0 + 1
+    hb = np.zeros((nbx, nby), bool)
+    ii = (np.floor(XC / 32).astype(int) - bx0)[flag_col]; jj = (np.floor(YC / 32).astype(int) - by0)[flag_col]
+    hb[ii, jj] = True
+    hb = ndimage.binary_dilation(hb, np.ones((3, 3), bool))
+    import vmapgen as VG
+    hb = VG.fix_pinches(hb)
+    holes = set((int(i + bx0), int(j + by0)) for i, j in zip(*np.nonzero(hb)))
+    # cell centres on the 8-u lattice; a centre on a 32-u line belongs to the region when either side of it does (closed region)
+    cxs = xs[:-1] + SN_H / 2; cys = ys[:-1] + SN_H / 2
+    def in_region(cx, cy):
+        out = np.zeros(np.broadcast(cx, cy).shape, bool)
+        for ex in (0, 1):
+            for ey in (0, 1):
+                bi = np.floor(cx / 32).astype(int) - ex * (np.mod(cx, 32) == 0); bj = np.floor(cy / 32).astype(int) - ey * (np.mod(cy, 32) == 0)
+                ok = (bi - bx0 >= 0) & (bi - bx0 < nbx) & (bj - by0 >= 0) & (bj - by0 < nby)
+                out |= ok & hb[np.clip(bi - bx0, 0, nbx - 1), np.clip(bj - by0, 0, nby - 1)]
+        return out
+    CXc, CYc = np.meshgrid(cxs, cys, indexing='ij')
+    reg = in_region(CXc, CYc)
+    Hcc = Hm(CXc, CYc) + spoil(CXc, CYc)
+    include = reg[:, :, None] | (zs[None, None, 1:] < Hcc[:, :, None] - 12.0)
+    phi, n_amb = snets.fix_ambiguous(phi)
+    V, Q, cell = snets.surface_nets(phi, x0, y0, z0, SN_H, include=include)
+    # ---- inside the region, where nothing but the ground is (the field equals the terrain's in the whole column), every vertex of a
+    # column collapses to one at the cell centre on the terrain mesh: there the patch is the terrain's own grid, and on its edge (a 32-u
+    # line of the terrain) its vertices lie exactly on the terrain's edges
+    pc = ~infl.any(2)
+    pure = pc[:-1, :-1] & pc[1:, :-1] & pc[:-1, 1:] & pc[1:, 1:] & reg
+    colv = {}
+    vmap = np.arange(len(V))
+    newV = list(map(tuple, V))
+    for vi, (ci, cj, ck) in enumerate(cell):
+        if not pure[ci, cj] or abs(V[vi, 2] - Hcc[ci, cj]) > 16.0: continue          # only the ground sheet (a gallery deep under it stays)
+        key = (int(ci), int(cj))
+        if key not in colv:
+            colv[key] = len(newV); newV.append((float(cxs[ci]), float(cys[cj]), float(Hcc[ci, cj])))
+        vmap[vi] = colv[key]
+    V = np.array(newV, float)
+    faces = []
+    for q in vmap[Q]:
+        lp = [int(q[0])]
+        for x_ in q[1:]:
+            if int(x_) != lp[-1]: lp.append(int(x_))
+        if len(lp) > 1 and lp[-1] == lp[0]: lp.pop()
+        if len(set(lp)) == len(lp) >= 3: faces.append(lp)
+    used = np.zeros(len(V), bool)
+    for lp in faces: used[lp] = True
+    remap = -np.ones(len(V), np.int64); remap[used] = np.arange(int(used.sum())); V = V[used]
+    faces = [[int(remap[i]) for i in lp] for lp in faces]
+    # manifold check (Hammer refuses a non-manifold edge; a pinched vertex hangs the compile: vmesh splits those)
+    E = {}
+    for lp in faces:
+        for k_ in range(len(lp)):
+            a_, b_ = lp[k_], lp[(k_ + 1) % len(lp)]
+            E[(a_, b_)] = E.get((a_, b_), 0) + 1
+    bad = [e_ for e_, c_ in E.items() if c_ > 1 or E.get((e_[1], e_[0]), 0) > 1]
+    t.update(holes=holes, region=hb, reg_origin=(bx0, by0), mesh=(V, faces), n_amb=n_amb, n_bad_edges=len(bad), mouths=mouths, heaps=heaps,
+             box=(float(Pn[:, 0].min() - 240), float(Pn[:, 1].min() - 240), float(z0), float(Pn[:, 0].max() + 240), float(Pn[:, 1].max() + 240), float(z1)),
+             sn=dict(xs=xs, ys=ys, zs=zs, x0=x0, y0=y0, z0=z0))
+    # the plan's 16-u cells open to the sky (the nav markup keeps those open): roof within 14 u of the ground
+    gx, gy, occ = t['gx'], t['gy'], t['occ']
+    CXp, CYp = np.meshgrid((gx[:-1] + gx[1:]) / 2, (gy[:-1] + gy[1:]) / 2, indexing='ij')
+    czc = np.maximum(np.maximum(t['CZ'][:-1, :-1], t['CZ'][1:, :-1]), np.maximum(t['CZ'][:-1, 1:], t['CZ'][1:, 1:]))
+    t['open'] = occ & (czc + 14.0 > Hm(CXp, CYp))
+    # lamps: every ~210 u along each gallery where it is roofed, hung 18 u under the roof
+    lamps = []
+    for G in G_:
+        for q in range(6, len(G['idx']), 13):
+            x_, y_ = G['P'][q]
+            if Hm(x_, y_) - (G['f'][q] + TUN_TOP) > 20.0 and math.hypot(x_ - ch[0], y_ - ch[1]) > CH_R: lamps.append((float(x_), float(y_), float(G['f'][q]) + TUN_TOP - 18.0))
+    t['lamps'] = lamps
+    if bad: print('WARNING tunnel mesh: %d non-manifold edges, e.g. at %s' % (len(bad), [tuple(round(float(c)) for c in V[e_[0]]) for e_ in bad[:4]]))
+    print('tunnel field: %d x %d x %d samples, %d ambiguous faces fixed, %d terrain cells cut, %d verts, %d faces, %d bad edges' %
+          (len(xs), len(ys), len(zs), n_amb, len(holes), len(V), len(faces), len(bad)))
 
 
 def tunnel_floor(x, y):
@@ -613,16 +878,19 @@ def bunker_rects():
 
 
 def terrain_holes(CX, CY, r):
-    """cells left out of the terrain: the open cuts at the tunnel portals and the dug floors inside the firebase bunkers"""
+    """cells left out of the terrain: the ground round the tunnel mouths (the tunnel mesh carries it) and the dug floors inside the
+    firebase bunkers"""
     cut = np.zeros(CX.shape, bool)
     t = tunnel_plan()
     if t['holes']:
         bx = np.floor(CX / 32.0).astype(np.int64); by = np.floor(CY / 32.0).astype(np.int64)
         x0, y0, _, x1, y1, _ = t['box']
         if CX.max() >= x0 and CX.min() <= x1 and CY.max() >= y0 and CY.min() <= y1:
-            assert r <= 32, 'tunnel portal in a coarse terrain tile (see mv_terrain.tile_res)'
-            for i, j in zip(*np.nonzero((CX >= x0) & (CX <= x1) & (CY >= y0) & (CY <= y1))):
-                if (int(bx[i, j]), int(by[i, j])) in t['holes']: cut[i, j] = True
+            sel = (CX >= x0) & (CX <= x1) & (CY >= y0) & (CY <= y1)
+            if sel.any():
+                hit = np.array([(int(a), int(b)) in t['holes'] for a, b in zip(bx[sel], by[sel])])
+                if hit.any(): assert r <= 32, 'tunnel portal in a coarse terrain tile (see mv_terrain.tile_res)'
+                cut[sel] = hit
     for (x, y, yaw, hl, hw) in bunker_rects():
         if abs(CX - x).min() > 200 or abs(CY - y).min() > 200: continue
         c, s = rot(yaw)
@@ -632,61 +900,192 @@ def terrain_holes(CX, CY, r):
     return cut
 
 
+def _log(p0, p1, r, mat=TIMBER, sides=7):
+    """a round log between two points (a closed prism)"""
+    sec = [(r * math.cos(2 * math.pi * k / sides), r * math.sin(2 * math.pi * k / sides)) for k in range(sides)]
+    up = (0.0, 0.0, 1.0) if abs(p1[2] - p0[2]) < 0.9 * math.dist(p0, p1) else (1.0, 0.0, 0.0)
+    return P.sweep([p0, p1], sec, mat=mat, up=up)
+
+
+def _beam(c, along, half, mat=TIMBER):
+    """a squared timber centred at c: half = (half length along `along`, half width across, half height)"""
+    b = P.box((c[0] - half[0], c[1] - half[1], c[2] - half[2]), (c[0] + half[0], c[1] + half[1], c[2] + half[2]), mat=mat)
+    return P.rotate_z(b, math.degrees(math.atan2(along[1], along[0])), (c[0], c[1], 0.0))
+
+
 def tunnels():
     rng = np.random.RandomState(4104)
     t = tunnel_plan()
-    gx, gy, occ, openc, FZ, CZ, TZ = t['gx'], t['gy'], t['occ'], t['open'], t['FZ'], t['CZ'], t['TZ']
-    nx, ny = occ.shape
-    vid = {}; verts = []
-    def V(i, j, lvl):
-        k = (i, j, lvl)
-        if k not in vid:
-            vid[k] = len(verts); verts.append((gx[i], gy[j], (FZ, CZ, TZ)[lvl][i, j]))
-        return vid[k]
-    faces, mats = [], []
-    for i, j in zip(*np.nonzero(occ)):
-        op = openc[i, j]
-        faces.append([V(i, j, 0), V(i + 1, j, 0), V(i + 1, j + 1, 0), V(i, j + 1, 0)]); mats.append(MUD)
-        if not op:
-            faces.append([V(i, j, 1), V(i, j + 1, 1), V(i + 1, j + 1, 1), V(i + 1, j, 1)]); mats.append(DIRT)
-        for (a, b, ni, nj) in (((i, j), (i + 1, j), i, j - 1), ((i + 1, j), (i + 1, j + 1), i + 1, j),
-                               ((i + 1, j + 1), (i, j + 1), i, j + 1), ((i, j + 1), (i, j), i - 1, j)):
-            inside = 0 <= ni < nx and 0 <= nj < ny and occ[ni, nj]
-            if inside and (not op or openc[ni, nj]): continue
-            lo, hi = (1, 2) if inside else (0, 2 if op else 1)        # open cell next to a roofed one: a lintel from its roof to the ground
-            faces.append([V(b[0], b[1], lo), V(a[0], a[1], lo), V(a[0], a[1], hi), V(b[0], b[1], hi)]); mats.append(DIRT)
-    vmesh.mesh_node(vmesh.polymesh_open(verts, faces, mats), W.group, bake=True, shadows=True)
+    V, faces = t['mesh']; Hm = t['Hm']; spoil = t['spoil']; G_ = t['gtab']
+    ch = np.array(L.TUNNEL_CHAMBER, float); fch = t['f_ch']
+    # ---- per face: ground round the mouths (valley blend, painted) or the dug earth (dirt walls / roof, mud floor, uvs along the gallery)
+    Vf = [V[lp] for lp in faces]
+    cen = np.array([p.mean(0) for p in Vf])
+    nrm = np.array([np.cross(p[1] - p[0], p[2] - p[0]) + (np.cross(p[2] - p[0], p[3] - p[0]) if len(p) > 3 else 0.0) for p in Vf])
+    nrm /= np.maximum(np.linalg.norm(nrm, axis=1, keepdims=True), 1e-9)
+    Hf = Hm(cen[:, 0], cen[:, 1]) + spoil(cen[:, 0], cen[:, 1])
+    depth = Hf - cen[:, 2]
+    ground = (depth < 10.0) & (nrm[:, 2] > -0.2)
+    floor_ = ~ground & (nrm[:, 2] > 0.55)
+    # nearest gallery / chamber of each face (for its uv)
+    best = np.full(len(cen), 1e9); bk = np.full(len(cen), -1); cols = []
+    for k, G in enumerate(G_):
+        d, ds_, s, F, _ = _gal_cols(G, cen[:, 0], cen[:, 1]); cols.append((ds_, s, F))
+        m = d < best; best[m] = d[m]; bk[m] = k
+    rch = np.hypot(cen[:, 0] - ch[0], cen[:, 1] - ch[1]); in_chm = rch - CH_R * 0.85 < best
+    TS = 160.0                                                                              # u per texture repeat in the tunnel
+    def corner_uv(fi, lp):
+        p = V[lp]
+        if floor_[fi]: return [(q[0] / TS, q[1] / TS) for q in p]
+        if in_chm[fi]:
+            az = np.arctan2(p[:, 1] - ch[1], p[:, 0] - ch[0])
+            if az.max() - az.min() > math.pi: az = np.where(az < 0, az + 2 * math.pi, az)
+            return [(a_ * CH_R * 0.8 / TS, -q[2] / TS) for a_, q in zip(az, p)]
+        G = G_[int(bk[fi])]
+        d, ds_, s, F, _ = _gal_cols(G, p[:, 0], p[:, 1])
+        th = np.arctan2(ds_, p[:, 2] - F - TUN_VC)
+        if th.max() - th.min() > math.pi: th = np.where(th < 0, th + 2 * math.pi, th)
+        return [(s_ / TS, a_ * 52.0 / TS) for s_, a_ in zip(s, th)]
+    nb = 0
+    for part, sel in (('earth', ~ground), ('ground', ground)):
+        idx = np.nonzero(sel)[0]
+        if not len(idx): continue
+        used = sorted(set(i for fi in idx for i in faces[fi])); rm = {v: k for k, v in enumerate(used)}
+        pv = V[used]; pf = [[rm[i] for i in faces[fi]] for fi in idx]
+        if part == 'earth':
+            mats = [MUD if floor_[fi] else DIRT for fi in idx]
+            uvs = [corner_uv(fi, faces[fi]) for fi in idx]
+            m_ = vmesh.polymesh_open(pv, pf, mats, uvs=uvs)
+            vmesh.mesh_node(m_, W.group, bake=True, shadows=True, smoothing=70.0)
+            W.solid_tris(pv, pf)
+        else:
+            # the valley's own paint (mv_terrain.paint per point), turned to mud toward the cut and on the spoil, back to the terrain's
+            # own values over the last 40 u before the edge of the cut-out (where the patch meets the terrain mesh)
+            x_, y_, z_ = pv[:, 0], pv[:, 1], pv[:, 2]
+            w_, tint_ = L.paint_weight(x_, y_, z_, L.slope(x_, y_))
+            if TER.img('mud') is not None:
+                fr_ = np.abs(L.detail(x_, y_)) > 0.5
+                w_ = np.where(fr_, np.clip(w_ - 0.8 * TER.img('mud')(x_, y_) - 0.6 * TER.img('rock')(x_, y_), 0, 1), w_)
+                tint_ = np.where(fr_, np.clip(tint_ * (1.12 - 0.24 * TER.img('cavity')(x_, y_)), 0.55, 1.0), tint_)
+            reg = t['region']; bx0, by0 = t['reg_origin']
+            fine = np.kron(reg, np.ones((4, 4), bool))                                     # the cut-out on an 8-u grid
+            edt = ndimage_edt(fine) * 8.0
+            fi_ = np.clip(((x_ / 8.0) - bx0 * 4).astype(int), 0, fine.shape[0] - 1); fj_ = np.clip(((y_ / 8.0) - by0 * 4).astype(int), 0, fine.shape[1] - 1)
+            keep_ = smoothstep(8.0, 44.0, edt[fi_, fj_])                                   # 0 at the edge: the terrain's paint
+            dax = np.min([_gal_cols(G, x_, y_)[0] for G in G_], axis=0)
+            mud = np.maximum(1.0 - smoothstep(48.0, 120.0, dax), np.clip(spoil(x_, y_) / 9.0, 0, 1)) * keep_
+            w_ = w_ * (1.0 - 0.95 * mud); tint_ = tint_ * (1.0 - 0.08 * mud)
+            pa = np.zeros((len(pv), 4)); pa[:, 0] = w_; pa[:, 2] = 0.35
+            ti = np.ones((len(pv), 4)); ti[:, 0] = ti[:, 1] = ti[:, 2] = tint_
+            m_ = vmesh.polymesh_open(pv, pf, [TER.BLEND_VALLEY] * len(pf), paint=pa, tint=ti)        # scale 0.25 as the terrain tiles
+            vmesh.mesh_node(m_, W.group, bake=True, shadows=True, smoothing=60.0)
+            W.solid_tris(pv, pf)
+        nb += len(pf)
+    # ---- timber: frames (two posts on the floor against the walls, a cap beam against the roof, ends set into the earth), lagging boards
+    # on the walls and over the caps through each framed entrance, half-buried log treads down the ramps
+    tim = []
+    def frame_at(G, s, lag=False):
+        p = np.array([np.interp(s, G['cum'], G['P'][:, 0]), np.interp(s, G['cum'], G['P'][:, 1])])
+        F = float(np.interp(s, G['cum'], G['f']))
+        _, _, _, _, dv = _gal_cols(G, np.array([p[0]]), np.array([p[1]])); dv = dv[0]
+        nx_, ny_ = -dv[1], dv[0]
+        for sg in (-1.0, 1.0):
+            cx_, cy_ = p[0] + nx_ * sg * (FR_U - 4.2), p[1] + ny_ * sg * (FR_U - 4.2)       # 4.5-u log: its outer side 0.3 u into the wall
+            tim.append(_log((cx_, cy_, F - 3.0), (cx_ + rng.uniform(-0.6, 0.6), cy_ + rng.uniform(-0.6, 0.6), F + FR_TOP - 8.0), 4.5))
+        tim.append(_beam((p[0], p[1], F + FR_TOP - 4.0), (nx_, ny_), (FR_U + 5.0, 4.5, 4.2)))
+        return p, F, dv
+    for G in G_:
+        for s in G['frames']: frame_at(G, s)
+    for m in t['mouths']:
+        G = G_[m['gi']]; ps = []
+        for s in m['frames']: ps.append(frame_at(G, s))
+        for (pa_, Fa, dv), (pb_, Fb, _) in zip(ps[:-1], ps[1:]):                          # lagging between neighbouring frames
+            nx_, ny_ = -dv[1], dv[0]
+            for sg in (-1.0, 1.0):
+                for hz in np.arange(10.0, FR_TOP - 12.0, 9.5):
+                    a_ = (pa_[0] + nx_ * sg * (FR_U - 0.6), pa_[1] + ny_ * sg * (FR_U - 0.6), Fa + hz); b_ = (pb_[0] + nx_ * sg * (FR_U - 0.6), pb_[1] + ny_ * sg * (FR_U - 0.6), Fb + hz)
+                    mid = ((a_[0] + b_[0]) / 2, (a_[1] + b_[1]) / 2, (a_[2] + b_[2]) / 2 + rng.uniform(-0.6, 0.6))
+                    ln = math.hypot(b_[0] - a_[0], b_[1] - a_[1]) / 2 + 3.0
+                    bm = P.box((mid[0] - ln, mid[1] - 1.1, mid[2] - 4.2), (mid[0] + ln, mid[1] + 1.1, mid[2] + 4.2), mat=TIMBER)
+                    tim.append(P.rotate_z(bm, math.degrees(math.atan2(dv[1], dv[0])), (mid[0], mid[1], 0.0)))
+            for off in np.arange(-FR_U + 4.0, FR_U - 3.0, 8.6):                            # roof boards across the caps
+                mid = ((pa_[0] + pb_[0]) / 2 + nx_ * off, (pa_[1] + pb_[1]) / 2 + ny_ * off, (Fa + Fb) / 2 + FR_TOP + 0.6)
+                ln = math.hypot(pb_[0] - pa_[0], pb_[1] - pa_[1]) / 2 + 4.0
+                bm = P.box((mid[0] - ln, mid[1] - 4.0, mid[2] - 1.1), (mid[0] + ln, mid[1] + 4.0, mid[2] + 1.1), mat=TIMBER)
+                tim.append(P.rotate_z(bm, math.degrees(math.atan2(dv[1], dv[0])), (mid[0], mid[1], 0.0)))
+        # treads: from the outer end of the cut to the framed entrance, a log every ~26 u where the floor climbs
+        inw = m['inward']; s0 = m['s_p'] - inw * 56.0; s1 = m['s_m'] + inw * 72.0
+        s_leash = float(m['s_p']) + inw * 48.0
+        for s in np.arange(min(s0, s1) + 10.0, max(s0, s1) - 6.0, 26.0):
+            if abs(s - s_leash) < 22.0: continue                    # no tread under the leash target (mv_tunnel_N) and its standing hull
+            F0 = float(np.interp(s - 8, G['cum'], G['f'])); F1 = float(np.interp(s + 8, G['cum'], G['f']))
+            if abs(F1 - F0) / 16.0 < 0.18: continue
+            p = np.array([np.interp(s, G['cum'], G['P'][:, 0]), np.interp(s, G['cum'], G['P'][:, 1])]); F = float(np.interp(s, G['cum'], G['f']))
+            _, _, _, _, dv = _gal_cols(G, np.array([p[0]]), np.array([p[1]])); dv = dv[0]; nx_, ny_ = -dv[1], dv[0]
+            hw = 26.0 if any(sa <= s <= sb for sa, sb in G['spans']) else 22.0
+            tim.append(_log((p[0] - nx_ * hw, p[1] - ny_ * hw, F + 0.6), (p[0] + nx_ * hw, p[1] + ny_ * hw, F + 0.6 + rng.uniform(-0.8, 0.8)), 3.4))
+    # one mesh per mouth area and one for the rest (closed shells)
+    if tim:
+        sh = P.merge(*tim)
+        W.shape(sh, smoothing=35.0)
+    # ---- lamps (unshadowed, baked): along the galleries, two in the chamber, one under each entrance's inner cap
     for (x, y, z) in t['lamps']: W.lamp(x, y, z, 380, rng_=170.0)
-    ch = L.TUNNEL_CHAMBER; fch = t['f_ch']
     for dx, dy in ((-50, 30), (50, -30)): W.lamp(ch[0] + dx, ch[1] + dy, fch + TUN_CH_H - 16, 620, '255 180 104', 190.0)
+    for m in t['mouths']:
+        G = G_[m['gi']]; s = m['frames'][-1]
+        W.lamp(float(np.interp(s, G['cum'], G['P'][:, 0])), float(np.interp(s, G['cum'], G['P'][:, 1])), float(np.interp(s, G['cum'], G['f'])) + FR_TOP - 16.0, 300, rng_=150.0)
     # the chamber: caches, cots, a radio table; placed on the floor (z given: the terrain above is not their ground)
     def tp(name, dx, dy, yaw, n=1):
         x, y = ch[0] + dx, ch[1] + dy
         for k in range(n):
             lo, hi = W.B(S.mv(name))
-            W.prop(name, x, y, fch + k * hi[2], yaw + rng.uniform(-5, 5), check=k == 0, pad=1.0, tag='tunnel')
+            if W.prop(name, x, y, fch + k * hi[2], yaw + rng.uniform(-5, 5), check=k == 0, pad=1.0, tag='tunnel') is None: break     # no crate on thin air (playtest 1)
     for (nm, dx, dy, yaw, n) in (('rocket_crate', -70, 60, 20, 2), ('rocket_crate', -78, 12, 95, 1), ('ammo_crate', 60, 70, 0, 3), ('ammo_crate', 84, 40, 80, 2),
                                  ('rice_basket', 20, 88, 0, 1), ('rice_basket', -14, 92, 0, 1), ('water_jar', -88, -30, 0, 1), ('cot', 70, -40, 60, 1),
                                  ('cot', 30, -78, 20, 1), ('plot_table_t', -30, -70, 200, 1), ('radio_prc25', 96, 0, 0, 1), ('rucksack', -50, -40, 0, 1),
                                  ('ammo_can', 40, 20, 30, 1), ('jerry_can', -96, 30, 0, 1)):
         tp(nm, dx, dy, yaw, n)
-    # portals: an arch where the roof starts, vines over it, the leash target inside the mouth
+    # ---- the mouths: leash targets, keep-outs; vines and roots hanging over the earth lip above each entrance frame; ferns on the lip;
+    # a root tangle half buried in the bigger spoil heap
     for k, m in enumerate(t['mouths']):
         W.sites['tunnels'].append(m['inside'])
         W.keep(m['pos'][0], m['pos'][1], 70.0, name='tunnel')
-        if m['arch'] is not None:
-            ax, ay, az, yaw = m['arch']
-            a = P.arch((ax, ay, az - 2.0), 2 * L.TUNNEL_HW - 6.0, TUN_H - 2.0, 14.0, thickness=12.0, segments=8, axis='y', mat=DIRT)
-            W.shape(P.rotate_z(a, yaw, (ax, ay, 0.0)), smoothing=50.0)       # axis 'y' = passage along x: turn it by the gallery heading (12 Nov review: it was yaw - 90, the legs stood in the passage)
-            W.keep(ax, ay, 60.0, name='tunnel')
-    # keep trees and dressing off the open cuts
-    for i, j in zip(*np.nonzero(openc[::2, ::2])):
-        W.keep(gx[2 * i] + 16, gy[2 * j] + 16, 30.0, z=float(TZ[2 * i, 2 * j]), name='tunnel')
+        G = G_[m['gi']]; s = m['frames'][0] - m['inward'] * 4.6
+        mx_, my_ = float(np.interp(s, G['cum'], G['P'][:, 0])), float(np.interp(s, G['cum'], G['P'][:, 1]))
+        ox, oy = -m['dir'][0], -m['dir'][1]
+        zl = float(Hm(np.array([mx_ + ox * 2]), np.array([my_ + oy * 2]))[0])
+        if zl - (float(np.interp(s, G['cum'], G['f'])) + FR_TOP) > 6.0:
+            W.prop('vine_drape', mx_ + ox * 1.0, my_ + oy * 1.0, zl - 1.0, math.degrees(math.atan2(oy, ox)) - 90.0, scale=(0.62, 1.0, (zl - float(np.interp(s, G['cum'], G['f'])) - 76.0) / 153.0),
+                   solid='0', reg=False, tag='hanging')
+        for j in range(5):
+            a_ = rng.uniform(0, 2 * math.pi); r_ = rng.uniform(70.0, 120.0); fx_, fy_ = m['pos'][0] + r_ * math.cos(a_), m['pos'][1] + r_ * math.sin(a_)
+            dax = min(_gal_cols(G2, np.array([fx_]), np.array([fy_]))[0][0] for G2 in G_)
+            if dax < 62.0: continue
+            dv_ = np.hypot(V[:, 0] - fx_, V[:, 1] - fy_); nv_ = dv_ < 9.0                # on the cut-out's own mesh (the lip is rounded below the terrain)
+            zf_ = float(V[nv_, 2].max()) if nv_.any() else float(Hm(np.array([fx_]), np.array([fy_]))[0])
+            W.prop(None, fx_, fy_, zf_ - 1.5, rng.uniform(0, 360), stock=S.FERNS[rng.randint(len(S.FERNS))], solid='0', reg=False, scale=rng.uniform(0.9, 1.3),
+                   tag='tunnel lip' if abs(zf_ - gz(fx_, fy_)) > 6.0 else None)
+    for (cx_, cy_, ox, oy, along, across, hh) in t['heaps'][::2]:
+        W.prop('root_tangle', cx_ - ox * 20.0, cy_ - oy * 20.0, float(Hm(np.array([cx_]), np.array([cy_]))[0]) + hh * 0.6 - 30.0, math.degrees(math.atan2(oy, ox)),
+               solid='0', reg=False, tag='roots')
+    # keep trees and dressing off the cut-out
+    hb = t['region']; bx0, by0 = t['reg_origin']
+    for i, j in zip(*np.nonzero(hb)):
+        x_, y_ = (i + bx0) * 32.0 + 16.0, (j + by0) * 32.0 + 16.0
+        W.keep(x_, y_, 18.0, z=float(Hm(np.array([x_]), np.array([y_]))[0]), name='tunnel')
     x0, y0, z0, x1, y1, z1 = t['box']
     W.clone('env_combined_light_probe_volume', ((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2), box_mins='%g %g %g' % (-(x1 - x0) / 2, -(y1 - y0) / 2, -(z1 - z0) / 2 - 8),
             box_maxs='%g %g %g' % ((x1 - x0) / 2, (y1 - y0) / 2, (z1 - z0) / 2 + 8), voxel_size='32.0', targetname='tunnel_probe', indoor_outdoor_level='2')
-    G.hint((x0, y0, z0 - 16, x1, y1, z1 + 8), 'Low', W.group)
-    print('tunnels: %d cells (%d open), %d faces, %d lamps, %d terrain holes' % (occ.sum(), openc.sum(), len(faces), len(t['lamps']) + 2, len(t['holes'])))
+    import vmapgen as VG
+    VG.hint((x0, y0, z0 - 16, x1, y1, z1 + 8), 'Low', W.group)
+    print('tunnels: %d mesh faces (%d terrain cells cut), %d timber pieces, %d lamps, %d frames' % (nb, len(t['holes']), len(tim), len(t['lamps']) + 5,
+                                                                                                   sum(len(G2['frames']) for G2 in G_) + 3 * len(t['mouths'])))
+
+
+def ndimage_edt(mask):
+    """distance (in cells) from each cell inside the mask to the nearest cell outside it"""
+    from scipy import ndimage
+    return ndimage.distance_transform_edt(np.pad(mask, 1))[1:-1, 1:-1]
 
 
 # ================================================================ CT firebase
@@ -791,8 +1190,8 @@ def firebase():
     # ---- ammo point: CONEXes and crate stacks behind a low wall
     ax, ay = fb['ammo']
     W.prop('conex', ax, ay, None, 200.0); W.prop('conex', ax + 6, ay + 88, None, 196.0)
-    for (dx, dy, n) in ((-90, 0, 3), (-92, 46, 2), (-88, 92, 3), (-140, 30, 2)): W.stack('ammo_crate', ax + dx, ay + dy, rng.uniform(-10, 10), n, jitter=rng)
-    W.bag_line((ax - 180, ay - 90), (ax - 180, ay + 140), layers=2); W.bag_line((ax - 140, ay - 96), (ax + 70, ay - 96), layers=2)
+    for (dx, dy, n) in ((-90, 0, 3), (-92, 46, 2), (-88, 92, 3), (-132, 30, 2)): W.stack('ammo_crate', ax + dx, ay + dy, rng.uniform(-10, 10), n, jitter=rng)     # playtest 1: the last stack 8 u east, against the new battered wall, not in it
+    W.bag_line((ax - 176, ay - 90), (ax - 176, ay + 140), layers=2); W.bag_line((ax - 140, ay - 96), (ax + 70, ay - 96), layers=2)      # playtest 1: 4 u east (the new wall is 30 thick at its base): ~8 u clear of the FDC bunker and the crates
     clutter(rng, [('ammo_can', 6), ('jerry_can', 2), ('drum_od', 2), ('ammo_crate', 3)], ax - 80, ay + 40, 30.0, 150.0)
     # ---- pads: PSP planking, the pad sign; helicopters come with the entities
     for k, (p, a) in enumerate(zip(fb['pads'], fb['pad_angles'])):
@@ -885,7 +1284,9 @@ def firebase():
     # wire with the old fill taken out of the scene) and joined with the pass 2 cells (build 3: the new cells alone left the pass 2 remnant
     # pockets open again in the south-west yard). New cells: the ammo point's yard behind its crate stacks, the foot of the tower ladder,
     # one cell by pit 3 and two by the east bunker; build 4's three remnant cells (two in the south-west yard, one at the ladder foot)
-    POCKET_FILL = [[2880, -3056, 2896, -3040, 620], [2896, -3280, 2912, -3264, 620], [2896, -3056, 2912, -3040, 620], [2912, -3312, 2928, -3264, 620], [2912, -3216, 2928, -3200, 620], [2912, -3040, 2928, -3024, 620], [2928, -3360, 2944, -3264, 620], [2928, -3216, 2944, -3200, 620], [2928, -3040, 2944, -3024, 620], [2944, -3392, 2960, -3264, 620], [2944, -3040, 2960, -3024, 620], [2960, -3408, 2976, -3264, 620], [2960, -3216, 2976, -3200, 620], [2976, -3392, 2992, -3264, 620], [2992, -3376, 3008, -3296, 620], [2992, -3264, 3008, -3248, 620], [2992, -3200, 3008, -3184, 620], [3008, -3376, 3024, -3248, 620], [3024, -3360, 3040, -3232, 620], [3040, -3344, 3056, -3232, 620], [3056, -3344, 3072, -3248, 620], [3056, -3216, 3072, -3184, 620], [3072, -3328, 3088, -3216, 620], [3088, -3632, 3104, -3616, 620], [3088, -3328, 3104, -3216, 620], [3104, -3360, 3120, -3296, 620], [3120, -3376, 3136, -3344, 620], [3136, -3408, 3152, -3376, 620], [3152, -3424, 3168, -3408, 620], [3200, -3552, 3216, -3536, 620], [3600, -3776, 3616, -3744, 620], [3616, -3760, 3632, -3744, 620], [3632, -3760, 3648, -3744, 620], [3664, -3776, 3680, -3760, 620], [3968, -2928, 3984, -2848, 620], [3984, -2928, 4000, -2912, 620], [3984, -2880, 4000, -2848, 620], [4000, -2928, 4016, -2912, 620], [4016, -2928, 4032, -2880, 620], [4016, -2800, 4032, -2784, 620], [4032, -2928, 4048, -2880, 620], [4032, -2800, 4048, -2784, 620], [4048, -2928, 4064, -2880, 620], [4048, -2800, 4064, -2784, 620], [4064, -2928, 4080, -2912, 620], [4096, -3536, 4112, -3520, 620], [4864, -3136, 4880, -3104, 620], [2944, -3216, 2960, -3200, 620], [2976, -3200, 2992, -3184, 620], [3648, -3776, 3664, -3760, 620]]
+    POCKET_FILL = [[2880, -3056, 2896, -3040, 620], [2896, -3280, 2912, -3264, 620], [2896, -3056, 2912, -3040, 620], [2912, -3312, 2928, -3264, 620], [2912, -3216, 2928, -3200, 620], [2912, -3040, 2928, -3024, 620], [2928, -3360, 2944, -3264, 620], [2928, -3216, 2944, -3200, 620], [2928, -3040, 2944, -3024, 620], [2944, -3392, 2960, -3264, 620], [2944, -3040, 2960, -3024, 620], [2960, -3408, 2976, -3264, 620], [2960, -3216, 2976, -3200, 620], [2976, -3392, 2992, -3264, 620], [2992, -3376, 3008, -3296, 620], [2992, -3264, 3008, -3248, 620], [2992, -3200, 3008, -3184, 620], [3008, -3376, 3024, -3248, 620], [3024, -3360, 3040, -3232, 620], [3040, -3344, 3056, -3232, 620], [3056, -3344, 3072, -3248, 620], [3056, -3216, 3072, -3184, 620], [3072, -3328, 3088, -3216, 620], [3088, -3632, 3104, -3616, 620], [3088, -3328, 3104, -3216, 620], [3104, -3360, 3120, -3296, 620], [3120, -3376, 3136, -3344, 620], [3136, -3408, 3152, -3376, 620], [3152, -3424, 3168, -3408, 620], [3200, -3552, 3216, -3536, 620], [3600, -3776, 3616, -3744, 620], [3616, -3760, 3632, -3744, 620], [3632, -3760, 3648, -3744, 620], [3664, -3776, 3680, -3760, 620], [3968, -2928, 3984, -2848, 620], [3984, -2928, 4000, -2912, 620], [3984, -2880, 4000, -2848, 620], [4000, -2928, 4016, -2912, 620], [4016, -2928, 4032, -2880, 620], [4016, -2800, 4032, -2784, 620], [4032, -2928, 4048, -2880, 620], [4032, -2800, 4048, -2784, 620], [4048, -2928, 4064, -2880, 620], [4048, -2800, 4064, -2784, 620], [4064, -2928, 4080, -2912, 620], [4096, -3536, 4112, -3520, 620], [4864, -3136, 4880, -3104, 620], [2944, -3216, 2960, -3200, 620], [2976, -3200, 2992, -3184, 620], [3648, -3776, 3664, -3760, 620], [3040, -3232, 3056, -3216, 620], [3056, -3248, 3072, -3232, 620], [3056, -3232, 3072, -3216, 620], [2992, -3296, 3008, -3280, 620], [2992, -3280, 3008, -3264, 620], [3104, -3616, 3120, -3600, 620], [3120, -3600, 3136, -3584, 620], [3504, -3472, 3520, -3456, 620]]
+    # playtest 1: the new full-height sandbag walls (thicker, battered) left 4 small pockets by the quad .50's ammo stack, its drum, the
+    # latrine and pit 2's ring end (check_play pocket_list cells, build 1); their cells are filled too
     for (x0_, y0_, x1_, y1_, z_) in POCKET_FILL:
         W.clip(P.box((x0_ + 6.0, y0_ + 6.0, z_ - 6.0), (x1_ - 6.0, y1_ - 6.0, z_ + 200.0), mat=TER.CLIP))
     # pass 3 review: the gate. Two of the items the wire has no room for stand outside it, on the flat apron south of the road where it
@@ -1322,6 +1723,10 @@ def village():
 def temple():
     rng = np.random.RandomState(4114)
     c = L.TEMPLE; z0 = gz(*c)
+    def drape(x, y, z, yaw, width, hang):
+        """playtest 1: a vine drape whose top lies on a real edge at z (vine_drape: 96 wide, hangs 153 u at scale 1; its local +y is the
+        way the face looks, so yaw = the face's outward direction - 90)"""
+        return W.prop('vine_drape', x, y, z, yaw, scale=(width / 96.0, 1.0, hang / 153.0), solid='0', reg=False, tag='hanging')
     t1, t2 = 28.0, 64.0                                      # terrace tops above the knoll
     # world geometry: the lower terrace (courtyard), the upper terrace (tower base) and stairs on every side
     HT = 340.0
@@ -1342,6 +1747,9 @@ def temple():
     W.shape(P.box((c[0] - 80.0, gy1_ - 4.0, -70.0), (c[0] + 80.0, c[1] - HT - run + 90.0, zl), mat=STONE))   # under the stair's lower steps
     W.shape(P.stairs((c[0] - 110.0 - frun, gy0_, -70.0), (c[0] - 110.0, gy1_, zl), 25, rise='+x', mat=STONE, tread_mat=STONE_TOP))
     W.shape(P.stairs((c[0] + 110.0, gy0_, -70.0), (c[0] + 110.0 + frun, gy1_, zl), 25, rise='-x', mat=STONE, tread_mat=STONE_TOP))
+    # playtest 1: the river channel is CHANNEL_D deep now: the ghat stands on stone footings down to under the bed (at -70 it floated)
+    zf_ = L.WATER_Z - L.CHANNEL_D - 40.0
+    W.shape(P.box((c[0] - 110.0 - frun, gy0_, zf_), (c[0] + 110.0 + frun, gy1_, -70.0), mat=STONE))
     W.surface(c[0] - 110.0, gy0_, c[0] + 110.0, gy1_, zl)
     for x in np.arange(-110.0 - frun + 20.0, 110.0 + frun, 40.0):
         for y in (gy0_ + 20.0, gy0_ + 60.0, gy0_ + 100.0): W.keep(c[0] + x, y, 22.0, z=zl, name='stairs')
@@ -1422,7 +1830,10 @@ def temple():
             if k < 3: arch.append(gy_)
     if len(arch) == 3:
         W.shape(ME.noise(ME.subdivide(P.box((px_ - 17.0, c[1] + arch[0] - 18.0, zc + 146.0), (px_ + 17.0, c[1] + arch[-1] + 18.0, zc + 168.0), mat=STONE_TOP), 1), 1.5, 30.0, 31))
-        W.prop('vine_curtain', px_ + 18.0, c[1] + (arch[0] + arch[-1]) / 2, zc + 120.0, 0.0, scale=(0.7, 1.0, 0.75), solid='0', reg=False, tag='platform')
+        # playtest 1 (p7): vines hang over both faces of the architrave between the pillars (they start on its top, zc + 168)
+        for (gy_, hang_) in (((arch[0] + arch[1]) / 2, 96.0), ((arch[1] + arch[2]) / 2, 70.0)):
+            drape(px_ + 17.0, c[1] + gy_, zc + 168.0, -90.0, 54.0, hang_)
+            drape(px_ - 17.0, c[1] + gy_ + 6.0, zc + 168.0, 90.0, 46.0, hang_ * 0.8)
     # statuary: lions at the head of the tower stair; a lion pair at the foot of the north, east and west stairs looking out; naga
     # balustrades flanking the north causeway down the knoll
     nst_ = 0
@@ -1479,7 +1890,11 @@ def temple():
             if kind == 'root_wall':
                 W.prop(None, x_, y_, gz(x_, y_) - 2.0, rng.uniform(0, 360), stock=S.ROOTS[rng.randint(2)], solid='0', reg=False, tag='roots')
             elif rng.uniform() < 0.6:
-                W.prop('vine_curtain', x_ + nrm[0] * 21.0, y_ + nrm[1] * 21.0, gz(x_, y_) + 6.0, yw_ + 90.0, scale=(0.6, 1.0, 0.55), solid='0', reg=False, tag='slope')
+                # playtest 1 (p7): over the outer face of the wall's coping (laterite body +-15, coping block +-18 from z 104 to 110
+                # over the prop's origin), hanging to the footing
+                zw_ = W.last_z + 110.0; t_ = rng.uniform(-50.0, 50.0)
+                drape(x_ + nrm[0] * 18.0 + tdir[0] * t_, y_ + nrm[1] * 18.0 + tdir[1] * t_, zw_, math.degrees(math.atan2(nrm[1], nrm[0])) - 90.0,
+                      rng.uniform(50.0, 80.0), rng.uniform(70.0, 98.0))
     for (fx_, fy_) in falls:      # rubble fields: clusters, not a scatter
         for j in range(rng.randint(3, 6)):
             a_ = rng.uniform(0, 2 * math.pi); r_ = rng.uniform(10.0, 90.0); x_, y_ = fx_ + r_ * math.cos(a_), fy_ + r_ * math.sin(a_)
@@ -1520,9 +1935,34 @@ def temple():
     print('temple pass 2: %d pillars, %d stair lions, %d causeway nagas, %d enclosure pieces (%d split by roots)' % (npil, nst_, nn_, nw_, nroot))
     # ruin dressing on the terrace: fallen lintels and block piles against the upper terrace and in the corners (cover), vines on the
     # tower and the gate, roots over the terrace edge
-    for (dx, dy, yw) in ((0.0, -40.0, 0.0), (150.0, 120.0, 90.0), (-150.0, 120.0, 90.0), (0.0, 280.0, 0.0)):       # lianas down the tower faces
-        W.prop('vine_curtain', c[0] + dx, c[1] + dy, zu + 150.0, yw, solid='0', reg=False, tag='platform')
-    for (dx, yw) in ((-150.0, 0.0), (150.0, 0.0)): W.prop('vine_curtain', c[0] + dx, c[1] - 262.0, zc + 40.0, yw, solid='0', reg=False, tag='platform')
+    # playtest 1 (p7): the lianas round the tower and the gate hung from their own bent bar in mid air (vine_curtain 40-160 u off the
+    # stone). They now hang from real edges of the two props (p_temple.khmer_tower / khmer_gate, measured from their generators):
+    # tower (at c + (0, 120), yaw -90): the cella cornice top at z 186 (edge 116 out) on the north, east and west faces, over the corner
+    # piers and clear of the false-door pediments (+-55 about each face centre) and the strangler-fig roots on the north-east corner
+    tx_, ty_ = c[0], c[1] + 120.0
+    for (ax_, ay_, yw_, lat_) in ((0.0, 1.0, 0.0, -80.0), (0.0, 1.0, 0.0, 74.0), (1.0, 0.0, -90.0, -80.0), (-1.0, 0.0, 90.0, 80.0), (-1.0, 0.0, 90.0, -76.0)):
+        if (ax_, ay_, lat_) == (0.0, 1.0, 74.0): continue                     # the roots run down that corner
+        x_ = tx_ + ax_ * 116.5 + (lat_ if ay_ else 0.0); y_ = ty_ + ay_ * 116.5 + (lat_ if ax_ else 0.0)
+        drape(x_, y_, zu + 186.0, yw_, rng.uniform(40.0, 52.0), rng.uniform(110.0, 150.0))
+    # gate (at c + (0, -290), yaw -90 = its build frame: spans x, faces +-y): the cornice top at z 172 (37 u out) over both piers, both
+    # faces; the laterite wall stubs' coping at z 105 (18 u out)
+    gx_, gy_ = c[0], c[1] - 290.0
+    for sy_ in (1.0, -1.0):
+        for sx_ in (1.0, -1.0):
+            drape(gx_ + sx_ * rng.uniform(70.0, 90.0), gy_ + sy_ * 37.5, zc + 172.0, 0.0 if sy_ > 0 else 180.0, rng.uniform(36.0, 46.0), rng.uniform(96.0, 134.0))
+        drape(gx_ + 132.0, gy_ + sy_ * 18.5, zc + 105.0, 0.0 if sy_ > 0 else 180.0, 38.0, rng.uniform(60.0, 88.0))
+        drape(gx_ - 131.0, gy_ + sy_ * 18.5, zc + 105.0, 0.0 if sy_ > 0 else 180.0, 36.0, rng.uniform(60.0, 88.0))
+    # the courtyard platform's outer face (top zc, faces at c +- 340): over the edge wherever the ground below is at least 50 u down,
+    # clear of the stairs (+-80 about each axis) and the corner roots
+    for side, (ux, uy) in enumerate(((1, 0), (0, 1), (-1, 0), (0, -1))):
+        nx_, ny_ = uy, -ux                                                    # outward normal of that edge
+        for t in (-230.0, -150.0, 150.0, 235.0):
+            if rng.uniform() < 0.35: continue
+            t_ = t + rng.uniform(-20.0, 20.0)
+            x_, y_ = c[0] + nx_ * HT + ux * t_, c[1] + ny_ * HT + uy * t_
+            drop_ = zc - gz(x_ + nx_ * 12.0, y_ + ny_ * 12.0)
+            if drop_ < 50.0: continue
+            drape(x_ + nx_ * 0.5, y_ + ny_ * 0.5, zc, math.degrees(math.atan2(ny_, nx_)) - 90.0, rng.uniform(56.0, 84.0), min(drop_ - 8.0, rng.uniform(90.0, 150.0)))
     for (dx, dy) in ((-HT, -HT), (HT, -HT), (HT, HT), (-HT, HT), (-HT, 180.0), (HT, -200.0), (120.0, HT), (-200.0, -HT)):   # roots gripping the platform edge
         W.prop(None, c[0] + dx, c[1] + dy, zc - 26.0, rng.uniform(0, 360), stock=S.ROOTS[rng.randint(2)], solid='0', reg=False, tag='roots')
     for a in (20.0, 70.0, 110.0, 160.0, 200.0, 250.0, 290.0, 340.0):
@@ -1616,7 +2056,8 @@ def waterfall():
     for sg in (-1, 1):                     # rock curbs along both sides of the lip: the sheet's long edges end in them, not in the air
         W.shape(ME.noise(ME.subdivide(P.box((x - 30.0, y + sg * 206.0 - 18.0, wz - 18.0), (x + CUR + 4.0, y + sg * 206.0 + 18.0, wz + 12.0), mat=TER.BLEND_ROCK), 1), 2.5, 40.0, 21 + sg), paint=lambda p: 0.2)
     shelf_z = L.WATER_Z + 10.0
-    W.shape(P.box((x + 22.0, y - 240.0, L.WATER_Z - 60.0), (x + 100.0, y + 240.0, shelf_z), mat=TER.BLEND_ROCK), paint=lambda p: 0.3)
+    # playtest 1: down to under the plunge pool's new bed (the channel is CHANNEL_D deep now; at WATER_Z - 60 the shelf floated over it)
+    W.shape(P.box((x + 22.0, y - 240.0, L.WATER_Z - L.CHANNEL_D - 50.0), (x + 100.0, y + 240.0, shelf_z), mat=TER.BLEND_ROCK), paint=lambda p: 0.3)
     W.surface(x + 22.0, y - 240.0, x + 100.0, y + 240.0, shelf_z)
     W.sites['waypoints'].append(('behind the waterfall', x + 62.0, y, shelf_z))
     for dy in (-280.0, 280.0): W.prop(None, x + 60.0, y + dy, gz(x + 60.0, y + dy) - 1.0, rng.uniform(0, 360), stock=S.FERNS[rng.randint(len(S.FERNS))], solid='0', reg=False, scale=1.3)      # at the shelf ends, not under the lip
@@ -1672,8 +2113,11 @@ def marsh():
             px = rng.uniform(L.MARSH_X0 - 300.0, L.MAP_X - 120.0); py = float(L.river_y(px)) + rng.uniform(-1000, 1000); g = gz(px, py)
             if not (L.WATER_Z + zlo < g < L.WATER_Z + zhi): continue
             tr = M.TRUNK.get(model)
-            if W.prop(None, px, py, g - 3.0, rng.uniform(0, 360), stock=model, solid='0', scale=rng.uniform(sc0, sc1), trunk=tr if tr is not None else 36.0, check=True, pad=20.0,
-                      reg=tr is not None) is not None: k += 1
+            # playtest 1: the banks are steeper since the channel is deeper: stand on the coarse terrain mesh's low side (as the nypa
+            # palms of the understorey since pass 4), never on the smooth field over it
+            zt_ = min(g, float(TER.mesh_low(px, py)[0])) - 3.0
+            if W.prop(None, px, py, zt_, rng.uniform(0, 360), stock=model, solid='0', scale=rng.uniform(sc0, sc1), trunk=tr if tr is not None else 36.0, check=True, pad=20.0,
+                      reg=tr is not None, tag='rooted in slope' if zt_ < g - 7.5 else None) is not None: k += 1
         nm_ += k
     print('marsh: %d reeds, %d dead trees, %d mangroves / nypa palms' % (n, nd, nm_))
 
@@ -1892,7 +2336,9 @@ def jungle():
         for (x, y) in TI.scatter_density(F.like(damp), spacing=110.0, seed=7, limit=700):
             if float(L.slope(x, y)) > 36.0 or gz(x, y) < L.WATER_Z + 10.0 or not W.free(x, y, 10.0): continue
             m = rav[rng.randint(len(rav))]
-            W.prop(None, float(x), float(y), gz(x, y) - 2.5, rng.uniform(0, 360), stock=m, solid='0', reg=False, scale=rng.uniform(0.8, 1.15)); cnt['ravine'] += 1
+            z_ = min(gz(x, y), float(TER.mesh_low(x, y)[0])) - 2.5        # on the terrain mesh's low side (the ravine banks are steep)
+            W.prop(None, float(x), float(y), z_, rng.uniform(0, 360), stock=m, solid='0', reg=False, scale=rng.uniform(0.8, 1.15),
+                   tag='rooted in slope' if z_ < gz(x, y) - 7.5 else None); cnt['ravine'] += 1
     # ---- elephant grass fields on the floodplain and terraces (cover from the air)
     X, Y = grid(66.0, jit=0.48)
     m_ = L.in_play(X, Y) & (L.water_dist(X, Y) < 2900.0)

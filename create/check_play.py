@@ -45,6 +45,9 @@ of the graph ("open" state) and added back as extra blocked nodes ("closed" stat
                  nav route is over Adapter.nav_detour x the walking route of the same label (1b)
     --nav-plan   check 9 with the boxes Adapter.planned_navboxes(sc) returns (the markup the generator would write now) instead of
                  the vmap's: a markup change measured before the map is regenerated
+ H spawn hull     every Adapter.hull_points point: a standing player hull (Adapter.hull_size, from hull_dz over the origin) touches no
+                 terrain, world mesh, player clip, solid prop hull or trunk (a separating-axis triangle / box test). From mg_monsoon
+                 playtest 1: a spawn inside a berm's player clip passed check 1, which joins a point to any walk node within 40 u
  project checks  Adapter.extra_checks(ctx): [(id, title, fn(ctx) -> dict(result, fail, warn, lines))]
 Exit code 1 when a check fails. Numbers go to Adapter.out_json (or --json).
 """
@@ -164,6 +167,9 @@ class Adapter:
     def water_edge_ok(self, x, y, z): return False
     def hole_ok(self, x, y): return False
     def extra_checks(self, ctx): return []
+    def hull_points(self, ctx): return []       # (name, x, y, z): teleport destinations (spawns, seats); check H stands a player hull there
+    hull_size = (32.0, 32.0, 72.0)              # standing player (width, depth, height); the hull starts hull_dz over the point's origin
+    hull_dz = 0.5
 
 
 # ================================================================ geometry sources
@@ -577,6 +583,25 @@ def cell_of(x, y):
 
 def cell_xy(c):
     return X0 + (c // NY + 0.5) * CELL, Y0 + (c % NY + 0.5) * CELL
+
+
+def tri_box(T, lo, hi):
+    """per triangle of T (N, 3, 3): does it intersect the box lo..hi (separating axis test: box axes, face normal, 9 edge crosses)"""
+    lo = np.asarray(lo, float); hi = np.asarray(hi, float)
+    c = (lo + hi) / 2; h = (hi - lo) / 2
+    V = np.asarray(T, float) - c
+    out = np.ones(len(V), bool)
+    for a in range(3): out &= ~((V[:, :, a].min(1) > h[a]) | (V[:, :, a].max(1) < -h[a]))
+    E = (V[:, 1] - V[:, 0], V[:, 2] - V[:, 1], V[:, 0] - V[:, 2])
+    n = np.cross(E[0], E[1])
+    out &= np.abs((n * V[:, 0]).sum(1)) <= (np.abs(n) * h).sum(1)
+    for e in E:
+        for a in range(3):
+            ax = np.zeros(3); ax[a] = 1.0
+            Lx = np.cross(ax, e)
+            p = (V * Lx[:, None, :]).sum(2); rr = (np.abs(Lx) * h).sum(1)
+            out &= ~((p.min(1) > rr) | (p.max(1) < -rr))
+    return out
 
 
 def node_xyz(G, n):
@@ -1402,6 +1427,28 @@ def run(path, A, only=None, out_json=None, verbose=False, plot=None, box=None, n
             if gate['detours']: warn.append('bot nav detours over %.2f x the walking route: %s' % (A.nav_detour, '; '.join(gate['detours'])))
             if ne['areas'] and A.nav_target and ne['areas'] > A.nav_target: warn.append('nav estimate ~%d areas (target under %d)' % (ne['areas'], A.nav_target))
         lap('9')
+
+    # ---------------------------------------------------------------- H spawn hull
+    hp = A.hull_points(ctx)
+    if hp and want('H'):
+        T_ = sc['tris']; K_ = sc['kinds']; S_ = sc['srcs']; tmin = T_.min(1); tmax = T_.max(1)
+        w_, d_, h_ = A.hull_size; stuck = []
+        for (nm, x, y, z) in hp:
+            lo = np.array([x - w_ / 2, y - d_ / 2, z + A.hull_dz]); hi = np.array([x + w_ / 2, y + d_ / 2, z + A.hull_dz + h_])
+            cand = np.nonzero((tmax >= lo).all(1) & (tmin <= hi).all(1) & (K_ != K_WATER))[0]
+            hit = cand[tri_box(T_[cand], lo, hi)] if len(cand) else cand
+            what = set()
+            for i in hit:
+                s_ = int(S_[i])
+                what.add(props[s_]['model'].split('/')[-1] if s_ >= 0 else KIND_NAME.get(int(K_[i]), '?') + ' ' + sc['meshes'][-1 - s_]['mat'].split('/')[-1])
+            for (tx, ty, z0, z1, r, pi) in sc['trunks']:
+                if z0 < hi[2] and z1 > lo[2] and math.hypot(max(abs(tx - x) - w_ / 2, 0.0), max(abs(ty - y) - d_ / 2, 0.0)) < r: what.add('trunk')
+            if what: stuck.append((nm, [round(x), round(y), round(z)], sorted(what)))
+        res['H'] = dict(points=len(hp), stuck=stuck)
+        print('H spawn hull: %d points, %d with a player hull touching something solid' % (len(hp), len(stuck)))
+        for s_ in stuck[:14]: print('    %s at %s: %s' % (s_[0], s_[1], ', '.join(s_[2])))
+        if stuck: fails.append('spawn hull')
+        lap('H')
 
     # ---------------------------------------------------------------- project checks
     for (cid, title, fn) in A.extra_checks(ctx):
