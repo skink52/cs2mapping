@@ -1,7 +1,7 @@
 # mg_trenchwarfare build log 1: the remaster's first deploy and compile
 
-AI-generated (Claude) for skink52. **Template, to fill in from the logs themselves after the real compile** (remaster step 9;
-how to run each line: [BUILD.md](BUILD.md)). Until it is filled, the remaster is offline only: nothing deployed, compiled or played.
+AI-generated (Claude) for skink52. Filled from the logs themselves (remaster step 9; how to run each line: [BUILD.md](BUILD.md)). Level reached: **compiled**,
+not loaded in CS2 or played.
 Copy each compile log into `out/step9/logs/` before the next run overwrites it (`C:\source1\cs2port\logs\mg_trenchwarfare_*.log`).
 
 ## Before the compile (12 Nov 2026, filled)
@@ -49,58 +49,64 @@ would first be copied to `backups\deploy_<stamp>\maps\`. Free on C: 110 GB. Mode
 
 Old route: all zips in `cs2port\assets\tw` are in the unpack bat's applied list (the bat is inert while that list stays).
 
-## Commands and times (fill in)
+## Commands and times (12 Nov 2026)
 
 | # | What | Command | Time | Result |
 |---|---|---|---|---|
-| 1 | Chain + gate + dry run | `watchdog ... -- python -u tools/deploy_tw.py --chain` | | chain CRC32s, gate PASS/REFUSED |
-| 2 | Deploy | `python -u tools/deploy_tw.py --apply` | | N created, N replaced; map backup `backups\deploy_<stamp>\`; record `out/step9/deploy/mg_trenchwarfare_deploy_<stamp>.json` |
-| 3 | Asset dry run | `build_maps.ps1 -DryRun assets mg_trenchwarfare` | | N assets |
-| 4 | Asset compile, run 1 | `watchdog --label "tw assets" ... build_maps.ps1 assets mg_trenchwarfare` | | wrapper says ...; `RESOURCE COMPILE ERROR` count ...; log `out/step9/logs/assets_run1.log` |
-| 5 | Forced xml / css / js / svg | `resourcecompiler -f -i ...` | | each `N compiled, 0 failed`? |
-| 6 | Map compile | `watchdog --label "tw final" ... build_maps.ps1 final mg_trenchwarfare` | | `OK in N min`? log `out/step9/logs/build_run1.log` |
+| 1 | Chain + gate + dry run | `watchdog ... -- python -u tools/deploy_tw.py --chain` | 16:13-16:21 (442 s) | all 5 stages guarded PASS (sounds stage included); gate REFUSED on a check_play `separation` false alarm |
+| 1b | Gate + dry run after the check_play cache fix | `watchdog ... -- python -u tools/deploy_tw.py` | 113 s | gate PASS; 117 files, 148.1 MB |
+| 2 | Deploy | `python -u tools/deploy_tw.py --apply` | 16:33, 75 s | 86 created, 29 replaced, 2 same; map backup `backups\deploy_20261112_163314\`; record `out/step9/deploy/mg_trenchwarfare_deploy_20261112_163314.json` |
+| 4 | Asset compile | `watchdog --label "tw assets" ... build_maps.ps1 assets mg_trenchwarfare` | ~16:35-16:50 (waited for mg_monsoon's compile) | wrapper "assets OK"; the log agrees: every block `0 failed`, 0 `RESOURCE COMPILE ERROR`; 13 models compiled (all `_dyn` twins, gm_canon75, gun_75mm, howitzer_bl8, plane_dr1 + dyn, plane_spad7 + dyn, tank_a7v, tw_de_a); 31 sound files; log `out/step9/mg_trenchwarfare_assets.log` |
+| 5 | Forced xml / css / js / svg | `resourcecompiler -f -i ...` from `C:\source1\cs2port` | ~16:51 | 1 / 30 / 1 / 1 compiled, 0 failed each |
+| 6 | Map compile | `watchdog --label "tw final" ... build_maps.ps1 final mg_trenchwarfare` | ~16:52-17:41 (49.7 min) | `OK in 49.7 min - mg_trenchwarfare.vpk moved`; 407 compiled, 0 failed; log `out/step9/mg_trenchwarfare_build.log` |
+| 7 | Stale models | `resourcecompiler -f -i` wire_coil, wire_fence_a, wire_fence_b, ladder | after the map | 4 compiled, 0 failed; check_world check 7 now 0 stale |
 
-CS2 build number (console `version`): ...   CS2 tools mode closed throughout: yes / no   Working folder `C:\source1\cs2port`: yes / no
+CS2 tools mode closed throughout: yes (only the dedicated server `C:\cs2server` cs2.exe ran). Working folder `C:\source1\cs2port`: yes.
 
-## Map compile figures (fill in; tw34 of 29 Oct for comparison)
+## Map compile figures (tw34 of 29 Oct for comparison)
 
 | Figure | tw34 (29 Oct) | This build | Where in the log |
 |---|---|---|---|
-| Total time | 19 min | | `OK in N min` |
-| Lightmap resolution | 2048 | | `-lightmapMaxResolution`, the packer lines |
-| Charting N unique meshes | 24,754 | | `Charting` |
-| Packing N UV charts | 1.37 M | | `Packing` |
-| Nav areas | 44,160 | | the nav generation line (target < 5,000; patch_nav estimate about 1,470, factor ~2) |
-| DELETED entities | ? | | `DELETED` (must not name `mortar_*`, the 4 unlock blockers, `tw_crater_smoke_*`, `tw_rain*`) |
-| vpk size | ? | | `game\csgo_addons\mg_trenchwarfare\maps\mg_trenchwarfare.vpk` |
+| Total time | 19 min | 49.7 min (another session's compile shared the CPU part of the time; charting alone 424 s) | `OK in N min` |
+| Lightmap resolution | 2048 | 2048 (`final` preset; the packer did not ask for more) | packer lines |
+| Charting N unique meshes | 24,754 | 24,718 | `Charting` |
+| Packing N UV charts | 1.37 M | 1.40 M | `Packing` |
+| Nav areas | 44,160 | **10,269** (Recast 27,179 polys; NONAV removed ~5.6k; IslandRemoval 14,682 -> 10,269) | `>>NAVGEN` near line 20419 |
+| DELETED entities | ? | 0 | `DELETED` |
+| vpk size | 525 MB | 519.9 MB | game addon `maps/mg_trenchwarfare.vpk` |
 
-## Errors and warnings, before and after (fill in, one row per class, from the log)
+## Errors and warnings
 
-| Class | Run 1 | Last run | Example line | Cause | Status |
-|---|---|---|---|---|---|
-| `RESOURCE COMPILE ERROR` (models) | | | | | |
-| missing material (`referencing missing material`) | | | | | |
-| `LODGroupList` single group | | | | | |
-| panorama layout / css / js not compiled | | | | | |
-| sounds (wav -> vsnd) | | | | | |
-| `DELETED` at map compile | | | | | |
-| lightmap / vrad3 (out of memory, charts) | | | | | |
-| nav (area count, ladders) | | | | | |
-| wrapper exit status vs the log | | | | "assets OK" with failed models is the known lie | |
+| Class | Count | Example / cause | Status |
+|---|---|---|---|
+| `RESOURCE COMPILE ERROR` (models) | 0 | | clean |
+| missing material | 0 | | clean |
+| `LODGroupList` single group | 0 | | clean |
+| panorama layout / css / js not compiled | 0 | forced, all compiled | clean |
+| sounds (wav -> vsnd) | 0 failed | 31 wavs + soundevents | clean |
+| `DELETED` at map compile | 0 | mortars, blockers, smoke, rain all kept | clean |
+| lightmap / vrad3 | 0 errors | 1.40 M charts in 2048 | clean |
+| nav | `ClipPolysToHullClearanceInternal - too many non-reducing passes` (1) | 10,269 areas: 77 % fewer than tw34 but over the 5,000 target | being tightened (patch_nav pass 2) |
+| wrapper exit status vs the log | agree | | |
+| harmless noise | `scripts/detail_prop_types.vdata_c` not found | every build | ignore |
 
-## Fixed (fill in: tool changed, assets rebuilt, redeployed, recompiled)
+## Fixed
 
-- ...
+- check_play scene cache served a no-stage scene to a `--stage` run (false `separation` failure): `create/check_play.py` keys on path,
+  mtime_ns, code, adapter, grid and model roots.
+- 4 stale model compiles (wire_coil, wire_fence_a/b, ladder) recompiled after the map compile.
 
-## Remains (fill in)
+## Remains
 
-- ...
+- Nav at 10,269 areas (target < 5,000): the offline estimate (~1,470) was off by 7x; patch_nav pass 2 and a recompile.
+- check_world `singletons`: the user's duplicate `info_map_parameters` (M2 opt-in, waiting for the user).
+- Everything in [TESTING.md](TESTING.md): nothing has been loaded in CS2.
 
-## Post-compile checks (fill in)
+## Post-compile checks
 
-- [ ] nav area count recorded here and in REVIEW_SCRIPT_1 "Step 4"
-- [ ] lightmap at 2048, packer content, chart counts beside tw34's
-- [ ] `python tools/check_world.py` on the deployed map: check 7 `0 of ours not compiled`, no `stale`
-- [ ] no `DELETED` for our entities
-- [ ] `maps/scripts/mg_trenchwarfare.vjs_c`, `.vxml_c`, `.vcss_c` newer than the deploy
-- [ ] NOTES.md "Resume here" and REMASTER_PLAN progress updated; level reached: **compiled** (not in-game verified)
+- [x] nav area count recorded here (10,269)
+- [x] lightmap at 2048, 1.40 M charts beside tw34's 1.37 M
+- [x] `python tools/check_world.py` on the deployed map: check 7 `0 of ours not compiled`, 0 stale (after step 7)
+- [x] no `DELETED`
+- [x] `maps/scripts/mg_trenchwarfare.vjs_c` (16:50), `.vxml_c` / `.vcss_c` newer than the deploy
+- [x] NOTES.md "Resume here" updated; level reached: **compiled** (not in-game verified)

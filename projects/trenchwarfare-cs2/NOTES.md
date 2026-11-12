@@ -29,8 +29,10 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
 - 12 Nov ~17:45: **compiled.** Assets: 13 models (all `_dyn` twins, Canon de 75, LODs, tw_de_a), 0 failed. Forced xml/css(30)/js/svg:
   0 failed. Map `final`: OK in 49.7 min, 407 compiled, 0 failed, vpk moved; log greps: 0 `DELETED`, 0 `RESOURCE COMPILE ERROR`,
-  0 out of memory. Logs copied to `out/step9/`. NOT done yet: nav area count and lightmap/chart lines (grep the log, wording differs
-  from BUILD.md's patterns), fill `docs/BUILD_LOG_1.md`, post-compile `check_world` (stale models), then the in-game `docs/TESTING.md`.
+  0 out of memory. Logs copied to `out/step9/`. `docs/BUILD_LOG_1.md` filled: nav **10,269 areas** (tw34 44,160; target < 5,000;
+  the ~1,470 estimate was 7x off), 24,718 meshes / 1.40 M charts at 2048, vpk 519.9 MB. 4 stale models (wire, ladder) recompiled;
+  check_world now fails only on the user's duplicate info_map_parameters. Nav pass 2 (tighter NONAV) in progress; after it: chain,
+  `--apply`, final recompile. Then the user's in-game `docs/TESTING.md`.
 - 12 Nov 16:33: **deployed** with `tools/deploy_tw.py --apply` (gate PASS; 86 created, 29 replaced, 148 MB). The addon's vmap is now
   the chained map (89.8 MB); the user's 29 Oct save is in `backups\deploy_20261112_163314\` and `backups\remaster_20261112\`.
   Record `out/step9/deploy/mg_trenchwarfare_deploy_20261112_163314.json`. The chain's base hash is the user's save (2e3f90d0): to
