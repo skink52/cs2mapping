@@ -182,6 +182,10 @@
   }
  },
  "forks": {
+  "create/check_play.py": {
+   "origin": "monsoon-cs2:tools/check_play.py",
+   "seen": "f5630176e888515323a98ec74e714d7832607205"
+  },
   "create/chiptune.py": {
    "origin": "space-racer-cs2:tools/sounds.py",
    "seen": "b140ec02b4c2bce61b8cc965bf5b463e2ae71038"

@@ -15,7 +15,12 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   **Gotcha:** with `ext_src/`/`ext_full/` missing, `weather_ext.py` and `split_props.py` take the already weathered/split addon files as
   source: never rerun them before restoring real sources. Tools importing repo readers must drop project `tools/` from `sys.path`
   (its `dmx.py` shadows the repo one). Linux paths remain in vtexread, preview_scene, toolkit.json, sync_repo.sh, fp.sh.
-  Step 2 (world checks) running.
+- 12 Nov ~13:30: step 2 done. `python tools/check_play.py` (~35 s, trench adapter over neutral `create/check_play.py`) and
+  `python tools/check_world.py` (5 s, FAILS until step 5 patches land). Findings in `docs/REVIEW_WORLD_1.md` (4 high, 6 mid, 11 low)
+  with a patch list for step 5. Needs the user: H1 (24 `tl_bench` they placed in the sap mouths keep the mine galleries shut after
+  the unlock), M2 (duplicate `info_map_parameters` id 7 is ungrouped). H2: the 4 unlock blockers are `prop_dynamic` on static-archetype
+  models (compiler may delete them: areas open from round start) - fix by rebuilding those models dynamic. H3: woods nav seeds outside
+  the fence flood 650k cells (likely the 44k nav areas). Step 3 (script) running.
 
 ## State 2026-10-26 ~13:15 ACDT (tw8_content_01.zip radar, tw8_game.zip overview)
 
