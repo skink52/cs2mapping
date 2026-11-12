@@ -8,59 +8,59 @@ Remaster to the mg_monsoon standard: rules in [docs/REMASTER_PROMPT.md](docs/REM
 [docs/REMASTER_PLAN.md](docs/REMASTER_PLAN.md), evidence in `docs/research/`. Map changes are guarded delta patches only (no generated
 baseline exists for EditKeeper). User vmap backed up to `content\csgo_addons\mg_trenchwarfare\backups\remaster_20261112\`.
 Working on branch `ironframe-test` (the remaster prompt's commit); do not commit the unrelated uncommitted monsoon edits.
-- 12 Nov ~12:20: research and plan done.
-- 12 Nov ~12:50: step 1 done. `python tools/restage_out.py` rebuilds `out/` from the vmap + addon (8 s); `node test/mock.mjs 32 120`
+- 12 Nov 12:10: research and plan done.
+- 12 Nov 12:21: step 1 done. `python tools/restage_out.py` rebuilds `out/` from the vmap + addon (8 s); `node test/mock.mjs 32 120`
   green on Windows (50 kills, 0 errors, simulated); `docs/CONTRACT.md` + `tools/check_contract.py` (76/77 OK, known missing `mortar_<tg>_K`).
   Not restageable: `radar_clean.png` (step 8 regenerates), `user_edits.json`/`gen_twN.vmap` (no baseline), `ext_src/`+`ext_full/`.
   **Gotcha:** with `ext_src/`/`ext_full/` missing, `weather_ext.py` and `split_props.py` take the already weathered/split addon files as
   source: never rerun them before restoring real sources. Tools importing repo readers must drop project `tools/` from `sys.path`
   (its `dmx.py` shadows the repo one). Linux paths remain in vtexread, preview_scene, toolkit.json, sync_repo.sh, fp.sh.
-- 12 Nov ~13:30: step 2 done. `python tools/check_play.py` (~35 s, trench adapter over neutral `create/check_play.py`) and
+- 12 Nov 13:14: step 2 done. `python tools/check_play.py` (~35 s, trench adapter over neutral `create/check_play.py`) and
   `python tools/check_world.py` (5 s, FAILS until step 5 patches land). Findings in `docs/REVIEW_WORLD_1.md` (4 high, 6 mid, 11 low)
   with a patch list for step 5. Needs the user: H1 (24 `tl_bench` they placed in the sap mouths keep the mine galleries shut after
   the unlock), M2 (duplicate `info_map_parameters` id 7 is ungrouped). H2: the 4 unlock blockers are `prop_dynamic` on static-archetype
   models (compiler may delete them: areas open from round start) - fix by rebuilding those models dynamic. H3: woods nav seeds outside
   the fence flood 650k cells (likely the 44k nav areas).
-- 12 Nov ~14:40: step 3 done (simulated). Script is `src/modules/NN_*.js` joined by `node ../../create/build_script.mjs src/build.json`
+- 12 Nov 13:45: step 3 done (simulated). Script is `src/modules/NN_*.js` joined by `node ../../create/build_script.mjs src/build.json`
   into `src/mg_trenchwarfare.js` (never edit the output). Gate in `docs/SCRIPT.md`: api check 0/0/0, tscheck OK, contract, mock,
   6/6 scenarios, coverage, `sim_balance` 50 seeds T 54 % +-7, perf 0.37 ms/tick at 64. 18 bugs fixed (`docs/REVIEW_SCRIPT_1.md`).
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
-- 12 Nov ~23:15: second independent review (simulated): `docs/REVIEW_SCRIPT_2.md` (5 bugs fixed: slot changing hands with no
+- 12 Nov 16:13: second independent review (simulated): `docs/REVIEW_SCRIPT_2.md` (5 bugs fixed: slot changing hands with no
   disconnect event -> `claim()`; `!pos` server-command injection via player names -> `say()` sanitises; disconnected controllers
   counted as humans; spectators kept HUD; damage-guard log spam), 13/13 scenarios. `docs/REVIEW_WORLD_2.md`: W1 sealed galleries
   (bots were sent there: `undergroundopen` removed from `CONFIG.BOTS.AREAS` until the user picks `--user-h1`), W2 dressing stations
   inside solid shelter hulls (asset fix), W3 10 stale model compiles (DR1, SPAD, A7V, howitzer...: the asset compile covers them),
   W5 doubled bench ids 71/72, W8-W10 lower. Careful: `check_play --help` runs the check (it overwrote out/review/check_play.json).
-- 12 Nov ~22:30: release docs done: README (status "simulated, not publishable yet"), `docs/TESTING.md` (in-game checklist, groups
+- 12 Nov 15:59: release docs done: README (status "simulated, not publishable yet"), `docs/TESTING.md` (in-game checklist, groups
   A-U), `docs/WORKSHOP.md` (page text + pre-upload checklist), new CREDITS.txt + Steam description staged in `out/step10/` and merged
   by deploy_tw (dry run 117 files, gate PASS). Template wavs bird_01-06, interior_01, vent_01 are of unknown origin (checklist).
-- 12 Nov ~22:00: step 9a done (dry run only). `python -u tools/deploy_tw.py --chain` rebuilds the final map from the user's save
+- 12 Nov 15:47: step 9a done (dry run only). `python -u tools/deploy_tw.py --chain` rebuilds the final map from the user's save
   (refuses unless CRC32 2e3f90d0), guards every stage, re-makes the radar; then the gate; then `create/deploy_addon.py` (dry run by
   default, `--apply` copies changed files only, backs up first, holds while Hammer / cs2 -tools has the addon open). Dry run: 110
   files, 148 MB. Docs: `docs/BUILD.md` (deploy, asset compile, forced xml/css/js compiles, map compile, log greps), `docs/BUILD_LOG_1.md`.
   Old unpack-bat route retired (kept inert: leave `cs2port\logs\mg_trenchwarfare_applied.txt` alone, no new twN zips). Next: second
   review finishing, then re-run `--chain` (now with sounds), dry run, `--apply`, compiles under the watchdog, triage BUILD_LOG_1.md.
-- 12 Nov ~21:30: the 3 pending sounds are wired (simulated). `tw_whistle_attack` (briefing room, 1.5 s after round start, 75_front),
+- 12 Nov 15:39: the 3 pending sounds are wired (simulated). `tw_whistle_attack` (briefing room, 1.5 s after round start, 75_front),
   `tw_plane_dive_1..4` shared pool (60_air `diveSound`: nose 25 deg down at >= 900 u/s; cs_script cannot play a sound itself),
   `tw_rain_tin_<tg>_1..3` over the dressing stations, started/stopped by the `tw_rain` relay. `tools/patch_sounds.py` (guarded,
   11 entities) runs in the chain world_1 -> models -> terrain -> sounds -> nav. Contract 86/86 on the sounds map; deployed map has
   4 known missing until deploy. Perf max fails only under another session's compile load (old build fails the same way).
-- 12 Nov ~20:30: step 8 done offline (simulated, staged in `out/step8/deploy_files.txt`; force-compile xml/css/js). HUD contract
+- 12 Nov 15:20: step 8 done offline (simulated, staged in `out/step8/deploy_files.txt`; force-compile xml/css/js). HUD contract
   in `docs/HUD.md` (56 script ids), `tools/tw_hud.py` fails on any contract/layout/module mismatch, `tools/hud_check.py` 0 problems
   over 6 states x 3 widths; new canvas/brass look, wooden mortar plotting board, walnut cockpit. Script: HUD-only changes (headlines,
   briefing toasts). 28 synthesised sounds (loop seams pass), `tw.amb.front` soundscape enriched. `tools/check_radar.py`: 56/56 points,
   0 u error. Re-run `make_radar.py --vmap <final chained map>` + `check_radar.py` after the chain. Pending sound wiring (sounds in
   `out/step8/pending_sounds/`): `whistle_attack` (round-start), `plane_dive` (60_air hook), `rain_tin` (step 7 rain exists: wire it).
   libsync: 5 trench copies added (hud_check, panorama, loading, sndevents, merge_snd).
-- 12 Nov ~19:30: step 7 done offline. `tools/patch_terrain.py --in out/mg_trenchwarfare_models.vmap --out out/mg_trenchwarfare_terrain.vmap`
+- 12 Nov 15:14: step 7 done offline. `tools/patch_terrain.py --in out/mg_trenchwarfare_models.vmap --out out/mg_trenchwarfare_terrain.vmap`
   patches 672 tw_gen terrain tiles: 367 new craters, tank/lorry ruts, puddles, erosion; protect mask (48 % of the map; trenches, pits,
   spawns, runways, props, user objects, the user's explosions) read back at 0.000000 u change. Terrain tris 118k -> 198k (47 tiles
   re-gridded to 16 u), map 67 -> 89 MB. 6 smoke columns `tw_crater_smoke_*` (on), 12 rain tiles `tw_rain` (off; FireUser1/2). Light
   rig untouched (user-tuned). Guard PASS; check_world/check_play unchanged. Renders `out/review/terrain_*.png` (`tools/terrain_views.py`).
   Chain now: world_1 -> models -> terrain -> nav (run `patch_nav.py` on the terrain output before deploy).
-- 12 Nov ~18:00: step 4 done (simulated). Bots in `src/modules/85_ai.js`: infantry placed at fire/support posts with a leash; a side
+- 12 Nov 14:44: step 4 done (simulated). Bots in `src/modules/85_ai.js`: infantry placed at fire/support posts with a leash; a side
   with < 4 active humans gets 1 AI pilot + 2 AI mortar crews, handed to a human on request in the same call. `BOTS_ON: true`,
   `bot_quota_mode fill`, `bot_quota 16` - **only valid with the patched map** (nav seeds + NONAV); on the old compile set BOTS_ON false.
   `tools/patch_nav.py --in --out` (~90 NONAV boxes, guarded) runs last in the chain world_1 -> models -> terrain -> nav; nav estimate
@@ -68,7 +68,7 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   0.09 ms/tick with 58 bots; the 8 ms perf max failed only while another session's resourcecompiler held the CPU: re-run the perf
   gate on a quiet PC. `check_contract.py --vmap --stage` checks the patched map (80/80) and every SetModel model. Never rerun the old
   `tools/patch_bots.py`: it deletes the whole tw_nav visgroup, NONAV boxes included.
-- 12 Nov ~17:00: step 6 done offline, NOT deployed. 339 WW1 Workshop titles screened, 13 packs downloaded to
+- 12 Nov 14:29: step 6 done offline, NOT deployed. 339 WW1 Workshop titles screened, 13 packs downloaded to
   `C:\source1\gmod_assets\trenchwarfare` (outside the repo), catalog `tools/tw_gmod_catalog.json`. Only swap: `gun_75mm` -> Canon de 75
   (3576805717, `tools/patch_models.py` -> `out/mg_trenchwarfare_models.vmap`, guard: 1 change). Ours beat every other low-risk pack;
   all WW1 soldier and BF1/Verdun/etc packs are rips. LODs added to 5 props; `tools/fill_holes.py` tw_de_a 167 -> 154 open edges (rest
@@ -79,7 +79,7 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
 - 12 Nov: **giant first-person weapons, cause (from the user):** the player character was set to an invalid/unloaded model (a CS2
   model picked in Hammer, which didn't have the game assets); Mario Party had the same symptom loading Octodad before it was ported.
   Only ever set compiled-in-addon (or stock, loaded) player models. Recorded in docs/reference/cs2-gotchas.md.
-- 12 Nov ~15:30: step 5 done offline, NOT deployed. `python tools/patch_world_1.py` -> `out/mg_trenchwarfare_patched.vmap`
+- 12 Nov 13:48: step 5 done offline, NOT deployed. `python tools/patch_world_1.py` -> `out/mg_trenchwarfare_patched.vmap`
   (guarded by `tools/patch_guard.py --strict`: 24 declared nodes, nothing else), `tools/dyn_models.py` builds `_dyn` model twins
   into `out/addon`. Fixed H4 (mortars `prop_dynamic mortar_<tg>_K` with idle/fire anims), H2 (blockers on `_dyn` models), H3 (woods
   seeds inside the fence: flood 654,758 -> 21,764 cells), M3 (barrels), L5 (z-fight). Opt-in, waiting for the user: `--user-h1
