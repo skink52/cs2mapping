@@ -7,6 +7,9 @@ Read this first when resuming. Newest state at the top. Design: [docs/DESIGN.md]
 **State in one line:** `mg_monsoon.vpk` **recompiled** (42.0 min, `OK: 506 compiled, 0 failed`, 0 DELETED) with **12,597 nav areas**
 (was 15,033; "Compute Approach areas" 454 s, was 348 s); **never launched, not opened in Hammer**. Committed 5989dfa.
 
+**Playtest 1 done (12 Nov 2026, 19 findings): the fix tracker is `docs/PLAYTEST_1.md`, which is the work list now.** Batch progress files:
+`docs/FIX_PT1_<batch>.md`. Resume by reading the tracker, then any batch file whose rows are not all closed.
+
 **Release decision (skink52, 12 Nov 2026): private use only.** Keep the current build with the GMod conversions and player models;
 no procedural-only public build. Do not publish to the public Workshop (docs/WORKSHOP_COMPLIANCE.md).
 Records: [docs/BUILD_LOG_1.md](docs/BUILD_LOG_1.md) "Stage 4", [docs/REVIEW_WORLD_1.md](docs/REVIEW_WORLD_1.md) "Pass 4".
