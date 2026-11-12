@@ -4,13 +4,13 @@
   385
  ],
  "cell": 32.0,
- "detail_min": -49.30570028758609,
- "detail_max": 33.06471849079213,
- "detail_rms": 9.50078707588765,
- "protected_cells": 46254,
+ "detail_min": -48.66637067214866,
+ "detail_max": 32.16980247213886,
+ "detail_rms": 9.448837738049876,
+ "protected_cells": 46695,
  "max_change_in_protected": 0.0,
  "max_change_in_protected_after_png": 0.0,
- "png_roundtrip_error": 0.0007523677620871125,
- "steep_over_45_before": 0.00902438318919388,
- "steep_over_45_after": 0.008602088334827757
+ "png_roundtrip_error": 0.0007426085808228677,
+ "steep_over_45_before": 0.008845052497613744,
+ "steep_over_45_after": 0.008416972782228907
 }

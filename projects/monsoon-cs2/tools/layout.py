@@ -86,18 +86,29 @@ BRIDGE_Y = float(river_y(0.0))
 BRIDGE_LEN = 1200.0               # two 600-u truss spans along y, centred on the river
 BRIDGE_DECK_Z = 56.0              # top of the deck (flag B stands on it); ramps run down to the road at both ends
 BRIDGE_RAMP = 200.0               # length of each approach ramp beyond the span ends
-FARM = (FLAGS[0][2][0] + 40.0, FLAGS[0][2][1] - 640.0)      # the farm cluster south of the paddies (dry terrace)
+FARM = (FLAGS[0][2][0] + 40.0, FLAGS[0][2][1] - 760.0)      # the farm cluster south of the paddies (dry terrace); 12 Nov review: 120 further south, its flat reached into the bottom paddy row
 # small terraces flattened to their centre height: (x, y, flat radius, foot radius)
-FLATS = [(FARM[0], FARM[1], 330.0, 560.0)]
+C123 = (CRASH[0] + 480.0, CRASH[1] + 480.0, 18.0)          # 12 Nov review: 90 further north; the tail stood in road 0's blend (ground 37 u through the floor)          # the fuselage (x, y, yaw): mv_places.crash_site and the flat under its floor
+FLATS = [(FARM[0], FARM[1], 330.0, 440.0),
+         (BRIDGE_X - 300.0, BRIDGE_Y - BRIDGE_LEN / 2 - 150.0, 170.0, 260.0),          # under the French bunker floor
+         (BRIDGE_X, BRIDGE_Y + BRIDGE_LEN / 2 + BRIDGE_RAMP + 150.0, 190.0, 300.0),    # the checkpoint hut
+         (C123[0], C123[1], 380.0, 520.0)]                                             # the C-123 cargo floor
+# the threshing floor at flag A: the dike junction widened into a dry island (cover at the flag; the paddies around stay open)
+ISLAND = (FLAGS[0][2][0], FLAGS[0][2][1], 150.0, 205.0)
+# the firebase road comes down a spur of the hill (a ridge filled out along the road, crest falling evenly): the hill itself is 40-45 deg
+# at mid height, which no road climbs. (crest start, crest end, crest half width, side slope as rise / run)
+SPUR = ((2700.0, -2650.0), (1300.0, -2420.0), 95.0, 0.62)
+ROAD_MAX_GRADE = math.tan(math.radians(13.0))             # road and trail profiles are cut / filled to this
 
 # roads: (half width, [(x, y), ...]); trails are narrower
 ROADS = [
-    (60.0, [(3240.0, -2400.0), (2700.0, -2650.0), (2600.0, -2150.0), (2200.0, -2300.0), (1300.0, -2420.0), (300.0, -2400.0),
-            (-100.0, -1600.0), (0.0, BRIDGE_Y - 420.0)]),
+    (60.0, [(3240.0, -2400.0), (2700.0, -2650.0), (1300.0, -2420.0), (300.0, -2400.0),
+            (-100.0, -1600.0), (0.0, BRIDGE_Y - 420.0)]),          # 12 Nov review: down the spur (the old switchback was up to 38 deg)
     (60.0, [(0.0, BRIDGE_Y + 420.0), (-150.0, 1200.0), (-300.0, 2400.0), (-1500.0, 2700.0), (-2700.0, 2750.0), (-3900.0, 2900.0)]),
     (45.0, [(-200.0, 1400.0), (600.0, 1150.0), (1500.0, 950.0), (2150.0, 870.0)]),            # spur to the temple foot
-    (35.0, [(-2600.0, float(river_y(-2600.0)) - 960.0), (-1200.0, -1950.0), (300.0, -2400.0)]),   # trail A - E
-    (35.0, [(-2600.0, float(river_y(-2600.0)) - 960.0), (-1300.0, -800.0), (-200.0, BRIDGE_Y - 420.0)]),   # trail A - bridge
+    # 12 Nov review: both trails used to start inside the paddies and cut their cells; they start at the paddy edge now (dikes lead in)
+    (35.0, [(FLAGS[0][2][0], float(river_y(FLAGS[0][2][0])) + PADDY_YR0 - 80.0), (-1200.0, -1950.0), (300.0, -2400.0)]),   # trail A - E, from the south edge under the flag dike
+    (35.0, [(PADDY_X1 + 150.0, float(river_y(PADDY_X1 + 150.0)) + PADDY_YR0 + PADDY_CELL_Y), (-1300.0, -800.0), (-200.0, BRIDGE_Y - 420.0)]),   # trail A - bridge, from the east end of the flag dike (150 out: at 80 its blend ate the dike's outer flank)
     (35.0, [(-300.0, 2400.0), (1200.0, 1900.0), (2250.0, 1150.0)]),                            # trail village - temple
     (35.0, [(-3900.0, 2900.0), (-3300.0, 1900.0), (-2800.0, 700.0), (-2600.0, float(river_y(-2600.0)) + 420.0)]),   # camp - river north bank
 ]
@@ -206,6 +217,16 @@ def features(x, y, h, flats=True):
     h = plateau(x, y, CRASH, CRASH_R, CRASH_FOOT, CRASH_Z, h, warp=0.12, seed=14)
     hb = float(base_terrain(*TEMPLE))
     h = plateau(x, y, TEMPLE, TEMPLE_R, TEMPLE_FOOT, hb + TEMPLE_H, h, warp=0.10, seed=15)
+    # the firebase road spur: fill only, crest from the plateau rim down to the ground at its end
+    (sa, sb, shw, sk) = SPUR
+    if 'za' not in _SPUR_Z:
+        _SPUR_Z['za'] = CT_Z; _SPUR_Z['zb'] = None
+        _SPUR_Z['zb'] = float(features(np.array([sb[0]]), np.array([sb[1]]), base_terrain(np.array([sb[0]]), np.array([sb[1]])), flats=False)[0])
+    if _SPUR_Z['zb'] is not None:
+        d, u = seg_dist(x, y, [sa, sb])
+        crest = _SPUR_Z['za'] + (_SPUR_Z['zb'] - _SPUR_Z['za']) * u
+        ridge = crest - np.maximum(d - shw, 0.0) * sk * (1.0 + 0.25 * fbm(x / 210.0, y / 210.0, 6.1, 2, seed=57))
+        h = np.maximum(h, ridge)
     # karst skirts (talus cones under the towers)
     for (kx, ky, kr, kh, ks) in KARST:
         d = _dist(x, y, (kx, ky))
@@ -220,6 +241,11 @@ def features(x, y, h, flats=True):
         dout = np.hypot(dx, dy)
         w = 1.0 - smoothstep(0.0, 70.0, dout)
         h = h * (1 - w) + ph * w
+    ix, iy, ir0, ir1 = ISLAND
+    wi = 1.0 - smoothstep(ir0, ir1, _dist(x, y, (ix, iy)))
+    if np.any(wi > 0):
+        zi = 14.0 + 8.0 * 1 + 1.5 * 2 + PADDY_DIKE_H + 6.0          # the dike top at the flag junction (row index 1, column 2)
+        h = h * (1 - wi) + np.maximum(h, zi) * wi
     # gullies and the oxbow
     for (hw, dep, pts) in GULLIES:
         d, u = seg_dist(x, y, pts)
@@ -242,32 +268,44 @@ def features(x, y, h, flats=True):
 
 
 _FLAT_Z = {}
+_SPUR_Z = {}
 
 
-def _road_profile(pts, hw):
+def _road_profile(pts, hw, k=0):
     """heights along a road: the carved terrain sampled at the vertices and smoothed, so the road climbs gently"""
     P = np.asarray(pts, float)
     seg = np.linalg.norm(np.diff(P, axis=0), axis=1); cum = np.concatenate([[0], np.cumsum(seg)])
     n = max(8, int(cum[-1] / 60))
     t = np.linspace(0, cum[-1], n + 1)
     xs = np.interp(t, cum, P[:, 0]); ys = np.interp(t, cum, P[:, 1])
-    z = carved(xs, ys, roads=False)
+    z = carved(xs, ys, roads=k)             # the ground with the roads listed before this one: a branch starts at the height of the road it leaves
     z = np.convolve(np.pad(z, 3, mode='edge'), np.ones(7) / 7, mode='valid')
+    # grade limit: the mean of the fill envelope (never steeper going down) and the cut envelope (never steeper going up); both are
+    # ROAD_MAX_GRADE-Lipschitz, so is their mean, and it equals the ground wherever the ground is gentle enough already
+    k = ROAD_MAX_GRADE; D = np.abs(t[:, None] - t[None, :])
+    hi = (z[None, :] - k * D).max(1); lo = (z[None, :] + k * D).min(1)
+    z = 0.5 * (hi + lo)
     return cum[-1], t, z
 
 
 _ROAD_CACHE = {}
 
 
-def roads_apply(x, y, h):
+def roads_apply(x, y, h, upto=None):
     x = np.asarray(x, float); y = np.asarray(y, float)
+    yr = y - river_y(x)                                   # no road or trail reshapes a paddy cell (they end at the paddy edge)
+    keep = 1.0 - (((x > PADDY_X0 - 20) & (x < PADDY_X1 + 20) & (yr > PADDY_YR0 - 20) & (yr < PADDY_YR1 + 20)) |
+                  ((x > PADDY2_X0 - 20) & (x < PADDY2_X1 + 20) & (yr > PADDY2_YR0 - 20) & (yr < PADDY2_YR1 + 20))).astype(float)
+    wmax = np.zeros(x.shape)
     for k, (hw, pts) in enumerate(ROADS):
-        if k not in _ROAD_CACHE: _ROAD_CACHE[k] = _road_profile(pts, hw)
+        if upto is not None and k >= upto: break
+        if k not in _ROAD_CACHE: _ROAD_CACHE[k] = _road_profile(pts, hw, k)
         L, t, z = _ROAD_CACHE[k]
         d, u = seg_dist(x, y, pts)
         zr = np.interp(u * L, t, z)
-        w = 1.0 - smoothstep(hw, hw * 2.3, d)
+        w = (1.0 - smoothstep(hw, hw * 2.3, d)) * keep * (1.0 - wmax)      # a branch never reshapes the road it leaves
         h = h * (1 - w) + zr * w
+        wmax = np.maximum(wmax, 1.0 - smoothstep(hw, hw * 1.6, d))
     return h
 
 
@@ -285,7 +323,8 @@ def carved(x, y, roads=True):
     hr = bed * (1 - bank) + hb * bank
     h = np.where(a < BANK_W, hr, h)
     # marsh pools east: let the ground dip under the water
-    if roads: h = roads_apply(x, y, h)
+    if roads is True: h = roads_apply(x, y, h)
+    elif roads: h = roads_apply(x, y, h, upto=int(roads))        # roads = k: only the first k roads (0 / False: none)
     return h
 
 
@@ -464,25 +503,27 @@ def firebase():
     c = CT_BASE
     gate_a = _gate_angle()
     wall_r = CT_PLATEAU_R - 110.0
-    b_ang = [96.0, 146.0, 215.0, 276.0, 321.0, 51.0]
+    b_ang = [110.0, 146.0, 215.0, 276.0, 355.0, 52.5]        # 12 Nov review: between the pads, not behind them (rotor cylinders)
     r0 = ROADS[0][1][0]
     return dict(
         centre=c, z=CT_Z,
         fdc=(c[0] - 40.0, c[1] + 60.0), fdc_yaw=90.0,                     # the FDC bunker (plotting table in its porch, opening north)
-        guns=[pol(c, 600.0, a) for a in (176.0, 228.0, 280.0)], pit_r=232.0,
-        ammo=(c[0] + 300.0, c[1] - 120.0),
-        pads=[pol(c, 640.0, a) for a in (-34.0, 23.5, 81.5)], pad_angles=[-34.0, 23.5, 81.5], pad_scale=0.72,
+        guns=[pol(c, 640.0, a) for a in (168.0, 213.0, 258.0)], pit_r=232.0,      # 12 Nov review: the battery swung west, clear of the rotor cylinder of pad 1
+        ammo=(c[0] + 220.0, c[1] + 40.0),
+        pads=[pol(c, 680.0, a) for a in (-34.0, 23.5, 81.5)], pad_angles=[-34.0, 23.5, 81.5], pad_scale=0.72,
+        pad_clear=363.0,                                                   # rotor radius 303 + 60: nothing taller than 24 u inside (tools/check_play.py check 4)
+        sally=[9.0, 236.0],
         pad_yaw=180.0,
-        toc=(c[0] - 320.0, c[1] + 665.0), toc_yaw=90.0,
+        toc=(c[0] - 460.0, c[1] + 600.0), toc_yaw=90.0,           # 12 Nov review: clear of the north-west bunker and its M2 gunner's spot
         tents=[], tent_yaws=[],
         bunkers=[pol(c, wall_r - 50.0, a) for a in b_ang], bunker_angles=b_ang,
         m2=[0, 1, 5],                                                      # bunker indices with an M2 nest (north, north-west, north-east)
-        tower=pol(c, 880.0, 254.0),
-        quad50=pol(c, 960.0, 186.0),
+        tower=pol(c, 975.0, 244.0),           # 12 Nov review: at 268 its legs stood in the south bunker, at 261 in the wall and pit 3's ring
+        quad50=pol(c, 985.0, 193.0),          # 12 Nov review: at 186 gun pit 1's ammo rack stood inside its sandbag ring
         gate=pol(c, wall_r, gate_a), gate_angle=gate_a,
         road_in=[pol(c, wall_r + 40.0, gate_a), r0, (c[0] - 330.0, c[1] + 300.0), (c[0] - 150.0, c[1] - 120.0)],   # track inside the wall
         wire_r=wall_r,
-        fuel=pol(c, 900.0, 302.0),
+        fuel=pol(c, 930.0, 290.0),
         rack=(c[0] - 20.0, c[1] - 230.0),
         spawns=ring((c[0] - 20.0, c[1] - 230.0), 130.0, 16, start=0.3))
 
@@ -496,10 +537,11 @@ def camp():
     return dict(
         centre=c, z=T_Z,
         fdc=(c[0] - 110.0, c[1] + 170.0), fdc_yaw=-30.0,
-        rockets=[(c[0] + 400.0, c[1] + 200.0), (c[0] + 150.0, c[1] + 300.0), (c[0] - 430.0, c[1] + 150.0), (c[0] - 120.0, c[1] - 280.0)], pit_r=105.0,
+        rockets=[(c[0] + 360.0, c[1] + 60.0), (c[0] + 150.0, c[1] + 300.0),      # 12 Nov review: pit 1 moved out of pad 3's rotor cylinder
+                  (c[0] - 430.0, c[1] + 150.0), (c[0] - 120.0, c[1] - 280.0)], pit_r=105.0,
         ammo=(c[0] - 330.0, c[1] - 60.0),
         aa=[(c[0] + 200.0, c[1] + 900.0), (c[0] + 820.0, c[1] - 420.0)],
-        pads=[(c[0] - 950.0, c[1] - 350.0), (c[0] + 150.0, c[1] - 950.0), (c[0] + 800.0, c[1] + 620.0)],
+        pads=[(c[0] - 870.0, c[1] - 430.0), (c[0] + 150.0, c[1] - 950.0), (c[0] + 985.0, c[1] + 174.0)],     # 12 Nov review: 1 and 3 off the karst talus (the ground rose 28 / 112 u inside their rotor cylinders)
         pad_yaw=0.0,
         hooches=[(c[0] - 90.0, c[1] + 600.0, -90.0), (c[0] - 600.0, c[1] + 600.0, -30.0), (c[0] - 380.0, c[1] + 820.0, -70.0),
                  (c[0] - 120.0, c[1] + 920.0, -90.0), (c[0] - 800.0, c[1] + 280.0, 10.0)],
@@ -518,8 +560,10 @@ TUNNEL_PORTALS = [(T_BASE[0] + 520.0, T_BASE[1] - 300.0),          # camp (insid
 TUNNEL_GALLERIES = [[TUNNEL_PORTALS[0], _J1, (-3300.0, 2050.0), (-3100.0, 1750.0)],
                     [_J1, (-3000.0, 2600.0), (-2300.0, 2850.0)],
                     [(-3300.0, 2050.0), (-3000.0, 2600.0)],        # cross cut
-                    [_J1, (T_BASE[0] + 800.0, T_BASE[1] - 690.0)]]  # stub into the chamber
-TUNNEL_CHAMBER = (T_BASE[0] + 800.0, T_BASE[1] - 690.0)
+                    [_J1, (_J1[0] + 300.0, _J1[1] - 60.0)]]        # stub into the chamber
+# 12 Nov review: the chamber stood 183 u from the junction and on the cross cut: its flat floor swallowed the ramp of the stub (a 64-u drop
+# in, 90 u from the cross cut, no way out). It is 306 u out now, clear of every gallery: the 25-degree ramp ends before the chamber wall.
+TUNNEL_CHAMBER = (_J1[0] + 300.0, _J1[1] - 60.0)
 TUNNEL_CHAMBER_R = 120.0
 TUNNEL_HW = 40.0
 

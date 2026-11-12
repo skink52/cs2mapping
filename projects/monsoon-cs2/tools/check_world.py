@@ -123,6 +123,15 @@ def main(path, plot=None, box=None):
         if r['solid'] == '0' and r['cls'] == 'prop_static': continue
         m = r['model']; nm_ = m.split('/')[-1][:-5]
         tr = S.TRUNK.get(m, S.TRUNK_MV.get(nm_, M.TRUNK.get(m, 344.0 if nm_ == 'rotor_hip' else 418.0 if nm_ == 'hip_rotor' else None)))   # trunks and the rotor disc are round
+        if nm_ == 'apache':
+            # two boxes, not one: the tail boom runs 80 u and more over the ground (apache.json: tail rotor hub z 146, radius 55), so a
+            # 57-u sandbag wall under the tail is no overlap (12 Nov review: the one-box test flagged every wall behind a pad)
+            yw = math.radians(r['a'][1]); cy_, sy_ = math.cos(yw), math.sin(yw)
+            for (lo_, hi_) in (((-107.0, -200.0, 7.0), (107.0, 195.0, 172.0)), ((-30.0, -397.0, 80.0), (30.0, -200.0, 174.0))):
+                mx, my = (lo_[0] + hi_[0]) / 2, (lo_[1] + hi_[1]) / 2
+                PLc.add(dict(c=(r['o'][0] + cy_ * mx - sy_ * my, r['o'][1] + sy_ * mx + cy_ * my), h=((hi_[0] - lo_[0]) / 2, (hi_[1] - lo_[1]) / 2), a=yw,
+                             z=(r['o'][2] + lo_[2] + 1.0, r['o'][2] + hi_[2] - 1.0), model=m, name=r['name']))
+            continue
         if tr is not None:
             lo, hi = PLc.bounds(m)
             f = dict(c=(r['o'][0], r['o'][1]), h=(tr * r['s'][0], tr * r['s'][0]), a=0.0, z=(r['o'][2], r['o'][2] + hi[2] * r['s'][2]), model=m)
@@ -136,7 +145,8 @@ def main(path, plot=None, box=None):
         for p, q in OK_PAIR:
             if (p in a and q in b) or (p in b and q in a): return True
         return False
-    pairs = [(i, j) for i, j in PLc.audit() if not allowed(short(PLc.items[i]['model']), short(PLc.items[j]['model']))]
+    same = lambda i, j: PLc.items[i].get('name') and PLc.items[i].get('name') == PLc.items[j].get('name')      # two boxes of one entity
+    pairs = [(i, j) for i, j in PLc.audit() if not allowed(short(PLc.items[i]['model']), short(PLc.items[j]['model'])) and not same(i, j)]
     cnt = Counter(tuple(sorted((short(PLc.items[i]['model']), short(PLc.items[j]['model'])))) for i, j in pairs)
     json.dump([dict(a=PLc.items[i]['model'], b=PLc.items[j]['model'], ca=[round(v) for v in PLc.items[i]['c']], cb=[round(v) for v in PLc.items[j]['c']]) for i, j in pairs],
               open(os.path.join(OUT, 'overlaps.json'), 'w'), indent=0)

@@ -115,7 +115,8 @@ def fdc_bunker(lod=0, seed=62):
 
 
 def psp_pad(lod=0, seed=63, size=600):
-    """pierced steel planking helipad with a painted H and a wind sock on a pole at a corner"""
+    """pierced steel planking helipad with a painted H. 12 Nov review: the wind sock pole stood inside the rotor cylinder (check_play
+    check 4); it is its own prop now (windsock), placed outside the cylinder"""
     p = geo.frame(seed=seed)
     m = geo.Mesh()
     n = int(size / 38)
@@ -123,14 +124,21 @@ def psp_pad(lod=0, seed=63, size=600):
         for j in range(int(size / 120)):
             x0 = -size / 2 + i * 38 + (20 if j % 2 else 0)
             m.add(MG.box(x0, -size / 2 + j * 120, 0, x0 + 38, -size / 2 + (j + 1) * 120, 1.6, 'psp', p, r=0.2))
-    hull = []
-    m.add(MG.cyl((size / 2 - 20, size / 2 - 20, 0), (size / 2 - 20, size / 2 - 20, 130), 1.8, 'gunsteel', p, sides=6))
-    sock = geo.tube([(size / 2 - 20, size / 2 - 20, 128), (size / 2 - 50, size / 2 - 30, 124), (size / 2 - 80, size / 2 - 44, 118)], [7, 6, 4], sides=10, mat='canvas_or', part=p, caps=False)
-    m.add(sock)
     H = MG.text_img(['H'], 256, 256, color=(0.9, 0.88, 0.8), fonts=MG.SANS, size=230)
     m.add(geo.decal('H', (-110, -130, 1.6), (1, 0, 0), (0, 1, 0), (220, 260)))
     m.recompute_normals(angle=50)
     return m, dict(H=H)
+
+
+def windsock(lod=0, seed=63):
+    """the LZ wind sock: a steel pole, 130 u, with the orange sock streaming off its top (origin at the pole foot)"""
+    p = geo.frame(seed=seed)
+    m = geo.Mesh()
+    m.add(MG.cyl((0, 0, 0), (0, 0, 130), 1.8, 'gunsteel', p, sides=6))
+    m.add(MG.cyl((0, 0, 0), (0, 0, 6), 6.0, 'gunsteel', p, sides=8))
+    m.add(geo.tube([(0, 0, 128), (-30, -10, 124), (-60, -24, 118)], [7, 6, 4], sides=10, mat='canvas_or', part=p, caps=False))
+    m.recompute_normals(angle=50)
+    return m
 
 
 def gp_tent(lod=0, seed=64):
@@ -503,7 +511,8 @@ def specs():
         'bunker_large': lambda: _two(bunker, 2048, hulls=[MG.pts_box(-100, -77, -26, 100, 77, 110), MG.pts_box(100, -85, -2, 142, 85, 40), MG.pts_box(-150, -126, -2, 150, 126, 24)], kind='large', gun=True),
         'bunker_small': lambda: _two(bunker, 2048, hulls=[MG.pts_box(-75, -62, -26, 75, 62, 104), MG.pts_box(75, -70, -2, 118, 70, 40), MG.pts_box(-120, -110, -2, 120, 110, 24)], kind='small', gun=False, seed=62),
         'fdc_bunker': lambda: _two(fdc_bunker, 2048, hulls=[MG.pts_box(-120, -52, 0, 44, 52, 92), MG.pts_box(40, -66, 0, 176, -50, 96), MG.pts_box(40, 50, 0, 176, 66, 96), MG.pts_box(36, -68, 88, 176, 68, 96)], metal=True),
-        'psp_pad': lambda: _two(psp_pad, 2048, hulls=[MG.pts_box(-300, -300, 0, 300, 300, 1.6), MG.pts_box(276, 276, 0, 284, 284, 130)], metal=True),
+        'psp_pad': lambda: _two(psp_pad, 2048, hulls=[MG.pts_box(-300, -300, 0, 300, 300, 1.6)], metal=True),
+        'windsock': lambda: _two(windsock, 512, metal=True, hulls=[MG.pts_box(-3, -3, 0, 3, 3, 130)]),
         'gp_tent': lambda: _two(gp_tent, 2048, hulls=[MG.pts_box(-160, -100, 0, 160, 100, 60), MG.pts_box(-160, -60, 60, 160, 60, 150)]),
         'conex': lambda: _two(conex, 1024, metal=True),
         'guard_tower': lambda: _two(guard_tower, 2048, hulls=tower_hulls()),

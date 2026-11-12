@@ -184,7 +184,8 @@ def build(d, group, out, T, clone):
     n['func_nav_markup'] = seeds + len(nonav)
     json.dump(dict(surfaces=S_['surfaces'], exceptions=W.exc, spawns=spawn_log, nonav=[list(map(float, b)) for b in nonav],
                    tunnel=dict(samples=PL.tunnel_plan()['samples'].tolist(), floor=PL.tunnel_plan()['floor'].tolist(), chamber=list(L.TUNNEL_CHAMBER) + [L.TUNNEL_CHAMBER_R, PL.tunnel_plan()['f_ch']]),
-                   mounts=len(S_['mounts']), karst=[dict(x=k['x'], y=k['y'], r=k['r'], top=k['top']) for k in W.karst]),
+                   mounts=len(S_['mounts']), karst=[dict(x=k['x'], y=k['y'], r=k['r'], top=k['top']) for k in W.karst], waypoints=S_.get('waypoints', []),
+                   landing=S_.get('landing', [])),
               open(os.path.join(os.path.dirname(os.path.abspath(out)), 'world_sites.json'), 'w'))
     print('entities:', ', '.join('%s %d' % kv for kv in sorted(n.items())), '| mounts %d, nav seeds %d, NONAV boxes %d' % (len(S_['mounts']), seeds, len(nonav)))
 
@@ -207,7 +208,10 @@ def nonav_boxes(W, cell=256.0):
     far = (L.water_dist(CX, CY) > 3500.0) & ~base
     edge = (np.abs(CX) > L.MAP_X) | (np.abs(CY) > L.MAP_Y)
     karst = L.karst_dist(CX, CY) < -cell * 0.45
-    no = steep | (water & ~ford) | far | edge | karst
+    bridge = (np.abs(CX - L.BRIDGE_X) < cell * 0.5 + 110.0) & (np.abs(CY - L.BRIDGE_Y) < L.BRIDGE_LEN / 2 + L.BRIDGE_RAMP + cell * 0.5)
+    water &= ~ford & ~bridge                 # 12 Nov review: the river boxes swallowed the bridge deck (bots could not cross)
+    no = steep | water | far | edge | karst
+    wateronly = water & ~(steep | far | edge | karst)
     t = PL.tunnel_plan()['box']
     no &= ~((CX > t[0] - cell) & (CX < t[3] + cell) & (CY > t[1] - cell) & (CY < t[4] + cell) & ~karst)
     zlo = Z.min((2, 3)); zhi = Z.max((2, 3))
@@ -220,6 +224,7 @@ def nonav_boxes(W, cell=256.0):
             i1 = i
             while i1 + 1 < nx and no[i1 + 1, j:j1 + 1].all() and not done[i1 + 1, j:j1 + 1].any() and i1 + 1 - i < 8: i1 += 1
             done[i:i1 + 1, j:j1 + 1] = True
-            out.append((X0 + i * cell, Y0 + j * cell, float(zlo[i:i1 + 1, j:j1 + 1].min()) - 48.0, X0 + (i1 + 1) * cell, Y0 + (j1 + 1) * cell,
-                        float(zhi[i:i1 + 1, j:j1 + 1].max()) + 260.0))
+            ztop = float(zhi[i:i1 + 1, j:j1 + 1].max()) + 260.0
+            if wateronly[i:i1 + 1, j:j1 + 1].all(): ztop = L.WATER_Z + 30.0          # river cells: nothing above the water is closed
+            out.append((X0 + i * cell, Y0 + j * cell, float(zlo[i:i1 + 1, j:j1 + 1].min()) - 48.0, X0 + (i1 + 1) * cell, Y0 + (j1 + 1) * cell, ztop))
     return out

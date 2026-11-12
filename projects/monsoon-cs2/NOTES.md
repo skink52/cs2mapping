@@ -2,7 +2,28 @@
 
 Read this first when resuming. Newest state at the top. Design: [docs/DESIGN.md](docs/DESIGN.md).
 
-## Resume here (12 Nov 2026, after the integration pass)
+## Resume here (12 Nov 2026, after world review 1)
+
+**State in one line:** the map is regenerated after a gameplay / clipping review and passes every offline check, including the new
+`tools/check_play.py`; **nothing has been compiled, opened in Hammer or run in CS2**. Nothing is committed or deployed.
+Full record: [docs/REVIEW_WORLD_1.md](docs/REVIEW_WORLD_1.md) (issues, fixes, before / after numbers, what was dropped and why).
+
+- Map `out/addon/maps/mg_monsoon.vmap`: 71.3 MB, 7489 entities, 1095 meshes, terrain 83 584 quads (paddy tiles are 16-u cells now),
+  6826 prop_static. Radar, board, script (`mg_monsoon.js`, 3341 lines) rebuilt from it.
+- New tools: `tools/check_play.py <vmap>` (walk graph on a 16-u grid: reachability and stuck pockets, 1b walking routes base -> flag
+  with mirror balance, sightlines, cover, rotor cylinders / approach lanes / karst landing discs, spawn safety, prop clipping, water
+  edges, road grades / floors / holes, nav markup; writes `out/check_play.json`) and `tools/view_world.py` (plans and views with props).
+- Balance: B was 1500 u nearer for T (deck cover closed the bridge for CT); now CT/T 5521 / 5281 (1.04), A-D 1.09, C-E 1.06.
+- Layout moves: T pads 1 and 3 off the karst talus, C-123 90 u north, firebase tower / quad .50 / TOC, trail A-bridge 150 u east of
+  the paddies, `ISLAND` threshing floor at flag A, `SPUR` road to the firebase, all roads graded to 13 deg. Contract names unchanged.
+- psp_pad rebuilt without its wind-sock pole; `windsock` is its own prop (built, not placed yet).
+- Left (documented in the review): village shrine / one stall / two cook fires and a second platform do not fit; temple court only
+  3 balustrades + 1 lion; water trailer, culvert, antenna masts, crew tents dropped inside the wire; 12 jump-escapable pockets.
+
+Checks (from `tools/`): `check_play.py`, `check_world.py`, `check_mesh.py` on `../out/addon/maps/mg_monsoon.vmap`: clean / clean /
+0 bad; `node tools/build_script.mjs && node test/mock.mjs 32 300` (project folder): PASS. A map build takes about 8.5 min now.
+
+## Earlier: after the integration pass (12 Nov 2026)
 
 **State in one line:** the whole addon is generated and passes every offline check; **nothing has been compiled, opened in Hammer
 or run in CS2**. Every "works" below means generated / simulated (words of `docs/reference/compatibility.md`). Nothing is committed

@@ -1,0 +1,140 @@
+# World review 1 (12 Nov 2026): gameplay checks, missing content, fixes
+
+Offline only ("simulated" in the words of `docs/reference/compatibility.md`): nothing here was compiled, opened in Hammer or played.
+Tools: `tools/check_play.py` (new: 9 checks plus 1b routes), `tools/view_world.py` (new: plans and flat-shaded views with props),
+`tools/check_world.py`, `tools/check_mesh.py`. Eight map builds in all; the eighth is the current `out/addon/maps/mg_monsoon.vmap`
+(71.3 MB, 7489 entities, terrain 83 584 quads).
+
+## Results on the final build (8th)
+
+```
+cd tools
+python check_play.py ../out/addon/maps/mg_monsoon.vmap          # RESULT: clean (9 checks)
+python check_world.py ../out/addon/maps/mg_monsoon.vmap         # RESULT: clean (0 off the ground, 0 overlaps, 0 bad spawns, 0 missing models)
+python check_mesh.py ../out/addon/maps/mg_monsoon.vmap          # 1095 meshes 0 bad
+python make_radar.py ../out/addon ../out/game ; python render_board.py ../out/addon
+cd .. ; node tools/build_script.mjs && node test/mock.mjs 32 300 # PASS
+```
+
+| Check | Before (04:04 map) | Final (8th build) |
+|---|---|---|
+| 1 walkability: spawns in one world / targets unreachable | 32/32, 0 of 117 | 32/32, 0 of 120 (waypoints included) |
+| 1 stuck pockets > 200 u2 (not escapable by a jump) | 7 (4), 57 088 u2 | 12 (0), 28 416 u2: pig pens, a garden, firebase pit corners; a jump gets out of every one |
+| 1b CT/T route ratio, mirror balance (1.00 = even) | B 1.29 (first measured on build 1) | A-D 1.09, C-E 1.06, B 1.04 |
+| 2 base spawn pairs with a line of sight | 0 | 0 |
+| 3 head-height cover within 600 u, A/B/C/D/E (min 14) | 4 / 3 / 11 / 11 / 43 * | 14 / 17 / 20 / 20 / 42 |
+| 4 pads with an obstacle in the rotor cylinder or < 3 lanes | 6 of 6 | 0 of 6 |
+| 4 karst crowns without a flat clear landing disc | 3 of 3 (slope 23-33 deg) | 0 of 3 (2 deg) |
+| 5 spawns in a mounted gun's line of fire < 900 u | 0 | 0 |
+| 6 buried / floating / under water / crown in building / inside solid | 6 / 14 / 3 / 0 / 4 | 0 / 0 / 0 / 0 / 0 |
+| 7 water edges above ground / z-fight cells | 159 / 24 | 0 / 0 |
+| 8 road max slope / samples >= 20 deg / ground through floors | 38.2 deg / 92 / 3 | 16.1 deg / 0 / 0 |
+| 9 nav seeds off walkable ground / NONAV over roads etc. | 0 / 4 | 0 / 0 |
+| check_world ground / overlaps / spawns | clean (older check) | clean |
+
+\* The old cover count never counted a sandbag wall (each course measured only its own 18 u). Fixed: a wall is measured as a column per
+96 u. Other check fixes this pass: points past the grid edge wrapped into the next column (trees beyond the south edge read as
+floating 170 u); floating used the merged walk layers (a bag on a karst crown read as floating 208 u); tree crowns are measured from the
+model's own bounds; boulders are exempt from "buried"; check_world tests the parked Apache as cabin + tail boom (the boom is 80 u
+and more over the ground, so a sandbag wall under it is no overlap) and no longer pairs an entity with itself.
+
+## Issues (where, severity, fix)
+
+Severity: **high** = a player can get stuck, a station is unreachable, a check fails; **mid** = visible clipping or a design item
+missing; **low** = cosmetic or check noise.
+
+### Walkability, routes, balance
+| Issue | Where | Sev | Fixed how / left why |
+|---|---|---|---|
+| Tunnel chamber swallowed the stub's ramp (64-u drop, no way out) | T tunnels | high | Chamber moved 306 u out from the junction (layout.TUNNEL_CHAMBER), clear of every gallery |
+| Deck cover closed the bridge: an ox cart beside a sandbag block left no lane, CT walked round by the north ramp (6661 u vs T 5160, ratio 1.29) | bridge deck | high | Blocks from alternate trusses at least 150 u apart, cart taken off the deck; B is now 5521 / 5253 (1.05). No flag or base moved |
+| Flag A closed in by the field hut 18 u from the pole plus stacks and baskets (build 2 and 3) | flag A | high | Hut removed, a 70-u keep-out round the pole, baskets at 110-150 u. (build 4) |
+| Farm nav seed under the re-fitted ox cart | farm | mid | The farm's yard is a 40-u gap between three huts: the seed moved to the open ground 300 u north (build 5) |
+| Garden fences + hut wall made a pen (8192 u2 pocket, jump gets out) | village (329, 2631) | low | Gardens fenced on two sides; the pocket stays (a jump gets out), left |
+| Pig pens are pockets (jump gets out) | farm | low | Left: a pen is a pen; a jump gets out |
+| Firebase road switchback up to 38 deg | road 0 | high | The road comes down a filled spur (layout.SPUR), all roads grade-limited to 13 deg (roads_apply); max now 16.1 deg |
+| Trails started inside paddy cells and cut them | trails A-E, A-bridge | mid | Trails start at the paddy edge; roads no longer reshape paddy cells |
+| Route table | new check 1b | - | `check_play.py` 1b: walking distance on the walk graph from each spawn ring to each flag, mirror products A-D, C-E, B; warns over 15 % |
+
+### Cover, sightlines
+| Issue | Where | Sev | Fixed how |
+|---|---|---|---|
+| Flag A 4 head-height pieces | paddies | high | Threshing-floor island (layout.ISLAND), haystacks, a 4-high crate stack, straw stacks in the four cells round the junction, bamboo on the dike junctions |
+| Flag B 3 pieces, the deck a 1200-u gallery | bridge | high | Four-course sandbag blocks, a CONEX, crate stacks on the deck; four-course fighting positions on both banks |
+
+### Helicopters
+| Issue | Where | Sev | Fixed how |
+|---|---|---|---|
+| Bunkers, gun pit, tents, conex, M151s, signs in the Apache rotor cylinders | firebase | high | Pads to r 680, bunkers and battery swung between them, a round keep-out per pad (keep_disc); a guard in `World.prop` drops anything over 24 u inside any cylinder and reports it |
+| Wind sock pole (part of psp_pad) inside every cylinder | firebase | mid | psp_pad rebuilt without it (`p_base.windsock` is its own prop now, not yet placed: a spot outside the cylinder is left for a later pass) |
+| Ground rose 28 / 112 u inside the T pad cylinders (karst talus) | camp pads 1, 3 | high | Pads moved (layout.camp: (-870, -430), (985, 174)) |
+| T pads had 2-3 approach lanes, trees in them | camp | high | Lanes chosen per pad among the compass directions whose ground and karst stay under the 30-deg glide; trees kept off them only where they would break the glide (rotor_ok). Now 3 / 5 / 3 |
+| Karst crowns: nest ringed the centre, bags past the rim in the air | karst 1, 4, 6 | high | Nest is a crescent at the rim on the valley side, the rest of the crown is the landing disc (slope 2 deg) |
+
+### Clipping and props
+| Issue | Where | Sev | Fixed how / left why |
+|---|---|---|---|
+| Ground through the floors of the C-123 (37 u), French bunker, checkpoint | crash, bridge | high | Flats under each (layout.FLATS), C-123 90 u north out of road 0's blend, checkpoint +2 u |
+| Camp hut inside karst 1 (z 436, 270 u from its axis) | camp | high | Karst keep-outs registered before any place is dressed |
+| Guard tower in the south bunker (build 1-2), then in the wall and pit 3's ring (build 3) | firebase | high | Tower at 244 deg r 975, the south-west blast wall shortened (build 6) |
+| TOC tent over the north-west bunker and the M2 gunner's spot (check_world spawns) | firebase | high | TOC a 0.85 GP tent at (c - 460, c + 600) (build 6) |
+| Karst nest crate in its own bags, kit round the crate overlapping | karst crowns | mid | Crate 120 u in from the rim, kit 84-112 u to the sides. (build 4) |
+| Haystacks in the paddies touching dike bamboo | paddies | low | Stacks at the cell centres. (build 4) |
+| Quad .50 ring around gun pit 1's ammo rack | firebase | mid | Quad .50 to 193 deg r 985 |
+| Tree crowns through school, C-123, temple | jungle | mid | Trees refuse a spot whose crown core (0.8 x 0.3 x width) reaches a building (World.prop); roots are exempt (they grip the ruins) |
+| Ferns on the river bed, reeds in fish traps, nypa in dead trees | temple, marsh | low | Water test for ferns; fish traps before reeds; nypa palms checked with a 36-u trunk footprint |
+| C-123 wing half buried, M35 41 % buried | crash, road 0 | mid | Wing on the flattest free spot (relief < 12 u); wrecks need slope < 8 deg and relief <= 26 u. Build 3 used 14 u and lost all four road wrecks; from build 6 they try both sides of the road at two distances and all four stand |
+| Floating banyans at y -5550 (130-170 u) | south map edge | low | Not real: check_play's grid wrapped points past its edge into the next column. Fixed in the check |
+| One shell_105 half buried at the ammo point, one boulder at the temple foot | firebase, temple | low | Loose shells taken out of the ammo-point clutter; boulders are set into the ground on purpose (exempt in the check) |
+| check_world ground: 62 trees 10-18 u under the field (build 3), 4 dike bamboo (build 4) | everywhere | mid | A mesh-height sink for trees, reverted; dike bamboo tagged as rooted in the crest. 0 now |
+| Fish trap 7 u over the marsh bed, banyan in the river at the temple | marsh, temple | low | Traps tagged as staked in the water; no corner banyan or canopy tree below water + 8 / + 12 |
+| Tower against the sally blast wall, TOC tent dropped by the rotor guard (build 4) | firebase | high | Blast wall of the south-west sally shortened; TOC a 0.85 GP tent at (c - 460, c + 600) |
+| Apache tail over the outer wall (check_world) | firebase | low | Not a clip: the boom is 80 u and more up, the wall 57; check_world now tests cabin + boom |
+
+### Water
+| Issue | Where | Sev | Fixed how / left why |
+|---|---|---|---|
+| River / marsh sheets z-fighting at x 5000 | marsh | mid | River ends on a cell edge (MARSH_X0 - 8), a fitted strip is clipped at its square end: 0 z-fight cells |
+| Paddy sheet edges 0.5-3 u over the ground | paddies | mid | Each side moves up the dike flank until the mesh (TER.mesh_low) is 6 u over the water; the paddy tiles are 16-u cells now (32-u cells cut the 36-u dikes): +15 k terrain quads, map 71 MB |
+| Upper river edge over the south bank (46 points) | above the fall | mid | Strip widths fitted per vertex; still 46 points because the outer terrain is 128-u cells: the fit tests a 64-u cross: 0 points |
+| Marsh south edge (8 points) | marsh | low | Marsh rectangle grows until its edges are over ground, one 64-u cell more: 0 points |
+| Waterfall lip sheet edges in the air | waterfall | low | Rock curbs along both sides of the lip: 0 points |
+
+### Content (brief B)
+| Item | State |
+|---|---|
+| Village to 9 hooches | 9 (fitted on the terrace) |
+| Gardens and fences | gardens with taro / greens where a 100 x 72 spot is free beside a hut (two fence sides) |
+| Two roof-access huts | 1 drying platform at eave height with a ladder; the second finds no free spot with 9 huts on the terrace (left) |
+| Waterfall back path | shelf behind the curtain (fall moved 112 u out from the cliff over a rock lip, 80 u headroom) |
+| Temple collapsed gallery | roofed passage with a fallen roof slab on the west court (a bored tunnel under the knoll needs a terrain cut: later) |
+| Vines / roots on the temple, ferns at the platform foot | done |
+| Reeds along both banks | 230 |
+| Rice in every paddy cell | 342 clumps, every cell |
+| Debris round wrecks, smoke columns | done (C-123, wrecks, two craters, camp fire, burnt hut) |
+| Firebase M113 | dropped: no room inside the wire; it stands at the bridge and on the roads |
+| Culvert bunker | dropped: 266 x 201, no spot between the gate track, pits and pad 3's cylinder (40-u grid scan) |
+| Antenna masts | dropped: guy anchors span 262 x 227; the converted comm stations at TOC and FDC carry the antennas |
+| Water trailer | dropped: the guard tower now takes the only free corner (south-west) |
+| FDC radios | comm stations placed (search 300 u, slope 11) |
+| Ox cart | at the farm, the village and the road-1 wreck; the one on flag A's floor is kept off the flag |
+| GP crew tents, second latrine, firebase jeeps | dropped inside the wire (no 422 x 282 spot left); one M151 parks by the spur road below the gate |
+| Temple court | 3 balustrades and 1 lion fit (the gate, the tower, the DShK, the flag crate and the gallery take the court); fallen blocks only on the slope ring |
+| Village shrine, market stalls, cook fires | placed before the extra huts; the shrine, one stall and two fires still find no spot (the three road keep-outs cross the yard): left for a yard re-plan |
+
+## Changed files
+`tools/layout.py`, `mv_places.py`, `mv_terrain.py`, `mv_entities.py`, `p_base.py` (psp_pad without the pole, new windsock),
+`check_play.py` (new), `view_world.py` (new), `check_world.py` (Apache two-box test, no self pairs); radar, board, script rebuilt; props rebuilt: psp_pad, windsock (`out/props.json` 118). Entity contract unchanged
+(`docs/CONTRACT.md` not edited); `out/world_sites.json` gained `waypoints` and `landing` (check_play reads them).
+
+## Left (deliberate)
+- Stuck pockets: 12, every one escapable by a jump (pig pens, one garden corner, firebase pit corners).
+- Village yard: shrine, one market stall, two cook fires do not fit; second climbable platform does not fit; windsock prop built but
+  not placed; temple court holds 3 balustrades and 1 lion (box footprints are too coarse for the court).
+- Water trailer, culvert bunker, antenna masts, GP crew tents, second latrine, firebase M113 dropped inside the wire (reasons above).
+- 160 walkable cells deeper than 60 u (the waterfall pool and the river channel; reported, not a failure).
+
+## Next
+1. Re-plan the village yard so the shrine and stalls get room (the road keep-outs are 70 u wide through it).
+2. Place the windsock outside each pad's cylinder; true (hull) footprints for the temple court dressing.
+3. Compile and look at it in Hammer.
