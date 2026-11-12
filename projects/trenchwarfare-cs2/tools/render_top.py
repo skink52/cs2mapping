@@ -78,8 +78,8 @@ def digital(img, team):
     out = out.rotate(-90 if team == 'ct' else 90, expand=True)
     return out.resize((768, 768), Image.LANCZOS)
 
-for team in ('t', 'ct'):
-    digital(base_img, team).save(os.path.join(OUT, 'panorama/images/custom_game/tw/target_%s.png' % team))
+# the plotting board's maps are tools/render_sight.py's since remaster step 8 (printed trench map, 1024 px, shown at 640);
+# this file's green 'digital' look is kept for reference only and no longer written into the addon
 
 # radar + overview: tools/make_radar.py
 
@@ -92,5 +92,4 @@ paper[trench] = (0.55, 0.12, 0.10)
 pim = Image.fromarray((np.clip(paper, 0, 1) * 255).astype(np.uint8)).resize((512, 512), Image.LANCZOS)
 pim = pim.convert('RGBA'); pim.putalpha(255)
 pim.save(os.path.join(os.path.dirname(__file__), 'trench_map_small.png'))
-json.dump(dict(ext=EXT, size=768), open(os.path.join(os.path.dirname(__file__), '..', 'out', 'target_map.json'), 'w'))
 print('top-down renders done')

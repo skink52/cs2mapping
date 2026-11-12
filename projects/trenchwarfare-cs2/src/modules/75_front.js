@@ -14,7 +14,7 @@ function tickUnlocks(t) {
     if (!n) continue;
     stats.unlocks++;
     say("[tw] " + u.msg);
-    for (const p of players.values()) toast(p, u.msg, 7);
+    for (const p of players.values()) headline(p, u.msg, 7);     // "TITLE - where" -> the banner plate
   }
 }
 function tickAmbient() {

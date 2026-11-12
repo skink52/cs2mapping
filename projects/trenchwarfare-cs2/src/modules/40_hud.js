@@ -1,4 +1,4 @@
-// 40_hud: HUD: per-player cache (only changes are sent), toast, info card, role cards, banner
+// 40_hud: HUD: per-player cache (only changes are sent), toast, info card, role cards, banner, front headlines (docs/HUD.md)
 
 // ------------------------------------------------------------------ HUD (per-player cache, only changes are sent)
 let hudEnt;
@@ -55,3 +55,10 @@ function roleCard(p, role) {
     CONFIG.AIR_ENABLED ? "Nominated - you're more likely to be posted to the aerodrome." : "No aircraft yet - noted for later.");
 }
 function banner(p, title, sub, secs) { hText(p, "tw_banner_title", title); hText(p, "tw_banner_sub", sub); p.bannerUntil = now() + (secs || 5); }
+// a front-wide headline ("THE WAY TO THE WOOD IS OPEN - ladder at the north end..."): the part before " - " is the title, the rest
+// (first letter raised) the line under it; bots are skipped by hText
+function headline(p, msg, secs) {
+  const i = String(msg).indexOf(" - ");
+  const sub = i < 0 ? "" : msg.slice(i + 3);
+  banner(p, i < 0 ? msg : msg.slice(0, i), sub.charAt(0).toUpperCase() + sub.slice(1), secs);
+}

@@ -359,7 +359,7 @@ try { globalThis.__twDebug = { players, crews, shells, stats, CONFIG }; } catch 
 let poolIdx = 0;
 
 // ---- 40_hud.js
-// 40_hud: HUD: per-player cache (only changes are sent), toast, info card, role cards, banner
+// 40_hud: HUD: per-player cache (only changes are sent), toast, info card, role cards, banner, front headlines (docs/HUD.md)
 
 // ------------------------------------------------------------------ HUD (per-player cache, only changes are sent)
 let hudEnt;
@@ -416,6 +416,13 @@ function roleCard(p, role) {
     CONFIG.AIR_ENABLED ? "Nominated - you're more likely to be posted to the aerodrome." : "No aircraft yet - noted for later.");
 }
 function banner(p, title, sub, secs) { hText(p, "tw_banner_title", title); hText(p, "tw_banner_sub", sub); p.bannerUntil = now() + (secs || 5); }
+// a front-wide headline ("THE WAY TO THE WOOD IS OPEN - ladder at the north end..."): the part before " - " is the title, the rest
+// (first letter raised) the line under it; bots are skipped by hText
+function headline(p, msg, secs) {
+  const i = String(msg).indexOf(" - ");
+  const sub = i < 0 ? "" : msg.slice(i + 3);
+  banner(p, i < 0 ? msg : msg.slice(0, i), sub.charAt(0).toUpperCase() + sub.slice(1), secs);
+}
 
 // ---- 50_roles.js
 // 50_roles: roles: crew seats, role choice and requests, loadouts, deploy, uniforms, the streak rifle swap
@@ -1270,7 +1277,7 @@ function tickUnlocks(t) {
     if (!n) continue;
     stats.unlocks++;
     say("[tw] " + u.msg);
-    for (const p of players.values()) toast(p, u.msg, 7);
+    for (const p of players.values()) headline(p, u.msg, 7);     // "TITLE - where" -> the banner plate
   }
 }
 function tickAmbient() {
@@ -1655,7 +1662,7 @@ function tickAfk(p, pawn, t, held) {
   const idle = t - (p.lastActive || t);
   if (p.air && idle >= CONFIG.AFK.PILOT) {
     endFlight(p, pawn, false); setRole(p, "infantry", p.team); deploy(p, pawn);
-    toast(p, "Away from the controls - your aircraft went home. Back in the trench.", 6);
+    toast(p, "Away from the controls - your aircraft went home", 6);
     stats.afk++; p.lastActive = t;
   } else if (p.role === "mortar" && p.crew >= 0 && idle >= CONFIG.AFK.CREW) {
     if (p.inSight) leaveSight(p, pawn);
@@ -1694,6 +1701,8 @@ function thinkPlayer(s, t, dt) {
         : ["Hold the fire trench. " + CONFIG.RIFLE_NAME[team] + ", pistol, knife.", CONFIG.STREAK_UPGRADE + " kills without dying earns a " + CONFIG.UPGRADE_NAME[team] + ".", "Dressing stations in the support trench heal you."];
       hText(p, "tw_brief_l1", lines[0]); hText(p, "tw_brief_l2", lines[1]); hText(p, "tw_brief_l3", lines[2]);
       hText(p, "tw_brief_count", "Moving up in " + Math.max(0, p.deployAt - t).toFixed(0) + "s   (chat: !mortar  !infantry  !roles)");
+      hClass(p, "tw_toast", "show", t < p.toastUntil);          // answers to role commands in the briefing room (were never shown)
+      hClass(p, "tw_banner", "show", t < p.bannerUntil);        // a front headline reaches the briefing room too
       if (t >= p.deployAt) { hClass(p, "tw_brief", "show", false); p.first = false; deploy(p, pawn); }
       return;
     }
@@ -1733,7 +1742,7 @@ function thinkPlayer(s, t, dt) {
     }
     // HUD: prompt, status, toast, banner
     hText(p, "tw_prompt_text", prompt); hClass(p, "tw_prompt", "show", !!prompt);
-    hClass(p, "tw_status", "show", true);
+    hClass(p, "tw_status", "show", !p.inSight);              // the plotting board carries the crew lines (and covers the card on 4:3)
     hText(p, "tw_st_role", ROLE_NAME[p.role] || "");
     if (p.role === "infantry") {
       hText(p, "tw_st_l1", "Rifle: " + (p.upgraded ? CONFIG.UPGRADE_NAME[team] : CONFIG.RIFLE_NAME[team]));
@@ -1823,7 +1832,7 @@ Instance.OnPlayerKill(({ player, attacker, inflictor, weapon }) => {
     const old = ap.FindWeapon(CONFIG.INF_RIFLE[team]); if (old) { try { ap.DestroyWeapon(old); } catch (e) {} }
     if (w && !ap.FindWeapon(w)) ap.GiveNamedItem(w, true);
     a.upgraded = true; a.ammo = {}; stats.upgrades++;
-    toast(a, CONFIG.UPGRADE_NAME[team] + " issued for your streak!  (SHIFT+E or !swap: back to the " + CONFIG.RIFLE_NAME[team] + ")", 5);
+    banner(a, "MARKSMAN", CONFIG.UPGRADE_NAME[team] + " issued.  SHIFT+E or !swap: back to the " + CONFIG.RIFLE_NAME[team], 5);   // the streak reward is a headline
   }
 });
 // damage guard: pilots in the air only take damage from the enemy (or their own crash), mortar crews in their pit only from enemy players.
@@ -1890,7 +1899,7 @@ Instance.OnPlayerChat(({ player, text }) => {
     const lobby = !!(pw && pw.IsAlive() && !p.deployed && !p.air && !p.hidden);
     if (p.noUniform) {
       if (lobby && p.stockModel) { try { pw.SetModel(p.stockModel); } catch (e) {} }
-      toast(p, "Standard agent model" + (lobby ? "" : " from your next deploy") + " (!uniform to wear the period uniform again)", 4);
+      toast(p, "Standard agent model" + (lobby ? "" : " from your next deploy") + " - !uniform to undo", 4);
     }
     else { p.uniformDone = false; p.uniformAt = now(); toast(p, "Period uniform on" + (lobby ? "" : " from your next deploy"), 3); }
   }

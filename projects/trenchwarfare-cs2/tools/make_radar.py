@@ -1,16 +1,39 @@
 """Radar / minimap for mg_trenchwarfare, fitted to the ground play space (trenches, no man's land, mortar line, the wood clearing, the mine
 galleries; the aerodromes are left off). Same conventions as the cs2port radar that works in game: 1024 px png + vtex (max 1024, no lod),
 game resource/overviews/<map>.txt with pos_x/pos_y = world position of the image's top-left corner and scale = world units per pixel.
-usage: make_radar.py <vmap> <addon content out> <addon game out>"""
-import os, sys, math, re
+usage: make_radar.py [--vmap V] [--addon OUT] [--game GAME]     (old form: make_radar.py <vmap> <addon out> <game out>)
+  --vmap   the map whose props (wire, wrecks, trees, ladders, aircraft) and water are drawn; default ../out/mg_trenchwarfare_models.vmap
+           (re-run it on the final chained map: world_1 -> models -> terrain -> nav)
+  --addon  content out (default ../out/addon): panorama/images/overheadmaps/mg_trenchwarfare_radar_psd.png + .vtex
+  --game   game out (default ../out/game): resource/overviews/mg_trenchwarfare.txt
+also writes ../out/radar_clean.png (4096 px, unlabelled: render_top.py, render_slides.py), ../out/radar_region.json, and
+../out/radar_labelled_4k.png (the labelled radar before the 1024 px shrink, for the slides). Check: tools/check_radar.py."""
+import os, sys, math, re, argparse
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from scipy import ndimage
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
 import dmx
 import layout as LY
 from noise import fbm
 
-VMAP = sys.argv[1]; OUT = sys.argv[2]; GAME = sys.argv[3]
+_ap = argparse.ArgumentParser()
+_ap.add_argument('pos', nargs='*')
+_ap.add_argument('--vmap', default=os.path.join(HERE, '..', 'out', 'mg_trenchwarfare_models.vmap'))
+_ap.add_argument('--addon', default=os.path.join(HERE, '..', 'out', 'addon'))
+_ap.add_argument('--game', default=os.path.join(HERE, '..', 'out', 'game'))
+_a = _ap.parse_args()
+VMAP, OUT, GAME = (_a.pos + [None, None, None])[:3] if len(_a.pos) == 3 else (_a.vmap, _a.addon, _a.game)
+SERIF_B = next((p for p in ('C:/Windows/Fonts/georgiab.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf') if os.path.exists(p)), None)
+SANS_C = next((p for p in ('C:/Windows/Fonts/bahnschrift.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.ttf') if os.path.exists(p)), None)
+def tfont(path, size):
+    f = ImageFont.truetype(path, size)
+    if path and 'bahnschrift' in path:
+        try: f.set_variation_by_name('SemiBold Condensed')
+        except Exception: pass
+    return f
+print('radar: reading %s' % VMAP, flush=True)
 SCALE = 8.40                     # world units per pixel of the 1024 image (written to the overview as is)
 SPAN = SCALE * 1024              # square side in world units
 X0, Y0 = -4300.0, 4700.0         # world position of the image's top-left corner (pos_x, pos_y)
@@ -346,8 +369,8 @@ for s_ in (-1, 1):
     dr.pieslice([c[0] - r, c[1] - r, c[0] + r, c[1] + r], 180, 360, fill=(30, 22, 16, 255), outline=(232, 214, 160, 255), width=2 * SS)
 out.convert('RGB').save(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'out', 'radar_clean.png'))     # unlabelled, for the mortar sight (render_top.py)
 # ---------------------------------------------------------------- lettering, compass, frame
-def label(text, x, y, size, col=(232, 220, 186), alpha=200, rot=0, spacing=0.18, font='/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf'):
-    f = ImageFont.truetype(font, int(size * SS))
+def label(text, x, y, size, col=(232, 220, 186), alpha=200, rot=0, spacing=0.18, font=None):
+    f = tfont(font or SERIF_B, int(size * SS))
     chars = list(text); widths = [f.getbbox(ch)[2] - f.getbbox(ch)[0] if ch != ' ' else size * SS * 0.35 for ch in chars]
     sp = size * SS * spacing
     W = int(sum(widths) + sp * (len(chars) - 1)) + 8; H = int(size * SS * 1.5)
@@ -363,22 +386,22 @@ label("NO MAN'S LAND", 0, 0, 30, alpha=150, rot=90, spacing=0.5)
 label('GERMAN LINES', -2760, -3040, 24, col=(222, 196, 170), alpha=190)
 label('BRITISH LINES', 2760, -3040, 24, col=(214, 214, 186), alpha=190)
 label('THE WOOD', 0, 3950, 26, alpha=200, spacing=0.35)
-label('MINE GALLERIES', 0, -3640, 14, alpha=180, font='/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.ttf')
+label('MINE GALLERIES', 0, -3640, 20, alpha=180, font=SANS_C)
 label('MINENWERFER', -LY.MORTAR_X, 1980, 17, alpha=170)
 label('TRENCH MORTARS', LY.MORTAR_X, 1980, 17, alpha=170)
-label('PICCADILLY', LY.XS + 120, -60, 13, alpha=170, rot=90, font='/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.ttf')
-label('UNTER DEN LINDEN', -LY.XS - 120, -60, 13, alpha=170, rot=90, font='/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.ttf')
+label('PICCADILLY', LY.XS + 120, -60, 18, alpha=170, rot=90, font=SANS_C)
+label('UNTER DEN LINDEN', -LY.XS - 120, -60, 18, alpha=170, rot=90, font=SANS_C)
 
 # grid: 16 x 16 squares lettered A-P across, 1-16 down (the same squares the script's !pos reports)
 dr = ImageDraw.Draw(out)
-fG = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.ttf', int(15 * SS))
+fG = tfont(SANS_C, int(26 * SS))
 for k in range(1, 16):
     t = M * k / 16
     dr.line([(t, 0), (t, M)], fill=(232, 220, 186, 46), width=SS); dr.line([(0, t), (M, t)], fill=(232, 220, 186, 46), width=SS)
 for k in range(16):
     c = M * (k + 0.5) / 16
-    dr.text((c - 5 * SS, 4 * SS), chr(65 + k), font=fG, fill=(232, 220, 186, 170))
-    dr.text((4 * SS, c - 9 * SS), str(k + 1), font=fG, fill=(232, 220, 186, 170))
+    dr.text((c, 6 * SS), chr(65 + k), font=fG, fill=(232, 220, 186, 190), anchor='mt', stroke_width=SS, stroke_fill=(20, 18, 14, 150))
+    dr.text((6 * SS, c), str(k + 1), font=fG, fill=(232, 220, 186, 190), anchor='lm', stroke_width=SS, stroke_fill=(20, 18, 14, 150))
 # compass (north = +y = up) and a 1000-unit scale bar, bottom left inside the frame
 cx_, cy_ = px(X0 + 380, Y0 - SPAN + 700); R = plen(200)
 dr.ellipse([cx_ - R, cy_ - R, cx_ + R, cy_ + R], outline=(214, 196, 150, 200), width=3)
@@ -387,13 +410,13 @@ for k in range(4):
     tip = (cx_ + math.sin(a) * R * 0.95, cy_ - math.cos(a) * R * 0.95)
     l_ = (cx_ + math.sin(a - 0.5) * R * 0.2, cy_ - math.cos(a - 0.5) * R * 0.2); r_ = (cx_ + math.sin(a + 0.5) * R * 0.2, cy_ - math.cos(a + 0.5) * R * 0.2)
     dr.polygon([tip, l_, (cx_, cy_)], fill=(232, 220, 186, 230)); dr.polygon([tip, r_, (cx_, cy_)], fill=(150, 136, 104, 230))
-fN = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf', int(20 * SS))
+fN = tfont(SERIF_B, int(20 * SS))
 dr.text((cx_ - 7 * SS, cy_ - R - 28 * SS), 'N', font=fN, fill=(232, 220, 186, 230))
 x0_, y0_ = px(X0 + 700, Y0 - SPAN + 260); x1_, _ = px(X0 + 1700, Y0 - SPAN + 260)
 for k in range(4):
     dr.rectangle([x0_ + (x1_ - x0_) * k / 4, y0_ - 5 * SS, x0_ + (x1_ - x0_) * (k + 1) / 4, y0_ + 5 * SS], fill=(232, 220, 186, 220) if k % 2 == 0 else (60, 54, 44, 220),
                  outline=(232, 220, 186, 220))
-fS = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.ttf', int(13 * SS))
+fS = tfont(SANS_C, int(13 * SS))
 dr.text((x0_, y0_ + 8 * SS), '0', font=fS, fill=(232, 220, 186, 220)); dr.text((x1_ - 30 * SS, y0_ + 8 * SS), '25 m', font=fS, fill=(232, 220, 186, 220))
 
 # vignette + paper grain
@@ -402,7 +425,9 @@ yy, xx = np.mgrid[0:M, 0:M] / M - 0.5
 vig = np.clip(1.08 - 0.55 * (xx ** 2 + yy ** 2) * 2.2, 0.55, 1)[..., None]
 grain = np.asarray(Image.fromarray((ndimage.gaussian_filter(np.random.RandomState(9).rand(1024, 1024), 1.2) * 255).astype(np.uint8)).resize((M, M), Image.BICUBIC), np.float32)[..., None] / 255.0 - 0.5
 o = o * vig * (0.97 + 0.05 * grain)
-final = Image.fromarray(o.clip(0, 255).astype(np.uint8)).resize((OUT_N, OUT_N), Image.LANCZOS)
+big = Image.fromarray(o.clip(0, 255).astype(np.uint8))
+big.save(os.path.join(HERE, '..', 'out', 'radar_labelled_4k.png'))
+final = big.resize((OUT_N, OUT_N), Image.LANCZOS)
 dst = os.path.join(OUT, 'panorama/images/overheadmaps'); os.makedirs(dst, exist_ok=True)
 final.save(os.path.join(dst, 'mg_trenchwarfare_radar_psd.png'), optimize=True)
 open(os.path.join(dst, 'mg_trenchwarfare_radar_psd.vtex'), 'w', newline='\n').write('''<!-- dmx encoding keyvalues2_noids 1 format vtex 1 -->

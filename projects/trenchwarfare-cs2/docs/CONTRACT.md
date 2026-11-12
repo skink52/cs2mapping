@@ -24,12 +24,13 @@ staged (`out/addon`, not compiled yet) count as OK, "staged, not compiled yet"; 
 - Map: the user's `content\csgo_addons\mg_trenchwarfare\maps\mg_trenchwarfare.vmap` (source of truth; delta patches only, REMASTER_PLAN).
   Most names were placed by `tools/make_map.py` (vis group `tw_gen`); later ones by the `tools/patch_*.py` delta patches.
 - HUD: `tools/tw_hud.py` + `tools/tw_cockpit.py` -> `panorama/layout/custom_game/mg_trenchwarfare.xml`, `panorama/styles/custom_game/mg_trenchwarfare.css`,
-  pictures `panorama/images/custom_game/tw/`. Panel ids start `tw_`. Text goes through the dialog variable `v`.
-- Sounds: `tools/sounds.py` -> `sounds/tw/*.wav`, events `tw.*` in `soundevents/soundevents_addon.vsndevts`.
+  pictures `panorama/images/custom_game/tw/` (the board maps from `tools/render_sight.py`). Panel ids start `tw_`. Text goes through the dialog variable `v`.
+  The full HUD contract (every id, kind, class and step range) is the table in [HUD.md](HUD.md#hud-contract); `tw_hud.py` enforces it.
+- Sounds: `tools/sounds.py` -> `sounds/tw/*.wav`, events `tw.*` in `soundevents/soundevents_addon.vsndevts` (all synthesised since step 8: [SOUNDS.md](SOUNDS.md)).
 - Tests: `node test/mock.mjs [players] [seconds]` reads `out/entities.json` and `out/addon/panorama/...xml|css` and `out/addon/<model>`
   for SetModel (all restaged by `tools/restage_out.py`).
 - Shared constants (`tools/restage_out.py` fails if they disagree): radar region `x0 -4300, y0 4700, span 8601.6` = `make_radar.py`
-  X0/Y0/SCALE x 1024 = the shipped overview `pos_x/pos_y/scale` = `CONFIG.RADAR`; sight square `CONFIG.TARGET_EXT 4600` = `render_top.py EXT`;
+  X0/Y0/SCALE x 1024 = the shipped overview `pos_x/pos_y/scale` = `CONFIG.RADAR`; sight square `CONFIG.TARGET_EXT 4600` = `render_sight.py` (reads it from 00_config.js; `render_top.py` no longer writes the sight);
   sight steps `CONFIG.TARGET_STEPS 192` = `tw_hud.py STEPS` (the `.x0..x191` / `.y0..y191` classes).
 
 ## Entities (targetnames)
@@ -115,7 +116,16 @@ Stock `.vsnd` files inside an event are not checked offline (they live in the ga
 | `tw.plane_engine` | tools/sounds.py | OK | on tw_plane_eng_N; own files plane_engine.vsnd |
 | `tw.plane_gun` | tools/sounds.py | OK | on tw_plane_gun2_N, tw_plane_gun3_N, tw_plane_gun_N; own files none; 3 stock vsnd (not checked offline) |
 
+The table above is the deployed addon (what `check_contract.py` reads). Step 8 (staged in `out/addon`, not deployed): every event
+above plays only our synthesised files (`mortar_launch_1..2`, `mortar_whistle_1..2`, `mortar_impact_1..3`, `plane_engine` loop,
+`plane_gun_1..3`); the map's `env_soundscape` plays `tw.amb.front`, whose children are `tw.amb.wind`, `tw.amb.barrage`, `tw.amb.guns`,
+`tw.amb.shells`, `tw.amb.mg`, `tw.amb.whistles`, `tw.amb.planes` (ours) and `tw.amb.crows`, `tw.amb.rifles`, `tw.amb.whiz` (stock).
+Sounds made but waiting for a script or map hook (`tw.whistle_attack`, `tw.plane_dive`, `tw.amb.rain_tin`): [SOUNDS.md](SOUNDS.md).
+
 ## HUD (custom_hud_layout `tw_hud`)
+Per-id contract (kind, classes, step ranges, the module that writes it): [HUD.md](HUD.md#hud-contract), enforced by `tools/tw_hud.py`
+(step 8). The rows below are `check_contract.py`'s summary against the deployed xml / css; the step 8 layout (staged in `out/addon`)
+keeps all 56 ids and every class, and the mock passes against it.
 Ids the script sends (`SetDialogVariableStringForPlayer` via `hText`, `SetHasClassForPlayer` via `hClass` / `hSwap` / `placeMarker`;
 `placeMarker(id)` also drives `<id>y`) and the classes it toggles, against the content xml / css.
 

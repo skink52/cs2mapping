@@ -60,10 +60,12 @@
    "cs2mapping": "tools/weapons/glbmesh.py"
   },
   "create/hud_check.py": {
-   "monsoon-cs2": "tools/hud_check.py"
+   "monsoon-cs2": "tools/hud_check.py",
+   "trenchwarfare-cs2": "tools/hud_check.py"
   },
   "create/loading.py": {
-   "monsoon-cs2": "tools/loading.py"
+   "monsoon-cs2": "tools/loading.py",
+   "trenchwarfare-cs2": "tools/loading.py"
   },
   "create/lod_decimate.py": {
    "monsoon-cs2": "tools/lod_decimate.py",
@@ -75,7 +77,8 @@
   },
   "create/merge_snd.py": {
    "hellmatch-cs2": "tools/merge_snd.py",
-   "monsoon-cs2": "tools/merge_snd.py"
+   "monsoon-cs2": "tools/merge_snd.py",
+   "trenchwarfare-cs2": "tools/merge_snd.py"
   },
   "create/modelio.py": {
    "monsoon-cs2": "tools/modelio.py",
@@ -93,7 +96,8 @@
    "trenchwarfare-cs2": "tools/p_sandbag.py"
   },
   "create/panorama.py": {
-   "monsoon-cs2": "tools/panorama.py"
+   "monsoon-cs2": "tools/panorama.py",
+   "trenchwarfare-cs2": "tools/panorama.py"
   },
   "create/patch_vmap.py": {
    "monsoon-cs2": "tools/patch_vmap.py"
@@ -124,7 +128,8 @@
   },
   "create/sndevents.py": {
    "hellmatch-cs2": "tools/sndevents.py",
-   "monsoon-cs2": "tools/sndevents.py"
+   "monsoon-cs2": "tools/sndevents.py",
+   "trenchwarfare-cs2": "tools/sndevents.py"
   },
   "create/split_parts.py": {
    "monsoon-cs2": "tools/split_parts.py"

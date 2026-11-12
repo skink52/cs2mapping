@@ -27,6 +27,13 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
+- 12 Nov ~20:30: step 8 done offline (simulated, staged in `out/step8/deploy_files.txt`; force-compile xml/css/js). HUD contract
+  in `docs/HUD.md` (56 script ids), `tools/tw_hud.py` fails on any contract/layout/module mismatch, `tools/hud_check.py` 0 problems
+  over 6 states x 3 widths; new canvas/brass look, wooden mortar plotting board, walnut cockpit. Script: HUD-only changes (headlines,
+  briefing toasts). 28 synthesised sounds (loop seams pass), `tw.amb.front` soundscape enriched. `tools/check_radar.py`: 56/56 points,
+  0 u error. Re-run `make_radar.py --vmap <final chained map>` + `check_radar.py` after the chain. Pending sound wiring (sounds in
+  `out/step8/pending_sounds/`): `whistle_attack` (round-start), `plane_dive` (60_air hook), `rain_tin` (step 7 rain exists: wire it).
+  libsync: 5 trench copies added (hud_check, panorama, loading, sndevents, merge_snd).
 - 12 Nov ~19:30: step 7 done offline. `tools/patch_terrain.py --in out/mg_trenchwarfare_models.vmap --out out/mg_trenchwarfare_terrain.vmap`
   patches 672 tw_gen terrain tiles: 367 new craters, tank/lorry ruts, puddles, erosion; protect mask (48 % of the map; trenches, pits,
   spawns, runways, props, user objects, the user's explosions) read back at 0.000000 u change. Terrain tris 118k -> 198k (47 tiles
