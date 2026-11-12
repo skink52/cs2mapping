@@ -32,6 +32,10 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   0 out of memory. Logs copied to `out/step9/`. `docs/BUILD_LOG_1.md` filled: nav **10,269 areas** (tw34 44,160; target < 5,000;
   the ~1,470 estimate was 7x off), 24,718 meshes / 1.40 M charts at 2048, vpk 519.9 MB. 4 stale models (wire, ladder) recompiled;
   check_world now fails only on the user's duplicate info_map_parameters.
+- 13 Nov ~00:45: **deployed + compiled** seams, sap portal fix, Gewehr/Luger/Lee-Enfield replacements, template wavs, full credits.
+  Assets 0 failed; map compile 4 OK 39.4 min, 0 errors, 0 entity DELETED, nav 4,397; check_world clean. Old CC BY-ND Luger files
+  moved out of the addon to `C:\source1\gmod_assets\trenchwarfare\retired\`. **Current build; level: compiled, not loaded in CS2.**
+  Next: the user's in-game `docs/TESTING.md` (now also: new weapons' bolt/toggle animations and hand fit; sap entry crouched).
 - 13 Nov ~00:00: seams fixed offline: `tools/check_seams.py` (selftest on planted gaps) + guarded stage `tools/patch_seams.py`
   (chain world_1 -> models -> terrain -> seams -> sounds -> nav). Generated seams 164 -> 0 (siding_top 100: an 11-u slot behind every
   revetment top; holes 9; standing-eye cracks 55); 8 user-owned niche cracks listed, not changed. Sap: floor ramp, lintel, ground
