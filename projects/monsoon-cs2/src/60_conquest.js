@@ -64,7 +64,7 @@ function captureFlag(f, team) {
   stats.captures++; stats.capturesBy[f.id] = (stats.capturesBy[f.id] || 0) + 1;
   if (to) { feed(team, "We took " + label, "good", true); feed(otherTeam(team), prev ? "We lost " + label : "The enemy took " + label, "bad", true); }
   else { feed(team, label + " neutralised", "good", true); feed(prev, "We lost " + label, "bad", true); }
-  for (const p of players.values()) if (!p.bot && p.team === team && p.here === f.id) p.merit++;
+  for (const p of players.values()) if (p.team === team && p.here === f.id) { if (!p.bot) p.merit++; reqEarn(p, CONFIG.REQ.CAPTURE, "capture"); }
   log(TEAM_NAME[team] + (to ? " took " : " neutralised ") + label);
 }
 function countHeld(team) { let n = 0; for (const q of flags) if (q.owner === team) n++; return n; }

@@ -156,7 +156,7 @@ function disableGun(g, bySlot, src) {
   if (gunDisabled(g)) return;                     // already out: more hits do not add time
   stats.gunsDisabled++; stats.gunsDisabledBy[src || "arty"] = (stats.gunsDisabledBy[src || "arty"] || 0) + 1;
   const q = players.get(bySlot);
-  if (q && q.team !== g.team) { q.merit++; toast(q, "Enemy gun knocked out", 3); }
+  if (q && q.team !== g.team) { q.merit++; toast(q, "Enemy gun knocked out", 3); reqEarn(q, CONFIG.REQ.GUN, "gun"); }
   const what = g.team === T ? "rocket launcher " : "howitzer ";
   feed(g.team, "Our " + what + (g.k + 1) + " is knocked out", "bad", false);
   feed(otherTeam(g.team), "Enemy " + what + "knocked out", "good", false);
@@ -294,7 +294,7 @@ function missionAssist(victimTeam, pos) {
   const M = CONFIG.ARTY.MISSION;
   for (const m of missions[otherTeam(victimTeam)] || []) {
     if (TNOW - m.splashAt > M.ASSIST_TIME || dist2(m, pos) > M.ASSIST_RADIUS) continue;
-    const q = players.get(m.owner); if (q && q.team === m.team) { q.merit++; stats.foAssists++; toast(q, "Fire mission assist +1 merit", 3); }
+    const q = players.get(m.owner); if (q && q.team === m.team) { q.merit++; stats.foAssists++; toast(q, "Fire mission assist +1 merit", 3); reqEarn(q, CONFIG.REQ.FO_ASSIST, "fo"); }
   }
 }
 // hold USE on open ground: returns the prompt while holding
@@ -411,7 +411,7 @@ function tickBattery(p, pawn, pos, dt, pressed, held) {
     if (held & CSInputs.USE) {
       if (p.holdKind !== "repair") { p.holdKind = "repair"; p.holdT = 0; }
       p.holdT += dt;
-      if (p.holdT >= A.REPAIR_HOLD) { g.disabledUntil = TNOW; p.holdKind = "done"; p.holdT = 0; p.merit++; stats.repairs++; toast(p, "Gun repaired", 2.5); }
+      if (p.holdT >= A.REPAIR_HOLD) { g.disabledUntil = TNOW; p.holdKind = "done"; p.holdT = 0; p.merit++; stats.repairs++; toast(p, "Gun repaired", 2.5); reqEarn(p, CONFIG.REQ.REPAIR, "repair"); }
       return "REPAIRING GUN " + (g.k + 1);
     }
     if (p.holdKind === "repair") { p.holdKind = ""; p.holdT = 0; }

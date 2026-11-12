@@ -4,7 +4,8 @@
 [CONTRACT.md](CONTRACT.md), rules from [DESIGN.md](DESIGN.md) sections 3 and 6. AI-generated (Claude) for skink52.
 
 Status: **simulated** (mock engine, `tsc`, `api.py --strict`). mv-0.5 ran once in CS2 (playtest 1, 12 Nov 2026: docs/PLAYTEST_1.md);
-mv-0.6 carries the fixes for its script rows (docs/FIX_PT1_S.md) and has not run in CS2. See "Simulated vs not yet tested".
+mv-0.6 carries the fixes for its script rows (docs/FIX_PT1_S.md); mv-0.7 adds the era weapons, requisition and the armory (batch G,
+docs/WEAPONS.md, docs/FIX_PT1_G.md). Neither has run in CS2. See "Simulated vs not yet tested".
 
 ## HUD contract
 
@@ -59,6 +60,9 @@ Needles and cards use `a0..a71` = rotation in 5 degree steps clockwise (`aN` = N
 | mv_st_l1 | text | | status line 1 |
 | mv_st_l2 | text | | status line 2 |
 | mv_st_l3 | text | | status line 3 |
+| mv_req | class | show, ready | requisition row under the status box (batch G, docs/WEAPONS.md); ready = an upgrade not yet owned is affordable |
+| mv_req_pts | text | | "REQ 35  +10" (points, the last gain for 2.5 s) |
+| mv_req_next | text | | what the points buy next: "SNIPER IN 10" / "CARBINE READY  -  F at a rack" |
 | mv_hold | class | show | hold-USE progress (fire mission, gun repair) |
 | mv_hold_text | text | | what is being held ("CALLING FIRE MISSION") |
 | mv_hold_bar | swap | p0..p20 | progress fill, p20 = complete |
@@ -193,7 +197,8 @@ Build: `node tools/build_script.mjs` joins `src/NN_*.js` in name order under one
 |---|---|
 | `00_config.js` | `VERSION`, the one `CONFIG` object |
 | `10_util.js` | vectors, angle bases (`angleBasis`, `anglesFromBasis`, `anglesNear`), entity cache (`ent`, `need`, `fire`), HUD cache (`hText`, `hClass`, `hSwap`), effect pools, tracers, smoke screens, `hitscan`, `groundZ` / `approxGround` |
-| `20_players.js` | player state `P(slot)`, roles (`chooseRole`, `requestRole`), kits and the AT rocket trigger, uniforms, deploy points, `deploy` |
+| `20_players.js` | player state `P(slot)`, roles (`chooseRole`, `requestRole`), kits (upgrade kits only once unlocked) and the AT rocket trigger (`atCfg`: per side), grenades kept through seats, uniforms, deploy points, `deploy` |
+| `25_weapons.js` | batch G (docs/WEAPONS.md): requisition points (`reqEarn`, assists from `OnPlayerDamage`, bounty), `reqBuy`, the armory card at a rack (F / E), the frag pouch, `botBuy`, the REQ HUD row, round / disconnect ledger (`reqNewRound`, `reqRemember`, `reqRestore`) |
 | `30_heli.js` | helicopters: pose to entities, seats and cameras, boarding / leaving / fast-rope, shared gun code (heat, tracers), rockets, damage, crash, wreck, respawn, the flight model `tickHeli` |
 | `40_arty.js` | guns (laying, loading, firing, recoil, disable / repair), shells, `blast` (damage + assist split), fire missions, the plotting board, crew stations |
 | `50_mounted.js` | emplaced guns |
@@ -219,6 +224,12 @@ Things worth knowing:
   is its base within `MOUNT.BASE_RADIUS` (else anyone) and its kind m2 (CT) / dshk.
 - Optional entities, used when present and not in CONTRACT: `mv_flag_snd_<a..e>` (point_soundevent, `StartSound` on capture).
   `mv.capture`, `mv.flag_lost`, `mv.radio_blip`, `mv.heli_turbine`, `mv.rocket_fly` have no entity in CONTRACT and are not played.
+- Requisition (batch G, docs/WEAPONS.md): kills 10, assists 5, captures 15, bounty +5, helicopter 25, gun knocked out 10, FO assist /
+  repair 5 (x1.3 for a side 60+ tickets behind), cap 100. Spent on `UNLOCKS` (round-long: frag pouch 20, shotgun 30, carbine 35, sniper 45)
+  at a rack (F opens the armory card on `mv_info`, F steps, E buys) or by `!armory <id>` anywhere (a primary is issued at the next rack /
+  deploy). Kept through death and a team switch (unlocks are side-neutral); a new round clears unlocks and keeps 30 REQ; a disconnected
+  player's points and unlocks wait 15 min under his name; reload carries them. Bots buy one thing at deploy (`BOT_BUY`). The REQ row is
+  `mv_req` (only when `out/hud.json` lists it).
 - Chat: `!help` / `!commands` (the list on the HUD card and in chat, at most once per 20 s each), `!controls` / `!keys` (the keys
   for the seat, gun or battery the player is on), `!infantry !artillery !air` (role now if open, else next respawn), `!rifle !mg !at`,
   `!roles`, `!spawn <a-e|base|heli>`, `!pos`, `!uniform`, `!bots <n>`, and `!swap` = next free seat in a helicopter, or the next kit at an
@@ -252,7 +263,8 @@ Things worth knowing:
 | Section | What to tune |
 |---|---|
 | `LOBBY_*`, `ROLES` | briefing time; chance of being drawn into the battery / an air slot |
-| `KITS`, `PISTOL`, `AT`, `BULLET_VS_HELI` | weapon classes per team, kit limits (`share`, `per`), the AT rocket, rifle damage to helicopters |
+| `KITS`, `PISTOL`, `AT`, `AT_TEAM`, `BULLET_VS_HELI` | weapon classes per team, kit limits (`share`, `per`, `unlock`), the AT rocket (`AT_TEAM[3]`: the US M79's speed, gravity, blast, reload), rifle damage to helicopters |
+| `REQ`, `UNLOCKS`, `UNLOCK_ORDER`, `UNLOCK_ALIAS`, `BOT_BUY` | batch G: points per deed, cap, carry into the next round, catch-up, disconnect keep time; the upgrades (cost, kit or perk); bot purchases |
 | `UNIFORMS*` | models per team; only applied when an `mv_cache_N` prop holds that model |
 | `CONQUEST` | tickets, bleed, capture time, round length, round-end fallbacks; `POSES`, `POSE_RATE`, `POSE_ANIM` / `POSE_IDLE`: the flag on its pole |
 | `CHAT`, `HUDRUN` | chat pacing, capture announcements, the first-deploy hint; HUD readiness and back-off after a failed call |
@@ -290,6 +302,7 @@ node test/mock.mjs 32 300 scenario=edge piece="shot down"  # one bug class alone
 node test/mock.mjs 32 450 scenario=review2 humans=4         # review pass 2's bug classes (docs/REVIEW_SCRIPT_2.md)
 node test/mock.mjs 32 450 scenario=review3 humans=4         # review pass 3's fixes (REVIEW_SCRIPT_2.md "Round 3")
 node test/mock.mjs 12 240 scenario=pt1 humans=4             # playtest 1 (docs/FIX_PT1_S.md); add script=out/pt1/before_pt1.js: 11 failures
+node test/mock.mjs 14 300 scenario=weapons humans=6         # batch G (docs/FIX_PT1_G.md): requisition, armory, upgrades kept / cleared, launchers, bots
 node test/mock.mjs 32 450 scenario=review3 humans=4 script=out/review3/before_review3.js   # the same against the build before
 node test/sim_balance.mjs 40 32                             # many seeded rounds, real CONFIG: balance report (about 1 min per set)
 node test/sim_balance.mjs 40 32 seed0=1001 set=bots         # a second seed set, to check a tuning is not fitted to the first
@@ -344,6 +357,10 @@ Not yet tested in CS2 (every item is an assumption):
   0.3 s fade between them should read as the cloth sliding); `Skin` on the flag poles; particle `Start` / `Stop` re-triggering (the impact
   puffs reuse the dirt particles of the explosion pool).
 - Whether a HUD call for a client still loading throws or is lost; `OnPlayerActivate` for a listen-server host. The script copes either way.
+- Batch G: the addon's `scripts/weapons.vdata` overriding the stock entries for this map (stats, the M1911 / M14 / M21 models in first and
+  third person, the stock animations on them); F (`LOOK_AT_WEAPON`) read at a rack while CS2 plays the inspect animation; the frag pouch
+  (one HE + one smoke) against CS2's grenade limits; bots using a sniper rifle / shotgun the script hands them; the M79's lob in a
+  player's hands (the script's projectile under real gravity); a rejoining player keeping his name (the ledger key).
 - `mv.mount_gun` naming the game's own `sounds/weapons/m249/m249_0N.vsnd` from an addon event (compiled; the sound itself unheard).
 - Moving a parked pawn (`MOVETYPE_NONE`, scale 0.02) every tick under a `FOLLOW_POSITION` / `CONTROLLED_POSITION` camera
   on a helicopter; restoring the camera parent; what CS2 bots do while parked in a seat.

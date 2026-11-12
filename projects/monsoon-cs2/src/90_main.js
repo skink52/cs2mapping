@@ -13,7 +13,9 @@ const stats = { rounds: 0, gunShots: 0, rockets: 0, fired: 0, shells: 0, beehive
                 // review 3
                 aiHeliSwaps: 0, botTakeovers: 0, botReleases: 0, crewReleased: 0, heliHeld: 0, botsVotes: 0, botsSet: 0, botGoals: {},
                 // playtest 1
-                impactPuffs: 0, pilotGunShots: 0, helps: 0 };
+                impactPuffs: 0, pilotGunShots: 0, helps: 0,
+                // batch G: requisition and the armory (25_weapons)
+                reqEarned: 0, reqBy: {}, reqCapped: 0, reqDenied: 0, unlocks: 0, unlockBy: {}, botBuys: 0, ledgerRestores: 0, assists: 0, armoryOpens: 0, atShots: 0 };
 let roster = [];
 // bot takeover (Instance.OnBotControl): human slot -> { bot: bot slot, pawn }, and bot slot -> human slot while he plays it
 const botCtl = new Map(), botTaken = new Map();
@@ -48,6 +50,7 @@ function leaveTeam(p, pawn) {
   p.role = null; p.team = 0; p.deployed = false; p.kit = "rifle"; p.kitNext = ""; p.spawnSel = "base"; p.waitRole = ""; p.afk = false; p.here = ""; p.goal = "";
 }
 function forgetPlayer(p) {
+  reqRemember(p);                              // points and unlocks wait under his name (25_weapons)
   endBotControl(p.slot);
   const hs = botTaken.get(p.slot); if (hs !== undefined) endBotControl(hs);
   leaveTeam(p, undefined);
@@ -77,6 +80,8 @@ function buildRoster() {
       if (p.ctl) { forgetPlayer(p); p = P(s); }
       p.ctl = ctl; p.seenAt = TNOW || now();
       try { p.bot = ctl.IsBot(); } catch (e) { p.bot = false; }
+      try { p.name = String(ctl.GetPlayerName() || ""); } catch (e) { p.name = ""; }
+      reqRestore(p);
       stats.joins++; if (game.start && !game.over && TNOW - game.start > 30 && !p.bot) stats.lateJoins++;
       if (!p.bot) hudReset(p);                 // whatever the last player in this slot had on screen
     }
@@ -110,6 +115,7 @@ function resetRound(soft) {
     p.role = null; p.crew = -1; p.aiRole = ""; p.aiGun = null; p.goal = ""; p.waitRole = ""; p.carrying = ""; p.carryEnt = -1;
     p.deployed = false; p.deployAt = TNOW + CONFIG.LOBBY_FIRST; p.here = ""; p.msnSel = -1; p.board = false; p.mount = -1; p.protectUntil = 0;
     p.fired = 0; p.hits = 0; p.missions = 0; p.atReadyAt = 0; p.atGiveAt = 0; p.afk = false; p.afkAt = TNOW;
+    reqNewRound(p);
     if (soft && pawn) { let a = false; try { a = pawn.IsAlive(); } catch (e) {} if (a) toLobby(p, pawn); }
   }
   clearWorld(soft);
@@ -204,6 +210,7 @@ function lobby(p, pawn, team, pressed) {
     if (pressed & CSInputs.RELOAD) p.spawnSel = ch[(Math.max(0, ch.indexOf(p.spawnSel)) + 1) % ch.length];
   }
   drawBrief(p, team);
+  drawReq(p);
   if ((tickNo + p.slot) % 16 === 0) drawFeed(p);
   hClass(p, "mv_status", "show", false); hClass(p, "mv_prompt", "show", false);
   hClass(p, "mv_toast", "show", TNOW < p.toastUntil);
@@ -276,14 +283,20 @@ function thinkPlayer(r, dt) {
       prompt = "[E] Board the " + b.h.M.label + " (" + b.h.seats[b.idx].kind + ")";
     }
   }
+  drawReq(p);
   if (!prompt && p.role === "infantry") {
     const k = kitStationNear(p, pos);
     if (k) {
-      const nx = nextKit(p, !!k.flag);
-      if (use && nx) { setKit(p, pawn, nx, !!k.flag); return; }
-      prompt = nx ? "[E] Kit: " + CONFIG.KITS[p.kit].label + "  ->  " + CONFIG.KITS[nx].label : "Kit: " + CONFIG.KITS[p.kit].label;
-    }
-  }
+      // the armory (F) takes the E key while its card is open; otherwise E cycles the kits
+      const ap = CONFIG.REQ.ON ? tickArmory(p, pawn, pressed) : "";
+      if (ap) prompt = ap;
+      else {
+        const nx = nextKit(p, !!k.flag);
+        if (use && nx) { setKit(p, pawn, nx, !!k.flag); return; }
+        prompt = nx ? "[E] Kit: " + CONFIG.KITS[p.kit].label + "  ->  " + CONFIG.KITS[nx].label : "Kit: " + CONFIG.KITS[p.kit].label;
+      }
+    } else closeArmory(p);
+  } else closeArmory(p);
   let holdText = "", holdFrac = 0;
   if (p.holdKind === "repair") { holdText = "REPAIRING THE GUN"; holdFrac = p.holdT / CONFIG.ARTY.REPAIR_HOLD; }
   if (!prompt) {
@@ -412,15 +425,16 @@ Instance.OnPlayerKill(({ player, attacker, weapon }) => {
     const k = dmgSrc || (enemyKill ? weaponSrc(weapon) : "other"), side = stats.killsOn[vteam] || (stats.killsOn[vteam] = {});
     stats.killsBy[k] = (stats.killsBy[k] || 0) + 1; side[k] = (side[k] || 0) + 1;       // killsOn[team] = that team's deaths by source
   }
-  if (!enemyKill) return;
-  const a = P(as);
+  const a = enemyKill ? P(as) : undefined;
+  if (vp && counted) reqKill(vp, a); else if (vp) vp.dmgBy.clear();
+  if (!a) return;
   a.kills++; a.merit++;
 });
 if (typeof Instance.OnPlayerDamage === "function") {
-  Instance.OnPlayerDamage(({ player, attacker }) => {
+  Instance.OnPlayerDamage(({ player, attacker, damage }) => {
     const t = now();
     const vp = players.get(slotOfPawn(player)); if (vp) vp.lastCombat = t;
-    const ap = toPawn(attacker); if (ap) { const q = players.get(slotOfPawn(ap)); if (q) q.lastCombat = t; }
+    const ap = toPawn(attacker); if (ap) { const q = players.get(slotOfPawn(ap)); if (q) { q.lastCombat = t; if (vp && q.team && q.team !== vp.team) { TNOW = t; reqDamage(vp, q.slot, damage); } } }
   });
 }
 // damage guard: nobody aboard a helicopter is hurt except by the crash the script deals (hits on the airframe cost airframe health);
@@ -479,9 +493,11 @@ Instance.OnPlayerChat(({ player, text }) => {
     p.pref = role; roleCard(p, role);
     if (onTeam && points) requestRole(p, role);
   }
-  else if (cmd === "rifle" || cmd === "mg" || cmd === "at") {
+  else if (cmd === "rifle" || cmd === "mg" || cmd === "at" || cmd === "marksman" || cmd === "m14" || cmd === "sks" || cmd === "carbine" || cmd === "shotgun" || cmd === "sniper") {
     if (!onTeam) return;
+    if (cmd === "m14" || cmd === "sks") cmd = "marksman";
     if (p.role !== "infantry") { toast(p, "Kits are for the infantry (!infantry)", 3); return; }
+    if (!kitOpen(p, cmd)) { const id = kitUnlockId(cmd); toast(p, CONFIG.KITS[cmd].label + " is an upgrade: !armory " + id + " (" + CONFIG.UNLOCKS[id].cost + " REQ, you have " + p.rq + ")", 4); return; }
     if (alive && p.deployed && !kitStationNear(p, pawn.GetAbsOrigin())) {
       if (kitAllowed(p, cmd, false)) { p.kitNext = cmd === p.kit ? "" : cmd; toast(p, CONFIG.KITS[cmd].label + " at your next deploy (now, at an arms rack)", 4); }
       else { stats.kitDenied++; toast(p, CONFIG.KITS[cmd].label + ": all issued (" + kitLimit(p.team, cmd) + " per team)", 3); }
@@ -554,16 +570,27 @@ Instance.OnPlayerChat(({ player, text }) => {
   // playtest 1: "!help doesn't work". It showed the roles card only, and only on the custom HUD; a player whose HUD was not up saw
   // nothing at all. Now !help / !commands list every command on the HUD card AND in chat (paced, at most once per HELP_GAP s each).
   else if (cmd === "help" || cmd === "commands" || cmd === "cmds" || cmd === "?") { stats.helps++; helpCard(p, true); }
+  // batch G: the armory. "!armory" = the card (and the list in chat), "!armory <name>" / "!buy <name>" requisitions from anywhere:
+  // a primary is issued at a rack or the next deploy, as a kit asked for in the field
+  else if (cmd === "armory" || cmd === "armoury" || cmd === "buy" || cmd === "req" || cmd === "upgrades") {
+    if (!onTeam) { toast(p, "Join a side first", 2); return; }
+    const w = words[1] || "";
+    if (cmd === "req" && !w) { toast(p, "REQ " + p.rq + "  -  kills, assists and captures earn it; !armory spends it", 4); return; }
+    const atRack = !alive || !p.deployed || !!kitStationNear(p, pawn.GetAbsOrigin());
+    if (w) { const id = unlockOf(w); if (id) reqBuy(p, id, pawn, atRack); else toast(p, "!armory " + CONFIG.UNLOCK_ORDER.join(" | "), 4); return; }
+    drawArmory(p, false); armoryChat(p);
+  }
   else if (cmd === "controls" || cmd === "keys") controlsCard(p, pawn);
   else if (cmd) toast(p, "Unknown command: !help lists them", 3);
 });
 // every chat command. The HUD card's label is 320 px of 19 px Stratum2 (about 34 characters): the card gets the short form, chat the long
 // one (lines measured with a condensed stand-in font, docs/FIX_PT1_S.md)
-const HELP_CARD = ["!infantry  !artillery  !air: role", "!rifle  !mg  !at: infantry kit", "!spawn a-e / base / heli: deploy",
+const HELP_CARD = ["!infantry  !artillery  !air: role", "!rifle  !mg  !at  !marksman: kit", "!armory: upgrades  !spawn: deploy",
   "!swap: seat or kit   !controls: keys", "!roles  !pos  !uniform  !bots <n>"];
 const HELP_CHAT = [
   "!infantry  !artillery  !air  -  choose a role (now at the base, else at your next deploy)",
-  "!rifle  !mg  !at  -  infantry kit     !spawn a-e | base | heli  -  where you deploy",
+  "!rifle  !mg  !at  !marksman  -  infantry kit     !spawn a-e | base | heli  -  where you deploy",
+  "!armory  -  upgrades for REQ (kills, assists, captures): !armory sniper | carbine | shotgun | grenades;  !req  -  your points",
   "!swap  -  next helicopter seat, or the next kit at an arms rack",
   "!controls  -  the keys for the seat or gun you are on     !roles  -  who plays what",
   "!pos  -  your position     !uniform  -  uniform on / off     !bots <n>  -  vote the bot count",
@@ -609,7 +636,9 @@ if (typeof Instance.OnScriptReload === "function") {
   Instance.OnScriptReload({
     before: () => ({ tickets: { 2: game.tickets[T], 3: game.tickets[CT] }, elapsed: now() - game.start, over: game.over, owners: flags.map((f) => f.owner), reloads: stats.reloads,
                      // what each player asked for (role, kit, deploy point) and the running counters (the perf / stats lines keep counting)
-                     prefs: [...players.values()].map((p) => ({ slot: p.slot, pref: p.pref, kit: p.kitNext || p.kit, spawnSel: p.spawnSel, merit: p.merit, noUniform: p.noUniform, flown: p.flown })),
+                     prefs: [...players.values()].map((p) => ({ slot: p.slot, pref: p.pref, kit: p.kitNext || p.kit, spawnSel: p.spawnSel, merit: p.merit, noUniform: p.noUniform, flown: p.flown,
+                                                                 rq: p.rq, unlocks: [...p.unlocks] })),
+                     ledger: [...reqLedger.entries()].map(([k, v]) => [k, { rq: v.rq, unlocks: v.unlocks, round: v.round, age: now() - v.at }]),
                      stats: Object.fromEntries(Object.entries(stats).filter(([, v]) => typeof v === "number")) }),
     after: (m) => {
       TNOW = now(); lastTick = TNOW; entCache.clear(); points = null;
@@ -625,7 +654,15 @@ if (typeof Instance.OnScriptReload === "function") {
         if (m && Array.isArray(m.prefs)) for (const o of m.prefs) {
           if (!o || !(o.slot >= 0) || !Instance.GetPlayerController(o.slot)) continue;
           const p = P(o.slot);
-          p.pref = o.pref || ""; p.kitNext = CONFIG.KITS[o.kit] ? o.kit : ""; p.spawnSel = o.spawnSel || "base"; p.merit = o.merit | 0; p.noUniform = !!o.noUniform; p.flown = o.flown | 0;
+          p.pref = o.pref || ""; p.spawnSel = o.spawnSel || "base"; p.merit = o.merit | 0; p.noUniform = !!o.noUniform; p.flown = o.flown | 0;
+          p.rq = Math.max(0, Math.min(CONFIG.REQ.CAP, o.rq | 0)); p.unlocks.clear();
+          if (Array.isArray(o.unlocks)) for (const id of o.unlocks) if (CONFIG.UNLOCKS[id]) p.unlocks.add(id);
+          p.kitNext = CONFIG.KITS[o.kit] && kitOpen(p, o.kit) ? o.kit : "";
+        }
+        // the disconnect ledger (25_weapons) and the round count it is checked against
+        if (m && Array.isArray(m.ledger)) for (const e of m.ledger) {
+          if (!Array.isArray(e) || typeof e[0] !== "string" || !e[1] || reqLedger.has(e[0])) continue;
+          const v = e[1]; reqLedger.set(e[0], { rq: v.rq | 0, unlocks: Array.isArray(v.unlocks) ? v.unlocks.filter((id) => !!CONFIG.UNLOCKS[id]) : [], round: v.round | 0, at: TNOW - (Number.isFinite(v.age) ? v.age : 0) });
         }
         stats.reloads = ((m && m.reloads) || 0) + 1;
       } catch (e) { logErr("reload", e); }

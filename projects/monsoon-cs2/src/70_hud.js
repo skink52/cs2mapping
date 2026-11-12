@@ -123,7 +123,7 @@ function drawStatus(p, team) {
   if (p.role === "infantry") {
     const K = CONFIG.KITS[p.kit] || CONFIG.KITS.rifle;
     hText(p, "mv_st_role", "INFANTRY - " + K.label);
-    hText(p, "mv_st_l1", K.name[team] + (p.kit === "at" && TNOW < p.atReadyAt ? "  (reloading " + Math.ceil(p.atReadyAt - TNOW) + " s)" : "") + (p.kitNext ? "  (next: " + CONFIG.KITS[p.kitNext].label + ")" : ""));
+    hText(p, "mv_st_l1", K.name[team] + (p.kit === "at" && TNOW < p.atReadyAt ? "  (reloading " + Math.ceil(p.atReadyAt - TNOW) + " s)" : "") + (p.kitNext ? "  (next: " + CONFIG.KITS[p.kitNext].label + ")" : p.unlocks.has("grenades") ? "  + FRAGS" : ""));
     const m = missions[team].find((q) => q.owner === p.slot);
     hText(p, "mv_st_l2", m ? "Fire mission " + gridRef(m.x, m.y) + (m.shot ? "  SHOT" : "  waiting") + "  " + Math.max(0, Math.ceil(m.until - TNOW)) + " s" : "Hold E on far ground: fire mission");
     hText(p, "mv_st_l3", TNOW < p.protectUntil ? "Deploy cover " + Math.ceil(p.protectUntil - TNOW) + " s" : "Kills " + p.kills + "   Merit " + p.merit);
@@ -155,7 +155,7 @@ function drawBrief(p, team) {
   let lines;
   if (p.role === "artillery") { const g = guns[team][p.crew]; lines = ["Gun " + (g ? g.k + 1 : "?") + " of " + guns[team].length + ". Answer the fire missions on the board.", "Rounds from the rack, load at the gun, plot, fire.", "Enemy shells can silence your gun: hold E to repair."]; }
   else if (p.role === "air") { const h = ownHeli(p); lines = [(h ? h.M.label + " on pad " + h.n : "Helicopter") + ". Carry the infantry, support the flags.", "SPACE up, CTRL down, mouse turns, WASD tilts.", "The pad repairs and re-arms. Riders board with E."]; }
-  else lines = [CONFIG.KITS[p.kit].name[team] + ". Hold 3 of the 5 flags to bleed their tickets.", "Hold E on far ground to call the battery. E boards a helicopter.", "Kits: !rifle !mg !at, or E at an arms rack or flag crate."];
+  else lines = [CONFIG.KITS[p.kit].name[team] + ". Hold 3 of the 5 flags to bleed their tickets.", "Hold E on far ground to call the battery. E boards a helicopter.", "Kits !rifle !mg !at !marksman. Upgrades: !armory (REQ)"];
   hText(p, "mv_brief_l1", lines[0]); hText(p, "mv_brief_l2", lines[1]); hText(p, "mv_brief_l3", lines[2]);
   const open = p.role === "infantry" && spawnChoices(p).includes(p.spawnSel);
   hText(p, "mv_brief_spawn", p.role === "infantry" ? "DEPLOY: " + (open ? spawnLabel(p.spawnSel) : "BASE  (" + (p.spawnSel === "heli" ? "no helicopter waiting" : spawnLabel(p.spawnSel) + ((flagById(p.spawnSel) || {}).owner === p.team ? " is under attack" : " is not ours")) + ")") + "   [R] next"

@@ -36,6 +36,7 @@ GREEN = (132, 214, 150); PHOS = (156, 240, 168); RED = (230, 72, 54); TCOL = (23
 FEED_GOOD = (150, 226, 140); FEED_BAD = (240, 112, 84)
 # ---- box sizes used by both the art and the layout
 INFO_W, ST_W, GUN_H = 360, 360, 104
+REQ_Y, REQ_H = 480, 50                                      # requisition row: under the status box (336 + 136), clear of the chat (600)
 FEED_W, FEED_H, FEED_Y, FEED_DY = 460, 26, 198, 28          # event feed: 3 lines under CS2's kill feed (which ends ~y 190)
 OBJ_H = 224                                                 # objective panel: bar 0-72, clock tab 70-94, capture ring 104-220
 FLAGS = [('a', 'PADDIES'), ('b', 'BRIDGE'), ('c', 'VILLAGE'), ('d', 'TEMPLE'), ('e', 'CRASH SITE')]
@@ -224,6 +225,19 @@ def art_common(D):
     a = plate(320, 42, 0, None, AMBER, 200, tick=False)
     a.rect(30, 27, 290, 35, 0, fill=(0, 0, 0, 170), outline=KEY + (110,), width=0.6)
     a.save(D, 'pl_hold')
+    # requisition row (batch G): a slim plate under the status box, a supply-crate stencil, and a green edge when an upgrade is ready
+    a = plate(ST_W, REQ_H, 0, None, GREEN, 200, tick=False)
+    a.rect(0, 0, 5, REQ_H, 0, fill=GREEN + (255,))
+    cx, cy = 30, REQ_H / 2                                   # crate stencil: box, lid line, two slats
+    a.rect(cx - 12, cy - 9, cx + 12, cy + 10, 2, outline=KEY + (230,), width=1.6)
+    a.line([(cx - 12, cy - 3), (cx + 12, cy - 3)], KEY + (230,), 1.4)
+    a.line([(cx - 4, cy - 3), (cx - 4, cy + 10)], KEY + (160,), 1); a.line([(cx + 4, cy - 3), (cx + 4, cy + 10)], KEY + (160,), 1)
+    a.save(D, 'pl_req')
+    a = Art(ST_W, REQ_H)
+    a.rect(1, 1, ST_W - 1, REQ_H - 1, 4, outline=GREEN + (255,), width=2)
+    a.rect(0, 0, 5, REQ_H, 0, fill=(200, 255, 200, 255))
+    a.glow(3.0, 0.9, GREEN)
+    a.save(D, 'req_ready')
     f = Art(260, 8)
     f.rect(0, 0, 260, 8, fill=AMBER + (255,)); f.rect(0, 0, 260, 3, fill=(255, 214, 140, 255))
     for i in range(1, 20): f.rect(i * 13 - 0.5, 0, i * 13 + 0.5, 8, fill=(40, 30, 10, 255))
@@ -723,6 +737,13 @@ def build(out, art=True):
     body.append(P('mv_status', 'Box ' + pin(24, 336, ST_W, 136), [
         img('pl_status', 0, 0, ST_W, 136), lab('mv_st_role', 18, 8, ST_W - 30, 30, 20, AMBER, 'left', letter_spacing='1px'),
         lab('mv_st_l1', 18, 50, ST_W - 30, 24, 18), lab('mv_st_l2', 18, 77, ST_W - 30, 24, 18), lab('mv_st_l3', 18, 104, ST_W - 30, 24, 17, GREY)]))
+    # ---------------------------------------------------------------- requisition row (batch G, docs/WEAPONS.md): points, next upgrade
+    R('.ReqReady', opacity='0', transition_property='opacity', transition_duration='0.3s')
+    R('.Req.ready .ReqReady', opacity='1', animation_duration='1.6s', **BLINK)
+    body.append(P('mv_req', 'Box Req ' + pin(24, REQ_Y, ST_W, REQ_H), [
+        img('pl_req', 0, 0, ST_W, REQ_H), img('req_ready', 0, 0, ST_W, REQ_H, 'ReqReady'),
+        lab('mv_req_pts', 54, 4, 130, 26, 20, GREEN, 'left', letter_spacing='1px'),
+        lab('mv_req_next', 54, 28, ST_W - 66, 18, 14, CREAM, 'left', letter_spacing='0.5px')]))
     # ---------------------------------------------------------------- gun box (bottom right): name, belt (HUD addition), heat
     for n in range(11): R('.HeatFill.ht%d' % n, background_image=url('heat_%d' % n))
     R('.GunHot', opacity='0')
@@ -891,6 +912,7 @@ def states():
         'infantry': dict(obj, **{
             'mv_status': {'add': ['show']}, 'mv_st_role': {'text': 'INFANTRY  /  MACHINE GUNNER'}, 'mv_st_l1': {'text': 'M60   kit rack: E'},
             'mv_st_l2': {'text': 'Fire missions: 1 ready'}, 'mv_st_l3': {'text': 'Merit 3'},
+            'mv_req': {'add': ['show', 'ready']}, 'mv_req_pts': {'text': 'REQ 45  +10'}, 'mv_req_next': {'text': 'SNIPER READY  -  F at a rack'},
             'mv_hold': {'add': ['show']}, 'mv_hold_text': {'text': 'CALLING FIRE MISSION'}, 'mv_hold_bar': {'add': ['p13']},
             'mv_prompt': {'add': ['show']}, 'mv_prompt_text': {'text': '[E]  Board the helicopter (door gunner)'},
             'mv_toast': {'add': ['show']}, 'mv_toast_text': {'text': 'SPLASH  -  GRID F7'},
@@ -900,7 +922,12 @@ def states():
         'capture': dict(obj, **{'mv_flag_b': {'add': ['own_n', 'cap6', 'capt_ct', 'here']},
                                 'mv_banner': {'add': ['show']}, 'mv_banner_title': {'text': 'VILLAGE TAKEN'}, 'mv_banner_sub': {'text': 'US forces hold 3 of 5: the enemy is bleeding'},
                                 'mv_status': {'add': ['show']}, 'mv_st_role': {'text': 'INFANTRY  /  RIFLEMAN'}, 'mv_st_l1': {'text': 'M16A1'},
-                                'mv_st_l2': {'text': 'Capturing BRIDGE'}, 'mv_st_l3': {'text': 'Merit 1'}}),
+                                'mv_st_l2': {'text': 'Capturing BRIDGE'}, 'mv_st_l3': {'text': 'Merit 1'},
+                                'mv_req': {'add': ['show']}, 'mv_req_pts': {'text': 'REQ 25  +15'}, 'mv_req_next': {'text': 'SHOTGUN IN 5'},
+                                'mv_info': {'add': ['show']}, 'mv_info_title': {'text': 'ARMORY   REQ 25'},
+                                'mv_info_l1': {'text': '> FRAG POUCH  M26 + SMOKE  20'}, 'mv_info_l2': {'text': '   SHOTGUN  ITHACA 37  30'},
+                                'mv_info_l3': {'text': '   CARBINE  XM177E2  35'}, 'mv_info_l4': {'text': '   SNIPER  M21  45'}, 'mv_info_l5': {'text': ''},
+                                'mv_info_foot': {'text': '[F] next   [E] requisition'}}),
         'contested': dict(obj, **{'mv_flag_b': {'add': ['own_t', 'cap4', 'capt_ct', 'here', 'contest']}}),
         'fly_pilot': dict(obj, **{
             'mv_fly': {'add': ['show', 'seat_pilot']}, 'mv_ai_roll': {'add': ['a3']}, 'mv_ai_pitch': {'add': ['pit7']}, 'mv_n_asi': {'add': ['a41']},

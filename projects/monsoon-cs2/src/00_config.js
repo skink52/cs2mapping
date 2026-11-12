@@ -2,7 +2,7 @@
 // battery, five flags, tickets. cs_script only, no plugins. Rules: docs/DESIGN.md 3; names: docs/CONTRACT.md; HUD ids: docs/SCRIPT.md.
 // Every tunable is in CONFIG. Units: Hammer units (40 u = 1 m), seconds, degrees.
 
-const VERSION = "mv-0.6 (13 Nov 2026, playtest 1 fixes: flags, rotors, weapons, help)";
+const VERSION = "mv-0.7 (13 Nov 2026, playtest 1 batch G: era weapons, requisition, armory)";
 
 const CONFIG = {
   HUD: "mv_hud", PARAMS: "mv_params",
@@ -29,19 +29,51 @@ const CONFIG = {
     ARTY_CREW: 2,                        // seats per gun
   },
 
-  // ---- infantry kits (DESIGN 3.1). Weapon classes are stock CS2; custom models come from weapons.vdata, never from the script.
+  // ---- infantry kits (DESIGN 3.1, docs/WEAPONS.md). Weapon classes are stock CS2 entries; era stats and the remodelled models come
+  // from the addon's scripts/weapons.vdata (tools/mv_weapons.py), never from the script. One class = one model for both sides.
   PISTOL: { 2: "weapon_glock", 3: "weapon_hkp2000" },
+  PISTOL_NAME: { 2: "TT-33", 3: "M1911A1" },
+  // `unlock`: a kit only for a player who has requisitioned it this round (WEAPONS.md "Earned upgrades"; REQ / UNLOCKS below)
   KITS: {
     rifle:    { label: "RIFLEMAN",       weapon: { 2: "weapon_ak47", 3: "weapon_m4a1" },   name: { 2: "AK-47", 3: "M16A1" } },
     mg:       { label: "MACHINE GUNNER", weapon: { 2: "weapon_negev", 3: "weapon_m249" },  name: { 2: "RPD", 3: "M60" }, share: 0.25 },
-    at:       { label: "ANTI-TANK",      weapon: { 2: "weapon_taser", 3: "weapon_taser" }, name: { 2: "RPG-7", 3: "M72 LAW" }, share: 0.25 },
-    marksman: { label: "MARKSMAN",       weapon: { 2: "weapon_scar20", 3: "weapon_g3sg1" }, name: { 2: "SVD", 3: "M21" }, per: 8, flagOnly: true },
+    at:       { label: "ANTI-TANK",      weapon: { 2: "weapon_taser", 3: "weapon_taser" }, name: { 2: "RPG-7", 3: "M79" }, share: 0.25 },
+    marksman: { label: "MARKSMAN",       weapon: { 2: "weapon_galilar", 3: "weapon_scar20" }, name: { 2: "SKS", 3: "M14" }, per: 6 },
+    carbine:  { label: "CARBINE",        weapon: { 2: "weapon_mac10", 3: "weapon_m4a1_silencer" }, name: { 2: "K-50M", 3: "XM177E2" }, per: 5, unlock: true },
+    shotgun:  { label: "SHOTGUN",        weapon: { 2: "weapon_nova", 3: "weapon_nova" }, name: { 2: "ITHACA 37", 3: "ITHACA 37" }, per: 6, unlock: true },
+    sniper:   { label: "SNIPER",         weapon: { 2: "weapon_ssg08", 3: "weapon_g3sg1" }, name: { 2: "MOSIN PU", 3: "M21" }, per: 8, unlock: true },
   },
-  KIT_ORDER: ["rifle", "mg", "at", "marksman"],
+  KIT_ORDER: ["rifle", "mg", "at", "marksman", "carbine", "shotgun", "sniper"],
   INF_ARMOR: 50, INF_HELMET: true,
+  // the launcher (the Zeus is its trigger). AT_TEAM overrides per side: the US grenadier's M79 lobs a 40 mm grenade at its real 76 m/s
+  // (3040 u/s) under real gravity (392 u/s2) and reloads in seconds; the NVA's RPG-7 flies flat and hits harder but reloads slowly
   AT: { SPEED: 2200, GRAVITY: 60, BLAST: 180, DAMAGE: 120, HELI: 45, RELOAD: 25, LIFE: 5, GUN_DISABLE: 150, PROX: 44 },
+  AT_TEAM: { 3: { SPEED: 3040, GRAVITY: 392, BLAST: 150, DAMAGE: 100, HELI: 24, RELOAD: 8, LIFE: 4, GUN_DISABLE: 110 } },
   // rifle rounds on a helicopter, by weapon class (OnBulletImpact); anything else = DEFAULT
-  BULLET_VS_HELI: { DEFAULT: 1.2, weapon_m249: 3, weapon_negev: 3, weapon_g3sg1: 2, weapon_scar20: 2 },
+  BULLET_VS_HELI: { DEFAULT: 1.2, weapon_m249: 3, weapon_negev: 3, weapon_scar20: 2, weapon_galilar: 1.8, weapon_g3sg1: 2.5, weapon_ssg08: 3, weapon_nova: 0.6, weapon_mac10: 0.9 },
+
+  // ---- requisition and the armory (docs/WEAPONS.md). Points for what helps the side, spent on optional upgrades that last the round.
+  REQ: {
+    ON: true,
+    KILL: 10, ASSIST: 5, ASSIST_DMG: 30, ASSIST_TIME: 10, CAPTURE: 15, BOUNTY: 5, HELI: 25, GUN: 10, FO_ASSIST: 5, REPAIR: 5,
+    CAP: 100,                            // balance ceiling: no hoarding a war chest
+    CARRY: 30,                           // what a player keeps into the next round (the unlocks themselves end with the round)
+    BEHIND: 60, BEHIND_MULT: 1.3,        // the side this many tickets behind earns x BEHIND_MULT (catch-up, no snowball)
+    KEEP: 900,                           // a disconnected player's points and unlocks wait this long for him under his name
+    SHOW_EVERY: 8,                       // ticks between REQ row refreshes
+  },
+  // id -> { cost, kit (a primary upgrade = an unlock kit) | perk, labels }. `!armory <id>`; aliases name the weapons.
+  UNLOCKS: {
+    grenades: { cost: 20, perk: true, label: "FRAG POUCH", name: { 2: "RGD-5 + SMOKE", 3: "M26 + SMOKE" }, give: ["weapon_hegrenade", "weapon_smokegrenade"] },
+    shotgun:  { cost: 30, kit: "shotgun", label: "SHOTGUN" },
+    carbine:  { cost: 35, kit: "carbine", label: "CARBINE" },
+    sniper:   { cost: 45, kit: "sniper",  label: "SNIPER" },
+  },
+  UNLOCK_ORDER: ["grenades", "shotgun", "carbine", "sniper"],
+  UNLOCK_ALIAS: { nades: "grenades", frags: "grenades", pouch: "grenades", ithaca: "shotgun", xm177: "carbine", car15: "carbine", k50: "carbine", k50m: "carbine",
+                  smg: "carbine", m21: "sniper", m40: "sniper", mosin: "sniper", scope: "sniper" },
+  // bots buy one thing when they deploy with enough REQ: their slot picks from PICKS; at most SNIPERS bot snipers per side
+  BOT_BUY: { ON: true, PICKS: ["grenades", "carbine", "grenades", "shotgun", "carbine", "grenades", "sniper", "carbine"], SNIPERS: 1 },
 
   // ---- uniforms: applied only when a cache prop mv_cache_1..16 holds that model (so a missing model is never set).
   // The four converted GMod player models (create/playermodels), copied into the addon at their own paths.

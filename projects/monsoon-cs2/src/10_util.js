@@ -136,7 +136,7 @@ function pawnOf(slot) {
 function nameOf(slot) { const c = Instance.GetPlayerController(slot); try { return c ? c.GetPlayerName() : "?"; } catch (e) { return "?"; } }
 function slotOfPawn(pawn) { try { const c = pawn.GetPlayerController(); return c ? c.GetPlayerSlot() : -1; } catch (e) { return -1; } }
 const KEYLIST = [CSInputs.FORWARD, CSInputs.BACK, CSInputs.LEFT, CSInputs.RIGHT, CSInputs.WALK, CSInputs.DUCK, CSInputs.JUMP, CSInputs.USE,
-                 CSInputs.ATTACK, CSInputs.ATTACK2, CSInputs.RELOAD];
+                 CSInputs.ATTACK, CSInputs.ATTACK2, CSInputs.RELOAD, CSInputs.LOOK_AT_WEAPON];      // F: the armory at a rack (batch G)
 function keys(pawn) {               // one key per call: masked calls are unconfirmed (cs_script-notes)
   let k = 0;
   for (const b of KEYLIST) { try { if (pawn.IsInputPressed(b)) k |= b; } catch (e) {} }

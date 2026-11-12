@@ -14,6 +14,8 @@ function P(slot) {
           uniformAt: 0, uniformDone: false, noUniform: false, stockModel: "", kitNext: "", protectUntil: 0, sane: false,
           afk: false, afkAt: 0, afkEye: 0, afkPos: null, afkCheck: 0, statusAt: 0,
           fired: 0, hits: 0, missions: 0, here: "",
+          // requisition and the armory (25_weapons): points, this round's unlocks, damage taken per enemy (assists), the card, grenades held
+          name: "", rq: 0, unlocks: new Set(), dmgBy: new Map(), rqGain: 0, rqGainUntil: 0, rqDrawAt: 0, armory: false, armSel: 0, nadesHeld: [], stowed: false,
           // bots
           aiRole: "", aiGun: null, goal: "", leashAt: 0, leashPos: null, leashMoved: 0, lastCombat: -99, deployedAt: 0 };
     players.set(slot, p);
@@ -177,6 +179,7 @@ function kitFree(p, kit) { return teamCount(p.team, (q) => q !== p && q.kit === 
 function kitAllowed(p, kit, atFlag) {
   const K = CONFIG.KITS[kit]; if (!K) return false;
   if (K.flagOnly && !atFlag) return false;
+  if (K.unlock && !kitOpen(p, kit)) return false;                      // an upgrade kit: only once requisitioned this round
   if (p.kit === kit) return true;
   return kitFree(p, kit);
 }
@@ -189,10 +192,15 @@ function settleKit(p) {
     if (w === "at" && kitFree(p, w) && teamCount(p.team, (q) => q.bot && q !== p && q.kit === "at") < CONFIG.AI.AT_BOTS) p.kit = w;
   }
   if (p.kitNext) { if (kitAllowed(p, p.kitNext, false)) p.kit = p.kitNext; p.kitNext = ""; }
-  if (!CONFIG.KITS[p.kit] || (p.kit !== "rifle" && p.role === "infantry" && !kitFree(p, p.kit))) { p.kit = "rifle"; stats.kitDenied++; }
+  if (!CONFIG.KITS[p.kit] || !kitOpen(p, p.kit) || (p.kit !== "rifle" && p.role === "infantry" && !kitFree(p, p.kit))) { p.kit = "rifle"; stats.kitDenied++; }
 }
 function setKit(p, pawn, kit, atFlag) {
-  if (!kitAllowed(p, kit, atFlag)) { stats.kitDenied++; toast(p, CONFIG.KITS[kit] ? CONFIG.KITS[kit].label + ": all issued (" + kitLimit(p.team, kit) + " per team)" : "No such kit", 3); return false; }
+  if (!kitAllowed(p, kit, atFlag)) {
+    stats.kitDenied++;
+    const K = CONFIG.KITS[kit], id = K && K.unlock ? kitUnlockId(kit) : "";
+    toast(p, !K ? "No such kit" : id && !p.unlocks.has(id) ? K.label + " is an upgrade: !armory " + id + " (" + CONFIG.UNLOCKS[id].cost + " REQ)" : K.label + ": all issued (" + kitLimit(p.team, kit) + " per team)", 3);
+    return false;
+  }
   p.kit = kit; p.kitNext = "";
   if (pawn && pawn.IsAlive() && p.deployed && p.role === "infantry" && !p.heli && p.mount < 0 && !p.board) equip(p, pawn, true);
   toast(p, CONFIG.KITS[kit].label + " - " + CONFIG.KITS[kit].name[p.team], 3);
@@ -205,8 +213,13 @@ function nextKit(p, atFlag) {
 }
 function give(pawn, cls, deployIt) { try { if (!pawn.FindWeapon(cls)) pawn.GiveNamedItem(cls, !!deployIt); } catch (e) {} }
 // fresh = a new issue (deploy, kit change at a rack): armour and a loaded launcher. Otherwise the weapons come back as they were
-// (leaving a seat does not reload the AT launcher or mend armour).
-function equip(p, pawn, fresh) {
+// (leaving a seat does not reload the AT launcher or mend armour). deployIssue: the frag pouch is filled (deploy only, not at every
+// kit change: the racks are no grenade refill); otherwise the grenades the player still had come back.
+const NADES = ["weapon_hegrenade", "weapon_smokegrenade"];
+function nadesOf(pawn) { const out = []; for (const c of NADES) { try { if (pawn.FindWeapon(c)) out.push(c); } catch (e) {} } return out; }
+function equip(p, pawn, fresh, deployIssue) {
+  if (!p.stowed) p.nadesHeld = nadesOf(pawn);
+  p.stowed = false;
   try { pawn.DestroyWeapons(); } catch (e) {}
   const team = pawn.GetTeamNumber();
   give(pawn, "weapon_knife", false);
@@ -219,13 +232,25 @@ function equip(p, pawn, fresh) {
     if (atWait) p.atGiveAt = p.atReadyAt;
     else { give(pawn, CONFIG.KITS[kit].weapon[team], true); if (kit === "at") p.atGiveAt = 0; }
   }
+  if (p.role === "infantry") {
+    if (deployIssue) givePerks(p, pawn);
+    else for (const c of p.nadesHeld) give(pawn, c, false);
+  }
+  p.nadesHeld = [];
   if (fresh) { try { pawn.SetArmor(CONFIG.INF_ARMOR); pawn.SetHasHelmet(CONFIG.INF_HELMET); } catch (e) {} }
 }
 // a seat that reads MOUSE1 (helicopter, emplaced gun, plotting board): the pawn's own weapons are put away so they do not fire too
-function stow(pawn) { try { pawn.DestroyWeapons(); } catch (e) {} give(pawn, "weapon_knife", false); }
+// (the grenades he held are remembered and come back with equip)
+function stow(pawn) {
+  const p = players.get(slotOfPawn(pawn));
+  if (p && !p.stowed) { p.nadesHeld = nadesOf(pawn); p.stowed = true; }
+  try { pawn.DestroyWeapons(); } catch (e) {} give(pawn, "weapon_knife", false);
+}
 // the AT kit: the Zeus is only the trigger. OnGunFire (or ATTACK with it in hand) launches the scripted rocket; the Zeus is re-given after RELOAD.
+// the launcher of a side: CONFIG.AT with that side's AT_TEAM numbers on top (US M79, NVA RPG-7; docs/WEAPONS.md)
+function atCfg(team) { return Object.assign({}, CONFIG.AT, (CONFIG.AT_TEAM || {})[team] || {}); }
 function fireAT(p, pawn) {
-  const A = CONFIG.AT;
+  const A = atCfg(p.team);
   if (p.kit !== "at" || p.role !== "infantry" || TNOW < p.atReadyAt || p.heli || p.mount >= 0) return false;
   p.atReadyAt = TNOW + A.RELOAD; p.atGiveAt = TNOW + A.RELOAD;
   const eye = eyeOf(pawn), dir = dirOf(eye);
@@ -233,6 +258,7 @@ function fireAT(p, pawn) {
   if (!finiteV(from)) { const o = pawn.GetAbsOrigin(); from = v3(o.x, o.y, o.z + 60); }
   launchRocket({ pos: vadd(from, dir, 40), vel: vscale(dir, A.SPEED), team: p.team, slot: p.slot, grav: A.GRAVITY, blast: A.BLAST, damage: A.DAMAGE,
                  heli: A.HELI, life: A.LIFE, gunRadius: A.GUN_DISABLE, ignore: pawn, src: "at" });
+  stats.atShots++;
   toast(p, CONFIG.KITS.at.name[p.team] + " away - reloading " + A.RELOAD + " s", 2.5);
   return true;
 }
@@ -358,7 +384,9 @@ function deploy(p, pawn) {
   unseat(p, pawn, "deploy");
   freeze(p, pawn, false); hidePawn(p, pawn, false);
   settleKit(p);
-  equip(p, pawn, true);
+  botBuy(p, pawn);
+  p.stowed = false; p.nadesHeld = []; p.dmgBy.clear(); closeArmory(p);
+  equip(p, pawn, true, true);
   p.deployed = true; p.deployedAt = TNOW; p.first = false; p.leashAt = TNOW; p.leashPos = null; p.leashMoved = TNOW;
   p.protectUntil = TNOW + CONFIG.SPAWN_PROTECT; p.afkAt = TNOW; p.afkPos = null;
   let sub = "";

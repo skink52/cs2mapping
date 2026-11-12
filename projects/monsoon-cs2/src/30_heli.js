@@ -502,7 +502,7 @@ function explodeHeli(h) {
   blast({ pos, radius: H.CRASH_BLAST, damage: H.CRASH_BLAST_DAMAGE, team: otherTeam(h.team), slot: killerSlot, loader: -1, fo: -1, heliRadius: 0, heliDamage: 0, gunRadius: 0, quiet: true, src });
   if (H.LOSS_TICKETS) loseTicket(h.team, H.LOSS_TICKETS);
   if (killerSlot >= 0) {
-    kq.merit++; toast(kq, "Helicopter destroyed!", 3);
+    kq.merit++; toast(kq, "Helicopter destroyed!", 3); reqEarn(kq, CONFIG.REQ.HELI, "heli");
     feed(otherTeam(h.team), nameOf(killerSlot) + " shot down a " + h.M.label, "good", false);
     feed(h.team, "We lost a " + h.M.label + " to " + nameOf(killerSlot), "bad", false);
   } else feed(h.team, "Our " + h.M.label + " crashed", "bad", false);

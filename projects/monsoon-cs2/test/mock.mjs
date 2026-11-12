@@ -21,6 +21,9 @@
 //                     pt1     playtest 1 (humans=4): HUD up for everyone with a slow client (hudthrow) and a host without
 //                             OnPlayerActivate, a lone man takes a flag at its pole at the real capture time (cloth up the pole, prompt,
 //                             chat), !help / !commands / !controls, the pilots' guns and the Apache rotor sequences, a report per round
+//                     weapons batch G (humans=6): requisition earned by kills / assists / bounty / captures, spent at a rack (F, E) and by
+//                             chat, kept through death, a team switch (the other side's weapon), a round restart (cleared, CARRY
+//                             kept), a disconnect and rejoin (by name), a script reload; bots buy; the M79 / RPG-7 per side
 //   hudthrow=1        HUD calls for a client still loading throw instead of being lost (on in scenario=pt1)
 //   piece=<text>      only the set pieces whose name contains <text> (one bug class at a time, e.g. scenario=edge piece="shot down")
 //   script=<file>     run that built script instead of building src/ (e.g. out/review2/before_review2.js: the build before pass 2)
@@ -296,7 +299,9 @@ const IN = { NONE: 0, FORWARD: 1, BACK: 2, LEFT: 4, RIGHT: 8, WALK: 16, DUCK: 32
 const DT = { GENERIC: 0, CRUSH: 1, BULLET: 2, SLASH: 4, BURN: 8, VEHICLE: 16, FALL: 32, BLAST: 64, CLUB: 128, SHOCK: 256 };
 const DF = { NONE: 0, SUPPRESS_HEALTH_CHANGES: 1, SUPPRESS_PHYSICS_FORCE: 2, SUPPRESS_EFFECTS: 4, PREVENT_DEATH: 8, FORCE_DEATH: 16, SUPPRESS_DAMAGE_MODIFICATION: 32, IGNORE_ARMOR: 64 };
 const hooks = {};
-const WEAPONS = new Set(['weapon_knife', 'weapon_glock', 'weapon_hkp2000', 'weapon_ak47', 'weapon_m4a1', 'weapon_negev', 'weapon_m249', 'weapon_taser', 'weapon_scar20', 'weapon_g3sg1', 'weapon_p250']);
+const WEAPONS = new Set(['weapon_knife', 'weapon_glock', 'weapon_hkp2000', 'weapon_ak47', 'weapon_m4a1', 'weapon_negev', 'weapon_m249', 'weapon_taser', 'weapon_scar20', 'weapon_g3sg1', 'weapon_p250',
+  // batch G: the marksman SKS, the upgrades and the frag pouch (docs/WEAPONS.md)
+  'weapon_galilar', 'weapon_mac10', 'weapon_m4a1_silencer', 'weapon_nova', 'weapon_ssg08', 'weapon_awp', 'weapon_hegrenade', 'weapon_smokegrenade']);
 class Weapon { constructor(n, owner) { this.n = n; this.owner = owner; } GetClassName() { return this.n; } GetOwner() { return this.owner; } GetData() { return { GetDamage: () => 30 }; } IsValid() { return true; } }
 class Cam extends Ent {
   constructor(p) { super('', 'camera', { x: 0, y: 0, z: 0 }); this.p = p; this.mode = 0; this.parent = p; }
@@ -309,6 +314,8 @@ class Pawn extends Ent {
   GetHealth() { return this.hp; } SetHealth(v) { if (!Number.isInteger(v)) throw new Error('SetHealth non-integer ' + v); this.hp = v; }
   GetArmor() { return this.armor; } SetArmor(v) { if (!Number.isInteger(v)) throw new Error('SetArmor non-integer ' + v); this.armor = v; } HasHelmet() { return this.helmet; } SetHasHelmet(v) { this.helmet = !!v; }
   IsInputPressed(b) { stats.inputs++; if (b & (b - 1)) throw new Error('masked IsInputPressed'); return (this.keys & b) !== 0; }
+  // a tap shorter than a tick: the stand-in's keys last whole ticks, so the per-tick read already sees every press
+  WasInputJustPressed(b) { if (b & (b - 1)) throw new Error('masked WasInputJustPressed'); return false; }
   SetEyeAngles(a) { checkAng(a, 'eye'); this.eye = { ...a }; } GetEyeAngles() { return { ...this.eye }; } GetEyePosition() { return { x: this.pos.x, y: this.pos.y, z: this.pos.z + 64 }; }
   SetMoveType(m) { this.use(); if (![0, 2].includes(m)) throw new Error('bad move type ' + m); this.mt = m; } GetMoveType() { return this.mt; }
   GetGroundEntity() { return this.pos.z <= ground(this.pos.x, this.pos.y) + 2 || this.pos.z < LOBBY_Z + 100 ? worldEnt : undefined; }
@@ -436,7 +443,7 @@ const Console = strict('Console', {
     if (w === 'say') { (stats.chat || (stats.chat = [])).push({ t: time, text: String(c).slice(4) }); if (process.env.MOCK_LOG) console.log(time.toFixed(2), 'CHAT', String(c).slice(4)); }
   },
 });
-let restartAt = -1;
+let restartAt = -1, reloadNow = false;
 const NORESTART = () => !!process.env.MOCK_NORESTART || (SCEN === 'restart' && stats.terminate % 2 === 0);
 const GameRules = strict('GameRules', {
   TerminateRound: (reason, delay) => { if (![2, 8, 9].includes(reason)) throw new Error('bad round end reason ' + reason); stats.terminate++; if (!NORESTART()) restartAt = time + (delay || 0) + 4; },
@@ -578,7 +585,8 @@ function driveCrew(c, pr, step) {
 function fireZeus(c, aim, lead) {      // the AT kit's trigger, aimed at a point (led by the target's velocity when given)
   const p = c.pawn, w = p.FindWeapon('weapon_taser'); if (!w) return false;
   let pt = aim;
-  if (lead) { const t = Math.hypot(aim.x - p.pos.x, aim.y - p.pos.y, aim.z - p.pos.z - 64) / CONFIG.AT.SPEED; pt = { x: aim.x + lead.x * t, y: aim.y + lead.y * t, z: aim.z + lead.z * t + 0.5 * CONFIG.AT.GRAVITY * t * t }; }
+  const A = Object.assign({}, CONFIG.AT, (CONFIG.AT_TEAM || {})[c.team] || {}), lv = lead || { x: 0, y: 0, z: 0 };
+  { const t = Math.hypot(aim.x - p.pos.x, aim.y - p.pos.y, aim.z - p.pos.z - 64) / A.SPEED; pt = { x: aim.x + lv.x * t, y: aim.y + lv.y * t, z: aim.z + lv.z * t + 0.5 * A.GRAVITY * t * t }; }
   lookAt(c, pt); p.eye.pitch = -Math.atan2(pt.z - p.pos.z - 64, Math.max(1, d2(p.pos, pt))) * 180 / Math.PI;
   p.active = w; hooks.gunfire({ weapon: w }); stats.gunfire++;
   return true;
@@ -772,6 +780,26 @@ function driveObserverBal(c, pr, step) {
 // one with no man to shoot at puts HELI_HITS rounds a second into a flying enemy helicopter inside HELI_RANGE.
 const FIGHT = { ENGAGE: +(opt.engage || 1300), TTK: +(opt.ttk || 9), HELI_RANGE: 2000, HELI_HITS: +(opt.helihits || 0.8), EVERY: 32 };
 const MGW = { 2: 'weapon_negev', 3: 'weapon_m249' }, RIFLEW = { 2: 'weapon_ak47', 3: 'weapon_m4a1' };
+// time-to-kill factor by the weapon in hand at range d (batch G, ASSUMPTIONS like the rest of the rate model): a scoped bolt rifle
+// kills fast far out and slowly close in, a shotgun the reverse, a carbine / SMG a little faster close and slower far, the iron-
+// sighted marksman rifles a little better at range. Rifles and MGs keep the review-pass numbers (factor 1).
+const FIGHTW = {
+  weapon_g3sg1: (d) => (d > 900 ? 0.6 : d > 500 ? 0.85 : 1.35), weapon_ssg08: (d) => (d > 900 ? 0.55 : d > 500 ? 0.9 : 1.7),
+  weapon_nova: (d) => (d < 400 ? 0.45 : d < 700 ? 1.0 : 3.0),
+  weapon_m4a1_silencer: (d) => (d < 700 ? 0.85 : 1.15), weapon_mac10: (d) => (d < 600 ? 0.8 : 1.3),
+  weapon_scar20: (d) => (d > 800 ? 0.85 : 1.1), weapon_galilar: (d) => (d > 800 ? 0.88 : 1.1),
+};
+// the test's humans spend like players would: every 20 s one with enough REQ buys the next thing on his slot's list (balance and
+// the default runs; bots buy by themselves in the script)
+const HUMAN_PICKS = ['grenades', 'carbine', 'sniper', 'shotgun', 'grenades', 'carbine', 'grenades', 'sniper'];
+function humanBuys(step) {
+  if (step % (64 * 20) !== 64 * 7) return;
+  for (const c of everyone()) {
+    const pr = P(c); if (c.bot || c.stunt || !pr || pr.role !== 'infantry' || !pr.team) continue;
+    const want = [0, 1, 2].map((k) => HUMAN_PICKS[(c.slot + k) % HUMAN_PICKS.length]).find((id) => !pr.unlocks.has(id));
+    if (want && pr.rq >= CONFIG.UNLOCKS[want].cost) say(c, '!armory ' + want);
+  }
+}
 function fight() {
   const inf = everyone().filter((c) => { const pr = P(c); return !c.spec && c.pawn.hp > 0 && pr && pr.deployed && !pr.heli && pr.mount < 0 && !pr.board && c.pawn.pos.z > LOBBY_Z + 400; });
   const dts = FIGHT.EVERY / 64;
@@ -779,7 +807,8 @@ function fight() {
     const pa = P(a); if (pa.carrying) continue;
     let best = null, bd = FIGHT.ENGAGE;
     for (const v of inf) if (v.team !== a.team && v.pawn.hp > 0) { const d = d2(a.pawn.pos, v.pawn.pos); if (d < bd && Math.abs(a.pawn.pos.z - v.pawn.pos.z) < 500) { bd = d; best = v; } }
-    const mg = pa.role === 'infantry' && pa.kit === 'mg', wcls = (mg ? MGW : RIFLEW)[a.team];
+    const mg = pa.role === 'infantry' && pa.kit === 'mg';
+    const prim = a.pawn.weapons.find((w) => FIGHTW[w.n]), wcls = prim ? prim.n : (mg ? MGW : RIFLEW)[a.team];
     // a human AT man fires the launcher (the script's own rocket) at a helicopter low enough, else at a man 400+ u away
     if (!a.bot && pa.role === 'infantry' && pa.kit === 'at' && time >= pa.atReadyAt && a.pawn.FindWeapon('weapon_taser')) {
       const h = D.helis[other(a.team)].find((x) => x.state === 'flying' && x.ent && Math.hypot(x.pos.x - a.pawn.pos.x, x.pos.y - a.pawn.pos.y, x.pos.z - a.pawn.pos.z) < 1600);
@@ -788,7 +817,10 @@ function fight() {
     }
     if (best) {
       a.drv.fight = time;
-      const ttk = FIGHT.TTK * (0.45 + 0.75 * bd / FIGHT.ENGAGE) / (mg ? 1.35 : 1);
+      const ttk = FIGHT.TTK * (0.45 + 0.75 * bd / FIGHT.ENGAGE) / (mg ? 1.35 : 1) * (FIGHTW[wcls] ? FIGHTW[wcls](bd) : 1);
+      // the frag pouch: a grenade at a man 250-700 u away, now and then (kills about one throw in three)
+      const nade = a.pawn.FindWeapon('weapon_hegrenade');
+      if (nade && bd > 250 && bd < 700 && Math.random() < dts / 20) { a.pawn.DestroyWeapon(nade); if (Math.random() < 0.35) best.pawn.TakeDamage({ damage: 150, damageTypes: DT.BLAST, attacker: a.pawn }); stats.nades = (stats.nades || 0) + 1; continue; }
       if (Math.random() < dts / ttk) best.pawn.TakeDamage({ damage: 150, damageTypes: DT.BULLET, attacker: a.pawn, weapon: new Weapon(wcls, a.pawn) });
       continue;
     }
@@ -872,11 +904,10 @@ if (FEATURES) {
     const f = D.flags.find((x) => x.owner === team);
     putAt(a, world.get('mv_kit_' + f.id).pos);
     for (let k = 0; k < 8 && P(a).kit !== 'marksman'; k++) { if (f.owner !== team) throw new Error('lost the flag while at its crate'); press(a, IN.USE); yield 0.2; }
-    if (P(a).kit !== 'marksman' || !a.pawn.FindWeapon('weapon_scar20')) throw new Error('no marksman rifle from the flag crate (kit ' + P(a).kit + ')');
+    if (P(a).kit !== 'marksman' || !a.pawn.FindWeapon(CONFIG.KITS.marksman.weapon[team])) throw new Error('no marksman rifle from the flag crate (kit ' + P(a).kit + ')');
     hit('marksman kit');
     putAt(a, world.get('mv_kit_t').pos); yield 0.2;
-    const before = P(a).kit; press(a, IN.USE); yield 0.2;
-    if (P(a).kit === 'marksman' && before !== 'marksman') throw new Error('the base rack issued a marksman rifle');
+    for (let k = 0; k < 8; k++) { press(a, IN.USE); yield 0.2; if (CONFIG.KITS[P(a).kit].unlock && !P(a).unlocks.has(P(a).kit)) throw new Error('the base rack issued the ' + P(a).kit + ' kit, never requisitioned'); }
   });
   // ---- Beehive: a CT crewman loads it, locks a point inside 900 u on the board, fires; the men there are hit
   piece('beehive', 34, function* () {
@@ -1652,6 +1683,8 @@ function invariants() {
     if (pr.mount >= 0 && D.mounts[pr.mount].user !== slot) fail('player ' + slot + ' thinks it mans a gun it does not hold');
     if (pr.aiRole) { aiSeen[pr.aiRole] = aiSeen[pr.aiRole] || (pr.aiRole === 'crew' ? D.stats.aiShots > 0 : pr.aiRole === 'pilot' ? !!pr.heli && pr.heli.state === 'flying' : D.stats.aiGunTicks > 0); if (!LOWPOP && !BAL && HUMANS < 0 && SCEN !== 'churn') aiWhenCrowded = true; }
     if (pr.aiRole && !c.bot) fail('a human has an AI role');
+    if (pr.rq !== undefined && (!Number.isInteger(pr.rq) || pr.rq < 0 || pr.rq > CONFIG.REQ.CAP)) fail('player ' + slot + ' has ' + pr.rq + ' REQ');
+    if (pr.kit && CONFIG.KITS[pr.kit] && CONFIG.KITS[pr.kit].unlock && !pr.unlocks.has(pr.kit)) fail('player ' + slot + ' has the ' + pr.kit + ' kit without the unlock');
     if (pr.carrying && pr.role !== 'artillery') fail('player ' + slot + ' carries a round but is ' + pr.role);
     if (pr.crew >= 0 && pr.role !== 'artillery') fail('player ' + slot + ' has a gun crew seat but is ' + pr.role);
     if (c.spec || c.pawn.hp <= 0) continue;
@@ -1663,6 +1696,7 @@ function invariants() {
     if (p.cam && p.cam.mode !== 0 && !seated && pr.mount < 0) fail('pawn ' + slot + ' is on a seat camera with no seat');
     if (!c.bot && pr.deployed && (seated || pr.mount >= 0 || pr.board) && p.weapons.length !== 1) fail('player ' + slot + ' holds ' + p.weapons.length + ' weapons in a seat');
     if (!c.bot && pr.deployed && !parked && p.weapons.length < 2) fail('player ' + slot + ' on foot holds ' + p.weapons.length + ' weapon(s)');
+    for (const k of ['carbine', 'shotgun', 'sniper']) { const cls = CONFIG.KITS[k].weapon[c.team]; if (cls && p.FindWeapon(cls) && !pr.unlocks.has(k)) fail('player ' + slot + ' holds ' + cls + ' (' + k + ') without the unlock'); }
     // (a client still loading has no HUD yet; one whose HUD call failed is sent everything again after its short wait: playtest 1)
     if (!c.bot && pr.deployed && !pr.heli && !pr.board && !shows(slot, 'mv_obj') && !loading.has(slot)) { if (Math.max(pr.deployedAt || 0, (pr.hudBlockUntil || 0) + 1, (pr.seenAt || 0) + (CONFIG.HUDRUN ? CONFIG.HUDRUN.READY : 0) + 1) + 1 < time) fail('player ' + slot + ' is deployed without the objective bar'); }
     if (screenLive && !pr.heli && shows(slot, 'mv_fly')) fail('player ' + slot + ' sees the flight instruments on foot');
@@ -1698,6 +1732,213 @@ function pilotState(t) {
 }      // flag id -> seconds both teams stood in it; flag id -> captures by T / CT (balance report)
 // node test/mock.mjs 12 240 scenario=pt1 humans=4   playtest 1 (docs/FIX_PT1_S.md). Add script=out/pt1/before_pt1.js to watch the
 // pass-1 build fail each piece. Runs with the real capture time and hudthrow=1 (HUD calls for a client still loading throw).
+// node test/mock.mjs 14 300 scenario=weapons humans=6   batch G (docs/WEAPONS.md, docs/FIX_PT1_G.md): requisition and the armory
+if (SCEN === 'weapons') {
+  const grab = (c) => { c.stunt = curPiece.name; c.q = []; c.hold = 0; curPiece.actors.push(c); return c; };
+  const after = (name) => until(() => pieces.every((x) => x.name !== name || x.done), 'set piece "' + name + '" to finish', 400);
+  const R = () => CONFIG.REQ, U = (id) => CONFIG.UNLOCKS[id];
+  const onFootInf = (c) => { const q = P(c); return !!q && q.deployed && q.role === 'infantry' && !q.heli && q.mount < 0 && !q.board && !q.carrying && c.pawn.hp > 0; };
+  const anyHuman = (team, not) => everyone().find((c) => !c.bot && c.team === team && !c.stunt && c !== not && c.pawn.hp > 0 && P(c) && P(c).deployed && !P(c).heli && P(c).role !== 'air');
+  function* infantryman(team, not) {
+    yield until(() => anyHuman(team, not), 'a deployed human of team ' + team, 90);
+    const a = grab(anyHuman(team, not)); a.god = true;
+    if (P(a).heli || P(a).mount >= 0 || P(a).board) { press(a, IN.USE); yield 0.5; }
+    putAt(a, baseSpot(team)); yield 0.1;
+    if (P(a).role !== 'infantry') { say(a, '!infantry'); yield 0.5; }
+    for (let k = 0; ; k++) {
+      if (onFootInf(a)) return a;
+      if (k > 80) throw new Error('human ' + a.slot + ' is not on foot as infantry (role ' + P(a).role + ')');
+      if (k % 20 === 10) { putAt(a, baseSpot(team)); say(a, '!infantry'); }
+      yield 0.25;
+    }
+  }
+  const enemyBot = (team) => everyone().find((c) => c.bot && c.team === other(team) && c.pawn.hp > 0 && P(c) && P(c).deployed && !P(c).aiRole && !P(c).heli);
+  const rack = (team) => world.get('mv_kit_' + (team === 2 ? 't' : 'ct')).pos;
+  const hasW = (c, cls) => !!c.pawn.FindWeapon(cls);
+  const box = {};                                  // the man who buys the sniper rifle, followed through pieces 2-4
+  function* same() {
+    const a = need(box.a && ctls[box.a.slot] === box.a ? box.a : null, 'the sniper of piece 2'); grab(a); a.god = true;
+    yield until(() => onFootInf(a), 'the sniper on foot', 40);
+    return a;
+  }
+  // (1) earning: a kill (10), an assist (5: 30+ damage, someone else's kill), the bounty on a man carrying an upgrade (+5); the HUD row
+  piece('REQ for a kill, an assist and a bounty', 15, function* () {
+    const a = yield* infantryman(3), b = yield* infantryman(3, a);
+    yield until(() => enemyBot(3), 'an enemy bot deployed', 60);
+    const v = enemyBot(3); P(v).protectUntil = 0;
+    const ra = P(a).rq, rb = P(b).rq;
+    v.pawn.TakeDamage({ damage: 40, damageTypes: DT.BULLET, attacker: b.pawn, weapon: new Weapon('weapon_m4a1', b.pawn) });
+    yield 0.2;
+    v.pawn.TakeDamage({ damage: 500, damageTypes: DT.BULLET, attacker: a.pawn, weapon: new Weapon('weapon_m4a1', a.pawn) });
+    yield 0.2;
+    const mult = D.game.tickets[2] - D.game.tickets[3] >= R().BEHIND ? R().BEHIND_MULT : 1;
+    const ga = P(a).rq - ra, gb = P(b).rq - rb;
+    if (ga !== Math.min(R().CAP - ra, Math.round(R().KILL * mult))) throw new Error('the killer got ' + ga + ' REQ (want ' + R().KILL + ' x ' + mult + ')');
+    if (gb !== Math.min(R().CAP - rb, Math.round(R().ASSIST * mult))) throw new Error('the man who did 40 damage got ' + gb + ' REQ, not the assist ' + R().ASSIST);
+    // the bounty: the next victim carries the frag pouch
+    yield until(() => enemyBot(3), 'an enemy bot deployed', 60);
+    const w = enemyBot(3); P(w).protectUntil = 0; P(w).unlocks.add('grenades');
+    P(a).rq = 0; w.pawn.TakeDamage({ damage: 500, damageTypes: DT.BULLET, attacker: a.pawn });
+    yield 0.2;
+    if (P(a).rq !== Math.round((R().KILL + R().BOUNTY) * mult)) throw new Error('killing a man with an upgrade gave ' + P(a).rq + ' REQ, not kill + bounty');
+    yield 0.5;
+    if (!shows(a.slot, 'mv_req') || !/^REQ \d+/.test(textOf(a.slot, 'mv_req_pts'))) throw new Error('no REQ row on the HUD ("' + textOf(a.slot, 'mv_req_pts') + '")');
+    if (!textOf(a.slot, 'mv_req_next')) throw new Error('the REQ row does not say what comes next');
+    hit('REQ: kill ' + ga + ', assist ' + gb + ', bounty, HUD row "' + textOf(a.slot, 'mv_req_pts') + '"');
+  });
+  // (2) spending at the rack: F opens the armory card, F steps to the sniper rifle, E requisitions it; the M21 is in his hands
+  piece('armory at the rack: F and E', 25, function* () {
+    yield after('REQ for a kill, an assist and a bounty');
+    const team = 3, a = yield* infantryman(team); box.a = a;
+    putAt(a, rack(team)); yield 0.3;
+    P(a).rq = 50;
+    press(a, IN.LOOK_AT_WEAPON); yield 0.3;
+    if (!shows(a.slot, 'mv_info') || !/ARMORY/.test(textOf(a.slot, 'mv_info_title'))) throw new Error('F at the rack showed no armory card (title "' + textOf(a.slot, 'mv_info_title') + '")');
+    const want = CONFIG.UNLOCK_ORDER.indexOf('sniper');
+    for (let k = 0; k < 8 && P(a).armSel !== want; k++) { press(a, IN.LOOK_AT_WEAPON); yield 0.2; }
+    if (P(a).armSel !== want) throw new Error('F did not step through the card');
+    if (!/Requisition SNIPER/.test(textOf(a.slot, 'mv_prompt_text'))) throw new Error('prompt "' + textOf(a.slot, 'mv_prompt_text') + '"');
+    press(a, IN.USE); yield 0.3;
+    if (!P(a).unlocks.has('sniper') || P(a).kit !== 'sniper') throw new Error('E did not requisition the sniper rifle (kit ' + P(a).kit + ', REQ ' + P(a).rq + ')');
+    if (!hasW(a, CONFIG.KITS.sniper.weapon[team])) throw new Error('no ' + CONFIG.KITS.sniper.weapon[team] + ' in his hands');
+    if (P(a).rq !== 50 - U('sniper').cost) throw new Error('REQ after the purchase ' + P(a).rq);
+    // too poor for the next one: refused, nothing taken
+    P(a).rq = 3; const n0 = D.stats.reqDenied;
+    const ci = CONFIG.UNLOCK_ORDER.indexOf('carbine');
+    for (let k = 0; k < 8 && P(a).armSel !== ci; k++) { press(a, IN.LOOK_AT_WEAPON); yield 0.2; }
+    press(a, IN.USE); yield 0.3;
+    if (P(a).unlocks.has('carbine') || D.stats.reqDenied <= n0) throw new Error('a carbine for 3 REQ');
+    // walking off closes the card; E at the rack cycles kits again (and never to a kit not requisitioned)
+    putAt(a, baseSpot(team, 6)); yield 0.3;
+    if (P(a).armory) throw new Error('the armory card stayed open away from the rack');
+    hit('armory: F card, F steps, E buys, refused when short, closes away from the rack');
+  });
+  // (3) chat: !armory <id> away from a rack (issued at the next deploy / rack); the pouch and the M21 come back after a death
+  piece('chat purchase and a death', 40, function* () {
+    yield after('armory at the rack: F and E');
+    const team = 3, a = yield* same();
+    const q = P(a); if (!q.unlocks.has('sniper')) throw new Error('lost the sniper unlock between pieces');
+    putAt(a, rack(team)); yield 0.2; say(a, '!sniper'); yield 0.3;           // (between pieces the test's crew driver may have cycled his kit)
+    if (q.kit !== 'sniper') throw new Error('!sniper at the rack gave kit ' + q.kit);
+    putAt(a, baseSpot(team, 8)); yield 0.2;
+    q.rq = 25; say(a, '!armory grenades'); yield 0.3;
+    if (!q.unlocks.has('grenades') || q.rq !== 5) throw new Error('!armory grenades did not buy the pouch (REQ ' + q.rq + ')');
+    if (hasW(a, 'weapon_hegrenade')) throw new Error('the pouch was filled away from a rack');
+    say(a, '!buy carbine'); yield 0.3;
+    if (q.unlocks.has('carbine')) throw new Error('a carbine for 5 REQ by chat');
+    say(a, '!armory'); yield 0.3;
+    if (!/ARMORY/.test(textOf(a.slot, 'mv_info_title'))) throw new Error('!armory showed no card');
+    say(a, '!req'); yield 0.2;
+    if (!/REQ 5/.test(textOf(a.slot, 'mv_toast_text'))) throw new Error('!req toast "' + textOf(a.slot, 'mv_toast_text') + '"');
+    // he dies and deploys again: the upgrades are still his
+    a.god = false; P(a).protectUntil = 0;
+    const e = enemyBot(team) || everyone().find((c) => c.team === other(team) && c.pawn.hp > 0);
+    a.pawn.TakeDamage({ damage: 500, damageTypes: DT.BULLET, attacker: e ? e.pawn : undefined });
+    a.god = true;
+    yield until(() => ctls[a.slot] === a && a.pawn.hp > 0 && onFootInf(a), 'him deployed again', 40);
+    if (!q.unlocks.has('sniper') || !q.unlocks.has('grenades')) throw new Error('the unlocks did not survive his death');
+    if (q.kit !== 'sniper' || !hasW(a, CONFIG.KITS.sniper.weapon[team])) throw new Error('redeployed without the sniper rifle (kit ' + q.kit + ', next ' + q.kitNext + ', role ' + q.role + ', other snipers ' + [...D.players.values()].filter((o) => o !== q && o.team === team && o.kit === 'sniper').map((o) => o.slot + (o.bot ? 'b' : 'h') + ':' + o.role).join(' ') + ')');
+    if (!hasW(a, 'weapon_hegrenade') || !hasW(a, 'weapon_smokegrenade')) throw new Error('the frag pouch was not filled at the deploy');
+    // a seat and back: the grenades he still had come back, no refill
+    a.pawn.DestroyWeapon(a.pawn.FindWeapon('weapon_hegrenade'));
+    const m = D.mounts.findIndex((x) => x.user < 0 && (!x.team || x.team === team));
+    if (m >= 0) {
+      putAt(a, D.mounts[m].seat ? D.mounts[m].seat.pos : D.mounts[m].pos); press(a, IN.USE); yield 0.5;
+      if (P(a).mount === m) { press(a, IN.USE); yield 0.5;
+        if (hasW(a, 'weapon_hegrenade')) throw new Error('leaving the gun refilled the frag he had thrown');
+        if (!hasW(a, 'weapon_smokegrenade')) throw new Error('leaving the gun lost the smoke he still had'); }
+    }
+    hit('chat purchase away from the rack, upgrades kept through a death, pouch at the deploy, no refill from a seat');
+  });
+  // (4) team switch: the unlock is side-neutral: the same sniper unlock gives the NVA's Mosin PU
+  piece('team switch keeps the unlocks', 60, function* () {
+    yield after('chat purchase and a death');
+    const a = yield* same();
+    const rq = P(a).rq;
+    a.pawn.hp = 0; die(a.pawn, undefined); a.team = 2;
+    yield until(() => ctls[a.slot] === a && a.pawn.hp > 0 && P(a) && P(a).team === 2 && P(a).deployed, 'him deployed as T', 40);
+    if (!P(a).unlocks.has('sniper') || P(a).rq !== rq) throw new Error('the team switch lost his unlocks or points (REQ ' + P(a).rq + ')');
+    if (P(a).role !== 'infantry') { putAt(a, baseSpot(2)); say(a, '!infantry'); yield 0.5; }
+    putAt(a, rack(2)); yield 0.2; say(a, '!sniper'); yield 0.3;
+    if (P(a).kit !== 'sniper' || !hasW(a, CONFIG.KITS.sniper.weapon[2])) throw new Error('!sniper as T did not give the ' + CONFIG.KITS.sniper.name[2] + ' (kit ' + P(a).kit + ')');
+    hit('team switch: unlocks and points kept, the other side\'s weapon (' + CONFIG.KITS.sniper.name[2] + ')');
+  });
+  // (5) disconnect and rejoin under the same name: points and unlocks come back; a stranger in the slot gets nothing
+  piece('disconnect and rejoin', 80, function* () {
+    yield after('team switch keeps the unlocks');
+    const team = 3, a = yield* infantryman(team);
+    a.name = 'Sgt Weapons'; yield 0.1;
+    P(a).name = 'Sgt Weapons'; P(a).rq = 40; P(a).unlocks.add('carbine');
+    const slot = a.slot;
+    hooks.disc({ playerSlot: slot }); a.pawn.valid = false; ctls[slot] = undefined; release(curPiece);
+    yield 2;
+    const n = addPlayer(false, slot); n.name = 'Somebody Else';
+    yield 1;
+    if (P(n) && (P(n).rq || P(n).unlocks.size)) throw new Error('a stranger in his slot got his points (' + P(n).rq + ')');
+    hooks.disc({ playerSlot: slot }); n.pawn.valid = false; ctls[slot] = undefined;
+    yield 1;
+    const b = addPlayer(false, slot); b.name = 'Sgt Weapons';
+    yield 1;
+    if (!P(b) || P(b).rq !== 40 || !P(b).unlocks.has('carbine')) throw new Error('rejoined with ' + (P(b) ? P(b).rq + ' REQ, unlocks ' + [...P(b).unlocks].join(',') : 'no record'));
+    hit('disconnect and rejoin: 40 REQ and the carbine back under his name');
+  });
+  // (6) a script reload in the tools: points and unlocks carried
+  piece('script reload carries REQ', 95, function* () {
+    yield after('disconnect and rejoin');
+    const c = need(everyone().find((x) => !x.bot && P(x) && P(x).unlocks.has('carbine')), 'the carbine man');
+    P(c).rq = 33; const n0 = cov['script reload'] || 0;
+    reloadNow = true;
+    yield until(() => (cov['script reload'] || 0) > n0, 'the reload', 5);
+    yield 0.2;
+    if (!P(c) || P(c).rq !== 33 || !P(c).unlocks.has('carbine')) throw new Error('after the reload: ' + (P(c) ? P(c).rq + ' REQ, ' + [...P(c).unlocks].join(',') : 'no record'));
+    hit('script reload: REQ and unlocks carried');
+  });
+  // (7) a new round (CS2 restarts it): unlocks cleared, CARRY points kept, nobody keeps an upgrade kit
+  piece('round restart clears the unlocks', 110, function* () {
+    yield after('script reload carries REQ');
+    for (const q of D.players.values()) if (q.team) { q.rq = 80; q.unlocks.add('carbine'); }
+    restartAt = time;
+    yield 3;
+    for (const [s, q] of D.players) {
+      if (!q.team && !q.ctl) continue;
+      if (q.unlocks.size) throw new Error('slot ' + s + ' kept ' + [...q.unlocks].join(',') + ' into the new round');
+      if (q.rq > R().CARRY) throw new Error('slot ' + s + ' carried ' + q.rq + ' REQ into the new round (CARRY ' + R().CARRY + ')');
+      if (CONFIG.KITS[q.kit] && CONFIG.KITS[q.kit].unlock) throw new Error('slot ' + s + ' kept the ' + q.kit + ' kit');
+    }
+    hit('round restart: unlocks cleared, ' + R().CARRY + ' REQ carried');
+  });
+  // (8) the launchers per side: the US M79 lobs (real gravity), the NVA RPG-7 flies flat
+  piece('M79 and RPG-7', 130, function* () {
+    yield after('round restart clears the unlocks');
+    for (const team of [3, 2]) {
+      const a = yield* infantryman(team);
+      putAt(a, rack(team)); yield 0.2; say(a, '!at'); yield 0.3;
+      if (P(a).kit !== 'at') throw new Error('no AT kit for team ' + team + ' (kit ' + P(a).kit + ')');
+      P(a).atReadyAt = 0; if (!hasW(a, 'weapon_taser')) a.pawn.GiveNamedItem('weapon_taser', true);
+      const n0 = D.rockets.length;
+      if (!fireZeus(a, { x: a.pawn.pos.x + 1500, y: a.pawn.pos.y, z: a.pawn.pos.z + 40 })) throw new Error('no trigger in hand');
+      yield 0.05;
+      const r = D.rockets[D.rockets.length - 1];
+      const want = Object.assign({}, CONFIG.AT, (CONFIG.AT_TEAM || {})[team] || {});
+      if (!r || D.rockets.length <= n0 && D.stats.atShots === 0) throw new Error('team ' + team + ' fired no launcher round');
+      if (r.grav !== want.GRAVITY || Math.abs(Math.hypot(r.vel.x, r.vel.y, r.vel.z) - want.SPEED) > want.SPEED * 0.2) throw new Error('team ' + team + ' round flies with gravity ' + r.grav + ', speed ' + Math.hypot(r.vel.x, r.vel.y, r.vel.z).toFixed(0));
+      if (P(a).atReadyAt - time > want.RELOAD + 0.5 || P(a).atReadyAt - time < want.RELOAD - 0.5) throw new Error('team ' + team + ' reload ' + (P(a).atReadyAt - time).toFixed(1) + ' s, want ' + want.RELOAD);
+      release(curPiece);
+    }
+    hit('launchers: M79 lobbed (g ' + CONFIG.AT_TEAM[3].GRAVITY + ', ' + CONFIG.AT_TEAM[3].RELOAD + ' s), RPG-7 flat (' + CONFIG.AT.RELOAD + ' s)');
+  });
+  // (9) bots: they earn and buy for themselves (at most BOT_BUY.SNIPERS sniper bots a side); their weapons match their unlocks
+  piece('bots earn and buy', 150, function* () {
+    yield after('M79 and RPG-7');
+    for (const q of D.players.values()) if (q.bot && q.team) q.rq = Math.max(q.rq, 60);
+    yield until(() => D.stats.botBuys >= 2, 'two bot purchases', 90);
+    for (const team of [2, 3]) {
+      const sn = [...D.players.values()].filter((q) => q.bot && q.team === team && q.unlocks.has('sniper')).length;
+      if (sn > CONFIG.BOT_BUY.SNIPERS) throw new Error(sn + ' bot snipers on team ' + team);
+    }
+    hit('bots: ' + D.stats.botBuys + ' purchases (' + Object.entries(D.stats.unlockBy).map(([k, v]) => k + ' ' + v).join(', ') + ')');
+  });
+}
 if (SCEN === 'pt1') {
   const grab = (c) => { c.stunt = curPiece.name; c.q = []; c.hold = 0; curPiece.actors.push(c); return c; };
   const after = (name) => until(() => pieces.every((x) => x.name !== name || x.done), 'set piece "' + name + '" to finish', 400);
@@ -1844,7 +2085,8 @@ for (let step = 0; step < SECONDS * 64 && !balDone; step++) {
   }
   fillBots();
   if (SCEN === 'churn' && step > 64 * 20) churn(step);
-  if (SCEN === 'reload' && (step === 64 * 100 || step === 64 * 200)) {      // the tools reload the script: new module state, same world and pawns
+  if ((SCEN === 'reload' && (step === 64 * 100 || step === 64 * 200)) || reloadNow) {
+    reloadNow = false;      // the tools reload the script: new module state, same world and pawns
     const mem = hooks.reloadCfg && hooks.reloadCfg.before ? hooks.reloadCfg.before() : undefined;
     const tk = { ...D.game.tickets }, owners = D.flags.map((f) => f.owner);
     Instance._next = undefined; hooks.reloadCfg = null;
@@ -1854,7 +2096,7 @@ for (let step = 0; step < SECONDS * 64 && !balDone; step++) {
     if (D.flags.map((f) => f.owner).join() !== owners.join()) fail('flag owners not carried over a script reload');
     hit('script reload');
   }
-  if (FEATURES || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3' || SCEN === 'pt1') runPieces();
+  if (FEATURES || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3' || SCEN === 'pt1' || SCEN === 'weapons') runPieces();
   for (const c of everyone()) {
     const p = c.pawn; p.keys = 0;
     if (c.spec || p.hp <= 0) continue;
@@ -1913,6 +2155,7 @@ for (let step = 0; step < SECONDS * 64 && !balDone; step++) {
     if (m && c) { putAt(c, m.seat.pos); press(c, IN.USE); const botSlot = m.user;
       expect(1, 'human ' + c.slot + ' took the emplaced gun from AI gunner ' + botSlot, () => { const ok = m.user === c.slot && P(ctls[botSlot]).aiRole === ''; if (ok) stats.yields++; return ok; }); }
   }
+  if ((BAL || FEATURES) && CONFIG.REQ && CONFIG.REQ.ON) humanBuys(step);
   if (BAL) { if (step % FIGHT.EVERY === 0) fight(); }
   else {
     // rifle fire: random kills between deployed enemies, bullets on flying helicopters
@@ -1982,7 +2225,7 @@ if (BAL) {
                 killsBy: S.killsBy, killsOn: S.killsOn, deaths: S.deaths, bleedOn: { t: S.bleedOn[2], ct: S.bleedOn[3] }, deathsOn: { t: Object.values(S.killsOn[2] || {}).reduce((a, b) => a + b, 0), ct: Object.values(S.killsOn[3] || {}).reduce((a, b) => a + b, 0) }, heliLives: lives, heliLost: S.heliLost, heliLostBy: S.heliLostBy, heliDmgBy: S.heliDmgBy, flights: S.flights,
                 heliLostTeam: { t: S.heliLostTeam[2], ct: S.heliLostTeam[3] }, shells: S.shells, shellHits: S.shellHits, missions: S.missions, missionShells: S.missionShells, missionHits: S.missionHits,
                 gunsDisabled: S.gunsDisabled, fired: S.fired, rockets: S.rockets, gunShots: S.gunShots, landings: S.landings, own: Object.fromEntries(Object.entries(ownTime).map(([k, o]) => [k, { t: +(o[2] / Math.max(1, aiUp.n)).toFixed(2), ct: +(o[3] / Math.max(1, aiUp.n)).toFixed(2) }])), ai: { pilot: frac(aiUp.pilot), gunner: frac(aiUp.gunner), crew: frac(aiUp.crew) },
-                pilotWhy, botGoals: S.botGoals, contest: Object.fromEntries(D.flags.map((f) => [f.id, contestTime[f.id] || 0])), capsBy: Object.fromEntries(D.flags.map((f) => [f.id, { t: (capsBy[f.id] || {})[2] || 0, ct: (capsBy[f.id] || {})[3] || 0 }])), perf, errors: errs.length + fails.length, fails: fails.slice(0, 5) };
+                pilotWhy, botGoals: S.botGoals, req: { earned: S.reqEarned, by: S.reqBy, unlocks: S.unlocks, unlockBy: S.unlockBy, botBuys: S.botBuys, assists: S.assists, capped: S.reqCapped }, contest: Object.fromEntries(D.flags.map((f) => [f.id, contestTime[f.id] || 0])), capsBy: Object.fromEntries(D.flags.map((f) => [f.id, { t: (capsBy[f.id] || {})[2] || 0, ct: (capsBy[f.id] || {})[3] || 0 }])), perf, errors: errs.length + fails.length, fails: fails.slice(0, 5) };
   console.log((JSONONLY ? '' : 'BALANCE ') + JSON.stringify(out));
   process.exit(fails.length ? 1 : 0);
 }
@@ -2017,7 +2260,7 @@ console.log(JSON.stringify({ script: { ...S, heliLives: S.heliLives.length, resu
   cmds: stats.cmds, setModel: stats.setmodel, maxAlt: Math.round(maxAlt), tickets: D.game.tickets, flags: D.flags.map((f) => f.id + ':' + f.owner).join(' '), churn: stats.churn } }));
 if (unusedIds.length) console.log('HUD contract ids never used in this run: ' + unusedIds.join(' '));
 // ---- coverage: feature -> times exercised. Set pieces fill cov; the rest comes from the script's own counters.
-if (FEATURES || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3' || SCEN === 'pt1') {
+if (FEATURES || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3' || SCEN === 'pt1' || SCEN === 'weapons') {
   const used = (id) => { const c = contract.get(id); return c && (c.textUsed || c.used.size) ? 1 : 0; };
   const table = FEATURES ? {
     ...cov,
@@ -2026,9 +2269,10 @@ if (FEATURES || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3' || S
     'smoke shells': S.smokes, 'belt changes': S.beltReloads, 'board: second flash marker': used('mv_fl1'),
     'event feed lines': S.feed, 'per-minute perf line': S.perfLines,
     'kills by artillery': S.killsBy.arty || 0,
+    'REQ earned (points)': S.reqEarned, 'upgrades requisitioned': S.unlocks, 'upgrades bought by bots': S.botBuys, 'assists': S.assists,
     'helicopter lost with riders (crash kills)': Object.entries(S.killsBy).filter(([k]) => !['rifle', 'mg', 'other'].includes(k)).reduce((a, [, v]) => a + v, 0),
   } : cov;
-  const need0 = !opt.piece && (SECONDS >= 600 || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3' || SCEN === 'pt1');
+  const need0 = !opt.piece && (SECONDS >= 600 || SCEN === 'edge' || SCEN === 'review2' || SCEN === 'review3' || SCEN === 'pt1' || SCEN === 'weapons');
   console.log('coverage (feature -> times exercised):');
   for (const [k, v] of Object.entries(table)) { console.log('  ' + String(Math.round(v * 10) / 10).padStart(6) + '  ' + k); if (need0 && !(v > 0)) fail('coverage: "' + k + '" was never exercised'); }
   for (const pc of pieces) if (!pc.done && need0) fail('set piece "' + pc.name + '" did not finish (waiting for: ' + (pc.what || 'its start') + ')');

@@ -244,7 +244,7 @@ function botSpawnChoice(p, team) {
 }
 // the bot AT man: CS2's bot brain would only use the Zeus as a Zeus, so the script fires the launcher for him, at helicopters only
 function botAT(p, pawn, pos) {
-  const A = CONFIG.AI, K = CONFIG.AT;
+  const A = CONFIG.AI, K = atCfg(p.team);
   if (p.kit !== "at" || p.role !== "infantry" || TNOW < p.atReadyAt) return;
   p.atReadyAt = TNOW + A.AT_EVERY;                          // look again in a second
   const from = v3(pos.x, pos.y, pos.z + 60);
