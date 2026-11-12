@@ -32,6 +32,9 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   0 out of memory. Logs copied to `out/step9/`. `docs/BUILD_LOG_1.md` filled: nav **10,269 areas** (tw34 44,160; target < 5,000;
   the ~1,470 estimate was 7x off), 24,718 meshes / 1.40 M charts at 2048, vpk 519.9 MB. 4 stale models (wire, ladder) recompiled;
   check_world now fails only on the user's duplicate info_map_parameters.
+- 12 Nov ~19:00: **user decisions:** sap tunnels "do what's best for gameplay" -> benches open with the unlock (`--user-h1 unlock`),
+  doubled bench dropped, sap roofs raised for standing entry; duplicate info_map_parameters deleted if safe (`--user-m2`); role
+  commands keep waiting for the next deploy. Being applied in the chain; then redeploy + recompile.
 - 12 Nov ~18:50: nav pass 2: `tools/patch_nav.py` height-aware NONAV (326 boxes; cuts trench tops, dugout roofs, ground over the
   galleries, woods outside the clearing, and the southern mine gallery, which no bot is sent to). Measured **4,377 areas** with
   `tools/navtest.py <map> <tag>` (nav-only test compile with its own outroot, ~3 min; calibrated 10,270 vs the final's 10,269);
