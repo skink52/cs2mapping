@@ -27,6 +27,12 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
+- 12 Nov 16:33: **deployed** with `tools/deploy_tw.py --apply` (gate PASS; 86 created, 29 replaced, 148 MB). The addon's vmap is now
+  the chained map (89.8 MB); the user's 29 Oct save is in `backups\deploy_20261112_163314\` and `backups\remaster_20261112\`.
+  Record `out/step9/deploy/mg_trenchwarfare_deploy_20261112_163314.json`. The chain's base hash is the user's save (2e3f90d0): to
+  re-deploy, run the chain from that backup, not from the deployed map. A Hammer save of the deployed map makes it the user's new
+  base. Opt-ins H1/M2 not applied (no answer yet). Before the gate passed: a `separation` false alarm from check_play's scene cache
+  (a no-stage scene served to a --stage run; fixed in create/check_play.py). Asset compile started 16:35 (waits for monsoon's compile).
 - 12 Nov 16:13: second independent review (simulated): `docs/REVIEW_SCRIPT_2.md` (5 bugs fixed: slot changing hands with no
   disconnect event -> `claim()`; `!pos` server-command injection via player names -> `say()` sanitises; disconnected controllers
   counted as humans; spectators kept HUD; damage-guard log spam), 13/13 scenarios. `docs/REVIEW_WORLD_2.md`: W1 sealed galleries
