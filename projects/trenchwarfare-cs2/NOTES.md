@@ -27,6 +27,12 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
+- 12 Nov ~22:00: step 9a done (dry run only). `python -u tools/deploy_tw.py --chain` rebuilds the final map from the user's save
+  (refuses unless CRC32 2e3f90d0), guards every stage, re-makes the radar; then the gate; then `create/deploy_addon.py` (dry run by
+  default, `--apply` copies changed files only, backs up first, holds while Hammer / cs2 -tools has the addon open). Dry run: 110
+  files, 148 MB. Docs: `docs/BUILD.md` (deploy, asset compile, forced xml/css/js compiles, map compile, log greps), `docs/BUILD_LOG_1.md`.
+  Old unpack-bat route retired (kept inert: leave `cs2port\logs\mg_trenchwarfare_applied.txt` alone, no new twN zips). Next: second
+  review finishing, then re-run `--chain` (now with sounds), dry run, `--apply`, compiles under the watchdog, triage BUILD_LOG_1.md.
 - 12 Nov ~21:30: the 3 pending sounds are wired (simulated). `tw_whistle_attack` (briefing room, 1.5 s after round start, 75_front),
   `tw_plane_dive_1..4` shared pool (60_air `diveSound`: nose 25 deg down at >= 900 u/s; cs_script cannot play a sound itself),
   `tw_rain_tin_<tg>_1..3` over the dressing stations, started/stopped by the `tw_rain` relay. `tools/patch_sounds.py` (guarded,

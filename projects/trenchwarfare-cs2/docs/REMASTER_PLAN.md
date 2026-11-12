@@ -63,6 +63,8 @@ Steps 1+2 run together, then 3 alone (it owns `src/`), then 4+5, 6+7, 8+9, 10.
 - 12 Nov: reminders set for each usage reset to Sat 13:00; vmap backed up; research done (TW_STATE, MONSOON_STANDARD); this plan.
 - 12 Nov: step 1 done (restage_out.py, mock green on Windows, CONTRACT.md + check_contract.py 76/77, 1 known missing).
 - 12 Nov: step 2 done (create/check_play.py + trench adapter, check_world.py, REVIEW_WORLD_1.md: 4 high, 6 mid, 11 low).
+- 12 Nov: step 9a done (create/deploy_addon.py, tools/deploy_tw.py chain + gate + dry run 110 files, BUILD.md); real deploy + compile next.
+- 12 Nov: 3 pending sounds wired (patch_sounds in the chain).
 - 12 Nov: step 8 done offline (HUD contract + hud_check 0, new HUD look, 28 synthesised sounds, radar check 0 u; 3 sounds await wiring).
 - 12 Nov: step 7 done offline (patch_terrain: craters, ruts, erosion under a protect mask; smoke + rain fx; light unchanged).
 - 12 Nov: step 4 done (bots placed + leashed, AI pilots/crews yield to humans, BOTS_ON with fill 16, patch_nav ~1,470 areas est.; perf max to re-run on a quiet PC).

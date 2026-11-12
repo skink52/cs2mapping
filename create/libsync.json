@@ -199,6 +199,10 @@
    "origin": "space-racer-cs2:tools/sounds.py",
    "seen": "b140ec02b4c2bce61b8cc965bf5b463e2ae71038"
   },
+  "create/deploy_addon.py": {
+   "origin": "monsoon-cs2:tools/deploy_monsoon.py",
+   "seen": "0eebe68fc464ef377868b79c3abee2b47a70377b"
+  },
   "create/gmod_assets.py": {
    "origin": "monsoon-cs2:tools/gmod_assets.py",
    "seen": "faa55fc5387ae251bf7fc916b088bc70b0eb9a72"
