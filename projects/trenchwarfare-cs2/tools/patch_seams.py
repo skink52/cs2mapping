@@ -237,7 +237,7 @@ def clone_mesh_node(m, src, node_id):
     """a copy of a mesh node (its node attributes: vis group, lighting, physics), appended to the world; -> (node, meshData)"""
     memo = {}
     e = m.import_subtree(m, src, memo, node_id)
-    dmx.set_(m.E[e], b'referenceID', dmx.T_U64, int.from_bytes(os.urandom(8), 'little') >> 1)
+    dmx.set_(m.E[e], b'referenceID', dmx.T_U64, V.random.getrandbits(63))
     dmx.geta(m.E[m.world], b'children')[2].append(e)
     return e, m.g(e, b'meshData')
 
@@ -794,6 +794,7 @@ def main(argv=None):
     t0 = time.time()
     raw = open(inp, 'rb').read()
     m = V.Map(inp, data=raw); m.path = inp
+    V.random.seed('patch_seams:%08x:%d' % (zlib.crc32(raw) & 0xffffffff, len(raw)))   # new guids / referenceIDs / randomSeeds (vmapedit's global random) follow from the input: same input, same bytes
     sc = CS.load_scene(inp)
     T = dict(input=inp, input_bytes=len(raw), input_crc32='%08x' % (zlib.crc32(raw) & 0xffffffff), modify={}, remove={}, add=[], prefix=[], root=False)
     try:

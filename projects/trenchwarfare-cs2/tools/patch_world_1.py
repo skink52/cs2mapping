@@ -138,6 +138,7 @@ def main(argv=None):
     t0 = time.time()
     raw = open(a.inp, 'rb').read()
     m = V.Map(a.inp, data=raw)
+    V.random.seed('patch_world_1:%08x:%d' % (zlib.crc32(raw) & 0xffffffff, len(raw)))   # new guids / referenceIDs / randomSeeds (vmapedit's global random) follow from the input: same input, same bytes
     m.path = a.inp
     nid = lambda i: m.g(i, b'nodeID')
     T = dict(input=os.path.abspath(a.inp), input_bytes=len(raw), input_crc32='%08x' % (zlib.crc32(raw) & 0xffffffff), modify={}, remove={}, add=[],

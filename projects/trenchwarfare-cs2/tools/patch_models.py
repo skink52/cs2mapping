@@ -80,6 +80,7 @@ def main(argv=None):
     t0 = time.time()
     raw = open(a.inp, 'rb').read()
     m = V.Map(a.inp, data=raw); m.path = a.inp
+    V.random.seed('patch_models:%08x:%d' % (zlib.crc32(raw) & 0xffffffff, len(raw)))   # new guids / referenceIDs / randomSeeds (vmapedit's global random) follow from the input: same input, same bytes
     nid = lambda i: m.g(i, b'nodeID')
     T = dict(input=os.path.abspath(a.inp), input_bytes=len(raw), input_crc32='%08x' % (zlib.crc32(raw) & 0xffffffff), modify={}, remove={}, add=[],
              prefix=['map_asset_references'], root=False)

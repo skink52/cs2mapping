@@ -108,6 +108,7 @@ def main(argv=None):
     t0 = time.time()
     raw = open(a.inp, 'rb').read()
     m = V.Map(a.inp, data=raw); m.path = a.inp
+    V.random.seed('patch_sounds:%08x:%d' % (zlib.crc32(raw) & 0xffffffff, len(raw)))   # new guids / referenceIDs / randomSeeds (vmapedit's global random) follow from the input: same input, same bytes
     try:
         relay, shelters, amb = plan(m)
     except Mismatch as ex:

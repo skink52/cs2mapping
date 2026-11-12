@@ -37,7 +37,10 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   revetment top; holes 9; standing-eye cracks 55); 8 user-owned niche cracks listed, not changed. Sap: floor ramp, lintel, ground
   cap built; entry stays crouched (the user's upper benches set 57-62 u head room); all 23 benches unmoved. Nav 4,397. Gate PASS,
   dry run 188 files. For the user: generated revetment 121040 at (-1892, 144) faces backwards (maybe a Hammer edit; not rotated).
-  Follow-up: patch_terrain gives a different output CRC per run from the same input (guard passes) - make it deterministic.
+  patch_terrain's different CRC per run: fixed 13 Nov. Cause: repo tools/vmapedit.py draws new elements' guid/referenceID/
+  randomSeed from the unseeded global `random` (and patch_seams/patch_nav used os.urandom). Each patch stage now seeds
+  `V.random` from its input CRC; two runs per stage are byte-identical. Geometry was always identical. The next chain run gives
+  new CRCs from terrain on (the ids are now fixed values); the deployed map is unaffected.
 - 12 Nov 23:22: licence items (step 12, staged, not deployed): Lee-Enfield was TurboSquid 1907112 (editorial-only licence) ->
   replaced by "Lee Enfield MKIII" by Moony_State / Giuliano.Sgroi (CC BY 4.0, Sketchfab f6a2160daf134071a84e3cae5f831875; 46.5 u vs
   45.9 old). Mondragón confirmed DilanMendozaHer CC BY 4.0 (2cfae8885fe747feaeb6068133f5fb38). Canon de 75 confirmed

@@ -271,8 +271,8 @@ def add_box(m, tmpl, box, name, node_id):
     memo = {}
     e = m.import_subtree(m, e0, memo, node_id)
     mesh = memo[mesh0]
-    dmx.set_(m.E[e], b'referenceID', dmx.T_U64, int.from_bytes(os.urandom(8), 'little') >> 1)
-    dmx.set_(m.E[mesh], b'referenceID', dmx.T_U64, int.from_bytes(os.urandom(8), 'little') >> 1)
+    dmx.set_(m.E[e], b'referenceID', dmx.T_U64, V.random.getrandbits(63))
+    dmx.set_(m.E[mesh], b'referenceID', dmx.T_U64, V.random.getrandbits(63))
     m.setp(e, 'navProperty_NavGen', 'NONAV'); m.setp(e, 'targetname', name)
     lo, hi = m.bounds(mesh0)
     md = m.g(mesh, b'meshData'); vd = m.g(md, b'vertexData')
@@ -314,6 +314,7 @@ def main(argv=None):
     t0 = time.time()
     raw = open(inp, 'rb').read()
     m = V.Map(inp, data=raw)
+    V.random.seed('patch_nav:%08x:%d' % (zlib.crc32(raw) & 0xffffffff, len(raw)))   # new guids / referenceIDs / randomSeeds (vmapedit's global random) follow from the input: same input, same bytes
     T = dict(input=inp, input_bytes=len(raw), input_crc32='%08x' % (zlib.crc32(raw) & 0xffffffff), modify={}, remove={}, add=[],
              prefix=['map_subasset_reference_types', 'map_subasset_reference_names', 'map_subasset_reference_counts'], root=False)
     try:

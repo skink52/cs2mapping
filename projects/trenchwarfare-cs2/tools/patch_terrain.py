@@ -1009,6 +1009,7 @@ def main(argv=None):
     def log(s): print(s); lines.append(s)
     raw = open(a.inp, 'rb').read()
     m = V.Map(a.inp, data=raw); m.path = a.inp
+    V.random.seed('patch_terrain:%08x:%d' % (zlib.crc32(raw) & 0xffffffff, len(raw)) + ':%d' % a.seed)   # new guids / referenceIDs / randomSeeds (vmapedit's global random) follow from the input: same input, same bytes
     T = dict(input=os.path.abspath(a.inp), input_bytes=len(raw), input_crc32='%08x' % (zlib.crc32(raw) & 0xffffffff), modify={}, remove={}, add=[],
              prefix=[], root=False)
     rig0 = light_rig(m)
