@@ -32,6 +32,12 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   0 out of memory. Logs copied to `out/step9/`. `docs/BUILD_LOG_1.md` filled: nav **10,269 areas** (tw34 44,160; target < 5,000;
   the ~1,470 estimate was 7x off), 24,718 meshes / 1.40 M charts at 2048, vpk 519.9 MB. 4 stale models (wire, ladder) recompiled;
   check_world now fails only on the user's duplicate info_map_parameters.
+- 12 Nov ~20:40: decisions applied (simulated, chain final CRC32 784ddc7b, gate PASS): id 7 `info_map_parameters` (Hammer defaults:
+  buying 0, dm spawn keys 0) deleted, `tw_params` kept; bench 72 (exact duplicate of 71, 1 u apart) dropped; all other benches kept.
+  Sap roof NOT raised: the user's upper benches set the ceiling (57-62 u over the step benches), so entry stays crouched; proper
+  seam fix (portal ramp, lintel, ground cap, roof to floor + 80) proposed in REVIEW_WORLD_2. check_play T9 probes each sap mouth
+  with a real player box (the 16-u grid could not see the stepped seam): 0 of 10 targets unreachable. Bots get gallery points again
+  (landing, northern gallery, chamber edge). Nav still 4,376 (navtest). deploy_tw defaults `--user-m2 --user-w5`.
 - 12 Nov ~19:35: map compile 2 (nav pass 2 deployed 18:52): OK 34.2 min, 0 errors, 0 entity DELETED, **nav 4,376 areas**
   (target < 5,000 met; tw34 44,160). This is the compiled state in the game addon now. The sap/M2 changes below are not in it yet.
 - 12 Nov ~19:00: **user decisions:** the 24 `tl_bench` in the sap mouths are the user's **bridges over the bad seam between the

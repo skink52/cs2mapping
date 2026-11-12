@@ -85,6 +85,7 @@ class Trench(CP.Adapter):
 
     # ---------------------------------------------------------------- points
     def worlds(self, ctx):
+        sap_links(ctx)                                 # the sap mouths, proven on a fine grid, join the open walk graph (T9)
         w = {}
         for tg in ('t', 'ct'):
             w[tg] = ctx.points(r'trench_%s_\d+' % tg) + ctx.points(r'heal_%s_\d+' % tg)
@@ -166,7 +167,167 @@ class Trench(CP.Adapter):
 
     def extra_checks(self, ctx):
         return [('T1', 'trench depth', t1_depth), ('T2', 'fire steps', t2_firesteps), ('T3', 'ladders', t3_ladders), ('T4', 'dugouts', t4_dugouts),
-                ('T5', "no man's land", t5_nml), ('T6', 'mortar pits', t6_pits), ('T7', 'runways and plane lanes', t7_air), ('T8', 'spawns', t8_spawns)]
+                ('T5', "no man's land", t5_nml), ('T6', 'mortar pits', t6_pits), ('T7', 'runways and plane lanes', t7_air), ('T8', 'spawns', t8_spawns),
+                ('T9', 'sap mouths (fine probe)', t9_saps)]
+
+
+# ---------------------------------------------------------------- T9: the sap mouths on a fine grid
+# The user's benches in each sap mouth (tw_user, 24 tl_bench) bridge the seam between the trench floor and the tunnel mesh: a low row of
+# steps down from the trench floor (12 u above the tunnel floor at the portal) and an upper row that closes the ground over the mouth.
+# The 16-u walk grid cannot resolve that seam (a 22-degree tunnel floor, bench tops 4-8 u apart, blockers widened 12 u), so it reported
+# the galleries unreachable although players walk in (crouched: the upper benches hang 59-62 u over the trench floor). This probe walks a
+# CS2 player box (32 x 32, 72 u standing / 54 u crouched, 18-u steps) over the exact triangles of the mouth on a 4-u grid, both ways,
+# with the undergroundopen planks out (open) and in (closed). When the crouched box gets through both ways once open and not while
+# closed, the coarse open walk graph gets a two-way link across the mouth (the closed graph is computed before the link is added).
+SAP_XC, SAP_Y_TRENCH, SAP_Y_TUNNEL = 2144.0, -2776.0, -2888.0
+SAP_REGION = (-2940.0, -2740.0, -220.0, 80.0)          # y0, y1, z0, z1 of the probe region (x: SAP_XC +- 96)
+HULL_W, HULL_STAND, HULL_CROUCH, STEP_H = 16.0, 72.0, 54.0, 18.0
+_SAP = {}
+
+
+def _tri_box(T, lo, hi):
+    """bool per triangle (N, 3, 3): does it intersect the box lo..hi (separating axis test, Akenine-Moller)"""
+    if not len(T): return np.zeros(0, bool)
+    c = (np.asarray(lo) + np.asarray(hi)) / 2.0; h = (np.asarray(hi) - np.asarray(lo)) / 2.0
+    v = T - c
+    e = np.stack([v[:, 1] - v[:, 0], v[:, 2] - v[:, 1], v[:, 0] - v[:, 2]], 1)
+    ok = np.ones(len(T), bool)
+    for a in range(3):                                    # box face normals
+        ok &= ~((v[:, :, a].min(1) > h[a]) | (v[:, :, a].max(1) < -h[a]))
+    n = np.cross(e[:, 0], e[:, 1])                        # triangle normal
+    r = (np.abs(n) * h).sum(1); d = (n * v[:, 0]).sum(1)
+    ok &= np.abs(d) <= r
+    I = np.eye(3)
+    for i in range(3):
+        for j in range(3):
+            ax = np.cross(e[:, j], I[i])
+            p = (v * ax[:, None, :]).sum(2)
+            rr = (np.abs(ax) * h).sum(1)
+            ok &= ~((p.min(1) > rr) | (p.max(1) < -rr))
+    return ok
+
+
+def _sap_probe(sc, s, closed):
+    """walk a player box through the sap mouth of side s (+1 CT, -1 T): {hull: (in, out)} for standing and crouched"""
+    y0, y1, z0, z1 = SAP_REGION
+    x0, x1 = s * SAP_XC - 96.0, s * SAP_XC + 96.0
+    if x0 > x1: x0, x1 = x1, x0
+    T = sc['tris']; src = sc['srcs']; kd = sc['kinds']
+    lo = T.min(1); hi = T.max(1)
+    rem = np.array([p['removable'] for p in sc['props']] + [False], bool)
+    m = (hi[:, 0] >= x0 - 20) & (lo[:, 0] <= x1 + 20) & (hi[:, 1] >= y0 - 20) & (lo[:, 1] <= y1 + 20) & (hi[:, 2] >= z0) & (lo[:, 2] <= z1) & (kd != CP.K_WATER)
+    if not closed: m &= ~((src >= 0) & rem[np.clip(src, 0, len(rem) - 1)])
+    T = T[m]; lo = lo[m]; hi = hi[m]
+    # columns on a 2-u lattice: every crossing z (any face) for the ground under the box
+    gx = np.arange(x0 - 18, x1 + 19, 2.0); gy = np.arange(y0 - 18, y1 + 19, 2.0)
+    cols = [[[] for _ in gy] for _ in gx]
+    for t in T:
+        a, b, c = t
+        d = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
+        if abs(d) < 1e-9: continue
+        i0 = max(0, int(np.ceil((min(a[0], b[0], c[0]) - gx[0]) / 2.0))); i1 = min(len(gx) - 1, int(np.floor((max(a[0], b[0], c[0]) - gx[0]) / 2.0)))
+        j0 = max(0, int(np.ceil((min(a[1], b[1], c[1]) - gy[0]) / 2.0))); j1 = min(len(gy) - 1, int(np.floor((max(a[1], b[1], c[1]) - gy[0]) / 2.0)))
+        if i1 < i0 or j1 < j0: continue
+        X, Y = np.meshgrid(gx[i0:i1 + 1], gy[j0:j1 + 1], indexing='ij')
+        l1 = ((b[1] - c[1]) * (X - c[0]) + (c[0] - b[0]) * (Y - c[1])) / d
+        l2 = ((c[1] - a[1]) * (X - c[0]) + (a[0] - c[0]) * (Y - c[1])) / d
+        l3 = 1 - l1 - l2
+        inn = (l1 >= -1e-6) & (l2 >= -1e-6) & (l3 >= -1e-6)
+        Z = l1 * a[2] + l2 * b[2] + l3 * c[2]
+        for ii, jj in zip(*np.nonzero(inn)): cols[i0 + ii][j0 + jj].append(float(Z[ii, jj]))
+    kmax = max(1, max(len(cc) for row in cols for cc in row))
+    CZ = np.full((len(gx), len(gy), kmax), np.inf)
+    for i, row in enumerate(cols):
+        for j, cc in enumerate(row):
+            if cc: CZ[i, j, :len(cc)] = cc
+
+    def ground(cx, cy, zfrom):
+        """the highest face under the box footprint at or below zfrom (a box traced down from there)"""
+        i0 = max(0, int(np.ceil((cx - HULL_W + 0.5 - gx[0]) / 2.0))); i1 = min(len(gx) - 1, int(np.floor((cx + HULL_W - 0.5 - gx[0]) / 2.0)))
+        j0 = max(0, int(np.ceil((cy - HULL_W + 0.5 - gy[0]) / 2.0))); j1 = min(len(gy) - 1, int(np.floor((cy + HULL_W - 0.5 - gy[0]) / 2.0)))
+        z = CZ[i0:i1 + 1, j0:j1 + 1]
+        z = z[z <= zfrom + 0.01]
+        return float(z.max()) if z.size else -np.inf
+
+    def free(cx, cy, zb, H):
+        blo = (cx - HULL_W + 0.5, cy - HULL_W + 0.5, zb + 1.0); bhi = (cx + HULL_W - 0.5, cy + HULL_W - 0.5, zb + H)
+        mm = (hi[:, 0] >= blo[0]) & (lo[:, 0] <= bhi[0]) & (hi[:, 1] >= blo[1]) & (lo[:, 1] <= bhi[1]) & (hi[:, 2] >= blo[2]) & (lo[:, 2] <= bhi[2])
+        return not _tri_box(T[mm], blo, bhi).any()
+
+    def bfs(start, H):
+        sx, sy, sz = start
+        q = [(sx, sy, sz)]; seen = {(round(sx), round(sy), round(sz / 2.0))}; out = [(sx, sy, sz)]
+        while q:
+            cx, cy, cz = q.pop()
+            for dx, dy in ((4, 0), (-4, 0), (0, 4), (0, -4), (4, 4), (4, -4), (-4, 4), (-4, -4)):
+                nx, ny = cx + dx, cy + dy
+                if not (x0 <= nx <= x1 and y0 <= ny <= y1): continue
+                nz = ground(nx, ny, cz + STEP_H)
+                if not np.isfinite(nz) or nz < z0 or nz < cz - 300: continue
+                key = (round(nx), round(ny), round(nz / 2.0))
+                if key in seen: continue
+                # the 2-u lattice can miss a raised edge or the crest of a tilted bench by a unit or two: settle on the first free height
+                # up to 4 u higher (the engine steps onto it)
+                nz = next((nz + dz for dz in (0.0, 2.0, 4.0) if nz + dz <= cz + STEP_H and free(nx, ny, nz + dz, H)), None)
+                if nz is None: continue
+                if nz < cz and not free(nx, ny, cz, H): continue          # stepping off: the box moves over at its own height first
+                key = (round(nx), round(ny), round(nz / 2.0))
+                if key in seen: continue
+                seen.add(key); q.append((nx, ny, nz)); out.append((nx, ny, nz))
+        return out
+
+    a = (s * SAP_XC, SAP_Y_TRENCH); b = (s * SAP_XC, SAP_Y_TUNNEL)
+    za = ground(a[0], a[1], -30.0); zb = ground(b[0], b[1], -60.0)
+    res = dict(trench=(a[0], a[1], za), tunnel=(b[0], b[1], zb))
+    near = lambda pts, p: any(abs(x - p[0]) <= 8 and abs(y - p[1]) <= 8 and abs(z - p[2]) <= 20 for (x, y, z) in pts)
+    for name, H in (('standing', HULL_STAND), ('crouched', HULL_CROUCH)):
+        fwd = bfs((a[0], a[1], za), H); back = bfs((b[0], b[1], zb), H)
+        res[name] = dict(walk_in=near(fwd, res['tunnel']), walk_out=near(back, res['trench']), states=len(fwd) + len(back))
+        if _SAP.get('debug'): res[name].update(fwd=fwd, back=back, free=free, ground=ground)
+    return res
+
+
+def sap_links(ctx):
+    """run the fine probe for both mouths (open and closed) once per grid; add the open-state links"""
+    G = ctx.G
+    if getattr(G, '_sap_done', False): return _SAP.get(id(G))
+    G._sap_done = True
+    G.closed()                                         # the closed graph first: a link must never bypass the planks
+    out = {}
+    from scipy import sparse
+    add_r, add_c = [], []
+    for s, tg in ((1, 'ct'), (-1, 't')):
+        r_open = _sap_probe(ctx.sc, s, False); r_closed = _sap_probe(ctx.sc, s, True)
+        ok = r_open['crouched']['walk_in'] and r_open['crouched']['walk_out'] and not (r_closed['crouched']['walk_in'] or r_closed['crouched']['walk_out'])
+        link = None
+        if ok:
+            pa, pb = r_open['trench'], r_open['tunnel']
+            na = G.nodes_near(pa[0], pa[1], pa[2] - 2.0, 12.0, 12.0); nb = G.nodes_near(pb[0], pb[1], pb[2] - 2.0, 12.0, 12.0)
+            for u in na:
+                for v in nb: add_r += [u, v]; add_c += [v, u]
+            link = dict(trench_nodes=len(na), tunnel_nodes=len(nb))
+        out[tg] = dict(open=r_open, closed=r_closed, link=link, ok=ok)
+    if add_r:
+        n = G.walk.shape[0]
+        G.walk = (G.walk + sparse.csr_matrix((np.ones(len(add_r), np.int8), (add_r, add_c)), shape=(n, n))).tocsr()
+        G.walk.data[:] = 1
+    _SAP[id(G)] = out
+    return out
+
+
+def t9_saps(ctx):
+    res = sap_links(ctx) or {}
+    lines, fails, warn = [], [], []
+    for tg, r in res.items():
+        o, c = r['open'], r['closed']
+        f = lambda d: '%s/%s' % ('in' if d['walk_in'] else '-', 'out' if d['walk_out'] else '-')
+        lines.append('   %s sap (trench z %.1f -> tunnel z %.1f): open standing %s, crouched %s; closed standing %s, crouched %s; link %s'
+                     % (tg, o['trench'][2], o['tunnel'][2], f(o['standing']), f(o['crouched']), f(c['standing']), f(c['crouched']),
+                        'added (%d x %d nodes)' % (r['link']['trench_nodes'], r['link']['tunnel_nodes']) if r['link'] else 'NOT added'))
+        if not r['ok']: fails.append('%s sap' % tg)
+        if r['ok'] and not (o['standing']['walk_in'] and o['standing']['walk_out']): warn.append('%s sap: crouch to enter (standing box blocked)' % tg)
+    out = {tg: dict(open={k: v for k, v in r['open'].items()}, closed={k: v for k, v in r['closed'].items()}, link=r['link'], ok=r['ok']) for tg, r in res.items()}
+    return dict(result=out, lines=lines, fail=fails, warn=warn, summary=', '.join('%s %s' % (tg, 'crouch ok' if r['ok'] else 'FAIL') for tg, r in res.items()))
 
 
 A = Trench()

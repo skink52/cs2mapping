@@ -122,8 +122,10 @@ const CONFIG = {
     // inside the opened areas (CT side; T mirrors x): tools/layout.py ground + 8 (woods clearing, the step-5 seeds) and the tunnel landing
     AREAS: {
       woodsopen: [{ x: 605, y: 3930, z: 10 }, { x: 1110, y: 3700, z: 10 }, { x: 1110, y: 4150, z: 6 }],
-      // undergroundopen: [{ x: 2120, y: -3296, z: -252 }],  // off until the sap benches open with the unlock
-      // (REVIEW_WORLD_2 W1: the user's benches seal the galleries unless deploy_tw runs with --user-h1 unlock|remove)
+      // the mine galleries, on ground that keeps its nav after tools/patch_nav.py (it cuts the southern gallery): the landing at the foot
+      // of the sap, the northern gallery (duckboard top + 8) and the chamber edge where that gallery comes in (x 130 mirrors to -130,
+      // so the two sides meet in the chamber). The user's sap benches are steps: players get in crouched (check_play T9, simulated)
+      undergroundopen: [{ x: 2120, y: -3296, z: -252 }, { x: 1100, y: -3272, z: -247 }, { x: 130, y: -3272, z: -258 }],
     },
   },
   AI: {

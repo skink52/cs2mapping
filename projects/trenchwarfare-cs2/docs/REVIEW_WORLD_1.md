@@ -270,7 +270,7 @@ only read (CRC 2e3f90d0 before and after). The addon was not written to.
 ```
 cd projects/trenchwarfare-cs2
 python tools/dyn_models.py                         # dynamic twins -> out/addon/models/tw/... (list: out/step5_models.txt)
-python tools/patch_world_1.py [--user-h1 unlock|remove] [--user-m2] [--render]   # -> out/mg_trenchwarfare_patched.vmap
+python tools/patch_world_1.py [--user-m2] [--user-w5] [--render]   # -> out/mg_trenchwarfare_patched.vmap (--user-h1: not for this map)
 python tools/patch_guard.py <input.vmap> out/mg_trenchwarfare_patched.vmap out/step5/patch_world_1.targets.json --strict
 python tools/check_world.py out/mg_trenchwarfare_patched.vmap --stage out/addon
 python tools/check_play.py  out/mg_trenchwarfare_patched.vmap --stage out/addon
@@ -303,12 +303,12 @@ python tools/check_play.py  out/mg_trenchwarfare_patched.vmap --stage out/addon
 
 | Finding | Result | What was done, or why not |
 |---|---|---|
-| H1 sap benches | **opt-in** | `--user-h1 unlock`: the 24 benches (the user's) become `prop_dynamic undergroundopen` on `tl_bench_dyn`, so the barricade stands until the unlock and goes with the planks. Cost: the script runs `effects()` 26 times instead of 2. `--user-h1 remove` deletes them instead. **Also found:** each sap portal's roof edge is 65.7 u over the trench floor, so a standing player (68 u in the check) must crouch for the first step in. With the opt-in and a crouched player (check body top 50), both sides reach the chamber: 6 unreachable targets become 0, routes 2740 / 2733 u. Without the opt-in, 6 stay unreachable. A standing walk-in needs the generated roof row at y ±2816 (mesh 1225, tw_gen) raised about 8 u, right under the terrain lip (+5..+7): left for a Hammer look |
+| H1 sap benches | **resolved 12 Nov: kept, not a blocker** (see "Resolution of H1 and M2" below; the opt-in text that follows is superseded) | `--user-h1 unlock`: the 24 benches (the user's) become `prop_dynamic undergroundopen` on `tl_bench_dyn`, so the barricade stands until the unlock and goes with the planks. Cost: the script runs `effects()` 26 times instead of 2. `--user-h1 remove` deletes them instead. **Also found:** each sap portal's roof edge is 65.7 u over the trench floor, so a standing player (68 u in the check) must crouch for the first step in. With the opt-in and a crouched player (check body top 50), both sides reach the chamber: 6 unreachable targets become 0, routes 2740 / 2733 u. Without the opt-in, 6 stay unreachable. A standing walk-in needs the generated roof row at y ±2816 (mesh 1225, tw_gen) raised about 8 u, right under the terrain lip (+5..+7): left for a Hammer look |
 | H2 blockers | **fixed** (model key only) | 7982 and 7983 (woodsopen) and 7979 and 7980 (undergroundopen, the user's; only their `model` changed, same geometry) now use the `_dyn` twins (archetype ""). check_world 7b: 4 → 0 |
 | H3 woods nav seeds | **fixed** | The 4 WALKABLESEED meshes moved to centre \|x\| 1110 (inside the fence), bottom 8 u under the lowest ground of the new footprint (dz -13..-15). Seeds off the walkable world 4 → 0; seed flood 654 758 → 21 764 cells (108 140 → 3 595 m²). Nav area count still to read from the next compile |
 | H4 mortar fire target | **fixed** | The 10 tubes are now `prop_dynamic mortar_<tg>_K` (K from the `mortarpit_` on each) on the animated twins. Keys: Hammer's prop_dynamic set taken from 7979, `use_animgraph 0`, Starting/Idle anim `idle` looping, `solid 6`. check_world 1: 10 wrong → 0, fire animation True ×10. Lighting is now from probes (was lightmapped) |
 | M1 shelters | left | Asset fix (separate convex hull pieces): step 6 |
-| M2 duplicate info_map_parameters | **opt-in** | `--user-m2` deletes id 7 (ungrouped); `tw_params` stays. With it, check_world comes out clean |
+| M2 duplicate info_map_parameters | **resolved 12 Nov: deleted** (`--user-m2`, on by default in deploy_tw) | `--user-m2` deletes id 7 (ungrouped); `tw_params` stays. With it, check_world comes out clean |
 | M3 posts in barrels | **fixed** | 1727 moved +10 u (the minimum is 9.7), its tins 1728 +10 u with it, 2811 moved -20.5 u (minimum 20.1). The minimum is what keeps a 32×32 box on the post 2 u clear of the barrel hull. T8: trench_ct_13 clean. trench_t_1 is still flagged because of the 16-u grid: the post sits exactly on a cell edge, so the check would need 19.7 u where the hull needs 9.7 (render `after_06`) |
 | M4 woods ladder nav | left | The user's volumes; nav ladder links in step 4 |
 | M5 woods cover | left | Adding cover is a design change, and the two trees the user moved (tw6) are not checked yet |
@@ -489,3 +489,15 @@ No prop moved: every prop footprint is protected, so nothing needed re-seating a
   - the lightmap at 2048 over the re-gridded tiles.
 - **Deploy list:** `out/step7/deploy_files.txt`. It holds the map only, because every particle is stock. If patch_nav runs after this
   step, deploy its output instead.
+
+## Resolution of H1 and M2 (12 Nov 2026, the user's decisions)
+
+- **H1: resolved, the benches stay.** The user: the 24 benches are seam bridges they placed between the trench and tunnel meshes (steps
+  down and a cover over the mouth), not blockers, and players got in with them. `--user-h1` is not used on this map. The "never open"
+  finding came from check_play's 16-u grid, which could not resolve the stepped seam; the adapter now proves each mouth on a fine grid
+  (T9) and both sides reach the chamber crouched once `undergroundopen` fires; standing they do not (tallest box through: 56.9 / 55.6 u,
+  set by the upper bench row, not by the roof, so the roof was not raised). Details, numbers and a proposed seam patch:
+  [REVIEW_WORLD_2.md](REVIEW_WORLD_2.md) "W1 / W4 / W5 resolved".
+- **M2: resolved, id 7 deleted** (`--user-m2`, on by default in `tools/deploy_tw.py`). Id 7 held Hammer's defaults; `tw_params` keeps
+  the map's values (buying 3, generated DM spawns off, normal spawns for DM), unchanged.
+- The doubled bench of review 2 (W5, ids 71 / 72, an exact copy 1 u apart) goes with `--user-w5` (default).

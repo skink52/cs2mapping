@@ -202,8 +202,10 @@ Rows that are MISSING on purpose or until a later remaster step; `tools/check_co
 ## Bots (remaster step 4)
 No new entity names: bots use the posts, the blockers, the crew seats and the aircraft above. CONFIG names the script and the map share:
 - `CONFIG.BOTS.AREAS`: points inside the opened areas (CT side; T mirrors x): woods clearing (605, 3930), (1110, 3700), (1110, 4150)
-  at `tools/layout.py` ground + 8 (the last two = step 5's moved woods seeds), tunnel landing (2120, -3296, -252) (`layout.TUN_LANDING`,
-  `TUN_FLOOR` + 8). Moved geometry there needs these moved too.
+  at `tools/layout.py` ground + 8 (the last two = step 5's moved woods seeds); mine galleries (on again 12 Nov 2026, the saps are
+  passable crouched): tunnel landing (2120, -3296, -252) (`layout.TUN_LANDING`, `TUN_FLOOR` + 8), northern gallery (1100, -3272, -247)
+  (duckboard top + 8) and the chamber edge (130, -3272, -258) (chamber floor -266 + 8). All three are on ground `tools/patch_nav.py`
+  keeps (its BOT_SKIP cuts only the southern gallery). Moved geometry there needs these moved too.
 - `CONFIG.BOTS.NML_*` = `tools/check_play.py` `NML_X / NML_Y / NML_ZMIN` (no man's land box), `LOBBY_Z` -1500 (the briefing room is at z -2892).
 - Map: `func_nav_markup` `tw_nav_no_N` (navProperty_NavGen NONAV, vis group tw_nav), made by `tools/patch_nav.py`; the WALKABLESEED
   markup of vis group tw_nav (made by `tools/patch_bots.py`, the woods four moved by step 5) is its template. Re-running the old

@@ -1,7 +1,7 @@
 ﻿"""coverage + connectivity of a compiled nav against the bot destinations. Reads only.
 usage: python tools/navcheck.py <map.nav> [keep.json]
 destinations: every post / dressing station (check_play nav_protect) and nav seed (proto_keep.json, from the map the patch read)
-plus CONFIG.BOTS.AREAS woodsopen points (both sides) and the gallery landings. Adjacency: areas sharing a corner (welded vertices);
+plus CONFIG.BOTS.AREAS points (both sides): woodsopen, and undergroundopen (landing, northern gallery, chamber edge). Adjacency: areas sharing a corner (welded vertices);
 ladder and jump links are not read, so the woods (ladder) and the galleries (sap ramp) may show as their own pieces."""
 import sys, os, json
 import numpy as np
@@ -14,6 +14,7 @@ keep = json.load(open(sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, '
 pts = [('keep', *p) for p in keep]
 for (x, y, z) in [(605, 3930, 10), (1110, 3700, 10), (1110, 4150, 6)]: pts += [('woods pt', x, y, z), ('woods pt', -x, y, z)]
 pts += [('landing', 2120, -3296, -252), ('landing', -2120, -3296, -252)]
+for (x, y, z) in [(1100, -3272, -247), (130, -3272, -258)]: pts += [('gallery pt', x, y, z), ('gallery pt', -x, y, z)]   # BOTS.AREAS.undergroundopen
 rows, cols = [], []
 for i, idx in enumerate(polys):
     for c in idx: rows.append(i); cols.append(c)
@@ -71,6 +72,8 @@ for r in res: comps.setdefault(r[5], []).append(r)
 print('areas %d, pieces %d (largest %s)' % (len(polys), ncomp, sorted(sizes)[-6:]))
 for c, rs in sorted(comps.items(), key=lambda t: -len(t[1])):
     print('piece %s (%s areas): %d points: %s' % (c, sizes[c] if c is not None else '-', len(rs), ', '.join('%s(%d,%d,%d)%s' % (r[0], r[1], r[2], r[3], '' if not r[4] else ' d%d' % r[4]) for r in rs[:6]) + (' ...' if len(rs) > 6 else '')))
+for r in res:
+    if r[0] != 'keep': print('  %-10s (%d, %d, %d): piece %s, %s' % (r[0], r[1], r[2], r[3], r[5], 'inside an area' if r[4] == 0 else 'nearest area %s u' % r[4]))
 print('points with no nav area within 64 u: %d of %d' % (miss, len(pts)))
 for r in res:
     if r[4] is None or r[4] > 64: print('  MISSING', r)

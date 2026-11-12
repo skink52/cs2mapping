@@ -4,10 +4,11 @@ chain, merges the step deploy lists, runs the offline gate, then hands the list 
 Dry run unless --apply. Replaces the numbered zips + C:\\source1\\cs2port\\unpack_mg_trenchwarfare.bat route (docs/BUILD.md "Old route").
 
 usage (from the project folder):
-  python -u tools/deploy_tw.py --chain [--user-h1 unlock|remove] [--user-m2]    rebuild out/step9/chain/*.vmap, then the dry run
+  python -u tools/deploy_tw.py --chain                                          rebuild out/step9/chain/*.vmap, then the dry run
   python -u tools/deploy_tw.py                                                  merge + gate + deploy dry run on the last chain
   python -u tools/deploy_tw.py --apply                                          the same, then copy (held while Hammer / cs2 -tools is open)
   options: --show (every file), --no-gate (dry run only), --force-vmap (replace an addon map that is not the base: backed up first)
+           --no-user-m2 / --no-user-w5 (leave those out of the chain; they are on by default, see "Opt-in flags" below)
 
 (a) chain   out/step9/chain/0_user.vmap (a copy of content\\...\\maps\\mg_trenchwarfare.vmap) -> 1_world_1 (patch_world_1, step 5)
             -> 2_models (patch_models, step 6) -> 3_terrain (patch_terrain, step 7) -> 4_sounds (patch_sounds, step 8: the sound
@@ -21,8 +22,13 @@ usage (from the project folder):
             changes). With no opt-in flags the outputs are compared with the earlier steps' own outputs (out/mg_trenchwarfare_*.vmap).
             The patch tools also rewrite their step's records (out/step5..7 deploy lists, targets, report); the chain keeps the copies
             from this run in out/step9/chain/side/ and puts the step folders back as they were.
-            Opt-in flags (default off, waiting for the user): --user-h1 unlock|remove (the 24 sap benches), --user-m2 (duplicate
-            info_map_parameters); passed to patch_world_1 only. A deploy refuses flags that differ from the chain's.
+            The user's opt-ins, passed to patch_world_1 only (a deploy refuses flags that differ from the chain's):
+              --user-m2 (ON by default): delete the duplicate info_map_parameters id 7 (Hammer defaults, buying 0; tw_params keeps
+                        buying 3 = nobody, the map's no-buy design; the script also sets mp_buytime 0).
+              --user-w5 (ON by default): delete tl_bench 72, the exact copy of bench 71 1 u above it (z-fight; REVIEW_WORLD_2 W5).
+              --user-h1 unlock|remove (OFF; do not use on this map): the 24 sap benches are the user's seam bridges, kept as placed.
+            Decided by the user 12 Nov 2026: sap tunnels "do what's best for gameplay", duplicate info_map_parameters deleted if safe,
+            then the correction that the benches are bridges (keep them; drop only the exact duplicate).
 (b) list    out/step5..8/deploy_files.txt (5-7 from this chain run's side copies; 8 when present) and out/step10/deploy_files.txt
             (release docs: CREDITS, licences, Steam description; when present), merged into out/step9/deploy_files.txt
             (one line per file, last step wins, map = the chain's final vmap) + a model -> material check (a material a deployed model
@@ -196,7 +202,7 @@ def restore(stage, snap):
 def chain(a):
     os.makedirs(SIDE, exist_ok=True)
     rec = dict(started=datetime.datetime.now().isoformat(timespec='seconds'), base=BASE,
-               flags=dict(user_h1=a.user_h1, user_m2=bool(a.user_m2)), stages=[], ok=False)
+               flags=dict(user_h1=a.user_h1, user_m2=bool(a.user_m2), user_w5=bool(a.user_w5)), stages=[], ok=False)
     out_json = os.path.join(STEP9, 'chain.json')
 
     def save():
@@ -234,6 +240,7 @@ def chain(a):
     flags = []
     if a.user_h1: flags += ['--user-h1', a.user_h1]
     if a.user_m2: flags += ['--user-m2']
+    if a.user_w5: flags += ['--user-w5']
     stages = [
         ('1_world_1', [PY, '-u', 'tools/patch_world_1.py', '--targets', os.path.join(CHAIN, '1_world_1.targets.json')] + flags, '1_world_1.targets.json'),
         ('2_models', [PY, '-u', 'tools/patch_models.py', '--no-guard'], None),
@@ -290,7 +297,7 @@ def chain(a):
         st['guard'] = last_line(gtext, r'^RESULT') or 'exit %d' % gcode
         st['guard_exit'] = gcode
         ref = REFS.get(name)
-        if ref and not (a.user_h1 or a.user_m2) and os.path.isfile(os.path.join(OUT, ref)):
+        if ref and not (a.user_h1 or a.user_m2 or a.user_w5) and os.path.isfile(os.path.join(OUT, ref)):
             hr = hashes(os.path.join(OUT, ref))
             st['reference'] = dict(path='out/' + ref, crc32=hr['crc32'], same=hr['sha256'] == ho['sha256'])
         save()
@@ -344,7 +351,7 @@ def merge_lists(ch):
     final = ch['final']['path']
     rows, used, problems, notes = {}, [], [], []
     flags = ch.get('flags', {})
-    optin = bool(flags.get('user_h1') or flags.get('user_m2'))
+    optin = bool(flags.get('user_h1') or flags.get('user_m2') or flags.get('user_w5'))
     for k in STEP_LISTS:
         cands = []
         if k == 5:
@@ -551,8 +558,10 @@ def old_route():
 def main(argv=None):
     ap = argparse.ArgumentParser(description='mg_trenchwarfare delivery: chain, merged list, gate, deploy (dry run unless --apply)')
     ap.add_argument('--chain', action='store_true', help='rebuild the final map through the patch chain first')
-    ap.add_argument('--user-h1', choices=('unlock', 'remove'), help='opt-in: the 24 sap benches (patch_world_1)')
-    ap.add_argument('--user-m2', action='store_true', help='opt-in: delete the duplicate info_map_parameters (patch_world_1)')
+    # the user's decisions of 12 Nov 2026 (docstring "Opt-in flags"): --user-m2 and --user-w5 on by default, --user-h1 never
+    ap.add_argument('--user-h1', choices=('unlock', 'remove'), help='NOT for this map: the sap benches are the user seam bridges (patch_world_1)')
+    ap.add_argument('--user-m2', action=argparse.BooleanOptionalAction, default=True, help='delete the duplicate info_map_parameters id 7 (default on)')
+    ap.add_argument('--user-w5', action=argparse.BooleanOptionalAction, default=True, help='delete bench 72, the exact copy of 71 (default on)')
     ap.add_argument('--apply', action='store_true')
     ap.add_argument('--show', action='store_true')
     ap.add_argument('--no-gate', action='store_true', help='skip the gate (dry run only)')
@@ -576,7 +585,7 @@ def main(argv=None):
     ch = json.load(open(cj, encoding='utf-8'))
     if not ch.get('ok'):
         print('the last chain did not finish (%s): run --chain again' % ch.get('stopped')); return 1
-    want = dict(user_h1=a.user_h1, user_m2=bool(a.user_m2))
+    want = dict(user_h1=a.user_h1, user_m2=bool(a.user_m2), user_w5=bool(a.user_w5))
     if not a.chain and want != ch.get('flags'):
         print('the chain was built with flags %s, this run asks for %s: run --chain with the flags' % (ch.get('flags'), want)); return 1
     fin = os.path.join(PROJ, *ch['final']['path'].split('/'))

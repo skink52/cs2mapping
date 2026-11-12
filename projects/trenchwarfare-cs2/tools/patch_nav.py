@@ -64,8 +64,9 @@ NAV_CAL = [dict(map='12 Nov final (step 5 seeds + 89 NONAV boxes)', areas=10269,
 BOT_SKIP = [
     ('south gallery T', (-1950.0, -3600.0, -340.0, -320.0, -3320.0, -100.0),
      'the southern of the two parallel mine galleries and its cross passages (west half). The northern gallery (y -3300..-3244) joins both '
-     'landings and the chamber; it keeps its nav. No bot is sent into the galleries (undergroundopen is not in CONFIG.BOTS.AREAS: the '
-     "user's sap benches seal them, REVIEW_WORLD_2 W1); 1,812 tiny areas (tunnel frames every 45 u) were 18 % of the nav"),
+     'landings and the chamber; it keeps its nav, and the bots sent into the galleries once undergroundopen fires go there '
+     '(CONFIG.BOTS.AREAS.undergroundopen: landing, northern gallery, chamber edge). Keeping both galleries would cost the 1,812 tiny '
+     'areas (tunnel frames every 45 u, 18 % of the nav) and pass the 5,000 budget; humans still use the southern gallery (no nav needed)'),
     ('south gallery CT', (320.0, -3600.0, -340.0, 1950.0, -3320.0, -100.0), 'the same, east half'),
 ]
 

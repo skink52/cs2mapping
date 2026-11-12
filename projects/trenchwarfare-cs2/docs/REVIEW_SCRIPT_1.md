@@ -370,3 +370,22 @@ world, 326 NONAV boxes over 0 protected points, both ladder volumes with ground 
 32 / bots / 13 of 13 scenarios. Dry run against the deployed state: **one file changes**, `content/maps/mg_trenchwarfare.vmap`
 (86.7 MB, replaces what the 16:33 deploy wrote, backed up first); the other 116 are the same. Not done: `--apply` and the final
 compile (the user's). After the compile, the build log's nav line should read about 4,377; "Compute Approach areas" about 2.5 min.
+
+## User decisions applied (12 Nov 2026, evening)
+
+- **Role commands wait for the next deploy** (bug 3 above): the user confirmed it. `!infantry` / `!mortar` / `!air` in the field set
+  the preference and apply at the next deploy (at once only in the briefing room). No code change; this stays as is.
+- **Bots back in the mine galleries.** The sap benches are the user's seam bridges, not blockers, and players get in crouched
+  (`tools/check_play.py` T9, a fine-grid probe of each sap mouth, simulated). `CONFIG.BOTS.AREAS.undergroundopen` is on again with three
+  points on ground that keeps its nav after `tools/patch_nav.py` (CT side, T mirrors x): the landing (2120, -3296, -252), the northern
+  gallery (1100, -3272, -247, duckboard top + 8) and the chamber edge (130, -3272, -258). patch_nav still cuts the southern gallery
+  (BOT_SKIP): keeping it would add about 1,800 tiny areas and pass the 5,000 budget; humans use it without nav.
+  Gate (simulated): build 11 modules, api 0/0/0, tscheck OK, mock 32 300 ok, mock 16 300 fill=1 humans=4 ok (9 bot deploys into opened
+  areas), 13/13 scenarios, `sim_balance` 50 x 32: T 49 % +-7; 150 x 16 fill=1 humans=4: T 53 % +-4 (same MISS rows as before:
+  the rifle model, plane_gun 2 %). Perf on a quiet PC: `humans=32` max 4.1 ms, `humans=6` max 4.3 ms, RESULT ok (under the map
+  compile's load one tick reached 11.6 ms: the known load artefact). The new area points shift the mock's random stream, and with
+  seed 7 the base run's "AFK pilot taken home" coverage row went unexercised (its pilots were shot down before 60 s AFK); the mock now
+  starts its AFK tries at 60 s instead of 120 s (`test/mock.mjs`), so the row runs again (seeds 7, 8, 9); the `air` scenario's
+  AFK assertion is unchanged and passes. Gate re-run after that: mock 32 / bots / both perf runs RESULT ok, 13/13 scenarios.
+  Nav (map side, `tools/navtest.py`, test compile of the chained map): **4,376 areas**; `tools/navcheck.py`: the landing, gallery
+  and chamber points of both sides are inside nav areas, in the same piece as every trench post (2,408 areas).

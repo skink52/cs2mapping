@@ -1100,11 +1100,11 @@ if (!SCEN && !BAL) {
     const c = everyone().find((q) => alive(q) && PR(q.slot) && PR(q.slot).role === 'mortar' && PR(q.slot).deployed && PR(q.slot).crew >= 0);
     if (c) { const pit = dbg().pitPos(c.team, PR(c.slot).crew); c.pawn.pos = { x: pit.x + 50, y: pit.y, z: pit.z }; c.pawn.TakeDamage({ damage: 30, damageTypes: DT.FALL }); }
   });
-  // an AFK pilot: one at a time from 120 s until the script has taken one home (a pilot shot down while AFK is replaced)
+  // an AFK pilot: one at a time from 60 s until the script has taken one home (a pilot shot down while AFK is replaced)
   const afkTry = () => { if (dbg().stats.afk) { for (const c of everyone()) c.afk = false; return; }
     if (!everyone().some((c) => c.afk && alive(c) && PR(c.slot) && PR(c.slot).air)) { for (const c of everyone()) c.afk = false; const pl = flying()[0]; if (pl) pl.afk = true; }
     if (time < SECONDS - 5) when(time + 5, afkTry); };
-  when(120, afkTry);
+  when(60, afkTry);    // from 60 s (was 120): more tries before the window ends, the row no longer hangs on one seed (12 Nov)
 }
 
 // ------------------------------------------------------------------ the loop

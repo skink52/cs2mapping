@@ -1,7 +1,7 @@
 """World patch 1 (remaster step 5): the auto-fixable findings of docs/REVIEW_WORLD_1.md as one guarded delta patch on the user's vmap.
 Reads the input map (never writes it); writes the patched copy, the guard's target list and the deploy list under out/.
 
-usage: python tools/patch_world_1.py [--in V] [--out V] [--stage DIR] [--user-h1 unlock|remove] [--user-m2] [--render]
+usage: python tools/patch_world_1.py [--in V] [--out V] [--stage DIR] [--user-h1 unlock|remove] [--user-m2] [--user-w5] [--render]
   defaults: --in <content addon>/maps/mg_trenchwarfare.vmap, --out out/mg_trenchwarfare_patched.vmap, --stage out/addon
   then:     python tools/patch_guard.py <in> <out> out/step5/patch_world_1.targets.json
 
@@ -23,6 +23,11 @@ Opt-in, the user's objects (off by default, pending their answer):
                     the unlock, then goes with the planks (the script's effects() runs once per removed entity: 26 instead of 2)
   --user-h1 remove  the 24 benches are deleted
   --user-m2         deletes the duplicate info_map_parameters id 7 (ungrouped, buying 0; tw_params stays)
+  --user-w5         deletes tl_bench 72, the exact copy of bench 71 1 u above it (same model, angles, scales and keys: z-fight;
+                    REVIEW_WORLD_2 W5). Every other bench stays.
+Decided 12 Nov 2026 (the user): the 24 sap benches are the user's seam bridges (steps from the trench floor down to the tunnel floor,
+and the cover over the mouth); players get through them crouched. Do NOT use --user-h1 on this map: it would delete the bridges with the
+unlock. tools/deploy_tw.py passes --user-m2 --user-w5 by default.
 Left alone, with the reason, in docs/REVIEW_WORLD_1.md "Step 5 results".
 --render: zoomed top-down renders of the changed areas (create/check_play.py) into out/review/after_*.png.
 """
@@ -70,6 +75,7 @@ BENCHES = [(70, (2142.8, -2834, -17)), (71, (2164, -2834, -15)), (72, (2164, -28
            (7936, (2170, -2816, -94)), (7937, (2176, -2818, -98)), (7938, (2136, -2818, -98)), (7939, (-2162, -2816, -82)), (7940, (-2128, -2816, -82)),
            (7941, (-2122, -2814, -82)), (7942, (-2162, -2814, -82)), (7943, (-2162, -2818, -86)), (7944, (-2122, -2818, -86))]
 PARAMS_DUP = (7, (512, 328, 32))
+BENCH_DUP = (72, (2164, -2834, -14), 71, (2164, -2834, -15))      # (drop, origin, the copy that stays, its origin): W5
 TEMPLATE_DYN = 7979      # the user's own Hammer-made prop_dynamic: Hammer's full prop_dynamic key set
 STATIC_ONLY = ('bakelighting', 'lodlevel', 'baketoworld', 'emissive', 'emissive_lighting_boost', 'lightmapscalebias', 'bakelightdoublesided',
                'visoccluder', 'disablemerging', 'collision_override', 'materialoverride')
@@ -122,6 +128,7 @@ def main(argv=None):
     ap.add_argument('--stage', default=os.path.join(OUT, 'addon'))
     ap.add_argument('--user-h1', choices=('unlock', 'remove'))
     ap.add_argument('--user-m2', action='store_true')
+    ap.add_argument('--user-w5', action='store_true', help='drop tl_bench 72, the exact duplicate of 71 (REVIEW_WORLD_2 W5)')
     ap.add_argument('--render', action='store_true')
     ap.add_argument('--targets', default=None, help='where the guard target list goes (default out/step5/patch_world_1.targets.json)')
     a = ap.parse_args(argv)
@@ -161,6 +168,13 @@ def main(argv=None):
         if a.user_m2:
             expect_entity(m, PARAMS_DUP[0], 'info_map_parameters', None, PARAMS_DUP[1], '')
             if not [e for e in m.entities() if m.name(e) == 'tw_params' and m.cls(e) == 'info_map_parameters']: raise Mismatch('tw_params missing')
+        if a.user_w5:
+            d, do, k, ko = BENCH_DUP
+            expect_entity(m, d, 'prop_static', BENCH, do, 'tw_user'); expect_entity(m, k, 'prop_static', BENCH, ko, 'tw_user')
+            kv = lambda i: sorted((x[0], x[2]) for x in m.props(i)['attrs'])
+            if (list(m.g(d, b'angles')) != list(m.g(k, b'angles')) or list(m.g(d, b'scales') or []) != list(m.g(k, b'scales') or [])
+                    or kv(d) != kv(k) or abs(m.origin(d)[2] - m.origin(k)[2]) > 1.01 or m.origin(d)[:2] != m.origin(k)[:2]):
+                raise Mismatch('bench %d is not an exact copy of %d (angles / scales / keys / origin)' % (d, k))
     except Mismatch as ex:
         sys.exit('patch_world_1: TARGET MISMATCH, nothing written: %s' % ex)
     # ---- the staged models must exist
@@ -191,6 +205,8 @@ def main(argv=None):
         removed += [i for i, o in BENCHES]; log.append('H1 opt-in: 24 benches deleted')
     if a.user_m2:
         removed.append(PARAMS_DUP[0]); log.append('M2 opt-in: info_map_parameters 7 deleted')
+    if a.user_w5:
+        removed.append(BENCH_DUP[0]); log.append('W5 opt-in: tl_bench 72 deleted (exact copy of 71, 1 u above it)')
     for i in removed:
         T['remove'][str(nid(i))] = dict(i=i, why='opt-in removal')
         if not m.remove_node(i): sys.exit('patch_world_1: could not remove %d' % i)
@@ -218,7 +234,7 @@ def main(argv=None):
     for l in log: print('  ' + l)
     os.makedirs(os.path.join(OUT, 'step5'), exist_ok=True)
     tp = a.targets or os.path.join(OUT, 'step5', 'patch_world_1.targets.json')
-    T['output'] = outp; T['flags'] = dict(user_h1=a.user_h1, user_m2=a.user_m2)
+    T['output'] = outp; T['flags'] = dict(user_h1=a.user_h1, user_m2=a.user_m2, user_w5=a.user_w5)
     json.dump(T, open(tp, 'w'), indent=1)
     # ---- deploy list: the map and every staged file the patched map's models need
     staged = [l.strip() for l in open(os.path.join(OUT, 'step5_models.txt')) if l.strip()]
@@ -229,11 +245,11 @@ def main(argv=None):
             xd, xb = x.rsplit('/', 1)
             if fd in (xd, xd + '/anims') and fb.startswith(xb[:-len('_dyn.vmdl')]):
                 dep.append(f); break
-    open(os.path.join(OUT, 'step5', 'deploy_files%s.txt' % ('_optin' if (a.user_h1 or a.user_m2) else '')), 'w', newline='\n').write(
+    open(os.path.join(OUT, 'step5', 'deploy_files%s.txt' % ('_optin' if (a.user_h1 or a.user_m2 or a.user_w5) else '')), 'w', newline='\n').write(
         '# remaster step 5: files to copy into content\\csgo_addons\\mg_trenchwarfare\\ (addon-relative), from out/addon unless noted.\n'
         '# Back up the vmap first, close Hammer, then compile the new models (they are not compiled yet).\n' + '\n'.join(dep) + '\n')
     print('patched map: %s (%d bytes); targets %s; %d changes, %d removals; %.1f s' % (outp, n, tp, len(T['modify']), len(T['remove']), time.time() - t0))
-    if a.render: render_after(outp, a.stage, 'after_optin_' if (a.user_h1 or a.user_m2) else 'after_')
+    if a.render: render_after(outp, a.stage, 'after_optin_' if (a.user_h1 or a.user_m2 or a.user_w5) else 'after_')
 
 
 # ---------------------------------------------------------------- after-renders (the review's views, same tool)

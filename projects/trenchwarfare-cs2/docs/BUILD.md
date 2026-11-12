@@ -52,8 +52,10 @@ Then the radar is re-made from the final map (`make_radar.py --vmap <final>`, `c
 The patch tools also rewrite records in `out/step5..7/` (deploy lists, targets, the terrain report and layers); the chain keeps this
 run's copies in `out/step9/chain/side/` and puts the step folders back as they were.
 
-Opt-in flags, **off until the user answers** ([REVIEW_WORLD_1.md](REVIEW_WORLD_1.md) H1, M2): `--user-h1 unlock|remove` (the 24 sap
-benches they placed), `--user-m2` (delete the duplicate `info_map_parameters` id 7; with it check_world's `singletons` failure goes).
+User-object flags (decided by the user 12 Nov 2026; [REVIEW_WORLD_1.md](REVIEW_WORLD_1.md) H1, M2): `--user-m2` (delete the duplicate
+`info_map_parameters` id 7, Hammer defaults) and `--user-w5` (drop bench 72, an exact duplicate of 71 1 u above it) are **on by
+default** (`--no-user-m2` / `--no-user-w5` to turn off). `--user-h1` must **not** be used for this map: the sap benches are the user's
+bridges over the trench-to-tunnel seam.
 A deploy refuses flags that differ from the last chain's.
 
 ## 2. The deploy
