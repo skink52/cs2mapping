@@ -1,4 +1,4 @@
-# mg_trenchwarfare game script
+﻿# mg_trenchwarfare game script
 
 `src/modules/NN_*.js` joined by the neutral `create/build_script.mjs` (settings `src/build.json`) into `src/mg_trenchwarfare.js`,
 the file that ships (the addon copy is `content\...\maps\scripts\mg_trenchwarfare.js`, run by the map's `tw_script` point_script).
@@ -114,8 +114,8 @@ node ../../create/build_script.mjs src/build.json          # build (and --check:
 node test/mock.mjs 32 120                                  # quick run (about 2 s)
 node test/mock.mjs 32 300                                  # coverage table: any feature at 0 fails (16+ players, 300+ s)
 node test/mock.mjs 16 300 fill=1 humans=4                 # bot coverage: 4 humans, bots through the quota; the bot and AI rows fail on 0
-node test/mock.mjs 32 150 scenario=all                     # the twelve scenarios, each in its own process: pass / total
-node test/mock.mjs 32 150 scenario=churn                   # one: round | churn | crew | air | reload | edge | bots | lopsided | full | yield | threshold | botround
+node test/mock.mjs 32 150 scenario=all                     # the thirteen scenarios, each in its own process: pass / total
+node test/mock.mjs 32 150 scenario=churn                   # one: round | churn | crew | air | reload | edge | bots | lopsided | full | yield | threshold | botround | handover
 node test/mock.mjs 64 300 humans=32 perf=1,8               # 64 players (32 bots): fails over 1 ms/tick average or 8 ms max
 node test/mock.mjs 64 300 humans=6 perf=1,8                # 64 players, 58 bots, script roles on both sides
 node ../../create/sim_balance.mjs test/balance.json 50 32  # 50 seeded 10-minute windows (about 1.5 min: run under the watchdog)
@@ -163,7 +163,7 @@ From the project folder unless marked; anything over ~2 min under `python C:\sou
    0 deprecated, 0 allowed)"; `sh create/test/tscheck.sh projects/trenchwarfare-cs2/src/mg_trenchwarfare.js` -> "tscheck: OK" (Git Bash).
 4. `node test/mock.mjs 32 300` -> coverage with no 0 row, "RESULT: ok"; `node test/mock.mjs 16 300 fill=1 humans=4` -> bot and AI rows
    with no 0, "RESULT: ok".
-5. `node test/mock.mjs 32 150 scenario=all` -> "scenarios: 12 / 12 pass".
+5. `node test/mock.mjs 32 150 scenario=all` -> "scenarios: 13 / 13 pass" (`handover`: a slot changing hands with no disconnect event, REVIEW_SCRIPT_2).
 6. `node test/mock.mjs 64 300 humans=32 perf=1,8` and `node test/mock.mjs 64 300 humans=6 perf=1,8` -> "RESULT: ok".
 7. `python tools/check_contract.py` -> exit 0 (1 known missing: `mortar_<tg>_K`, in the deployed map); against step 5's map:
    `python tools/check_contract.py --vmap out/mg_trenchwarfare_patched.vmap --stage out/addon` -> exit 0, 0 missing.

@@ -18,7 +18,12 @@ function nameOf(slot) { const c = Instance.GetPlayerController(slot); return c ?
 function slotOfPawn(pawn) { try { const c = pawn.GetPlayerController(); return c ? c.GetPlayerSlot() : -1; } catch (e) { return -1; } }
 function byName(name) { const a = Entities.FindByName(name); return a && a.length ? live(a[0]) : undefined; }   // first entity with the name
 function fire(name, input, value, delay) { Entities.FireInput({ name, input, value, delay: delay || 0 }); }
-function say(text) { Console.ServerCommand("say " + text); }
+// a "say" server command: ; would end the say and run the rest as a command, " would end the quoting (player names reach here via !pos)
+function say(text) { Console.ServerCommand("say " + String(text).replace(/[;"\x00-\x1f\x7f]/g, "")); }
+function ctlOfPawn(pawn) { try { return pawn.GetPlayerController(); } catch (e) { return undefined; } }
+// a controller that is someone: CS2 can keep a disconnected player's controller in the slot (IsConnected false; hellmatch, cs21.6 and
+// space racer skip those the same way). It must hold no record and count as no human
+function isOn(c) { try { return !!c && c.IsConnected(); } catch (e) { return !!c; } }
 // kill / assist credit: the pawn in this slot only while it is the same player (gen, see P) on the same side; otherwise no credit
 // (a slot that changed hands or a player who changed sides since the shot must not get the kill, or a team kill)
 function creditOf(slot, team, gen) {

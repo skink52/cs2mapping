@@ -10,7 +10,8 @@ function P(slot) {
           pref: "", carrying: false, inSight: false, u: 0.5, v: 0.3, prevKeys: 0, lives: 0, merit: 0, flown: 0, toastUntil: 0, bannerUntil: 0, infoUntil: 0,
           healing: false, mortarKills: 0, hud: new Map(), uniformAt: 0, uniformDone: false, noUniform: false, stockModel: "",
           bot: false, sane: false, lastActive: 0, lastEye: undefined, sortie: false, firedAt: -99,
-          aiRole: "", aiFly: undefined, anchor: undefined, outT: 0, checkAt: 0, lastCombat: -99 };
+          aiRole: "", aiFly: undefined, anchor: undefined, outT: 0, checkAt: 0, lastCombat: -99,
+          ctl: undefined, blockedLogAt: -99, blockedQuiet: 0 };   // ctl: whose record this is (90_main claim); the guard's console throttle
     players.set(slot, p);
     hudReset(p);             // a slot that changed hands must not keep the last player's HUD classes
   }

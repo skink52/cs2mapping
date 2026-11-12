@@ -7,7 +7,7 @@
 //   seed=<n>         random seed (the script's Math.random too); default 7
 //   humans=<n>       how many players are human (default 2 x round(players / 3), split evenly between the sides; the rest bots)
 //   scenario=<name>  one bug class: round | churn | crew | air | reload | edge, or a bot case: bots | lopsided | full | yield |
-//                    threshold | botround   (all = every one, each in its own process)
+//                    threshold | botround | handover   (all = every one, each in its own process)
 //   fill=1           bots come and go through the script's bot_quota / bot_quota_mode (CS2's "fill"): only humans are created, split
 //                    by split=<T>,<CT> (default humans / 2 each); the bot scenarios always run this way
 //   mode=balance     one round window with the real CONFIG, a JSON result line (test/sim_balance via create/sim_balance.mjs); json=1 only that
@@ -31,9 +31,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2), posArgs = argv.filter((a) => !a.includes('=')), opt = Object.fromEntries(argv.filter((a) => a.includes('=')).map((a) => { const i = a.indexOf('='); return [a.slice(0, i), a.slice(i + 1)]; }));
 const N = Math.min(64, +(posArgs[0] || 32)), SECONDS = +(posArgs[1] || 120);
 const SCEN = opt.scenario || '', BAL = opt.mode === 'balance', JSONONLY = opt.json === '1';
-const SCENARIOS = ['round', 'churn', 'crew', 'air', 'reload', 'edge', 'bots', 'lopsided', 'full', 'yield', 'threshold', 'botround'];
+const SCENARIOS = ['round', 'churn', 'crew', 'air', 'reload', 'edge', 'bots', 'lopsided', 'full', 'yield', 'threshold', 'botround', 'handover'];
 // the bot scenarios: humans per side (T, CT); bots join through the script's bot_quota (fill)
-const FILLSCEN = { bots: [2, 2], lopsided: [4, 0], full: [32, 32], yield: [2, 2], threshold: [2, 2], botround: [2, 2] };
+const FILLSCEN = { bots: [2, 2], lopsided: [4, 0], full: [32, 32], yield: [2, 2], threshold: [2, 2], botround: [2, 2], handover: [2, 2] };
 const FILL = opt.fill === '1' || !!FILLSCEN[SCEN];
 
 if (SCEN === 'all') {                      // every scenario in its own process (fresh module state), pass / total
@@ -212,6 +212,7 @@ class Ctl {
   GetClassName() { return 'cs_player_controller'; } GetEntityName() { return ''; }
 }
 const ctls = new Array(64).fill(undefined);
+const linger = new Array(64).fill(undefined);   // disconnected controllers CS2 may keep in their slots (IsConnected false)
 const everyone = () => ctls.filter((c) => c && c.connected);
 function spawn(c) {
   if (!c.connected || (c.team !== 2 && c.team !== 3)) return;
@@ -300,7 +301,8 @@ const Instance = strict('Instance', {
   OnActivate: (f) => { hooks.activate = f; }, OnRoundStart: (f) => { hooks.round = f; }, OnPlayerReset: (f) => { hooks.reset = f; }, OnPlayerDisconnect: (f) => { hooks.disc = f; },
   OnPlayerKill: (f) => { hooks.kill = f; }, OnPlayerChat: (f) => { hooks.chat = f; }, OnBulletImpact: (f) => { hooks.bullet = f; }, OnModifyPlayerDamage: (f) => { hooks.mod = f; },
   OnScriptReload: (c) => { hooks.reloadCfg = c; },
-  GetPlayerController: (s) => (ctls[s] && ctls[s].connected ? ctls[s] : undefined), TraceLine: traceLine,
+  // a disconnected player's controller may stay in its slot (IsConnected false) until the slot is reused: linger[s] (set by a scenario)
+  GetPlayerController: (s) => (ctls[s] && ctls[s].connected ? ctls[s] : ctls[s] ? undefined : linger[s]), TraceLine: traceLine,
 });
 const Entities = strict('Entities', {
   FindByName: (n) => (byName.get(n) || []).filter((e) => e.valid),
@@ -318,7 +320,7 @@ const Console = strict('Console', {
     if (w === 'bot_quota') quota = +String(c).split(' ')[1]; if (w === 'bot_quota_mode') quotaMode = String(c).split(' ')[1];
     if (w === 'bot_kick') kickAll = true;
     if (!/^(mp_|bot_|say$)/.test(w)) fail('server command outside mp_ / bot_ / say: ' + c);
-    if (/[;\n]/.test(c)) fail('unsafe characters in a server command: ' + c);
+    if (/[;\n\r]/.test(c) || (w === 'say' && /"/.test(c))) fail('unsafe characters in a server command: ' + c);
     if (w === 'say') stats.says = (stats.says || []).concat([String(c).slice(4)]).slice(-50);
   },
 });
@@ -668,6 +670,21 @@ if (SCEN === 'crew') {
     const c = everyone().find((q) => alive(q) && PR(q.slot) && PR(q.slot).role === 'mortar');
     if (c) { c.pawn.TakeDamage({ damage: 5, damageTypes: DT.FALL }); piece('damage before the first think of a round'); }
   });
+  when(80, () => {
+    // (g) a prop grinding a crewman at his tube (or a pilot) every tick: every hit is blocked, and the console gets a line now and then,
+    //     not one per tick (64 players x 64 ticks of "[tw] blocked" would be the server's whole console)
+    const D = dbg();
+    const c = everyone().find((q) => alive(q) && PR(q.slot) && PR(q.slot).role === 'mortar' && PR(q.slot).deployed && PR(q.slot).crew >= 0);
+    if (!c) { fail('crew scenario: no deployed crew for the flood piece'); return; }
+    const pit = D.pitPos(c.team, PR(c.slot).crew), tag = '(slot ' + c.slot + ',';
+    const count = () => stats.msgs.filter((x) => x.startsWith('[tw] blocked') && x.includes(tag)).length;
+    const n0 = count(), b0 = D.stats.blocked;
+    for (let i = 0; i < 64; i++) { c.pawn.pos = { x: pit.x + 60, y: pit.y, z: pit.z }; c.pawn.TakeDamage({ damage: 3, damageTypes: DT.CRUSH }); tickOnce(); }
+    const lines = count() - n0;
+    if (D.stats.blocked - b0 < 60) fail('flood piece: only ' + (D.stats.blocked - b0) + ' of 64 grinding hits were blocked');
+    if (lines > 2) fail('the damage guard printed ' + lines + ' "[tw] blocked" lines for one crewman in one second');
+    piece('grinding damage at the pit: ' + lines + ' console line(s) for 64 blocked hits');
+  });
   when(90, () => { if (!stats.msgs.some((x) => x.startsWith('[tw] crew death'))) fail('crew scenario: no crew death logged'); });
 }
 if (SCEN === 'air') {
@@ -778,7 +795,32 @@ if (SCEN === 'edge') {
     c.pawn.pos = pos; piece('!pos radar squares');
     // (d) chat from a spectator / no team
     const s = everyone().find((q) => !q.bot && q !== c && q !== u); if (s) { switchTeam(s, 1); for (const txt of ['!mortar', '!air', '!roles', '!pos', '!swap', '!uniform']) say(s, txt); piece('chat from a spectator'); }
+    if (s) when(time + 1, () => {
+      const st = hudState.get(s.slot);
+      if (ctls[s.slot] === s && s.team === 1 && st && (st.get('tw_status.show') || st.get('tw_brief.show'))) fail('a spectator kept the role card / orders sheet on screen (slot ' + s.slot + ')');
+      else piece('spectator: no role card');
+    });
+    // (g) a player name with ; and " in it: !pos puts the name in a "say" server command (a ; there runs whatever follows it)
+    const e = everyone().find((q) => !q.bot && alive(q) && q !== s);
+    if (e) { const nm = e.GetPlayerName; e.GetPlayerName = () => 'Tommy";quit;"'; say(e, '!pos'); e.GetPlayerName = nm; piece('!pos with ; and " in the name'); }
+    when(time + 2, briefingSpectate);              // after (d): the t=8 piece runs late and could otherwise hand (d) this piece's man
   });
+  const briefingSpectate = () => {
+    // (h) spectating from the briefing room: the orders sheet must not stay up over the spectator view
+    const h = everyone().find((q) => !q.bot && !q.god && onGround(q) && PR(q.slot) && PR(q.slot).deployed && PR(q.slot).role === 'infantry' && q.team >= 2);   // (a crewman at his pit would be guarded)
+    if (!h) { fail('edge: no human to send to the briefing room'); return; }
+    h.pawn.TakeDamage({ damage: 999, damageTypes: DT.BULLET });
+    when(time + 2.4, () => {
+      const pr = PR(h.slot);
+      if (!alive(h) || !pr || pr.deployed) { fail('edge: the briefing-room spectator piece found him out of the briefing room (alive ' + alive(h) + ', deployed ' + (pr && pr.deployed) + ', hp ' + h.pawn.hp + ', team ' + h.team + ', spawned ' + h.pawn.spawnedAt + ', now ' + time + ')'); return; }
+      const st0 = hudState.get(h.slot); if (!st0 || !st0.get('tw_brief.show')) { fail('edge: the orders sheet was not up in the briefing room'); return; }
+      switchTeam(h, 1);
+      for (let i = 0; i < 64; i++) tickOnce();
+      const st = hudState.get(h.slot);
+      if (st && st.get('tw_brief.show')) fail('spectating from the briefing room left the orders sheet up (slot ' + h.slot + ')');
+      else piece('spectate from the briefing room: orders sheet down');
+    });
+  };
   when(8, () => {
     // (e) the bot leash never sends a bot to a post beside a still-closed blocker: the picker 300 times per side, then bots for real
     for (const team of [2, 3]) for (let i = 0; i < 300; i++) {
@@ -991,7 +1033,8 @@ if (SCEN === 'threshold') {
       if (!aiUp(3)) fail('threshold: CT (2 humans) lost its script roles');
       piece('T reached 4 humans: its script roles released (' + D.stats.aiReleased.humans + ')');
       when(time + 5, () => {
-        for (const c of added) disconnect(c, 'left');
+        // they leave; CS2 may keep a disconnected player's controller in the slot (IsConnected false): it is nobody, and no human
+        for (const c of added) { disconnect(c, 'left'); linger[c.slot] = c; }
         fillBots();
         poll(() => aiUp(T_), 25, () => piece('T back to 2 humans: script roles again'), 'threshold: the script roles did not come back after the humans left');
       });
@@ -1011,6 +1054,42 @@ if (SCEN === 'botround') {
     }, 'botround: the script roles did not come back after the restart');
   }, 'botround: the script roles were not up before the restart');
   when(1, () => restart(0, () => restart(1)));
+}
+
+if (SCEN === 'handover') {
+  // a slot changes hands with no disconnect event (CS2 kicks a bot for a joining human: docs/reference/cs2-gotchas.md, cs_script-notes):
+  // the newcomer must start on a record of his own: no script role, crew seat, aircraft, kills or HUD of the last holder
+  const takeSlot = (old, bot) => {
+    const slot = old.slot;
+    old.connected = false; old.pawn.valid = false;                     // the old controller is gone, and no OnPlayerDisconnect comes
+    let st = hudState.get(slot); if (!st) hudState.set(slot, st = new Map()); st.set('tw_fly.stale', true);   // the last holder's HUD
+    const n = connect(slot, old.team, bot); n.fresh = true; stats.churn['hand-over'] = (stats.churn['hand-over'] || 0) + 1;
+    return n;
+  };
+  poll(() => aiUp(2) && aiUp(3) && aiAtSeats(2) && aiAtSeats(3), 30, () => {
+    const cases = [];
+    for (const [q, what] of [[aiSeated(2)[0], 'AI crewman -> human'], [aiFlying(3)[0], 'AI pilot -> human']]) {
+      if (!q) { fail('handover: no ' + what); continue; }
+      const gen = q.gen, team = q.team, crew = q.crew, ac = q.air ? q.air.ac : undefined;
+      cases.push({ n: takeSlot(ctls[q.slot], false), gen, team, crew, ac, what });
+    }
+    const h = humansOf(2).find((c) => alive(c) && PR(c.slot) && PR(c.slot).deployed);
+    if (h) { const pr = PR(h.slot); pr.kills = 7; cases.push({ gen: pr.gen, team: 2, crew: pr.role === 'mortar' ? pr.crew : -1, ac: pr.air ? pr.air.ac : undefined, what: 'human -> human', n: takeSlot(h, false) }); }
+    poll(() => cases.every((k) => alive(k.n) && PR(k.n.slot) && PR(k.n.slot).deployed && time - k.n.pawn.spawnedAt > 0.5), 12, () => {
+      const D = dbg();
+      for (const k of cases) {
+        const c = k.n, pr = PR(c.slot);
+        if (pr.gen === k.gen) fail('handover (' + k.what + '): the newcomer in slot ' + c.slot + ' plays on the last holder\'s record');
+        if (pr.aiRole) fail('handover (' + k.what + '): the human newcomer has the script role ' + pr.aiRole);
+        if (pr.kills) fail('handover (' + k.what + '): the newcomer inherited ' + pr.kills + ' kills');
+        if (c.pawn.mt === MT.NONE && !pr.inSight && !pr.air) fail('handover (' + k.what + '): the newcomer is frozen (move type NONE)');
+        if (k.ac && k.ac.pilot === c.slot && !(pr.air && pr.air.ac === k.ac)) fail('handover (' + k.what + '): the last holder\'s aircraft still points at the slot');
+        if (k.crew >= 0) { const cr = D.crews[k.team][k.crew]; if ((cr.a === c.slot || cr.b === c.slot) && pr.crew !== k.crew) fail('handover (' + k.what + '): the last holder\'s seat still points at the slot'); }
+        const st = hudState.get(c.slot); if (st && st.get('tw_fly.stale')) fail('handover (' + k.what + '): the newcomer kept the last holder\'s HUD');
+        piece('slot hand-over with no disconnect event: ' + k.what);
+      }
+    }, 'handover: the newcomers never deployed');
+  }, 'handover: the script roles did not come up');
 }
 
 // default runs (no scenario): small set pieces so every guard shows in the coverage table

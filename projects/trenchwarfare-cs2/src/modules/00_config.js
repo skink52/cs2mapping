@@ -117,7 +117,8 @@ const CONFIG = {
     // inside the opened areas (CT side; T mirrors x): tools/layout.py ground + 8 (woods clearing, the step-5 seeds) and the tunnel landing
     AREAS: {
       woodsopen: [{ x: 605, y: 3930, z: 10 }, { x: 1110, y: 3700, z: 10 }, { x: 1110, y: 4150, z: 6 }],
-      undergroundopen: [{ x: 2120, y: -3296, z: -252 }],
+      // undergroundopen: [{ x: 2120, y: -3296, z: -252 }],  // off until the sap benches open with the unlock
+      // (REVIEW_WORLD_2 W1: the user's benches seal the galleries unless deploy_tw runs with --user-h1 unlock|remove)
     },
   },
   AI: {

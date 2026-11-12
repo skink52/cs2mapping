@@ -27,6 +27,12 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   For the user to confirm: role commands now wait for the next deploy instead of teleporting at once (old comment said otherwise);
   `!uniform` only in the briefing room; AFK pilots/crews released after 60/120 s. No script path found for crew deaths on firing:
   `[tw] crew death` / `[tw] blocked` console lines now name the killer. `85_ai.js` is the empty seam for step 4.
+- 12 Nov ~23:15: second independent review (simulated): `docs/REVIEW_SCRIPT_2.md` (5 bugs fixed: slot changing hands with no
+  disconnect event -> `claim()`; `!pos` server-command injection via player names -> `say()` sanitises; disconnected controllers
+  counted as humans; spectators kept HUD; damage-guard log spam), 13/13 scenarios. `docs/REVIEW_WORLD_2.md`: W1 sealed galleries
+  (bots were sent there: `undergroundopen` removed from `CONFIG.BOTS.AREAS` until the user picks `--user-h1`), W2 dressing stations
+  inside solid shelter hulls (asset fix), W3 10 stale model compiles (DR1, SPAD, A7V, howitzer...: the asset compile covers them),
+  W5 doubled bench ids 71/72, W8-W10 lower. Careful: `check_play --help` runs the check (it overwrote out/review/check_play.json).
 - 12 Nov ~22:30: release docs done: README (status "simulated, not publishable yet"), `docs/TESTING.md` (in-game checklist, groups
   A-U), `docs/WORKSHOP.md` (page text + pre-upload checklist), new CREDITS.txt + Steam description staged in `out/step10/` and merged
   by deploy_tw (dry run 117 files, gate PASS). Template wavs bird_01-06, interior_01, vent_01 are of unknown origin (checklist).

@@ -28,7 +28,7 @@ function nearLock(o, r) {
 function humansOn(team, t) {
   let n = 0;
   for (let s = 0; s < 64; s++) {
-    const c = Instance.GetPlayerController(s); if (!c) continue;
+    const c = Instance.GetPlayerController(s); if (!isOn(c)) continue;      // (a disconnected player's controller can stay in the slot)
     try { if (c.IsBot() || c.GetTeamNumber() !== team) continue; } catch (e) { continue; }
     const q = players.get(s);
     if (q && q.deployed && t - (q.lastActive || t) > CONFIG.AFK.PILOT) continue;

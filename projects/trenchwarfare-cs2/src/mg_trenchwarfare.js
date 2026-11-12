@@ -122,7 +122,8 @@ const CONFIG = {
     // inside the opened areas (CT side; T mirrors x): tools/layout.py ground + 8 (woods clearing, the step-5 seeds) and the tunnel landing
     AREAS: {
       woodsopen: [{ x: 605, y: 3930, z: 10 }, { x: 1110, y: 3700, z: 10 }, { x: 1110, y: 4150, z: 6 }],
-      undergroundopen: [{ x: 2120, y: -3296, z: -252 }],
+      // undergroundopen: [{ x: 2120, y: -3296, z: -252 }],  // off until the sap benches open with the unlock
+      // (REVIEW_WORLD_2 W1: the user's benches seal the galleries unless deploy_tw runs with --user-h1 unlock|remove)
     },
   },
   AI: {
@@ -166,7 +167,12 @@ function nameOf(slot) { const c = Instance.GetPlayerController(slot); return c ?
 function slotOfPawn(pawn) { try { const c = pawn.GetPlayerController(); return c ? c.GetPlayerSlot() : -1; } catch (e) { return -1; } }
 function byName(name) { const a = Entities.FindByName(name); return a && a.length ? live(a[0]) : undefined; }   // first entity with the name
 function fire(name, input, value, delay) { Entities.FireInput({ name, input, value, delay: delay || 0 }); }
-function say(text) { Console.ServerCommand("say " + text); }
+// a "say" server command: ; would end the say and run the rest as a command, " would end the quoting (player names reach here via !pos)
+function say(text) { Console.ServerCommand("say " + String(text).replace(/[;"\x00-\x1f\x7f]/g, "")); }
+function ctlOfPawn(pawn) { try { return pawn.GetPlayerController(); } catch (e) { return undefined; } }
+// a controller that is someone: CS2 can keep a disconnected player's controller in the slot (IsConnected false; hellmatch, cs21.6 and
+// space racer skip those the same way). It must hold no record and count as no human
+function isOn(c) { try { return !!c && c.IsConnected(); } catch (e) { return !!c; } }
 // kill / assist credit: the pawn in this slot only while it is the same player (gen, see P) on the same side; otherwise no credit
 // (a slot that changed hands or a player who changed sides since the shot must not get the kill, or a team kill)
 function creditOf(slot, team, gen) {
@@ -337,7 +343,8 @@ function P(slot) {
           pref: "", carrying: false, inSight: false, u: 0.5, v: 0.3, prevKeys: 0, lives: 0, merit: 0, flown: 0, toastUntil: 0, bannerUntil: 0, infoUntil: 0,
           healing: false, mortarKills: 0, hud: new Map(), uniformAt: 0, uniformDone: false, noUniform: false, stockModel: "",
           bot: false, sane: false, lastActive: 0, lastEye: undefined, sortie: false, firedAt: -99,
-          aiRole: "", aiFly: undefined, anchor: undefined, outT: 0, checkAt: 0, lastCombat: -99 };
+          aiRole: "", aiFly: undefined, anchor: undefined, outT: 0, checkAt: 0, lastCombat: -99,
+          ctl: undefined, blockedLogAt: -99, blockedQuiet: 0 };   // ctl: whose record this is (90_main claim); the guard's console throttle
     players.set(slot, p);
     hudReset(p);             // a slot that changed hands must not keep the last player's HUD classes
   }
@@ -1375,7 +1382,7 @@ function nearLock(o, r) {
 function humansOn(team, t) {
   let n = 0;
   for (let s = 0; s < 64; s++) {
-    const c = Instance.GetPlayerController(s); if (!c) continue;
+    const c = Instance.GetPlayerController(s); if (!isOn(c)) continue;      // (a disconnected player's controller can stay in the slot)
     try { if (c.IsBot() || c.GetTeamNumber() !== team) continue; } catch (e) { continue; }
     const q = players.get(s);
     if (q && q.deployed && t - (q.lastActive || t) > CONFIG.AFK.PILOT) continue;
@@ -1698,6 +1705,23 @@ function dropPlayer(p) {
   hudReset(p);
   players.delete(p.slot);
 }
+// the record of the player in slot s, whose controller is ctl. A slot can change hands with no disconnect event (CS2 kicks a bot for a
+// joining human: docs/reference/cs2-gotchas.md; cs2mapTTT and monsoon compare the controller the same way): the last holder's record
+// (script role, crew seat, aircraft, kills, gen for credit, HUD) is dropped and the newcomer starts on a fresh one
+function claim(s, ctl) {
+  let p = players.get(s);
+  if (p && ctl && p.ctl && p.ctl !== ctl) { dropPlayer(p); p = undefined; }
+  if (!p) p = P(s);
+  if (ctl && !p.ctl) { p.ctl = ctl; try { p.bot = ctl.IsBot(); } catch (e) {} }
+  return p;
+}
+// no live pawn on a side (dead, spectating, unassigned): nothing of the briefing room, the role card or the sight stays up
+// (spectating from the briefing room left the orders sheet over the spectator view; a spectator kept his role card)
+function hudIdle(p, t) {
+  hClass(p, "tw_target", "show", false); hClass(p, "tw_prompt", "show", false); hClass(p, "tw_brief", "show", false);
+  if (!p.team) { hClass(p, "tw_status", "show", false); hClass(p, "tw_fly", "show", false); }
+  hClass(p, "tw_toast", "show", t < p.toastUntil); hClass(p, "tw_banner", "show", t < p.bannerUntil);
+}
 // AFK: no key, no turn of the view and no step for CONFIG.AFK seconds. A pilot is brought down to the trench as infantry (his
 // aircraft goes home), a mortar crewman gives up his seat. Humans only: script-run bots never idle, and an
 // AFK human does not count toward a side's humans for the AI roles (85_ai humansOn).
@@ -1725,19 +1749,19 @@ function tickAfk(p, pawn, t, held) {
 function thinkPlayer(s, t, dt) {
   {
     const ctl = Instance.GetPlayerController(s);
-    if (!ctl) { const gone = players.get(s); if (gone) dropPlayer(gone); return; }
+    if (!isOn(ctl)) { const gone = players.get(s); if (gone) dropPlayer(gone); return; }   // nobody, or a disconnected player's controller
     const pawn = live(ctl.GetPlayerPawn());
-    const p = P(s);
+    const p = claim(s, ctl);
     try { p.bot = ctl.IsBot(); } catch (e) {}
     // the side, read from the controller as well, so a dead or spectating player who switched also leaves his seat and aircraft
     let side = 0; try { side = ctl.GetTeamNumber(); } catch (e) {}
     if (side !== T && side !== CT && pawn) { try { const pt = pawn.GetTeamNumber(); if (pt === T || pt === CT) side = pt; } catch (e) {} }
     if (p.team && side !== p.team) { leaveTeam(p, pawn); p.team = side === T || side === CT ? side : 0; p.deployAt = t + CONFIG.LOBBY_FIRST; p.uniformDone = false; }
     hClass(p, "tw_info", "show", t < (p.infoUntil || 0));
-    if (!pawn || !pawn.IsAlive()) { if (p.air) endFlight(p, pawn, true); if (p.inSight) leaveSight(p, pawn); hClass(p, "tw_target", "show", false); hClass(p, "tw_prompt", "show", false); return; }
+    if (!pawn || !pawn.IsAlive()) { if (p.air) endFlight(p, pawn, true); if (p.inSight) leaveSight(p, pawn); hudIdle(p, t); return; }
     if (!p.sane) { p.sane = true; if (!p.air && !p.inSight) sanitise(p, pawn); }   // first look at this pawn (map start, script reload)
     const team = pawn.GetTeamNumber();
-    if (team !== T && team !== CT) return;
+    if (team !== T && team !== CT) { hudIdle(p, t); return; }
     if (p.team !== team) { leaveTeam(p, pawn); p.team = team; p.deployAt = t + CONFIG.LOBBY_FIRST; p.uniformDone = false; }
     uniform(p, pawn, team, t);
     const held = p.bot ? 0 : keys(pawn); const pressed = held & ~p.prevKeys; p.prevKeys = held;
@@ -1845,7 +1869,7 @@ Instance.OnRoundStart(() => {
 Instance.OnPlayerReset(({ player }) => {
   const pawn = live(player); if (!pawn) return;
   const s = slotOfPawn(pawn); if (s < 0) return;
-  const p = P(s);
+  const p = claim(s, ctlOfPawn(pawn));         // (a newcomer in a slot that changed hands may spawn before the next think sees him)
   if (p.air) endFlight(p, pawn, false);        // a respawn while the record still flies (round restart, a missed death)
   sanitise(p, pawn); p.sane = true;
   p.uniformDone = false; p.uniformAt = now() + CONFIG.UNIFORM_DELAY;
@@ -1863,7 +1887,7 @@ Instance.OnPlayerDisconnect(({ playerSlot }) => {
 });
 Instance.OnPlayerKill(({ player, attacker, inflictor, weapon }) => {
   const victim = live(player); if (!victim) return;
-  const vs = slotOfPawn(victim); const vp = vs >= 0 ? P(vs) : undefined;
+  const vs = slotOfPawn(victim); const vp = vs >= 0 ? claim(vs, ctlOfPawn(victim)) : undefined;
   if (vp) {
     if (vp.role === "mortar" && vp.crew >= 0) crewDeathLog(vp, victim, attacker, inflictor, weapon);
     vp.streak = 0; vp.upgraded = false; vp.carrying = false; vp.ammo = {};
@@ -1873,7 +1897,7 @@ Instance.OnPlayerKill(({ player, attacker, inflictor, weapon }) => {
   }
   const ap = toPawn(attacker); if (!ap || ap === victim) return;
   const as = slotOfPawn(ap); if (as < 0) return;
-  const a = P(as);
+  const a = claim(as, ctlOfPawn(ap));
   if (ap.GetTeamNumber() === victim.GetTeamNumber()) return;
   roundKills++;
   a.kills++; a.streak++; a.merit++;
@@ -1903,8 +1927,14 @@ Instance.OnModifyPlayerDamage((ev) => {
   }
   if (why) {
     stats.blocked++;
-    Console.Log("[tw] blocked " + Math.round(ev.damage) + " damage to " + why + " (slot " + vs + ", types " + ev.damageTypes + ", flags " + ev.damageFlags +
-                ", attacker " + entDesc(ev.attacker) + ", inflictor " + entDesc(ev.inflictor) + (d >= 0 ? ", " + Math.round(d) + " u from the tube" : "") + ")");
+    // one line per player per 2 s at most: a prop grinding a pilot or crewman hits every tick (64 lines a second each, unthrottled)
+    const t = now();
+    if (t - p.blockedLogAt >= 2) {
+      Console.Log("[tw] blocked " + Math.round(ev.damage) + " damage to " + why + " (slot " + vs + ", types " + ev.damageTypes + ", flags " + ev.damageFlags +
+                  ", attacker " + entDesc(ev.attacker) + ", inflictor " + entDesc(ev.inflictor) + (d >= 0 ? ", " + Math.round(d) + " u from the tube" : "") + ")" +
+                  (p.blockedQuiet ? "; " + p.blockedQuiet + " more blocked since the last line" : ""));
+      p.blockedLogAt = t; p.blockedQuiet = 0;
+    } else p.blockedQuiet++;
     return { abort: true };
   }
 });
@@ -1932,7 +1962,7 @@ Instance.OnBulletImpact(({ weapon, hitEntity }) => {
 });
 Instance.OnPlayerChat(({ player, text }) => {
   if (!player) return;
-  const s = player.GetPlayerSlot(); const p = P(s);
+  const s = player.GetPlayerSlot(); const p = claim(s, player);
   const t = String(text || "").trim().toLowerCase();
   if (t === "!mortar" || t === "!artillery") { p.pref = "mortar"; roleCard(p, "mortar"); if (p.team === T || p.team === CT) requestRole(p, "mortar"); }
   else if (t === "!infantry" || t === "!rifle") { p.pref = "infantry"; roleCard(p, "infantry"); if (p.team === T || p.team === CT) requestRole(p, "infantry"); }
