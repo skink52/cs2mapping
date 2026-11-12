@@ -43,7 +43,7 @@ function tickDirector() {
     if (!aiWanted(team)) {
       for (const q of bots) {
         if (!q.aiRole) continue;
-        if (q.aiRole === "pilot") { const h = ownHeli(q); if (h && h.state === "flying") { if (h.ai) h.ai.release = true; continue; } }
+        if (q.aiRole === "pilot") { const h = ownHeli(q); if (h && h.state === "flying") { if (h.ai) h.ai.quit = true; continue; } }
         aiRelease(q, true);
       }
     } else {
@@ -77,7 +77,7 @@ function tickDirector() {
     // a human waiting for a helicopter the AI was flying
     for (const q of players.values()) {
       if (q.team !== team || q.bot || q.waitRole !== "air" || q.role === "air") continue;
-      if (helis[team].some((h) => h.ent && h.owner < 0 && h.yieldTo < 0)) { q.waitRole = ""; requestRole(q, "air", true); if (q.role === "air") toast(q, "A helicopter is free: it is yours", 4); }
+      if (helis[team].some((h) => h.ent && h.owner < 0 && (h.yieldTo < 0 || h.yieldTo === q.slot))) { q.waitRole = ""; requestRole(q, "air", true); if (q.role === "air") toast(q, "A helicopter is free: it is yours", 4); }
     }
   }
 }
@@ -88,7 +88,7 @@ function aiSeatTry(p, pawn) {
     if (!h || h.state !== "parked" || h.seats[0].slot >= 0) return false;
     if (!enterHeli(p, pawn, h, 0)) return false;
     h.ai = { state: "pad", since: TNOW, think: 0, goal: v3(h.pos.x, h.pos.y, h.pos.z), wp: "", target: null, reactAt: 0, rocketsAt: 0, attackAt: 0, nextStrafe: TNOW + 10,
-             release: false, blocked: 0, land: false, yawGoal: h.yaw, alt: CONFIG.AI.CRUISE };
+             release: false, quit: false, blocked: 0, land: false, yawGoal: h.yaw, alt: CONFIG.AI.CRUISE };
     return true;
   }
   if (p.aiRole === "gunner" && p.aiGun) {
@@ -248,7 +248,9 @@ function aiStrafeTarget(h) {
 }
 function aiPilotThink(h, ai) {
   const A = CONFIG.AI, H = CONFIG.HELI, bot = players.get(h.seats[0].slot);
-  if (h.yieldTo >= 0) ai.release = true;
+  // home and out: the director wants the seat back (quit, kept), or a human is waiting for this helicopter (only while he still is:
+  // a request withdrawn or a waiting player who left no longer sends the AI home to quit for nobody, review 2)
+  ai.release = !!ai.quit || h.yieldTo >= 0;
   const hurtNow = h.hp < A.RTB_HP || (h.M.ROCKETS > 0 && h.rockets < 2);
   const padD = dist2(h.pos, h.pad.pos);
   if (ai.state === "pad") {

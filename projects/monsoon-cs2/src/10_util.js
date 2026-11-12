@@ -84,7 +84,9 @@ function logErr(where, e) {
   const t = now();
   if (t - errAt > 2) { errAt = t; log("error in " + where + ": " + e + (e && e.stack ? " " + e.stack : "")); }
 }
-function say(text) { Console.ServerCommand("say " + String(text).replace(/[;"\n\r]/g, " ")); }
+// everything said goes through the server console: `;` would end the command and start another (a player named `x";quit;"`),
+// `"` breaks the quoting, and control characters (NUL, ESC, tabs) have no business there either (review 2)
+function say(text) { Console.ServerCommand("say " + String(text).replace(/[;"\x00-\x1f\x7f]/g, " ").slice(0, 200)); }
 
 // ------------------------------------------------------------------ entities (cached per round: map entities are re-created every round)
 const entCache = new Map();
@@ -197,7 +199,9 @@ function hSwap(p, id, group, cls) {   // one class per group (marker positions, 
   } catch (e) { hudFails++; return; }
   r.s[group] = cls;
 }
-function hudReset(p) { const h = hud(); if (h && !p.bot) { try { h.ResetForPlayer(p.slot); } catch (e) {} } p.hud.clear(); }
+// the texts are gone after a reset, so the timers that keep a toast / banner / card up go too (a round restart left them running:
+// the new round opened with an empty banner and toast box on screen, review 2)
+function hudReset(p) { const h = hud(); if (h && !p.bot) { try { h.ResetForPlayer(p.slot); } catch (e) {} } p.hud.clear(); p.toastUntil = 0; p.bannerUntil = 0; p.infoUntil = 0; }
 function toast(p, text, secs) { if (!p || p.bot) return; hText(p, "mv_toast_text", text); p.toastUntil = TNOW + (secs || 3); }
 // the event feed (flag taken, helicopter down, gun silenced): the newest line on top, each for FEED.TIME seconds.
 // team = who reads it (0 = everyone); tone "good" / "bad" / "" as that reader sees it. Without the feed panels (HUD additions,

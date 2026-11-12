@@ -484,10 +484,20 @@ function recallHeli(h) {
   h.idleT = 0; h.padT = 0; h.rotorSpeed = 0; h.alt = 0; h.speed = 0;
   setEngine(h, false); setDust(h, false);
   placeHeli(h, true); setAnim(h, true);
+  placeRiders(h, true);                          // an AI gunner still aboard comes with it
   stats.recalls++;
 }
 
 // ------------------------------------------------------------------ flight (DESIGN 3.2)
+// the stick of a helicopter nobody flies (the pilot left, died, switched sides, was kicked, or is AFK): it settles and lets down;
+// over the river it first holds its height and creeps toward its pad, because touching the water is a ditching that kills everyone
+// aboard (review 2: only the AFK pilot had the creep; a pilot who quit over the river drowned his riders)
+function letDown(h) {
+  const H = CONFIG.HELI, home = Math.atan2(h.pad.pos.y - h.pos.y, h.pad.pos.x - h.pos.x) * R2D;
+  return h.overWater ? { fwd: 0.4, side: 0, coll: 0, yaw: home, fire: false, aim: null, spread: 0 }
+                     : { fwd: 0, side: 0, coll: H.AUTOLAND_VS / H.VS_MAX, yaw: h.yaw, fire: false, aim: null, spread: 0 };
+}
+function humansAboard(h) { let n = 0; for (const s of h.seats) { if (s.slot < 0) continue; const q = players.get(s.slot); if (!q || !q.bot) n++; } return n; }
 function heliBounds(h) {
   const B = CONFIG.HELI.BOUNDS;
   let w = 0, kind = "";
@@ -511,7 +521,7 @@ function tickHeli(h, dt) {
   if (h.state === "crashing") { tickCrash(h, dt); return; }
   let inp = h.inp; h.inp = null;
   const piloted = !!inp;
-  if (!inp) inp = { fwd: 0, side: 0, coll: h.landed ? 0 : H.AUTOLAND_VS / H.VS_MAX, yaw: h.yaw, fire: false, aim: null, spread: 0 };
+  if (!inp) inp = h.landed ? { fwd: 0, side: 0, coll: 0, yaw: h.yaw, fire: false, aim: null, spread: 0 } : letDown(h);
   // rotor
   const wantSpin = piloted || !h.landed ? 1 : 0;
   h.rotorSpeed += clampN(wantSpin - h.rotorSpeed, -dt / H.SPOOL, dt / H.SPOOL);
@@ -534,8 +544,15 @@ function tickHeli(h, dt) {
         h.idleT = 0;
       } else {
         if (inp.coll > 0.1) h.warn = "ROTOR " + Math.round(h.rotorSpeed * 100) + " %";
-        // left in the field with nobody aboard and no pilot assigned (the pilot quit, changed role or went AFK): the ground crew fetch it
-        if (h.owner < 0 && crewCount(h) === 0) { h.idleT += dt; if (h.idleT >= H.ABANDON) { recallHeli(h); return; } } else h.idleT = 0;
+        // left in the field with no human aboard and no pilot assigned (the pilot quit, changed role or went AFK): the ground crew fetch
+        // it (an AI gunner sitting in it no longer keeps it out there all round: he comes along). Its pilot back on his pad, alive and on
+        // foot (he died in the air and redeployed while it let itself down somewhere): it is fetched for him at once (review 2)
+        const r = h.owner >= 0 ? rosterAt[h.owner] : null, op = r ? r.p : null;
+        const waiting = !!op && r.alive && op.deployed && !op.heli && op.mount < 0 && dist2(r.pos, h.pad.pos) < H.PAD_RADIUS + 340 && dist2(r.pos, h.pos) > H.BOARD_RADIUS;
+        if (humansAboard(h) === 0 && (h.owner < 0 || waiting)) {
+          h.idleT += dt;
+          if (h.idleT >= (waiting ? H.FETCH : H.ABANDON)) { recallHeli(h); if (waiting) { stats.fetched++; toast(op, "Your " + h.M.label + " is back on the pad", 4); } return; }
+        } else h.idleT = 0;
       }
       if (h.rotorSpeed > 0 && (h.rotor || h.tail)) placeHeli(h, false);
       setDust(h, false);
@@ -665,7 +682,7 @@ function tickSeat(p, pawn, dt, pressed, held) {
               aim: fireKey && h.M.ROCKETS && !h.landed ? pilotAim(p, h, eye) : null, spread: 0 };
     // an AFK pilot (no key, no look for AFK.TIME): the stick is let go so it does not fly on with the last keys held. It settles and
     // lets down; over the river it creeps to the bank first (a landing on water is a ditching). tickAfk takes him out once it is down.
-    else h.inp = { fwd: h.overWater ? 0.4 : 0, side: 0, coll: h.overWater ? 0 : -0.5, yaw: Math.atan2(h.pad.pos.y - h.pos.y, h.pad.pos.x - h.pos.x) / D2R, fire: false, aim: null, spread: 0 };
+    else h.inp = letDown(h);
     easeCamera(p, h, dt);
     if (pressed & CSInputs.USE) {
       if (h.landed) { leaveHeli(p, pawn, ""); return; }

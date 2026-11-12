@@ -12,7 +12,13 @@
 //                     edge    set pieces: helicopter shot down full of riders, pilot quits mid-air, deaths at the board / gun / rack,
 //                             two E presses on one seat, contested flags, ticket underflow (runs with the HUD additions on)
 //                     reload  the script reloaded in the tools twice, mid-round
+//                     review2 review pass 2's bug classes (run with humans=4 so the AI holds seats; the river bed is cut into the
+//                             ground): a departed controller left in its slot, one AI helicopter per waiting human and a withdrawn
+//                             request, a pilot gone over the river, a pilot back on his pad, an AI gunner in an abandoned helicopter,
+//                             control characters in a name sent with say
 //   piece=<text>      only the set pieces whose name contains <text> (one bug class at a time, e.g. scenario=edge piece="shot down")
+//   script=<file>     run that built script instead of building src/ (e.g. out/review2/before_review2.js: the build before pass 2)
+//   river=1           the river bed lies below the water (layout river line, 180 u each side); on in scenario=review2
 //   hudnew=1          out/hud.json is given the "HUD additions (pass 1)" ids, so the script uses them
 //   mode=balance      real CONFIG (400 tickets, 15 s captures), a stand-in infantry fight, one round, a JSON result line
 //                     (test/sim_balance.mjs runs many of these); json=1 prints only that line
@@ -77,7 +83,16 @@ const xmlIds = fs.existsSync(xmlPath) ? new Set([...fs.readFileSync(xmlPath, 'ut
 const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : null;
 
 // ------------------------------------------------------------------ the world: a height field from the layout
+const RIVER = (opt.river === '1' || SCEN === 'review2') && Array.isArray(L.river) && L.river.length > 1 ? L.river : null;
+function riverY(x) {
+  const R = RIVER; if (!R) return NaN;
+  if (x <= R[0][0]) return R[0][1];
+  for (let i = 1; i < R.length; i++) if (x <= R[i][0]) { const a = R[i - 1], b = R[i], t = (x - a[0]) / Math.max(1e-6, b[0] - a[0]); return a[1] + (b[1] - a[1]) * t; }
+  return R[R.length - 1][1];
+}
+const inRiver = (x, y) => !!RIVER && Math.abs(y - riverY(x)) < 180 && Math.abs(x) > 700;      // the bridge (flag B) stays dry
 function ground(x, y) {
+  if (inRiver(x, y)) return L.map.water_z - 120;
   let z = 40;
   for (const tg of ['t', 'ct']) { const b = L[tg], d = Math.hypot(x - b.centre[0], y - b.centre[1]); if (d < 800) z = Math.max(z, b.z); else if (d < 1400) z = Math.max(z, b.z * (1400 - d) / 600); }
   for (const k of L.karst) if (Math.hypot(x - k.x, y - k.y) < k.r) z = Math.max(z, k.top);
@@ -115,6 +130,7 @@ class Ent {
   }
 }
 const hudState = new Map();                       // slot -> Map(panel#class -> bool, panel$ -> text): what each human's screen shows
+const loading = new Set();                        // slots whose client has not finished loading (their HUD calls are lost)
 class Hud extends Ent {
   chk(slot, panel, cls) {
     stats.panelIds.add(panel);
@@ -128,11 +144,12 @@ class Hud extends Ent {
     c.used.add(cls);
   }
   st(slot) { let m = hudState.get(slot); if (!m) hudState.set(slot, m = new Map()); return m; }
-  SetHasClassForPlayer(slot, panel, cls, on) { stats.hud++; if (typeof on !== 'boolean') throw new Error('class flag not boolean'); this.chk(slot, panel, cls); this.st(slot).set(panel + '#' + cls, on); }
+  // a client still loading (cs2-gotchas: HUD changes sent before a joining client is ready are lost): the call is made and lost
+  SetHasClassForPlayer(slot, panel, cls, on) { stats.hud++; if (typeof on !== 'boolean') throw new Error('class flag not boolean'); this.chk(slot, panel, cls); if (loading.has(slot)) return; this.st(slot).set(panel + '#' + cls, on); }
   SetDialogVariableStringForPlayer(slot, panel, n, v) {
     stats.vars++; if (n !== 'v' || typeof v !== 'string') throw new Error('bad dialog variable'); if (/undefined|NaN|\[object|null/.test(v)) throw new Error('bad HUD text for ' + panel + ': ' + v);
     if (v.length > 96) throw new Error('HUD text too long for ' + panel + ' (' + v.length + '): ' + v);
-    this.chk(slot, panel); this.st(slot).set(panel + '$', v);
+    this.chk(slot, panel); if (loading.has(slot)) return; this.st(slot).set(panel + '$', v);
   }
   ResetForPlayer(slot) { hudState.delete(slot); stats.hudResets = (stats.hudResets || 0) + 1; }
 }
@@ -253,12 +270,17 @@ class Pawn extends Ent {
   }
 }
 class Ctl extends Ent {
-  constructor(slot, team, bot) { super('', 'cs_player_controller', { x: 0, y: 0, z: 0 }); this.slot = slot; this.team = team; this.bot = bot; this.pawn = new Pawn(this); this.drv = {}; this.q = []; this.hold = 0; this.stunt = ''; this.god = false; this.spec = false; }
-  GetPlayerSlot() { return this.slot; } GetPlayerPawn() { return this.spec ? undefined : this.pawn; } IsBot() { return this.bot; } GetPlayerName() { return (this.bot ? 'bot' : 'p') + this.slot; } GetTeamNumber() { return this.team; }
+  constructor(slot, team, bot) { super('', 'cs_player_controller', { x: 0, y: 0, z: 0 }); this.slot = slot; this.team = team; this.bot = bot; this.pawn = new Pawn(this); this.drv = {}; this.q = []; this.hold = 0; this.stunt = ''; this.god = false; this.spec = false; this.gone = false; this.name = ''; }
+  GetPlayerSlot() { return this.slot; } GetPlayerPawn() { return this.spec || this.gone ? undefined : this.pawn; } IsBot() { return this.bot; } GetPlayerName() { return this.name || (this.bot ? 'bot' : 'p') + this.slot; } GetTeamNumber() { return this.team; }
+  IsConnected() { return !this.gone; }
 }
 const worldEnt = new Ent('world', 'worldent', { x: 0, y: 0, z: 0 });
 const ctls = [];                                  // by slot; a slot can be empty (undefined) for a while in the churn scenario
-const everyone = () => ctls.filter(Boolean);
+// a departed player's controller CS2 leaves in the slot (gone: IsConnected false, no pawn) is nobody: the drivers skip it
+const everyone = () => ctls.filter((c) => c && !c.gone);
+// a player leaves and CS2 keeps the controller in the slot, with no disconnect event (a bot kicked by bot_quota fill); the slot is
+// emptied after `linger` seconds
+function depart(c, linger) { c.gone = true; c.pawn.valid = false; const slot = c.slot; at(linger, () => { if (ctls[slot] === c) ctls[slot] = undefined; }); }
 function spawn(c, samePawn) {
   if (c.spec || ctls[c.slot] !== c) return;
   const sp = lobby.filter((e) => (e.cls.endsWith('terrorist') && !e.cls.includes('counter')) === (c.team === 2));
@@ -271,7 +293,13 @@ function spawn(c, samePawn) {
 const later = [];
 function at(dt, fn) { later.push({ at: time + dt, fn }); }
 function die(pawn, attacker, weapon) { stats.kills++; hooks.kill && hooks.kill({ player: pawn, attacker, weapon }); const c = pawn.ctl; at(2, () => { if (ctls[c.slot] === c && c.pawn === pawn) spawn(c); }); }
-function addPlayer(bot, slot) { const s = slot === undefined ? ctls.length : slot; const c = new Ctl(s, s % 2 ? 3 : 2, bot); ctls[s] = c; spawn(c); return c; }
+// load = seconds the client is still loading after its first spawn (HUD calls lost); OnPlayerActivate fires when it is done
+function addPlayer(bot, slot, load) {
+  const s = slot === undefined ? ctls.length : slot; const c = new Ctl(s, s % 2 ? 3 : 2, bot); ctls[s] = c;
+  if (load > 0) { loading.add(s); at(load, () => { loading.delete(s); if (ctls[s] === c) hooks.pactivate && hooks.pactivate({ player: c }); }); }
+  else hooks.pactivate && hooks.pactivate({ player: c });
+  spawn(c); return c;
+}
 
 // ------------------------------------------------------------------ engine API (current names only)
 function traceLine(o) {
@@ -322,6 +350,7 @@ const Instance = strict('Instance', {
   OnActivate: (f) => { hooks.activate = f; }, OnRoundStart: (f) => { hooks.round = f; }, OnPlayerReset: (f) => { hooks.reset = f; }, OnPlayerDisconnect: (f) => { hooks.disc = f; },
   OnPlayerKill: (f) => { hooks.kill = f; }, OnPlayerChat: (f) => { hooks.chat = f; }, OnBulletImpact: (f) => { hooks.bullet = f; }, OnModifyPlayerDamage: (f) => { hooks.mod = f; },
   OnPlayerDamage: (f) => { hooks.damage = f; }, OnGunFire: (f) => { hooks.gunfire = f; }, OnScriptReload: (c) => { hooks.reloadCfg = c; },
+  OnPlayerActivate: (f) => { hooks.pactivate = f; },
   GetPlayerController: (s) => ctls[s], TraceLine: traceLine,
 });
 const Entities = strict('Entities', {
@@ -335,7 +364,7 @@ const Console = strict('Console', {
   ServerCommand: (c) => {
     const w = String(c).split(' ')[0]; stats.cmds[w] = (stats.cmds[w] || 0) + 1;
     if (!/^(mp_|bot_|say$)/.test(w)) throw new Error('server command outside the allowed set: ' + c);
-    if (/[;"\n]/.test(c)) throw new Error('unsafe characters in a server command: ' + c);
+    if (/[;"\x00-\x1f\x7f]/.test(c)) throw new Error('unsafe characters in a server command: ' + JSON.stringify(c));
     if (w === 'bot_quota') quota = +String(c).split(' ')[1]; if (w === 'bot_quota_mode') quotaMode = String(c).split(' ')[1];
   },
 });
@@ -347,7 +376,7 @@ const GameRules = strict('GameRules', {
   SetRoundRemainingTime: (t) => { if (!Number.isFinite(t)) throw new Error('bad round time'); }, GetRoundRemainingTime: () => 600, IsWarmupPeriod: () => false,
 });
 const dest = path.join(root, 'test/_run' + (opt.tag || (BAL ? '_' + process.pid : '')) + '.mjs');
-const built = build(dest);
+const built = opt.script ? (() => { const t = fs.readFileSync(path.resolve(root, opt.script), 'utf8'); fs.writeFileSync(dest, t); return { dest, lines: t.split('\n').length }; })() : build(dest);
 {
   let src = fs.readFileSync(dest, 'utf8').replace(/import \{([^}]*)\} from "cs_script\/point_script";/, 'const {$1} = globalThis.__cs;');
   if (HUDNEW) src = src.replace(/^const HUDDATA = (.*);$/m, (m, j) => { const h = JSON.parse(j); h.ids = [...new Set([...(h.ids || [...contract.keys()]), ...ADDED_IDS])]; return 'const HUDDATA = ' + JSON.stringify(h) + ';'; });
@@ -999,6 +1028,7 @@ if (FEATURES) {
       // a flag with an enemy inside is closed to deploys (right): keep its circle clear while the actor redeploys (busy at 64 players)
       const ff = f, clear = () => { for (const c of everyone()) if (c.team !== team && !c.stunt && c.pawn.hp > 0 && d2(c.pawn.pos, ff.pos) < ff.r + 300) { c.pawn.pos.x += 1500; c.drv.goal = null; c.drv.hold = time + 20; } };
       clear();
+      yield until(() => !!enemyOf(team) && alive(a) && P(a).deployed, 'an enemy in the field (a round restart puts everyone in the briefing room)', 30);
       const n0 = D.stats.flagSpawns; kill(a);
       yield until(() => { clear(); return alive(a) && P(a).deployed; }, 'the redeploy', 12);
       yield until(() => alive(a) && P(a).deployed, 'the redeploy', 12);
@@ -1007,6 +1037,7 @@ if (FEATURES) {
     if (!ok) throw new Error('never deployed at the chosen flag');
     hit('!spawn at a held flag');
     // deploy cover
+    if (!enemyOf(team)) throw new Error('no enemy in the field right after the redeploy');
     const e = need(enemyOf(team), 'an enemy'), g0 = D.stats.spawnGuard;
     a.pawn.TakeDamage({ damage: 60, damageTypes: DT.BULLET, attacker: e.pawn });
     if (a.pawn.hp !== 100 || D.stats.spawnGuard <= g0) throw new Error('hit inside the deploy cover');
@@ -1014,14 +1045,18 @@ if (FEATURES) {
     a.pawn.TakeDamage({ damage: 30, damageTypes: DT.FALL });
     if (a.pawn.hp === 100) throw new Error('the deploy cover should not stop a fall');
     a.pawn.hp = 100; a.god = true;
-    yield CONFIG.SPAWN_PROTECT + 0.3; a.god = false;
+    yield CONFIG.SPAWN_PROTECT + 0.3;
+    yield until(() => !!enemyOf(team) && alive(a) && P(a).deployed && time >= P(a).deployedAt + CONFIG.SPAWN_PROTECT + 0.2, 'an enemy in the field, the cover over', 30);
+    a.god = false; a.pawn.hp = 100;
     a.pawn.TakeDamage({ damage: 30, damageTypes: DT.BULLET, attacker: need(enemyOf(team), 'an enemy').pawn });
     if (a.pawn.hp === 100) throw new Error('the deploy cover never ends');
     // aboard a waiting helicopter
     say(a, '!spawn heli'); ok = false;
     for (let tries = 0; tries < 8 && !ok; tries++) {
       yield until(() => alive(a) && P(a).deployed && D.helis[team].some((h) => h.state === 'parked' && h.seats[0].slot >= 0 && h.seats.some((s, i) => i > 0 && s.slot < 0) && d2(h.pos, h.pad.pos) < 200), 'a friendly helicopter waiting with its pilot', 150);
-      const n0 = D.stats.spawnAboard; a.god = false; if (P(a).heli) { press(a, IN.USE); yield 0.2; } kill(a);
+      const n0 = D.stats.spawnAboard; a.god = false; if (P(a).heli) { press(a, IN.USE); yield 0.2; }
+      yield until(() => !!enemyOf(team) && alive(a) && P(a).deployed, 'an enemy in the field', 30);
+      kill(a);
       yield until(() => alive(a) && P(a).deployed, 'the redeploy', 12);
       ok = D.stats.spawnAboard > n0 && !!P(a).heli;
     }
@@ -1032,7 +1067,7 @@ if (FEATURES) {
   // ---- fast-rope: out of a helicopter in a low, slow hover: a capped fall, no fall damage
   piece('fast-rope', 140, function* () {
     const H = CONFIG.HELI, ok = (h) => h.state === 'flying' && h.alt > 150 && h.alt < H.ROPE_ALT - 40 && h.speed < H.ROPE_SPEED - 60 && h.seats.some((s, i) => i > 0 && s.slot < 0);
-    yield until(() => D.helis[2].some(ok) && humans(2).some((x) => free(x) && jobOf(x) === 'walker' && P(x).role === 'infantry'), 'a T helicopter in a low hover', 300);
+    yield until(() => D.helis[2].some(ok) && humans(2).some((x) => free(x) && jobOf(x) === 'walker' && P(x).role === 'infantry' && !P(x).heli && P(x).mount < 0), 'a T helicopter in a low hover', 300);      // the walker test actor() makes
     const h = D.helis[2].find(ok), a = need(actor(2), 'T walker'), n0 = D.stats.ropes, f0 = stats.falls;
     seatHack(a, h, h.seats.findIndex((s, i) => i > 0 && s.slot < 0)); a.pawn.hp = 100;
     press(a, IN.USE); yield 0.15;
@@ -1060,10 +1095,18 @@ if (FEATURES) {
   });
   piece('afk', 262, function* () {
     const a = need(actor(3), 'CT walker'); a.god = true;
-    const m = need(D.mounts.find((x) => x.team === 3 && x.user < 0), 'free CT emplaced gun'), n0 = D.stats.afk;
-    putAt(a, m.seat.pos); yield 0.1; press(a, IN.USE); yield 0.3;
-    if (m.user !== a.slot) throw new Error('did not get the gun');
-    yield until(() => P(a).afk, 'the AFK flag (' + CONFIG.AFK.TIME + ' s)', CONFIG.AFK.TIME + 5);
+    let m, n0;
+    for (let tries = 0; ; tries++) {      // a round that ends meanwhile respawns everyone (review 2: the 32 x 600 run's round 2 began at 268 s)
+      if (tries > 3) throw new Error('four rounds ended before an AFK gunner could be tested');
+      yield until(() => !D.game.over && alive(a) && P(a).deployed, 'the actor deployed in a running round', 30);
+      m = need(D.mounts.find((x) => x.team === 3 && x.user < 0), 'free CT emplaced gun'); n0 = D.stats.afk;
+      putAt(a, m.seat.pos); yield 0.1; press(a, IN.USE); yield 0.3;
+      if (m.user !== a.slot) throw new Error('did not get the gun');
+      const r0 = stats.rounds;
+      yield until(() => P(a).afk || D.game.over || stats.rounds !== r0, 'the AFK flag (' + CONFIG.AFK.TIME + ' s)', CONFIG.AFK.TIME + 5);
+      if (P(a).afk) break;
+      yield until(() => !D.game.over, 'the next round', 60);
+    }
     yield 0.1;
     if (m.user >= 0 || P(a).mount >= 0 || a.pawn.mt !== 2) throw new Error('the AFK gunner kept the gun');
     hit('AFK seat release', D.stats.afk - n0);
@@ -1099,7 +1142,10 @@ if (FEATURES) {
   piece('late join', 120, function* () {
     // a full server (64 slots): a bot leaves first and the newcomer takes its slot
     let slot; if (ctls.length >= 64) { const b = need(everyone().find((x) => x.bot && !x.stunt && P(x) && !P(x).aiRole), 'a bot to make room'); slot = b.slot; hooks.disc({ playerSlot: slot }); b.pawn.valid = false; ctls[slot] = undefined; }
-    const n0 = D.stats.lateJoins, c = addPlayer(false, slot);
+    const n0 = D.stats.lateJoins, c = addPlayer(false, slot, 1.5);      // the client is still loading for 1.5 s after it spawns
+    yield 2.5;
+    if (P(c) && !P(c).deployed && !shows(c.slot, 'mv_brief')) throw new Error('the late joiner sees no briefing card (HUD sent while his client loaded was lost)');
+    hit('late join: HUD sent again once the client has loaded', D.stats.hudActivates || 0);
     yield until(() => P(c) && P(c).deployed, 'the late joiner to deploy', CONFIG.LOBBY_FIRST + 6);
     yield 0.5;
     if (!shows(c.slot, 'mv_obj')) throw new Error('no objective bar for the late joiner');
@@ -1215,6 +1261,138 @@ if (SCEN === 'edge') {
   });
 }
 
+// ------------------------------------------------------------------ review pass 2: one set piece per bug class (docs/REVIEW_SCRIPT_2.md)
+// node test/mock.mjs 32 400 scenario=review2 humans=4   (each fails on out/review2/before_review2.js: add script=out/review2/before_review2.js)
+if (SCEN === 'review2') {
+  const grab = (c) => { c.stunt = curPiece.name; c.q = []; c.hold = 0; curPiece.actors.push(c); return c; };
+  const H = () => CONFIG.HELI;
+  // flat dry ground in the open, well away from the helicopter's pad and the map edge
+  const fieldSpot = (h) => {
+    for (const [x, y] of [[1800, -1900], [-1500, -2600], [2200, 2400], [-900, 3300], [3600, -1200], [-3200, -1000], [1200, 1500]]) {
+      if (ground(x, y) === 40 && !inRiver(x, y) && d2({ x, y }, h.pad.pos) > 2500 && L.flags.every((f) => Math.hypot(f.x - x, f.y - y) > 600)) return { x, y };
+    }
+    throw new Error('no flat field spot');
+  };
+  const quit = (c, back) => { hooks.disc({ playerSlot: c.slot }); c.pawn.valid = false; ctls[c.slot] = undefined; if (back) { const s = c.slot, bot = c.bot; at(back, () => { if (!ctls[s]) addPlayer(bot, s); }); } };
+  // (1) say(): a player's name goes to the server console with !pos; control characters must not reach it (`;` and `"` already could not)
+  piece('say: control characters in a name', 3, function* () {
+    const c = need(everyone().find((x) => !x.bot && x.pawn.hp > 0), 'a human');
+    const n0 = stats.cmds.say || 0, keep = c.name;
+    c.name = 'Tom";quit;"\x1b[2J\x00\tx'; say(c, '!pos'); c.name = keep;
+    if ((stats.cmds.say || 0) <= n0) throw new Error('!pos said nothing');
+    hit('say strips control characters');
+  });
+  // (2) a departed player's controller left in its slot (no disconnect event, IsConnected false): its AI role, seat, gun crew and
+  // helicopter go back at once, and the director gives the role to another bot
+  const after = (name) => until(() => pieces.every((x) => x.name !== name || x.done), 'set piece "' + name + '" to finish', 400);
+  piece('departed controller', 150, function* () {
+    yield after('one yield per human, withdrawn'); yield after('waiting human, AI pilot gone');
+    for (const role of ['pilot', 'crew']) {
+      yield until(() => everyone().some((c) => c.bot && c.pawn.hp > 0 && P(c) && P(c).aiRole === role && P(c).deployed), 'a bot with the AI ' + role + ' role', 120);
+      const c = everyone().find((x) => x.bot && x.pawn.hp > 0 && P(x) && P(x).aiRole === role && P(x).deployed), team = c.team, slot = c.slot, d0 = D.stats.departed || 0;
+      depart(c, 8); at(10, () => { if (!ctls[slot]) addPlayer(true, slot); });
+      yield 1;
+      const q = D.players.get(slot);
+      if (q && (q.aiRole || q.team)) throw new Error('slot ' + slot + ' (departed, controller left behind) still has ' + (q.aiRole ? 'the AI ' + q.aiRole + ' role' : 'a side'));
+      if (D.helis[team].some((h) => h.owner === slot || h.seats.some((s) => s.slot === slot))) throw new Error('a helicopter still belongs to departed slot ' + slot);
+      if (D.guns[team].some((g) => g.crew.includes(slot))) throw new Error('a gun crew still lists departed slot ' + slot);
+      yield until(() => [...D.players.values()].some((x) => x.team === team && x.aiRole === role && x.slot !== slot), 'another bot to take the AI ' + role + ' role', 15);
+      hit('departed controller: AI ' + role + ' handed on', (D.stats.departed || 0) - d0);
+    }
+  });
+  // (3) one AI helicopter comes home per waiting human; !infantry withdraws the request and nobody is put in a helicopter later
+  piece('one yield per human, withdrawn', 30, function* () {
+    const team = 2, keep = { p: CONFIG.AI.PILOTS, s: CONFIG.AI.MAX_ROLE_SHARE };
+    CONFIG.AI.PILOTS = 3; CONFIG.AI.MAX_ROLE_SHARE = 1;
+    const aiFlying = () => D.helis[team].filter((h) => h.ai && h.state === 'flying' && ctls[h.owner] && ctls[h.owner].bot && h.yieldTo < 0);
+    const who = () => everyone().find((c) => !c.bot && c.team === team && !c.stunt && c.pawn.hp > 0 && P(c) && P(c).deployed && P(c).role !== 'air' && !P(c).heli);
+    yield until(() => aiFlying().length >= 2 && who(), 'two AI helicopters in the air and a T human on foot', 240);
+    const a = grab(who()); a.god = true;
+    putAt(a, baseSpot(team)); yield 0.1;
+    say(a, '!air'); yield 0.3; say(a, '!air'); yield 0.3;
+    const yielding = D.helis[team].filter((h) => h.yieldTo === a.slot);
+    if (yielding.length > 1) throw new Error(yielding.length + ' AI helicopters were called home for one human');
+    if (!yielding.length) throw new Error('no AI helicopter was called home (role ' + P(a).role + ')');
+    hit('one AI helicopter per waiting human');
+    const h1 = yielding[0];
+    say(a, '!infantry'); yield 0.3;
+    if (D.helis[team].some((h) => h.yieldTo === a.slot) || P(a).waitRole) throw new Error('!infantry did not withdraw the helicopter request');
+    const t1 = time;      // the AI may land (it had turned for home) or fly on (it had not yet): either way he must stay on foot
+    yield until(() => (h1.state === 'parked' && d2(h1.pos, h1.pad.pos) < H().PAD_RADIUS) || h1.state === 'dead' || P(a).role === 'air' || time - t1 > 90, 'the AI helicopter back on its pad, or 90 s', 100);
+    yield 2;
+    if (P(a).role === 'air' || D.helis[team].some((h) => h.owner === a.slot)) throw new Error('a withdrawn request still put the player in a helicopter');
+    hit('withdrawn helicopter request');
+    CONFIG.AI.PILOTS = keep.p; CONFIG.AI.MAX_ROLE_SHARE = keep.s;
+  });
+  // (3b) the AI pilot of the helicopter coming home for a human leaves on the way: the human gets that helicopter (it was locked:
+  // no owner, and both the director and takeHeli skipped a helicopter with a yieldTo)
+  piece('waiting human, AI pilot gone', 30, function* () {
+    yield after('one yield per human, withdrawn');
+    const team = 3, keep = { p: CONFIG.AI.PILOTS, s: CONFIG.AI.MAX_ROLE_SHARE };
+    CONFIG.AI.PILOTS = 3; CONFIG.AI.MAX_ROLE_SHARE = 1;
+    const aiOwned = (h) => h.ai && ctls[h.owner] && ctls[h.owner].bot;
+    const who = () => everyone().find((c) => !c.bot && c.team === team && !c.stunt && c.pawn.hp > 0 && P(c) && P(c).deployed && P(c).role !== 'air' && !P(c).heli);
+    yield until(() => D.helis[team].every((h) => h.owner >= 0 && h.yieldTo < 0 && (!ctls[h.owner] || !ctls[h.owner].bot || (aiOwned(h) && h.state === 'flying'))) && D.helis[team].some(aiOwned) && who(),
+      'every CT helicopter held, the AI ones in the air, a CT human on foot', 300);
+    const a = grab(who()); a.god = true;
+    putAt(a, baseSpot(team)); yield 0.1;
+    say(a, '!air'); yield 0.3;
+    const x = D.helis[team].find((h) => h.yieldTo === a.slot);
+    if (!x) { if (P(a).role === 'air') { hit('waiting human: helicopter at once'); CONFIG.AI.PILOTS = keep.p; CONFIG.AI.MAX_ROLE_SHARE = keep.s; return; } throw new Error('no AI helicopter was called home'); }
+    quit(ctls[x.owner], 8);
+    yield until(() => P(a).role === 'air' && D.helis[team].some((h) => h.owner === a.slot), 'the waiting human to get a helicopter after its AI pilot left', 8);
+    if (D.helis[team].some((h) => h.yieldTo === a.slot)) throw new Error('a helicopter still waits for a human who has one');
+    hit('waiting human: helicopter whose AI pilot left handed over');
+    CONFIG.AI.PILOTS = keep.p; CONFIG.AI.MAX_ROLE_SHARE = keep.s;
+    say(a, '!artillery');
+  });
+  // (4) a pilot gone in the air over the river: the helicopter holds its height and creeps to the bank before it lets down
+  piece('pilot gone over the river', 100, function* () {
+    const team = 2, fly = (c) => c.team === team && !c.bot && !c.stunt && P(c) && P(c).heli && P(c).seat === 0 && P(c).heli.state === 'flying' && P(c).heli.alt > 100;
+    yield until(() => everyone().some(fly), 'a T human pilot in the air', 200);
+    const c = grab(everyone().find(fly)), h = P(c).heli;
+    const x = -1500, y = riverY(x); h.pos = { x, y, z: L.map.water_z + 260 }; h.vel = { x: 0, y: 0, z: 0 }; h.guardUntil = time + 120;
+    yield 0.1;
+    quit(c, 6);
+    yield until(() => h.landed || h.state === 'dead' || h.state === 'crashing', 'the pilotless helicopter to come down', 60);
+    if (h.state !== 'parked') throw new Error('the pilotless helicopter ditched in the river (' + h.state + ')');
+    if (inRiver(h.pos.x, h.pos.y)) throw new Error('landed in the river bed');
+    hit('pilotless helicopter crept off the river');
+  });
+  // (5) a pilot killed in the air redeploys on his pad while his empty helicopter lets itself down in the field: it is fetched
+  piece('pilot back on his pad', 100, function* () {
+    const team = 3, fly = (c) => c.team === team && !c.bot && !c.stunt && P(c) && P(c).heli && P(c).seat === 0 && P(c).heli.state === 'flying' && P(c).heli.alt > 100;
+    yield until(() => everyone().some(fly), 'a CT human pilot in the air', 200);
+    const c = grab(everyone().find(fly)), h = P(c).heli, sp = fieldSpot(h);
+    h.pos = { x: sp.x, y: sp.y, z: ground(sp.x, sp.y) + 2600 }; h.vel = { x: 0, y: 0, z: 0 }; h.guardUntil = time + 120;
+    yield 0.1;
+    c.pawn.hp = 0; die(c.pawn, undefined);
+    yield until(() => h.landed || h.state === 'dead', 'the empty helicopter to come down', 40);
+    if (h.state === 'dead') throw new Error('the empty helicopter was lost on the way down');
+    yield until(() => (P(c) && P(c).heli === h) || (h.state === 'parked' && d2(h.pos, h.pad.pos) < H().PAD_RADIUS), 'the helicopter back with its pilot (pilot ' + (P(c) && P(c).deployed ? 'deployed' : 'in the lobby') + ')', 20);
+    hit('helicopter fetched for its pilot', D.stats.fetched || 0);
+  });
+  // (6) an AI gunner left in a helicopter whose pilot quit in the field: the helicopter still goes home (and the gunner with it)
+  piece('AI gunner in an abandoned helicopter', 170, function* () {
+    yield after('departed controller');
+    CONFIG.AI.PILOTS = 0;                  // no AI pilot may fly the abandoned helicopter home: the ground crew must fetch it
+    const ok = (h) => h.state === 'parked' && ctls[h.owner] && !ctls[h.owner].bot && !ctls[h.owner].stunt && h.seats.some((s) => s.kind === 'gunner' && s.slot >= 0 && ctls[s.slot] && ctls[s.slot].bot && P(ctls[s.slot]).aiRole === 'gunner');
+    yield until(() => D.helis[2].concat(D.helis[3]).some(ok), 'a human\'s parked helicopter with an AI gunner aboard', 200);
+    const h = D.helis[2].concat(D.helis[3]).find(ok), sp = fieldSpot(h), r0 = D.stats.recalls;
+    quit(ctls[h.owner]);                   // not back: a newcomer in the slot could be drawn into the air role and fly it home himself
+    for (const c of everyone()) if (!c.bot && c.team === h.team) { grab(c); say(c, '!infantry'); }      // nor may the side's other humans
+    h.pos = { x: sp.x, y: sp.y, z: ground(sp.x, sp.y) }; h.guardUntil = time + 200;
+    for (const t of [2, 3]) D.game.tickets[t] = Math.max(D.game.tickets[t], 400);      // no round end (new helicopter objects) during the wait
+    const t0 = time;
+    yield until(() => d2(h.pos, h.pad.pos) < H().PAD_RADIUS || h.state !== 'parked' || time - t0 > H().ABANDON + 8, 'the abandoned helicopter to be fetched home', H().ABANDON + 10);
+    if (h.state !== 'parked' || d2(h.pos, h.pad.pos) > H().PAD_RADIUS) throw new Error('the abandoned helicopter is not on its pad (' + h.state + ', owner ' + h.owner + (ctls[h.owner] ? (ctls[h.owner].bot ? ' bot ' : ' human ') + P(ctls[h.owner]).aiRole : '') + ', ' + Math.round(d2(h.pos, h.pad.pos)) + ' u from it, recalls ' + (D.stats.recalls - r0) + ', aboard ' + h.seats.map((s) => s.slot < 0 ? '-' : (ctls[s.slot] && ctls[s.slot].bot ? 'bot' : 'human') + s.slot).join(' ') + ', idle ' + h.idleT.toFixed(1) + ')');
+    const g = h.seats.find((s) => s.kind === 'gunner' && s.slot >= 0);
+    if (g && ctls[g.slot] && ctls[g.slot].pawn.hp > 0 && d2(ctls[g.slot].pawn.pos, h.pos) > 400) throw new Error('the AI gunner was left behind in the field');
+    hit('abandoned helicopter with an AI gunner fetched home');
+    CONFIG.AI.PILOTS = 1;
+  });
+}
+
 // ------------------------------------------------------------------ churn: players come and go in whatever seat they are in
 function churn(step) {
   if (step % 150 !== 75) return;
@@ -1239,7 +1417,7 @@ function expect(dt, what, fn) { checks.push({ at: time + dt, what, fn }); }
 
 // ------------------------------------------------------------------ invariants: nothing a player left may still point at them
 function invariants() {
-  const seen = (slot) => { const c = ctls[slot]; return c && !c.spec ? c : null; };
+  const seen = (slot) => { const c = ctls[slot]; return c && !c.spec && !c.gone ? c : null; };
   for (const t of [2, 3]) {
     for (const h of D.helis[t]) {
       if (!fin(h.pos) || !fin(h.vel) || ![h.yaw, h.pitch, h.roll, h.hp].every(Number.isFinite)) fail('helicopter ' + h.tag + ' has a non-finite state');
@@ -1265,6 +1443,13 @@ function invariants() {
   for (const [slot, pr] of D.players) {
     const c = ctls[slot];
     if (!c) { if (pr.ctl) fail('the script still knows slot ' + slot + ' after it emptied'); continue; }
+    if (c.gone) { if (pr.ctl || pr.team || pr.aiRole) fail('the script still plays slot ' + slot + ' after its player left (controller left behind, ' + (pr.aiRole ? 'AI ' + pr.aiRole : pr.role) + ')'); continue; }
+    // a panel shown with no text: its text went with a HUD reset (round restart, slot change) while the timer that shows it ran on
+    if (!c.bot && !loading.has(slot)) {
+      const st = hudState.get(slot);
+      for (const [panel, text] of [['mv_banner', 'mv_banner_title'], ['mv_toast', 'mv_toast_text'], ['mv_info', 'mv_info_title']])
+        if (shows(slot, panel) && !(st && st.has(text + '$'))) fail('player ' + slot + ' sees an empty ' + panel + ' (round ' + stats.rounds + ', t ' + time.toFixed(0) + ')');
+    }
     if (pr.heli && pr.heli.seats[pr.seat].slot !== slot) fail('player ' + slot + ' thinks it is in a seat it does not hold');
     if (pr.mount >= 0 && D.mounts[pr.mount].user !== slot) fail('player ' + slot + ' thinks it mans a gun it does not hold');
     if (pr.aiRole) { aiSeen[pr.aiRole] = aiSeen[pr.aiRole] || (pr.aiRole === 'crew' ? D.stats.aiShots > 0 : pr.aiRole === 'pilot' ? !!pr.heli && pr.heli.state === 'flying' : D.stats.aiGunTicks > 0); if (!LOWPOP && !BAL && HUMANS < 0 && SCEN !== 'churn') aiWhenCrowded = true; }
@@ -1314,7 +1499,7 @@ for (let step = 0; step < SECONDS * 64 && !balDone; step++) {
     if (D.flags.map((f) => f.owner).join() !== owners.join()) fail('flag owners not carried over a script reload');
     hit('script reload');
   }
-  if (FEATURES || SCEN === 'edge') runPieces();
+  if (FEATURES || SCEN === 'edge' || SCEN === 'review2') runPieces();
   for (const c of everyone()) {
     const p = c.pawn; p.keys = 0;
     if (c.spec || p.hp <= 0) continue;
@@ -1470,7 +1655,7 @@ console.log(JSON.stringify({ script: { ...S, heliLives: S.heliLives.length, resu
   cmds: stats.cmds, setModel: stats.setmodel, maxAlt: Math.round(maxAlt), tickets: D.game.tickets, flags: D.flags.map((f) => f.id + ':' + f.owner).join(' '), churn: stats.churn } }));
 if (unusedIds.length) console.log('HUD contract ids never used in this run: ' + unusedIds.join(' '));
 // ---- coverage: feature -> times exercised. Set pieces fill cov; the rest comes from the script's own counters.
-if (FEATURES || SCEN === 'edge') {
+if (FEATURES || SCEN === 'edge' || SCEN === 'review2') {
   const used = (id) => { const c = contract.get(id); return c && (c.textUsed || c.used.size) ? 1 : 0; };
   const table = FEATURES ? {
     ...cov,
@@ -1481,7 +1666,7 @@ if (FEATURES || SCEN === 'edge') {
     'kills by artillery': S.killsBy.arty || 0,
     'helicopter lost with riders (crash kills)': Object.entries(S.killsBy).filter(([k]) => !['rifle', 'mg', 'other'].includes(k)).reduce((a, [, v]) => a + v, 0),
   } : cov;
-  const need0 = !opt.piece && (SECONDS >= 600 || SCEN === 'edge');
+  const need0 = !opt.piece && (SECONDS >= 600 || SCEN === 'edge' || SCEN === 'review2');
   console.log('coverage (feature -> times exercised):');
   for (const [k, v] of Object.entries(table)) { console.log('  ' + String(Math.round(v * 10) / 10).padStart(6) + '  ' + k); if (need0 && !(v > 0)) fail('coverage: "' + k + '" was never exercised'); }
   for (const pc of pieces) if (!pc.done && need0) fail('set piece "' + pc.name + '" did not finish (waiting for: ' + (pc.what || 'its start') + ')');

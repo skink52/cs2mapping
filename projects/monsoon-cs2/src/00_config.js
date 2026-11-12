@@ -2,7 +2,7 @@
 // battery, five flags, tickets. cs_script only, no plugins. Rules: docs/DESIGN.md 3; names: docs/CONTRACT.md; HUD ids: docs/SCRIPT.md.
 // Every tunable is in CONFIG. Units: Hammer units (40 u = 1 m), seconds, degrees.
 
-const VERSION = "mv-0.3 (12 Nov 2026, review pass 1)";
+const VERSION = "mv-0.4 (12 Nov 2026, review pass 2)";
 
 const CONFIG = {
   HUD: "mv_hud", PARAMS: "mv_params",
@@ -55,7 +55,7 @@ const CONFIG = {
   // ---- helicopters (DESIGN 3.2). Model numbers are in HELI_MODELS; offsets are in the NOSE frame: x forward, y left, z up,
   // origin on the ground under the mast.
   HELI: {
-    COUNT: 3, HEALTH: 100, SMOKE_HP: 35, RESPAWN: 45, WRECK_TIME: 40, SPAWN_GUARD: 3, ABANDON: 45, LOSS_TICKETS: 0,
+    COUNT: 3, HEALTH: 100, SMOKE_HP: 35, RESPAWN: 45, WRECK_TIME: 40, SPAWN_GUARD: 3, ABANDON: 45, FETCH: 3, LOSS_TICKETS: 0,   // FETCH: own pilot waits on the pad
     VS_MAX: 380, VS_EASE: 0.4, VS_SETTLE: 1.5,              // collective
     YAW_RATE: 70, YAW_GAIN: 3.5,                            // pedals: nose follows the eye yaw
     V_FWD: 900, V_BACK: 350, V_SIDE: 380, ACCEL: 0.7,       // cyclic: speed eases to the target at ACCEL / s

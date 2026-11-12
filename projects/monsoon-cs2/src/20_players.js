@@ -76,17 +76,28 @@ function takeHeli(p, team) {
   const list = (helis[team] || []).filter((h) => h.ent);
   let h = list.find((x) => x.owner === p.slot);
   if (h) return "ok";
-  const open = list.filter((x) => x.owner < 0 && x.yieldTo < 0);          // an armed one that is standing on its pad first
+  // free ones (and one that was coming home for p whose AI pilot has gone meanwhile: it was locked for the round, review 2);
+  // an armed one that is standing on its pad first
+  const open = list.filter((x) => x.owner < 0 && (x.yieldTo < 0 || x.yieldTo === p.slot));
   h = open.find((x) => x.state !== "dead" && x.M.ROCKETS > 0) || open.find((x) => x.state !== "dead") || open[0];
-  if (h) { h.owner = p.slot; return "ok"; }
+  if (h) { h.owner = p.slot; cancelAirWait(p); return "ok"; }
   if (p.bot) return "";
+  // one AI helicopter comes home per human: a second !air (or a respawn with the air preference) used to call a second one, and
+  // every AI pilot after the first landed and quit for nobody (review 2)
+  if (list.some((x) => x.yieldTo === p.slot)) return "wait";
   for (const x of list) {
     const q = players.get(x.owner);
     if (!q || !q.bot) continue;
+    if (x.yieldTo >= 0) continue;                                          // already coming home for someone else
     if (x.state === "parked" || x.state === "dead") { aiRelease(q, true); x.owner = p.slot; x.yieldTo = -1; return "ok"; }
-    if (x.yieldTo < 0) { x.yieldTo = p.slot; return "wait"; }
+    x.yieldTo = p.slot; return "wait";
   }
   return "";
+}
+// a human who asked for a helicopter the AI was flying and then wants something else: the AI keeps it (it no longer comes home)
+function cancelAirWait(p) {
+  p.waitRole = "";
+  for (const h of helis[p.team] || []) if (h.yieldTo === p.slot) h.yieldTo = -1;
 }
 function leaveHeliRole(p) { for (const h of helis[p.team] || []) { if (h.owner === p.slot) h.owner = -1; if (h.yieldTo === p.slot) h.yieldTo = -1; } }
 function setRole(p, role, team) {
@@ -121,6 +132,11 @@ function chooseRole(p, team) {
 function requestRole(p, role, force) {
   const team = p.team;
   if (team !== T && team !== CT) return;
+  if (role !== "air" && (p.waitRole === "air" || (helis[team] || []).some((h) => h.yieldTo === p.slot))) {
+    cancelAirWait(p);                     // !infantry / !artillery after !air: no helicopter is forced on him when the AI lands (review 2)
+    toast(p, "Helicopter request cancelled", 3);
+    if (p.role === role) return;
+  }
   if (p.role === role && (role !== "air" || ownHeli(p))) { toast(p, "You are " + ROLE_NAME[role].toLowerCase() + " already", 2); return; }
   const pawn0 = pawnOf(p.slot);
   let up = false; try { up = !!pawn0 && pawn0.IsAlive(); } catch (e) {}

@@ -7,7 +7,9 @@ const stats = { rounds: 0, gunShots: 0, rockets: 0, fired: 0, shells: 0, beehive
                 feed: 0, smokeBlocked: 0, smokes: 0, beltReloads: 0, rocketHeliHits: 0, heliGuard: 0, padRepairs: 0, padRearms: 0, recalls: 0, ditched: 0,
                 hardLandings: 0, crashLandings: 0, softWall: 0, wrecksCleared: 0, ropes: 0, jumps: 0, beehiveShots: 0, shellHits: 0, missionShells: 0, missionHits: 0,
                 flashes: 0, foAssists: 0, kitDenied: 0, flagSpawns: 0, spawnAboard: 0, spawnGuard: 0, afk: 0, joins: 0, lateJoins: 0, perfLines: 0, sanitised: 0,
-                teamSwitches: 0, reloads: 0, roleDeferred: 0, botRockets: 0, heliLostTeam: { 2: 0, 3: 0 }, bleedOn: { 2: 0, 3: 0 }, crashSurvivors: 0 };
+                teamSwitches: 0, reloads: 0, roleDeferred: 0, botRockets: 0, heliLostTeam: { 2: 0, 3: 0 }, bleedOn: { 2: 0, 3: 0 }, crashSurvivors: 0,
+                // review 2
+                departed: 0, hudActivates: 0, fetched: 0 };
 let roster = [];
 const rosterAt = new Array(64).fill(null);
 let lastTick = 0, perfAt = 0, perfTicks = 0, perfMs = 0, perfMax = 0, tickNo = 0;
@@ -47,8 +49,18 @@ function buildRoster() {
   roster = [];
   for (let s = 0; s < 64; s++) {
     rosterAt[s] = null;
-    const ctl = Instance.GetPlayerController(s);
-    if (!ctl) { const old = players.get(s); if (old && old.ctl) forgetPlayer(old); continue; }
+    let ctl = Instance.GetPlayerController(s), pawn;
+    let alive = false, team = 0, pos = null;
+    if (ctl) {
+      try { pawn = live(ctl.GetPlayerPawn()); } catch (e) { pawn = undefined; }
+      if (pawn) { try { alive = pawn.IsAlive(); team = pawn.GetTeamNumber(); if (alive) pos = pawn.GetAbsOrigin(); } catch (e) { alive = false; } }
+      if (alive && !finiteV(pos)) alive = false;
+      // CS2 can leave a departed player's controller in the slot (IsConnected false), often with no disconnect event (a bot kicked
+      // by bot_quota fill for a joining human). Its record kept its AI role, gun crew seat and helicopter, so the team's AI pilot /
+      // crew never came back, and a departed human still counted as a human (review 2). A live pawn is someone who is here.
+      if (!alive) { let on = true; try { on = ctl.IsConnected(); } catch (e) {} if (!on) { ctl = undefined; if (players.has(s)) stats.departed++; } }
+    }
+    if (!ctl) { const old = players.get(s); if (old && (old.ctl || old.team)) forgetPlayer(old); continue; }
     let p = P(s);
     if (p.ctl !== ctl) {                       // a slot can change hands with no disconnect event
       if (p.ctl) { forgetPlayer(p); p = P(s); }
@@ -57,10 +69,6 @@ function buildRoster() {
       stats.joins++; if (game.start && !game.over && TNOW - game.start > 30 && !p.bot) stats.lateJoins++;
       if (!p.bot) hudReset(p);                 // whatever the last player in this slot had on screen
     }
-    const pawn = live(ctl.GetPlayerPawn());
-    let alive = false, team = 0, pos = null;
-    if (pawn) { try { alive = pawn.IsAlive(); team = pawn.GetTeamNumber(); if (alive) pos = pawn.GetAbsOrigin(); } catch (e) { alive = false; } }
-    if (alive && !finiteV(pos)) alive = false;
     // a dead or spectating player who left the side: their seats and roles go back at once (a live one is handled in thinkPlayer)
     if (p.team && !alive) { let ct = p.team; try { ct = ctl.GetTeamNumber(); } catch (e) {} if (ct !== p.team) { stats.teamSwitches++; leaveTeam(p, pawn); } }
     const r = { slot: s, p, pawn, alive, team, pos, seated: !!p.heli, bot: p.bot };
@@ -309,6 +317,15 @@ Instance.OnPlayerDisconnect(({ playerSlot }) => {
   const p = players.get(playerSlot);
   if (p) forgetPlayer(p);
 });
+// HUD changes sent before a joining client has loaded are lost (cs2-gotchas), while the cache believes they are on screen: start the
+// cache again when the client is ready, so everything is sent once more (review 2, defensive)
+if (typeof Instance.OnPlayerActivate === "function") {
+  Instance.OnPlayerActivate(({ player }) => {
+    let s = -1; try { s = player ? player.GetPlayerSlot() : -1; } catch (e) {}
+    const p = s >= 0 ? players.get(s) : undefined;
+    if (p && !p.bot) { TNOW = now(); hudReset(p); stats.hudActivates++; }
+  });
+}
 // which stats bucket a CS2 weapon kill or hit belongs to
 function weaponSrc(weapon) {
   let cls = ""; try { cls = weapon ? weapon.GetClassName() : ""; } catch (e) {}
