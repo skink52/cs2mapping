@@ -270,3 +270,85 @@ Whole compile time is unchanged.
   into small pieces), not the outer rims.
 - FPS with bots at 12,597 areas is to be seen at the first launch (mg_trenchwarfare lost FPS at 44k, runs 4,376).
 - Not launched: BUILD.md step 12 is the next step, for skink52.
+
+## Stage 5 (playtest 1 build): batches S, W, G, P integrated, recompiled (13 Nov 2026, 02:30-06:18)
+
+Level reached: the map is **compiled** (resourcecompiler `OK: 1024 compiled, 0 failed, 0 skipped, 53m:06s`, `mg_monsoon OK 53.1 min`,
+vpk in `game\csgo_addons\mg_monsoon\maps\`), and every asset this build changed is compiled. Not Hammer verified, not in-game verified.
+No `cs2.exe` or Hammer ran (checked before both deploys and before every compile). The 3D skybox was not recompiled: `make_sky.py`,
+`make_skybox.py` and toolkit.json `skybox` are unchanged, and the only layout function it reads, `ground_low` (= `base_terrain`), was not
+touched by batch W (the river carve is in `carved()`). Batches S, G and P had compiled their own assets; this stage built, deployed and
+compiled batch W's map and assets, and the shared-code rebuild of W's props. Fix records: FIX_PT1_S/W/G/P.md; what to test: TESTING_MONSOON.md
+"Playtest 2 checklist".
+
+### Commands and times
+| # | What | Command | Time | Result |
+|---|---|---|---|---|
+| 1 | Shared tools | from `cs2mapping`: port batch S's inward-normals fix (`orient_normals`, `smooth_normals`, `fix_normals`, `normals` subcommand) into `create/gmod_assets.py`; `python create/libsync.py ack create/gmod_assets.py`; `check` | minutes | `libsync: all in step` (checked again at the end, after `ack create/check_play.py` for this stage's monsoon-only nav calibration) |
+| 2 | W's props with P's UV / atlas code | `watchdog ... -- python -u build_all_props.py <16 p_jungle props> <8 sandbag walls>` (vine_curtain left out: no longer placed); `python p_jungle.py`, then at once `python mv_flag_anim.py ../out/addon`; `lod_decimate.py` on the 8 walls; `prop_lint.py` | 6.5 min + seconds | 24 built, 0 failed; `flag_pole.vmdl` lists `flag_00..flag_20` (21), archetype `animated_model`; prop_lint **134 props, 0 bad** (after the two fixes below) |
+| 3 | Map, 5 builds | `watchdog ... -- python -u make_map.py ../out/template.vmap ../out/addon/maps/mg_monsoon.vmap ../out/addon` (logs `out/logs/pt1_map5..9.log`) | 601-929 s each | build 9 (final): 7,620 entities, 1,843 meshes (477 water prisms), 6,774 prop_static, 259 `func_nav_markup` (244 NONAV), 67-69 MB |
+| 4 | Offline checks on build 9 | `check_mesh.py`, `check_world.py`, `check_play.py`; `make_radar.py ../out/addon ../out/game`, `render_board.py`, `mv_hud.py`; project folder: `node tools/build_script.mjs`, `node test/mock.mjs 32 300`, `12 240 scenario=pt1 humans=4`, `14 300 scenario=weapons humans=6`; `api.py --strict --check` | about 10 min | 1,862 meshes 0 bad / clean (8) / clean (10) / done / HUD gate 0 problems / mv-0.7, 4,112 lines / PASS / PASS / PASS / 0 problems |
+| 5 | Deploy 1 | `python -I tools/deploy_monsoon.py --list`, then `--apply` | seconds | 70 created, 92 replaced, 3,171 unchanged (177 MB); vmap backed up as `mg_monsoon.vmap.bak_20261113_034503` (the stage 4 map); `out/deploy/mg_monsoon_deploy_20261113_034503.json` |
+| 6 | Assets | scratchpad script, one `resourcecompiler -f [-r] -i <file> -nop4` at a time from `C:\source1\cs2port`, waiting for any other resourcecompiler (log `C:\source1\cs2port\logs\pt1_build_assets.log`) | 5 min (03:46-03:51) | 45 jobs, each `OK ... 0 failed`, no error or warning line: 16 material folders (rebuilt jungle props, vine_drape), 25 vmdls (8 walls, vine_drape, 15 jungle props, flag_pole), `postprocess_filmic_underwater.vpost`, the radar `.vtex`, HUD css (308 compiled, with the board and loading-slide PNGs) and xml. The script was byte-identical to batch G's deploy: not recompiled |
+| 7 | Map, run 1 | from `C:\source1\cs2port`: `watchdog --label "mg_monsoon final pt1" --expect 3000 --heartbeat 300 --stall 900 --max 9000 --log logs\mg_monsoon_pt1_watch.log --watch logs\mg_monsoon_build.log -- powershell ... build_maps.ps1 final mg_monsoon` | 56.8 min (03:52-04:48) | `OK: 547 compiled, 0 failed`, but 4 `func_water`s without a physics hull (below); log kept as `out/logs/mg_monsoon_build_pt1_run1.log` |
+| 8 | Water fix, test compiles, regenerate, checks, deploy 2 | three world + phys test maps (below); `mv_terrain.water_volume(pieces=True)`; steps 3-4 again; deploy | 1 h | deploy 2: 3 replaced (the vmap, TESTING_MONSOON.md in both roots), backup `mg_monsoon.vmap.bak_20261113_052359`; `out/deploy/mg_monsoon_deploy_20261113_052359.json` |
+| 9 | Map, run 2 | as 7 (`--expect 3500 --max 10500 --log logs\mg_monsoon_pt1b_watch.log`) | **53.1 min** (05:25-06:18) | `OK: 1024 compiled, 0 failed, 0 skipped, 53m:06s`; log kept as `out/logs/mg_monsoon_build_pt1.log`, watchdog log `out/logs/mg_monsoon_pt1_watch.log` |
+
+### Fixed along the way
+- **Sandbag walls: 838-2,255 zero-area triangles per LOD0** (prop_lint). The bag's superellipsoid poles sat at `cos(pi/2)` = 6e-17, which
+  the 0.34 power spread into rings about 1e-5 u wide: their faces had a float area over build_prop's zero-area cut and collapsed when the
+  SMD rounds to 1e-4. `p_sandbag_mv.bag` snaps the poles to the axis; LOD0 9,576-23,981 tris (was 10,877-27,335), LOD2-4 unchanged.
+  The generic fix (measure the area on the rounded positions in `create/build_prop.write_multi_smd`) is not made: build_prop is shared
+  with mg_trenchwarfare.
+- **prop_lint stopped on the rigged flag pole**: `flag_pole.vmdl` names 21 animation SMDs (skeleton only). `tools/prop_lint.py` skips an
+  SMD with a skeleton and no triangles.
+- **Flag A cover 14 -> 12 head-height pieces** (check_play 3 wants 14): batch P's rice-straw stack (100 u across, was 92) no longer fitted on
+  the threshing floor (1 of 4) and its ox cart (190 u long, was 164) found no spot in the farm yard. `mv_places.paddies`: farm cart search
+  260 -> 360, island stacks at scale 0.92 (the old footprint, 96 u tall; `W.fit` now passes `scale` to its footprint pre-test). A 15 / 2.
+  Two attempts that did not help: a wider search, and letting the stacks onto the island's shoulder (too steep for `fit`).
+- **The river, upper reach, marsh and oxbow had no water physics.** Run 1 logged, for exactly these four `func_water`s (nodes 807-813;
+  find the entity behind `unnamed_<id>` by its node id with `vmapedit.Map`):
+  `ExtrudeReplaceHull failed to build new convex hull with extrusion 0.007812` / `Encountered issues while adding mesh from node 808 to
+  entity model maps/mg_monsoon/entities/unnamed_807.vmdl` / `Warning: Failed to create physics hulls for one or more meshes.` Their PHYS
+  blocks were 2.0-4.2 KB against 4.7 KB for one small paddy box: no volume to swim in. Test maps (template + water only, `resourcecompiler
+  -world -phys`, 8-12 s each, written to the scratchpad and removed): failed: the marsh as built (512 grid), the same footprint as one box at
+  170 u and at 13 u deep, a single 512 box, three 512 boxes in one entity, a 96 x 1200 box, the marsh footprint on a 256 grid, a curved
+  2-column strip; passed: 256 and 384 boxes, a 96 x 600 box, a 512 box on a 256 grid, the paddy control, the curved strip and the marsh as
+  **one prism per top face**. `mv_terrain.water_volume(pieces=True)` (strips and rect sheets; marsh grid 512 -> 256; a non-convex quad split in
+  two): the map's real water then test-compiled with 0 hull issues, and in run 2 none either; the river's PHYS is 506 KB, the upper reach,
+  marsh and oxbow 107 / 47 / 19 KB. The paddies (small boxes) passed as they were. cs2-gotchas.md has the rule.
+
+### Before / after
+| | Stage 4 | Stage 5 (run 2) |
+|---|---|---|
+| Whole compile | 42.0 min | **53.1 min** (run 1: 56.8) |
+| Entities / meshes / prop_static | 7,663 / 1,377 / 6,841 | 7,620 / 1,843 (477 water prisms) / 6,774 |
+| Vis | 152,931 clusters merged to 4,096 | 157,476 clusters (36,481 after the first merges) merged to 4,096; vis 1,065 s |
+| Lightmap | 1,883 meshes charted in 118 s, 291,230 charts | **2,585 meshes** in 94 s, **390,604 charts** into 2048 x 2048, lightmapping 672 s on the GPU (2.5 of 11.9 GB), seams welded in 15 s, no out-of-memory |
+| Nav polys: Recast / after NONAV / merged | 40,191 / 27,485 / 18,149 | 40,841 / 28,546 / 19,273 |
+| **Nav areas** (`Nav mesh (v36/1) loaded with N nav areas`) | **12,597** | **13,739** (run 1: 13,733); check_play estimated ~12,645 |
+| CSGO: early occupy / hiding / encounter / **approach areas** | 11 s / 6 s / 17 s / **454 s** | 13 s / 7 s / 29 s / **1,044 s** (run 1: 1,248 s) |
+| nav file | 2,928,009 bytes | 3,275,946 bytes |
+| vpk | 170,748,319 bytes | 266,511,224 bytes (the tunnel field, 390 k lightmap charts, the new props) |
+| Triangles outside vis | | 2,362 / 512,666; 1 % of 4.08 M triangles 240+ u from lightmap volumes (expected: karst tops, far slopes) |
+| `DELETED` props / entities | 0 | 0 (only Steam Audio's "baked data file will be deleted") |
+| Missing models / materials of ours | 0 | 0 |
+| Known harmless | | `survival_river_0{2,4}_..._tga_...` (18 lines, 16 error-texture fallbacks: the baker's albedo for the stock river vmat) and `detail_prop_types.vdata_c` (1), as in Stage 2 |
+| Physics hull warnings | 0 | 0 (run 1: 4, the water volumes) |
+| Water | open sheets of a non-water material | 20 `func_water` volumes in `rush_water_river_01a` / `hr_aztec_water_shallow`, compiled with hulls; 482 water render nodes (`nomerge`, one per prism top; about 24 before the prisms) |
+| Tunnel mesh | voxel mesh | compiled into the world aggregates (ceiling wood 40,008 tris, dirt 29,822, mud 10,158, timber 2,998); no tunnel-specific line, no T-junction or pinch error |
+
+`check_play.py` is recalibrated on this compile (91,163 cells = 13,739 areas, 0.151 per cell): the organic tunnel floors and the bank and
+ford slopes are cut into small areas. The nav rose 9 % over stage 4 and "Compute Approach areas" more than doubled (454 -> 1,044 s): the
+compile is 11 min longer, nearly all of it there.
+
+### Remains
+- **Nav 13,739 areas, approach areas 17 min.** Still a third of mg_trenchwarfare's 44k; FPS with bots is to be seen in playtest 2. If it
+  costs, the lever is NONAV over the deep channel and the tunnel side galleries (`mv_entities.NAV_ZONES`), measured with `check_play.py --nav-plan`.
+- **482 water draw calls.** One translucent node per prism top. Same pixels as before; watch FPS looking along the river in playtest 2. If it
+  costs, try one render-only top sheet per body with nodraw prisms for the physics (untested: the sheet itself would then log a hull warning).
+- `create/build_prop.write_multi_smd` should drop zero-area faces measured on the rounded positions (generic form of the sandbag fix; shared
+  with mg_trenchwarfare, not changed here). `tools/watervol.py` (stage D `water`) merges touching water meshes into one func_water and may
+  hit the same hull limit on ported maps.
+- Lightmap charts rose to 390,604 (tunnel field, new props): fits 2048 with room (trench: 1.37 M).
+- Not launched: BUILD.md step 12, then TESTING_MONSOON.md "Playtest 2 checklist", for skink52.

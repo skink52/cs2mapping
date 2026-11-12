@@ -233,23 +233,23 @@ def strip_sheet(pts_xy, half_w, z, mat, group, step_t=None, cols=3, square=(), f
     verts = np.asarray(verts, float)
     a, b, c = verts[faces[0][0]], verts[faces[0][1]], verts[faces[0][2]]
     if np.cross(b - a, c - a)[2] < 0: faces = [f[::-1] for f in faces]
-    water_volume(verts, faces, z_bot, mat, group)
+    water_volume(verts, faces, z_bot, mat, group, pieces=True)
     return len(faces)
 
 
-def rect_sheet(x0, y0, x1, y1, z, mat, group, cell=256.0, z_bot=None):
+def rect_sheet(x0, y0, x1, y1, z, mat, group, cell=256.0, z_bot=None, pieces=True):
     nx = max(1, int(round((x1 - x0) / cell))); ny = max(1, int(round((y1 - y0) / cell)))
     X, Y = np.meshgrid(np.linspace(x0, x1, nx + 1), np.linspace(y0, y1, ny + 1), indexing='ij')
     Z = np.full(X.shape, float(z))
     verts, faces, mats = vmesh.grid_sheet(X, Y, Z, lambda i, j: mat)
-    water_volume(verts, faces, z - 8.0 if z_bot is None else z_bot, mat, group)
+    water_volume(verts, faces, z - 8.0 if z_bot is None else z_bot, mat, group, pieces=pieces)
     return len(faces)
 
 
 WATER_BOXES = []          # (lo, hi, material) of every water volume made, for the probes
 
 
-def water_volume(verts, faces, z_bot, mat, group, name=None):
+def water_volume(verts, faces, z_bot, mat, group, name=None, pieces=False):
     """playtest 1: water CS2 treats as water (wading, swimming, splashes, the underwater view) is a CLOSED volume in a func_water:
     the sheet (faces CCW from above) is the top in the water material, the same faces at z_bot under it and the walls round its edge
     are toolsnodraw (docs/reference/cs2-gotchas.md, water). The material must carry mapbuilder.water / mapbuilder.nonsolid (Valve's
@@ -257,6 +257,32 @@ def water_volume(verts, faces, z_bot, mat, group, name=None):
     V = np.asarray(verts, float); n = len(V)
     Vb = V.copy(); Vb[:, 2] = z_bot
     allv = np.vstack([V, Vb])
+    if pieces:
+        # 13 Nov (playtest 1 build, BUILD_LOG_1 "Stage 5"): resourcecompiler gives a func_water mesh no physics hull ("ExtrudeReplaceHull
+        # failed ... Failed to create physics hulls") when the mesh is curved (the river and oxbow strips) or long (the marsh as one box,
+        # even on a 256 grid; a single 512 box; a 96 x 1200 box), so the river, marsh and oxbow had no water to swim in. Test maps
+        # (world + phys compile) passed 256 / 384 boxes and every set of per-face prisms. So: one func_water, one closed prism per top face.
+        e = vmaplib.ent('func_water', ((V[:, 0].min() + V[:, 0].max()) / 2, (V[:, 1].min() + V[:, 1].max()) / 2, float(V[:, 2].max())), group=group,
+                        **({'targetname': name} if name else {}))
+        def area2(q): return sum(V[q[j], 0] * V[q[(j + 1) % len(q)], 1] - V[q[(j + 1) % len(q)], 0] * V[q[j], 1] for j in range(len(q)))
+        convex = []
+        for f in faces:                       # a non-convex quad (the clipped square end of a strip) -> two triangles that stay CCW
+            f = list(f)
+            if len(f) == 4:
+                P2 = V[f][:, :2]; d1 = np.roll(P2, -1, 0) - P2; d2 = np.roll(P2, -2, 0) - np.roll(P2, -1, 0)
+                cr = d1[:, 0] * d2[:, 1] - d1[:, 1] * d2[:, 0]
+                if not ((cr > 1e-6).all() or (cr < -1e-6).all()):
+                    for t1, t2 in (([f[0], f[1], f[2]], [f[0], f[2], f[3]]), ([f[1], f[2], f[3]], [f[1], f[3], f[0]])):
+                        if area2(t1) > 1e-6 and area2(t2) > 1e-6: convex += [t1, t2]; break
+                    continue
+            convex.append(f)
+        for f in convex:
+            k = len(f); pv = np.vstack([V[list(f)], Vb[list(f)]])
+            pf = [list(range(k)), [k + j for j in range(k)][::-1]] + [[j, k + j, k + (j + 1) % k, (j + 1) % k] for j in range(k)]
+            pm = [mat] + [NODRAW] * (k + 1)
+            e.attr('children')[2].append(vmesh.mesh_node(vmesh.polymesh_open(pv, pf, pm, scale=0.5), group, attach=False, bake=False, shadows=False))
+        WATER_BOXES.append((allv.min(0), allv.max(0), mat))
+        return e
     used = {}
     for f in faces:
         for k in range(len(f)): used[(f[k], f[(k + 1) % len(f)])] = used.get((f[k], f[(k + 1) % len(f)]), 0) + 1
@@ -289,7 +315,7 @@ def build_water(group):
     while yr0 > -L.TERRAIN_Y and not (L.height(xm, np.full(xm.shape, yr0)) >= L.WATER_Z + 4.0).all(): yr0 -= 32.0
     while yr1 < L.TERRAIN_Y and not (L.height(xm, np.full(xm.shape, yr1)) >= L.WATER_Z + 4.0).all(): yr1 += 32.0
     yr0 -= 64.0; yr1 += 64.0                                      # one mesh cell more: the 64-u mesh dips between the samples
-    n += rect_sheet(MX, yr0, L.TERRAIN_X, yr1, L.WATER_Z, WATER, group, cell=512.0, z_bot=bot)
+    n += rect_sheet(MX, yr0, L.TERRAIN_X, yr1, L.WATER_Z, WATER, group, cell=256.0, z_bot=bot)      # 13 Nov: 512 -> 256, as per-cell prisms (water_volume pieces)
     # the oxbow lake
     n += strip_sheet(L.OXBOW, 86.0, L.WATER_Z, WATER, group, cols=2, z_bot=L.WATER_Z - L.OXBOW_DEPTH - 30.0)
     # paddies: one sheet per cell, inset past the dike foot so the edge is buried in the rising floor

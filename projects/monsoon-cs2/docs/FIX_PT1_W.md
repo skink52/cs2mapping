@@ -42,3 +42,9 @@ in-game verified until skink52 plays the next compile.
 - 13 Nov 2026: build 1 (check fixes: footing-aware tests, swim model, pocket cells, bridge NONAV), build 2 (frames off junctions, leash
   points, lip ferns, probe tops), build 3 (bridge steep box, chamber crate stack, ammo wall): check_play clean; build 4 (crate stack,
   audit pair). Batch S's two `mv_entities.py` changes (IdleAnim on the Apache and the flag poles) are in.
+- 13 Nov 2026, integrated playtest 1 build (the lead; docs/BUILD_LOG_1.md "Stage 5"): W's props rebuilt with batch P's UV / atlas code
+  (`p_sandbag_mv.py` bag poles snapped to the axis: 840-2,250 zero-area slivers per wall had passed build_prop and collapsed in the SMD;
+  prop_lint 0 bad). The first compile of W's water showed `Failed to create physics hulls` on the river, upper reach, marsh and oxbow
+  `func_water`s (curved or long meshes get no hull: test compiles in BUILD_LOG_1 "Stage 5"); `mv_terrain.water_volume(pieces=True)` now
+  builds each of them as one closed prism per top face (marsh grid 512 -> 256), 0 hull warnings, recompiled. Flag A cover kept at 14+
+  (`mv_places.paddies`: island haystacks at 0.92 scale, farm ox cart search 360) after P's larger stack and cart stopped fitting.

@@ -299,9 +299,10 @@ class World:
             if d < rr: return (hx, hy)
         return None
 
-    def taken(self, model, x, y, yaw, pad=0.0):
+    def taken(self, model, x, y, yaw, pad=0.0, scale=1.0):
         """quick test before the slow ground calls: does the model's footprint here touch anything recorded, at any height"""
-        f = self.PL.footprint(model, x, y, 0.0, yaw, (1, 1, 1), pad); f['z'] = (-1e6, 1e6)
+        sc = (scale,) * 3 if isinstance(scale, (int, float)) else tuple(scale)
+        f = self.PL.footprint(model, x, y, 0.0, yaw, sc, pad); f['z'] = (-1e6, 1e6)
         return self.PL.hits(f) is not None
 
     def fit(self, name, x, y, yaw, search=200.0, step=40.0, max_slope=14.0, stock=None, within=None, **kw):
@@ -312,7 +313,7 @@ class World:
         for dx, dy in spots:
             px, py = x + dx, y + dy
             if within is not None and math.hypot(px - within[0], py - within[1]) > within[2]: continue
-            if self.taken(stock or S.mv(name), px, py, yaw, kw.get('pad', 0.0)) or float(L.slope(px, py)) > max_slope: continue
+            if self.taken(stock or S.mv(name), px, py, yaw, kw.get('pad', 0.0), kw.get('scale', 1.0)) or float(L.slope(px, py)) > max_slope: continue
             if self.prop(name, px, py, None, yaw, stock=stock, check=True, _quiet=True, **kw) is not None: return (px, py)
         self.big_skips.append('%s: no free spot within %.0f of (%.0f, %.0f)' % (name or stock, search, x, y))
         return None
@@ -1450,7 +1451,10 @@ def paddies():
     # baskets round it, closed the flag in (check_play 1: flag A unreachable). The flag stands in the open middle of the floor.
     W.keep(fx, fy, 70.0, name='flag'); W.keep(fx, fy - 60.0, 30.0, name='seed')
     for (dx, dy) in ((108.0, -78.0), (-112.0, -70.0), (118.0, 84.0), (-150.0, 60.0)):
-        W.fit('haystack', fx + dx, fy + dy, rng.uniform(0, 360), search=60.0, step=20.0, pad=2.0, within=(fx, fy, L.ISLAND[2] + 10.0))
+        # 13 Nov (playtest 1 build): scale 0.92. Batch P's rice-straw stack is ~100 u across (was 92) and only 1 of 4 then fitted on
+        # the island's flat top between the flag keep-out, spawns and crate (a wider search or the shoulder did not help: too steep),
+        # which left flag A at 12-13 head-height cover pieces (check_play 3 wants 14). At 0.92 it is the old footprint, 96 u tall.
+        W.fit('haystack', fx + dx, fy + dy, rng.uniform(0, 360), search=60.0, step=20.0, pad=2.0, within=(fx, fy, L.ISLAND[2] + 10.0), scale=0.92)
     W.stack('ammo_crate', fx + 150.0, fy + 10.0, rng.uniform(0, 180), 4, jitter=rng)
     # rice-straw stacks standing in the cells round the island (head-height cover in the open water; the flag itself stays reachable
     # from every side: the second review build closed it in with a crate stack beside the pole)
@@ -1477,7 +1481,7 @@ def paddies():
     W.prop('pig_pen', c[0] - 230, c[1] - 150, None, 20.0, fit='min', check=True)
     W.prop('pig_pen', c[0] + 250, c[1] - 120, None, 100.0, fit='min', check=True)
     W.keep(c[0], c[1] + 300.0, 40.0, name='seed')                                     # the farm's nav seed
-    W.fit('ox_cart', c[0] + 40, c[1] + 40, 150.0, search=260.0, step=30.0)          # 12 Nov review: re-fitted (blocked by a hooch)
+    W.fit('ox_cart', c[0] + 40, c[1] + 40, 150.0, search=360.0, step=30.0)          # 12 Nov review: re-fitted (blocked by a hooch); 13 Nov: 260 -> 360, batch P's cart with its straw load is 190 u long (was 164) and found no spot
     W.prop('well', c[0] - 20, c[1] + 220, None, 10.0, check=True)
     for (dx, dy) in ((-60, -60), (210, 0), (-260, 30), (120, 250)): W.prop('haystack', c[0] + dx, c[1] + dy, None, rng.uniform(0, 360), check=True, pad=4.0)
     for (dx, dy, yaw) in ((-110, 240, 10.0), (240, 230, 80.0), (-300, -40, 95.0)): W.prop('drying_rack', c[0] + dx, c[1] + dy, None, yaw, check=True, pad=4.0)

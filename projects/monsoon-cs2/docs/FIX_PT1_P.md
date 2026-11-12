@@ -38,3 +38,5 @@ height, statue smaller); a map regenerate reads them from props.json.
 
 - A second pass for the vehicle and wreck props (CS2 painted-metal and rust tiles for their hull plates).
 - W's props (p_jungle foliage cards, supply crate, flag poles; p_sandbag_mv) get the UV and density fixes on their next rebuild.
+  Done 13 Nov 2026 in the integrated build (BUILD_LOG_1.md "Stage 5"): supply_crate 53 -> 345 px/m, flag poles 169 -> 354, log_fallen
+  153 -> 306, dead_tree 97 -> 200, root_tangle 183 -> 363, vine_drape 199 -> 234; the foliage cards' cut atlases are unchanged in size.

@@ -50,7 +50,11 @@ def bag(L=21.0, Wd=11.2, H=6.0, seed=0, lod=0, quad=0):
     E, O = np.meshgrid(np.linspace(-np.pi / 2, np.pi / 2, nu + 1), np.linspace(-np.pi, np.pi, nv + 1), indexing='ij')
     e1, e2 = 0.34, 0.55
     a1, a2, a3 = L / 2, Wd / 2, H / 2
-    x = a1 * _sp(np.sin(E), e1); y = a2 * _sp(np.cos(E), e1) * _sp(np.cos(O), e2); z = a3 * _sp(np.cos(E), e1) * _sp(np.sin(O), e2)
+    # the poles exactly on the axis: cos(+-pi/2) is ~6e-17, which the 0.34 power spreads into a ring ~1e-5 u wide, so the pole fans
+    # had a float area above build_prop's zero-area cut but collapsed when the SMD rounds to 1e-4 (prop_lint: ~860 degenerate tris
+    # per wall). At exactly 0 they are dropped as zero-area.
+    cE = np.cos(E); cE[np.abs(cE) < 1e-9] = 0.0
+    x = a1 * _sp(np.sin(E), e1); y = a2 * _sp(cE, e1) * _sp(np.cos(O), e2); z = a3 * _sp(cE, e1) * _sp(np.sin(O), e2)
     xn = x / a1
     # uv from the undeformed footprint: across the width -> u, along the length -> v with the tie at the top of the bag image
     U = 0.5 + 0.44 * y / a2; V = 0.07 + 0.86 * (0.5 - 0.5 * xn)

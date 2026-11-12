@@ -2,7 +2,40 @@
 
 Read this first when resuming. Newest state at the top. Design: [docs/DESIGN.md](docs/DESIGN.md).
 
-## Resume here (12 Nov 2026, after build stage 4: world pass 4, recompiled)
+## Resume here (13 Nov 2026, after build stage 5: the playtest 1 build, ready for playtest 2)
+
+**State in one line:** all four playtest 1 batches (S script and helicopters, W world, G era weapons, P prop quality) are in one
+**compiled** build: `mg_monsoon.vpk` 53.1 min, `OK: 1024 compiled, 0 failed`, 0 DELETED, 0 missing, 0 physics-hull warnings,
+**13,739 nav areas**; script mv-0.7; every changed asset compiled. **Not launched, not opened in Hammer since playtest 1. Not committed.**
+Record: [docs/BUILD_LOG_1.md](docs/BUILD_LOG_1.md) "Stage 5". Skybox not rebuilt (nothing feeding it changed).
+
+**Next: playtest 2.** skink52 starts CS2 (docs/BUILD.md "Local test with bots": tools mode, `map mg_monsoon`, `version`) and works through
+[docs/TESTING_MONSOON.md](docs/TESTING_MONSOON.md) **"Playtest 2 checklist"** first. What to test, from each batch's "only CS2 can confirm":
+- S ([FIX_PT1_S.md](docs/FIX_PT1_S.md)): the flag cloth runs up and down the pole with a capture and the "CAPTURING B 45 %" prompt; the HUD
+  stays up for joining players and the host; Apache rotors spin and spool; the Mi-8 hull solid at every distance; pilot guns (Apache MOUSE2
+  chin gun, Mi-8 slick nose gun), impact puffs and the "why nothing fires" toasts; `!help` card + chat, `!controls`; the M249 report on the
+  emplaced guns.
+- W ([FIX_PT1_W.md](docs/FIX_PT1_W.md)): rounded tunnel mouths, smooth galleries with timber frames, no seam where the patch meets the
+  terrain, bots through the shafts; no stuck spawns; no foliage line or pale trunk bands; vines lying on the temple stone; the new sandbag
+  walls (texture, LODs, cover); wading / swimming in river, marsh, oxbow and paddies, the underwater look, bots at the fords.
+- G ([FIX_PT1_G.md](docs/FIX_PT1_G.md)): era kits per side; the M1911 / M14 / M21 models in first and third person; REQ on the HUD, the
+  armory on F at kit stations or `!armory`; unlocks (frag pouch, shotgun, carbine, sniper, 1 in 8); the M79's lob; bots buying; a
+  rejoining player keeping his REQ.
+- P ([FIX_PT1_P.md](docs/FIX_PT1_P.md)): sharp prop textures, layered thatch, straw that reads as straw, the Khmer lions and nagas; FPS / VRAM
+  (placed-prop textures 338 -> ~550 MiB).
+- This build: FPS with bots at 13,739 nav areas, and looking along the river (482 water pieces).
+
+What this build changed beyond deploying and compiling (BUILD_LOG_1 "Stage 5", "Fixed along the way"):
+- **Water physics.** The first compile gave the river, upper reach, marsh and oxbow `func_water`s no physics hull (curved or long meshes
+  fail; found with world + phys test compiles). `mv_terrain.water_volume(pieces=True)`: one closed prism per top face. Recompiled clean.
+  Rule in docs/reference/cs2-gotchas.md.
+- W's props rebuilt with P's UV / atlas code (supply crate 53 -> 345 px/m, flag poles 169 -> 354); sandbag bag poles snapped (840-2,250
+  zero-area slivers per wall); `prop_lint.py` skips animation SMDs; flag A cover kept at 14+ (haystacks at 0.92, ox cart search 360);
+  `check_play.py` nav recalibrated on this compile (0.151 areas per cell). `create/gmod_assets.py` has S's normals fix; `libsync` all in step.
+- Left: approach areas 17 min of the 53 (nav 13,739); `create/build_prop` zero-area test on rounded positions; `tools/watervol.py` may hit
+  the same water-hull limit on ports.
+
+## Earlier: after build stage 4 (12 Nov 2026, world pass 4, recompiled)
 
 **State in one line:** `mg_monsoon.vpk` **recompiled** (42.0 min, `OK: 506 compiled, 0 failed`, 0 DELETED) with **12,597 nav areas**
 (was 15,033; "Compute Approach areas" 454 s, was 348 s); **never launched, not opened in Hammer**. Committed 5989dfa.

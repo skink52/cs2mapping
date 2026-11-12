@@ -3,9 +3,10 @@
 AI-generated (Claude) for skink52. The terse command sheet is [../tools/build_monsoon.md](../tools/build_monsoon.md); this page says why
 each step is there and what to look for.
 
-**How far this is checked (12 Nov 2026).** Steps 1-11 have been run on this PC. The assets and the map are **compiled**
-(resourcecompiler, no errors; records in [BUILD_LOG_1.md](BUILD_LOG_1.md)): `maps/mg_monsoon.vpk` (final build, 42 min since the nav
-cut of stage 3; latest: stage 4, 12,597 nav areas) and the 3D skybox `maps/mg_monsoon_3dskybox.vpk`. Nothing is Hammer verified or in-game verified: step 12 (launch) has not been run.
+**How far this is checked (13 Nov 2026).** Steps 1-11 have been run on this PC. The assets and the map are **compiled**
+(resourcecompiler, no errors; records in [BUILD_LOG_1.md](BUILD_LOG_1.md)): `maps/mg_monsoon.vpk` (latest: stage 5, the playtest 1
+build, 53 min, 13,739 nav areas) and the 3D skybox `maps/mg_monsoon_3dskybox.vpk` (stage 4; nothing feeding it changed since).
+Playtest 1 ran on the stage 4 build; nothing since is Hammer verified or in-game verified.
 
 ## Before you start
 
@@ -35,7 +36,7 @@ cut of stage 3; latest: stage 4, 12,597 nav areas) and the 3D skybox `maps/mg_mo
 | 8 | Script + tests | from the project folder: `node tools/build_script.mjs`; `node test/mock.mjs 32 600`; `node test/mock.mjs 4 600`; `tsc -p test/tsconfig.json`; from `cs2mapping`: `python create/test/api.py --strict --check projects/monsoon-cs2/out/addon/maps/scripts/mg_monsoon.js` | under 2 min | both mock runs PASS, nothing invalid or deprecated |
 | 9 | Deploy | from the project folder: `python -I tools/deploy_monsoon.py` then `--apply` | dry run seconds; first apply about 1.2 GB copied, 1-3 min | see "Deploy" |
 | 10 | Compile assets, HUD, script | see "Compile" | first time 9 min (measured 12 Nov 2026) | `logs\mg_monsoon_assets.log` |
-| 11 | Compile the map, then the 3D skybox map | `build_maps.ps1 final mg_monsoon`, then `build_maps.ps1 final "mg_monsoon mg_monsoon_3dskybox"`, each under the watchdog | 42 min (stage 4, 12 Nov 2026; 66 min before the nav cut) + skybox | see "What to read in the build log" |
+| 11 | Compile the map, then the 3D skybox map | `build_maps.ps1 final mg_monsoon`, then `build_maps.ps1 final "mg_monsoon mg_monsoon_3dskybox"`, each under the watchdog | 53 min (stage 5, 13 Nov 2026: tunnels, water, 13,739 nav areas; 42 min at stage 4) + skybox when its inputs changed | see "What to read in the build log" |
 | 12 | Launch | see "Local test with bots" | | TESTING_MONSOON.md |
 
 Order matters in three places: the map (4) needs the props, Apache and `out/props.json`; the HUD (7) preloads the slides and the board
@@ -178,6 +179,7 @@ From Git Bash quote the script path in single quotes (`'C:\source1\cs2port\build
 | `FAILED - these materials did not compile` | a `.vmat` the map or a model uses has no `.vmat_c` | open `mg_monsoon_assets.log` at that name; usually a missing texture png or a bad shader key |
 | `DELETED` next to a prop or entity name | the compiler dropped it (a `prop_static` whose model has no static archetype, a model that failed to load, bad physics) | list every name; a dropped prop is a hole in cover or a missing script entity. The dynamic ones (`mv_heli_*`, `mv_tube_*`, `mv_mount_*`) must be `prop_dynamic` with `model_archetype ""` |
 | `Error loading resource`, `failed to load`, `missing material`, `ERROR:` with a `.vmdl` or `.vmat` path | a model or material is missing or failed | models under `models/mv/ext/` and `models/vehicles/apache/` are the conversions: check the SMD material names (ASSETS.md "Open points") |
+| `Encountered issues while adding mesh from node N to entity model .../entities/unnamed_<id>.vmdl` + `Failed to create physics hulls` | that brush entity (node id `<id>`) got no physics hull; on a `func_water` it means no water to swim in | find the entity by node id (`vmapedit.Map`, `nodeID`); a water volume must be compact convex pieces: `mv_terrain.water_volume(pieces=True)` (BUILD_LOG_1.md "Stage 5") |
 | `Charting N unique meshes` | lightmapped mesh count (LODs counted) | for comparison: trench 24,754 after its fix. Far above that = lightmapped props that should be probe-lit |
 | `Packing N UV charts` | chart count | trench: 1.37 M fits 2048. Several million = sandbag / bunker LODs with a chart per triangle (run `lod_decimate.py`, step 1c) |
 | `OUT OF MEMORY`, `FATAL ERROR` in vrad3, "Welding seams" as the last line | lightmap bake ran out of memory | reduce charts as above; do not raise the resolution |

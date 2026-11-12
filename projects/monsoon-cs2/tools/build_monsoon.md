@@ -17,9 +17,11 @@ mkdir -p $P/out/logs
 ```sh
 $WD --label "mv props" --expect 2400 --heartbeat 120 --stall 600 --max 7200 --log $P/out/logs/wd_props.log -- python -u build_all_props.py
 python p_jungle.py                         # flag_pole with skins, after flag_pole_n/_t/_ct
+python mv_flag_anim.py ../out/addon        # at once: p_jungle rewrites flag_pole.vmdl without the capture rig (flag_00..20)
 python lod_decimate.py ../out/addon ../out/addon mv/bunker_large mv/bunker_small mv/cargo_pallet mv/checkpoint mv/culvert_bunker \
-  mv/fdc_bunker mv/fuel_bladder mv/gp_tent mv/guard_tower mv/truss_span mv/sandbag_wall mv/sandbag_wall_b mv/sandbag_wall_128 \
-  mv/sandbag_low mv/sandbag_low_128
+  mv/fdc_bunker mv/fuel_bladder mv/gp_tent mv/guard_tower mv/truss_span mv/guardian_statue mv/naga_balustrade \
+  mv/sandbag_w_h1 mv/sandbag_w_h2 mv/sandbag_w_h3 mv/sandbag_w_h4 mv/sandbag_a118_h1 mv/sandbag_a118_h2 mv/sandbag_a232_h1 mv/sandbag_a232_h2
+python prop_lint.py                        # 0 bad expected
 ```
 One prop: `python -u build_all_props.py <name> [<name>...]`.
 

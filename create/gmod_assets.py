@@ -12,6 +12,8 @@ usage (always with -I: the downloads are untrusted data and nothing in them is e
   python -I create/gmod_assets.py <catalog.json> report                    <report>: {name: {model, bounds, tris, replaces, credit, ...}}
   python -I create/gmod_assets.py <catalog.json> prune   [--gma]           delete extracts of addons with no items, unused model files,
                                                                              rejected outputs (--gma: archives too)
+  python -I create/gmod_assets.py <catalog.json> normals [--only name,name]   vertex normals turned to agree with the winding, LODs
+                                                                             decimated again (convert does it too)
   common options: --work DIR  --addon DIR  --prefix P (model_sub = models/P/ext, mat_sub = materials/models/P/ext)  --report FILE
 
 Catalog: {"config": {...}, "addons": [...]}
@@ -309,6 +311,94 @@ def vmdl_remaps(path):
     return re.findall(r'from = "([^"]+)"\s*to = "([^"]+)"', open(path).read())
 
 
+def orient_normals(path):
+    """make every triangle's vertex normals agree with its winding (the side CS2 draws; it culls the other). Found on mg_monsoon's Mi-8
+    (a GMod MDL whose triangles carried normals pointing INTO the hull for 63-80 % of them while the winding faced out): CS2 lit those
+    faces from inside (dark), and lod_decimate, which keeps the normal-consistent faces, built LOD1-4 out of the rest, so panels went
+    missing from LOD1 on ("see-through parts"). Per triangle: when the corners' mean normal points against the face normal it is flipped.
+    The source smoothing mixed in- and outward faces, so a mesh that needed any flip gets its normals rebuilt from the geometry
+    (area-weighted, faces more than CREASE degrees apart not smoothed together). A double-sided sheet keeps one normal per side.
+    Returns (triangles, flipped); the file is rewritten only when something flipped."""
+    import numpy as np
+    head, rows = smd_tris(path)
+    mats, V = [], []
+    for k in range(0, len(rows) - 3, 4):
+        mats.append(rows[k]); V.append([rows[k + 1 + j].split() for j in range(3)])
+    P = np.array([[[float(x) for x in c[1:4]] for c in t] for t in V]); N = np.array([[[float(x) for x in c[4:7]] for c in t] for t in V])
+    G = np.cross(P[:, 1] - P[:, 0], P[:, 2] - P[:, 0])
+    bad = (np.linalg.norm(G, axis=1) > 1e-12) & ((G * N.mean(1)).sum(1) < 0)
+    flipped = int(bad.sum())
+    if not flipped: return len(V), 0
+    Ns = smooth_normals(P, G)
+    out = []
+    for t in range(len(V)):
+        out.append(mats[t])
+        for j, c in enumerate(V[t]):
+            c[4:7] = ['%.4f' % x for x in Ns[t, j]]
+            out.append(' '.join(c))
+    open(path, 'w', newline='\n').write('\n'.join(head + out + ['end']) + '\n')
+    return len(V), flipped
+
+
+CREASE = 50.0
+
+
+def smooth_normals(P, G):
+    """corner normals from the geometry: P (n, 3 corners, 3), G (n, 3) unnormalised face normals by winding -> (n, 3, 3). A corner takes
+    the area-weighted mean of the faces that share its position and lie within CREASE degrees of its own face."""
+    import numpy as np
+    n = len(P)
+    Fn = G / np.maximum(np.linalg.norm(G, axis=1, keepdims=True), 1e-12)
+    key = np.round(P.reshape(-1, 3) / 0.01).astype(np.int64)
+    _, vid = np.unique(key, axis=0, return_inverse=True); vid = vid.ravel()
+    order = np.argsort(vid, kind='stable'); starts = np.r_[0, np.nonzero(np.diff(vid[order]))[0] + 1, len(order)]
+    out = np.repeat(Fn[:, None, :], 3, axis=1).reshape(-1, 3).copy()
+    cosc = np.cos(np.radians(CREASE))
+    for s, e in zip(starts[:-1], starts[1:]):
+        if e - s < 2: continue
+        corners = order[s:e]; faces = corners // 3
+        fn = Fn[faces]; w = G[faces]                      # area-weighted (|G| = 2 x area)
+        sim = fn @ fn.T >= cosc
+        acc = sim.astype(float) @ w
+        out[corners] = acc / np.maximum(np.linalg.norm(acc, axis=1, keepdims=True), 1e-12)
+    return out.reshape(n, 3, 3)
+
+
+def fix_normals(name, rep, vdir):
+    """orient_normals on every LOD0 mesh of a converted item; a mesh that changed gets its LOD1-4 decimated again (they were built from
+    the bad normals). -> {mesh: (tris, flipped)}"""
+    import mdl2cs2
+    res = {}
+    for key, e in rep['models'].items():
+        mname = name + ('' if key == 'model' else '_' + key)
+        f = os.path.join(vdir, mname + '.smd')
+        if not os.path.exists(f): continue
+        n, fl = orient_normals(f)
+        res[mname] = (n, fl)
+        if fl:
+            for g in glob.glob(os.path.join(vdir, mname + '_lod*d.smd')): os.remove(g)
+            P = smd_points(f)
+            counts, notes = mdl2cs2.make_lods(C['addon'], '%s/%s' % (C['sub'], name), mname, float((P.max(0) - P.min(0)).max()))
+            e['tris'] = counts; e['lod_notes'] = notes
+            log('    normals %s: %d of %d triangles faced into the mesh, turned; LODs again %s' % (mname, fl, n, counts))
+    return res
+
+
+def cmd_normals(only):
+    """orient_normals over converted items already in the addon tree (the conversion now does it itself)"""
+    for ad in catalog()['addons']:
+        for it in ad.get('items', []):
+            if only and it['name'] not in only: continue
+            rp = os.path.join(C['work'], 'reports', it['name'] + '.json'); vdir = os.path.join(C['addon'], C['sub'], it['name'])
+            if not os.path.exists(rp) or not os.path.isdir(vdir): continue
+            rep = json.load(open(rp, encoding='utf-8'))
+            res = fix_normals(it['name'], rep, vdir)
+            if any(fl for _, fl in res.values()):
+                json.dump(rep, open(rp, 'w', encoding='utf-8'), indent=1, ensure_ascii=False)
+            else: log('  %s: normals agree with the winding' % it['name'])
+    cmd_report()
+
+
 def merge_parts(ad, it, vdir, rep, roots):
     """item 'parts': other MDLs of the same object that the game assembles in lua (a gun carriage, its wheels, its traverse ring), each
     converted on its own and its triangles appended at pos (the lua's Vector, source units; scaled here) -> one model, hull and LODs redone"""
@@ -450,6 +540,7 @@ def convert_item(ad, it, force):
             mname = name + ('' if key == 'model' else '_' + key)
             try: e['hulls'] = write_hulls(vdir, mname, n)
             except Exception as ex: log('    hulls %s failed: %s' % (mname, ex))
+    fix_normals(name, rep, vdir)                   # normals that face into the mesh, and the LODs built on them
     rep['item'] = {k: it[k] for k in it}
     rep['addon'] = {k: ad.get(k) for k in ('id', 'title', 'author', 'license_note', 'rip', 'rip_risk')}
     json.dump(rep, open(report, 'w', encoding='utf-8'), indent=1, ensure_ascii=False)
@@ -587,6 +678,7 @@ def main():
     elif cmd == 'report': cmd_report()
     elif cmd == 'view': cmd_view(only)
     elif cmd == 'prune': cmd_prune('--gma' in a)
+    elif cmd == 'normals': cmd_normals(only)
     else: print(__doc__)
 
 

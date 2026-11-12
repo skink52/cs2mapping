@@ -15,18 +15,20 @@ Status: `open` / `in progress (batch)` / `fixed (compiled)` / `fixed (in-game ve
 | 5 | Helicopters need weapons (check whether they exist but can't be found; make firing obvious) | S | fixed (simulated, compiled; FIX_PT1_S.md) |
 | 6 | `!air` works, `!help` doesn't; no other commands are discoverable | S | fixed (simulated, compiled; FIX_PT1_S.md) |
 | 7 | Bridge machine gun sounds tinny; use the M249 sound | S | fixed (simulated, compiled; FIX_PT1_S.md) |
-| 8 | Tunnel entrance very blocky (p1) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
-| 9 | Underground blockiness, floating arches (p6) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
-| 10 | Some T spawns stuck in the rocket/mortar battery wall | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
-| 11 | Line across foliage (p2) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
-| 12 | Colour bug from grass on tree trunks: pale bands (p5) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
-| 13 | Vines on poles around the Khmer temple float in the air (p7) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
-| 14 | Sandbags look wrong (p3) | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
-| 15 | Water should have depth: a real func_water | W | fixed (generated + offline checks; map compile pending; FIX_PT1_W.md) |
+| 8 | Tunnel entrance very blocky (p1) | W | fixed (compiled; FIX_PT1_W.md) |
+| 9 | Underground blockiness, floating arches (p6) | W | fixed (compiled; FIX_PT1_W.md) |
+| 10 | Some T spawns stuck in the rocket/mortar battery wall | W | fixed (compiled; FIX_PT1_W.md) |
+| 11 | Line across foliage (p2) | W | fixed (compiled; FIX_PT1_W.md) |
+| 12 | Colour bug from grass on tree trunks: pale bands (p5) | W | fixed (compiled; FIX_PT1_W.md) |
+| 13 | Vines on poles around the Khmer temple float in the air (p7) | W | fixed (compiled; FIX_PT1_W.md) |
+| 14 | Sandbags look wrong (p3) | W | fixed (compiled; FIX_PT1_W.md) |
+| 15 | Water should have depth: a real func_water | W | fixed (compiled; FIX_PT1_W.md) |
 | 16 | Generated prop textures are low resolution across the board (p4) | P (round 2) | fixed (compiled; FIX_PT1_P.md) |
 | 17 | Hay and hay bales are not photorealistic | P (round 2) | fixed (compiled; FIX_PT1_P.md) |
 | 18 | Temple animal statues are the wrong vibe: source a proper model | P (round 2) | fixed (compiled; FIX_PT1_P.md) |
 | 19 | No custom weapons, no buy zone: era weapons, kills unlock optional upgrades (e.g. snipers) | G (round 2) | fixed (simulated, compiled; WEAPONS.md, FIX_PT1_G.md) |
 
 Batches: S = script and helicopters (`docs/FIX_PT1_S.md`), W = world geometry (`docs/FIX_PT1_W.md`), P = prop quality, G = era weapons and
-upgrade system. After S and W finish, one integrated deploy and map compile.
+upgrade system. After S and W finish, one integrated deploy and map compile: done 13 Nov 2026 (BUILD_LOG_1.md "Stage 5"; the water
+volumes needed per-face prisms to get physics hulls). Nothing above is in-game verified until playtest 2 (TESTING_MONSOON.md "Playtest 2
+checklist").

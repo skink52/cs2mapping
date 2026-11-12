@@ -1,8 +1,9 @@
 # mg_monsoon CS2 test: what to check
 
 Each line says what to do and what to expect. **Only report what fails** (what you saw, where, the console lines if any):
-anything you don't mention counts as passed. Version under test: **mv-0.5 (12 Nov 2026, review pass 3: bot balance)**, map
-build stage 3 (15,033 nav areas) and the 3D skybox after its triangle cut (1.93 M triangles, was 16.2 M).
+anything you don't mention counts as passed. Version under test (playtest 2): **mv-0.7 (13 Nov 2026, playtest 1 batch G: era
+weapons, requisition, armory)**, map build stage 5 (the playtest 1 fixes; nav areas in docs/BUILD_LOG_1.md "Stage 5") and the 3D
+skybox after its triangle cut (1.93 M triangles, was 16.2 M). Start with "Playtest 2 checklist" below.
 
 This is the first time any of it meets CS2. Until now: the map, the 3D skybox and the assets are **compiled** (no errors), the
 script is **simulated** on a mock engine, the rest was checked offline. **NOT YET TESTED IN CS2**: every item below is an
@@ -17,11 +18,84 @@ CS2 agents. Say which one you tested; sections E, F, G and L differ between them
 Useful: `!pos` in chat prints your position and grid square: quote it for anything about a place. Console filter: every script
 line starts `[mv]`. After copying new files: `disconnect`, then `map mg_monsoon` again.
 
+## Playtest 2 checklist (the playtest 1 fixes, 13 Nov 2026)
+
+The build after playtest 1: script **mv-0.7 (13 Nov 2026, playtest 1 batch G: era weapons, requisition, armory)**, map build stage 5
+(docs/BUILD_LOG_1.md "Stage 5"). Every line below is **compiled** or **simulated** only; each is something only CS2 can confirm. The
+records behind them: docs/FIX_PT1_S.md, FIX_PT1_W.md, FIX_PT1_G.md, FIX_PT1_P.md (finding numbers from docs/PLAYTEST_1.md in brackets).
+Do this section first, then go on with the rest of the file as before. Report only what fails, with `!pos` for anything about a place.
+
+Script start:
+- [ ] Console on load names `mv-0.7 (13 Nov 2026, playtest 1 batch G: ...)`. An older version means a stale `.vjs_c`.
+- [ ] The HUD stays up for everyone, including a player who joins while the round runs and the host. The per-minute `[mv] perf` line
+      shows `HUD failures 0` or a small number, and flag owners / progress (finding 1).
+
+Flags and capture (findings 1, 6):
+- [ ] At map start every flag hangs white at the foot of its pole. Stand at a pole alone: the on-foot prompt reads
+      "CAPTURING B BRIDGE 45 %" (rising), the owner's cloth runs down over the first half and yours runs up over the second, changing
+      colour only at the foot. The capture takes about 15 s alone. A chat line announces it with the flag count. With an enemy in the
+      circle the prompt says "CONTESTED"; standing on your own flag, "HOLDING".
+- [ ] The cloth slides between poses (0.3 s fades) and reads as a flag being raised, not jumping; at the foot it is clear of the
+      cairn and sandbags.
+- [ ] `!help` (also `!commands`, `!cmds`, `!?`) shows the command card on the HUD and 5 lines in chat; `!controls` / `!keys` lists the
+      keys for your seat, gun or battery; an unknown `!word` answers "Unknown command ... !help lists them".
+
+Helicopters (findings 2, 4, 5):
+- [ ] Apache rotors turn on take-off and spool up / down (the script fires `SetAnimationLooping spin` and `SetPlaybackRate`).
+- [ ] The Mi-8 (both kinds) is solid from every distance and angle, no see-through hull panels at range; its shading looks right.
+- [ ] Weapons: Apache pilot MOUSE1 rockets, and MOUSE2 the chin gun while the gunner seat is empty; Mi-8 slick pilot MOUSE1 nose
+      machine gun; dirt puffs where rounds land; tracers every 2nd round; the gun / heat box on screen for a pilot gun; a toast that
+      says why a trigger does nothing (on the ground, rockets empty, gunner has the chin gun). The seat card on boarding.
+- [ ] Pilot guns feel usable (gimbal, rate of fire) and are not overpowered in a human match.
+
+Sound (finding 7):
+- [ ] The emplaced guns (bridge M2 and others) play CS2's own M249 report, one per round, loud enough at the bridge and not tinny.
+
+World (findings 8-15):
+- [ ] Tunnels: each entrance is a rounded cut with a lip and spoil heaps, a steep walkable shaft with log treads, no blocky pit; the
+      ground patch meets the terrain with no seam or lighting step; galleries are smooth ovoids with timber frames that touch wall,
+      floor and roof; no floating arches. Bots get through the shafts.
+- [ ] Spawns: no T spawn (or any teleport point) stuck in the battery berms, the temple terraces, the temple DShK seat or the tunnels.
+- [ ] Lighting: no hard horizontal line across the grass, reeds and rice near the river, and no pale band on the lower trunks of the
+      palms and slim trees.
+- [ ] Temple vines lie on the stone (tower cornice, gate, wall copings, east architrave): no vines hanging from poles in the air;
+      the leaf cards' alpha looks right.
+- [ ] Sandbags: the full-height walls at the bridge's south bank, the gun pits and the quad .50 ring look like filled bags laid in
+      bond (GMod bag texture on each bag), follow the ground with no floating courses or gaps, work as cover, and their LODs hold
+      up at distance.
+- [ ] Water: you wade in the shallows and fords and swim in the deep channel (about 120 u); splashes; the river surface looks right
+      from above and below; the underwater tint and exposure under the surface; no hard edge where the river crosses a light probe
+      volume. The paddies are shallow water you walk through. Swim the whole river (upper reach above the fall too), the marsh and
+      the oxbow: no stretch where you drop through to the bed as if there were no water (the volumes are now built from many
+      pieces; a gap between pieces would show as a dry spot). No visible seams on the surface between the pieces.
+- [ ] FPS looking along the river from the bridge and from the marsh edge (`cl_showfps 1`), compared with looking away from it: the
+      water surface is now 482 separate pieces.
+- [ ] Bots cross at the three fords and do not get stuck at the deep channel; they still reach flag B under the bridge. FPS with
+      bots: the nav is 13,739 areas now (12,597 in playtest 1); send the `[mv] perf` line and FPS with 14+ bots.
+
+Weapons and requisition (finding 19, batch G):
+- [ ] Each side spawns with its era kit (US M16A1 / M60 / M79 / M14 / M1911, NVA AK / RPD / RPG-7 / SKS / TT-33 by class); the
+      M1911, M14 and M21 models look right in first and third person with the stock animations (hands, op-rod handle, magazine on the
+      reload). CS2's own kill feed still names the stock weapons (SCAR-20 for the M14): expected.
+- [ ] REQ points: the REQ row on the HUD rises with kills, assists and captures. At a kit station, F (inspect) opens the armory card,
+      even on a quick tap; `!armory` too. The frag pouch (one HE + one smoke), shotgun, carbine and sniper unlocks work; at most 1 in
+      8 players has a sniper rifle at once.
+- [ ] The M79's lob feels right; bots buy and use the frag pouch, scoped rifles and shotgun.
+- [ ] A player who leaves and rejoins keeps his REQ (by name).
+
+Props (findings 16-18, batch P):
+- [ ] Prop textures are sharp up close: huts, the temple tower and gate, bunkers, tents, crates (was blurry and smeared). The
+      thatch roofs read as layered thatch with fringes.
+- [ ] Hay: rice-straw stacks, woven rice baskets and the ox-cart load look like straw, not plastic.
+- [ ] Temple: the seated singha lions and the seven-headed naga balustrades look like weathered Khmer stone; their LODs at distance.
+- [ ] FPS and VRAM: texture memory of the placed props rose from 338 to about 550 MiB. Watch FPS at 64 players and report VRAM if you
+      can see it.
+
 ## Check these first (new since mv-0.1, none of it seen in CS2)
 
 Script (review pass 2 and round 3; only CS2 can settle these):
-- [ ] Console on load: `[mv] mg_monsoon script mv-0.5 (12 Nov 2026, review pass 3: bot balance) - flags 5, bots on (quota 10)`.
-      An older version string means a stale `.vjs_c`: recompile the `.js`.
+- [ ] Console on load: `[mv] mg_monsoon script mv-0.7 (13 Nov 2026, playtest 1 batch G: era weapons, requisition, armory) - flags 5,
+      bots on (quota 10)`. An older version string means a stale `.vjs_c`: recompile the `.js`.
 - [ ] `[mv] points: ... uniforms cached 4` in a private build (0 in a public build). Private build: T players wear the NVA / Viet Cong
       soldiers, CT the woodland / US soldiers; first-person arms look normal; `!uniform` switches you back to the CS2 agent. Report
       two-handed weapons clipping into the chest (the conversions' torsos are bulkier than a CS2 agent's).

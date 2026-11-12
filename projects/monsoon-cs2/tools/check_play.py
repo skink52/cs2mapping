@@ -495,8 +495,10 @@ def reach(g, start, reverse=False):
 # open valley that was taken out, so the pass 3 point is used. Linear in the flooded cells, good to about 1.5x for a very
 # different markup; the cell count is the solid number. Pass 4 (flag discs 600, road margins 64, base discs to the wire): 90,815
 # cells, estimated ~11,823 on the pass 3 point, compiled 12,597 areas (0.139 per cell: the open rims taken out were cut into larger
-# areas than the average kept cell). The pass 4 point is used now.
-NAV_CAL = dict(areas=12597, cells=90815)
+# areas than the average kept cell). Playtest 1 build (13 Nov 2026, BUILD_LOG_1 "Stage 5": tunnels as a surface-nets field, water
+# volumes with fords and a 120-u channel): 91,163 cells, estimated ~12,645 on the pass 4 point, compiled 13,739 areas (0.151 per
+# cell: the organic tunnel floors and the bank / ford slopes cut into small areas). That point is used now.
+NAV_CAL = dict(areas=13739, cells=91163)
 NAV_TARGET = 15000             # areas: warn above this (the first compile's approach-area pass took 26 min at 33,661)
 NAV_DETOUR = 1.35              # warn when a bot's nav route to a flag is this much longer than the walking route (1b)
 

@@ -15,6 +15,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 def read_smd(path):
     lines = open(path).read().split('\n')
+    if 'triangles' not in lines:          # an animation SMD (nodes + skeleton only, e.g. flag_pole's anims/flag_NN.smd)
+        return None, None
     i = lines.index('triangles') + 1
     mats, rows = [], []
     while i + 3 < len(lines) and lines[i] != 'end':
@@ -42,6 +44,9 @@ def lint(addon, name, info):
         p = os.path.join(addon, s)
         if not os.path.isfile(p): errs.append('missing %s' % s); continue
         mats, T = read_smd(p)
+        if T is None:
+            if 'skeleton' not in open(p).read(): errs.append('%s: no triangles and no skeleton' % os.path.basename(s))
+            continue
         if 'hull' in os.path.basename(s):
             from scipy.spatial import ConvexHull
             try:
