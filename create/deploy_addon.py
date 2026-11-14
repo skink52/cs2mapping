@@ -530,7 +530,7 @@ def main(argv=None):
         f.write('%s\t%d created\t%d replaced\t%d written\t%s\t%s\n' % (stamp, summ['create'], summ['modify'], len(man['generated']),
                                                                     os.path.basename(manifest), a.label))
     result['manifest'] = manifest
-    print('deployed: %d created, %d replaced, %d unchanged; %d written files. Record: %s'
+    print('deployed: %d created, %d replaced, %d unchanged; %d generated files. Record: %s'
           % (summ['create'], summ['modify'], summ['same'], len(man['generated']), manifest))
     for m in maps:
         print('  map %s backed up to %s' % (m['rel'], m['backup']))

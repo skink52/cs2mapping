@@ -37,11 +37,12 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   (`tools/decimate_lod0.py`, Blender); stretcher canvas re-textured to period khaki; tw_de_a welded before weight transfer in
   `tools/soldiers.py` (open edges 154 -> 0; same scale and 87 joints). Test compile 6/0. `--pit-sandbags` option prepared (off,
   waiting for the user: crew sightlines 13/54 -> 4/4 of 380).
-  Deploy HELD 14 Nov ~14:20: gate PASS, but a CS2 the user started at 13:33 (pid 18632, command line hidden) was running, so
-  deploy_addon refused. To finish: with CS2 closed, run the scratch sequence again (deploy_tw --apply, build_maps assets,
-  force-compile wreck_tank / petrol_can / helmet_stahl_ext / field_telephone / stretcher_ext / tw_de_a, build_maps final).
-- 13 Nov 06:53: **world pass 3 deployed + compiled** (compile 5: 0 errors, 0 DELETED, nav 4,529, all 83 bot/heal points on
-  nav incl. the dressing stations, check_world clean). **Current build; level: compiled.**
+- 14 Nov 15:24: **step 14 deployed + compiled** (first deploy held at ~14:20 while the user's CS2 was open; rerun after they
+  closed it). Deploy 14:26 (8 created, 26 replaced); assets 0 failed; the 6 rebuilt vmdls force-compiled, 0 failed; map compile 6
+  OK in 52.2 min, 0 errors, 0 entity DELETED, nav 4,529; check_world clean (11 known overlap pairs). **Current build; level:
+  compiled, not loaded in CS2.** Open: the user's call on `--pit-sandbags`; in-game `docs/TESTING.md`.
+- 13 Nov 06:53: world pass 3 deployed + compiled (compile 5: 0 errors, 0 DELETED, nav 4,529, all 83 bot/heal points on
+  nav incl. the dressing stations, check_world clean).
 - 13 Nov 05:20: world pass 3 (docs/REVIEW_WORLD_3.md): dressing-station shelter rebuilt in `tools/p_trench.py` (85.8 u crown,
   11 convex hulls; staged `out/step13/`), new chain stage `tools/patch_world_3.py` after seams (shell rack turned, 4 CT poplars
   scaled 1.6-7.6 % to clear plane lanes, a poplar moved out of a pool, 56 crater-pool rims reset / 38 water levels lowered).
