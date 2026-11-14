@@ -39,7 +39,7 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   waiting for the user: crew sightlines 13/54 -> 4/4 of 380).
 - 14 Nov 17:15: **pit sandbags shipped** (the user: "Yes, both sides"). `deploy_tw.py --pit-sandbags` now defaults to `both`
   (`off` to drop; a deploy refuses flags that differ from the chain's). Chain final 843a5675, guards PASS, gate PASS: crew sightlines
-  13 / 54 -> 4 / 380 a side (the 8 left run through two old breastwork dips, pit_ct_2 SW and pit_t_4 SE: a possible next change).
+  13 / 54 -> 4 / 380 a side (the 8 left run through two old breastwork dips, pit_ct_2 SW and pit_t_4 SE; the user said leave them as is, 14 Nov).
   Map compile 7: 0 errors, 0 DELETED, nav 4,530, navcheck 0 of 83 off nav, check_world clean. **Current build; level: compiled,
   not loaded in CS2.** Next: the user's in-game `docs/TESTING.md` (new item E4b).
 - 14 Nov 15:24: step 14 deployed + compiled (first deploy held at ~14:20 while the user's CS2 was open; rerun after they
