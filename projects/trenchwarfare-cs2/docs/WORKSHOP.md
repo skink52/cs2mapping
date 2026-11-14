@@ -200,7 +200,7 @@ Third-party models (Sketchfab, CC BY 4.0 - https://creativecommons.org/licenses/
   https://sketchfab.com/3d-models/france-m1897-75mm-cannoncustom-modified-eb6c4b6b18324e64992615e04b60d2ab
   (the Canon de 75 field gun, models/tw/ext/gm_canon75; reached through soap's Garry's Mod conversion, Steam Workshop
   item 3576805717 "WW1 French Canon de 75mm 1897", which credits this model; converted to a CS2 static prop with new LODs)
-Changes: converted to CS2 models, re-scaled, rigged as weapons where listed, LOD meshes added to some.
+Changes: converted to CS2 models, re-scaled, rigged as weapons where listed, LOD meshes added to some; the petrol can, Stahlhelm pair and field telephone simplified to fewer triangles; the stretcher's camouflage canvas re-coloured as plain canvas.
 Stock CS2 foliage, ground materials and sounds by Valve.
 Stock CS2 textures re-used on the procedural props (boards, rust, mud, maple bark) by Valve.
 

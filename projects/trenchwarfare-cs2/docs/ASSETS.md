@@ -78,9 +78,92 @@ name (planes, `_dyn` twins, mortars, uniforms all keep their paths).
 | `ext/plane_spad7` | 21.7k, one LOD | static: + LOD2 5.7k, LOD4 1.3k; `_dyn`: 12.5k / 5.7k / 2.8k / 1.3k | same |
 | `players/tw_de_a` body | 167 open edges in 47 loops | 154; 4 holes capped (5 triangles) | `tools/fill_holes.py`: caps small simple boundary loops reusing existing corner data (weights unchanged). The other 43 loops run along non-manifold edges left by the tw31 weld (2,285 of them): no well-defined cap; the real fix is at the source (weld the Tripo GLB before the donor weight transfer in `soldiers.py`), which needs the GLB and a rebuild of the uniform |
 
-Not rebuilt (weakest that remain): `wreck_tank` (procedural hull reads flat at close range: no sponson guns, plain panels; 2 wrecks in no
-man's land), `ext/petrol_can` (28.9k triangles for a can, 13 instances: LODs exist from 20 u), `ext/tank_renault_ft` LOD0 54.8k.
+Not rebuilt in step 6: `wreck_tank`, `ext/petrol_can` (both done in [step 14](#prop-rebuilds-step-14)), `ext/tank_renault_ft` LOD0 54.8k.
 Single-LOD props (`toolkit.json single_lod`: shattered trees, stumps, tunnel set, hangar ...) are single on purpose (lightmap charts).
+
+## Prop rebuilds (step 14)
+
+14 Nov 2026. Every prop the final map places was turntabled (72 models of our own; contact sheets `out/step14/turntables/survey_all_props_*.png`, triangles and LODs per model `out/step14/survey_tris_lods.txt`, made with
+`tools/tw_models.py`'s renderer, which now applies each vmat's `g_vColorTint`, so the tinted stock copies no longer render white) and
+ranked by what a player sees: screen size x instances x quality. Placed counts are from the chain's final map
+(`out/step9/chain/7_nav.vmap`); the lightmapped set (`out/step14/lightmapped.json`) from `lod_decimate.lightmapped()`.
+
+| Rank | Model | Placed | Why it was weak | Done |
+|---|---|---|---|---|
+| 1 | `wreck_tank` | 2 (no man's land, 386 u long) | flat hull boxes, one painted band per track, no rivets, blank sponsons, salmon tiled rust | **rebuilt procedurally** (below) |
+| 2 | `ext/stretcher_ext` | 6 (dressing stations) | modern woodland camouflage canvas: wrong for 1917 | **re-textured**: khaki duck with weave, sun-fade, mud and old blood; mesh unchanged |
+| 3 | `ext/petrol_can` | 13 | 28,884 triangles for a 20-u can | **LOD0 cut to 2,999** + LOD1-4 |
+| 4 | `ext/helmet_stahl_ext` | 9 | 27,536 triangles for two helmets | **LOD0 cut to 6,000** + LOD1-4 |
+| 5 | `ext/field_telephone` | 13 | 18,577 triangles for an 11-u box | **LOD0 cut to 4,000** + LOD1-4 |
+| 6 | `tl_brazier` | 5 | the perforated drum reads as a wooden tub (stock rust_heavy at 64 u per tile) | not rebuilt |
+| 7 | `wreck_fieldgun` (+ `wreck_wheel`) | 2 + 2 | plain carriage, no detail; the wheels are fine | not rebuilt |
+| 8 | `helmet_brodie`, `helmet_stahl` (procedural) | 33 + 18 | faceted 720-816-triangle lathes; small on screen | not rebuilt |
+
+Everything keeps its model path, origin, facing, scale, footprint and collision hull, so the map is unchanged (bounds below). Staged in
+`out/step14/addon/`, list `out/step14/deploy_files.txt` (40 files, 50 MB), build record `out/step14/build.json`. Builder:
+`python tools/build_step14.py [names]` (TW_OUT = out/step14/addon; rebuilds, LODs, the stretcher texture, the T body and the list).
+Before / after renders (deployed left, step 14 right, same camera): `out/step14/turntables/<model>.png`, looked at.
+
+| Model | Before | After | Bounds (x, y, z) before -> after |
+|---|---|---|---|
+| `wreck_tank` | 5,406 (+ a generated LOD1 of 2,884; the vmdl drew LOD0 only) | LOD0 28,986; lightmapped pair `lod2d` 8,802 at 60, `lod4d` 2,411 at 240 | -156..230, -126.6..110.3, -4.9..117 -> -155.9..228.2, -126.7..110.4, -4.8..126.8 (the ajar hatch) |
+| `ext/petrol_can` | 28,884 (LOD1-4 9.7k / 3.3k / 1.1k / 0.4k) | 2,999 + 1,036 / 356 / 106 / 44 at 20 / 60 / 120 / 240 | the same within 0.01 u |
+| `ext/helmet_stahl_ext` | 27,536 (9.6k / 3.3k / 1.1k / 0.4k) | 6,000 + 2,577 / 706 / 235 / 86 | the same within 0.01 u |
+| `ext/field_telephone` | 18,577 (6.3k / 2.2k / 0.7k / 0.3k) | 4,000 + 1,382 / 470 / 160 / 60 | the same within 0.01 u |
+| `ext/stretcher_ext` | camouflage `stretcher_ext_c0.png` | same mesh, new colour texture (68 % of its texels re-made) | unchanged |
+
+**wreck_tank** (`tools/p_wreck.py tank2()`; the old builder stays as `tank()`, `TW_WRECK_V1=1` builds it). A knocked-out Mark IV male:
+individual track plates with grousers (8.1 u pitch, each slightly skewed), the left track broken at the front with 13 plates lying in the
+mud ahead; raised outer armour skins on both side frames with two rivet lines each, four riveted joint straps per side, three mud-chute
+openings with lips; sponsons with riveted edges, rear doors on hinges and 6-pdr mantlets (the left gun knocked askew); the cab with four
+visor flaps at different angles and its roof hatch left ajar; rails on supports, the unditching beam strapped and chained on; the middle
+roof plate blown off and curled back over its hole; three shell penetrations; a mud bank against the long sides thinning to a skirt at
+nose and tail. Hidden faces (frame and hull faces pressed together, everything facing down at ground level) are culled. Hull, tracks and
+mud are baked (4096 hull atlas, 2048 track and mud atlas: AO round every rivet, mud rising from the bank, burnt and chipped paint); only
+the beam, exhaust and gun steel keep stock tiling materials. LODs: `tools/lod_decimate.py` with the lightmapped rule (the wreck is
+`bakelighting 1`); lod2d rendered next to lod0 shows no visible change at turntable size (its p95 figure is inflated by rivets and
+plates merging). Physics: the same four hulls as before.
+
+**LOD0 cuts** (`tools/decimate_lod0.py`): Blender 5.2 headless (`-b --factory-startup`, no window): the SMD is welded by position, the
+Collapse decimator (quadric edge collapse; UVs interpolated) brings it to the budget, normals are smoothed within 40 degrees, and the
+SMD is written back with the same material names, so the converted textures still fit; then `lod_decimate.py` makes LOD1-4. Hull SMDs
+and materials are untouched (not re-sent). Visually the same as the old LOD0 at turntable size; the Stahlhelm needed 6,000 (4,000
+faceted the dome). These three are probe-lit, so their LOD0 chart counts (229 / 1,026 / 1,224) do not reach the lightmap.
+
+**stretcher_ext**: camouflage texels found by local colour variance (21-px window, closed and opened, the black grips excluded, stray
+green flecks beside it taken too), replaced by a generated khaki duck (weave, two noise scales, mud, old blood) plus the source's fine
+folds (its luminance minus a 2-px blur), blended over a 1.2-px soft edge. The normal map keeps the weave.
+
+**tw_de_a (T player body) re-weld.** `tools/soldiers.py weld_mesh()`: the Tripo GLB (`3d modell soldat wehrmacht.glb`, 22,130 vertices
+split along every UV seam) is welded by exact position (9,142 points; the source itself has 43 open / 13 non-manifold edges), fins on
+non-manifold edges dropped where that lowers open + non-manifold edges (8), simple 3-6-vertex holes capped from adjacent corners (13
+triangles), then the donor weights are transferred once per welded point (every seam copy gets the same weights) and smoothed over the
+welded topology. The normalisation frame is measured on the unwelded GLB, so joints, scale and pose are those of the old build.
+`soldiers.py --no-weld` reproduces the old body exactly (18,993 open edges, as NOTES tw31 recorded).
+
+| | Deployed (tw31 weld_cracks + step 6 fill_holes) | Step 14 |
+|---|---|---|
+| Open edges (positions welded at 1e-4) | 154 | **0** |
+| Non-manifold edges | 2,286 | **1** (a pinched collar edge where two closed sheets meet: 4 faces, consistently wound) |
+| Triangles / vertices | 18,286 / 22,130 | 18,286 / 22,115 (15 fin-only vertices gone) |
+| Skeleton | 87 joints | the same 87, same order (template); 4 influences |
+| Scale (head_0 / GLB head) | 81.888284 | 81.888284 |
+| Bounds | -10.80..8.94, -26.20..25.75, -0.12..79.83 | -10.81..8.96, -26.20..25.76, -0.15..79.83 |
+| Skin weights vs deployed | | median change 1 %, p99 18 %; dominant bone the same on 97.2 % of vertices; 0 seam copies with different weights |
+
+Only `tw_de_a_body.dmx` is staged: the vmdl (hitboxes, attachments, ragdoll, arms, animgraph) and the materials stay the deployed ones,
+so attachments and the first-person setup are unchanged. Render on red (`tools/render_body.py`, `out/step14/turntables/tw_de_a.png`):
+no specks on either; the deployed cracks were already sub-pixel at that size, so this is a correctness fix more than a visible one.
+
+**Deploy:** `tools/deploy_tw.py` merges `out/step14/deploy_files.txt` (its STEP_LISTS has 14). After the deploy, force-compile the six
+vmdls named in the list's header (assets before the map); the stretcher and tw_de_a vmdls did not change, so only `-f` compiles them.
+
+**Test compile (14 Nov 2026, level: compiled):** scratch addon `tw_weapontest` (the step 14 files over copies of the addon's own
+materials, stock copies, arms_de / shared player files; mg_trenchwarfare untouched), `resourcecompiler -f -i` per vmdl, each under the
+watchdog after any other session's compile had ended: wreck_tank 1 compiled 0 failed (32 s), petrol_can 1/0, helmet_stahl_ext 1/0,
+field_telephone 1/0, stretcher_ext 1/0, tw_de_a 1/0 (20 s); no warning or error line. Logs `out/step14/compile_*_watch.log`. Not
+yet seen in Hammer or in game: after the deploy, look at the wreck in no man's land (mud skirt against the terrain), and check the T
+player model in first and third person (it must load: an unloaded player model gives giant first-person weapons).
 
 ## Turntable review notes (12 Nov 2026, `out/step6/turntables/`)
 

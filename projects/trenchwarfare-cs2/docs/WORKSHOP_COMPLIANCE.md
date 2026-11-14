@@ -35,7 +35,8 @@ The map's props are original (generated), CC BY Sketchfab models with credit, or
 - **Sketchfab models, CC BY 4.0, credited in `CREDITS.txt`** (13): Mortier de 58 mm type 2 (mrpolarbear), A7V "Wotan" (IvanKoliada),
   Renault FT 1917 (kraytay), 75mm Field Gun (kisotsu, now the fallback only), Bl 8 Howitzer MkV (Zanderart), Army Stretcher (4mecharmi),
   British WW1 helmet (noodlepirate), Stahlhelm m16 (janovich3D), German Field Telephone (rayferric), Burnt Stump (dunathan), Vintage
-  petrol can (jkillgore), Spad S VII and Dr1 (manilov.ap). LOD meshes added in step 6 are adaptations: allowed under CC BY with credit.
+  petrol can (jkillgore), Spad S VII and Dr1 (manilov.ap). LOD meshes added in step 6 are adaptations: allowed under CC BY with credit; so are the step 14 changes (petrol can, Stahlhelm pair and field telephone LOD0 cut to 3k / 6k / 4k triangles,
+  the stretcher's modern camouflage canvas re-coloured), listed in CREDITS.txt. Step 14 added no new third-party source.
 - **Canon de 75 mle 1897** (`models/tw/ext/gm_canon75`, swapped in for `gun_75mm`): GMod Workshop 3576805717 by soap, whose page links
   "the original modeller": **"France M1897 75mm Cannon(Custom modified)" by DopamineWarlock, CC BY 4.0**, Sketchfab
   eb6c4b6b18324e64992615e04b60d2ab (published 14 Jun 2022; Objaverse 1.0 000-105 lists it as `by`). Confirmed 12 Nov 2026 (step 12):

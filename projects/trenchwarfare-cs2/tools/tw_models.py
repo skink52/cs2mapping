@@ -7,6 +7,8 @@ usage: python tools/tw_models.py table                     the swap table as tex
        python tools/tw_models.py view <model.vmdl> [...]   out/step6/turntables/<name>.png: one model from 4 sides (rebuilt props)
        python tools/tw_models.py weapons [gewehr98,mondragon,lewis]   out/step6/turntables/weapon_<key>.png: ours, stock, scale overlay, candidates
        python tools/tw_models.py check                      every chosen / fallback model exists (staged or in the content addon)
+       python tools/tw_models.py pair <model.vmdl> [...] [--new-root out/step14/addon] [--out out/step14/turntables]
+                                                            before (content addon) / after (new root) at the same camera (step 14)
 
 Renders: create/smd_view.py's software rasteriser with a fixed sun (Lambert, two-sided) so form reads; textures from the vmats (ours as
 PNGs; stock Valve materials decoded from pak01 with create/vtexread.py into a cache). Same scale and camera for both sides of a pair.
@@ -26,6 +28,7 @@ STAGE = os.path.join(PROJ, 'out', 'addon')
 OUT = os.path.join(PROJ, 'out', 'step6')
 CACHE = os.environ.get('TW_STOCK_CACHE', r'C:\source1\gmod_assets\trenchwarfare\stock_tex')
 M = lambda n: 'models/tw/%s/%s.vmdl' % (n, n.split('/')[-1])
+TEX_PREVIEW = 512           # textures are shrunk to this edge for the renders (memory: one copy per shade step)
 
 # ---------------------------------------------------------------------------------------------------------------- the swap table
 # slot: the model the map uses today (key of the prop entities). chosen: what the map should use after step 6. fallback: what to put
@@ -131,7 +134,13 @@ class Scene(smd_view.Scene):
             if not mc and re.search(r'TextureColor', t) is None: c = None
         else:
             c = stock_png(vmat)
-        col = np.array(Image.open(c).convert('RGB')).astype(np.float32) if c else np.full((4, 4, 3), 150, np.float32)
+        im = Image.open(c).convert('RGB') if c else None
+        if im is not None and max(im.size) > TEX_PREVIEW:       # previews only: a 2048 texture cached per shade step took GBs
+            im = im.resize((min(TEX_PREVIEW, im.size[0]), min(TEX_PREVIEW, im.size[1])), Image.BILINEAR)
+        col = np.array(im).astype(np.float32) if im is not None else np.full((4, 4, 3), 150, np.float32)
+        tint = re.search(r'g_vColorTint\s+"\[([\d. ]+)\]"', t) if vp else None
+        if tint and im is not None:          # step 14: the stock copies (steel, brass, paint) are a grey texture tinted in the vmat
+            col = col * np.array([float(v) for v in tint.group(1).split()[:3]], np.float32)
         al = np.array(Image.open(a).convert('L')).astype(np.float32) / 255 if a else None
         if al is not None and al.shape != col.shape[:2]:
             al = np.array(Image.fromarray((al * 255).astype(np.uint8)).resize(col.shape[1::-1])).astype(np.float32) / 255
@@ -211,6 +220,37 @@ def cmd_view(models, tag=''):
         name = os.path.splitext(os.path.basename(m))[0] + (tag or '_view')
         path = os.path.join(OUT, 'turntables', name + '.png')
         im.save(path); print('  %s  bounds %s .. %s' % (os.path.relpath(path, PROJ), lo.round(1).tolist(), hi.round(1).tolist()))
+
+
+def cmd_pair(models, new_root, out_dir, old_roots=None):
+    """step 14 before / after: the deployed model (content addon, or old_roots) left, the rebuilt one (new_root first) right; same
+    centre, radius and views (3/4 front, 3/4 rear from above, side, top, and a close 3/4 at 0.45 of the radius)"""
+    from PIL import Image, ImageDraw
+    os.makedirs(out_dir, exist_ok=True)
+    old_roots = old_roots or [CONTENT]
+    views = VIEWS + ((0, 80),)
+    for m in models:
+        cols = []
+        lo_o, hi_o = None, None
+        try:
+            lo_o, hi_o, _ = Scene(old_roots).add_model(m)
+        except Exception:
+            pass
+        lo_n, hi_n, _ = Scene([new_root] + [STAGE, CONTENT]).add_model(m)
+        lo = np.minimum(lo_n, lo_o) if lo_o is not None else lo_n; hi = np.maximum(hi_n, hi_o) if hi_o is not None else hi_n
+        c = (lo + hi) / 2; r = float(np.linalg.norm(hi - lo)) / 2
+        for label, roots in (('BEFORE (deployed)', old_roots), ('AFTER (step 14)', [new_root, STAGE, CONTENT])):
+            if label.startswith('BEFORE') and lo_o is None:
+                cols.append(Image.new('RGB', (560, 380 * (len(views) + 1)), (60, 60, 60))); continue
+            im, l2, h2 = turntable(m, roots, views=views, centre=c, radius=r, label=label)
+            close, _, _ = turntable(m, roots, views=((30, 14),), centre=c, radius=r * 0.45, label='close')
+            W = Image.new('RGB', (im.size[0], im.size[1] + close.size[1])); W.paste(im, (0, 0)); W.paste(close, (0, im.size[1]))
+            cols.append(W)
+        S = Image.new('RGB', (sum(i.size[0] for i in cols), max(i.size[1] for i in cols)))
+        x = 0
+        for i in cols: S.paste(i, (x, 0)); x += i.size[0]
+        path = os.path.join(out_dir, os.path.splitext(os.path.basename(m))[0] + '.png')
+        S.save(path); print('  %s' % path)
 
 
 # ---------------------------------------------------------------------------------------------------------------- weapons
@@ -316,6 +356,14 @@ def main():
     if a[0] == 'table': cmd_table()
     elif a[0] == 'compare': cmd_compare(set(a[1].split(',')) if len(a) > 1 else set())
     elif a[0] == 'view': cmd_view(a[1:])
+    elif a[0] == 'pair':
+        root = os.path.join(PROJ, 'out', 'step14', 'addon'); out = os.path.join(PROJ, 'out', 'step14', 'turntables'); ms = []
+        it = iter(a[1:])
+        for x in it:
+            if x == '--new-root': root = next(it)
+            elif x == '--out': out = next(it)
+            else: ms.append(x)
+        cmd_pair(ms, root, out)
     elif a[0] == 'weapons': cmd_weapons(set(a[1].split(',')) if len(a) > 1 else set())
     elif a[0] == 'check':
         bad = [(k, m) for k, s in SWAPS.items() for m in (s['chosen'], s['fallback']) if not exists(m)]

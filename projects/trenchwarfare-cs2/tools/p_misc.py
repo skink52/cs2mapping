@@ -7,6 +7,10 @@ import shaders as S
 
 FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.ttf'
 FONT_SERIF = '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf'
+import os as _os
+if not _os.path.exists(FONT):        # Windows PC (step 14): the signs were drawn with DejaVu on Linux; this only lets specs() run here
+    FONT = next((p for p in ('C:/Windows/Fonts/arialbd.ttf', 'C:/Windows/Fonts/arial.ttf') if _os.path.exists(p)), FONT)
+    FONT_SERIF = next((p for p in ('C:/Windows/Fonts/georgiab.ttf', 'C:/Windows/Fonts/timesbd.ttf') if _os.path.exists(p)), FONT_SERIF)
 
 
 def text_img(lines, w=512, h=128, color=(0.92, 0.90, 0.85), font=FONT, rough=True, size=None):

@@ -32,6 +32,11 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   0 out of memory. Logs copied to `out/step9/`. `docs/BUILD_LOG_1.md` filled: nav **10,269 areas** (tw34 44,160; target < 5,000;
   the ~1,470 estimate was 7x off), 24,718 meshes / 1.40 M charts at 2048, vpk 519.9 MB. 4 stale models (wire, ladder) recompiled;
   check_world now fails only on the user's duplicate info_map_parameters.
+- 14 Nov ~14:00: step 14 prop rebuilds (staged `out/step14/`, 40 files): wreck_tank rebuilt as a knocked-out Mark IV
+  (`tools/p_wreck.py tank2()`, 5.4k -> 29k tris + LODs); petrol can 28.9k -> 3k, Stahlhelm 27.5k -> 6k, field telephone 18.6k -> 4k
+  (`tools/decimate_lod0.py`, Blender); stretcher canvas re-textured to period khaki; tw_de_a welded before weight transfer in
+  `tools/soldiers.py` (open edges 154 -> 0; same scale and 87 joints). Test compile 6/0. `--pit-sandbags` option prepared (off,
+  waiting for the user: crew sightlines 13/54 -> 4/4 of 380).
 - 13 Nov 06:53: **world pass 3 deployed + compiled** (compile 5: 0 errors, 0 DELETED, nav 4,529, all 83 bot/heal points on
   nav incl. the dressing stations, check_world clean). **Current build; level: compiled.**
 - 13 Nov 05:20: world pass 3 (docs/REVIEW_WORLD_3.md): dressing-station shelter rebuilt in `tools/p_trench.py` (85.8 u crown,

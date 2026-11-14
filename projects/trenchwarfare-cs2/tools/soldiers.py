@@ -154,10 +154,77 @@ def move(X, tr):
     return d @ R.T + q
 
 
-def transfer_weights(P, N, F, donor):
+def _edges(T):
+    from collections import defaultdict
+    E = defaultdict(list)
+    for fi, t in enumerate(T):
+        for i, j in ((0, 1), (1, 2), (2, 0)):
+            E[(min(t[i], t[j]), max(t[i], t[j]))].append(fi)
+    return E
+
+
+def weld_mesh(P, F, nd=6):
+    """Weld a GLB mesh before the weight transfer (remaster step 14; NOTES tw31 'fix at the source').
+    Tripo splits every vertex along each UV seam; the copies got different donor weights and the re-pose pulled them apart (tw_de_a:
+    18,993 open edges before tools/weld_cracks.py, 154 open / 2,285 non-manifold after it and fill_holes). Here the copies are found
+    by exact position (rounded to nd decimals of the GLB's metres), the weights are transferred once per welded point (so every copy
+    gets the same weights and lands on the same spot), then the welded topology is cleaned: fin triangles on non-manifold edges are
+    dropped when that lowers the count of open + non-manifold edges, and simple boundary loops of 3-6 vertices (single missing
+    triangles of the Tripo export) are capped with corners copied from an adjacent face (no new vertex data).
+    -> (F cleaned, in original vertex indices; inv: original vertex -> welded point; first: welded point -> an original vertex; stats)"""
+    from collections import Counter
+    _, first, inv = np.unique(np.round(P, nd), axis=0, return_index=True, return_inverse=True)
+    inv = inv.ravel(); T = inv[F]
+    st0 = Counter(len(v) for v in _edges(T).values())
+    keep = np.array([len(set(t)) == 3 for t in T])
+    bad = lambda: sum(1 for v in _edges(T[keep]).values() if len(v) != 2)
+    while True:
+        idx = np.nonzero(keep)[0]; E = _edges(T[idx])
+        nm = [k for k, v in E.items() if len(v) > 2]
+        if not nm: break
+        base = sum(1 for v in E.values() if len(v) != 2); best = None
+        for k in nm:
+            for lf in E[k]:
+                keep[idx[lf]] = False; d = bad() - base; keep[idx[lf]] = True
+                if best is None or d < best[0]: best = (d, idx[lf])
+        if best[0] >= 0: break
+        keep[best[1]] = False
+    F2, T2 = F[keep], T[keep]
+    nxt, corner = {}, {}
+    for k, fl in _edges(T2).items():
+        if len(fl) != 1: continue
+        t, f = T2[fl[0]], F2[fl[0]]
+        for i, j in ((0, 1), (1, 2), (2, 0)):
+            if (min(t[i], t[j]), max(t[i], t[j])) == k:
+                nxt.setdefault(t[j], []).append(t[i]); corner[t[i]] = f[i]; corner[t[j]] = f[j]
+    caps, used = [], set()
+    for s in list(nxt):
+        if s in used or len(nxt[s]) != 1: continue
+        loop, x = [s], s
+        while True:
+            n = nxt.get(x)
+            if not n or len(n) != 1: loop = None; break
+            x = n[0]
+            if x == s: break
+            loop.append(x)
+            if len(loop) > 6: loop = None; break
+        if not loop or any(v in used for v in loop): continue
+        used |= set(loop)
+        caps += [[corner[loop[0]], corner[loop[k]], corner[loop[k + 1]]] for k in range(1, len(loop) - 1)]
+    F3 = np.vstack([F2, np.array(caps, int).reshape(-1, 3)]) if caps else F2
+    st1 = Counter(len(v) for v in _edges(inv[F3]).values())
+    stats = dict(verts=len(P), welded=len(first), tris_in=len(F), fins_removed=int((~keep).sum()), caps=len(caps), tris_out=len(F3),
+                 open_before=st0[1], nonmanifold_before=sum(v for k, v in st0.items() if k > 2),
+                 open=st1[1], nonmanifold=sum(v for k, v in st1.items() if k > 2))
+    return F3, inv, first, stats
+
+
+def transfer_weights(P, N, F, donor, frame_pts=None):
     """skin weights for a mesh whose export lost them, copied from another Tripo soldier in the same T-pose: both are normalised
     (arm span, height, torso centre), each vertex takes the inverse-distance mix of its nearest donor vertices (position + a little
-    normal, so an inner arm doesn't pick the torso), then the weights are smoothed over the mesh a few times"""
+    normal, so an inner arm doesn't pick the torso), then the weights are smoothed over the mesh a few times.
+    frame_pts: the points the target's normalisation frame is measured on (default P); a welded mesh passes the unwelded GLB
+    positions so the joints, and with them the model's scale and pose, stay exactly those of the unwelded build"""
     from scipy.spatial import cKDTree
     gd, md, names, parent, Wdd = load_skinned(donor)
     def frame_of(X):
@@ -170,7 +237,7 @@ def transfer_weights(P, N, F, donor):
     def denorm(X, f):
         cx, y0, cz, span, h = f
         return np.stack([X[:, 0] * span + cx, X[:, 1] * h + y0, X[:, 2] * h + cz], 1)
-    fd, ft = frame_of(md['P']), frame_of(P)
+    fd, ft = frame_of(md['P']), frame_of(P if frame_pts is None else frame_pts)
     A = np.hstack([norm(md['P'], fd), 0.03 * md['N']]); B = np.hstack([norm(P, ft), 0.03 * N])
     Jd = joints_bind(gd, names) or joints_from_weights(md['P'], names, parent, Wdd)
     Jt = {n: denorm(norm(v[None], fd), ft)[0] for n, v in Jd.items()}
@@ -189,19 +256,35 @@ def transfer_weights(P, N, F, donor):
     return names, parent, W, Jt
 
 
-def convert_body(T, glb_path, name, out, donor=None):
+def convert_body(T, glb_path, name, out, donor=None, weld=True):
     g, m, names, parent, Wd = load_skinned(glb_path)
+    P0 = m['P'].copy()
     used = (Wd.sum(0) > 0).sum()
     if used < 20:
         if not donor: raise SystemExit('%s: only %d bones carry weights - the rig is broken, re-export it (or give name=glb@donor.glb)' % (glb_path, used))
-        names, parent, Wd, Jb = transfer_weights(m['P'], m['N'], m['F'], donor)
+        if weld:      # step 14: one weight set per welded point (the old per-copy transfer cracked the body along every UV seam)
+            F, inv, first, st = weld_mesh(m['P'], m['F'])
+            live = np.zeros(len(m['P']), bool); live[F.ravel()] = True          # drop vertices only fins used
+            remap = -np.ones(len(m['P']), np.int64); remap[live] = np.arange(live.sum())
+            for k in ('P', 'N', 'UV'): m[k] = m[k][live]
+            m['F'] = remap[F]; inv = inv[live]
+            _, inv = np.unique(inv, return_inverse=True); inv = inv.ravel()
+            first = np.zeros(inv.max() + 1, np.int64); first[inv] = np.arange(len(inv))
+            Nw = np.zeros((len(first), 3)); np.add.at(Nw, inv, m['N']); Nw /= np.linalg.norm(Nw, axis=1, keepdims=True) + 1e-12
+            names, parent, Ww, Jb = transfer_weights(m['P'][first], Nw, inv[m['F']], donor, frame_pts=P0)
+            Wd = Ww[inv]
+            print('%s: welded %d -> %d points; open edges %d -> %d, non-manifold %d -> %d (%d fins dropped, %d holes capped)'
+                  % (name, st['verts'], st['welded'], st['open_before'], st['open'], st['nonmanifold_before'], st['nonmanifold'],
+                     st['fins_removed'], st['caps']))
+        else:
+            names, parent, Wd, Jb = transfer_weights(m['P'], m['N'], m['F'], donor)
         print('%s: rig broken (%d bones weighted) - weights and joints copied from %s' % (name, used, os.path.basename(donor)))
     else:
         Jb = joints_bind(g, names)
     P = gl2cs(m['P']); N = gl2cs(m['N'])
     Jg = Jb if Jb is not None else joints_from_weights(m['P'], names, parent, Wd)
     J = {n: gl2cs(v[None])[0] for n, v in Jg.items()}
-    floor = P[:, 2].min()
+    floor = gl2cs(P0)[:, 2].min()          # the unwelded GLB's floor: the scale must not move with the weld
     s = (T.J('head_0')[2] - 0) / (J['Head'][2] - floor)
     P = (P - [0, 0, floor]) * s; J = {n: (v - [0, 0, floor]) * s for n, v in J.items()}
     centre = (J['LeftUpLeg'] + J['RightUpLeg']) / 2
@@ -368,7 +451,7 @@ if __name__ == '__main__':
     args = sys.argv[1:]
     tpl, out = args[0], args[1]
     T = Template(tpl)
-    bodies, arms, sides, preview, bare = [], {}, {}, None, False
+    bodies, arms, sides, preview, bare, weld = [], {}, {}, None, False, True
     i = 2
     while i < len(args):
         a = args[i]
@@ -376,6 +459,7 @@ if __name__ == '__main__':
         elif a == '--side': k, v = args[i + 1].split('=', 1); sides[k] = v; i += 2
         elif a == '--preview': preview = args[i + 1]; i += 2
         elif a == '--bare-hands': bare = True; i += 1
+        elif a == '--no-weld': weld = False; i += 1
         else: bodies.append(a.split('=', 1)); i += 1
     sh = os.path.join(out, MODEL_DIR, 'shared'); os.makedirs(sh, exist_ok=True)
     import shutil
@@ -393,11 +477,11 @@ if __name__ == '__main__':
         try:
             donor = None
             if '@' in path: path, donor = path.split('@', 1)
-            V, F, W, s = convert_body(T, path, name, out, donor)
+            V, F, W, s = convert_body(T, path, name, out, donor, weld)
         except SystemExit as e:
             print('SKIP', e); continue
         write_vmdl(T, out, name, sides.get(name, 'gb' if 'gb' in name else 'de') if arms else 'stock', bare and bool(arms))
-        print(name, 'verts', len(V), 'tris', len(F), 'scale %.1f' % s, 'height %.1f' % V[:, 2].max())
+        print(name, 'verts', len(V), 'tris', len(F), 'scale %.6f' % s, 'height %.3f' % V[:, 2].max())
         if preview:
             import preview_soldier
             preview_soldier.sheet(T, V, np.array(F), W, os.path.join(preview, name + '.png'))
