@@ -8,13 +8,24 @@ or in a func_water_analog:
   16 u under the bottom to UNDER u below the surface (the volume tests the player's feet, so the effect starts when the eyes go
   under): lighting/postprocessing/postprocess_filmic_underwater.vpost (copied from ba_jail_seaside), master 0, exposure 0-0.3,
   fade 0.1, as on ba_jail_seaside;
-- a master post_processing_volume is added (stock lighting/postprocessing/filmic_default.vpost) if the map has none.
+- a master post_processing_volume is added (stock lighting/postprocessing/filmic_default.vpost) if the map has none;
+- every func_water mesh wider than CELL is cut into pieces no wider than CELL, one mesh each (split_volumes, also the pass `watersplit`).
+
+Why the cut (14 Nov 2026): resourcecompiler gives a func_water mesh over about 500 u across no physics hull ("ExtrudeReplaceHull failed to
+build new convex hull" / "Failed to create physics hulls for one or more meshes", and the compile still says OK), so there is no water to swim
+in. In the ported maps' build logs 85 of 107 func_water meshes over 500 u failed, plain six-face boxes included; none of 41 at 448 u or less
+did (mg_monsoon's test compiles: 256 / 384 boxes pass, a single 512 box fails). docs/reference/cs2-gotchas.md has the rule.
 """
+import math
 import os
+import numpy as np
 import dmx
 import vmapedit as V
+import splitfaces as SF
 
 UNDER = 80.0
+CELL = 384.0           # widest func_water piece (x and y); each mesh is cut into equal pieces no wider than this
+NODRAW = 'materials/tools/toolsnodraw.vmat'
 VPOST = 'lighting/postprocessing/postprocess_filmic_underwater.vpost'
 TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'box_template.vmap')
 
@@ -73,6 +84,175 @@ def underwater_lights(m, lo, hi, step0=640.0, cap=16):
             m.new_entity('light_omni2', list(p), props)
             lights.append((p, 512.0)); placed += 1
     return placed
+
+
+def _key(p): return tuple(np.round(p, SF.WELD))
+
+
+def _cap(polys, axis, c, outward, attrs):
+    """The face closing a piece on the cut plane pos[axis] = c: the open edges the clipped faces left on that plane, walked the other way.
+    -> poly or None (the edges do not make one loop)"""
+    nxt = {}
+    for p in polys:
+        cs = p['corners']
+        for j in range(len(cs)):
+            a, b = cs[j], cs[(j + 1) % len(cs)]
+            if abs(a['pos'][axis] - c) < SF.EPS and abs(b['pos'][axis] - c) < SF.EPS and _key(a['pos']) != _key(b['pos']):
+                nxt[_key(b['pos'])] = (_key(a['pos']), a)              # reversed: the cap runs b -> a
+    if len(nxt) < 3: return None
+    start = next(iter(nxt)); k, loop = start, []
+    for _ in range(len(nxt)):
+        t, a = nxt[k]; loop.append(a); k = t
+        if k == start: break
+    if k != start or len(loop) != len(nxt): return None
+    n = [0.0, 0.0, 0.0]; n[axis] = outward
+    corners = []
+    for a in loop:
+        f = {kk: (np.array(n) if kk.startswith('normal') else np.array(v, float)) for kk, v in a['fvd'].items()}
+        corners.append({'pos': a['pos'].copy(), 'fvd': f})
+    return {'attrs': attrs, 'corners': corners}
+
+
+def _pieces_convex(polys, cuts, attrs):
+    """A closed convex mesh cut into grid cells: every face clipped to the cell, each cut plane closed with a nodraw cap."""
+    out = []
+    xs, ys = cuts
+    for i in range(len(xs) - 1):
+        for j in range(len(ys) - 1):
+            planes = [(0, xs[i], -1.0, i > 0), (0, xs[i + 1], 1.0, i < len(xs) - 2), (1, ys[j], -1.0, j > 0), (1, ys[j + 1], 1.0, j < len(ys) - 2)]
+            piece = [{'attrs': p['attrs'], 'corners': p['corners']} for p in polys]
+            for axis, c, side, cut in planes:                    # clip, then close that plane before the next (its cap gets clipped too)
+                if not cut: continue
+                nxt = []
+                for p in piece:
+                    lo, hi = SF.clip_poly(p['corners'], axis, c)
+                    keep = lo if side > 0 else hi
+                    if SF._usable(keep): nxt.append({'attrs': p['attrs'], 'corners': keep})
+                piece = nxt
+                if not piece: break
+                cap = _cap(piece, axis, c, side, attrs)
+                if cap is None: return None
+                piece.append(cap)
+            if not piece: continue
+            out.append(piece)
+    return out
+
+
+def _pieces_prism(polys, mats, cuts, attrs, zbot):
+    """Fallback for a mesh that is not a closed convex volume: each upward water face, clipped to the grid cells, extruded down to zbot
+    (top in its own material, bottom and walls nodraw), as mg_monsoon's water_volume(pieces=True). -> pieces or None"""
+    xs, ys = cuts
+    tops = []
+    for p in polys:
+        nz = np.mean([c['fvd'].get('normal:0', np.zeros(3))[2] for c in p['corners']])
+        if nz > 0.5 and 'water' in mats[p['attrs']['materialindex:0']]:
+            if not SF.is_convex(p['corners']): return None
+            tops.append(p)
+    if not tops: return None
+    out = []
+    for p in tops:
+        cells = [p['corners']]
+        for axis, cs in ((0, xs[1:-1]), (1, ys[1:-1])):
+            for c in cs:
+                nxt = []
+                for pc in cells:
+                    lo, hi = SF.clip_poly(pc, axis, c)
+                    nxt += [x for x in (lo, hi) if SF._usable(x)]
+                cells = nxt
+        for top in cells:
+            if min(c['pos'][2] for c in top) - zbot < 1.0: continue
+            bot = [{'pos': np.array([c['pos'][0], c['pos'][1], zbot]), 'fvd': {k: (np.array([0.0, 0.0, -1.0]) if k.startswith('normal') else v) for k, v in c['fvd'].items()}} for c in top]
+            piece = [{'attrs': p['attrs'], 'corners': top}, {'attrs': attrs, 'corners': bot[::-1]}]
+            k = len(top)
+            for j in range(k):
+                a, b, ab, bb = top[j], top[(j + 1) % k], bot[j], bot[(j + 1) % k]
+                d = b['pos'] - a['pos']; n = np.array([d[1], -d[0], 0.0]); ln = np.linalg.norm(n)
+                n = n / ln if ln > 1e-9 else n
+                wall = [{'pos': x['pos'], 'fvd': {kk: (n if kk.startswith('normal') else vv) for kk, vv in x['fvd'].items()}} for x in (b, a, ab, bb)]
+                piece.append({'attrs': attrs, 'corners': wall})
+            out.append(piece)
+    return out
+
+
+def split_volumes(m, c, cell=CELL):
+    """Cut every func_water mesh wider than `cell` (x or y) into equal pieces no wider than `cell`, one mesh per piece in the same entity.
+    A closed convex mesh (a CS:GO water brush) is cut exactly; anything else becomes one prism per upward water face and cell. Flat sheets
+    (no depth) are cut but stay sheets. -> number of meshes cut"""
+    cut = pieces = 0
+    notes, sheets = [], []
+    for ent in m.by_class('func_water'):
+        label = 'func_water %s' % (m.name(ent) or '-')
+        for node in [n for n in m.children(ent) if m.type(n) == b'CMapMesh']:
+            md = m.g(node, b'meshData')
+            if md is None: continue
+            b = m.bounds(node)
+            if b is None or max(b[1][0] - b[0][0], b[1][1] - b[0][1]) <= cell + SF.EPS: continue
+            if SF.mesh_has_subdivision(m, node):
+                notes.append('%s (mesh %d): subdivision mesh, not cut' % (label, node)); continue
+            ok, _ = SF._identity_xform(m, node)
+            if not ok:
+                notes.append('%s (mesh %d): rotated or scaled mesh, not cut' % (label, node)); continue
+            polys, mats = SF.mesh_read(m, node)
+            P = np.array([cr['pos'] for p in polys for cr in p['corners']])
+            lo, hi = P.min(0), P.max(0)
+            cuts = []
+            for k in range(2):
+                n = max(1, math.ceil((hi[k] - lo[k]) / cell - 1e-6))
+                cuts.append([float(lo[k] + (hi[k] - lo[k]) * i / n) for i in range(n)] + [float(hi[k])])
+            marr = dmx.geta(m.E[md], b'materials')
+            if NODRAW not in mats:
+                marr[2].append(NODRAW.encode() if isinstance(marr[2][0], (bytes, bytearray)) else NODRAW); mats = mats + [NODRAW]
+            ni = mats.index(NODRAW)
+            src = next((p for p in polys if p['attrs']['materialindex:0'] == ni), polys[0])
+            attrs = dict(src['attrs']); attrs['materialindex:0'] = ni
+            closed = -1 not in (m.g(md, b'edgeFaceIndices') or [-1])
+            convex = closed and all(SF.is_convex(p['corners']) for p in polys)
+            if convex:                                           # every vertex on or behind every face plane (normals point out)
+                for p in polys:
+                    Q = np.array([cr['pos'] for cr in p['corners']]); nrm = np.zeros(3)
+                    for i in range(1, len(Q) - 1): nrm += np.cross(Q[i] - Q[0], Q[i + 1] - Q[0])
+                    nrm /= np.linalg.norm(nrm) or 1.0
+                    if np.dot(nrm, np.mean([cr['fvd'].get('normal:0', nrm) for cr in p['corners']], 0)) < 0: nrm = -nrm
+                    if ((P - Q.mean(0)) @ nrm).max() > 0.05: convex = False; break
+            if hi[2] - lo[2] < 1.0:                               # a flat sheet: cut it, it has no volume to close
+                kind = 'sheet'
+                out = []
+                for i in range(len(cuts[0]) - 1):
+                    for j in range(len(cuts[1]) - 1):
+                        cur = [(p['attrs'], p['corners']) for p in polys]
+                        for axis, cc, keep_lo in ((0, cuts[0][i], False), (0, cuts[0][i + 1], True), (1, cuts[1][j], False), (1, cuts[1][j + 1], True)):
+                            nc = []
+                            for at, cs in cur:
+                                l_, h_ = SF.clip_poly(cs, axis, cc)
+                                x = l_ if keep_lo else h_
+                                if SF._usable(x): nc.append((at, x))
+                            cur = nc
+                        if cur: out.append([{'attrs': at, 'corners': cs} for at, cs in cur])
+                sheets.append('%s (mesh %d)' % (label, node))
+            elif convex:
+                kind = 'convex'; out = _pieces_convex(polys, cuts, attrs)
+            else:
+                kind = 'prisms'; out = _pieces_prism(polys, mats, cuts, attrs, float(lo[2]))
+            if not out:
+                notes.append('%s (mesh %d, %d x %d u): %s cut failed, not cut' % (label, node, hi[0] - lo[0], hi[1] - lo[1], kind)); continue
+            backup = SF.mesh_read(m, node)[0]
+            made, err = [], None
+            for piece in out[1:]:
+                new = m.import_subtree(m, node, {}, [m.next_node_id()])
+                err = SF.mesh_write(m, new, piece) or (SF.mesh_check(m, new) or [None])[0]
+                if err: break
+                made.append(new)
+            if not err: err = SF.mesh_write(m, node, out[0]) or (SF.mesh_check(m, node) or [None])[0]
+            if err:
+                SF.mesh_write(m, node, backup)
+                notes.append('%s (mesh %d): %s, not cut' % (label, node, err)); continue
+            dmx.geta(m.E[ent], b'children')[2].extend(made)
+            cut += 1; pieces += len(out)
+            c.log.append('watersplit: %s mesh %d (%d x %d x %d u, %s) -> %d pieces (func_water meshes over ~500 u get no physics hull)'
+                         % (label, node, hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2], kind, len(out)))
+    if sheets: c.todo.append('watersplit: flat func_water sheets with no depth (no volume to swim in; the CS:GO brush depth was lost on import): %s' % ', '.join(sheets)[:600])
+    if notes: c.todo.append('watersplit: %s' % '; '.join(notes)[:600])
+    return cut
 
 
 def run(m, c):
@@ -134,6 +314,7 @@ def run(m, c):
             'exposurespeedup': '1', 'exposurespeeddown': '1', 'fadetime': '1.0'})
         dmx.geta(m.E[e], b'children')[2].append(box(m, tm, tnode, [-8, -8, -8], [8, 8, 8], b'materials/tools/toolsnodraw.vmat'))
     c.needs_underwater_vpost = npp > 0
+    split_volumes(m, c)
     c.log.append('water: %d water meshes -> %d func_water; %d underwater post_processing_volumes (%s, top %g u below the surface); %s'
                  % (len(meshes), nwater, npp, VPOST, UNDER, 'master post_processing_volume already there' if master else 'master post_processing_volume added (filmic_default)'))
     if nlight:

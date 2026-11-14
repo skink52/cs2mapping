@@ -321,7 +321,7 @@ This is the canonical naming rule; [hud.md](../creation/hud.md#loading-screens) 
 All of these keep your Hammer edits and append to the cleanup log. Exact usage lines: [tools/README.md](../../tools/README.md).
 
 - `stage_d.py <addon> <root> pass[,pass...]`: passes `beams, lights, lightcover, visfit_detail, relight, lightbright, droppedio, ovlquads, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity,
-  roundend, weaponmodels, playercolor, envglobal, equipitems, rendermode, particles, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water, fire, splitfaces, waterprobe, culled, displaybrush, trigmat, toolpaths, trigsplit, nullparams, origindup, ropes` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
+  roundend, weaponmodels, playercolor, envglobal, equipitems, rendermode, particles, overlayfix, overlaydepth, facescale, matflags, probes, probecover, steam, soundscripts, physpush, gameui, physlaunch, renderamt, ventlight, doorsolid, doorhinge, doorparent, iofix, tesla, overlays, probefill, probedetail, skyshell, water, watersplit, fire, splitfaces, waterprobe, culled, displaybrush, trigmat, toolpaths, trigsplit, nullparams, origindup, ropes` (`physpush`, `gameui` and `physlaunch` add their section to the existing `<addon>_io.js`). Stage C's `vis` step is called `visfit` here. sky, sounds, doors, assets, equip etc. aren't stage D passes: use `run_pass.py`.
   - `visfit` replaces the map's vis hints with ones fitted to the play space and takes unneeded sky shells out of vis. `visfit_lower` does the same with
     Lower instead of Low everywhere (for a map whose vis merge stalls).
   - **Daylight** (`daylight`, stage D only; for indoor maps that are still dark after stage C): adds a stationary light_environment using the map's env_sky
@@ -347,6 +347,13 @@ All of these keep your Hammer edits and append to the cleanup log. Exact usage l
   post_processing_volume (`lighting/postprocessing/postprocess_filmic_underwater.vpost`, copied from ba_jail_seaside; master 0, exposure 0–0.3, fade 0.1,
   spawnflags 4097, toolsnodraw) from 16 u under the bottom to **80 u below the surface** (the volume tests the player's feet). A master
   post_processing_volume (`filmic_default.vpost`, master 1) is added if the map has none.
+  **Every func_water mesh wider than 384 u** (x or y) is then cut into equal pieces no wider than 384 u, one closed mesh each, in the same
+  func_water (`watervol.split_volumes`; the pass `watersplit` does only this, for maps ported before 14 Nov 2026). CS2's compiler gives a
+  func_water mesh over about 500 u no physics hull (`ExtrudeReplaceHull failed` / `Failed to create physics hulls`, compile still `OK`), so
+  that water could not be swum in: 85 of the 107 such meshes in the ports' build logs ([cs2-gotchas](../reference/cs2-gotchas.md)). A closed convex
+  mesh (a CS:GO water brush) is cut exactly (cut faces capped in toolsnodraw); anything else becomes one prism per upward water face and cell,
+  down to the mesh's lowest point. Flat sheets with no depth are cut but stay sheets, and displaced (subdivision) water tops and rotated meshes
+  are left whole; all three are listed in TO CHECK.
   Water at least 48 u deep also gets a sparse grid of dim, unshadowed light_omni2 (map median brightness clamped to 60–250 lumens, range 512,
   ≤16 per volume, none where an existing light already reaches): Source 1 water was lit by the lightmap, CS2 water needs lights. Heuristic,
   listed in TO CHECK. From cs2-slop-porting `rebuild_lighting.py` (MIT).
