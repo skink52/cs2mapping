@@ -25,6 +25,9 @@ SHOTS = {   # name: (eye, target, lens mm)
     'stub': ((4300, 120, 240), (7100, 0, 700), 24),              # a street leaving the ring: barricade, outer blocks, the wall
     'ring': ((4700, -3900, 330), (5300, 2600, 900), 22),          # along the east ring road: the outer blocks' fronts
     'outer': ((3000, -3000, 2600), (6400, 1000, 900), 26),        # over the roofs towards the outer ring and the wall
+    'podium': ((-3000, 5100, 420), (-4100, 4350, 250), 22),      # point A's ramp on the north ring road
+    'podium_c': ((3000, -5100, 420), (4100, -4350, 250), 22),    # point C's ramp on the south ring road
+    'junction': ((-1600, 3500, 1300), (-2700, 2600, 650), 24),   # the two decks' junction and the north-south lanes from above
 }
 
 

@@ -370,6 +370,7 @@ def static_obstacles(o):
                 tc = sd * (LANE_IN + HW_W / 2) / 2
                 x, y = (mid, at + tc) if ax == 'x' else (at + tc, mid)
                 o.claim(x, y, (HW_FOOT - HW_END) / 2 + 40, (HW_W / 2 - LANE_IN) / 2 + 10, 0 if ax == 'x' else 90, 0, DECK, check=False, name='ramp')
+    for x0, y0, x1, y1, zt in plan.get('podium_ramps', []): o.claim((x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) / 2 + 20, (y1 - y0) / 2 + 20, 0, 0, zt + 40, check=False, name='ramp')
     for x, y in plan['lamps']: o.claim(x + 365, y + 365, 26, 26, 0, 0, 600, check=False, name='mast')
     for x in (-3600, 3600): o.claim(x, 0, 300, 300, 0, 0, 500, check=False, name='flag')
 
@@ -619,7 +620,7 @@ def dress_block(o, blk, rnd):
         top = 400.0 if kind == 'podium' else 200.0
         for (p0, p1, nrm) in (((cx - h, cy - h), (cx + h, cy - h), (0, -1)), ((cx - h, cy + h), (cx + h, cy + h), (0, 1)),
                               ((cx - h, cy - h), (cx - h, cy + h), (-1, 0)), ((cx + h, cy - h), (cx + h, cy + h), (1, 0))):
-            if kind == 'podium' and nrm[0] == (-1 if cx > 0 else 1): continue          # the ramp side
+            if kind == 'podium' and nrm[1] == (1 if cy > 0 else -1): continue          # the ramp side (sprawl.py: the ring-road face)
             wall_run(o, rnd, p0, p1, nrm, 0.0, top, 2 if kind == 'podium' else 1)
         if kind == 'tall':                                               # the slab roof round the towers: plant, tanks, skylights (all under 60 u)
             for k in range(26):
@@ -800,10 +801,11 @@ def dress_highway(o, axis, at, cross, rnd):
         o.n['gantries'] += 1
     # stranded traffic
     for a0, a1 in spans:
+        if a1 - a0 < 900: continue                                       # the short stub past the junction: no room (12 Nov: cars in mid-air)
         for c in range(2):
             ac = rnd.uniform(a0 + 250, a1 - 250)
             for k in range(rnd.randint(3, 5)):
-                lane = rnd.choice([-240, -80, 80, 240]); a = ac + rnd.uniform(-260, 260)
+                lane = rnd.choice([-240, -80, 80, 240]); a = min(max(ac + rnd.uniform(-260, 260), a0 + 90), a1 - 90)
                 x, y = W(a, lane + rnd.uniform(-20, 20)); o.car(rnd, x, y, z, yaw + rnd.uniform(-14, 14), pad=10)
         a = rnd.uniform(a0 + 300, a1 - 300); x, y = W(a, rnd.choice([-235, 235]))
         o.car(rnd, x, y, z, yaw + rnd.uniform(-5, 5), key=rnd.choice(['bus01_2', 'semi_trailer']), pad=10)

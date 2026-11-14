@@ -15,6 +15,24 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**13-14 Nov 2026 (skink52: "update server", "Sprawl is looking good though - there are still some cars that are floating near where
+the ramps were modified. there are also some random slabs of concrete at 30 degrees in some of the side streets").**
+- **Test server back up on CS2 1.41.9.7**: CounterStrikeSharp 1.0.380 (slime-mg-gm server/plugins.json) fixed the crash after every map
+  load. **Then Dunes still crashed a second after its script's first round**: bisected with a stage trace (each tick's stages logged:
+  the last script tick always finished, the engine died after it), then with parts switched off (drawing, everything after the core
+  tick, SlimeMG unloaded: still crashed). **A CS2 bot joining mg_ironframe_dunes crashes the dedicated server** on this build; with the
+  script's CS2-bot fill off it stays up (2 min checked), de_dust2 with bot_quota 4 stays up. `CONFIG.CS2_BOTS` is **false** for now:
+  the script's own AI mechs fill (no bot names on the scoreboard, no stand-in kill credit). Retry after the next CS2 update.
+  The server is on Dunes, port **27015** (`connect 192.168.50.215:27015` on the LAN).
+- **Sprawl's "30-degree slabs"** were the two podium ramps (points A and C): tilted the wrong way since they were made (the high end
+  out in the street, the low end at the wall: `-25 * sx` where the decks use `+deg * e`) and 900 wide, the whole avenue. At A the
+  old full-width highway embankment had hidden it; the split lanes showed it. Now each is 300 wide along the podium's ring-road face
+  (north for A, south for C), rising toward the corner with no tower to a landing level with the roof, a solid block under the slope,
+  a guard rail on the street side; plan `podium_ramps` (the detail pass keeps clear of them).
+- **Floating cars**: the stranded traffic on the decks drew from a span past the junction that is only 50 u long (min > max in
+  `uniform`), so cars landed at deck height in mid-air past the deck ends (e.g. (-3107, 2460), (-2496, 3178)). Spans under 900 u get
+  none and cars stay inside their span.
+
 **12 Nov 2026, night (skink52's Sprawl notes, "half rate for above 40 is yes", "update server"). build 31: 19 suites PASS, mock PASS, Sprawl rebuilt and compiled (vpk 13 Nov 00:56, 5194 resources, 0 failed, cache check clean), Dunes script deployed, both copied to the test server's files; test server down (CSS, below). Unseen in game.**
 - **Sprawl ramps split** (skink52: "inelegant - and removed playable area ... a single lane on and off ramp, and have normal traffic
   flow between"): tools/arenas/sprawl.py `highway`. The decks are 900 wide (the avenue's width; barriers 40 thick at +-430) and each

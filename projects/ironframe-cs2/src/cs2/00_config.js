@@ -47,7 +47,8 @@ const CONFIG = {
   // ---- hangar: the side each ifr_bay_N's preview camera sits on (yaw: 90 = +Y, -90 = -Y); bays not listed pick the clearest side
   BAY_CAMERA_YAW: { 1: 90, 2: 90, 3: 90, 4: 90, 5: 90, 6: 90, 7: -90, 8: -90, 9: -90, 10: -90, 11: -90, 12: -90 },
   // ---- AI fill as real CS2 bots when the map has a nav mesh (else the script's own AI mechs)
-  CS2_BOTS: true,
+  CS2_BOTS: false,   // OFF since CS2 1.41.9.7 (13 Nov 2026): a CS2 bot joining Dunes crashes the dedicated server a tick later (no dump);
+                     // the script's own AI mechs fill instead. Turn back on after a CS2 update and a test (STATUS, 13 Nov).
   // ---- kill credit: CS2 score for a kill of the script's own AI mechs (they have no pawn, so no real kill); a killed human's pawn is
   //      revived by the script REVIVE_AFTER s after the kill (hidden in the booth) so the death orbit and the garage have a camera
   //      STANDIN_KILLS: a CS2 bot's pawn takes the kill for a destroyed AI mech (20_players.js npcKill), so it is a real CS2 kill

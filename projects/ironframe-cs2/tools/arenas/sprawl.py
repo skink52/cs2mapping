@@ -111,12 +111,33 @@ def block(ctx, cx, cy, rng, kind):
     if kind == 'podium':
         ctx.box((x0, y0, -20, x1, y1, PODIUM_Z), dict(top=M['concrete_floor'], side=street_wall(cx, cy), bottom=M['concrete']))
         SOLIDS.append((x0, y0, 0, x1, y1, PODIUM_Z, True)); STRUCT.append((x0, y0, x1, y1))
-        # ramp up to the podium on the side facing the plaza (25 degrees, 900 wide)
-        sx = -1 if cx > 0 else 1; run = PODIUM_Z / math.tan(math.radians(25.0)); L = math.hypot(run, PODIUM_Z)
-        xe = x1 if sx > 0 else x0
-        ctx.obox((xe + sx * run / 2, cy, PODIUM_Z / 2 - 30), (L / 2 + 20, 450, 30), 0.0, -25.0 * sx, mats=dict(top=M['concrete_floor'], side=M['concrete'], bottom=M['concrete']))
+        # the ramp up to the podium: 300 wide along the podium's ring-road face (north for A, south for C), rising at 25 degrees
+        # toward the podium corner with no tower, then a short landing level with the roof (mechs step off sideways onto it).
+        # It used to stand square to the plaza-side face, 900 wide (the whole avenue), and tilted the wrong way: its high end in
+        # the street, its low end at the wall (skink52, 12 Nov 2026: "random slabs of concrete at 30 degrees in the side streets";
+        # at A the old highway embankment had hidden it). A solid block under the slope, its foot below the street.
+        r = 1.0 if cx > 0 else -1.0; sy = 1.0 if cy > 0 else -1.0
+        run = PODIUM_Z / math.tan(math.radians(25.0)); sn25, cs25 = math.sin(math.radians(25.0)), math.cos(math.radians(25.0))
+        xh = cx + r * (BLOCK / 2 - 250.0); xl = xh - r * run; xc = (xh + xl) / 2
+        yr = (y1 if sy > 0 else y0) + sy * 150.0
+        T = (PODIUM_Z + 40.0) * cs25 / 2
+        ctx.obox((xc + r * sn25 * T, yr, PODIUM_Z / 2 - cs25 * T), (run / cs25 / 2 + 4, 150, T), 0.0, -25.0 * r, mats=dict(top=M['concrete_floor'], side=M['concrete'], bottom=M['concrete']))
+        la, lb = sorted((xh, xh + r * 160.0))
+        ctx.box((la, yr - 150, -20, lb, yr + 150, PODIUM_Z), dict(top=M['concrete_floor'], side=M['concrete'], bottom=M['concrete']))
         for k in range(4):
-            xa, xb = sorted((xe + sx * run * k / 4, xe + sx * run * (k + 1) / 4)); SOLIDS.append((xa, cy - 450, 0, xb, cy + 450, PODIUM_Z * (1 - (k + 0.5) / 4), True))
+            xa, xb = sorted((xl + r * run * k / 4, xl + r * run * (k + 1) / 4)); SOLIDS.append((xa, yr - 150, 0, xb, yr + 150, PODIUM_Z * (k + 0.5) / 4, True))
+        SOLIDS.append((la, yr - 150, 0, lb, yr + 150, PODIUM_Z, True))
+        a0, a1 = sorted((xl, xh + r * 160.0))
+        PLAN.setdefault('podium_ramps', []).append([a0, yr - 150, a1, yr + 150, PODIUM_Z])
+        # a steel guard rail on posts along the open (street) side of the slope and the landing
+        ye = yr + sy * 142.0; Lr = run / cs25
+        ctx.obox((xc - r * sn25 * 64, ye, PODIUM_Z / 2 + cs25 * 64), (Lr / 2 - 10, 4, 10), 0.0, -25.0 * r, mats=M['metal_trim'])
+        d = 40.0
+        while d < run - 30:
+            px = xl + r * d; pz = PODIUM_Z * d / run
+            ctx.box((px - 4, ye - 4, pz - 10, px + 4, ye + 4, pz + 72), M['metal_trim']); d += 170.0
+        ctx.box((la, ye - 4, PODIUM_Z + 62, lb, ye + 4, PODIUM_Z + 82), M['metal_trim'])
+        for px in (la + 4, lb - 4): ctx.box((px - 4, ye - 4, PODIUM_Z, px + 4, ye + 4, PODIUM_Z + 82), M['metal_trim'])
         # two mid-height towers on the podium, leaving the roof between them as the point
         tower(ctx, x0 + 60, y0 + 60, x0 + 560, y0 + 620, PODIUM_Z, rng.uniform(900, 1400), rng)
         tower(ctx, x1 - 560, y1 - 620, x1 - 60, y1 - 60, PODIUM_Z, rng.uniform(900, 1400), rng)
