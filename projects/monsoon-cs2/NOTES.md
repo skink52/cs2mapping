@@ -6,7 +6,7 @@ Read this first when resuming. Newest state at the top. Design: [docs/DESIGN.md]
 
 **State in one line:** all four playtest 1 batches (S script and helicopters, W world, G era weapons, P prop quality) are in one
 **compiled** build: `mg_monsoon.vpk` 53.1 min, `OK: 1024 compiled, 0 failed`, 0 DELETED, 0 missing, 0 physics-hull warnings,
-**13,739 nav areas**; script mv-0.7; every changed asset compiled. **Not launched, not opened in Hammer since playtest 1. Not committed.**
+**13,739 nav areas**; script mv-0.7; every changed asset compiled. **Not launched, not opened in Hammer since playtest 1.** Committed 43f73cd. The 6-hourly auto-resume was stopped at the Saturday 14 Nov 13:30 cutoff; next step is skink52's playtest 2 (TESTING_MONSOON.md "Playtest 2 checklist"), then a new tracker like PLAYTEST_1.md.
 Record: [docs/BUILD_LOG_1.md](docs/BUILD_LOG_1.md) "Stage 5". Skybox not rebuilt (nothing feeding it changed).
 
 **Next: playtest 2.** skink52 starts CS2 (docs/BUILD.md "Local test with bots": tools mode, `map mg_monsoon`, `version`) and works through
