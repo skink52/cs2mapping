@@ -28,7 +28,9 @@ server on Dunes (port 27015). Unseen in game.**
   tick): **max tick 17-18 ms (was 44)**. Part of the first gain is the CS2 bot pawns being gone (players in/out was ~0.6 ms).
 - **The CS2-bot crash is not Dunes**: bots joining de_dust2 crash the server too (the earlier "dust2 stays up" never had a bot join).
   MultiAddonManager 1.7.3 predates the CS2 update; **v1.7.4 (12 Nov) is "Updated for the 11/11/2026 CS2 update"** (its fix touches
-  the client-connection hook). Waiting for skink52's OK to download it (725 KB); then test bots and turn `CONFIG.CS2_BOTS` back on.
+  the client-connection hook). **Fixed with v1.7.4** (skink52's OK, 14 Nov ~19:20; pinned in slime-mg-gm server/plugins.json):
+  4 bots on de_dust2 and on Dunes stay up, and with `CONFIG.CS2_BOTS` back on (build 34, chain _mam all PASS) the script filled Dunes
+  with 8 CS2 bots at its round start and the server ran on (13 mechs, avg 2.6 ms a tick, 0 humans).
 - Booster effects no longer ride a released rig under the map (renderDropMech stops the effects before releasing the props).
 - Valve's template sound event `ambient_example.indoors.vent` (missing `sounds/vent_01.vsnd`, a recompile on every tools-mode load)
   is dropped from soundevents_addon.vsndevts (tools/sounds.py `TEMPLATE_DEAD`).
