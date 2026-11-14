@@ -37,10 +37,14 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   (`tools/decimate_lod0.py`, Blender); stretcher canvas re-textured to period khaki; tw_de_a welded before weight transfer in
   `tools/soldiers.py` (open edges 154 -> 0; same scale and 87 joints). Test compile 6/0. `--pit-sandbags` option prepared (off,
   waiting for the user: crew sightlines 13/54 -> 4/4 of 380).
-- 14 Nov 15:24: **step 14 deployed + compiled** (first deploy held at ~14:20 while the user's CS2 was open; rerun after they
+- 14 Nov 17:15: **pit sandbags shipped** (the user: "Yes, both sides"). `deploy_tw.py --pit-sandbags` now defaults to `both`
+  (`off` to drop; a deploy refuses flags that differ from the chain's). Chain final 843a5675, guards PASS, gate PASS: crew sightlines
+  13 / 54 -> 4 / 380 a side (the 8 left run through two old breastwork dips, pit_ct_2 SW and pit_t_4 SE: a possible next change).
+  Map compile 7: 0 errors, 0 DELETED, nav 4,530, navcheck 0 of 83 off nav, check_world clean. **Current build; level: compiled,
+  not loaded in CS2.** Next: the user's in-game `docs/TESTING.md` (new item E4b).
+- 14 Nov 15:24: step 14 deployed + compiled (first deploy held at ~14:20 while the user's CS2 was open; rerun after they
   closed it). Deploy 14:26 (8 created, 26 replaced); assets 0 failed; the 6 rebuilt vmdls force-compiled, 0 failed; map compile 6
-  OK in 52.2 min, 0 errors, 0 entity DELETED, nav 4,529; check_world clean (11 known overlap pairs). **Current build; level:
-  compiled, not loaded in CS2.** Open: the user's call on `--pit-sandbags`; in-game `docs/TESTING.md`.
+  OK in 52.2 min, 0 errors, 0 entity DELETED, nav 4,529; check_world clean (11 known overlap pairs).
 - 13 Nov 06:53: world pass 3 deployed + compiled (compile 5: 0 errors, 0 DELETED, nav 4,529, all 83 bot/heal points on
   nav incl. the dressing stations, check_world clean).
 - 13 Nov 05:20: world pass 3 (docs/REVIEW_WORLD_3.md): dressing-station shelter rebuilt in `tools/p_trench.py` (85.8 u crown,

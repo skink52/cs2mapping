@@ -63,6 +63,7 @@ Logs: `C:\source1\cs2port\logs\mg_trenchwarfare_assets.log` and `mg_trenchwarfar
 - [ ] E2. Loader: E at the ammo box ("Take a mortar bomb"), E at the tube ("Load the bomb"), then SPACE / "[E] FIRE". Expect a launch sound and smoke. Record: R.
 - [ ] E3. **Fire animation:** the tube recoils on each shot, then returns to idle. Expect it on all 5 tubes per side. Record: R (which tubes don't).
 - [ ] E4. Nothing at the tube pushes or traps the crew; walk seat a to seat b in `pit_t_2` (`!pos` there; L1 stock shells). Record: R.
+- [ ] E4b. **Pit sandbags (new 14 Nov):** in each side's pits, a fourth sandbag course on the front arc. Expect no floating or sunk bags and no bag in the tube, table or stores; the tube still fires over it; standing at a seat, the enemy trench line is hidden behind it (except at `pit_ct_2` SW and `pit_t_4` SE, two known dips). Record: R (pit + `!pos`).
 - [ ] E5. Impact: a falling whistle about 2 s before, a blast and dirt at the marked point with spread growing with range. Record: R.
 
 ## F. Assist credit

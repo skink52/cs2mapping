@@ -9,7 +9,7 @@ usage (from the project folder):
   python -u tools/deploy_tw.py --apply                                          the same, then copy (held while Hammer / cs2 -tools is open)
   options: --show (every file), --no-gate (dry run only), --force-vmap (replace an addon map that is not the base: backed up first)
            --no-user-m2 / --no-user-w5 (leave those out of the chain; they are on by default, see "Opt-in flags" below)
-           --pit-sandbags [both|ct|t] (OFF by default, pending the user's decision: passed to patch_world_3, see below)
+           --pit-sandbags [both|ct|t|off] (default both, the user's decision of 14 Nov 2026: passed to patch_world_3, see below)
 
 (a) chain   out/step9/chain/0_user.vmap (a copy of content\\...\\maps\\mg_trenchwarfare.vmap) -> 1_world_1 (patch_world_1, step 5)
             -> 2_models (patch_models, step 6) -> 3_terrain (patch_terrain, step 7) -> 4_seams (patch_seams: siding-top caps, sheet
@@ -33,9 +33,9 @@ usage (from the project folder):
               --user-h1 unlock|remove (OFF; do not use on this map): the 24 sap benches are the user's seam bridges, kept as placed.
             Decided by the user 12 Nov 2026: sap tunnels "do what's best for gameplay", duplicate info_map_parameters deleted if safe,
             then the correction that the benches are bridges (keep them; drop only the exact duplicate).
-            Passed to patch_world_3 only: --pit-sandbags [both|ct|t] (OFF by default; PENDING THE USER'S DECISION, docs/REVIEW_WORLD_3.md
-            W9): one more sandbag course on the enemy-facing arc of the mortar pits' breastworks. Recorded in chain.json's flags only
-            when on, so a chain built before the option still matches a plain deploy.
+            Passed to patch_world_3 only: --pit-sandbags [both|ct|t|off] (default both: the user said "Yes, both sides" on 14 Nov 2026,
+            docs/REVIEW_WORLD_3.md W9): one more sandbag course on the enemy-facing arc of the mortar pits' breastworks. Recorded in
+            chain.json's flags only when on, so a chain built with 'off' matches the chains from before the option.
 (b) list    out/step5..8/deploy_files.txt (5-7 from this chain run's side copies; 8 when present), out/step10/deploy_files.txt
             (release docs: CREDITS, licences, Steam description; when present), out/step11/deploy_files.txt (weapon replacements,
             staged by the weapons work), out/step12/deploy_files.txt (licence-replacement assets) and out/step13/deploy_files.txt (the
@@ -591,15 +591,16 @@ def main(argv=None):
     ap.add_argument('--user-h1', choices=('unlock', 'remove'), help='NOT for this map: the sap benches are the user seam bridges (patch_world_1)')
     ap.add_argument('--user-m2', action=argparse.BooleanOptionalAction, default=True, help='delete the duplicate info_map_parameters id 7 (default on)')
     ap.add_argument('--user-w5', action=argparse.BooleanOptionalAction, default=True, help='delete bench 72, the exact copy of 71 (default on)')
-    # W9 (docs/REVIEW_WORLD_3.md): OFF by default, pending the user's decision; a bare flag means 'both'. Passed to patch_world_3.
-    ap.add_argument('--pit-sandbags', nargs='?', const='both', choices=('both', 'ct', 't'), default=None,
-                    help="one more sandbag course on the mortar pits' enemy-facing arc (patch_world_3; off by default, pending the user's decision)")
+    # W9 (docs/REVIEW_WORLD_3.md): the user chose 'both' on 14 Nov 2026, so it is the default; 'off' drops it. Passed to patch_world_3.
+    ap.add_argument('--pit-sandbags', nargs='?', const='both', choices=('both', 'ct', 't', 'off'), default='both',
+                    help="one more sandbag course on the mortar pits' enemy-facing arc (patch_world_3; default both, the user's decision of 14 Nov 2026; 'off' to drop)")
     ap.add_argument('--apply', action='store_true')
     ap.add_argument('--show', action='store_true')
     ap.add_argument('--no-gate', action='store_true', help='skip the gate (dry run only)')
     ap.add_argument('--force-vmap', action='store_true', help='replace an addon map that is not the base (backed up first)')
     ap.add_argument('--allow-open', action='store_true', help='passed to deploy_addon: the person at the game said go')
     a = ap.parse_args(argv)
+    if a.pit_sandbags == 'off': a.pit_sandbags = None
     for s in (sys.stdout, sys.stderr):
         if hasattr(s, 'reconfigure'):
             s.reconfigure(encoding='utf-8', errors='replace')

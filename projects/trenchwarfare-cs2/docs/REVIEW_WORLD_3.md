@@ -29,7 +29,7 @@ Each finding below was first sorted into real or artefact with a probe on the ex
 | C3 | clipping: `tunnel_set` 6274 "12.4 u under water" | **artefact** | The prop is in a gallery at z -259. The pool is on the surface 190 u over it | Neutral check: a prop whose top is under the terrain at its own spot is not in the pool over it | gone |
 | C4 | clipping: `debris_metal_01b` 24.7 u and `_01f` under water | **artefact** (by design) | Debris sunk in a crater pool, out of sight (already 'bury' by design in the adapter) | `water_ok` + debris_metal | gone |
 | C5 | clipping: `tree_poplar_mature_02` 4456 "8.7 u under water" | **real** | A living mature poplar stood in the middle of a generated crater pool, which was centred on its trunk (render `before_poplar_pool`). A shell crater cannot form under a standing tree | Moved straight out of the pool, 58 u, its trunk 8 u past the water's edge, set on the ground (patch_world_3). It now stands on the bank, 16 u from the rim, 19 u over the water | gone |
-| W9 | sightlines: enemy fire steps -> mortar crews | **real, a design call** (not changed) | 13 / 380 and 54 / 380 pairs at 4,900-6,600 u (see "W9" below) | Proposal; prepared as `patch_world_3 --pit-sandbags` (OFF by default, the user's call): 4 / 380 a side when on | still FAILS: the one remaining check_play item |
+| W9 | sightlines: enemy fire steps -> mortar crews | **real, a design call** (not changed) | 13 / 380 and 54 / 380 pairs at 4,900-6,600 u (see "W9" below) | `patch_world_3 --pit-sandbags both`: the user chose "Yes, both sides" on 14 Nov 2026; now the default, shipped in compile 7 (71 bags, 4 / 380 a side) | 8 pairs left (the two dips, below): still listed by check_play |
 | R1 | generated revetment 121040 (`revet_iron_128`, -1892, 144) faces backwards | **probably the user's edit: listed, not rotated** | The generator would place it at yaw -90 (270): `layout.walls()` gives the wall at x -1892 with n (1, 0), and `yaw_for` gives -90. The base z it computes, -89.18, matches exactly. The map has yaw **90.00001525878906**. That float is Hammer's re-save signature. Of the other 11 revetments with Hammer float noise, 9 are the user's own (`tw_user`, e.g. their niche irons 57810 / 57813 / 57816 at exactly 90.00001525878906) and 2 are the woodsopen blockers. The other 680 revetments have exact yaws (270.0 / 90.0 / 0.0 / 180.0) | For the user: rotate 180 deg in Hammer if it was not meant (render `before_revet_121040`: the earth backing faces the trench) | listed |
 
 ## W2: the shelter
@@ -76,7 +76,10 @@ the CT crews are about 4x more exposed.
 the CT pits' breastworks, mirrored on T for parity. Or a low hedge or wreck screen 300-600 u in front of each pit row. Either would
 take the line at about 5,000 u. Check 2 keeps failing until one is chosen.
 
-### W9 option prepared: `--pit-sandbags` (13 Nov 2026; OFF by default, pending the user's decision)
+### W9 option prepared: `--pit-sandbags` (13 Nov 2026; chosen by the user for both sides 14 Nov, shipped in compile 7)
+
+**14 Nov 2026:** shipped. Chain final CRC32 843a5675 (5_world_3 1a2fb9ee), every guard PASS; gate check_play 2: 4 / 380 a side, as
+measured below; map compile 7: 0 errors, 0 entity DELETED, nav 4,530, navcheck 0 of 83 points off nav; check_world clean (prop_static 6,184).
 
 **Why the CT crews were the more exposed.** The generator's breastwork is three courses (walls at r 194 / 192, a `sandbag_low` cap at
 r 190, scale 1 1 1.1). The cap tops out at about +63 over the pit floor, and a standing crewman's eye is +64. So the breastwork stops

@@ -64,10 +64,10 @@ default** (`--no-user-m2` / `--no-user-w5` to turn off). `--user-h1` must **not*
 bridges over the trench-to-tunnel seam.
 A deploy refuses flags that differ from the last chain's.
 
-`--pit-sandbags [both|ct|t]` (**OFF by default, pending the user's decision**; [REVIEW_WORLD_3.md](REVIEW_WORLD_3.md) W9): passed to
-`patch_world_3.py`, which then adds one more course of `sandbag_low` (clones of each pit's own cap bag) on the enemy-facing arc of the
-generated mortar pits' breastworks (a bare flag = `both`; `ct` / `t` = one side's pits only). It is recorded in `chain.json`'s flags only
-when on, so `python -u tools/deploy_tw.py --chain --pit-sandbags` must be followed by deploys with the same flag. To try it without
+`--pit-sandbags [both|ct|t|off]` (**default `both`**: the user chose both sides on 14 Nov 2026; [REVIEW_WORLD_3.md](REVIEW_WORLD_3.md) W9):
+passed to `patch_world_3.py`, which then adds one more course of `sandbag_low` (clones of each pit's own cap bag) on the enemy-facing arc
+of the generated mortar pits' breastworks (`ct` / `t` = one side's pits only, `off` = none). It is recorded in `chain.json`'s flags only
+when on; a deploy refuses flags that differ from the chain's, so leave the flag at its default for both. To try a variant without
 touching `out/step9/`, run the stages by hand on copies (as in `out/step15/`, REVIEW_WORLD_3 W9).
 
 ## 2. The deploy
