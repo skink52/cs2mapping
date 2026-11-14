@@ -15,6 +15,8 @@ Why the cut (14 Nov 2026): resourcecompiler gives a func_water mesh over about 5
 build new convex hull" / "Failed to create physics hulls for one or more meshes", and the compile still says OK), so there is no water to swim
 in. In the ported maps' build logs 85 of 107 func_water meshes over 500 u failed, plain six-face boxes included; none of 41 at 448 u or less
 did (mg_monsoon's test compiles: 256 / 384 boxes pass, a single 512 box fails). docs/reference/cs2-gotchas.md has the rule.
+A subdivided func_water mesh gets no hull at any size; the importer's displacement water is flat (all-zero displacement), so its subdivision is
+dropped before the cut (ba_jail_seaside's sea, ba_jail_keimusho's pools, 14 Nov 2026).
 """
 import math
 import os
@@ -123,6 +125,8 @@ def _pieces_convex(polys, cuts, attrs):
             piece = [{'attrs': p['attrs'], 'corners': p['corners']} for p in polys]
             for axis, c, side, cut in planes:                    # clip, then close that plane before the next (its cap gets clipped too)
                 if not cut: continue
+                if not any((cr['pos'][axis] - c) * side > SF.EPS for p in piece for cr in p['corners']):
+                    continue                                     # the plane misses this piece (a slanted side): nothing to cut or close
                 nxt = []
                 for p in piece:
                     lo, hi = SF.clip_poly(p['corners'], axis, c)
@@ -174,6 +178,41 @@ def _pieces_prism(polys, mats, cuts, attrs, zbot):
     return out
 
 
+def subdivision_is_flat(m, node, tol=0.01):
+    """True when a subdivision mesh's displacement stream is all zero: the importer's CS:GO displacement water (ba_jail_seaside's sea,
+    ba_jail_keimusho's pools) is a flat face tessellated 16 x 16, its waves are csgo_water_fancy's normal maps, not geometry."""
+    sd = m.g(m.g(node, b'meshData'), b'subdivisionData')
+    for st in m.g(sd, b'streams') or []:
+        if m.E[st]['name'].startswith(b'displacement'):
+            if any(abs(x) > tol for v in m.g(st, b'data') or [] for x in v): return False
+    return True
+
+
+def _mesh_elements(m, node):
+    md = m.g(node, b'meshData'); out, stack = [], [md]
+    while stack:
+        i = stack.pop(); out.append(i)
+        for _, t, v in m.E[i]['attrs']:
+            if t == dmx.T_ELEM and isinstance(v, int) and v >= 0: stack.append(v)
+            elif t == dmx.ARR + dmx.T_ELEM: stack += [x for x in v if isinstance(x, int) and x >= 0]
+    return out
+
+
+def restore_mesh(m, snap):
+    for i, attrs in snap.items(): m.E[i]['attrs'] = attrs
+
+
+def drop_subdivision(m, node):
+    """Turn a flat subdivision mesh into a plain one (no subdivision streams, every level 0), as Hammer writes a plain mesh.
+    -> snapshot of the mesh's elements for restore_mesh"""
+    import copy
+    snap = {i: copy.deepcopy(m.E[i]['attrs']) for i in _mesh_elements(m, node)}
+    sd = m.g(m.g(node, b'meshData'), b'subdivisionData')
+    dmx.geta(m.E[sd], b'streams')[2] = []
+    lv = dmx.geta(m.E[sd], b'subdivisionLevels'); lv[2] = [0] * len(lv[2])
+    return snap
+
+
 def split_volumes(m, c, cell=CELL):
     """Cut every func_water mesh wider than `cell` (x or y) into equal pieces no wider than `cell`, one mesh per piece in the same entity.
     A closed convex mesh (a CS:GO water brush) is cut exactly; anything else becomes one prism per upward water face and cell. Flat sheets
@@ -187,11 +226,14 @@ def split_volumes(m, c, cell=CELL):
             if md is None: continue
             b = m.bounds(node)
             if b is None or max(b[1][0] - b[0][0], b[1][1] - b[0][1]) <= cell + SF.EPS: continue
-            if SF.mesh_has_subdivision(m, node):
-                notes.append('%s (mesh %d): subdivision mesh, not cut' % (label, node)); continue
             ok, _ = SF._identity_xform(m, node)
             if not ok:
                 notes.append('%s (mesh %d): rotated or scaled mesh, not cut' % (label, node)); continue
+            subdiv = None
+            if SF.mesh_has_subdivision(m, node):
+                if not subdivision_is_flat(m, node):
+                    notes.append('%s (mesh %d): displaced (subdivision) top with real displacement, not cut' % (label, node)); continue
+                subdiv = drop_subdivision(m, node)           # the copies made for the pieces below must not carry it either
             polys, mats = SF.mesh_read(m, node)
             P = np.array([cr['pos'] for p in polys for cr in p['corners']])
             lo, hi = P.min(0), P.max(0)
@@ -234,6 +276,7 @@ def split_volumes(m, c, cell=CELL):
             else:
                 kind = 'prisms'; out = _pieces_prism(polys, mats, cuts, attrs, float(lo[2]))
             if not out:
+                if subdiv: restore_mesh(m, subdiv)
                 notes.append('%s (mesh %d, %d x %d u): %s cut failed, not cut' % (label, node, hi[0] - lo[0], hi[1] - lo[1], kind)); continue
             backup = SF.mesh_read(m, node)[0]
             made, err = [], None
@@ -245,11 +288,13 @@ def split_volumes(m, c, cell=CELL):
             if not err: err = SF.mesh_write(m, node, out[0]) or (SF.mesh_check(m, node) or [None])[0]
             if err:
                 SF.mesh_write(m, node, backup)
+                if subdiv: restore_mesh(m, subdiv)
                 notes.append('%s (mesh %d): %s, not cut' % (label, node, err)); continue
             dmx.geta(m.E[ent], b'children')[2].extend(made)
             cut += 1; pieces += len(out)
-            c.log.append('watersplit: %s mesh %d (%d x %d x %d u, %s) -> %d pieces (func_water meshes over ~500 u get no physics hull)'
-                         % (label, node, hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2], kind, len(out)))
+            c.log.append('watersplit: %s mesh %d (%d x %d x %d u, %s%s) -> %d pieces (func_water meshes over ~500 u get no physics hull)'
+                         % (label, node, hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2], kind,
+                            ', flat displaced top: subdivision dropped' if subdiv else '', len(out)))
     if sheets: c.todo.append('watersplit: flat func_water sheets with no depth (no volume to swim in; the CS:GO brush depth was lost on import): %s' % ', '.join(sheets)[:600])
     if notes: c.todo.append('watersplit: %s' % '; '.join(notes)[:600])
     return cut

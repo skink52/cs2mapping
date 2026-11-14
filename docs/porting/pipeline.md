@@ -352,8 +352,9 @@ All of these keep your Hammer edits and append to the cleanup log. Exact usage l
   func_water mesh over about 500 u no physics hull (`ExtrudeReplaceHull failed` / `Failed to create physics hulls`, compile still `OK`), so
   that water could not be swum in: 85 of the 107 such meshes in the ports' build logs ([cs2-gotchas](../reference/cs2-gotchas.md)). A closed convex
   mesh (a CS:GO water brush) is cut exactly (cut faces capped in toolsnodraw); anything else becomes one prism per upward water face and cell,
-  down to the mesh's lowest point. Flat sheets with no depth are cut but stay sheets, and displaced (subdivision) water tops and rotated meshes
-  are left whole; all three are listed in TO CHECK.
+  down to the mesh's lowest point. A displaced (subdivision) water top with an all-zero displacement (the importer's CS:GO displacement water)
+  has its subdivision dropped and is then cut the same way: CS2 gives a subdivided func_water mesh no hull at any size. Flat sheets with no
+  depth are cut but stay sheets, and displaced tops with real displacement and rotated meshes are left whole; all three are listed in TO CHECK.
   Water at least 48 u deep also gets a sparse grid of dim, unshadowed light_omni2 (map median brightness clamped to 60–250 lumens, range 512,
   ≤16 per volume, none where an existing light already reaches): Source 1 water was lit by the lightmap, CS2 water needs lights. Heuristic,
   listed in TO CHECK. From cs2-slop-porting `rebuild_lighting.py` (MIT).

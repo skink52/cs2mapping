@@ -66,6 +66,65 @@ class SplitVolumes(unittest.TestCase):
         self.assertEqual(W.split_volumes(m, Ctx()), 0)
         self.assertEqual(len(meshes(m, e)), n)
 
+    def _subdivide(self, m, n, disp=0.0):
+        """give the mesh subdivision data the way the importer writes a CS:GO displacement (levels on the top's half-edges, 17 x 17 streams)"""
+        sd = m.g(m.g(n, b'meshData'), b'subdivisionData')
+        lv = dmx.geta(m.E[sd], b'subdivisionLevels'); lv[2] = [5 if i % 6 == 0 else 0 for i in range(len(lv[2]))]
+        st = m.new_el(b'DmeVertexDataStream', [[b'name', dmx.T_STR, b'displacement:0'], [b'semanticName', dmx.T_STR, b'displacement'],
+                                                [b'semanticIndex', dmx.T_INT, 0], [b'vertexBufferLocation', dmx.T_INT, 0],
+                                                [b'dataStateFlags', dmx.T_INT, 0], [b'subdivisionBinding', dmx.T_ELEM, -1],
+                                                [b'data', dmx.ARR + dmx.T_V3, [[0.0, 0.0, disp]] * 289]], name=b'displacement:0')
+        dmx.geta(m.E[sd], b'streams')[2].append(st)
+
+    def test_flat_displaced_top_dropped_then_cut(self):
+        # ba_jail_seaside's sea, ba_jail_keimusho's pools: a subdivision mesh whose displacement is all zero. CS2 gives a subdivided
+        # func_water mesh no hull at any size (a 104 x 299 one failed), so the subdivision is dropped and the plain box cut as usual
+        m, e = water_map([0, 0, -100], [1000, 600, 0])
+        self._subdivide(m, meshes(m, e)[0])
+        c = Ctx()
+        self.assertEqual(W.split_volumes(m, c), 1)
+        self.assertIn('subdivision dropped', c.log[0])
+        for n in meshes(m, e):
+            self.assertFalse(SF.mesh_has_subdivision(m, n))
+            self.assertEqual(SF.mesh_check(m, n), [])
+            sd = m.g(m.g(n, b'meshData'), b'subdivisionData')
+            self.assertFalse(any(m.g(sd, b'subdivisionLevels')))
+        self.assertEqual(len(meshes(m, e)), 6)
+
+    def test_real_displacement_left_whole(self):
+        m, e = water_map([0, 0, -100], [1000, 600, 0])
+        n = meshes(m, e)[0]
+        self._subdivide(m, n, disp=8.0)
+        c = Ctx()
+        self.assertEqual(W.split_volumes(m, c), 0)
+        self.assertTrue(SF.mesh_has_subdivision(m, n))
+        self.assertIn('real displacement', c.todo[0])
+
+    def test_slanted_side_cut(self):
+        # a convex footprint with a slanted side (ba_jail_seaside's sea is a hexagon): a cut plane that misses a piece needs no cap
+        m, e = water_map([0, 0, -100], [1000, 1000, 0])
+        n = meshes(m, e)[0]
+        polys, _ = SF.mesh_read(m, n)
+        tmpl = polys[0]
+        foot = [(0, 0), (1000, 0), (1000, 600), (600, 1000), (0, 1000)]                # counter-clockwise from above
+
+        def face(pts, nrm):
+            return {'attrs': dict(tmpl['attrs']), 'corners': [{'pos': np.array(q, float), 'fvd': {k: (np.array(nrm, float) if k.startswith('normal')
+                    else v.copy()) for k, v in tmpl['corners'][0]['fvd'].items()}} for q in pts]}
+        prism = [face([(x, y, 0) for x, y in foot], (0, 0, 1)), face([(x, y, -100) for x, y in foot[::-1]], (0, 0, -1))]
+        for i in range(len(foot)):
+            (x0, y0), (x1, y1) = foot[i], foot[(i + 1) % len(foot)]
+            nrm = np.array([y1 - y0, x0 - x1, 0.0]); nrm /= np.linalg.norm(nrm)
+            prism.append(face([(x0, y0, -100), (x1, y1, -100), (x1, y1, 0), (x0, y0, 0)], nrm))
+        self.assertIsNone(SF.mesh_write(m, n, prism))
+        before = volume(m, n)
+        self.assertEqual(W.split_volumes(m, Ctx()), 1)
+        ms = meshes(m, e)
+        self.assertEqual(len(ms), 9)                                                   # 3 x 3 cells, all reached by the footprint
+        for x in ms:
+            self.assertNotIn(-1, m.g(m.g(x, b'meshData'), b'edgeFaceIndices'))
+            self.assertEqual(SF.mesh_check(m, x), [])
+        self.assertAlmostEqual(sum(volume(m, x) for x in ms), before, delta=1e-3 * before)
 
 if __name__ == '__main__':
     unittest.main()

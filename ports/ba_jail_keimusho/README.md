@@ -180,6 +180,14 @@ water could not be swum in. Entities-only rebuild (0.7 min): no hull failure on 
 8022): their tops are displacements (subdivision meshes), which the cut leaves whole. Backup `ba_jail_keimusho.vmap.bak_watersplit_20261114_*`.
 Compiled, not checked in game.
 
+Later the same day (flat displaced tops): the two pools (8018, 1,568 x 1,681 x 90 u, `hr_aztec_water_shallow`; 8022, 346 x 998 x 16 u,
+`anubis_water_canal`) have an all-zero displacement, and CS2 gives a subdivided func_water mesh no hull at any size, so `split_volumes` dropped
+their subdivision and cut them into 25 and 3 closed pieces. Entities-only rebuild (about 1 min): **0 func_water hull failures**. Backup
+`ba_jail_keimusho.vmap.bak_waterflat_20261114_161926`. Compiled, not checked in game.
+Two hull failures remain, both older than this (in the 7 Nov builds) and not water: node 8117, a 1-u-thick `toolstrigger` sheet in the
+trigger_teleport over the water-race pool (entity 8095), and node 8247, the 1-u-thick trigger_hurt `parkourthurt` (9595). A trigger with no hull
+may never fire: check both in game.
+
 ## Open
 
 - Not tested in game: all of the above. Build, then check the doors, gun room equips, skipping rope cases, samurai mask (speed/invisibility/mask
