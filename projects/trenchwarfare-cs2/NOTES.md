@@ -37,6 +37,9 @@ Working on branch `ironframe-test` (the remaster prompt's commit); do not commit
   (`tools/decimate_lod0.py`, Blender); stretcher canvas re-textured to period khaki; tw_de_a welded before weight transfer in
   `tools/soldiers.py` (open edges 154 -> 0; same scale and 87 joints). Test compile 6/0. `--pit-sandbags` option prepared (off,
   waiting for the user: crew sightlines 13/54 -> 4/4 of 380).
+  Deploy HELD 14 Nov ~14:20: gate PASS, but a CS2 the user started at 13:33 (pid 18632, command line hidden) was running, so
+  deploy_addon refused. To finish: with CS2 closed, run the scratch sequence again (deploy_tw --apply, build_maps assets,
+  force-compile wreck_tank / petrol_can / helmet_stahl_ext / field_telephone / stretcher_ext / tw_de_a, build_maps final).
 - 13 Nov 06:53: **world pass 3 deployed + compiled** (compile 5: 0 errors, 0 DELETED, nav 4,529, all 83 bot/heal points on
   nav incl. the dressing stations, check_world clean). **Current build; level: compiled.**
 - 13 Nov 05:20: world pass 3 (docs/REVIEW_WORLD_3.md): dressing-station shelter rebuilt in `tools/p_trench.py` (85.8 u crown,
