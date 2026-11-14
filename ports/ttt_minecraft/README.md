@@ -77,7 +77,7 @@ Minecraft-style TTT map. TTT gameplay scripting is done separately ([cs2mapTTT](
     glowstone, the Pigman furnace) have no multi-frame textures.
 - 2026-11-03: the fog relay (`ttt_pt_5__touch`) sent `fog.TurnOff`, which env_gradient_fog doesn't have: now Disable (`mapcheck.py`).
 - 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 45 and moved 0 faces (the lake (func_water) under the lava trap brush, which vanished when the lava was off) that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
-- 2026-11-14: **water physics** (`watersplit`): 2 func_water meshes over 384 u cut into 531 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `ttt_minecraft.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game.
+- 2026-11-14: water cut into ≤384-u pieces (`watersplit`) and rebuilt, then **undone the same day**: the compiler's func_water "Failed to create physics hulls" warning, which the cut was meant to remove, turned out to be harmless (water with it works in game). vmap restored from `.bak_watersplit_20261114_*` and rebuilt entities-only; the cut version is kept as `.bak_prerevert_*`.
 
 ## Open / to check
 

@@ -13,7 +13,7 @@
 - 2026-10-11: VIS ran 18+ min ("Generated clusters for 307557 regions… 2453840 clusters"). The big open centre gives vis little to cull. Iterate without full vis and keep the sealed volume small.
 - 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `spawn` switches on (60 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 55 s in. Needs a build.
 - 2026-11-03: **music** (`coursemusic.py`): the map had none. Seven songs shuffled from round start, the next when one ends: ba_jail_skylight's four (skink52's favourites) and Nightcall (Kavinsky), In the Navy, jb_lightsout's disco2. Each is named after the map it came from (`sounds/port_music/`), since several maps call different songs disco1-3.
-- 2026-11-14: **water physics** (`watersplit`): 2 func_water meshes over 384 u cut into 61 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `mg_circle_course.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game.
+- 2026-11-14: water cut into ≤384-u pieces (`watersplit`) and rebuilt, then **undone the same day**: the compiler's func_water "Failed to create physics hulls" warning, which the cut was meant to remove, turned out to be harmless (water with it works in game). vmap restored from `.bak_watersplit_20261114_*` and rebuilt entities-only; the cut version is kept as `.bak_prerevert_*`.
 
 ## Import report
 

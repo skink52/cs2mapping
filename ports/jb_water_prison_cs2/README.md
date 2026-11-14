@@ -15,7 +15,7 @@ Drivable car (`vehicle_base5` physbox + four thrusters, +use on `vehicle_button5
 - 2026-10-25: radar re-rendered with textured floors (`radar.py` + `radartex.py`).
 - 2026-10-24: Radar, 1 loading-screen image, credits (TomGreen, CS:GO port JJ). Assets compile with `run_build.bat "assets jb_water_prison_cs2"`.
 - 2026-09-29 (file date): CS2's AddOutput can't rename entities ("AddOutput fired with bad string"), so `water_immunity.js` calls `SetEntityName`. `waterfilter` needed `negated 1`, added as a raw keyvalue with Smart Edit off.
-- 2026-11-14: **water physics** (`watersplit`): 5 func_water meshes over 384 u cut into 110 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `jb_water_prison_cs2.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game.
+- 2026-11-14: water cut into ≤384-u pieces (`watersplit`) and rebuilt, then **undone the same day**: the compiler's func_water "Failed to create physics hulls" warning, which the cut was meant to remove, turned out to be harmless (water with it works in game). vmap restored from `.bak_watersplit_20261114_*` and rebuilt entities-only; the cut version is kept as `.bak_prerevert_*`.
 
 ## Import report
 

@@ -13,7 +13,7 @@
 
 - 2026-10-13, `convert_swag.py`: the same treatment as mg_yolo_multigames, plus 17 env_screenoverlays, 5 env_spritetrail → info_particle_system, 9 func_illusionary → non-solid func_brush, water → dev_water2 inside a func_water, and the star models (`slow`, `slow_2`) rebuilt from the pakfile. func_wall_toggle → func_brush.
 - 2026-10-13 (afternoon): asked for the map check, the slide game, and an intro overlay limited to two rounds (`INTRO_ROUNDS = 2`).
-- 2026-11-14: **water physics** (`watersplit`): 16 func_water meshes over 384 u cut into 274 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `mg_swag_multigames.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game. Its water is flat sheets with no depth (the CS:GO brush depth was lost on import), so they compile but there is still no volume to swim in.
+- 2026-11-14: water cut into ≤384-u pieces (`watersplit`) and rebuilt, then **undone the same day**: the compiler's func_water "Failed to create physics hulls" warning, which the cut was meant to remove, turned out to be harmless (water with it works in game). vmap restored from `.bak_watersplit_20261114_*` and rebuilt entities-only; the cut version is kept as `.bak_prerevert_*`.
 
 ## Import report
 

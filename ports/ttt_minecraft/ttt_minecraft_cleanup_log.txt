@@ -106,3 +106,5 @@ Follow-up pass (2026-11-02): fire
 Follow-up pass (2026-11-14): watersplit
 - watersplit: func_water - mesh 113849 (8704 x 8704 x 88 u, convex) -> 529 pieces (func_water meshes over ~500 u get no physics hull)
 - watersplit: func_water - mesh 114074 (448 x 64 x 24 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+
+Follow-up (2026-11-14): watersplit undone, vmap restored from ttt_minecraft.vmap.bak_watersplit_20261114_142035 (the func_water hull warning is harmless: water with it worked in game). The split vmap is kept as ttt_minecraft.vmap.bak_prerevert_20261114_170518.

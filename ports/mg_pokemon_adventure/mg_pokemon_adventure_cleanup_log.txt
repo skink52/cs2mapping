@@ -82,3 +82,5 @@ Follow-up pass (2026-11-14): watersplit
 - watersplit: func_water - mesh 23699 (192 x 512 x 192 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
 - watersplit: func_water - mesh 23720 (544 x 128 x 192 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
 - watersplit: func_water - mesh 23793 (800 x 704 x 64 u, convex) -> 6 pieces (func_water meshes over ~500 u get no physics hull)
+
+Follow-up (2026-11-14): watersplit undone, vmap restored from mg_pokemon_adventure.vmap.bak_watersplit_20261114_142035 (the func_water hull warning is harmless: water with it worked in game). The split vmap is kept as mg_pokemon_adventure.vmap.bak_prerevert_20261114_170518.

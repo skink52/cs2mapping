@@ -77,3 +77,5 @@ Follow-up pass (2026-11-09): weaponmodels
 
 Follow-up pass (2026-11-14): watersplit
 - watersplit: func_water - mesh 68425 (464 x 63 x 4 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+
+Follow-up (2026-11-14): watersplit undone, vmap restored from mg_minecraft_multigames.vmap.bak_watersplit_20261114_142035 (the func_water hull warning is harmless: water with it worked in game). The split vmap is kept as mg_minecraft_multigames.vmap.bak_prerevert_20261114_170518.

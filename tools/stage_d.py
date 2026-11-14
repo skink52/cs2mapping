@@ -81,7 +81,7 @@ def run(addon, root, passes):
     if 'iofix' in passes: stage_c.io_fixups(m, c)
     if 'water' in passes and watervol.run(m, c) and c.needs_underwater_vpost and not c.exists(watervol.VPOST):
         c.write(watervol.VPOST, open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'postprocess_filmic_underwater.vpost'), 'rb').read())
-    if 'watersplit' in passes and 'water' not in passes: watervol.split_volumes(m, c)
+    if 'watersplit' in passes: watervol.split_volumes(m, c)
     if 'nullparams' in passes: repair.null_params(m, c)
     if 'trigmat' in passes: repair.trigger_materials(m, c)
     if 'toolpaths' in passes: repair.tool_paths(m, c)

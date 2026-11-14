@@ -8,15 +8,14 @@ or in a func_water_analog:
   16 u under the bottom to UNDER u below the surface (the volume tests the player's feet, so the effect starts when the eyes go
   under): lighting/postprocessing/postprocess_filmic_underwater.vpost (copied from ba_jail_seaside), master 0, exposure 0-0.3,
   fade 0.1, as on ba_jail_seaside;
-- a master post_processing_volume is added (stock lighting/postprocessing/filmic_default.vpost) if the map has none;
-- every func_water mesh wider than CELL is cut into pieces no wider than CELL, one mesh each (split_volumes, also the pass `watersplit`).
+- a master post_processing_volume is added (stock lighting/postprocessing/filmic_default.vpost) if the map has none.
 
-Why the cut (14 Nov 2026): resourcecompiler gives a func_water mesh over about 500 u across no physics hull ("ExtrudeReplaceHull failed to
-build new convex hull" / "Failed to create physics hulls for one or more meshes", and the compile still says OK), so there is no water to swim
-in. In the ported maps' build logs 85 of 107 func_water meshes over 500 u failed, plain six-face boxes included; none of 41 at 448 u or less
-did (mg_monsoon's test compiles: 256 / 384 boxes pass, a single 512 box fails). docs/reference/cs2-gotchas.md has the rule.
-A subdivided func_water mesh gets no hull at any size; the importer's displacement water is flat (all-zero displacement), so its subdivision is
-dropped before the cut (ba_jail_seaside's sea, ba_jail_keimusho's pools, 14 Nov 2026).
+split_volumes (the pass `watersplit` only, NOT run by `water`) cuts every func_water mesh wider than CELL into pieces no wider than CELL,
+one mesh each; a flat (all-zero) displacement top loses its subdivision first. It removes the compiler warning "ExtrudeReplaceHull failed ..." /
+"Failed to create physics hulls for one or more meshes", which resourcecompiler prints for most func_water meshes over about 500 u
+(85 of 107 in the ports' build logs). That warning turned out to be harmless: water that had it (jb_sides_cs2, ba_jail_lightsout,
+ba_jail_skylight) could be swum in fine in game (skink52, 14 Nov 2026), so the cut is not needed and was undone on the 24 ports it was
+applied to. Kept as an opt-in tool for a func_water that is shown in game to have no water.
 """
 import math
 import os
@@ -292,7 +291,7 @@ def split_volumes(m, c, cell=CELL):
                 notes.append('%s (mesh %d): %s, not cut' % (label, node, err)); continue
             dmx.geta(m.E[ent], b'children')[2].extend(made)
             cut += 1; pieces += len(out)
-            c.log.append('watersplit: %s mesh %d (%d x %d x %d u, %s%s) -> %d pieces (func_water meshes over ~500 u get no physics hull)'
+            c.log.append('watersplit: %s mesh %d (%d x %d x %d u, %s%s) -> %d pieces (removes the func_water physics-hull warning)'
                          % (label, node, hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2], kind,
                             ', flat displaced top: subdivision dropped' if subdiv else '', len(out)))
     if sheets: c.todo.append('watersplit: flat func_water sheets with no depth (no volume to swim in; the CS:GO brush depth was lost on import): %s' % ', '.join(sheets)[:600])
@@ -359,7 +358,6 @@ def run(m, c):
             'exposurespeedup': '1', 'exposurespeeddown': '1', 'fadetime': '1.0'})
         dmx.geta(m.E[e], b'children')[2].append(box(m, tm, tnode, [-8, -8, -8], [8, 8, 8], b'materials/tools/toolsnodraw.vmat'))
     c.needs_underwater_vpost = npp > 0
-    split_volumes(m, c)
     c.log.append('water: %d water meshes -> %d func_water; %d underwater post_processing_volumes (%s, top %g u below the surface); %s'
                  % (len(meshes), nwater, npp, VPOST, UNDER, 'master post_processing_volume already there' if master else 'master post_processing_volume added (filmic_default)'))
     if nlight:

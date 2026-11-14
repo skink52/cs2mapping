@@ -173,20 +173,13 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
   Pre-fix map: 3,653 s of fire-less damage in 20 games, longest 183 s. Fixed: none, apart from one 0.05 s blip when a press lands in the very tick of
   the 2 s test (settled by the 0.15 s Test). Backup: `maps/ba_jail_keimusho_vmap_backup_20261108.zip`. Needs an entity build; not tested in game.
 
-## 2026-11-14: water physics
+## 2026-11-14: water cut, then undone
 
-`watersplit`: 5 func_water meshes over 384 u cut into 104 closed pieces. CS2 gives a func_water mesh over ~500 u no physics hull, so that
-water could not be swum in. Entities-only rebuild (0.7 min): no hull failure on the cut water. **Two pools still have no hull** (meshes 8018 and
-8022): their tops are displacements (subdivision meshes), which the cut leaves whole. Backup `ba_jail_keimusho.vmap.bak_watersplit_20261114_*`.
-Compiled, not checked in game.
-
-Later the same day (flat displaced tops): the two pools (8018, 1,568 x 1,681 x 90 u, `hr_aztec_water_shallow`; 8022, 346 x 998 x 16 u,
-`anubis_water_canal`) have an all-zero displacement, and CS2 gives a subdivided func_water mesh no hull at any size, so `split_volumes` dropped
-their subdivision and cut them into 25 and 3 closed pieces. Entities-only rebuild (about 1 min): **0 func_water hull failures**. Backup
-`ba_jail_keimusho.vmap.bak_waterflat_20261114_161926`. Compiled, not checked in game.
-Two hull failures remain, both older than this (in the 7 Nov builds) and not water: node 8117, a 1-u-thick `toolstrigger` sheet in the
-trigger_teleport over the water-race pool (entity 8095), and node 8247, the 1-u-thick trigger_hurt `parkourthurt` (9595). A trigger with no hull
-may never fire: check both in game.
+The func_water meshes were cut into ≤384-u pieces (`watersplit`, including the two flat displaced pools) to remove the compiler's
+"Failed to create physics hulls" warning, and 13 thin triggers (`parkourthurt`, `parkourtpd` and the teleports over the water-race pool)
+were thickened from 1 u to 2-6 u for the same warning. Both were **undone the same day**: that warning turned out to be harmless (water with
+it works in game; skink52), so there was nothing to fix. The vmap is back to `.bak_watersplit_20261114_142035` and rebuilt entities-only;
+the edited version is kept as `.bak_prerevert_*`. The trigger change is on hold until a trigger is shown not to fire in game.
 
 ## Open
 

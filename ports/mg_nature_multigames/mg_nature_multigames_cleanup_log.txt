@@ -106,3 +106,5 @@ Follow-up pass (2026-11-14): watersplit
 - watersplit: func_water - mesh 15360 (345 x 1429 x 130 u, convex) -> 4 pieces (func_water meshes over ~500 u get no physics hull)
 - watersplit: func_water - mesh 16063 (476 x 1820 x 116 u, convex) -> 10 pieces (func_water meshes over ~500 u get no physics hull)
 - watersplit: func_water - mesh 17013 (2804 x 3092 x 435 u, convex) -> 72 pieces (func_water meshes over ~500 u get no physics hull)
+
+Follow-up (2026-11-14): watersplit undone, vmap restored from mg_nature_multigames.vmap.bak_watersplit_20261114_142035 (the func_water hull warning is harmless: water with it worked in game). The split vmap is kept as mg_nature_multigames.vmap.bak_prerevert_20261114_170518.

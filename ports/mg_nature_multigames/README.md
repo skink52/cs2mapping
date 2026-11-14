@@ -17,7 +17,7 @@
 - 2026-11-09: the 12 'missing' textures were all handled in stage C (11 rebuilt from CS:GO textures, inferno_water -> anubis_water_canal, mpa115 sky rebuilt).
 - 2026-11-09: the first build spent over 20 min in vis while it overlapped another worker's build, so it was rebuilt with visfit_lean hints (look for pop-in). Held after it for `flower_barrel`'s gibs (HL2's flower_barrel_p1-p11, never in CS:GO): `gibfix.py --csgo` swapped in the generic wood chunks (backup `flower_barrel.vmdl.bak_gibfix`); entities rebuild 234 compiled, 0 failed.
 - 2026-11-09: loading-screen and Steam description credit set to Punky.
-- 2026-11-14: **water physics** (`watersplit`): 7 func_water meshes over 384 u cut into 256 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `mg_nature_multigames.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game.
+- 2026-11-14: water cut into ≤384-u pieces (`watersplit`) and rebuilt, then **undone the same day**: the compiler's func_water "Failed to create physics hulls" warning, which the cut was meant to remove, turned out to be harmless (water with it works in game). vmap restored from `.bak_watersplit_20261114_*` and rebuilt entities-only; the cut version is kept as `.bak_prerevert_*`.
 
 ## What the cleanup did
 

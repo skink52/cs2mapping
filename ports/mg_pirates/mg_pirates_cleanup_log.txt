@@ -75,3 +75,5 @@ Follow-up pass (2026-10-29): water
 
 Follow-up pass (2026-11-14): watersplit
 - watersplit: func_water - mesh 56171 (6080 x 5568 x 256 u, convex) -> 240 pieces (func_water meshes over ~500 u get no physics hull)
+
+Follow-up (2026-11-14): watersplit undone, vmap restored from mg_pirates.vmap.bak_watersplit_20261114_142035 (the func_water hull warning is harmless: water with it worked in game). The split vmap is kept as mg_pirates.vmap.bak_prerevert_20261114_170518.
