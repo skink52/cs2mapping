@@ -221,13 +221,15 @@ function rigMountCheck(r) {
 }
 function renderDropMech(slot) {
   const r = rigs.get(slot); if (!r) return;
+  // effects first: boosters and trails are parented to the upper prop, and releasing it moves it under the map (HIDE_POS), so
+  // they used to ride along there for a tick ("ifr_pfx_boost_NNN ... outside of cell bounds", 11 Nov 2026 console)
+  fxMechGone(slot);
   if (r.iff) { releaseProp(r.iff); r.iff = undefined; }
   for (const w of r.weapons) if (w) releaseProp(w);
   // a body half given back is Teleported by its next user (not Moved from here: it would slide in with its weapons)
   if (r.legs) { r.legs.lastPos = null; releaseProp(r.legs); }
   if (r.upper) { r.upper.lastPos = null; releaseProp(r.upper); }
   rigs.delete(slot);
-  fxMechGone(slot);
 }
 // is any human's camera near this position? (far mechs are drawn at half rate, effects skipped)
 function nearHuman(pos, dist) {

@@ -14,6 +14,11 @@ import numpy as np
 
 FPS = 64
 STYLE = {'fear3_mule': 'heavy', 'me2_loki': 'stiff'}      # per-frame gait character (mname without _legs / _upper)
+# Stance: how far every clip brings the planted feet in toward the hips, as a fraction of the bind pose's hip-to-ankle sideways
+# offset (0 = feet where the bind pose has them, 1 = straight under the hips). Generated meshes often stand A-legged: IRONFRAME's
+# Tripo heavy has its ankles 28 u further out than its hips (legs leaning out ~10 deg; skink52, 14 Nov 2026: "the legs are
+# slightly angled outwards").
+STANCE_IN = {'tripo_bastion': 0.7, 'tripo_kestrel': 0.6, 'tripo_scout': 0.5, 'tripo_warden': 0.5}   # Kestrel ~20 deg out, Scout ~10, Warden ~14
 LEG_CLIPS = ['hover', 'move', 'boost', 'air', 'land', 'qb_l', 'qb_r']
 UP_CLIPS = ['idle', 'fire_r', 'fire_l', 'fire_s', 'stagger']
 
@@ -242,9 +247,10 @@ class Gait:
             self.Lh = min(0.30 * self.lmax, max(0.03 * self.lmax, float(np.mean([v[1] for v in fx.values()]))))
         self.sdl = info['sd_l']
         self.base = {}
+        k_in = float(info.get('stance_in') or 0.0)
         for s in 'lr':
             g = legs[s]; sd = info['sd_' + s]
-            self.base[s] = np.array([g.A0[0], g.A0[1] + sd * widen * self.hh0])
+            self.base[s] = np.array([g.A0[0], g.A0[1] + k_in * (g.H0[1] - g.A0[1]) + sd * widen * self.hh0])
         self.cap = self.hh0 * rise
         N = 256; ts = np.arange(N) / N; hh = np.zeros(N)
         for i, tau in enumerate(ts):
@@ -443,7 +449,7 @@ def legs_clips(info, rig=None):
             for sd_ in 'lr':
                 gg = LG[sd_]; rel, p = feet[sd_]
                 hip = pel0 + Rp @ (gg.H0 - pel0)
-                Rt, Rs, ov, K, Ae = gg.solve(hip, gg.A0 + np.asarray(rel, float) - off); over = max(over, ov)
+                Rt, Rs, ov, K, Ae = gg.solve(hip, gg.A0 + np.asarray(rel, float) - off + np.array([0.0, k_in * (gg.H0[1] - gg.A0[1]), 0.0])); over = max(over, ov)
                 R['thigh_' + sd_] = Rt; R['shin_' + sd_] = Rs
                 if gg.has_foot: R['foot_' + sd_] = Ry(rad(p))
             R['_over'] = over
@@ -469,21 +475,23 @@ def legs_clips(info, rig=None):
         return (rel + np.array([0.0, 0.0, n]) if n > 0 else rel), pp
 
     I3 = np.eye(3)
+    k_in = float(info.get('stance_in') or 0.0)
+    INW = {sd_: k_in * (LG[sd_].H0[1] - LG[sd_].A0[1]) for sd_ in 'lr'}      # the stance shift ik_clip adds to every foot
     fin = info.get('foot_in') or {}
     GAP = 0.07 * hh0                                   # clear space kept between the two feet's inner edges in hover / boost
     def hover(t, T):
         ft = {}
         for sd_ in 'lr':
             sd = info['sd_' + sd_]; ph = 2 * math.pi * t / T + (0 if sd > 0 else 1.5)
-            dyk = sd * max((fin[sd_] + GAP / 2) - abs(LG[sd_].A0[1] - cy), 0.035 * hh0) if sd_ in fin else 0.0      # hip abduction: outward, never into the other foot
+            dyk = sd * max((fin[sd_] + GAP / 2) - abs(LG[sd_].A0[1] + INW[sd_] - cy), 0.035 * hh0) if sd_ in fin else 0.0      # hip abduction: outward, never into the other foot
             ft[sd_] = ((-0.13 * hh0 + 0.025 * hh0 * math.sin(ph), dyk + 0.012 * hh0 * math.sin(ph + 1.0) * sd, 0.11 * hh0 + 0.02 * hh0 * math.sin(ph + 0.7) + (0.03 * hh0 if sd_ == 'l' else 0.0)), 52 + 4 * math.sin(ph + 1.2))
         return (0, 0.006 * hh0 * math.sin(2 * math.pi * t / T), 0), Rx(rad(0.8 * sdl * math.sin(2 * math.pi * t / T))), ft
     def boost(t, T):
         ph = 2 * math.pi * t / T; ft = {}
         for sd_ in 'lr':
-            dy = 0.82 * (cy - LG[sd_].A0[1])
+            dy = 0.82 * (cy - LG[sd_].A0[1]) - INW[sd_]
             if sd_ in fin:                              # pulled together, but never into each other
-                dy = info['sd_' + sd_] * ((fin[sd_] + GAP / 2) - abs(LG[sd_].A0[1] - cy))
+                dy = info['sd_' + sd_] * ((fin[sd_] + GAP / 2) - abs(LG[sd_].A0[1] - cy)) - INW[sd_]
             ft[sd_] = ((-0.60 * hh0 + 0.012 * hh0 * math.sin(ph), dy, 0.36 * hh0 + 0.01 * hh0 * math.sin(ph + 1) + (0.035 * hh0 if sd_ == 'l' else 0.0)), 58 + 2 * math.sin(ph))
         return (0, 0, 0), I3, ft
     def air(t, T):
@@ -718,7 +726,7 @@ def animate_group(out, sub, mname, gname, P, Nn, UV, faces, W, B, bones, bone_ok
     r, why = build_rig(gname, bones, bp, height, wi)
     if r is None: warn('%s: static prop (%s)' % (mname, why)); return None
     rig, smap, fallback, info = r
-    info['style'] = STYLE.get(mname.rsplit('_', 1)[0])
+    info['style'] = STYLE.get(mname.rsplit('_', 1)[0]); info['stance_in'] = STANCE_IN.get(mname.rsplit('_', 1)[0], 0.0)
     # source bone -> rig bone through the nearest mapped ancestor
     b2r = np.full(len(bones), fallback)
     for i in range(len(bones)):
@@ -807,7 +815,7 @@ def animate_group(out, sub, mname, gname, P, Nn, UV, faces, W, B, bones, bone_ok
     else:
         r2, _why = build_rig('legs', bones, bp, height, wi)
         if r2 is not None:
-            linfo = dict(r2[3]); linfo['style'] = STYLE.get(mname.rsplit('_', 1)[0]); legs_clips(linfo, r2[0])
+            linfo = dict(r2[3]); linfo['style'] = STYLE.get(mname.rsplit('_', 1)[0]); linfo['stance_in'] = STANCE_IN.get(mname.rsplit('_', 1)[0], 0.0); legs_clips(linfo, r2[0])
         clips = upper_clips(rig, info, linfo)
     ad = os.path.join(d, 'anims'); os.makedirs(ad, exist_ok=True)
     entries, lens = [], {}

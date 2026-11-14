@@ -33,6 +33,7 @@ class IF_Nav {
       }
     }
     this.fields = new Map();      // target cell -> {dist: Float32Array, used}
+    this.buildBudget = 2; this.buildsThisTick = 0;
     this.fieldUse = 0;
     this.maxFields = 64;
     this.builds = 0;
@@ -133,9 +134,14 @@ class IF_Nav {
     return this.walkable[c] ? c : this.nearestWalk(this.cx(bi), this.cy(bj));
   }
   // flow field toward a target cell: Dijkstra cost per cell (Infinity where unreachable). Cached (LRU).
+  // At most `buildBudget` new fields a tick (the owner resets `buildsThisTick` each tick): a burst of new goals (a round start, a
+  // point captured) built ten fields in one tick, 10-40 ms in CS2's script engine (14 Nov 2026 timing test). Over budget: null,
+  // and the caller walks straight at the goal this tick and asks again next tick.
   field(target) {
     let f = this.fields.get(target);
     if (f) { f.used = ++this.fieldUse; return f.dist; }
+    if (this.buildsThisTick >= this.buildBudget) return null;
+    this.buildsThisTick++;
     let dist = null;
     if (this.fields.size >= this.maxFields) {
       let oldK = -1, oldU = Infinity;
@@ -178,6 +184,7 @@ class IF_Nav {
   // the direction (unit, xy) to follow from (x, y) toward the target cell, into o; returns false when unreachable / there
   flowDir(target, x, y, o) {
     const dist = this.field(target), w = this.w, h = this.h;
+    if (!dist) return false;
     let cur = this.idx(x, y);
     if (!(dist[cur] < Infinity)) cur = this.nearestWalk(x, y);
     if (!(dist[cur] < Infinity)) return false;
@@ -207,7 +214,7 @@ class IF_Nav {
     return true;
   }
   // path cost (cells) from (x, y) to the target cell, Infinity when unreachable
-  pathCost(target, x, y) { const d = this.field(target); const c = this.idx(x, y); return d[c] < Infinity ? d[c] : d[this.nearestWalk(x, y)]; }
+  pathCost(target, x, y) { const d = this.field(target); if (!d) return Infinity; const c = this.idx(x, y); return d[c] < Infinity ? d[c] : d[this.nearestWalk(x, y)]; }
   // the best cover cell within `radius` of (x, y) against a threat at t: cover value, terrain between, distance; into o
   findCover(x, y, tx, ty, tz, radius, o) {
     const r = Math.ceil(radius / this.cell), i0 = this.ci(x), j0 = this.cj(y), w = this.w;

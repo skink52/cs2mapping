@@ -15,6 +15,26 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**14 Nov 2026, evening (skink52: "free to use compute power ... to improve both maps and the gamemode"; "the legs [of the heavy
+tripo model] are slightly angled outwards"). Builds 32-33: 19 suites PASS, mock PASS, plugin harness 3/3, both maps deployed, test
+server on Dunes (port 27015). Unseen in game.**
+- **Tripo legs straightened**: the generated meshes stand A-legged (Bastion's ankles 28 u wider than its hips per side, ~10 deg;
+  Kestrel ~20, Warden ~14, Scout ~10). create/mech_anim.py `STANCE_IN` (per frame, fraction of the bind hip-to-ankle sideways offset)
+  brings every clip's planted feet in under the hips: Bastion 0.7, Kestrel 0.6, Scout 0.5, Warden 0.5 (the hover / boost foot-gap
+  logic counts it). Front views before / after checked; all four frames rebuilt and compiled.
+- **Load shedding measured on the server**: 64 mechs (all script AI, the timing test) **avg 4.3-5.5 ms a tick (was 11.4-13.6)**,
+  traces 30-59 a tick (was 117-157). Then two spike fixes: AI think timers spread over the whole think period (they started in its
+  first quarter: bursts), and at most 2 new flow fields a tick (core 30_nav.js `buildBudget`; over budget the bot walks straight that
+  tick): **max tick 17-18 ms (was 44)**. Part of the first gain is the CS2 bot pawns being gone (players in/out was ~0.6 ms).
+- **The CS2-bot crash is not Dunes**: bots joining de_dust2 crash the server too (the earlier "dust2 stays up" never had a bot join).
+  MultiAddonManager 1.7.3 predates the CS2 update; **v1.7.4 (12 Nov) is "Updated for the 11/11/2026 CS2 update"** (its fix touches
+  the client-connection hook). Waiting for skink52's OK to download it (725 KB); then test bots and turn `CONFIG.CS2_BOTS` back on.
+- Booster effects no longer ride a released rig under the map (renderDropMech stops the effects before releasing the props).
+- Valve's template sound event `ambient_example.indoors.vent` (missing `sounds/vent_01.vsnd`, a recompile on every tools-mode load)
+  is dropped from soundevents_addon.vsndevts (tools/sounds.py `TEMPLATE_DEAD`).
+- Checked, left alone: Dunes' two `ifr_vfog` are both IsMaster 1 (one per stacked copy); the letter masts are baked geometry.
+- Sprawl: road markings on the street between the split ramp lanes (detail pass), compiled next.
+
 **13-14 Nov 2026 (skink52: "update server", "Sprawl is looking good though - there are still some cars that are floating near where
 the ramps were modified. there are also some random slabs of concrete at 30 degrees in some of the side streets").**
 - **Test server back up on CS2 1.41.9.7**: CounterStrikeSharp 1.0.380 (slime-mg-gm server/plugins.json) fixed the crash after every map

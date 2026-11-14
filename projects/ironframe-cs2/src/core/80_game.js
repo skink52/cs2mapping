@@ -354,6 +354,7 @@ class IF_Game {
     dt = IF_clamp(IF_fin(dt, 1 / IF_TICKRATE), 0, this.cfg.dtMax);
     if (!(dt > 0)) return;
     this.time += dt; this.now = Number.isFinite(now) ? now : this.time; this.tickN++;
+    if (this.nav) this.nav.buildsThisTick = 0;
     const M = this.match;
     if (M.phase === 'over') { IF_bulletsStep(this, dt); IF_missilesStep(this, dt); IF_fxStep(this, dt); return; }
     // phases

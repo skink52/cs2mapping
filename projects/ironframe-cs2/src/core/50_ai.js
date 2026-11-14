@@ -79,7 +79,7 @@ const IF_Ai = {
   attach(game, m, tierKey) {
     const t = game.cfg.ai.tiers[tierKey] || game.cfg.ai.tiers.normal;
     m.ai = new IF_AiState(t, tierKey);
-    m.ai.thinkT = (m.slot % t.think) / IF_TICKRATE;
+    m.ai.thinkT = ((m.slot * 7) % (t.think * 4)) / IF_TICKRATE;      // spread over the whole think period (it was its first quarter: bursts)
     m.ai.strafe = (m.slot & 1) ? 1 : -1;
     m.tier = tierKey;
   },

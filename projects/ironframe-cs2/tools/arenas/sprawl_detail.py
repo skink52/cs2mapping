@@ -821,6 +821,18 @@ def dress_highway(o, axis, at, cross, rnd):
             x, y = W(e * (HW_END - 100), sd * (PAR - 30))
             o.put('furn', [(bx((-1.5, -34, 22), (1.5, 34, 40), m['metal_dark'], px=m['led_amber'], nx=m['led_amber']), 'fit'), (bx((-9, -28, 0), (9, -24, 22), m['orange']), None),
                            (bx((-9, 24, 0), (9, 28, 22), m['orange']), None)], x, y, z, yaw)
+    # the street between the split ramp lanes (sprawl.py LANE_IN): edge lines along the retaining walls, a dashed centre line,
+    # a turn arrow each way at the deck end (14 Nov 2026: it was bare asphalt)
+    if LANE_IN > 0:
+        def mg(a0, a1, t0, t1, kind, ru=1.0, rv=1.0, along=1.0):
+            p0 = W(a0, t0); p1 = W(a1, t1)
+            o.put('mark', [(bx((min(p0[0], p1[0]), min(p0[1], p1[1]), RZ + 0.05), (max(p0[0], p1[0]), max(p0[1], p1[1]), RZ + 0.9), m['mk_' + kind]), top_spec((d[0] * along, d[1] * along), ru, rv))])
+        for e in (-1, 1):
+            a0, a1 = sorted((e * (HW_END - 300), e * (HW_FOOT - 60)))
+            L = a1 - a0
+            for t in (-(LANE_IN - 22), LANE_IN - 27): mg(a0, a1, t, t + 5, 'solid', 1, L / 256)
+            mg(a0 + 30, a1 - 30, -2.5, 2.5, 'dash', 1, (L - 60) / 150)
+            for t, al in ((-60, 1.0), (60, -1.0)): mg(e * (HW_END + 100) - 42, e * (HW_END + 100) + 42, t - 17, t + 17, 'arrow', along=al)
     # under the deck: piers
     piers = [int(q) for q in HW_PIERS]
     for q in piers:

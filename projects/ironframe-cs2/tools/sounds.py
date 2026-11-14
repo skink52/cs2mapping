@@ -33,6 +33,27 @@ import synth as S             # noqa: E402
 SR = 44100
 PEAK_DB = -1.0
 TEMPLATE = r'C:\source1\cs2port\tools\addon_template\content\soundevents\soundevents_addon.vsndevts'
+# Valve's template events whose sound files the game does not ship: CS2 in tools mode recompiles the whole file on every load
+# trying to find them (11 Nov 2026 console: `sounds/vent_01.vsnd` missing). Dropped from the merged file.
+TEMPLATE_DEAD = ['ambient_example.indoors.vent']
+
+
+def drop_events(text, names):
+    """remove the top-level event blocks `"<name>" = { ... }` from a vsndevts text (brace matched)"""
+    for name in names:
+        text = ''.join(l for l in text.splitlines(True) if l.strip() not in ('"%s",' % name, '"%s"' % name))   # a reference in another event's list
+        i = text.find('"%s" =' % name)
+        if i < 0: continue
+        j = text.index('{', i); depth = 0; k = j
+        while k < len(text):
+            if text[k] == '{': depth += 1
+            elif text[k] == '}':
+                depth -= 1
+                if depth == 0: break
+            k += 1
+        a0 = text.rfind(chr(10), 0, i) + 1; b0 = text.find(chr(10), k) + 1 or len(text)
+        text = text[:a0] + text[b0:]
+    return text
 rng = np.random.default_rng(1952)
 
 
@@ -1264,6 +1285,7 @@ def main():
     if live and os.path.exists(live): tpl = open(live, encoding='utf-8').read()
     elif os.path.exists(TEMPLATE): tpl = open(TEMPLATE, encoding='utf-8').read()
     text = E.merge(tpl, ours, 'IRONFRAME')
+    text = drop_events(text, TEMPLATE_DEAD)
     open(os.path.join(out, 'soundevents', 'soundevents_addon.vsndevts'), 'w', encoding='utf-8', newline='\n').write(text)
     if live:
         os.makedirs(os.path.dirname(live) or '.', exist_ok=True)
