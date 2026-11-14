@@ -14,6 +14,7 @@
 - 2026-10-18: vis pass (`visfit`) for compile time. Hints 1 Lowest, 10 Low → 34 Low, 26 Lower, 1 Lowest; hint volume in billion cubic units Low 20.3, Lowest 111.0 → Low 7.8, Lower 1.2, Lowest 142.5. Backup: `csgo_addons\prefabs+backups\pre_vis_2026-10-18`.
 - 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `spawn_kill` switches on (50 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 45 s in. Needs a build.
 - 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 115 and moved 2 faces (its buttons and rotating platforms) that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
+- 2026-11-14: **water physics** (`watersplit`): 9 func_water meshes over 384 u cut into 60 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `mg_faohu_course.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game.
 
 ## What the cleanup did
 

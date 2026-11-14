@@ -15,6 +15,7 @@ The first mg map in this batch of ports. The source BSP was already named `mg_sm
 
 - 2026-10-10: decal materials converted to `csgo_static_overlay` with `vmat_to_overlay.py` (mask keyed from the most common border colour, softened for blood decals).
 - 2026-10-17: two-level radar split at z 2560: `"default"` (top of the tower, T spawn) with `mg_smee_tower_cs2_radar_psd`, and `"lower"` (ground, yard and tower stairs) with `mg_smee_tower_cs2_lower_radar_psd`. Loading text "Original map by Mathijs / CS:GO port by WriteX / Ported to CS2 by skink52". Both radar images were compiled the same morning.
+- 2026-11-14: **water physics** (`watersplit`): 1 func_water mesh over 384 u cut into 2 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `mg_smee_tower_cs2.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game.
 
 ## Import report
 

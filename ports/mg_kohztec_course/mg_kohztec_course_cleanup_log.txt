@@ -33,3 +33,10 @@ Follow-up pass (2026-10-18): vis compile time (visfit)
 - hint volume (billion cubic units): before Low 71.8, Lowest 629.9, after Low 39.1, Lower 18.5, Lowest 764.5
 - sky shells: 8 of 35 moondome meshes set to Exclude from Vis (they bound no playable air that would be open without them); 27 kept
 - TO CHECK: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium); backup in csgo_addons\prefabs+backups\pre_vis_2026-10-18
+
+Follow-up pass (2026-11-14): watersplit
+- watersplit: func_water - mesh 60553 (400 x 1146 x 92 u, convex) -> 6 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 60578 (872 x 312 x 80 u, convex) -> 3 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 60603 (288 x 856 x 80 u, convex) -> 3 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 60628 (744 x 312 x 40 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 62324 (983 x 1286 x 180 u, convex) -> 12 pieces (func_water meshes over ~500 u get no physics hull)

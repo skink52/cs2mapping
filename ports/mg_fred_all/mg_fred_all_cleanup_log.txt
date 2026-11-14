@@ -26,3 +26,7 @@ Follow-up pass (2026-10-16): beams, lights, alpha, radar
 Follow-up (2026-10-16): enemy damage gate
 - fintrigger (trigger_once at the Fin room) OnTrigger -> mg_fred_all_io_script RunScriptInput EnableDamage
 - maps/scripts/mg_fred_all_io.js: players cannot damage players on the other team until EnableDamage; every round start turns it off again (DisableDamage input also available). World / trigger_hurt / fall damage is unaffected.
+
+Follow-up pass (2026-11-14): watersplit
+- watersplit: func_water - mesh 54357 (512 x 512 x 128 u, convex) -> 4 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 54532 (571 x 512 x 256 u, convex) -> 4 pieces (func_water meshes over ~500 u get no physics hull)

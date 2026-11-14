@@ -21,6 +21,7 @@
   `pclocal.py deliver` / `apply` (verified backups, change manifests): prep to audit 16 min, build 11 min. Held for the same 2 stale 'missing
   textures' and marked ready. The built `.vpk` is 8 915 661 bytes against 8 915 386 on 9 Nov. Compiled only: not opened in Hammer, not loaded
   in game. The loading-screen credit and the Steam description were copied back from the 9 Nov addon (a fresh port resets both).
+- 2026-11-14: **water physics** (`watersplit`): 1 func_water mesh over 384 u cut into 2 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `mg_minecraft_multigames.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game.
 
 ## What the cleanup did
 

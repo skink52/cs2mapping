@@ -97,3 +97,12 @@ Follow-up (2026-10-30 evening): cs2-slop-porting 2.0 features (cs2mapping 145e47
 
 Follow-up (2026-10-30 night): doors reverted to the original (skink52: the _vis brushes stayed invisible in game even with SetParent at spawn)
 - 15 doors: meshes moved back from <door>_vis into the door, hinge cubes and _vis brushes removed, 30 port_logic_auto SetParent outputs removed; Ttest_Frontdoors_2 named Ttest_Frontdoors again (shared name as in the original) and its 2 copied outputs removed. Mesh counts per door match the .vmf. Doors are solid again in CS2 (Non-solid to Player is ignored); skink52 does his own workaround.
+
+Follow-up pass (2026-11-02): fire
+- fire: 43 env_fire -> 43 _fx particles (43 stock burning_fx, generated sizes -), 0 burn trigger_hurts (2/s); 0 skipped (unnamed, not Start On)
+- pruned 0 orphaned elements
+- TO CHECK: env_fire without Don't Drop (CS:GO dropped it onto the floor below; CS2 flames/hurt stay where placed): unnamed, unnamed, unnamed
+
+Follow-up pass (2026-11-14): watersplit
+- watersplit: func_water - mesh 113849 (8704 x 8704 x 88 u, convex) -> 529 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 114074 (448 x 64 x 24 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)

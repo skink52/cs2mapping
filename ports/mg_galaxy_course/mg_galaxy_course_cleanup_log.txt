@@ -33,3 +33,8 @@ Follow-up pass (2026-10-19): gravity
 - 6 trigger_gravity (does nothing to players in CS2) -> trigger_multiple firing script Gravity_<scale> on touch (scales [0.2, 0.3, 0.5, 1.0]); names/filters/Enable/Disable kept
 - pruned 1 orphaned elements
 - 2026-10-19: the 3 low-gravity trigger_multiples also fire Gravity_1 OnEndTouch, so gravity returns to normal on leaving the zone
+
+Follow-up pass (2026-11-14): watersplit
+- watersplit: func_water - mesh 19596 (1248 x 352 x 4 u, convex) -> 4 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 19659 (576 x 112 x 8 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 19680 (448 x 640 x 12 u, convex) -> 4 pieces (func_water meshes over ~500 u get no physics hull)

@@ -97,3 +97,12 @@ Follow-up pass (2026-11-09): visfit_lean
 - visfit: 0 of 144 sky shell meshes set to Exclude from Vis, 144 kept because they close playable air
 - pruned 1424 orphaned elements
 - TO CHECK: vis: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium)
+
+Follow-up pass (2026-11-14): watersplit
+- watersplit: func_water - mesh 7285 (432 x 2511 x 80 u, convex) -> 14 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 8843 (1032 x 420 x 108 u, convex) -> 6 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 13536 (1144 x 10469 x 218 u, convex) -> 84 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 14372 (1057 x 8191 x 59 u, convex) -> 66 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 15360 (345 x 1429 x 130 u, convex) -> 4 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 16063 (476 x 1820 x 116 u, convex) -> 10 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 17013 (2804 x 3092 x 435 u, convex) -> 72 pieces (func_water meshes over ~500 u get no physics hull)

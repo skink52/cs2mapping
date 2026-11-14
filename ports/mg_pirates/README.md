@@ -25,6 +25,7 @@ Pirate ship battle: cannons and boats steered with the movement keys (game_ui).
 - 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 0 and moved 2 faces that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
 - 2026-11-10: CS:GO's water colour and murkiness, underwater fog in the water only (`fog_volume`), and the ropes rebuilt as cable_dynamic
   parented to the masts (see below). Needs a build.
+- 2026-11-14: **water physics** (`watersplit`): 1 func_water mesh over 384 u cut into 240 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `mg_pirates.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game.
 
 ## Open / to check
 

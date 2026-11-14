@@ -74,3 +74,6 @@ Follow-up pass (2026-11-09): weaponmodels
 - pruned 0 orphaned elements
 - TO CHECK: weaponmodels: CS2 weapon models are a different size/pivot from CS:GO's: check the repointed display props sit right
 - TO CHECK: weaponmodels: no CS2 weapon model for models/weapons/w_knife_m9_bay.vmdl
+
+Follow-up pass (2026-11-14): watersplit
+- watersplit: func_water - mesh 68425 (464 x 63 x 4 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)

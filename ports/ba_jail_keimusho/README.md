@@ -173,6 +173,13 @@ trigger (v2 had sg556), the new cell / sleeping-room doors. The v3 BSP also move
   Pre-fix map: 3,653 s of fire-less damage in 20 games, longest 183 s. Fixed: none, apart from one 0.05 s blip when a press lands in the very tick of
   the 2 s test (settled by the 0.15 s Test). Backup: `maps/ba_jail_keimusho_vmap_backup_20261108.zip`. Needs an entity build; not tested in game.
 
+## 2026-11-14: water physics
+
+`watersplit`: 5 func_water meshes over 384 u cut into 104 closed pieces. CS2 gives a func_water mesh over ~500 u no physics hull, so that
+water could not be swum in. Entities-only rebuild (0.7 min): no hull failure on the cut water. **Two pools still have no hull** (meshes 8018 and
+8022): their tops are displacements (subdivision meshes), which the cut leaves whole. Backup `ba_jail_keimusho.vmap.bak_watersplit_20261114_*`.
+Compiled, not checked in game.
+
 ## Open
 
 - Not tested in game: all of the above. Build, then check the doors, gun room equips, skipping rope cases, samurai mask (speed/invisibility/mask

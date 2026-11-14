@@ -18,3 +18,16 @@ Backup of the pre-clean map: csgo_addons\prefabs+backups\preclean_2026-10-14\mg_
 - radar: rendered from geometry
 - loading text: "original map by The_Prodigy cs2 port by skink52"
 - TO CHECK: chat messages use "say" from cs_script ServerCommand - if your server blocks it the messages just won't show
+
+Follow-up pass (2026-11-14): watersplit
+- watersplit: func_water - mesh 10553 (304 x 400 x 32 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 10628 (112 x 448 x 32 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 10653 (544 x 128 x 32 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 10703 (512 x 272 x 32 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 10778 (768 x 224 x 48 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 10803 (608 x 160 x 13 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 10853 (256 x 416 x 144 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 10878 (752 x 64 x 29 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 10978 (320 x 752 x 64 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 11003 (320 x 864 x 112 u, convex) -> 3 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 11053 (192 x 848 x 64 u, convex) -> 3 pieces (func_water meshes over ~500 u get no physics hull)

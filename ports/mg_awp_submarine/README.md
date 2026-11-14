@@ -13,6 +13,7 @@ Has a separate 3D skybox map (`mg_awp_submarine_3dskybox.vmap`) referenced from 
 ## History
 
 - 2026-10-11: the `launch` soundevent was silent. Most of the map's wavs had never compiled to `.vsnd_c` (fix: Full Recompile of the wavs, re-save the `.vsndevts`, restart the tools), and `soundspawna3` / `soundspawna17` had `sounds/launch.vsnd` / `launch.vsnd` as their sound name, where the event name `launch` belongs.
+- 2026-11-14: **water physics** (`watersplit`): 1 func_water mesh over 384 u cut into 276 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `mg_awp_submarine.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game.
 
 ## Import report
 

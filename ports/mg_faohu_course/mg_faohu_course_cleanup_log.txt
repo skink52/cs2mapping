@@ -27,3 +27,14 @@ Follow-up pass (2026-10-18): vis compile time (visfit)
 - visibility hints rebuilt from the play space: 34 Low (64-unit grid) over the walkable band (playable air up to 160 units above a floor), 26 Lower (64-unit grid, fewer initial clusters) over the rest of the playable air near geometry, 1 Lowest over the whole map; old set 1 Lowest, 10 Low
 - hint volume (billion cubic units): before Low 20.3, Lowest 111.0, after Low 7.8, Lower 1.2, Lowest 142.5
 - TO CHECK: if anything pops in or out of view where players stand, change the nearest Lower hint to Low (or Low to Medium); backup in csgo_addons\prefabs+backups\pre_vis_2026-10-18
+
+Follow-up pass (2026-11-14): watersplit
+- watersplit: func_water - mesh 16020 (1024 x 544 x 94 u, convex) -> 6 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 16045 (1920 x 1280 x 56 u, convex) -> 20 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 16070 (1664 x 896 x 96 u, convex) -> 15 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 16095 (992 x 1024 x 32 u, convex) -> 9 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 16195 (64 x 544 x 30 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 16220 (32 x 512 x 30 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 16270 (64 x 608 x 30 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 16295 (64 x 672 x 30 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)
+- watersplit: func_water - mesh 16395 (32 x 576 x 30 u, convex) -> 2 pieces (func_water meshes over ~500 u get no physics hull)

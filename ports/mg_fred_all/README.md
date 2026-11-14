@@ -16,6 +16,7 @@ Has a map-specific script gate: damage between enemies is off until the Fin room
 - 2026-10-16 16:35: damage between enemies is off until the Fin room's `fintrigger` fires `EnableDamage`, and every round starts with it off. Rebuilt at 18:13 (26.9 min).
 - 2026-11-03: **music** (`coursemusic.py`): the map had none. Eight songs shuffled from round start, the next when one ends: ba_jail_skylight's four (skink52's favourites) and jb_seaside's disco1, Majestic (Wax Fang), Midnight City (M83), Turn Down for What.
 - 2026-11-03: **z-fight fix undone where it was wrong** (skink52 spotted it): the 2 Nov polish had hidden 33 and moved 0 faces that only overlap a switched, moving, breakable or undrawn entity, or sit behind a see-through face. Restored from the pre-polish backup; zfight.py now leaves those alone. Needs a lighting build.
+- 2026-11-14: **water physics** (`watersplit`): 2 func_water meshes over 384 u cut into 8 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `mg_fred_all.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game.
 
 ## What the cleanup did
 

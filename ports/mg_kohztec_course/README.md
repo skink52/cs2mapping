@@ -15,6 +15,7 @@
 
 - 2026-10-24: all 61 displacements (terrain, rock walls, the south-west pit floor) were missing from the vmap: none survived the import. Rebuilt from the BSP's dispinfo/dispverts with `tools/disprestore.py` as closed meshes (displaced surface with the CS:GO texture projection, 4-unit toolsnodraw back and sides). Stand-ins for materials with no CS2 copy in the addon: `nature/blendgrassgravel001a` → `grass/hr_grass/grass_b` (10), `de_aztec/road01_cheap` → `de_aztec/hpe_aztec_stone01_dirt` (2). No vertex-paint blending. Backup: `maps\mg_kohztec_course_pre_disp_2026-10-24.vmap.bak`. Every other brush face in the BSP was checked against the vmap and is present; the only other gap is the two toolsblack func_illusionary areaportal-window fade brushes, which CS2 has no use for.
 - 2026-11-03: **respawn window** (`respawnwindow.py`, skink52): players who die before the spawn AFK killer `mg_kohztec_course_afk_trigger` switches on (180 s) respawn; `port_respawn_window` turns `mp_respawn_on_death_t/ct` off 175 s in. Needs a build.
+- 2026-11-14: **water physics** (`watersplit`): 5 func_water meshes over 384 u cut into 26 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `mg_kohztec_course.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game.
 
 ## What the cleanup did
 

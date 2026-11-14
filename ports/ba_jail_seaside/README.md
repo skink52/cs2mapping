@@ -19,6 +19,7 @@ Jailbreak map with cs_script additions: a knife dodgeball minigame (balls `Dball
 - Undated: func_brush beams parented to a func_rotating wouldn't Enable, so they stay unparented and get `SetParent` at runtime. Water reflections come from a baked cubemap. Radar made with RadGen (the selection set must be named `radgen_path`). BreakFloor respawn through a counter (to 104) and a point_template. `movingwall_stop` was missing a Disable on `movingwall_timer3`.
 - 2026-11-03: **switched lights** (`mapcheck.py`): 7 lights the map switches are no longer baked: Stationary (Dynamic only if it rides a parent or was already Dynamic; shadows off where more than 4 shadowed stationary lights would overlap), bounce light off, so their light no longer stays on the walls when they are off. Needs a lighting build.
 - 2026-11-03: **disco floor** (`mapcheck.py`, skink52): its 26 coloured switched lights have shadows off, so the changing colours look right; switched lights get no baked bounce. Needs a lighting build.
+- 2026-11-14: **water physics** (`watersplit`): 1 func_water mesh over 384 u cut into 2 closed pieces; CS2 gives a func_water mesh over ~500 u no physics hull, so that water could not be swum in. Entities-only rebuild: 0 func_water hull failures where the cut applied. Backup `ba_jail_seaside.vmap.bak_watersplit_20261114_*`. Compiled, not checked in game. **Still no hull on the sea itself**: its top is a displacement (subdivision mesh), which the cut leaves whole, and the build still logs `Failed to create physics hulls` for it.
 
 ## Import report
 
