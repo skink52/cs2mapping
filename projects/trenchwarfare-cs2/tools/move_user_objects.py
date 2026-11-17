@@ -62,8 +62,10 @@ def zone(x, y, z):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description='move user objects for the short front')
-    ap.add_argument('inp'); ap.add_argument('out'); ap.add_argument('--report')
+    ap.add_argument('pos', nargs='*', help='<in> <out> (or --in / --out, as deploy_tw.py --chain passes them)')
+    ap.add_argument('--in', dest='inp_'); ap.add_argument('--out', dest='out_'); ap.add_argument('--report')
     a = ap.parse_args(argv)
+    a.inp = a.inp_ or a.pos[0]; a.out = a.out_ or a.pos[1]
     if os.path.normcase(os.path.abspath(a.inp)) == os.path.normcase(os.path.abspath(a.out)): sys.exit('move_user_objects: out must not be the input')
     raw = open(a.inp, 'rb').read()
     m = V.Map(a.inp, data=raw)

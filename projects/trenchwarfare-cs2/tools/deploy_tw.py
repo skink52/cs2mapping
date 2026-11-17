@@ -140,6 +140,7 @@ def last_line(text, pat):
 
 # ---------------------------------------------------------------- (a) the chain
 SIDE_FILES = {   # what each patch tool writes into an earlier step's folder besides its map (kept as side copies, then put back)
+    '0a_moved': [], '0b_gen': [],
     '1_world_1': ['step5/deploy_files.txt', 'step5/deploy_files_optin.txt'],
     '2_models': ['step6/patch_models.targets.json', 'step6/user_owned.txt', 'step6/deploy_files.txt'],
     '3_terrain': ['step7/patch_terrain.report.json', 'step7/terrain_layers.npz', 'step7/deploy_files.txt'],
@@ -264,12 +265,16 @@ def chain(a):
     if a.user_m2: flags += ['--user-m2']
     if a.user_w5: flags += ['--user-w5']
     stages = [
-        ('1_world_1', [PY, '-u', 'tools/patch_world_1.py', '--targets', os.path.join(CHAIN, '1_world_1.targets.json')] + flags, '1_world_1.targets.json'),
+        # short front (18 Nov 2026, docs/SHORT_FRONT_DESIGN.md): the user's objects moved with their area, then the map regenerated at
+        # 5 bays; these two are not delta patches (no guard: their outputs are recorded by hash), the rest are, with --find targets
+        ('0a_moved', [PY, '-u', 'tools/move_user_objects.py'], None),
+        ('0b_gen', [PY, '-u', 'tools/make_map_stage.py'], None),
+        ('1_world_1', [PY, '-u', 'tools/patch_world_1.py', '--find', '--targets', os.path.join(CHAIN, '1_world_1.targets.json')] + flags, '1_world_1.targets.json'),
         ('2_models', [PY, '-u', 'tools/patch_models.py', '--no-guard'], None),
         ('3_terrain', [PY, '-u', 'tools/patch_terrain.py', '--targets', os.path.join(CHAIN, '3_terrain.targets.json')], '3_terrain.targets.json'),
         ('4_seams', [PY, '-u', 'tools/patch_seams.py', '--no-guard', '--targets', os.path.join(CHAIN, '4_seams.targets.json'),
                      '--report', os.path.join(CHAIN, '4_seams.report.json')], '4_seams.targets.json'),
-        ('5_world_3', [PY, '-u', 'tools/patch_world_3.py', '--no-guard', '--targets', os.path.join(CHAIN, '5_world_3.targets.json'),
+        ('5_world_3', [PY, '-u', 'tools/patch_world_3.py', '--find', '--no-guard', '--targets', os.path.join(CHAIN, '5_world_3.targets.json'),
                        '--report', os.path.join(CHAIN, '5_world_3.report.json')] + (['--pit-sandbags', a.pit_sandbags] if a.pit_sandbags else []),
          '5_world_3.targets.json'),
         ('6_sounds', [PY, '-u', 'tools/patch_sounds.py'], None),
@@ -317,6 +322,10 @@ def chain(a):
             return stop('%s exited %d (log out/step9/chain/%s.log): %s' % (name, code, name, (text.strip().splitlines() or [''])[-1][:300]))
         ho = hashes(outp)
         st.update(output=rel(outp), output_sha256=ho['sha256'], output_crc32=ho['crc32'], output_bytes=ho['size'])
+        if name in ('0a_moved', '0b_gen'):                       # short front: generation, not a delta patch (no guard)
+            st['guard'] = 'n/a (generation stage)'; save()
+            print('  %s -> %s CRC32 %s, %.1f MB, %.0f s; generation stage' % (rel(prev['path']), rel(outp), ho['crc32'], ho['size'] / 1048576.0, secs), flush=True)
+            prev = dict(path=outp, **ho); continue
         tpath = os.path.join(CHAIN, tfile)
         tj = json.load(open(tpath, encoding='utf-8'))
         if tj.get('input_crc32') != prev['crc32']:
