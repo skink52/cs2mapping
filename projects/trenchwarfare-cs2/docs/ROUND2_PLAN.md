@@ -23,7 +23,7 @@ The user authorised pushing this branch (18 Nov) and deploying when the gate pas
 
 | # | Item | Where | Done when | Status |
 |---|---|---|---|---|
-| A | Fog that shows (why is there none? env_cubemap_fog / volumetric settings in CS2, light_environment fog keys, post-process) | `tools/patch_fog_2.py`, `make_map.py` env block | a reason found (CS2 keys / known requirements) and values that render; TESTING L5 | |
+| A | Fog that shows (why is there none? env_cubemap_fog / volumetric settings in CS2, light_environment fog keys, post-process) | `tools/patch_fog_2.py`, `make_map.py` env block | a reason found (CS2 keys / known requirements) and values that render; TESTING L5 | done 18 Nov (code; not deployed): CS2 excludes volumetric fog -> env_gradient_fog tw_mist + cubemap height band to the ground |
 | B | Ambience: soundscape richer and closer (distant artillery, MG, wind, mud, birds at the woods), soundscape per area (trench / NML / woods / galleries) | `tools/sounds.py`, soundscape in `make_map.py` | events + emitters, sounds checked | |
 | C | Galleries: find crouch-only stretches (roof vs player 72 u) and supports (tunnel_set) inside the walkway; delete those supports, raise the roof where needed | `make_map.py` tunnel section, check | check_play gallery headroom probe 0 low spots; 0 sets in the path | |
 | D | Mortar pits: sandbag courses lower (one course less or lower z), bags bedded on each other (no hover), staggered like a real stack | `make_map.py` pits, `patch_world_3` W9 | clipping check: 0 floating bags; sightline crews still covered at crouch | |

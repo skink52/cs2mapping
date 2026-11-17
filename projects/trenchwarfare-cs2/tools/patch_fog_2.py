@@ -12,10 +12,11 @@ usage: python tools/patch_fog_2.py [--in V] [--out V] [--targets T] [--report R]
 Changes (by class, so it runs on any stage of the chain, and on the short-front map later):
   env_cubemap_fog (exactly one): CUBEMAP below. The far fire trench (3,282 u, fire step to fire step) goes from ~29 % fog to ~12 %
       (opacity = max * ((d - start) / (end - start)) ** exponent, the formula REVIEW_WORLD_3 checked against the old values).
-  env_volumetric_fog_controller tw_vfog: added when there is none (VFOG below: make_map.py's key set, strength 0.35 against the old
-      0.8, drawn to 2,400 u), or its keys set when one exists. Vis group tw_gen.
+  env_volumetric_fog_controller: removed (CS2 renders no volumetric fog: csgo.fgd @exclude; found 18 Nov 2026, round 2).
+  env_gradient_fog tw_mist: added when there is none (GRADIENT below = make_map.py), or its keys set: a ground mist, dense near the
+      ground and thinning with height, ~22 % at the far fire trench. Vis group tw_gen.
   The prefix's per-class entity counts follow.
-Level: "simulated" (patch_guard --strict); how thick 0.35 looks is only known in CS2 (docs/TESTING.md L5). AI-generated (Claude) for skink52.
+Level: "simulated" (patch_guard --strict); how it looks is only known in CS2 (docs/TESTING.md L5). AI-generated (Claude) for skink52.
 """
 import argparse, json, os, subprocess, sys, time, zlib
 
@@ -37,11 +38,6 @@ CUBEMAP = dict(cubemapfogstartdistance='400', cubemapfogenddistance='9000', cube
 GRADIENT = [('targetname', 'tw_mist'), ('fogcolor', '164 166 158'), ('fogstrength', '1.0'), ('fogmaxopacity', '0.55'), ('fogstart', '300'),
             ('fogend', '6000'), ('fogfalloffexponent', '1.4'), ('heightfog', '1'), ('fogstartheight', '-250'), ('fogendheight', '900'),
             ('fogverticalexponent', '1.5'), ('fadetime', '1.0'), ('farz', '-1'), ('StartDisabled', '0')]
-# make_map.py's tw_vfog keys (tw13-tw32), thinner and drawn further: patches of mist that drift (noise), lit by the sun
-VFOG = [('targetname', 'tw_vfog'), ('IsMaster', '1'), ('FogStrength', '0.35'), ('TintColor', '205 210 215'), ('DrawDistance', '2400'),
-        ('FadeInStart', '60'), ('FadeInEnd', '400'), ('FadeSpeed', '2'), ('IndirectEnabled', '1'), ('IndirectStrength', '0.8'),
-        ('IndirectVoxelDim', '256'), ('NoiseSpeed', '0.12'), ('NoiseStrength', '0.6'), ('NoiseScale', '.003 .003 .008'),
-        ('volume_depth_override', '0'), ('volume_first_slice_thickness', '0')]
 VFOG_AT = (192.0, 0.0, 2000.0)
 SPAN = 3282.0                 # fire step to fire step (layout XF 1641 a side)
 
