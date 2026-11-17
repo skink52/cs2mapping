@@ -987,10 +987,10 @@ def plan_fx(m, rec, Hnew, log):
     cr = sorted([c for c in rec['craters'] if c['zone'] == 'nml' and abs(c['x']) < 1250], key=lambda c: -c['r'])
     pick = []
     for c in cr:
-        if any(math.hypot(c['x'] - o[0], c['y'] - o[1]) < 520 for o in old): continue
-        if any(math.hypot(c['x'] - p['x'], c['y'] - p['y']) < 1100 for p in pick): continue
+        if any(math.hypot(c['x'] - o[0], c['y'] - o[1]) < 300 for o in old): continue
+        if any(math.hypot(c['x'] - p['x'], c['y'] - p['y']) < 700 for p in pick): continue
         pick.append(c)
-        if len(pick) >= 6: break
+        if len(pick) >= 4: break      # short front (18 Nov): 4 in the shorter strip, 300 / 700 u apart (was 6, 520 / 1100)
     out = []
     for k, c in enumerate(pick):
         z = float(Hnew[li(c['x']), lj(c['y'])]) + 6.0

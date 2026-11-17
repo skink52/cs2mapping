@@ -562,6 +562,41 @@ def rec_engine(rng, synth):
     return clip(x / np.max(np.abs(x)), 1.15)
 
 
+def rec_arty(rng, v):
+    """round 2 (18 Nov 2026): far artillery from recordings, a battery firing and its shells landing a few km off: a distant HE
+    detonation or close thunder, low-passed and given an outdoor tail (about 6 s); synthesised fallback without the VPK"""
+    src = stock(('weapons/hegrenade/explode3_distant.wav', 'weapons/hegrenade/explode4_distant.wav', 'ambient/weather/thunder_distant_03.wav',
+                 'weapons/hegrenade/explode5_distant.wav')[v])
+    if src is None: return make_far_guns(rng, v)
+    s = src[onset(src):] * _pk(src)
+    s = fit(lp(s, 700 - 80 * v, 2), int(6.0 * SR))
+    if v % 2:                                                          # a second, nearer report a moment later
+        place(s, lp(src[onset(src):] * _pk(src), 900, 2)[:int(3 * SR)] * 0.55, 0.9 + 0.3 * v)
+    return fade_out(distant(s, rng, sec=2.2, tau=0.8, wet=0.55, lo=30, hi=900), 1.6)
+
+
+def make_gallery(rng):
+    """round 2: 12 s loop under the ground: the barrage felt through the earth (very low), water dripping, the timber sets creaking
+    under the weight; whole cycles and wrap-around placement, so it loops without a crossfade (monsoon's method)"""
+    L = 12.0; n = int(SR * L); t = np.arange(n) / SR
+    rumble = circ_lp(shaped_noise(n, rng, band(18, 140)), 120) * (0.7 + 0.3 * np.cos(2 * np.pi * t / L * 3 + 0.7))
+    x = rumble / (np.max(np.abs(rumble)) + 1e-9) * 0.55
+    for _ in range(26):                                                # drips: a falling plink with a short cave ring
+        m = int(SR * 0.35); tt = np.arange(m) / SR; f0 = rng.uniform(1300, 2600)
+        d = np.sin(2 * np.pi * (f0 * tt + 900 * tt ** 2)) * np.exp(-tt / 0.03)
+        d = d + 0.35 * np.sin(2 * np.pi * f0 * 1.5 * tt) * np.exp(-tt / 0.12)
+        place_wrap(x, d * rng.uniform(0.08, 0.22), int(rng.uniform(0, n)))
+    for _ in range(5):                                                 # timber creaks: a slow, rough, falling groan
+        m = int(SR * rng.uniform(0.5, 1.1)); tt = np.arange(m) / SR
+        f = rng.uniform(140, 260) * (1 - 0.25 * tt / tt[-1])
+        g = np.sin(2 * np.pi * np.cumsum(f) / SR) * (1 + 0.6 * np.sign(np.sin(2 * np.pi * rng.uniform(18, 32) * tt)))
+        g = bp(g, 120, 1400) * env(m, 0.08, m / SR / 3)
+        place_wrap(x, g * rng.uniform(0.12, 0.25), int(rng.uniform(0, n)))
+    x = x - np.mean(x)
+    x = clip(x / np.max(np.abs(x)), 1.1)
+    return np.stack([x, np.roll(x, int(0.045 * SR))], 1)             # a little width (a periodic shift keeps the loop seamless)
+
+
 def rec_gun(rng, v, synth):
     """twin synchronised MGs: each round's report from a recorded MG shot (m249 / negev distant reports, slowed 15 %: heavier,
     older guns), the synthesised mechanism clack kept on top"""
@@ -644,6 +679,9 @@ def build():
     # out of the addon (written to --pending) until something plays it
     add('plane_dive', rec_dive(R(100), make_dive(R(100), eng_s)), centroid=(150, 2500), late=True)
     add('rain_tin', make_rain_tin(R(101)), loop=True, centroid=(2000, 7000), high=(0.5, 2000, 12000))
+    # round 2 (18 Nov 2026): far artillery from recordings, the mine-gallery bed
+    for v in range(4): add('amb_arty_%d' % (v + 1), rec_arty(R(110 + v), v), low=(0.5, 15, 300), centroid=(20, 700))
+    add('amb_gallery', make_gallery(R(120)), loop=True, centroid=(30, 1500))
     add('whistle_attack', make_whistle_attack(R(102)), centroid=(1800, 4500), high=(0.5, 2000, 8000))
 
 
@@ -817,9 +855,12 @@ def far(r, full=0.1, mid=0.35, midv=0.5):
     return [(0, 1), (r * full, 1), (r * mid, midv), (r * 0.7, midv * 0.36), (r, 0)]
 
 
-AMB_KIDS = ['tw.amb.wind', 'tw.amb.barrage', 'tw.amb.guns', 'tw.amb.shells', 'tw.amb.mg', 'tw.amb.whistles', 'tw.amb.planes',
+AMB_KIDS = ['tw.amb.wind', 'tw.amb.barrage', 'tw.amb.guns', 'tw.amb.arty', 'tw.amb.shells', 'tw.amb.mg', 'tw.amb.whistles', 'tw.amb.planes',
             'tw.amb.crows', 'tw.amb.rifles', 'tw.amb.whiz']
-CONTRACT = ['tw.mortar_launch', 'tw.mortar_whistle', 'tw.mortar_impact', 'tw.plane_engine', 'tw.plane_gun', 'tw.amb.front',
+# round 2 (18 Nov 2026): one soundscape per place (env_soundscape in make_map.py): the wood and the mine galleries
+WOODS_KIDS = ['tw.amb.leaves', 'tw.amb.crows', 'tw.amb.arty_far', 'tw.amb.planes', 'tw.amb.rifles']
+GALLERY_KIDS = ['tw.amb.gallery_bed', 'tw.amb.arty_earth']
+CONTRACT = ['tw.mortar_launch', 'tw.mortar_whistle', 'tw.mortar_impact', 'tw.plane_engine', 'tw.plane_gun', 'tw.amb.front', 'tw.amb.woods', 'tw.amb.gallery',
             'tw.whistle_attack', 'tw.plane_dive', 'tw.amb.rain_tin']
 FLAT = [(0, 1), (20000, 1)]     # heard everywhere at full level (csgo_mega with a flat distance curve: cs2-gotchas "play everywhere")
 
@@ -843,8 +884,17 @@ def events():
     ev.append(ev_loop('tw.amb.wind', files('amb_wind'), 0.40))
     ev.append(ev_loop('tw.amb.barrage', files('amb_barrage'), 0.50))
     ev.append(ev_rand('tw.amb.guns', files('amb_guns', 4), 0.80, 3500, 7000, 5.0, 16.0, (0.92, 1.05)))
-    ev.append(ev_rand('tw.amb.shells', files('amb_shell', 3), 0.70, 2500, 6000, 7.0, 22.0, (0.93, 1.05)))
-    ev.append(ev_rand('tw.amb.mg', files('amb_mg', 3), 0.45, 2000, 5000, 6.0, 18.0, (0.95, 1.05)))
+    ev.append(ev_rand('tw.amb.arty', files('amb_arty', 4), 0.85, 2500, 6500, 4.0, 12.0, (0.92, 1.05)))
+    ev.append(ev_rand('tw.amb.shells', files('amb_shell', 3), 0.75, 1500, 4500, 5.0, 16.0, (0.93, 1.05)))     # closer and busier (round 2)
+    ev.append(ev_rand('tw.amb.mg', files('amb_mg', 3), 0.50, 1500, 4500, 4.0, 14.0, (0.95, 1.05)))
+    ev.append(E._event('tw.amb.woods', ['base = "amb.soundscapeParent.base"', 'enable_child_events = true', 'soundevent_01 =', '['] +
+                       ['	"%s",' % k for k in WOODS_KIDS] + [']']))
+    ev.append(ev_loop('tw.amb.leaves', files('amb_wind'), 0.55))
+    ev.append(ev_rand('tw.amb.arty_far', files('amb_arty', 4), 0.50, 4000, 8000, 6.0, 18.0, (0.90, 1.0)))
+    ev.append(E._event('tw.amb.gallery', ['base = "amb.soundscapeParent.base"', 'enable_child_events = true', 'soundevent_01 =', '['] +
+                       ['	"%s",' % k for k in GALLERY_KIDS] + [']']))
+    ev.append(ev_loop('tw.amb.gallery_bed', files('amb_gallery'), 0.70))
+    ev.append(ev_rand('tw.amb.arty_earth', files('amb_arty', 4), 0.35, 300, 1200, 8.0, 24.0, (0.70, 0.82)))   # felt through the earth
     ev.append(ev_rand('tw.amb.whistles', files('amb_whistle', 3), 0.32, 2500, 5500, 40.0, 110.0, (0.97, 1.03)))
     ev.append(ev_rand('tw.amb.planes', files('amb_plane', 2), 0.45, 2500, 6000, 35.0, 90.0, (0.95, 1.05)))
     # stock files, as before (the game's pak01; not checked offline)
@@ -864,7 +914,7 @@ def check_events(text, shipped):
         if f.split('/')[-1] not in shipped: prob.append('event names a missing sound: %s' % f)
     names = set(E.event_names(E.body_of(text, TAG)))
     prob += ['contract event missing: %s' % w for w in CONTRACT if w not in names]
-    prob += ['soundscape child not defined: %s' % k for k in AMB_KIDS if k not in names]
+    prob += ['soundscape child not defined: %s' % k for k in AMB_KIDS + WOODS_KIDS + GALLERY_KIDS if k not in names]
     used = set(re.findall(r'%s/([^"]+)\.vsnd' % SUB, text))
     prob += ['sound shipped but used by no event: %s' % s for s in shipped if s not in used]
     for o, c in ('{}', '[]'):
