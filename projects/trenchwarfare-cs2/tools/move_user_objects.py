@@ -80,6 +80,7 @@ def main(argv=None):
         p = where(m, i)
         if p is None: rep['kept'] += 1; continue
         z, dy = zone(*p)
+        dz = 0.0; dx = 0.0
         rep['counts'][z] = rep['counts'].get(z, 0) + 1
         t = s_(m.type(i)); cls = s_(m.cls(i)) if t == 'CMapEntity' else t
         row = dict(node=i, cls=cls, name=s_(m.name(i)) if t == 'CMapEntity' else '', vg=s_(m.g(i, b'customVisGroup')), at=[round(p[0]), round(p[1])], zone=z)
@@ -88,6 +89,10 @@ def main(argv=None):
             dmx.set_(m.E[i], b'customVisGroup', dmx.T_STR, b'tw_user')   # (woods ladder volumes, sap-mouth meshes) go to their tw_user group
             row['vg'] = 'tw_user (was ungrouped)'; rep.setdefault('regrouped', []).append(i)
         dz = 0.0; dx = 0.0
+        if z == 'keep' and t == 'CMapEntity' and m.cls(i) == 'func_nav_markup' and 2100 < abs(p[0]) < 2250:
+            dx = (LY.station_x(p[1]) - abs(p[0])) * (1 if p[0] > 0 else -1)   # a support-trench seed: onto the trench's line at that y
+            dy = dy or 0.0
+            if abs(dx) > 0.5: dy = 1e-9                  # (forces the move below; y unchanged)
         if z == 'shelter':                               # the 15-bay stations stood off XS; the new one may stand off XS + 48
             ny = p[1] + dy; dx = (LY.station_x(ny) - LY.XS) * (1 if p[0] > 0 else -1)
         if dy and z in ('north', 'south', 'shelter') and p[2] > -200:   # surface objects follow the ground (trench floor = ground_low - DEPTH);
