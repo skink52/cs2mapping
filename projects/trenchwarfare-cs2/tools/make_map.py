@@ -490,7 +490,7 @@ for s in (-1, 1):
             prop('duckboard_128' if unit > 64 else 'duckboard', s * x, y, g - LY.DEPTH - 0.5, yaw + rng.uniform(-2, 2), scale=(L / (cnt * unit), 1, 1), reg=False)
     # heal shelters (elephant iron) in the niches, with dressing station dressing
     for k, y in enumerate(LY.SHELTER_Y):
-        xs_ = LY.XS + LY.HW + 4 + 48          # arch mouth 4 units clear of the support trench
+        xs_ = LY.station_x(y) + LY.HW + 4 + 48   # arch mouth 4 units clear of the support trench
         g = float(LY.ground_low(np.array([s * xs_]), np.array([y]))[0])
         prop('shelter', s * xs_, y, g - LY.DEPTH, 0 if s > 0 else 180, reg=False)
         prop('crate_medical', s * (xs_ + 30), y, g - LY.DEPTH, rng.uniform(-2, 2))
@@ -519,7 +519,7 @@ for s in (-1, 1):
         yaw = math.degrees(math.atan2(n[1], n[0] * s)) + 90
         return prop(name, s * px, py, float(LY.ground_low(np.array([s * px]), np.array([py]))[0]) - LY.DEPTH, yaw, check=True)
     for k, y in enumerate(LY.SHELTER_Y):
-        wall_sign('sign_dressing_gb' if s > 0 else 'sign_dressing_de', LY.XS + 34, y + 60)
+        wall_sign('sign_dressing_gb' if s > 0 else 'sign_dressing_de', LY.station_x(y) + 34, y + 60)
     for k, y in enumerate(LY.COMM_Y):
         wall_sign('sign_mortars_gb' if s > 0 else 'sign_mortars_de', LY.XB + 30, y + 40)
         wall_sign('sign_firetrench_gb' if s > 0 else 'sign_firetrench_de', LY.XS - 30, y + 100)
@@ -815,7 +815,7 @@ for s in (-1, 1):
     x, y = s * (LY.HANGAR_X - 430), 300
     prop(None, x, y, gz(x, y), rng.uniform(0, 360), stock='models/de_overpass/junk/wheelbarrow01a/wheelbarrow01a.vmdl', solid='6', check=True, pad=3)
     for k, y in enumerate(LY.SHELTER_Y):
-        xs_ = LY.XS + LY.HW + 4 + 48
+        xs_ = LY.station_x(y) + LY.HW + 4 + 48
         prop(None, s * (xs_ - 3), y + 29, float(LY.ground_low(np.array([s * xs_]), np.array([y]))[0]) - LY.DEPTH + 0.5, rng.uniform(-2, 2), stock=EXT('stretcher_ext'), check=True)
     # flyable aircraft (prop_dynamic, script-flown): parked on the strip, noses (model +x) toward the front
     dyn = '%s_dyn' % pl

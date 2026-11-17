@@ -46,7 +46,7 @@ SHELTER = 'models/tw/shelter/shelter.vmdl'
 # map (plan() matches x, y within TOL and takes the shelter's own origin). 15 bays had 3 a side at y -1056 / 576 / 2304.
 sys.path.append(HERE)
 import layout as _LY      # noqa: E402
-SHELTERS = [(tg, n + 1, (sg * (_LY.XS + 88.0), y)) for tg, sg in (('t', -1), ('ct', 1)) for n, y in enumerate(_LY.SHELTER_Y)]
+SHELTERS = [(tg, n + 1, (sg * (_LY.station_x(y) + 88.0), y)) for tg, sg in (('t', -1), ('ct', 1)) for n, y in enumerate(_LY.SHELTER_Y)]
 TIN_UP = 88.0                 # under the shelter roof (check_play T4: >= 72 u headroom at the dressing station)
 DIVE_EMITTERS = 4             # = CONFIG.AIR.DIVE.EMITTERS (tools/check_contract.py compares the two)
 RAIN_RELAY = 'tw_rain'      # the rain tile count is whatever patch_terrain made (each one Start / Stop; checked in plan())

@@ -32,13 +32,20 @@ def fy(v):
 
 DEPTH = 72.0                       # floor below local ground
 COMM_Y = [0.0]                     # communication trenches (15 bays: -1920, 0, 1920)
-SHELTER_Y = [-576.0, 576.0]        # heal shelters off the support trench (15 bays: -1056, 576, 2304)
+SHELTER_Y = [-576.0, 288.0]        # heal shelters off the support trench (15 bays: -1056, 576, 2304); niche at station_x(y)
 MORTAR_X = 3200.0
 MORTAR_Y = [-560.0, 560.0]         # 2 pits a side (15 bays: 5, -1600..1600 step 800); the user: "too many mortar stations"
 HANGAR_X = 6150.0
 RES = 16.0                         # trench raster cell
 RX0, RX1 = 1300.0, 2600.0          # raster extent (x), CT side
 RY0, RY1 = -FRONT_Y - 640.0, FRONT_Y + 640.0   # 15 bays: -3200, 3200
+
+
+def station_x(y):
+    """the support trench's centre x at y (CT side): it dog-legs XS / XS + 48 every 768 (segments()); the dressing-station niches
+    and shelters stand off it there (short front 18 Nov 2026: with 5 bays a station can sit on an XS + 48 run)"""
+    yA = Y0 + 96; k = int(max(0.0, (y - yA)) // 768.0)
+    return XS + (48.0 if k % 2 else 0.0)
 
 
 def fire_centreline():
@@ -77,7 +84,7 @@ def segments():
             segs.append(((xs[k], yy[k]), (xs[k + 1], yy[k + 1]), 'comm'))
     # shelter niches
     for y in SHELTER_Y:
-        segs.append(((XS, y), (XS + 150, y), "niche"))
+        segs.append(((station_x(y), y), (station_x(y) + 150, y), "niche"))
     return segs
 
 
@@ -273,13 +280,13 @@ def infantry_spawns(s):
     for i in range(NBAY):
         y = Y0 + i * P + 128
         out.append((s * (XF + 8), y))
-    for y in (-704.0, 320.0, 704.0):                     # clear of the communication trench (y 0..160)
+    for y in (-704.0, 448.0, 600.0):                     # clear of the communication trench (y 0..160); the support trench ends at 672
         out.append((s * support_x_at(y), y))
     return out
 
 
 def heal_points(s):
-    return [(s * (XS + 64), y) for y in SHELTER_Y]
+    return [(s * (station_x(y) + 64), y) for y in SHELTER_Y]
 
 
 def mortar_pits(s):

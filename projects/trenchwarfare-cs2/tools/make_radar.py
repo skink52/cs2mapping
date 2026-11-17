@@ -179,7 +179,7 @@ for s in (-1, 1):
 # shelters (elephant iron under earth)
 for s in (-1, 1):
     for y in LY.SHELTER_Y:
-        cx = s * (LY.XS + LY.HW + 4 + 48)
+        cx = s * (LY.station_x(y) + LY.HW + 4 + 48)
         dr.rounded_rectangle([px(cx - 50, y + 52), px(cx + 50, y - 52)], radius=plen(30), fill=(104, 94, 76, 255), outline=(150, 136, 108, 255), width=3)
         for k in range(-3, 4):
             dr.line([px(cx - 46, y + k * 13), px(cx + 46, y + k * 13)], fill=(124, 112, 92, 255), width=1)
@@ -362,7 +362,7 @@ for (m, o, a, sc) in props:
     if m.endswith('/ladder.vmdl'): glyph_ladder(o[0], o[1], math.radians(a[1]))
 for s_ in (-1, 1):
     for y in LY.SHELTER_Y:
-        c = px(s_ * (LY.XS + LY.HW + 4 + 48), y); r = plen(34)
+        c = px(s_ * (LY.station_x(y) + LY.HW + 4 + 48), y); r = plen(34)
         dr.ellipse([c[0] - r, c[1] - r, c[0] + r, c[1] + r], fill=(236, 230, 214, 255), outline=(120, 30, 26, 255), width=SS)
         w = plen(9); h = plen(24)
         dr.rectangle([c[0] - w, c[1] - h, c[0] + w, c[1] + h], fill=(178, 34, 30, 255)); dr.rectangle([c[0] - h, c[1] - w, c[0] + h, c[1] + w], fill=(178, 34, 30, 255))
