@@ -8,7 +8,19 @@ compiled or heard in CS2 yet). Overview of the presentation work: [PRESENTATION.
 ```
 python tools/sounds.py out/addon "C:/source1/links/content_addons/mg_trenchwarfare/soundevents/soundevents_addon.vsndevts"   # 12 s
 ```
-Everything is synthesised (numpy / scipy, 44.1 kHz 16-bit, no samples), with monsoon's method (`projects/monsoon-cs2/tools/sounds.py`):
+**17 Nov 2026 (short front revision): recorded layers.** The user found the plane sounds cartoony and the mortars weightless. The
+mortar launch and impact, the plane engine, guns, dive and the far passes now layer real recordings from the stock game's own files
+(read at build time from CS:GO's `csgo/pak01` VPK on this PC, never committed: `stock()` in `tools/sounds.py`) under the synthesised
+parts; without the VPK each falls back to its synthesised recipe. Sources: engine loop `ambient/nuke/airplane_02` (3-8 s, an even
+harmonic comb with no Doppler bend; level flattened, 4 s equal-power cross-fade loop, low end raised, the synthesised rotary as a
+quiet hum); passes `ambient/playonce/overhead/bank_airplane_01`, `ambient/dust2/airplane_02`; dive `ambient/playonce/overhead/plane3`
+wound up a fifth; guns `weapons/m249|negev/*-1-distant` slowed 15 %; launch `ambient/machines/thumper_dust` + an HE detonation an
+octave down; impacts `weapons/hegrenade/hegrenade_detonate_0N` + `weapons/c4/c4_explode1` (low-passed punch) + close thunder
+(low-passed roll) + `weapons/debris1|2` + a 36 Hz pressure thump. Impact target relaxed to >= 2.5 % energy at 400-8000 Hz (the
+recorded detonations are 74-98 % under 200 Hz themselves). Before / after pictures: `out/short_front/step2/compare.png`.
+Nothing heard in CS2 yet.
+
+The rest is synthesised (numpy / scipy, 44.1 kHz 16-bit, no samples), with monsoon's method (`projects/monsoon-cs2/tools/sounds.py`):
 loops are built from noise that is periodic over the file and whole numbers of cycles (events placed with wrap-around, reverb by
 circular convolution), so they need no crossfade; loops carry `smpl` + `cue` markers. The template (the live addon file) is only read;
 the result goes to `out/addon/soundevents/soundevents_addon.vsndevts`: our events in the block `// ---- mg_trenchwarfare sound events

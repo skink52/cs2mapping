@@ -148,8 +148,8 @@ Logs: `C:\source1\cs2port\logs\mg_trenchwarfare_assets.log` and `mg_trenchwarfar
 ## Q. Sounds and loops
 
 - [ ] Q1. Officer's whistle about 1.5 s after round start, heard at full level everywhere. Record: R.
-- [ ] Q2. Mortar launch, falling whistle and impact: levels against stock rifles; 3D position right. Record: R.
-- [ ] Q3. Aircraft engine loop: no click at the seam (2 s loop). It stops cleanly when the flight ends. Guns sound every second round. Record: R.
+- [ ] Q2. Mortar launch, falling whistle and impact: levels against stock rifles; 3D position right. Since 17 Nov the launch and impact layer real HE / C4 / thunder recordings: do they carry weight now, and is the impact's 4 s roll too long when several land together? Record: R.
+- [ ] Q3. Aircraft engine loop: no click at the seam (4 s loop since 17 Nov: a real piston engine; does it still sound cartoony? too muffled up close?). It stops cleanly when the flight ends. Guns sound every second round. Record: R.
 - [ ] Q4. Soundscape: wind, distant drumfire, guns, MG, whistles, passing aircraft. Expect seamless loops, not too busy. Record: R.
 
 ## R. Loading screen

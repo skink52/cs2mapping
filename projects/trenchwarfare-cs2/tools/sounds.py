@@ -165,6 +165,69 @@ def distant(x, rng, sec=1.6, tau=0.6, wet=0.7, lo=40, hi=1500, cut=None, echoes=
     return fade_out(reverb(x, sec, rng, tau, wet, lo, hi, pre=0.06, echoes=echoes), min(1.0, sec * 0.6))
 
 
+# ---------------------------------------------------------------- recordings (17 Nov 2026)
+# The user: "the plane sounds are very cartoony, and the mortar sound doesn't carry much weight". The aircraft and the mortars now
+# layer real recordings from the stock game's own files (CS:GO's csgo/pak01 VPK on this PC: prop-plane passes, HE grenade and C4
+# detonations, close thunder, debris) under the synthesised parts. Valve content inside a Valve-game addon; nothing is committed to
+# git (read from the install at build time). Without the VPK (another PC) every recipe falls back to its synthesised version.
+STOCK_VPK = 'C:/source1/links/csgo/pak01'
+_VPK = {}
+
+
+def stock(path, start=0.0, dur=None):
+    """a stock recording (path under sound/) as mono float at SR, cut to [start, start + dur] s; None when the VPK is missing"""
+    if 'dir' not in _VPK:
+        try:
+            import vpkdir
+            _VPK['dir'] = vpkdir.read_dir(STOCK_VPK + '_dir.vpk')
+        except Exception as e:
+            print('sounds: stock VPK not readable (%s): synthesised fallbacks' % e); _VPK['dir'] = None
+    d = _VPK['dir']
+    if not d or 'sound/' + path not in d: return None
+    ai, off, ln, pre = d['sound/' + path][:4]
+    data = pre
+    if ln:
+        with open(STOCK_VPK + '_%03d.vpk' % ai, 'rb') as f: f.seek(off); data = pre + f.read(ln)
+    import io
+    from scipy.io import wavfile
+    sr, x = wavfile.read(io.BytesIO(data))
+    x = x.astype(float) / (32768.0 if x.dtype.kind == 'i' else 1.0)
+    if x.ndim > 1: x = x.mean(axis=1)
+    if sr != SR:
+        from math import gcd
+        g = gcd(SR, sr); x = signal.resample_poly(x, SR // g, sr // g)
+    i0 = int(start * SR); x = x[i0:] if dur is None else x[i0:i0 + int(dur * SR)]
+    return x - np.mean(x)
+
+
+def onset(x, thr=0.25):
+    """index of the first sample above thr x the peak (the transient)"""
+    a = np.abs(x); return int(np.argmax(a > thr * a.max()))
+
+
+def flatten(x, win=0.35):
+    """take the slow level changes out of a recording (a pass fading in and out) so it can loop"""
+    k = int(win * SR); e = np.sqrt(np.convolve(x ** 2, np.ones(k) / k, 'same')) + 1e-6
+    return x / e * np.median(e)
+
+
+def xloop(x, L, xf=0.4):
+    """a seamless loop of L s from x (at least L + xf s): the last xf s is cross-faded (equal power) into the start"""
+    n = int(L * SR); m = int(xf * SR)
+    y = x[:n].copy(); u = np.linspace(0, 1, m)
+    y[:m] = x[:m] * np.sin(0.5 * np.pi * u) + x[n:n + m] * np.cos(0.5 * np.pi * u)
+    return y
+
+
+def pitch(x, ratio):
+    """resample by ratio (> 1 higher and shorter), a plain varispeed"""
+    pos = np.arange(0, len(x) - 1, ratio); return np.interp(pos, np.arange(len(x)), x)
+
+
+def fit(x, n):
+    y = np.zeros(n); m = min(n, len(x)); y[:m] = x[:m]; return y
+
+
 # ---------------------------------------------------------------- wav output
 def wav_bytes(x, loop=False):
     """x: (n,) mono or (n, 2) stereo float -1..1. loop=True adds cue + smpl markers over the whole file."""
@@ -444,6 +507,95 @@ def make_dive(rng, eng):
     return fade_out(fade_in((e * 0.8 + howl * 0.25 + rush * 0.5) * swell, 0.15), 0.08)
 
 
+# ================================================================ recorded layers (17 Nov 2026; see stock() above)
+def rec_launch(rng, v, synth):
+    """mortar launch with weight: a heavy recorded thump (thumper_dust) and a pitched-down HE transient for the tube's boom,
+    under the synthesised cough / ring / bomb leaving"""
+    th = stock('ambient/machines/thumper_dust.wav'); he = stock('weapons/hegrenade/hegrenade_detonate_0%d.wav' % (2 + v))
+    if th is None or he is None: return synth
+    n = len(synth)
+    th = th[onset(th):]; th = fade_out(lp(fit(th, int(1.4 * SR)), 900), 0.6)
+    he = he[onset(he):]; boom = fade_out(lp(fit(pitch(he, 0.55), int(1.2 * SR)), 260, 3), 0.7)    # an octave down: the tube's boom
+    sub = np.sin(2 * np.pi * (38 + 3 * v) * np.arange(int(0.5 * SR)) / SR) * env(int(0.5 * SR), 0.004, 0.16)
+    x = synth * 0.9 + fit(th, n) * 0.5 * _pk(th) + fit(boom, n) * 0.6 * _pk(boom) + fit(sub, n) * 0.35
+    return clip(x / np.max(np.abs(x)), 1.25)
+
+
+def _pk(x): return 1.0 / (np.max(np.abs(x)) + 1e-9)
+
+
+def rec_impact(rng, v, synth):
+    """mortar impact with weight: a recorded HE detonation for the burst, close thunder (low-passed) for the ground-shaking
+    body and the long roll, recorded debris coming down, a pressure thump, then the synthesised crack / clods / mud on top"""
+    he = stock('weapons/hegrenade/hegrenade_detonate_0%d.wav' % (1 + v))
+    c4 = stock('weapons/c4/c4_explode1.wav')
+    th = stock('ambient/weather/thunderstorm/thunder_%d.wav' % (2 + v % 2) if v < 2 else 'ambient/ambience/rainscapes/thunder_close03.wav')
+    deb = stock('weapons/debris%d.wav' % (1 + v % 2))
+    if he is None or th is None: return synth
+    n = len(synth)
+    he = he[onset(he):]; he = fit(he, n) * _pk(he)
+    body = np.zeros(n)
+    if c4 is not None:
+        c4 = c4[onset(c4):]; body = lp(fit(c4, n), 1400, 2) * _pk(c4)               # the big one's chest punch
+    th = th[max(0, onset(th, 0.5) - int(0.05 * SR)):]                              # thunder from just before its main crack
+    roll = lp(fit(th, n), 180, 3) * _pk(th) * np.minimum(1, np.arange(n) / (0.04 * SR))
+    roll = fade_out(roll, 1.4)
+    d = np.zeros(n)
+    if deb is not None: place(d, deb * _pk(deb) * 0.6, 0.30 + 0.05 * v); place(d, pitch(deb, 0.8) * _pk(deb) * 0.4, 0.55 + 0.07 * v)
+    t = np.arange(int(0.6 * SR)) / SR
+    thump = fit(np.sin(2 * np.pi * (36 - 2 * v) * t) * np.exp(-t / 0.18), n)
+    crack = hp(he, 450, 2) * 1.2                                        # the burst's own crack brought forward: it carries
+    x = he * 0.85 + crack + body * 0.45 + roll * 0.6 + d * 0.8 + thump * 0.45 + synth * 0.75
+    return fade_out(clip(x / np.max(np.abs(x)), 1.35), 0.8)
+
+
+def rec_engine(rng, synth):
+    """4 s loop of a real piston engine (nuke airplane_02: an even harmonic comb, no Doppler bend), its level flattened, cross-
+    faded into a loop, the close-up low end raised; the synthesised rotary only as a quiet low hum underneath (2 cycles)"""
+    src = stock('ambient/nuke/airplane_02.wav', 3.0, 5.0)
+    if src is None: return synth
+    y = xloop(flatten(hp(src, 30)), 4.0, 0.5)
+    y = y + circ_lp(y, 260) * 0.8                                      # nearer: more body
+    hum = circ_lp(np.tile(synth, 2)[:len(y)], 140)
+    x = y / np.max(np.abs(y)) + hum / (np.max(np.abs(hum)) + 1e-9) * 0.22
+    x = x - np.mean(x)
+    return clip(x / np.max(np.abs(x)), 1.15)
+
+
+def rec_gun(rng, v, synth):
+    """twin synchronised MGs: each round's report from a recorded MG shot (m249 / negev distant reports, slowed 15 %: heavier,
+    older guns), the synthesised mechanism clack kept on top"""
+    src = stock(('weapons/m249/m249-1-distant.wav', 'weapons/negev/negev-1-distant.wav', 'weapons/m249/m249-1-distant.wav')[v])
+    if src is None: return synth
+    s = src[onset(src):]; s = fade_out(fit(pitch(s, 0.85 - 0.03 * v), int(0.30 * SR)), 0.18) * _pk(s)
+    n = len(synth); x = np.zeros(n); off = (0.014, 0.018, 0.022)[v]
+    for at in (0.004, 0.094):
+        place(x, s, at); place(x, s * 0.8, at + off)
+    x = x / (np.max(np.abs(x)) + 1e-9) + synth / np.max(np.abs(synth)) * 0.5
+    return fade_out(clip(x / np.max(np.abs(x)), 1.3), 0.1)
+
+
+def rec_plane_far(rng, v, synth):
+    """an aircraft passing off to one side: the recorded passes themselves (bank_airplane_01 / dust2 airplane_02)"""
+    src = stock(('ambient/playonce/overhead/bank_airplane_01.wav', 'ambient/dust2/airplane_02.wav')[v], (2.0, 4.0)[v], 10.0)
+    if src is None: return synth
+    y = hp(src, 25)
+    return fade_out(fade_in(y / np.max(np.abs(y)), 1.0), 2.0)
+
+
+def rec_dive(rng, synth):
+    """3 s dive: the recorded close pass (plane3, 2.5-5.5 s, rising to its loudest) wound up a fifth as the dive steepens, the
+    synthesised rigging howl and wind rush kept on top"""
+    src = stock('ambient/playonce/overhead/plane3.wav', 2.5, 4.4)
+    if src is None: return synth
+    n = len(synth); u = np.arange(n) / n
+    ratio = 1.0 + 0.45 * u ** 1.4; pos = np.cumsum(ratio)
+    e = np.interp(np.minimum(pos, len(src) - 1), np.arange(len(src)), src)
+    e = e / np.max(np.abs(e)) * (0.25 + 0.75 * u ** 1.8)
+    x = e * 0.85 + synth / np.max(np.abs(synth)) * 0.45
+    return fade_out(fade_in(x, 0.15), 0.08)
+
+
 def make_rain_tin(rng):
     """12 s stereo loop: rain on corrugated iron (the shelters' elephant iron): many small pings, a ringing sheet, a bed of
     rain; drops placed with wrap-around"""
@@ -473,22 +625,24 @@ def make_whistle_attack(rng):
 # ================================================================ build all
 def build():
     R = np.random.RandomState
-    for v in range(2): add('mortar_launch_%d' % (v + 1), make_launch(R(10 + v), v), centroid=(150, 1600), low=(0.25, 20, 500), dur=(1.9, 2.6))
+    # 17 Nov 2026: launch, impact, engine, guns, far planes and the dive layer recorded material (rec_*; synthesised fallback).
+    # Impacts: mid share >= 0.025 (was 0.06 for the pure synth): the recorded HE detonations are 74-98 % under 200 Hz themselves
+    for v in range(2): add('mortar_launch_%d' % (v + 1), rec_launch(R(10 + v), v, make_launch(R(10 + v), v)), centroid=(80, 1600), low=(0.45, 20, 500), dur=(1.9, 2.6))
     for v in range(2): add('mortar_whistle_%d' % (v + 1), make_whistle(R(14 + v), v), centroid=(600, 2200), dur=(1.98, 2.02), late=True)
-    for v in range(3): add('mortar_impact_%d' % (v + 1), make_impact(R(20 + v), v), low=(0.4, 20, 200), mid=(0.06, 400, 8000), dur=(4.0, 5.0), tail=0.012)
-    eng = make_engine(R(30))
-    add('plane_engine', eng, loop=True, centroid=(150, 1500), low=(0.35, 20, 500))
-    for v in range(3): add('plane_gun_%d' % (v + 1), make_gun(R(40 + v), v), centroid=(250, 3500), mid=(0.15, 500, 8000), dur=(0.6, 0.9))
+    for v in range(3): add('mortar_impact_%d' % (v + 1), rec_impact(R(20 + v), v, make_impact(R(20 + v), v)), low=(0.55, 20, 200), mid=(0.025, 400, 8000), dur=(4.0, 5.0), tail=0.02)
+    eng_s = make_engine(R(30)); eng = rec_engine(R(31), eng_s)
+    add('plane_engine', eng, loop=True, centroid=(120, 1500), low=(0.35, 20, 500))
+    for v in range(3): add('plane_gun_%d' % (v + 1), rec_gun(R(40 + v), v, make_gun(R(40 + v), v)), centroid=(250, 3500), mid=(0.15, 500, 8000), dur=(0.6, 0.9))
     add('amb_wind', make_wind(R(50)), loop=True, centroid=(150, 1500))
     add('amb_barrage', make_barrage(R(51)), loop=True, low=(0.85, 15, 250), centroid=(20, 200))
     for v in range(4): add('amb_guns_%d' % (v + 1), make_far_guns(R(60 + v), v), low=(0.85, 15, 300), centroid=(20, 260))
     for v in range(3): add('amb_shell_%d' % (v + 1), make_far_shell(R(70 + v), v), low=(0.5, 15, 300), centroid=(30, 700))
     for v in range(3): add('amb_mg_%d' % (v + 1), make_mg_far(R(80 + v), v), centroid=(150, 1500))
     for v in range(3): add('amb_whistle_%d' % (v + 1), make_whistles(R(90 + v), v), centroid=(1500, 4500), high=(0.45, 2000, 8000))
-    for v in range(2): add('amb_plane_%d' % (v + 1), make_plane_far(R(95 + v), eng, v), centroid=(60, 1200))
+    for v in range(2): add('amb_plane_%d' % (v + 1), rec_plane_far(R(95 + v), v, make_plane_far(R(95 + v), eng_s, v)), centroid=(60, 1200))
     # wired 12 Nov 2026 (tools/patch_sounds.py emitters; the script's dive pool and round-start whistle); ship=False keeps a sound
     # out of the addon (written to --pending) until something plays it
-    add('plane_dive', make_dive(R(100), eng), centroid=(200, 2500), late=True)
+    add('plane_dive', rec_dive(R(100), make_dive(R(100), eng_s)), centroid=(150, 2500), late=True)
     add('rain_tin', make_rain_tin(R(101)), loop=True, centroid=(2000, 7000), high=(0.5, 2000, 12000))
     add('whistle_attack', make_whistle_attack(R(102)), centroid=(1800, 4500), high=(0.5, 2000, 8000))
 

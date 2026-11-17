@@ -59,7 +59,8 @@ The map's props are original (generated), CC BY Sketchfab models with credit, or
 
 - **Player models:** four Tripo-generated soldiers (`models/tw/players/*`, ours), template rig from mg_mario_party (ours). Every
   uniform the script sets ships compiled in this addon (a missing player model gave the giant first-person weapons).
-- **Sounds:** synthesised (`sounds/tw/*`); the rest CS2 stock sound events. The template's `sounds/bird_01-06`, `interior_01`,
+- **Sounds:** synthesised (`sounds/tw/*`), since 17 Nov 2026 with layers cut from stock CS:GO / CS2 recordings (plane passes, HE / C4
+  detonations, thunder, debris, MG reports: Valve's, shipped only inside this CS2 addon, like the stock texture copies); the rest CS2 stock sound events. The template's `sounds/bird_01-06`, `interior_01`,
   `vent_01` were Valve's CS2 addon_template files (byte-identical; `interior_01` carries a commercial sound-library label, so the terms
   outside CS2 are unknown); the map never plays them but the template's `ambient_example.*` events make them compile. **Step 12:
   replaced by synthesised wavs of the same names** (`tools/sounds.py --template-wavs`), staged.
