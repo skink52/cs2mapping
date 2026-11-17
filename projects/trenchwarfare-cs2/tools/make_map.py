@@ -813,9 +813,13 @@ for s in (-1, 1):
         prop(None, px, py, gz(px, py), yaw_, stock='models/tw/ext/%s/%s.vmdl' % (pl, pl))
         hx, hy, hz = hub_at(pl, px, py, gz(px, py), yaw_)
         prop(None, hx, hy, hz, yaw_, roll=SK_.uniform(0, 180), stock='models/tw/ext/%s/%s_prop.vmdl' % (pl, pl), solid='0', reg=False)
+    # petrol cans in a neat row against the outside of the hangar's side wall (round 2: they were scattered inside its walls; the
+    # hangar is placed unregistered, so the placer could not keep them out). rng calls kept.
+    yside = rng.choice([-1, 1])
     for j in range(5):
-        x, y = s * (LY.HANGAR_X + rng.uniform(-340, 340)), rng.uniform(-280, 280)
-        prop(None, x, y, gz(x, y), rng.uniform(0, 360), stock='models/tw/ext/petrol_can/petrol_can.vmdl', check=True, pad=3)
+        _ = rng.uniform(-340, 340); _ = rng.uniform(-280, 280)
+        x, y = s * (LY.HANGAR_X - 160 + 18 * j), yside * (332 + 14)
+        prop(None, x, y, gz(x, y), 90 + rng.uniform(-6, 6), stock='models/tw/ext/petrol_can/petrol_can.vmdl', check=True, pad=1)
     # airfield stores: fuel drums, pallets, crates, a barrow
     for j in range(7):
         x, y = s * (LY.HANGAR_X + rng.uniform(-300, 300)), rng.choice([-1, 1]) * rng.uniform(420, 520)
