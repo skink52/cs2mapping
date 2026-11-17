@@ -456,7 +456,7 @@ def build_layout():
     rule('#tw_fly.show', opacity='1')
     label('#tw_fly_help', 600, 26, 0, 724, 17, SERIF, '#e2d4ac', 'right', horizontal_align='right', margin_right='28px', font_weight='normal')
     label('#tw_fly_info', 640, 30, 0, 764, 20, SERIF, '#f0d48a', 'center', horizontal_align='center', letter_spacing='1px')
-    box('#tw_dash', DASH_W, DASH_H, center=True, y=800, **bg('fly_dash.png'))
+    box('#tw_dash', DASH_W, DASH_H, center=True, y=800)          # 18 Nov 2026 (user): the dials only, no wooden panel behind them
     rule('#tw_dashrow', width=px(5 * GS + 4 * GAP), height=px(GS), margin_left=px(ROW_X), margin_top=px(ROW_Y), flow_children='right')
     rule('.Gauge', width=px(GS), height=px(GS), margin_left=px(GAP))
     rule('.Gauge.First', margin_left='0px')
@@ -476,7 +476,7 @@ def build_layout():
     compass = P(None, 'Gauge', P('tw_card', 'GLayer') + P(None, 'GFace Lubber') + P('tw_hdg_txt', tag='Label') + P(None, 'GFace Bezel'))
     row = (gauge('tw_g_bank', 'tw_n_bank', 'Needle', first=True) + gauge('tw_g_asi', 'tw_n_asi', 'Needle') + compass +
            gauge('tw_g_alt', 'tw_n_alt', 'Needle', P('tw_alt_drum', tag='Label')) + gauge('tw_g_rpm', 'tw_n_rpm', 'Needle'))
-    box('#tw_side', SIDE_W, SIDE_H, center=True, cx=DASH_W // 2 + 10 + SIDE_W // 2, y=812, **bg('fly_side.png'))
+    box('#tw_side', SIDE_W, SIDE_H, center=True, cx=DASH_W // 2 + 10 + SIDE_W // 2, y=812)   # counter + bomb lamps, no plate
     rule('#tw_counter', width='130px', height='48px', margin_left='10px', margin_top='14px', **bg('fly_counter.png'))
     label('#tw_ammo_txt', 130, 40, 0, 6, 26, MONO, '#f0e6c8', 'center', letter_spacing='9px')
     rule('#tw_lamps', width='104px', height='44px', margin_left='23px', margin_top='98px', flow_children='right')
