@@ -1,0 +1,36 @@
+# Round 2: ambience, fidelity, fixes (started 18 Nov 2026)
+
+AI-generated (Claude) for skink52. Follows the short front ([SHORT_FRONT_PLAN.md](SHORT_FRONT_PLAN.md), deployed + compiled 18 Nov
+02:27, not yet played by Claude). The user's list, 18 Nov 2026 (their own playtest of the short-front build):
+
+1. Improve ambience: sounds, fog etc.
+2. Terrain textures: the grid squares where terrain has been manipulated are really obvious; make them natural.
+3. Mine galleries: some parts make you crouch (clip squishing?); some supports cross into the path: delete those.
+4. Improve visual fidelity overall.
+5. Mortar sandbags: lower them a bit to allow sniping; they hover and don't look stacked like real ones.
+6. Some trench models aren't solid; some are in weird places.
+7. Forest models pop in and out (LOD changes visible).
+8. Flight instruments: no wooden panel background, just the dials.
+9. All in-game text reads as AI-written: make hints / cards AAA in language and tone.
+10. Fog: there still isn't any. And optimise performance.
+
+**Resuming after a usage reset or in a new chat:** read this table, the newest line of `out/short_front/round2_progress.md`, `git log
+-5` in `C:\source1\cs2mapping`, then carry on with the first row not marked done. The map is regenerated, not hand-patched:
+`python -u tools/deploy_tw.py --chain` (user save -> move_user_objects -> make_map_stage -> patch stages `--find` -> fog), then
+the gate; `sh tools/short_front_stages.sh <stage>` runs stages by hand into `out/short_front/step5/chain/`. Check CS2 / Hammer are
+not open on the addon before `--apply` (deploy_tw also checks). Long commands under the watchdog (see the user's CLAUDE.md).
+The user authorised pushing this branch (18 Nov) and deploying when the gate passes.
+
+| # | Item | Where | Done when | Status |
+|---|---|---|---|---|
+| A | Fog that shows (why is there none? env_cubemap_fog / volumetric settings in CS2, light_environment fog keys, post-process) | `tools/patch_fog_2.py`, `make_map.py` env block | a reason found (CS2 keys / known requirements) and values that render; TESTING L5 | |
+| B | Ambience: soundscape richer and closer (distant artillery, MG, wind, mud, birds at the woods), soundscape per area (trench / NML / woods / galleries) | `tools/sounds.py`, soundscape in `make_map.py` | events + emitters, sounds checked | |
+| C | Galleries: find crouch-only stretches (roof vs player 72 u) and supports (tunnel_set) inside the walkway; delete those supports, raise the roof where needed | `make_map.py` tunnel section, check | check_play gallery headroom probe 0 low spots; 0 sets in the path | |
+| D | Mortar pits: sandbag courses lower (one course less or lower z), bags bedded on each other (no hover), staggered like a real stack | `make_map.py` pits, `patch_world_3` W9 | clipping check: 0 floating bags; sightline crews still covered at crouch | |
+| E | Trench props: non-solid ones (solid 0 / no hull) and odd places | `make_map.py` dressing, check_world overlaps | listed and fixed | |
+| F | Forest LOD pop: fade / LOD distances on tree models (`fademindist` / `fademaxdist`, LOD switch), fewer vista swaps near play | `make_map.py` woodland | no visible LOD swap inside ~3000 u of play | |
+| G | Terrain grid: re-gridded / patched tiles show square seams (paint blend, normals, 16 vs 32 u grids) | `patch_terrain.py`, `make_map.py` terrain_paint | smooth blend across tiles; render checks | |
+| H | Flight HUD: dials only, no wooden dash plate | `tools/tw_hud.py`, `tw_cockpit.py` | hud_check green, picture looked at | |
+| I | Text tone: every player-facing string (HUD cards, toasts, banners, chat, briefing) rewritten AAA-style: short, direct, in-world | `src/modules/*.js`, `tw_hud.py` baked text | all strings listed in a table before/after; mock green | |
+| J | Visual fidelity pass + performance (draw distance, shadows, prop counts, particles, light count) | map, HUD | a perf budget written and met offline (counts) | |
+| K | Chain, gate, deploy, compile | `deploy_tw.py` | gate PASS, compiled | |

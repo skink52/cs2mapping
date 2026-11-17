@@ -2,6 +2,11 @@
 
 Read this first when resuming. Newest state at the top.
 
+## Resume here: round 2 (started 18 Nov 2026)
+
+The user's round-2 list (ambience, fog, terrain grid seams, galleries, mortar sandbags, trench props, forest LOD pop, flight HUD,
+text tone, performance): [docs/ROUND2_PLAN.md](docs/ROUND2_PLAN.md), progress in `out/short_front/round2_progress.md`.
+
 ## Resume here: short front revision (started 17 Nov 2026)
 
 **Current work.** Trench cut to a third, 2 mortar pits a side, pilot-only HUD sights, heavier plane/mortar sounds, gentle fog.
