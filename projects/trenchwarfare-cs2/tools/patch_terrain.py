@@ -688,6 +688,33 @@ def face_loops(m, md):
     return loops, evi
 
 
+# round 2 (18 Nov 2026), the user: "the grid squares where terrain has been manipulated are really obvious". Patched faces used to get
+# one flat normal each (newell) while the generator's ground keeps smooth vertex normals, so every edited face shaded as a flat square.
+# Now every patched face-vertex takes a smooth normal from the final height field (the lattice H + D, central differences).
+SMOOTH_N = None
+
+
+def smooth_normals(Hn):
+    global SMOOTH_N
+    bad = ~np.isfinite(Hn)
+    if bad.any():                                                    # holes (the sap cut): the nearest height, so no false slope
+        idx = ndimage.distance_transform_edt(bad, return_distances=False, return_indices=True)
+        Z = Hn[tuple(idx)]
+    else: Z = Hn
+    gx, gy = np.gradient(Z, CELL)
+    n = np.stack([-gx, -gy, np.ones_like(Z)], -1)
+    SMOOTH_N = n / np.linalg.norm(n, axis=-1, keepdims=True)
+
+
+def normal_at(x, y):
+    fx = (np.asarray(x, float) - X0) / CELL; fy_ = (np.asarray(y, float) - Y0) / CELL
+    i0 = np.clip(np.floor(fx).astype(int), 0, NX - 2); j0 = np.clip(np.floor(fy_).astype(int), 0, NY - 2)
+    tx = np.clip(fx - i0, 0, 1)[..., None]; ty = np.clip(fy_ - j0, 0, 1)[..., None]
+    N = SMOOTH_N
+    n = (N[i0, j0] * (1 - tx) * (1 - ty) + N[i0 + 1, j0] * tx * (1 - ty) + N[i0, j0 + 1] * (1 - tx) * ty + N[i0 + 1, j0 + 1] * tx * ty)
+    return n / np.linalg.norm(n, axis=-1, keepdims=True)
+
+
 def newell(P):
     q = np.roll(P, -1, axis=0)
     n = np.array([np.sum((P[:, 1] - q[:, 1]) * (P[:, 2] + q[:, 2])), np.sum((P[:, 2] - q[:, 2]) * (P[:, 0] + q[:, 0])),
@@ -718,7 +745,8 @@ def apply_zonly(m, pl, VL, rmap, nb, PL):
         if not np.any(d[vidx]): continue
         n = newell(P2[vidx])
         if n[2] < COS_STEEP <= newell(P[vidx])[2]: steep += 1
-        for h in hs: nn[evd[h]] = [float(n[0]), float(n[1]), float(n[2])]
+        sn = normal_at(P2[vidx][:, 0], P2[vidx][:, 1])               # smooth, per vertex (was the flat face normal n for all)
+        for h, nv in zip(hs, sn): nn[evd[h]] = [float(nv[0]), float(nv[1]), float(nv[2])]
     nrm[2] = nn
     # paint: every face-vertex takes its vertex's change
     ii = np.round((P[:, 0] - X0) / CELL).astype(int); jj = np.round((P[:, 1] - Y0) / CELL).astype(int)
@@ -836,7 +864,7 @@ def apply_dense(m, pl, VL, rmap, nb, PL):
     fh = G['E_face'] >= 0
     dv = G['E_dest'][fh]
     tex[fh, 0] = cu[0] * P[dv, 0] + cu[1] * P[dv, 1] + cu[2]; tex[fh, 1] = cv[0] * P[dv, 0] + cv[1] * P[dv, 1] + cv[2]
-    nrm[fh] = fn[G['E_face'][fh]]; tan[fh] = tan0; tco[fh] = Tv[dv]; bpa[fh] = Bv[dv]
+    nrm[fh] = normal_at(P[dv, 0], P[dv, 1]); tan[fh] = tan0; tco[fh] = Tv[dv]; bpa[fh] = Bv[dv]   # normals smooth per vertex (were fn[face], flat)
     # write into the existing elements (same element ids: the node keeps its id, nodeID and everything else)
     L = lambda a: [list(map(float, v)) for v in a]
     set_arr(m, md, b'vertexEdgeIndices', G['v_edge'].tolist()); set_arr(m, md, b'vertexDataIndices', list(range(nvx)))
@@ -1033,6 +1061,7 @@ def main(argv=None):
     seamd = seam_distance(plans)
     log('frozen faces: %d; frozen %.1f %% of the terrain, fully free %.1f %%' % (nfz, 100 * R.mean(), 100 * (w > 0.999).mean()))
     D, paint, rec = build_detail(H, w, Rdist, rmap, seamd, sc, a.seed, log, hard, quick=a.quick)
+    smooth_normals(H + D)
     VL = vertex_layers(D, w)
     PL = {k: {r: np.clip(v, 0, 1) for r, v in vertex_layers(paint[k], w).items()} for k in paint}
     nb = neighbours(plans)
