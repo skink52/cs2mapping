@@ -54,10 +54,11 @@ REVIEW = os.path.join(PROJ, 'out', 'review')
 # from tools/layout.py (generator constants) and the script's CONFIG (src/mg_trenchwarfare.js)
 XF, XB, XS, HW, STEP_D = 1641.0, 1791.0, 2150.0, 36.0, 30.0
 MORTAR_X, HANGAR_X = 3200.0, 6150.0
-NML_X, NML_Y, NML_ZMIN = 1450.0, 2750.0, -150.0        # no man's land box (the woods track runs north of y 2750, the galleries under z -150)
+NML_X, NML_Y, NML_ZMIN = 1450.0, 830.0, -150.0         # no man's land box (short front: the woods track runs north of y 830; 15 bays 2750), galleries under z -150
 SPAWN_ALT, NOSE, BOX_X, BOX_Y, ALT_MAX, HARD, HARD_Z = 1100.0, 90.0, 6500.0, 5500.0, 5000.0, 600.0, 400.0
 GROUND_TRACE_Z = 3000.0
-WOODS = {'t': (-1210.0, 3930.0), 'ct': (1210.0, 3930.0)}
+NPITS = 2                                               # mortar pits a side (tools/layout.py MORTAR_Y; 15 bays: 5)
+WOODS = {'t': (-1210.0, 2010.0), 'ct': (1210.0, 2010.0)}       # short front: woods y - 1920
 
 
 class Trench(CP.Adapter):
@@ -95,7 +96,7 @@ class Trench(CP.Adapter):
         if '/log_fallen' in m: return 'bury'
         if any(k in m for k in ('/shell_pile', '/casings')): return 'bury'          # a low heap: its box's corners stand in the slope it lies on
         if abs(p['o'][0]) < NML_X + 50 and any(k in m for k in ('/wreck_wheel', '/crate_shells', '/wire_coil', '/wire_fence')): return 'bury'
-        if '/sandbag_' in m and abs(abs(p['o'][0]) - MORTAR_X) < 260 and abs(p['o'][1]) < 1900: return 'bury'
+        if '/sandbag_' in m and abs(abs(p['o'][0]) - MORTAR_X) < 260 and abs(p['o'][1]) < 1000: return 'bury'     # pits to |y| 560 (+ breastwork); 15 bays 1900
         if any(k in m for k in ('ladder', 'tl_lantern', '_prop.vmdl', 'tw_prop')): return 'float'   # leans on the wall / hangs from a frame / on the plane's nose
         return None
 
@@ -110,7 +111,7 @@ class Trench(CP.Adapter):
             # a dressing station inside a shelter whose walk-in the fine probe proves (T4) joins its world at the shelter's mouth:
             # the grid's 12-u widened blockers close the 30-u aisle between the two stretchers
             w[tg] = ctx.points(r'trench_%s_\d+' % tg) + [heal_point(ctx, h) for h in ctx.points(r'heal_%s_\d+' % tg)]
-            for k in range(1, 6): w['pit_%s_%d' % (tg, k)] = ctx.points(r'mortarcrew_%s_%d_[ab]' % (tg, k))
+            for k in range(1, NPITS + 1): w['pit_%s_%d' % (tg, k)] = ctx.points(r'mortarcrew_%s_%d_[ab]' % (tg, k))
         w['lobby'] = [(e['cls'], e['o'][0], e['o'][1], e['o'][2]) for e in ctx.ents if e['cls'] in ('info_player_terrorist', 'info_player_counterterrorist')]
         # the two areas the unlocks open: the woods clearing (a point well inside each half) and the mine galleries (their nav seeds)
         w['woods'] = [('woods %s' % tg, x * 0.5, y, ctx.G.ground(x * 0.5, y, 1e4) + 8) for tg, (x, y) in WOODS.items()]
@@ -119,7 +120,7 @@ class Trench(CP.Adapter):
 
     def separate(self, ctx):
         s = [('t', 'ct'), ('t', 'woods'), ('ct', 'woods'), ('t', 'mines'), ('ct', 'mines')]
-        for k in range(1, 6): s += [('t', 'pit_ct_%d' % k), ('ct', 'pit_t_%d' % k)]
+        for k in range(1, NPITS + 1): s += [('t', 'pit_ct_%d' % k), ('ct', 'pit_t_%d' % k)]
         return s
 
     def seeds(self, ctx):
@@ -212,8 +213,8 @@ class Trench(CP.Adapter):
 # CS2 player box (32 x 32, 72 u standing / 54 u crouched, 18-u steps) over the exact triangles of the mouth on a 4-u grid, both ways,
 # with the undergroundopen planks out (open) and in (closed). When the crouched box gets through both ways once open and not while
 # closed, the coarse open walk graph gets a two-way link across the mouth (the closed graph is computed before the link is added).
-SAP_XC, SAP_Y_TRENCH, SAP_Y_TUNNEL = 2144.0, -2776.0, -2888.0
-SAP_REGION = (-2940.0, -2740.0, -220.0, 80.0)          # y0, y1, z0, z1 of the probe region (x: SAP_XC +- 96)
+SAP_XC, SAP_Y_TRENCH, SAP_Y_TUNNEL = 2144.0, -2776.0 + 1920.0, -2888.0 + 1920.0     # short front: the saps moved north 1920
+SAP_REGION = (-2940.0 + 1920.0, -2740.0 + 1920.0, -220.0, 80.0)          # y0, y1, z0, z1 of the probe region (x: SAP_XC +- 96)
 HULL_W, HULL_STAND, HULL_CROUCH, STEP_H = 16.0, 72.0, 54.0, 18.0
 _SAP = {}
 
@@ -432,7 +433,7 @@ def t1_depth(ctx):
         sel = ((c_ // NY) % 3 == 0) & ((c_ % NY) % 3 == 0)
         k_, c_ = k_[sel], c_[sel]
         xs = X0 + (c_ // NY + 0.5) * CELL; ys = Y0 + (c_ % NY + 0.5) * CELL; zs = G.Z[k_, c_]
-        trench = (np.abs(np.abs(xs) - 1900) < 700) & (np.abs(ys) < 3300) & (zs > -150) & np.array([c not in fs_cells for c in c_.tolist()])
+        trench = (np.abs(np.abs(xs) - 1900) < 700) & (np.abs(ys) < 1380) & (zs > -150) & np.array([c not in fs_cells for c in c_.tolist()])
         xs, ys, zs, cc = xs[trench], ys[trench], zs[trench], c_[trench]
         depth = np.full(len(xs), np.inf)
         ii = cc // NY; jj = cc % NY
@@ -645,7 +646,7 @@ def t5_nml(ctx):
 def t6_pits(ctx):
     G = ctx.G; lines = []; fails = []; out = []
     for tg in ('t', 'ct'):
-        for k in range(1, 6):
+        for k in range(1, NPITS + 1):
             pit = ctx.by.get('mortarpit_%s_%d' % (tg, k))
             w = 'pit_%s_%d' % (tg, k)
             if pit is None: fails.append('mortarpit_%s_%d missing' % (tg, k)); continue

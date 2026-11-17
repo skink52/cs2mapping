@@ -95,7 +95,7 @@ def find_tiles(m):
         lo, hi = P.min(0), P.max(0)
         tx, ty = math.floor(lo[0] / TILE) * TILE, math.floor(lo[1] / TILE) * TILE
         res = None
-        for r in (32, 64, 128):
+        for r in (16, 32, 64, 128):      # 16: a parapet sheet (skipped below; short front 18 Nov: some are now under a tile wide)
             if np.all(np.abs((P[:, 0] - tx) / r - np.round((P[:, 0] - tx) / r)) < 1e-4) and np.all(np.abs((P[:, 1] - ty) / r - np.round((P[:, 1] - ty) / r)) < 1e-4):
                 res = r
         if res is None or res == 16 or hi[0] - tx > TILE + 1e-3 or hi[1] - ty > TILE + 1e-3:

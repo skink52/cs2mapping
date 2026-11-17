@@ -61,10 +61,12 @@ def expected():
     T = 'info_teleport_destination'; I = 'info_target'; D = 'prop_dynamic'; Sn = 'point_soundevent'; Fx = 'info_particle_system'
     TP = (T, 'point_teleport', I)
     e = {'tw_hud': ('custom_hud_layout', True), 'tw_script': ('point_script', True)}
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    import layout as LY_                                       # short front (18 Nov 2026): the counts follow the layout
     for tg in ('t', 'ct'):
-        for i in range(1, 21): e['trench_%s_%d' % (tg, i)] = (TP, True)
-        for i in range(1, 4): e['heal_%s_%d' % (tg, i)] = ((I, T), True)
-        for k in range(1, 6):
+        for i in range(1, len(LY_.infantry_spawns(1)) + 1): e['trench_%s_%d' % (tg, i)] = (TP, True)
+        for i in range(1, len(LY_.SHELTER_Y) + 1): e['heal_%s_%d' % (tg, i)] = ((I, T), True)
+        for k in range(1, len(LY_.MORTAR_Y) + 1):
             e['mortarpit_%s_%d' % (tg, k)] = ((I, T), True)
             e['mortarcrew_%s_%d_a' % (tg, k)] = (TP, True); e['mortarcrew_%s_%d_b' % (tg, k)] = (TP, True)
             e['mortar_%s_%d' % (tg, k)] = (D, True)              # fire('mortar_' + tg, 'SetAnimation', 'fire') (src:921)
@@ -119,7 +121,7 @@ def main(path, out_json=None, verbose=False):
     fam = Counter(re.sub(r'\d+', 'N', b['name']) for b in bad)
     mortars = []
     for tg in ('t', 'ct'):
-        for k in range(1, 6):
+        for k in range(1, 9):                                  # every pit the map has (short front: 2, 15 bays: 5)
             pit = named.get('mortarpit_%s_%d' % (tg, k))
             if not pit: continue
             px_, py_ = pit[0]['o'][:2]
