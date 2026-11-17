@@ -499,6 +499,30 @@ def main(argv=None):
                 % (rec['moved'], len(loop), rec['max_move'], dz, rec['worst_lip']))
         rep['pools'].append(rec)
 
+    # ---- L5 as a rule (--find, short front 18 Nov 2026): overlapping water sheets less than 2 u apart z-fight; the lower generated one
+    # goes down to 2 u under the other (the 15-bay map's three were an instance fix in patch_world_1)
+    rep['zfight'] = []
+    if a.find:
+        ids = sorted(sheets)
+        for _ in range(3):
+            moved = False
+            for i1 in range(len(ids)):
+                for i2 in range(i1 + 1, len(ids)):
+                    (z1, b1), (z2, b2) = sheets[ids[i1]], sheets[ids[i2]]
+                    if not (abs(z1 - z2) < 2.0 and b1[0] < b2[2] and b1[2] > b2[0] and b1[1] < b2[3] and b1[3] > b2[1]): continue
+                    lo_id = ids[i1] if z1 <= z2 else ids[i2]; other = z2 if z1 <= z2 else z1
+                    n_ = nodes[lo_id]
+                    if (m.g(n_, b'customVisGroup') or b'').decode() != GROUP: continue
+                    d_ = (other - 2.0) - sheets[lo_id][0]
+                    o_ = list(m.g(n_, b'origin') or [0.0, 0.0, 0.0]); o_[2] += d_
+                    dmx.set_(m.E[n_], b'origin', dmx.T_V3, [float(v) for v in o_])
+                    sheets[lo_id] = (sheets[lo_id][0] + d_, sheets[lo_id][1])
+                    ex = T['modify'].get(str(lo_id))
+                    if ex: ex['fields'] = sorted(set(ex['fields']) | {'origin'})
+                    else: declare(lo_id, n_, ['origin'], 'L5 water sheet lowered %.2f u: 2 u under the overlapping sheet (no z-fight)' % -d_)
+                    rep['zfight'].append(dict(nodeID=lo_id, lowered=round(-d_, 2))); moved = True
+            if not moved: break
+
     # ---- W9 (optional, off by default): one more sandbag course on the pits' enemy-facing arc
     if a.pit_sandbags:
         try:
