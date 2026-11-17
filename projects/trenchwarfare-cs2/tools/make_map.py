@@ -541,7 +541,8 @@ for s in (-1, 1):
             ex, ey = ux * e * half_len(model), uy * e * half_len(model)
             back = (px + ex + nx_ * side * (depth / 2), py + ey + ny_ * side * (depth / 2))
             wall = (px + ex + nx_ * side * (depth / 2 + inset + 3), py + ey + ny_ * side * (depth / 2 + inset + 3))
-            front = (px + ex - nx_ * side * (depth / 2 + 30), py + ey - ny_ * side * (depth / 2 + 30))
+            front = (px + ex - nx_ * side * (depth / 2 + 42), py + ey - ny_ * side * (depth / 2 + 42))   # 42 (was 30): a revetment opposite
+                                                                              # left < 32 u at a support-trench dog-leg (short front check_play)
             if not (in_trench(*back) and not in_trench(*wall) and in_trench(*front)): return None
         zz = floor(s * px, py) + dz if z is None else z
         return prop(None, s * px, py, zz, yaw, *(lean or (0, 0)), stock=model, solid='6', check=True, pad=pad)
