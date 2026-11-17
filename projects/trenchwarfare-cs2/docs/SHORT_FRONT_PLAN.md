@@ -63,8 +63,14 @@ state; the deployed addon map (843a5675) is untouched.
 - [x] 2. `make_map.py` literals moved (battle zone, paint, tile_res, galleries, scatter counts `nk()` and bounds, wrecks `sy()`,
       woods, probes, vis hints, lightmap shell); Windows font fallback; numpy point-in-polygon replaces matplotlib.
       First full run: `out/short_front/step4/gen_short1.vmap` (log `make_map_short1.log`).
-- [ ] 3. `tools/move_user_objects.py` (user objects by zone) and generation from the moved base.
+- [x] 3. `tools/move_user_objects.py` (user objects by zone): `python tools/move_user_objects.py out/short_front/step4/user_base.vmap
+      out/short_front/step5/user_moved.vmap` (user_base = the 29 Oct save, CRC32 2e3f90d0, from `backupsemaster_20261112\`):
+      91 moved, 11 dropped (6 niche revetments of the gone y-2304 station, 5 props at an old outer pit). Then
+      `python -u tools/make_map.py out/short_front/step5/user_moved.vmap out/short_front/step5/gen_short2.vmap out/short_front/step5/addon_gen`
+      (~2.5 min, run under the watchdog). Quick look: `out/short_front/step4/top_short1.png` (shape right: 5 bays, 2 pits, 2 stations a side,
+      galleries off the support trench's south end).
 - [ ] 4. Re-target chain stages (world_1, world_3, sounds, seams, terrain, nav).
-- [ ] 5. Script config / ai / front, checkers, mock.
+- [~] 5. Script config / ai / front and mock seat test done (CREWS 2, TARGET_EXT 3600, NML_Y 830, AREAS moved, AI patrol +-1000,
+      ambient bursts +-1280). Checkers (`check_world` counts, `check_play` literals) and restaging `out/entities.json` NOT done.
 - [ ] 6. Radar + plotting board.
 - [ ] 7. Renders looked at; gate green.
