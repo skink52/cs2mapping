@@ -6,6 +6,7 @@ Read this first when resuming. Newest state at the top.
 
 The user's round-2 list (ambience, fog, terrain grid seams, galleries, mortar sandbags, trench props, forest LOD pop, flight HUD,
 text tone, performance): [docs/ROUND2_PLAN.md](docs/ROUND2_PLAN.md), progress in `out/short_front/round2_progress.md`.
+**18 Nov 05:18: all of A-K done, deployed and compiled** (gate PASS; map 0 failed, 0 DELETED, nav 3,798). Next: the user's in-game checks (TESTING.md W1-W8, L5, Q2-Q4, V1-V6).
 
 ## Resume here: short front revision (started 17 Nov 2026)
 

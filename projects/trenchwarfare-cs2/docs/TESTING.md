@@ -185,6 +185,18 @@ Logs: `C:\source1\cs2port\logs\mg_trenchwarfare_assets.log` and `mg_trenchwarfar
 - [ ] V5. Pilots: take-off lanes clear (no trees under them now), bombing runs by bots happen (fixed 18 Nov). Record: R.
 - [ ] V6. Frame rate and feel at 32 players: the fight should feel denser than before. Record: R.
 
+## W. Round 2 (18 Nov 2026)
+
+- [ ] W1. Fog: a ground mist you can see, the far fire trench still readable; pilots see over it. Record: R.
+- [ ] W2. Soundscapes: in the wood (wind in the trees, crows, the front far off) and in the galleries (drips, creaking timber, the
+  barrage through the earth); the front has far artillery and closer shellfire. Record: R.
+- [ ] W3. Terrain: no square patches in the shading over no man's land and the craters. Record: R (`!pos`).
+- [ ] W4. Galleries: walk every passage standing; no timber set across a junction or in the walkway. Record: R.
+- [ ] W5. Mortar pits: two courses of bags, sitting on each other and on the ground (no gaps); a crew is covered crouched, visible standing. Record: R.
+- [ ] W6. Trench signs are solid; petrol cans stand outside the hangar wall. Forest: no tree changing detail as you move. Record: R.
+- [ ] W7. Flight: dials only (no wood). All HUD text reads cleanly (roles RIFLEMAN / MORTAR CREW / PILOT, [KEY] prompts). Record: R.
+- [ ] W8. Frame rate looking across no man's land and into the wood, against before. Record: R.
+
 ## Results
 
 One row per failed or noted item. Answered rows stay, so a problem that comes back can be checked against them.

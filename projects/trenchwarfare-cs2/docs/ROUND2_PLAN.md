@@ -33,4 +33,9 @@ The user authorised pushing this branch (18 Nov) and deploying when the gate pas
 | H | Flight HUD: dials only, no wooden dash plate | `tools/tw_hud.py`, `tw_cockpit.py` | hud_check green, picture looked at | done 18 Nov (hud_check green) |
 | I | Text tone: every player-facing string (HUD cards, toasts, banners, chat, briefing) rewritten AAA-style: short, direct, in-world | `src/modules/*.js`, `tw_hud.py` baked text | all strings listed in a table before/after; mock green | done 18 Nov: 47 strings rewritten (roles RIFLEMAN / MORTAR CREW / PILOT, [KEY] prompts, no chatty dashes); mocks + 10 scenarios green |
 | J | Visual fidelity pass + performance (draw distance, shadows, prop counts, particles, light count) | map, HUD | a perf budget written and met offline (counts) | done 18 Nov (code): no dynamic shadows from clutter / foliage / far trees, clutter fades past 3,200 u; fidelity via A, F, G |
-| K | Chain, gate, deploy, compile | `deploy_tw.py` | gate PASS, compiled | |
+| K | Chain, gate, deploy, compile | `deploy_tw.py` | gate PASS, compiled | done 18 Nov 05:18: gate PASS, deployed (backup deploy_20261118_050223), map 503 compiled / 0 failed, 0 DELETED, nav 3,798 |
+
+**18 Nov 05:18: round 2 deployed and compiled. Level: compiled, not loaded in CS2.** Not done / notes: decorative ladders, wire and small
+clutter stay non-solid on purpose; the gong and tool rack stay non-solid (a single convex hull blocked the bay spawns); check_play's
+sightlines now show mortar crews visible over the lower breastwork (what the user asked for). In-game checks: docs/TESTING.md L5 (fog),
+Q2-Q4 (sounds, soundscapes), V1-V6, and group W below.
