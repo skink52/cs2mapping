@@ -2,7 +2,13 @@
 
 Read this first when resuming. Newest state at the top.
 
-## Resume here (remaster, started 12 Nov 2026)
+## Resume here: short front revision (started 17 Nov 2026)
+
+**Current work.** Trench cut to a third, 2 mortar pits a side, pilot-only HUD sights, heavier plane/mortar sounds, gentle fog.
+Plan, decisions and step table with status: [docs/SHORT_FRONT_PLAN.md](docs/SHORT_FRONT_PLAN.md); finer progress in
+`out/short_front/progress.md` (not in git). Resume from the first step without "done".
+
+## Earlier: remaster (started 12 Nov 2026)
 
 Remaster to the mg_monsoon standard: rules in [docs/REMASTER_PROMPT.md](docs/REMASTER_PROMPT.md), plan and step table in
 [docs/REMASTER_PLAN.md](docs/REMASTER_PLAN.md), evidence in `docs/research/`. Map changes are guarded delta patches only (no generated
