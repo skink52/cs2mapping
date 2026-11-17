@@ -14,7 +14,8 @@ bounds (meshes), in the 15-bay map's coordinates, and handled by the zone's rule
   keep       |y| <= 1100 (the centre third)                                                                  unchanged
   cut        everything else (the outer two thirds of the trench band and its mortar pits)                      dropped (listed)
   outside    |x| >= 3600 or z < -1500 (aerodromes, the briefing room under the map)                                                     unchanged
-Nodes without a position (nav data) are kept. The prefix's per-class entity counts follow the dropped entities.
+Nodes without a position (nav data) are kept. Ungrouped meshes (the user's ladder volumes, sap-mouth pieces) are put in the user's
+tw_user group: make_map.py drops ungrouped meshes as template samples. The prefix's per-class entity counts follow the dropped entities.
 Level: "simulated" (reads back; the generated map is checked by the gate). AI-generated (Claude) for skink52.
 """
 import argparse, json, os, sys, zlib
@@ -81,6 +82,9 @@ def main(argv=None):
         t = s_(m.type(i)); cls = s_(m.cls(i)) if t == 'CMapEntity' else t
         row = dict(node=i, cls=cls, name=s_(m.name(i)) if t == 'CMapEntity' else '', vg=s_(m.g(i, b'customVisGroup')), at=[round(p[0]), round(p[1])], zone=z)
         if dy is None: drop.append(i); rep['dropped'].append(row); continue
+        if t == 'CMapMesh' and not row['vg']:            # make_map drops ungrouped meshes (its template's samples): the user's own
+            dmx.set_(m.E[i], b'customVisGroup', dmx.T_STR, b'tw_user')   # (woods ladder volumes, sap-mouth meshes) go to their tw_user group
+            row['vg'] = 'tw_user (was ungrouped)'; rep.setdefault('regrouped', []).append(i)
         if dy:
             for j in (mesh_kids(m, i) if t == 'CMapEntity' and mesh_kids(m, i) else [i]):   # a brush entity: its meshes move (as patch_world_1)
                 o = list(m.g(j, b'origin') or [0.0, 0.0, 0.0])

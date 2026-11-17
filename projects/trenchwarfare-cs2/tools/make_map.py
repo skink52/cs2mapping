@@ -872,6 +872,8 @@ def woodland_ok(x, y):
     ax, ay = abs(x), abs(y)
     if ax < 3550 and ay < fy(3500): return False                # battle zone (shattered trees only)
     if 4300 < ax < 6950 and ay < 1150: return False             # airfield clearing
+    if 3550 <= ax <= 4300 and ay < 1150: return False           # the take-off run toward the front: plane lanes (short front 18 Nov 2026,
+                                                                # replaces patch_world_3's per-tree T7 scaling of the 15-bay map)
     if abs(ax - LY.MORTAR_X) < 420 and ay < MORTAR_EXT: return False
     return True
 
