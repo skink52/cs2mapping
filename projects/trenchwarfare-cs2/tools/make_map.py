@@ -541,7 +541,7 @@ for s in (-1, 1):
             ex, ey = ux * e * half_len(model), uy * e * half_len(model)
             back = (px + ex + nx_ * side * (depth / 2), py + ey + ny_ * side * (depth / 2))
             wall = (px + ex + nx_ * side * (depth / 2 + inset + 3), py + ey + ny_ * side * (depth / 2 + inset + 3))
-            front = (px + ex - nx_ * side * (depth / 2 + 42), py + ey - ny_ * side * (depth / 2 + 42))   # 42 (was 30): a revetment opposite
+            front = (px + ex - nx_ * side * (depth / 2 + 50), py + ey - ny_ * side * (depth / 2 + 50))   # 50 (was 30): a revetment opposite
                                                                               # left < 32 u at a support-trench dog-leg (short front check_play)
             if not (in_trench(*back) and not in_trench(*wall) and in_trench(*front)): return None
         zz = floor(s * px, py) + dz if z is None else z
@@ -937,7 +937,7 @@ for _ in range(30):
 for s in (-1, 1):
     tag = 'ct' if s > 0 else 't'
     for i, (x, y) in enumerate(LY.infantry_spawns(s)):
-        z = max(float(LY.ground_low(np.array([x]), np.array([y]))[0]) - LY.DEPTH + 4.5, surf_z(x, y, pad=16)) + 10   # duckboards top out ~4 above the floor
+        z = max(float(LY.ground_low(np.array([x]), np.array([y]))[0]) - LY.DEPTH + 4.5, surf_z(x, y, pad=24)) + 14   # duckboards top out ~4 above the floor (short front: pad 24, +14: a spawn sat 2 u into one)
         ent('info_teleport_destination', (x, y, z), (0, 180 if s > 0 else 0, 0), group=GROUP, targetname='trench_%s_%d' % (tag, i + 1))
     for i, (x, y) in enumerate(LY.heal_points(s)):
         z = float(LY.ground_low(np.array([x]), np.array([y]))[0]) - LY.DEPTH
