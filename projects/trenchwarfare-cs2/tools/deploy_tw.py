@@ -608,8 +608,8 @@ def main(argv=None):
     ap.add_argument('--user-h1', choices=('unlock', 'remove'), help='NOT for this map: the sap benches are the user seam bridges (patch_world_1)')
     ap.add_argument('--user-m2', action=argparse.BooleanOptionalAction, default=True, help='delete the duplicate info_map_parameters id 7 (default on)')
     ap.add_argument('--user-w5', action=argparse.BooleanOptionalAction, default=True, help='delete bench 72, the exact copy of 71 (default on)')
-    # W9 (docs/REVIEW_WORLD_3.md): the user chose 'both' on 14 Nov 2026, so it is the default; 'off' drops it. Passed to patch_world_3.
-    ap.add_argument('--pit-sandbags', nargs='?', const='both', choices=('both', 'ct', 't', 'off'), default='both',
+    # W9 (docs/REVIEW_WORLD_3.md): 'both' 14 Nov 2026; OFF since 18 Nov 2026 (the user: lower the pit sandbags to allow sniping). Passed to patch_world_3.
+    ap.add_argument('--pit-sandbags', nargs='?', const='both', choices=('both', 'ct', 't', 'off'), default='off',
                     help="one more sandbag course on the mortar pits' enemy-facing arc (patch_world_3; default both, the user's decision of 14 Nov 2026; 'off' to drop)")
     ap.add_argument('--apply', action='store_true')
     ap.add_argument('--show', action='store_true')

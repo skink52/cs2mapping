@@ -729,17 +729,29 @@ for _ in range(nk(70)):
 for s in (-1, 1):
     for k, (cx, cy) in enumerate(LY.mortar_pits(s)):
         g = gz(cx + s * 150, cy)
-        # breastwork: two courses of sandbag walls and a capping row, staggered, inner face ~185 from the tube
+        # breastwork (round 2, 18 Nov 2026, the user: "lower a bit to allow sniping; they hover, they don't look stacked"): one course of
+        # wall bags, each bedded 1.5 u into the LOWEST ground under its footprint (the pit rim is steep: one centre sample left them
+        # hanging), then a capping course half a bag round, resting on the higher of the two wall bags under it (bedded 0.6 u) and set
+        # 3 u inward like a real stack. Top about 32 u over the ground (was ~48): crews are covered crouched, visible standing.
         NB = 17
-        for lvl, (rad, dz, names) in enumerate(((194, -3, ['sandbag_wall_a', 'sandbag_wall_b', 'sandbag_wall_c']),
-                                                 (192, 15.5, ['sandbag_wall_b', 'sandbag_wall_c', 'sandbag_wall_a']),
-                                                 (190, 34.0, ['sandbag_low']))):
-            for q in range(NB):
-                a = 2 * math.pi * (q + 0.5 * (lvl % 2)) / NB + 0.04 * k
-                rx, ry = math.cos(a), math.sin(a)
-                x, y = cx + rx * rad, cy + ry * rad
-                prop(names[rng.randint(len(names))], x, y, gz(cx + rx * 194, cy + ry * 194) + dz, math.degrees(math.atan2(-rx, ry)) + rng.uniform(-2, 2),
-                     scale=(1.0, 1, 1 if lvl < 2 else 1.1))
+        WALL_H = 19.0                                             # sandbag_wall_* mesh height (LOD0), sandbag_low 14.2
+        def bed(x, y, a, half=36.0, depth=13.0):
+            tx, ty = -math.sin(a), math.cos(a); rx_, ry_ = math.cos(a), math.sin(a)
+            return min(gz(x + tx * u + rx_ * v, y + ty * u + ry_ * v) for u in (-half, -half / 2, 0, half / 2, half) for v in (-depth, 0, depth))
+        walls = []
+        for q in range(NB):
+            a = 2 * math.pi * q / NB + 0.04 * k
+            rx, ry = math.cos(a), math.sin(a)
+            x, y = cx + rx * 194, cy + ry * 194
+            z = bed(x, y, a) - 1.5
+            walls.append(z)
+            prop(['sandbag_wall_a', 'sandbag_wall_b', 'sandbag_wall_c'][rng.randint(3)], x, y, z, math.degrees(math.atan2(-rx, ry)) + rng.uniform(-2, 2))
+        for q in range(NB):
+            a = 2 * math.pi * (q + 0.5) / NB + 0.04 * k
+            rx, ry = math.cos(a), math.sin(a)
+            x, y = cx + rx * 191, cy + ry * 191
+            z = max(walls[q], walls[(q + 1) % NB]) + WALL_H - 0.6
+            prop('sandbag_low', x, y, z, math.degrees(math.atan2(-rx, ry)) + rng.uniform(-3, 3), scale=(1.0, 1, 1.05))
         st = LY.mortar_stations(s, k)
         tx, ty = st['table']; ax, ay = st['ammo']
         if s > 0: prop(None, cx, cy, gz(cx, cy), 180, stock='models/tw/ext/mortar_58mm/mortar_58mm.vmdl')     # French 58 mm No.2

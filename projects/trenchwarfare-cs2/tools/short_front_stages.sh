@@ -30,7 +30,7 @@ if [ "$FROM" = seams ]; then
 fi
 if [ "$FROM" = w3 ]; then
   step world_3
-  $W --label "sf world_3" --expect 240 --max 900 --log $C/w_world3.log -- python -u tools/patch_world_3.py --find --pit-sandbags both --in $C/4_seams.vmap --out $C/5_world_3.vmap --targets $C/5_world_3.targets.json --report $C/5_world_3.report.json > $C/5_world_3.log 2>&1 || exit 1
+  $W --label "sf world_3" --expect 240 --max 900 --log $C/w_world3.log -- python -u tools/patch_world_3.py --find --in $C/4_seams.vmap --out $C/5_world_3.vmap --targets $C/5_world_3.targets.json --report $C/5_world_3.report.json > $C/5_world_3.log 2>&1 || exit 1
   FROM=sounds
 fi
 if [ "$FROM" = sounds ]; then
