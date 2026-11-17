@@ -21,7 +21,7 @@
 // ------------------------------------------------------------------ settings
 const CONFIG = {
   HUD: "tw_hud",
-  RADAR: { x0: -4300, y0: 4700, span: 8601.6 },   // tools/make_radar.py region (overview pos_x/pos_y, 1024 px x scale 8.40)
+  RADAR: { x0: -3584, y0: 4096, span: 7168 },     // tools/make_radar.py region (overview pos_x/pos_y, 1024 px x scale 7.00; short front 18 Nov 2026)
   LOBBY_FIRST: 4.0,          // seconds in the briefing room on first spawn
   LOBBY_RESPAWN: 1.5,        // ... and after every respawn
   MORTAR_CHANCE: 0.4,        // chance a new player is put on a mortar crew (if a seat is free)

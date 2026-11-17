@@ -16,6 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import dmx
 import layout as LY
+fy, WDY = LY.fy, LY.WOOD_DY   # short front (18 Nov 2026)
 from noise import fbm
 
 _ap = argparse.ArgumentParser()
@@ -34,9 +35,9 @@ def tfont(path, size):
         except Exception: pass
     return f
 print('radar: reading %s' % VMAP, flush=True)
-SCALE = 8.40                     # world units per pixel of the 1024 image (written to the overview as is)
-SPAN = SCALE * 1024              # square side in world units
-X0, Y0 = -4300.0, 4700.0         # world position of the image's top-left corner (pos_x, pos_y)
+SCALE = 7.00                     # world units per pixel of the 1024 image (written to the overview as is); 15 bays: 8.40
+SPAN = SCALE * 1024              # square side in world units (7168: x +-3584, y -3072..4096 with the galleries and the wood)
+X0, Y0 = -3584.0, 4096.0         # world position of the image's top-left corner (pos_x, pos_y); 15 bays: -4300, 4700
 OUT_N = 1024                     # shipped size
 N = 2048                         # terrain raster
 SS = 2                           # supersampling for the vector work
@@ -67,7 +68,7 @@ n1 = fbm(X / 700.0, Y / 700.0, 0.4, 4, seed=21); n2 = fbm(X / 160.0, Y / 160.0, 
 forest = np.array([0.215, 0.255, 0.165]); field = np.array([0.30, 0.315, 0.215]); churn = np.array([0.33, 0.285, 0.215])
 mudd = np.array([0.30, 0.255, 0.195]); grass = np.array([0.33, 0.37, 0.235])
 col = np.empty((N, N, 3)); col[:] = forest
-battle = (ax < 3550) & (ay < 3500)
+battle = (ax < 3550) & (ay < fy(3500))
 col[battle] = field
 nml = np.clip((1560 - ax) / 160.0, 0, 1)[..., None] * battle[..., None]
 col = col * (1 - nml) + churn * nml
@@ -219,7 +220,7 @@ for (m, o, a, sc) in props:
     elif 'wreck_fieldgun' in nm or 'gun_75mm' in nm or 'howitzer' in nm: size = (90, 50, (66, 62, 54, 255))
     elif 'log_fallen' in nm: size = (150, 22, (74, 60, 44, 255))
     elif 'crate' in nm or 'tl_barrel' in nm or 'barrel_0' in nm: size = (34, 22, (110, 92, 66, 255))
-    elif 'sandbag_low' in nm and abs(o[1]) > 3400: size = (64, 18, (186, 168, 128, 255))
+    elif 'sandbag_low' in nm and abs(o[1]) > fy(3400): size = (64, 18, (186, 168, 128, 255))
     if size is None: continue
     yaw = math.radians(a[1]); ux, uy = math.cos(yaw), math.sin(yaw); hl, hw, fc = size[0] / 2, size[1] / 2, size[2]
     pts = [(o[0] + ux * hl - uy * hw, o[1] + uy * hl + ux * hw), (o[0] - ux * hl - uy * hw, o[1] - uy * hl + ux * hw),
@@ -290,10 +291,10 @@ for s in (-1, 1):
         a, b = sorted((s * x0, s * x1)); dpl.rectangle([px(a - 30, y1 + 30), px(b + 30, y0 - 30)], fill=255)
     for (cx, cy) in LY.mortar_pits(s):
         dpl.rectangle([px(cx - 240, cy + 240), px(cx + 240, cy - 240)], fill=255)
-EXIT_X, EXIT_Y, W_ = 1716.0, 2916.0, 55.0
-B_ = (1080.0, 3560.0)
-ct = [(EXIT_X + W_, EXIT_Y), (EXIT_X + W_, EXIT_Y + 120), (B_[0] + 40, B_[1] + 45), (1185, 3700), (1210, 3950), (1130, 4205), (905, 4350), (455, 4415), (0, 4395)]
-south = [(EXIT_X - W_, EXIT_Y), (EXIT_X - W_, EXIT_Y + 70), (B_[0] - 40, B_[1] - 45), (850, 3478), (450, 3452), (0, 3472)]
+EXIT_X, EXIT_Y, W_ = 1716.0, 2916.0 + WDY, 55.0
+B_ = (1080.0, 3560.0 + WDY)
+ct = [(EXIT_X + W_, EXIT_Y), (EXIT_X + W_, EXIT_Y + 120), (B_[0] + 40, B_[1] + 45)] + [(x, y + WDY) for x, y in ((1185, 3700), (1210, 3950), (1130, 4205), (905, 4350), (455, 4415), (0, 4395))]
+south = [(EXIT_X - W_, EXIT_Y), (EXIT_X - W_, EXIT_Y + 70), (B_[0] - 40, B_[1] - 45)] + [(x, y + WDY) for x, y in ((850, 3478), (450, 3452), (0, 3472))]
 mir = lambda P_: [(-p[0], p[1]) for p in P_]
 outline = ct + mir(ct)[::-1][1:] + mir(south) + south[::-1][1:]
 dpl.polygon([px(*p) for p in outline], fill=255)
@@ -383,12 +384,12 @@ def label(text, x, y, size, col=(232, 220, 186), alpha=200, rot=0, spacing=0.18,
     if rot: t = t.rotate(rot, expand=True, resample=Image.BICUBIC)
     p = px(x, y); out.alpha_composite(t, (int(p[0] - t.size[0] / 2), int(p[1] - t.size[1] / 2)))
 label("NO MAN'S LAND", 0, 0, 30, alpha=150, rot=90, spacing=0.5)
-label('GERMAN LINES', -2760, -3040, 24, col=(222, 196, 170), alpha=190)
-label('BRITISH LINES', 2760, -3040, 24, col=(214, 214, 186), alpha=190)
-label('THE WOOD', 0, 3950, 26, alpha=200, spacing=0.35)
-label('MINE GALLERIES', 0, -3640, 20, alpha=180, font=SANS_C)
-label('MINENWERFER', -LY.MORTAR_X, 1980, 17, alpha=170)
-label('TRENCH MORTARS', LY.MORTAR_X, 1980, 17, alpha=170)
+label('GERMAN LINES', -2760, fy(-3040), 24, col=(222, 196, 170), alpha=190)
+label('BRITISH LINES', 2760, fy(-3040), 24, col=(214, 214, 186), alpha=190)
+label('THE WOOD', 0, 3950 + WDY, 26, alpha=200, spacing=0.35)
+label('MINE GALLERIES', 0, -3640 + LY.TUN_DY, 20, alpha=180, font=SANS_C)
+label('MINENWERFER', -LY.MORTAR_X, max(LY.MORTAR_Y) + 380, 17, alpha=170)
+label('TRENCH MORTARS', LY.MORTAR_X, max(LY.MORTAR_Y) + 380, 17, alpha=170)
 label('PICCADILLY', LY.XS + 120, -60, 18, alpha=170, rot=90, font=SANS_C)
 label('UNTER DEN LINDEN', -LY.XS - 120, -60, 18, alpha=170, rot=90, font=SANS_C)
 

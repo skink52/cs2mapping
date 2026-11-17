@@ -95,11 +95,13 @@ def find_tiles(m):
         lo, hi = P.min(0), P.max(0)
         tx, ty = math.floor(lo[0] / TILE) * TILE, math.floor(lo[1] / TILE) * TILE
         res = None
-        for r in (16, 32, 64, 128):      # 16: a parapet sheet (skipped below; short front 18 Nov: some are now under a tile wide)
+        for r in (32, 64, 128):
             if np.all(np.abs((P[:, 0] - tx) / r - np.round((P[:, 0] - tx) / r)) < 1e-4) and np.all(np.abs((P[:, 1] - ty) / r - np.round((P[:, 1] - ty) / r)) < 1e-4):
                 res = r
         if res is None or res == 16 or hi[0] - tx > TILE + 1e-3 or hi[1] - ty > TILE + 1e-3:
-            if res != 16 and (hi[0] - lo[0]) <= TILE + 1: skipped.append((n, 'not on a 32/64/128 grid in one tile'))
+            ux = np.unique(np.round(P[:, 0], 3))
+            sheet16 = len(ux) > 1 and float(np.min(np.diff(ux))) <= 16.5   # a 16-u parapet sheet (short front 18 Nov: some under a tile wide)
+            if res != 16 and not sheet16 and (hi[0] - lo[0]) <= TILE + 1: skipped.append((n, 'not on a 32/64/128 grid in one tile'))
             continue                                         # the 16-u parapet sheets and anything else
         why = None
         if vg != 'tw_gen': why = 'vis group %r (not ours)' % vg
