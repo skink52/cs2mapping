@@ -6,6 +6,7 @@ usage: python tools/move_user_objects.py <in.vmap> <out.vmap> [--report R]
 
 Every top-level world node that is NOT generated (vis group tw_gen) is placed in one zone by its origin (entities) or the centre of its
 bounds (meshes), in the 15-bay map's coordinates, and handled by the zone's rule:
+  (north / south objects above z -200 also move up / down by the change of tools/layout.py ground_low between the two spots)
   north      y > 2700 (the woods: ladders, ladder volumes, woodsopen blockers, skirmish wire, the user's trees)   y + WOOD_DY (-1920)
   south      y < -2700 (sap mouths and galleries: the user's tl_bench bridges, undergroundopen blockers)          y + TUN_DY (+1920)
   shelter    a niche revetment beside an old dressing station (|x| 2180..2420, within 160 of its y): follows its station
@@ -25,12 +26,13 @@ PROJ = os.path.dirname(HERE)
 REPO = os.path.normpath(os.path.join(PROJ, '..', '..'))
 sys.path[:] = [os.path.join(REPO, 'tools')] + [p for p in sys.path if os.path.normcase(os.path.abspath(p or '.')) != os.path.normcase(HERE)]
 import vmapedit as V      # noqa: E402
+import numpy as np        # noqa: E402
 import dmx                # noqa: E402
 sys.path.append(HERE)
 import layout as LY       # noqa: E402  (the short layout: FRONT_Y, WOOD_DY, TUN_DY)
 
 KY = LY.FRONT_Y / 2880.0
-SHELTER_MAP = {-1056.0: -576.0, 576.0: 576.0, 2304.0: None}     # old station y -> new (None: gone)
+SHELTER_MAP = {-1056.0: LY.SHELTER_Y[0], 576.0: LY.SHELTER_Y[1], 2304.0: None}   # old station y -> new (None: gone); x: layout.station_x
 
 
 def s_(v): return v.decode('utf-8', 'replace') if isinstance(v, bytes) else (v or '')
@@ -85,12 +87,18 @@ def main(argv=None):
         if t == 'CMapMesh' and not row['vg']:            # make_map drops ungrouped meshes (its template's samples): the user's own
             dmx.set_(m.E[i], b'customVisGroup', dmx.T_STR, b'tw_user')   # (woods ladder volumes, sap-mouth meshes) go to their tw_user group
             row['vg'] = 'tw_user (was ungrouped)'; rep.setdefault('regrouped', []).append(i)
+        dz = 0.0; dx = 0.0
+        if z == 'shelter':                               # the 15-bay stations stood off XS; the new one may stand off XS + 48
+            ny = p[1] + dy; dx = (LY.station_x(ny) - LY.XS) * (1 if p[0] > 0 else -1)
+        if dy and z in ('north', 'south', 'shelter') and p[2] > -200:   # surface objects follow the ground (trench floor = ground_low - DEPTH);
+            gl = lambda x_, y_: float(LY.ground_low(np.array([x_]), np.array([y_]))[0])   # gallery objects (TUN_FLOOR) keep their z
+            dz = gl(p[0] + dx, p[1] + dy) - gl(p[0], p[1])
         if dy:
             for j in (mesh_kids(m, i) if t == 'CMapEntity' and mesh_kids(m, i) else [i]):   # a brush entity: its meshes move (as patch_world_1)
                 o = list(m.g(j, b'origin') or [0.0, 0.0, 0.0])
-                o[1] += dy
+                o[0] += dx; o[1] += dy; o[2] += dz
                 dmx.set_(m.E[j], b'origin', dmx.T_V3, [float(v) for v in o])
-            row['dy'] = round(dy, 1); rep['moved'].append(row)
+            row['dy'] = round(dy, 1); row['dz'] = round(dz, 1); rep['moved'].append(row)
         else: rep['kept'] += 1
     for i in drop: m.remove_node(i)
     counts = {}
