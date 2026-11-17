@@ -172,6 +172,19 @@ Logs: `C:\source1\cs2port\logs\mg_trenchwarfare_assets.log` and `mg_trenchwarfar
 - [ ] U1. Upload from the game addon. Expect the item to install on a clean client and the map to load with `host_workshop_map <id>` on a dedicated server. Record: R and [WORKSHOP.md](WORKSHOP.md).
 - [ ] U2. On the dedicated server: the `[tw] perf:` line with 10+ humans. Record: R.
 
+## V. Short front (18 Nov 2026: 5 bays, 2 mortar pits a side, woods and galleries moved in)
+
+- [ ] V1. Walk each trench end to end: 5 bays, one communication trench, 2 dressing stations a side (y -576 / 288), no gaps or
+  blocked corners (the checker passes; it uses a 16-u grid). Record: R (`!pos` of anything wrong).
+- [ ] V2. Woods: ladder out of the north end of the fire trench (y ~990), the fenced track and clearing; your own wire, trees and
+  ladder volumes are where you left them relative to the wood (moved 1,920 u south and onto the new ground). Record: R.
+- [ ] V3. Galleries: both saps at the south end of the support trench (crouched entry, as before), landings, galleries, chamber; your
+  sap benches and clips moved with them. Record: R.
+- [ ] V4. Mortars: 2 pits a side; the plotting board shows the new map (scale 3600 u from the centre), pits on the printed rings,
+  firing hits where plotted. Radar dot matches where you stand. Record: R.
+- [ ] V5. Pilots: take-off lanes clear (no trees under them now), bombing runs by bots happen (fixed 18 Nov). Record: R.
+- [ ] V6. Frame rate and feel at 32 players: the fight should feel denser than before. Record: R.
+
 ## Results
 
 One row per failed or noted item. Answered rows stay, so a problem that comes back can be checked against them.

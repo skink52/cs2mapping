@@ -46,15 +46,15 @@ in git or in `out/short_front/<step>/` before it is marked done.
 | 2 | Sounds with weight: plane engine loop, guns and dive from real recordings; mortar launch / whistle / impact with a real low end and a long tail | `tools/sounds.py`, `docs/SOUNDS.md`, staged wavs | loop check green; spectra meet SOUNDS.md targets; listened-to pictures (waveform + spectrogram) | done 17 Nov (simulated; staged `out/short_front/step2/addon`, not deployed) |
 | 3 | Gentle fog: `env_volumetric_fog_controller` back + cubemap fog retuned | new guarded stage `tools/patch_fog_2.py` | fog at 3,300 u under 25 % (computed); guard shows only the fog entities | done 17 Nov (simulated: guard PASS, far trench 29 % -> 12 %; chain stage 8_fog, not deployed) |
 | 4 | Short front design: what moves, what is cut, what every chain stage assumes; regenerate vs transform decision | `docs/SHORT_FRONT_DESIGN.md` | every map stage and script constant that depends on y listed with its new value | done 17 Nov (docs/SHORT_FRONT_DESIGN.md) |
-| 5 | Short front build | layout, patch stages, script config, radar, mortar board | `check_world`, `check_play`, contract, mock, sim_balance green; renders looked at | **in progress** (see "Step 5 progress" below) |
-| 6 | Deploy + asset compile + map compile under the watchdog (~55 min) | `tools/deploy_tw.py` | 0 errors, 0 DELETED, nav count recorded | |
+| 5 | Short front build | layout, patch stages, script config, radar, mortar board | `check_world`, `check_play`, contract, mock, sim_balance green; renders looked at | done 18 Nov (gate PASS) |
+| 6 | Deploy + asset compile + map compile under the watchdog (~55 min) | `tools/deploy_tw.py` | 0 errors, 0 DELETED, nav count recorded | done 18 Nov 02:27: deployed, compiled (map 503 compiled / 0 failed, 0 DELETED, nav 3,798 areas) |
 | 7 | TESTING items, README, NOTES, CHANGELOG | docs | committed | |
 
 Steps 1-3 do not depend on the map shape and can be deployed on their own if step 5 runs long.
 
 ## Step 5 progress (update as pieces land)
 
-**Mid-change warning:** since 18 Nov `tools/layout.py` describes the SHORT front (5 bays). Until step 5 is done the chain stages,
+**(Resolved 18 Nov 02:10: deployed.)** Was: since 18 Nov `tools/layout.py` describes the SHORT front (5 bays). Until step 5 is done the chain stages,
 script config, checkers and radar still assume the 15-bay map, so do NOT run `deploy_tw.py --chain` or redeploy the map from this
 state; the deployed addon map (843a5675) is untouched.
 
@@ -111,3 +111,7 @@ check_world clean. Then `python -u tools/deploy_tw.py --chain` (dry run, gate) a
 `--apply`, asset compile, forced HUD / script compiles, map compile (docs/BUILD.md). The user said (18 Nov): "deploy when the checks pass".
 Step-16 deploy list (`out/step16/deploy_files.txt`, out/ is not in git): panorama/images/custom_game/tw/m_pip.png, m_ring.png, m_edge.png,
 m_edge_bomb.png, target_t.png, target_ct.png (from out/addon; re-run `python tools/render_sight.py` after the chain's radar).
+
+**18 Nov 02:27: deployed and compiled.** Level: **compiled, not loaded in CS2.** Map compile 14 min 21 s, 503 compiled / 0 failed,
+0 DELETED, **nav 3,798 areas** (4,530 before); sounds and HUD pictures compiled after the deploy (timestamps checked). Next: the user's
+in-game checks (docs/TESTING.md: H2b / H2c sights, Q2 / Q3 sounds, L5 fog, and group V: the short front).

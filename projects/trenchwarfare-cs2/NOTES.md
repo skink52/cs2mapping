@@ -11,7 +11,7 @@ Plan, decisions and step table with status: [docs/SHORT_FRONT_PLAN.md](docs/SHOR
   PASS: check_world clean, check_play only the baseline's accepted categories, seams clean, radar clean, contract, api, tscheck,
   mocks incl. bots and 13/13 scenarios). Deploy 4 created / 22 replaced; previous map (843a5675) in `backups\deploy_20261118_021053\`.
   Includes the HUD sights, the recorded sounds and the fog. Fixed on the way: AI pilots never bombed after the HUD-sight change
-  (a.land is computed before the bot return now). Compile started 02:12 (out/short_front/compile.sh: assets, forced HUD/script, final).
+  (a.land is computed before the bot return now). Compiled 02:27: map 503 / 0 failed, 0 DELETED, nav 3,798; sounds + HUD pictures compiled. **Level: compiled, not loaded in CS2.** Next: TESTING.md H2b/H2c, Q2/Q3, L5, V1-V6.
 
 ## Earlier: remaster (started 12 Nov 2026)
 
