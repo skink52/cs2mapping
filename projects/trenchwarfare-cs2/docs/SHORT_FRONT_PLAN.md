@@ -102,3 +102,12 @@ emaster_20261112\`):
   (40..88, 1000..1064); nav: see check_play.json "8"/"9".
 - 3 floating props, 2 dressing-inside-solid, 17 overlapping prop pairs (check_world warnings; mostly hangar + petrol can, as before).
 
+
+**18 Nov ~01:40, check_play after the fixes** (stations off the support trench's real x, user meshes kept via tw_user, user objects
+follow the ground, 50-u dressing walkway, no trees under the take-off run, water z-fight rule): routes all OK (woods 1,825 / 1,834,
+chamber 2,736 / 2,727, mirror-even), walkability, T4, T7, T8, T9 (both saps crouch, as decided 12 Nov) pass; left only the gate
+baseline's accepted categories (clipping: 3 props 6-9 u floating + a wire fence through a log; water; one CT fire step).
+check_world clean. Then `python -u tools/deploy_tw.py --chain` (dry run, gate) and, once CS2 / Hammer are closed on the addon,
+`--apply`, asset compile, forced HUD / script compiles, map compile (docs/BUILD.md). The user said (18 Nov): "deploy when the checks pass".
+Step-16 deploy list (`out/step16/deploy_files.txt`, out/ is not in git): panorama/images/custom_game/tw/m_pip.png, m_ring.png, m_edge.png,
+m_edge_bomb.png, target_t.png, target_ct.png (from out/addon; re-run `python tools/render_sight.py` after the chain's radar).
