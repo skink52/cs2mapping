@@ -385,8 +385,15 @@ def prop(name, x, y, z, yaw=0.0, pitch=0.0, roll=0.0, scale=(1, 1, 1), stock=Non
             skipped[model] = skipped.get(model, 0) + 1
             return None
         if reg: PL.add(f)
+    # round 2 performance (18 Nov 2026): no dynamic sun shadow from small clutter, foliage and wire, nor from trees that are not pinned
+    # to a near-play LOD (the far woods); small clutter also fades out past ~3,000 u (fewer draw calls; it is unreadable there anyway)
+    lod = kw.pop('lodlevel', '-1')
+    tree = any(k in model for k in ('tree', 'poplar', 'beech', 'maple'))
+    small = probed(model, scale) and not tree
+    if small or (tree and lod == '-1'): shadows = '1'
+    if small and 'fademaxdist' not in kw: kw.update(fademindist='2600', fademaxdist='3200')
     e = ent('prop_static', (x, y, z), (pitch, yaw, roll), group=GROUP, model=model, rendercolor='255 255 255', skin='default',
-            solid=solid, bakelighting='0' if probed(model, scale) else '1', disableshadows=shadows, lodlevel=kw.pop('lodlevel', '-1'), baketoworld='0', rendertocubemaps='1', **kw)
+            solid=solid, bakelighting='0' if probed(model, scale) else '1', disableshadows=shadows, lodlevel=lod, baketoworld='0', rendertocubemaps='1', **kw)
     if tuple(scale) != (1, 1, 1): setscale(e, scale)
     props_placed[model] = props_placed.get(model, 0) + 1
     return e
