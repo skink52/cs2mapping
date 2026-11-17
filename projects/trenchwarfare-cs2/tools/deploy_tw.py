@@ -73,7 +73,7 @@ MAP_REL = 'maps/mg_trenchwarfare.vmap'
 BASE = dict(crc32='2e3f90d0', size=67206918, sha256='9fb68e43ff31e7f87b129909489b0c1a594c2e83e66eaa07440ed6da0da5f73f')
 # earlier steps' own outputs (default flags), for the determinism comparison
 REFS = {'1_world_1': 'mg_trenchwarfare_patched.vmap', '2_models': 'mg_trenchwarfare_models.vmap', '3_terrain': 'mg_trenchwarfare_terrain.vmap'}
-STEP_LISTS = (5, 6, 7, 8, 10, 11, 12, 13, 14)   # 8, 10-14 optional (a note when missing); 10 = release docs (CREDITS, licences, Steam description), 11 = weapons, 12 = licence-replacement assets, 13 = the rebuilt shelter, 14 = prop rebuilds (staged by another session)
+STEP_LISTS = (5, 6, 7, 8, 10, 11, 12, 13, 14, 16)   # 16 = the short front (sight pictures, plotting board); 8, 10-14 optional (a note when missing); 10 = release docs (CREDITS, licences, Steam description), 11 = weapons, 12 = licence-replacement assets, 13 = the rebuilt shelter, 14 = prop rebuilds (staged by another session)
 OPTIONAL_LISTS = (8, 10, 11, 12, 13, 14)
 PY = sys.executable
 OLD_BAT_LOG = r'C:\source1\cs2port\logs\mg_trenchwarfare_applied.txt'
