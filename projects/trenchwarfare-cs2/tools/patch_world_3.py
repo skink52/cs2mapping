@@ -534,8 +534,9 @@ def main(argv=None):
     json.dump(T, open(tp, 'w'), indent=1)
     rep.update(input=inp, output=outp, input_crc32=T['input_crc32'], seconds=round(time.time() - t0, 1))
     json.dump(rep, open(rp, 'w'), indent=1, default=float)
-    print('patched map: %s (%d bytes); %d poplars scaled, rack turned, pool poplar moved %.0f u, %d pool rims tucked in (%d left)%s; %.1f s'
-          % (outp, n, len(rep['trees']), rep['pool_tree']['moved'], len(rep['pools']), len(rep['pools_left']),
+    print('patched map: %s (%d bytes); %d poplars scaled, %s, %d pool rims tucked in (%d left)%s; %.1f s'
+          % (outp, n, len(rep['trees']), 'rack turned, pool poplar moved %.0f u' % rep['pool_tree']['moved'] if rep['pool_tree'] else 'no single-object fixes (--find)',
+             len(rep['pools']), len(rep['pools_left']),
              ('; pit sandbags (%s): %d bags on %d pits' % (a.pit_sandbags, sum(len(p['bags']) for p in rep['pit_sandbags']), len(rep['pit_sandbags'])))
              if a.pit_sandbags else '', time.time() - t0))
     if not a.no_guard:

@@ -7,7 +7,7 @@ FROM=${1:-gen}
 step() { echo "== $1 $(date +%T)"; }
 if [ "$FROM" = gen ]; then
   step gen
-  $W --label "sf gen" --expect 180 --max 600 --log $C/w_gen.log -- python -u tools/make_map.py out/short_front/step5/user_moved.vmap out/short_front/step5/gen_short2.vmap out/addon > $C/gen.log 2>&1 || exit 1
+  $W --label "sf gen" --expect 180 --max 600 --log $C/w_gen.log -- python -u tools/make_map_stage.py --in out/short_front/step5/user_moved.vmap --out out/short_front/step5/gen_short2.vmap > $C/gen.log 2>&1 || exit 1
   FROM=w1
 fi
 if [ "$FROM" = w1 ]; then

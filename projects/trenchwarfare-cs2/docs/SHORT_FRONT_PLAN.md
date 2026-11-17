@@ -78,3 +78,27 @@ emaster_20261112\`):
       ambient bursts +-1280). Checkers (`check_world` counts, `check_play` literals) and restaging `out/entities.json` NOT done.
 - [~] 6. Radar reframed (`make_radar.py` scale 7.00); re-run it + `render_sight.py` on the final map (deploy_tw does the radar).
 - [ ] 7. Renders looked at; gate green.
+
+**18 Nov ~00:40, first full run** (`sh tools/short_front_stages.sh gen`, ~11 min): every stage ran and every guard PASSED
+(world_1 14 targets, world_3 80 incl. 64 pool rims + 16 pit sandbags on 4 pits, sounds 10 (9 emitters), nav 444 (222 NONAV boxes,
+**estimate ~3,050 nav areas**, budget 5,000), fog 0 (already in make_map)). The uniform precache props were missing:
+`make_map_stage.py` now runs `patch_uniforms.py` after make_map (tested; the chain must be re-run from `gen` to include it).
+`check_world` on that map: **clean**. `check_play` (`python tools/check_play.py out/short_front/step5/chain/9_test_uniforms.vmap
+--stage out/addon --json out/short_front/step5/chain/check_play.json --map out/short_front/step5/chain/check_play_map.png`, 45 s)
+**FAILS**, to fix next (diagnosis so far):
+- T8 / walkability: `trench_*_8` at the support trench's north end (x +-2150, y 704) has 18 u headroom: the support trench now ends
+  at y 672 (dog-legs from y -864 every 768) -> move that spawn inside (y ~600) in `layout.infantry_spawns`; `trench_t_3`,
+  `trench_ct_4` 53-56 u "off the floor" (fire-step duckboards?); `trench_ct_6` split from the CT trench world.
+- T4: 3 of 4 dressing-station mouths not in the walkable trench. The support trench's x alternates 2150 / 2198 per 768 segment;
+  the old stations sat on 2150 segments. y 576 is on the short 2150 piece between the jog at 544 and the end at 672 -> pick station
+  ys on 2150 segments or place niche + shelter at the support trench's x at that y (layout `segments()` niche uses XS).
+- T9 CT sap: no standing or crouched passage at the CT sap mouth (T side crouch ok). The user's tl_bench bridges were moved +1920
+  with the galleries; check they still sit on the new mouth (`move_user_objects` report, `patch_seams` SAP_CAP).
+- 1b routes: no route trench -> woods for either side, ct -> chamber missing: check the woods exit (ladder at x +-1716, y ~984: the
+  user's ladders were moved -1920; the generated exit is at y 996) and the woods blockers / clip walls; then the CT sap (above).
+- T7: plane_t_5, plane_ct_2, plane_ct_3 air lanes blocked by tall poplars by the aerodromes (the old T7 per-tree fix was a 15-bay
+  instance fix, dropped): make it a rule (scale or skip poplars under the lanes) in make_map or patch_world_3 `--find`.
+- T2: one CT fire step "blind" at (1575, 576); clipping (woods half: head 4/6, crouch 2/1 of need 4); water: 25 z-fight cells near
+  (40..88, 1000..1064); nav: see check_play.json "8"/"9".
+- 3 floating props, 2 dressing-inside-solid, 17 overlapping prop pairs (check_world warnings; mostly hangar + petrol can, as before).
+
