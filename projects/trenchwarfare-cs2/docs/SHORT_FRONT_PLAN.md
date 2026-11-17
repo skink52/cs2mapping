@@ -64,13 +64,17 @@ state; the deployed addon map (843a5675) is untouched.
       woods, probes, vis hints, lightmap shell); Windows font fallback; numpy point-in-polygon replaces matplotlib.
       First full run: `out/short_front/step4/gen_short1.vmap` (log `make_map_short1.log`).
 - [x] 3. `tools/move_user_objects.py` (user objects by zone): `python tools/move_user_objects.py out/short_front/step4/user_base.vmap
-      out/short_front/step5/user_moved.vmap` (user_base = the 29 Oct save, CRC32 2e3f90d0, from `backupsemaster_20261112\`):
+      out/short_front/step5/user_moved.vmap` (user_base = the 29 Oct save, CRC32 2e3f90d0, from `backups
+emaster_20261112\`):
       91 moved, 11 dropped (6 niche revetments of the gone y-2304 station, 5 props at an old outer pit). Then
       `python -u tools/make_map.py out/short_front/step5/user_moved.vmap out/short_front/step5/gen_short2.vmap out/short_front/step5/addon_gen`
       (~2.5 min, run under the watchdog). Quick look: `out/short_front/step4/top_short1.png` (shape right: 5 bays, 2 pits, 2 stations a side,
       galleries off the support trench's south end).
-- [ ] 4. Re-target chain stages (world_1, world_3, sounds, seams, terrain, nav).
-- [~] 5. Script config / ai / front and mock seat test done (CREWS 2, TARGET_EXT 3600, NML_Y 830, AREAS moved, AI patrol +-1000,
+- [~] 4. Chain stages re-targeted: world_1 / world_3 `--find` (rules, not ids; single-object 15-bay fixes dropped), sounds from the
+      layout, terrain / seams / nav literals moved, terrain finder knows 16-u sheets, battle zone on a tile edge. `deploy_tw.py --chain`
+      now runs 0a_moved -> 0b_gen -> 1..8. By hand: `sh tools/short_front_stages.sh [gen|w1|terrain|seams|w3|sounds|nav|fog]` (writes
+      out/short_front/step5/chain/; resume from the stage that failed). Status of the first full run: see the newest progress line.
+- [~] 5. Script config / ai / front, RADAR, mock seat test done; checkers follow the layout (CREWS 2, TARGET_EXT 3600, NML_Y 830, AREAS moved, AI patrol +-1000,
       ambient bursts +-1280). Checkers (`check_world` counts, `check_play` literals) and restaging `out/entities.json` NOT done.
-- [ ] 6. Radar + plotting board.
+- [~] 6. Radar reframed (`make_radar.py` scale 7.00); re-run it + `render_sight.py` on the final map (deploy_tw does the radar).
 - [ ] 7. Renders looked at; gate green.
