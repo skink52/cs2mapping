@@ -381,3 +381,11 @@ the original addons are in [../creation/](../creation/); cs_script API details a
 - **A CS2 update can crash a CounterStrikeSharp server a second after every map load** (12 Nov 2026, 1.41.9.7: the log stops after `Created physics for <map>`, no dump). Update CSS to the release that names the game update before starting the server again.
 - **Text on a mesh face reads backwards on faces looking -x or +y** with Hammer's default texture axes (u = +y on x-facing faces, +x on y-facing ones; create/meshedit.py `_axes`). A sign generated with `fit` UVs needs its u axis set per face (IRONFRAME sprawl_ops `READ_U`, 12 Nov 2026).
 - **CS2 1.41.9.7 (Nov 2026): a CS2 bot joining a custom map can crash the dedicated server a tick later** (IRONFRAME mg_ironframe_dunes: no dump, the console just stops; de_dust2 with bots stays up; found by switching parts of the map script off). Keep bot fill switchable. **Cause: MultiAddonManager 1.7.3** (bots crash de_dust2 too); **1.7.4** ("Updated for the 11/11/2026 CS2 update") fixes it (14 Nov 2026). After a CS2 update, update Metamod plugins as well as CSS.
+
+## Volumetric fog does not exist in CS2 (found 18 Nov 2026, mg_trenchwarfare)
+
+`csgo.fgd` has `@exclude env_volumetric_fog_controller` and `@exclude env_volumetric_fog_volume` (also `fog_volume`,
+`env_tonemap_controller`, `postprocess_controller`): a map can contain them, the compile does not complain, and nothing renders.
+CS2's fog is `env_cubemap_fog` (distance / height haze coloured from the env_sky) and `env_gradient_fog` (one per map, `global(
+gradient_fog)`: colour, strength, max opacity, start / end distance, height fog start / end / exponent, inputs `SetFog*`). For a
+visible ground mist use the gradient fog with a low height band; fog particles (sprites) cost a lot of overdraw.

@@ -123,7 +123,7 @@ Logs: `C:\source1\cs2port\logs\mg_trenchwarfare_assets.log` and `mg_trenchwarfar
 - [ ] L2. **Mud stretch:** look at the steep crater walls (48 faces). Expect the texture is not visibly smeared. Record: R (`!pos` of the worst).
 - [ ] L3. **Ruts:** the tank tracks behind the 4 wrecks and the twin lorry ruts along both airfield edges (y about +-1100). Expect them to read at player scale. Record: R.
 - [ ] L4. Parked aircraft and props sit on the ground, not floating or sunk. The lightmap over the re-gridded tiles has no blotches. Record: R.
-- [ ] L5. **Fog (17 Nov 2026):** stand on a fire step and look across: the enemy fire trench (about 3,300 u) must read clearly, with a soft mist drifting over no man's land and the aerodromes fading into haze. Too thick or too thin: tell Claude (volumetric `FogStrength` 0.35 and the cubemap fog in `tools/patch_fog_2.py`). Check the frame rate looking across against before (it was the fog particles that cost frames in tw32; this has none). Record: R.
+- [ ] L5. **Fog (18 Nov 2026: CS2 has no volumetric fog; now a gradient-fog ground mist `tw_mist` + cubemap haze):** stand on a fire step and look across: the enemy fire trench (about 3,300 u) must read clearly, with a soft mist drifting over no man's land and the aerodromes fading into haze. Too thick or too thin: tell Claude (volumetric `FogStrength` 0.35 and the cubemap fog in `tools/patch_fog_2.py`). Check the frame rate looking across against before (it was the fog particles that cost frames in tw32; this has none). Record: R.
 
 ## M. Rain
 

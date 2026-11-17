@@ -1007,13 +1007,16 @@ ent('point_soundevent', (0, 0, LZ + 200), group=GROUP, targetname='tw_ambience',
 clone('light_environment', (0, 0, 2000), (55, 145, 0), targetname='tw_sun', color='196 202 210', brightness='1.6', castshadows='1', directlight='3',
       skycolor='150 160 175', skyintensity='1.6', fog='1', fogstrength='0.6')
 clone('env_sky', (64, 0, 2000), targetname='sky', skyname='materials/skybox/sky_overcast_01.vmat', tint_color='190 196 205', brightnessscale='0.9')
-# 17 Nov 2026 (short front revision): the gentle fog of tools/patch_fog_2.py (the far fire trench at ~12 % cubemap fog, mist 0.35)
+# fog (18 Nov 2026, round 2): CS2 has NO volumetric fog (csgo.fgd: @exclude env_volumetric_fog_controller / _volume; the tw13-tw35
+# tw_vfog and the 17 Nov one never rendered). CS2's fog is env_cubemap_fog (sky-coloured distance haze) + env_gradient_fog (one per map:
+# coloured fog by distance and height). A ground mist: dense near the ground, thinning with height (pilots see over it); the far
+# fire trench (3,300 u) ~22 % (tools/patch_fog_2.py GRADIENT / CUBEMAP hold the same values and fix older maps).
 clone('env_cubemap_fog', (128, 0, 2000), cubemapfogstartdistance='400', cubemapfogenddistance='9000', cubemapfogfalloffexponent='1.6',
-      cubemapheightfog='1', cubemapfogheightstart='300.0', cubemapfogheightend='2600.0', cubemapfogheightexponent='1.0', cubemapfogmaxopacity='0.7',
+      cubemapheightfog='1', cubemapfogheightstart='-200.0', cubemapfogheightend='1600.0', cubemapfogheightexponent='1.2', cubemapfogmaxopacity='0.6',
       cubemapfogskyentity='sky')
-ent('env_volumetric_fog_controller', (192, 0, 2000), group=GROUP, targetname='tw_vfog', IsMaster='1', FogStrength='0.35', TintColor='205 210 215',
-    DrawDistance='2400', FadeInStart='60', FadeInEnd='400', FadeSpeed='2', IndirectEnabled='1', IndirectStrength='0.8', IndirectVoxelDim='256',
-    NoiseSpeed='0.12', NoiseStrength='0.6', NoiseScale='.003 .003 .008', volume_depth_override='0', volume_first_slice_thickness='0')
+ent('env_gradient_fog', (192, 0, 2000), group=GROUP, targetname='tw_mist', fogcolor='164 166 158', fogstrength='1.0', fogmaxopacity='0.55',
+    fogstart='300', fogend='6000', fogfalloffexponent='1.4', heightfog='1', fogstartheight='-250', fogendheight='900',
+    fogverticalexponent='1.5', fadetime='1.0', farz='-1', StartDisabled='0')
 clone('post_processing_volume', (256, 0, 2000), postprocessing='postprocess/%s.vpost' % NAME, master='1', minexposure='0.6', maxexposure='1.8',
       enableexposure='1', fadetime='1.0', spawnflags='4097')
 clone('env_combined_light_probe_volume', (0, 0, 120), box_mins='-3900 %g -260' % fy(-3700), box_maxs='3900 %g 520' % fy(4500), voxel_size='64.0', targetname='bf_probe')

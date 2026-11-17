@@ -30,7 +30,13 @@ import dmx                # noqa: E402
 import safepath           # noqa: E402
 
 GROUP = 'tw_gen'
-CUBEMAP = dict(cubemapfogstartdistance='400', cubemapfogenddistance='9000', cubemapfogfalloffexponent='1.6', cubemapfogmaxopacity='0.7')
+CUBEMAP = dict(cubemapfogstartdistance='400', cubemapfogenddistance='9000', cubemapfogfalloffexponent='1.6', cubemapfogmaxopacity='0.6',
+               cubemapheightfog='1', cubemapfogheightstart='-200.0', cubemapfogheightend='1600.0', cubemapfogheightexponent='1.2')
+# 18 Nov 2026 (round 2): CS2 has no volumetric fog (csgo.fgd @exclude env_volumetric_fog_controller): a controller is removed and
+# replaced by env_gradient_fog, CS2's coloured distance / height fog (one per map) = make_map.py's tw_mist
+GRADIENT = [('targetname', 'tw_mist'), ('fogcolor', '164 166 158'), ('fogstrength', '1.0'), ('fogmaxopacity', '0.55'), ('fogstart', '300'),
+            ('fogend', '6000'), ('fogfalloffexponent', '1.4'), ('heightfog', '1'), ('fogstartheight', '-250'), ('fogendheight', '900'),
+            ('fogverticalexponent', '1.5'), ('fadetime', '1.0'), ('farz', '-1'), ('StartDisabled', '0')]
 # make_map.py's tw_vfog keys (tw13-tw32), thinner and drawn further: patches of mist that drift (noise), lit by the sun
 VFOG = [('targetname', 'tw_vfog'), ('IsMaster', '1'), ('FogStrength', '0.35'), ('TintColor', '205 210 215'), ('DrawDistance', '2400'),
         ('FadeInStart', '60'), ('FadeInEnd', '400'), ('FadeSpeed', '2'), ('IndirectEnabled', '1'), ('IndirectStrength', '0.8'),
@@ -75,18 +81,23 @@ def main(argv=None):
         if m.P(c, k, '') != v: m.setp(c, k, v); changed.append('kv:' + k)
     if changed: T['modify'][str(m.g(c, b'nodeID'))] = dict(i=c, fields=changed, why='gentler distance fog: the far fire trench stays readable')
     rep['cubemap_after'] = dict(CUBEMAP, at_1600=round(opacity(CUBEMAP, 1600), 3), at_span=round(opacity(CUBEMAP, SPAN), 3), at_6000=round(opacity(CUBEMAP, 6000), 3))
-    vf = m.by_class('env_volumetric_fog_controller')
-    if len(vf) > 1: sys.exit('patch_fog_2: TARGET MISMATCH, nothing written: %d volumetric fog controllers' % len(vf))
-    if vf:
-        e = vf[0]; fields = []
-        for k, v in VFOG:
+    for e in m.by_class('env_volumetric_fog_controller'):            # renders nothing in CS2
+        T['remove'][str(m.g(e, b'nodeID'))] = dict(i=e, why='volumetric fog is excluded in CS2 (csgo.fgd): replaced by env_gradient_fog')
+        m.remove_node(e); rep.setdefault('removed', []).append(e)
+    gf = m.by_class('env_gradient_fog')
+    if len(gf) > 1: sys.exit('patch_fog_2: TARGET MISMATCH, nothing written: %d env_gradient_fog' % len(gf))
+    if gf:
+        e = gf[0]; fields = []
+        for k, v in GRADIENT:
             if m.P(e, k, None) != v: m.setp(e, k, v); fields.append('kv:' + k)
-        if fields: T['modify'][str(m.g(e, b'nodeID'))] = dict(i=e, fields=fields, why='gentle volumetric fog values')
-        rep['volumetric'] = 'set on the existing controller (%d keys)' % len(fields)
+        if fields: T['modify'][str(m.g(e, b'nodeID'))] = dict(i=e, fields=fields, why='gradient fog values')
+        rep['gradient'] = 'set on the existing one (%d keys)' % len(fields)
     else:
-        e = m.new_entity('env_volumetric_fog_controller', VFOG_AT, dict(VFOG))
+        e = m.new_entity('env_gradient_fog', VFOG_AT, dict(GRADIENT))
         dmx.set_(m.E[e], b'customVisGroup', dmx.T_STR, GROUP.encode())
-        T['add'].append(dict(type='CMapEntity', **{'class': 'env_volumetric_fog_controller'}, name='tw_vfog', why='gentle volumetric mist (none in the user save)'))
+        T['add'].append(dict(type='CMapEntity', **{'class': 'env_gradient_fog'}, name='tw_mist', why='ground mist (CS2 gradient fog)'))
+        rep['gradient'] = 'added tw_mist'
+    if rep.get('removed') or not gf:
         counts = {}
         for x in m.entities(): counts[m.cls(x)] = counts.get(m.cls(x), 0) + 1
         for attrs in m.doc.prefix:
@@ -97,15 +108,15 @@ def main(argv=None):
                 pre[b'map_subasset_reference_names'][2] = [nm.encode() for nm in names]
                 pre[b'map_subasset_reference_counts'][2] = [counts[nm] for nm in names]
                 T['prefix'] += ['map_subasset_reference_counts', 'map_subasset_reference_names', 'map_subasset_reference_types']
-        rep['volumetric'] = 'added tw_vfog'
-    rep['volumetric_keys'] = dict(VFOG)
+        m.prune()
+    rep['gradient_keys'] = dict(GRADIENT)
     os.makedirs(os.path.dirname(outp), exist_ok=True)
     n = m.save(outp)
     T['output'] = outp
     json.dump(T, open(tp, 'w'), indent=1)
     json.dump(rep, open(rp, 'w'), indent=1)
     print('patched map: %s (%d bytes); cubemap fog at the far trench %.0f %% -> %.0f %%; %s; %.1f s'
-          % (outp, n, 100 * rep['cubemap_before']['at_span'], 100 * rep['cubemap_after']['at_span'], rep['volumetric'], time.time() - t0))
+          % (outp, n, 100 * rep['cubemap_before']['at_span'], 100 * rep['cubemap_after']['at_span'], rep['gradient'], time.time() - t0))
     if not a.no_guard:
         r = subprocess.run([sys.executable, os.path.join(HERE, 'patch_guard.py'), a.inp, outp, tp, '--strict', '--report',
                             os.path.splitext(outp)[0] + '.guard.json'], capture_output=True, text=True)
