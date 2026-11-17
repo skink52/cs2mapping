@@ -386,7 +386,7 @@ def prop(name, x, y, z, yaw=0.0, pitch=0.0, roll=0.0, scale=(1, 1, 1), stock=Non
             return None
         if reg: PL.add(f)
     e = ent('prop_static', (x, y, z), (pitch, yaw, roll), group=GROUP, model=model, rendercolor='255 255 255', skin='default',
-            solid=solid, bakelighting='0' if probed(model, scale) else '1', disableshadows=shadows, lodlevel='-1', baketoworld='0', rendertocubemaps='1', **kw)
+            solid=solid, bakelighting='0' if probed(model, scale) else '1', disableshadows=shadows, lodlevel=kw.pop('lodlevel', '-1'), baketoworld='0', rendertocubemaps='1', **kw)
     if tuple(scale) != (1, 1, 1): setscale(e, scale)
     props_placed[model] = props_placed.get(model, 0) + 1
     return e
@@ -911,7 +911,9 @@ for gx in np.arange(-LY.MAP_X + 100, LY.MAP_X - 100, grid):
         dp = near_play(x, y)
         sc = rng.uniform(0.85, 1.25)
         model = FULL[rng.randint(len(FULL))] if dp < 1400 else VISTA[rng.randint(len(VISTA))]
-        prop(None, x, y, gz(x, y) - 4, rng.uniform(0, 360), scale=(sc, sc, sc), stock=model, shadows='0')
+        # round 2 (18 Nov 2026, the user: forest models pop, LOD changes visible): a fixed LOD near play, so they never swap
+        prop(None, x, y, gz(x, y) - 4, rng.uniform(0, 360), scale=(sc, sc, sc), stock=model, shadows='0',
+             lodlevel='0' if dp < 900 else '1' if dp < 1400 else '-1')
         nt += 1
         if dp < 1600 and rng.rand() < 0.45:
             bx, by = x + rng.uniform(-110, 110), y + rng.uniform(-110, 110)
