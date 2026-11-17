@@ -127,8 +127,11 @@ BLEND_FOREST = 'materials/de_ancient/hr_ancient_blend_groundgrass01-grounddirt01
 for m in (BLEND_BATTLE, BLEND_FOREST): vmesh.TEX_SIZE[m] = (1024, 1024)
 
 
+BATTLE_Y = math.ceil(fy(4608) / 512.0) * 512.0   # on a terrain tile edge (one blend per tile; patch_terrain): 3072 (15 bays: 4608)
+
+
 def in_battle(x, y):
-    return (abs(x) < 4096) & (abs(y) < fy(4608))
+    return (abs(x) < 4096) & (abs(y) < BATTLE_Y)
 
 
 # ---------------------------------------------------------------- standing water in the trenches (planned before the terrain so the floor can look wet)
@@ -242,7 +245,7 @@ def terrain_paint(X, Y, Z, D=None):
     f = np.clip((n1 - 0.05) * 2.2 + 0.6 * n2, 0, 1)
     air = (ax > 4300) & (ax < 6950) & (ay < 1150)
     f = np.where(air, np.clip(0.25 * n2, 0, 1), f)
-    f = np.where((ax < 4400) & (ay < fy(4900)), np.minimum(f, np.clip(((np.maximum(ax - 4096, 0)) + np.maximum(ay - fy(4608), 0)) / 300.0, 0, 1)), f)
+    f = np.where((ax < 4400) & (ay < fy(4900)), np.minimum(f, np.clip(((np.maximum(ax - 4096, 0)) + np.maximum(ay - BATTLE_Y, 0)) / 300.0, 0, 1)), f)
     w = np.where(in_battle(X, Y), g, f)
     t = np.clip(0.86 + 0.12 * n1 + 0.06 * n2, 0.7, 1.0)
     t = np.where(in_battle(X, Y) & (w < 0.3), t * 0.94, t)
