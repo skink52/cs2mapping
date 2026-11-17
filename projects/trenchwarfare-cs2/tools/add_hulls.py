@@ -12,7 +12,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PROJ = os.path.dirname(HERE)
 SOLID = ['sign_achtung', 'sign_airfield_de', 'sign_airfield_gb', 'sign_danger', 'sign_dressing_de', 'sign_dressing_gb', 'sign_firetrench_de',
          'sign_firetrench_gb', 'sign_mortars_de', 'sign_mortars_gb', 'sign_piccadilly', 'sign_sap_de', 'sign_sap_gb', 'sign_unter_den_linden',
-         'sign_wood_de', 'sign_wood_gb', 'tl_gong', 'tl_tools']
+         'sign_wood_de', 'sign_wood_gb']   # not tl_gong / tl_tools: a single convex hull made them blocks over the bay spawns (gate, 18 Nov)
 SURF = {'tl_gong': 'metal'}
 
 BLOCK = '''			{
