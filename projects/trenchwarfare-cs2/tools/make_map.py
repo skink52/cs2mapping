@@ -1179,8 +1179,18 @@ for (A, B, w, k) in tun_runs():
     while t_ < L_ - 16:
         x_, y_ = A[0] + ux * t_, A[1] + uy * t_
         f_, cz_ = tun_floor(x_, y_), tun_ceil(x_, y_)
-        prop('tunnel_set', x_, y_, f_, yaw + TN.uniform(-2, 2), roll=TN.uniform(-1.5, 1.5), scale=(1, w / 80.0, max(0.6, (cz_ - f_) / 92.0)), reg=False)
-        nsets += 1
+        jy, jr, jroll = TN.uniform(-2, 2), 0, TN.uniform(-1.5, 1.5)          # drawn every time: the rng sequence stays the same
+        # round 2 (18 Nov 2026, the user: crouch spots, supports crossing the path): no set whose cap would hang under 77 u (the cap is
+        # 0.92 x the headroom: the top of each sap ramp), none standing in a junction, none with a post inside another passage
+        px_, py_ = -uy * w / 2, ux * w / 2
+        inside = lambda X, Y: [i for i, (rx0, ry0, rx1, ry1, kk) in enumerate(TUN) if rx0 + 2 < X < rx1 - 2 and ry0 + 2 < Y < ry1 - 2]
+        own = inside(x_, y_)
+        posts = inside(x_ + px_, y_ + py_) + inside(x_ - px_, y_ - py_)
+        if 0.92 * (cz_ - f_) < 77.0 or len(own) > 1 or any(i not in own for i in posts):
+            nskip_sets = globals().get('nskip_sets', 0) + 1; globals()['nskip_sets'] = nskip_sets
+        else:
+            prop('tunnel_set', x_, y_, f_, yaw + jy, roll=jroll, scale=(1, w / 80.0, max(0.6, (cz_ - f_) / 92.0)), reg=False)
+            nsets += 1
         t_ += 48.0 + TN.uniform(-4, 4)
     if k in ('gallery', 'cross'):          # duckboards down the middle
         t_ = 64.0
@@ -1222,7 +1232,7 @@ for (nm, x, y, yaw, dz) in (('crate_shells', -24, -3380, 0, 0), ('crate_shells',
 for (x, y) in ((0, -3300 + TDY), (0, -3440 + TDY)):            # the chamber keeps two shadowed lamps (only the sun overlaps them)
     tun_lamp(x, y, tun_ceil(x, y) - 18, 600, '255 180 104', rmax=150.0, shadows=True)
 clone('env_combined_light_probe_volume', (0, -3216 + TDY, -200), box_mins='-2260 -340 -90', box_maxs='2260 400 120', voxel_size='32.0', targetname='tunnel_probe')
-print('mine tunnels: %d timber sets, %d lamps' % (nsets, nlamp))
+print('mine tunnels: %d timber sets (%d left out: low cap / junction / post in a passage), %d lamps' % (nsets, globals().get('nskip_sets', 0), nlamp))
 
 # ---------------------------------------------------------------- woods skirmish: a ladder out of the north end of each fire trench,
 # a fenced track through the shell-holes and a fenced clearing in the wood where both sides meet (own rng: nothing above shifts)
