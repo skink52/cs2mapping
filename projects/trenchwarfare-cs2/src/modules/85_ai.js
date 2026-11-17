@@ -193,7 +193,7 @@ function aiSteer(p, a, t) {
       if (!ok || t > ai.until || past) { ai.state = "patrol"; ai.next = t + A.ATTACK_COOLDOWN; ai.wp = undefined; }
     }
     if (ai.state === "patrol") {
-      if (!ai.wp || dist2(a.pos, ai.wp) < A.ARRIVE) ai.wp = v3(side * (1500 + Math.random() * 900), (Math.random() * 2 - 1) * 2600, 0);
+      if (!ai.wp || dist2(a.pos, ai.wp) < A.ARRIVE) ai.wp = v3(side * (1500 + Math.random() * 900), (Math.random() * 2 - 1) * 1000, 0);   // short front: patrol the 5-bay line (was +-2600)
       if (t >= ai.next) {
         const s = aiStrafeTarget(a, enemy), pw = s >= 0 ? pawnOf(s) : undefined;
         if (pw) { stats.aiAttacks = (stats.aiAttacks || 0) + 1; ai.state = "attack"; ai.tgt = s; ai.tpos = pw.GetAbsOrigin(); ai.until = t + A.ATTACK_TIME; ai.reactAt = t + A.REACT; }

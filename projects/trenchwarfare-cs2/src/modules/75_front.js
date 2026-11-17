@@ -31,7 +31,7 @@ function tickAmbient() {
   const t = now(); if (t < nextAmbient) return;
   nextAmbient = t + CONFIG.AMBIENT_MIN + Math.random() * (CONFIG.AMBIENT_MAX - CONFIG.AMBIENT_MIN);
   for (let tries = 0; tries < 6; tries++) {
-    const x = (Math.random() * 2 - 1) * 1250, y = (Math.random() * 2 - 1) * 3200;
+    const x = (Math.random() * 2 - 1) * 1250, y = (Math.random() * 2 - 1) * 1280;   // short front (was 3200)
     let near = false;
     for (let s = 0; s < 64 && !near; s++) { const pw = pawnOf(s); if (pw && pw.IsAlive() && dist2(pw.GetAbsOrigin(), { x, y }) < CONFIG.AMBIENT_CLEAR) near = true; }
     if (near) continue;

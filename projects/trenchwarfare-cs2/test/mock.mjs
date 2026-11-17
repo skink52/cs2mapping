@@ -995,11 +995,11 @@ if (SCEN === 'yield') {
       }, 'yield (ground): no hand-over within 10 s', 1 / 64);
     });
   }
-  // (c) a mortar seat: script crews in all five T pits; a human asks for the mortar and takes a seat a bot ran, the same tick
+  // (c) a mortar seat: script crews in every T pit (CFG.CREWS: 2 since the short front); a human asks for the mortar and takes a seat a bot ran, the same tick
   function seatPiece() {
-    CFG.AI.PILOTS = 0; CFG.AI.CREWS = 5;
+    CFG.AI.PILOTS = 0; CFG.AI.CREWS = CFG.CREWS;
     poll(() => dbg().crews[T_].every((c) => { const q = c.a >= 0 ? PR(c.a) : undefined; return q && q.aiRole === 'crew'; }), 20, () => {
-      piece('all 5 T crews run by script bots');
+      piece('all T crews run by script bots');
       const h = humansOf(T_).find((c) => alive(c)); if (!h) { fail('yield (seat): no T human'); return; }
       const before = new Map(dbg().crews[T_].map((c, k) => [k, c.a]));
       const foe = everyone().find((c) => c.team !== T_ && alive(c));          // a pilot in the air only takes enemy damage (the guard)
@@ -1014,7 +1014,7 @@ if (SCEN === 'yield') {
         if (dbg().stats.yields.seat !== 1) fail('yield (seat): ' + dbg().stats.yields.seat + ' seat hand-overs counted');
         piece('human takes a bot-held mortar seat (same tick)');
       }, 'yield (seat): the human who asked never got a seat', 1 / 64);
-    }, 'yield (seat): the script crews never held all 5 T pits');
+    }, 'yield (seat): the script crews never held all the T pits');
   }
 }
 if (SCEN === 'threshold') {

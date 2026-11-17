@@ -31,7 +31,7 @@ const CONFIG = {
   LOBBY_RESPAWN: 1.5,        // ... and after every respawn
   MORTAR_CHANCE: 0.4,        // chance a new player is put on a mortar crew (if a seat is free)
   ROTATE_CHANCE: 0.12,       // on respawn, chance to be moved to the other ground role ("a taste of everything")
-  CREWS: 5,
+  CREWS: 2,                           // mortar pits a side (short front, 18 Nov 2026: was 5)
   // WW1 weapons come from the addon's weapons.vdata (models, magazines): T Gewehr 98 = weapon_awp, Luger = weapon_glock;
   // CT Lee-Enfield = weapon_ssg08, Colt M1911 = weapon_hkp2000. Streak upgrade: T Mondragon = weapon_g3sg1, CT Lewis gun = weapon_scar20.
   INF_RIFLE: { 2: "weapon_awp", 3: "weapon_ssg08" },
@@ -42,7 +42,7 @@ const CONFIG = {
   INF_ARMOR: 50,
   HEAL_RADIUS: 120, HEAL_HP_PER_S: 12, HEAL_ARMOR_PER_S: 25,
   STATION_RADIUS: 72,
-  TARGET_EXT: 4600,                    // targeting map covers x, y in [-EXT, EXT] (render_top.py EXT); includes the wood
+  TARGET_EXT: 3600,                    // targeting map covers x, y in [-EXT, EXT] (render_sight.py); the pits (x 3200) and the wood (to y 2500); was 4600
   TARGET_STEPS: 192,
   SIGHT_SPEED: 60, SIGHT_FINE: 14,     // steps per second
   SHELL_RADIUS: 330, SHELL_DAMAGE: 170, TRENCH_COVER: 0.35,
@@ -117,7 +117,7 @@ const CONFIG = {
     LEASH: 170, LEASH_Z: 160, LEASH_TIME: 3,   // a bot this close (dz) to a still-closed area's blocker for LEASH_TIME goes back to a post
     LEASH_AVOID: 400,          // the leash's post is at least this far from a closed blocker
     CHECK: 1.0,                // seconds between a bot's out-of-play checks
-    NML_X: 1450, NML_Y: 2750, NML_ZMIN: -150,   // no man's land (tools/check_play.py T5): |x| < NML_X, |y| < NML_Y, above the galleries
+    NML_X: 1450, NML_Y: 830, NML_ZMIN: -150,     // no man's land (tools/check_play.py T5): |x| < NML_X, |y| < NML_Y, above the galleries
     LOBBY_Z: -1500,            // a deployed bot below this is back in the briefing room
     FAR: 1500,                 // farther than this from every post (both sides), dressing station and opened area point: out of play
     OUT_TIME: 3,               // seconds out of play (no man's land, briefing room, far) before the bot goes back to a post
@@ -127,11 +127,11 @@ const CONFIG = {
     AREA_MAX: 4,               // at most this many bots of a side deployed into one opened area at a time
     // inside the opened areas (CT side; T mirrors x): tools/layout.py ground + 8 (woods clearing, the step-5 seeds) and the tunnel landing
     AREAS: {
-      woodsopen: [{ x: 605, y: 3930, z: 10 }, { x: 1110, y: 3700, z: 10 }, { x: 1110, y: 4150, z: 6 }],
+      woodsopen: [{ x: 605, y: 2010, z: 10 }, { x: 1110, y: 1780, z: 10 }, { x: 1110, y: 2230, z: 6 }],         // short front: woods y - 1920
       // the mine galleries, on ground that keeps its nav after tools/patch_nav.py (it cuts the southern gallery): the landing at the foot
       // of the sap, the northern gallery (duckboard top + 8) and the chamber edge where that gallery comes in (x 130 mirrors to -130,
       // so the two sides meet in the chamber). The user's sap benches are steps: players get in crouched (check_play T9, simulated)
-      undergroundopen: [{ x: 2120, y: -3296, z: -252 }, { x: 1100, y: -3272, z: -247 }, { x: 130, y: -3272, z: -258 }],
+      undergroundopen: [{ x: 2120, y: -1376, z: -252 }, { x: 1100, y: -1352, z: -247 }, { x: 130, y: -1352, z: -258 }],   // galleries y + 1920
     },
   },
   AI: {
@@ -1382,7 +1382,7 @@ function tickAmbient() {
   const t = now(); if (t < nextAmbient) return;
   nextAmbient = t + CONFIG.AMBIENT_MIN + Math.random() * (CONFIG.AMBIENT_MAX - CONFIG.AMBIENT_MIN);
   for (let tries = 0; tries < 6; tries++) {
-    const x = (Math.random() * 2 - 1) * 1250, y = (Math.random() * 2 - 1) * 3200;
+    const x = (Math.random() * 2 - 1) * 1250, y = (Math.random() * 2 - 1) * 1280;   // short front (was 3200)
     let near = false;
     for (let s = 0; s < 64 && !near; s++) { const pw = pawnOf(s); if (pw && pw.IsAlive() && dist2(pw.GetAbsOrigin(), { x, y }) < CONFIG.AMBIENT_CLEAR) near = true; }
     if (near) continue;
@@ -1588,7 +1588,7 @@ function aiSteer(p, a, t) {
       if (!ok || t > ai.until || past) { ai.state = "patrol"; ai.next = t + A.ATTACK_COOLDOWN; ai.wp = undefined; }
     }
     if (ai.state === "patrol") {
-      if (!ai.wp || dist2(a.pos, ai.wp) < A.ARRIVE) ai.wp = v3(side * (1500 + Math.random() * 900), (Math.random() * 2 - 1) * 2600, 0);
+      if (!ai.wp || dist2(a.pos, ai.wp) < A.ARRIVE) ai.wp = v3(side * (1500 + Math.random() * 900), (Math.random() * 2 - 1) * 1000, 0);   // short front: patrol the 5-bay line (was +-2600)
       if (t >= ai.next) {
         const s = aiStrafeTarget(a, enemy), pw = s >= 0 ? pawnOf(s) : undefined;
         if (pw) { stats.aiAttacks = (stats.aiAttacks || 0) + 1; ai.state = "attack"; ai.tgt = s; ai.tpos = pw.GetAbsOrigin(); ai.until = t + A.ATTACK_TIME; ai.reactAt = t + A.REACT; }
