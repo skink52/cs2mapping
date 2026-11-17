@@ -33,7 +33,7 @@ function fireMortar(team, k, firerSlot) {
   c.loader = -1; c.loaderGen = 0;
   for (const s of [c.a, c.b]) { const q = s >= 0 ? players.get(s) : undefined; if (q) q.firedAt = now(); }
   stats.shots++;
-  for (const s of [c.a, c.b]) if (s >= 0) toast(P(s), "Shot out! Splash in " + (t - now()).toFixed(1) + "s", 2.5);
+  for (const s of [c.a, c.b]) if (s >= 0) toast(P(s), "Round away. Impact in " + (t - now()).toFixed(1) + "s", 2.5);
   return true;
 }
 function effects(pos, quiet) {
@@ -140,10 +140,10 @@ function tickMortar(p, pawn, dt, pressed, held) {
     p.u = Math.max(0, Math.min(0.9999, p.u)); p.v = Math.max(0, Math.min(0.9999, p.v));
     if (pressed & CSInputs.ATTACK) {
       c.target = sightToWorld(team, p.u, p.v); stats.sightLocks++;
-      for (const s of [c.a, c.b]) if (s >= 0) toast(P(s), "Target locked: " + gridRef(p.u, p.v), 2);
+      for (const s of [c.a, c.b]) if (s >= 0) toast(P(s), "Target set: " + gridRef(p.u, p.v), 2);
     }
     if (pressed & CSInputs.JUMP) {
-      if (!fireMortar(team, p.crew, p.slot)) toast(p, c.loaded ? (c.target ? "Wait..." : "Lock a target first (MOUSE 1)") : "Tube is empty - fetch a bomb", 2);
+      if (!fireMortar(team, p.crew, p.slot)) toast(p, c.loaded ? (c.target ? "Tube clearing" : "Set a target first  [MOUSE 1]") : "Tube empty. Fetch a round", 2);
     }
     if (pressed & (CSInputs.USE | CSInputs.ATTACK2)) leaveSight(p, pawn);
     return "";
@@ -160,24 +160,24 @@ function tickMortar(p, pawn, dt, pressed, held) {
     return "[E] Use the mortar sight";
   }
   if (at === "ammo") {
-    if (c.loaded) return "The mortar is already loaded";
-    if (p.carrying) return "Carrying a bomb - load it at the mortar";
-    if (pressed & CSInputs.USE) { p.carrying = true; toast(p, "Bomb in hand", 1.5); return ""; }
+    if (c.loaded) return "Tube already loaded";
+    if (p.carrying) return "Load the round at the mortar";
+    if (pressed & CSInputs.USE) { p.carrying = true; toast(p, "Round taken", 1.5); return ""; }
     return "[E] Take a mortar bomb";
   }
   if (at === "tube") {
     if (p.carrying && !c.loaded) {
-      if (pressed & CSInputs.USE) { p.carrying = false; c.loaded = true; c.loader = p.slot; c.loaderGen = p.gen; stats.loads++; for (const s of [c.a, c.b]) if (s >= 0) toast(P(s), "Mortar loaded", 2); return ""; }
+      if (pressed & CSInputs.USE) { p.carrying = false; c.loaded = true; c.loader = p.slot; c.loaderGen = p.gen; stats.loads++; for (const s of [c.a, c.b]) if (s >= 0) toast(P(s), "Loaded", 2); return ""; }
       return "[E] Load the bomb";
     }
     if (c.loaded && c.target) {
       if (pressed & CSInputs.USE) { fireMortar(team, p.crew, p.slot); return ""; }
-      return now() < c.cooldown ? "Clearing the tube..." : "[E] FIRE";
+      return now() < c.cooldown ? "Tube clearing" : "[E] FIRE";
     }
-    if (c.loaded) return "Loaded - plot a target at the table";
-    return "Tube empty - fetch a bomb from the ammunition box";
+    if (c.loaded) return "Loaded. Set a target at the plotting table";
+    return "Tube empty. Fetch a round from the ammo box";
   }
-  return p.carrying ? "Carrying a bomb" : "";
+  return p.carrying ? "Carrying a round" : "";
 }
 
 function drawSight(p) {
@@ -198,5 +198,5 @@ function drawSight(p) {
   hText(p, "tw_t_range", "RANGE  " + Math.round(range * 0.0254) + " m");
   hText(p, "tw_t_grid", "GRID  " + gridRef(p.u, p.v) + (c.target ? "   LOCKED" : ""));
   hText(p, "tw_t_tube", "TUBE  " + (c.loaded ? "LOADED" : "EMPTY") + (now() < c.cooldown ? " (clearing)" : ""));
-  hText(p, "tw_t_state", c.loaded && c.target ? "READY - JUMP TO FIRE" : (!c.target ? "PLOT A TARGET" : "AWAITING BOMB"));
+  hText(p, "tw_t_state", c.loaded && c.target ? "READY   [SPACE] FIRE" : (!c.target ? "SET A TARGET" : "LOAD THE TUBE"));
 }

@@ -74,7 +74,7 @@ function aiYieldAircraft(team, h) {
     aiRelease(q, "yield");
     if (ac.pilot >= 0) continue;
     stats.yields.air++;
-    toast(h, "A bot pilot handed his aircraft over to you", 4);
+    toast(h, "You have the aircraft", 4);
     return ac;
   }
   return undefined;

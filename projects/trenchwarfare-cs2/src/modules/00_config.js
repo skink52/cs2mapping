@@ -96,8 +96,8 @@ const CONFIG = {
   // blocked areas opened during the round: every map entity with this targetname is blown open (removed + explosion) at whichever
   // comes first, enemy kills by anyone since the round started or seconds since the round started. Map entities return every round.
   UNLOCKS: [
-    { name: "woodsopen", kills: 15, time: 240, msg: "THE WAY TO THE WOOD IS OPEN - ladder at the north end of the fire trench" },
-    { name: "undergroundopen", kills: 30, time: 480, msg: "THE MINE GALLERIES ARE OPEN - saps at the south end of the support trench" },
+    { name: "woodsopen", kills: 15, time: 240, msg: "THE WOOD IS OPEN - Climb out at the north end of the fire trench" },
+    { name: "undergroundopen", kills: 30, time: 480, msg: "THE MINES ARE BREACHED - Enter by the saps at the south end of the support trench" },
   ],
   CVARS: ["mp_respawn_on_death_t 1", "mp_respawn_on_death_ct 1", "mp_respawn_immunitytime 0", "mp_freezetime 0",
           "mp_roundtime 60", "mp_buy_anywhere 0", "mp_buytime 0", "mp_death_drop_gun 0", "mp_weapons_allow_map_placed 1",
@@ -147,4 +147,4 @@ const CONFIG = {
 const T = 2, CT = 3;
 const tagOf = (team) => (team === T ? "t" : "ct");
 const enemyOf = (team) => (team === T ? CT : T);
-const ROLE_NAME = { infantry: "INFANTRY", mortar: "TRENCH MORTAR CREW", air: "AIRCREW" };
+const ROLE_NAME = { infantry: "RIFLEMAN", mortar: "MORTAR CREW", air: "PILOT" };

@@ -86,7 +86,7 @@ function requestRole(p, role) {
   if (p.role === role) return;
   if (p.deployed) { stats.deferred++; return; }
   const open = role === "air" ? airFree(team, true) : role === "mortar" ? seatFree(team, true) : true;
-  if (!open) { toast(p, role === "air" ? "All aircraft are up - you're next in line" : "Mortar crews are full - you're next in line", 4); return; }
+  if (!open) { toast(p, role === "air" ? "All aircraft are up. You're next." : "All mortar posts are manned. You're next.", 4); return; }
   setRole(p, role, team);
 }
 // leaving a side (team switch, spectating, disconnect), alive or dead: the crew seat, the aircraft and the sight are given up
@@ -164,9 +164,9 @@ function deploy(p, pawn) {
   p.deployed = true; p.deployedAt = now(); p.lastActive = now(); p.outT = 0;
   if (p.role === "air" && !startFlight(p, pawn, dest)) { if (p.aiRole) aiDrop(p, pawn, "lost"); setRole(p, "infantry", team); deploy(p, pawn); return; }
   stats.deploys[p.role] = (stats.deploys[p.role] || 0) + 1;
-  const sub = p.role === "infantry" ? "Hold the fire trench. Dressing stations heal you." :
-              p.role === "mortar" ? "Crew " + (p.crew + 1) + ": plot at the table, fetch bombs, load and fire." :
-              "Mouse aim, A/D roll, W/S throttle, LMB guns, RMB bomb, E view. " + p.lives + " lives.";
+  const sub = p.role === "infantry" ? "Hold the fire trench." :
+              p.role === "mortar" ? "Tube " + (p.crew + 1) + ". Set a target, load, fire." :
+              "[E] cockpit view.   Sorties left: " + p.lives;
   banner(p, ROLE_NAME[p.role], sub, 5);
 }
 // the pilot rides inside the aircraft model: shrink the pawn rather than touching its render colour/alpha (changing the render

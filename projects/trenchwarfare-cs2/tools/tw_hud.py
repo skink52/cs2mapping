@@ -507,7 +507,7 @@ def build_layout():
 
     def sight(sid, cls):
         return P(sid, 'SCol', P(sid + 'y', 'SRow', P(sid + 'a', 'SArt ' + cls)))
-    fly = P('tw_fly', '', P('tw_fly_help', tag='Label', text='MOUSE aim    A / D roll    W / S throttle    MOUSE 1 guns    MOUSE 2 bomb') +
+    fly = P('tw_fly', '', P('tw_fly_help', tag='Label', text='[MOUSE] Steer    [A/D] Roll    [W/S] Throttle    [MOUSE 1] Guns    [MOUSE 2] Bomb') +
             P('tw_fly_info', tag='Label') + P('tw_dash', '', P('tw_dashrow', '', row)) + side +
             sight('tw_bring', 'Ring') + sight('tw_gpip', 'Pip'))          # sights last: drawn over the dash
     parts.append(fly)
@@ -556,7 +556,7 @@ def check_contract(xml, css_text):
 
 def states():
     s = {}
-    s['lobby'] = {'_chat_top': 800, 'tw_brief': {'add': ['show']}, 'tw_brief_role': {'text': 'TRENCH MORTAR CREW'},
+    s['lobby'] = {'_chat_top': 800, 'tw_brief': {'add': ['show']}, 'tw_brief_role': {'text': 'MORTAR CREW'},
                   'tw_brief_l1': {'text': 'Crew 2 of 5. Plot targets at the map table,'}, 'tw_brief_l2': {'text': 'fetch bombs from the ammunition box,'},
                   'tw_brief_l3': {'text': 'load and fire the mortar. Swap jobs freely.'},
                   'tw_brief_count': {'text': 'Moving up in 3s   (chat: !mortar  !infantry  !roles)'},
@@ -564,7 +564,7 @@ def states():
                   'tw_info_l2': {'text': 'MORTARS (4/10)  -  !mortar'}, 'tw_info_l3': {'text': 'AIRCRAFT (2/5)  -  !air'},
                   'tw_info_l4': {'text': '!swap  -  switch between unlocked primaries'}, 'tw_info_foot': {'text': "Type a role's command to see its orders and ask for it."},
                   'tw_toast': {'add': ['show']}, 'tw_toast_text': {'text': 'Mortar crews are full - you\'re next in line'}}
-    s['infantry'] = {'tw_status': {'add': ['show']}, 'tw_st_role': {'text': 'INFANTRY'}, 'tw_st_l1': {'text': 'Rifle: Lee-Enfield'},
+    s['infantry'] = {'tw_status': {'add': ['show']}, 'tw_st_role': {'text': 'RIFLEMAN'}, 'tw_st_l1': {'text': 'Rifle: Lee-Enfield'},
                      'tw_st_l2': {'text': 'Streak 2 / 3 for an upgrade'}, 'tw_st_l3': {'text': 'Kills: 7'},
                      'tw_prompt': {'add': ['show']}, 'tw_prompt_text': {'text': 'Dressing station - patching you up'},
                      'tw_toast': {'add': ['show']}, 'tw_toast_text': {'text': 'Standard agent model from your next deploy - !uniform to undo'},

@@ -47,12 +47,12 @@ function info(p, title, lines, foot, secs) {
 }
 function roleCard(p, role) {
   const team = p.team === T || p.team === CT ? p.team : CT;
-  if (role === "infantry") return info(p, "INFANTRY", [CONFIG.RIFLE_NAME[team], "Hold the line.", "Earn new equipment with multiple kills.",
-    "SHIFT+E / !swap to revert to old weapons."], "You'll go to the fire trench when you next deploy.");
-  if (role === "mortar") return info(p, "MORTARS", ["Crews of two.", "Aim on the map table: E, then WASD.", "MOUSE1 lock, SPACE fire.", "Load from the ammo box with E."],
-    "You'll join a mortar crew when you next deploy (if a seat is free).");
-  if (role === "air") return info(p, "AIRCRAFT", ["!air to nominate to be a pilot.", "Mouse steers, W/S throttle, A/D roll.", "MOUSE1 guns, MOUSE2 bombs.", "2 lives, back to ground."],
-    CONFIG.AIR_ENABLED ? "Nominated - you're more likely to be posted to the aerodrome." : "No aircraft yet - noted for later.");
+  if (role === "infantry") return info(p, "RIFLEMAN", [CONFIG.RIFLE_NAME[team], "Hold the fire trench.", "Kill streaks earn better weapons.",
+    "[SHIFT+E] or !swap: change weapon."], "Assigned from your next deployment.");
+  if (role === "mortar") return info(p, "MORTAR CREW", ["Two to a tube.", "[E] at the plotting table, [WASD] to aim.", "[MOUSE 1] set target, [SPACE] fire.", "[E] at the ammo box for a round."],
+    "Assigned from your next deployment, if a post is free.");
+  if (role === "air") return info(p, "PILOT", ["!air to volunteer.", "[MOUSE] steer, [W/S] throttle, [A/D] roll.", "[MOUSE 1] guns, [MOUSE 2] bomb.", "Two sorties, then back to the line."],
+    CONFIG.AIR_ENABLED ? "Volunteered. You're first in line for the next aircraft." : "No aircraft on this front yet.");
 }
 function banner(p, title, sub, secs) { hText(p, "tw_banner_title", title); hText(p, "tw_banner_sub", sub); p.bannerUntil = now() + (secs || 5); }
 // a front-wide headline ("THE WAY TO THE WOOD IS OPEN - ladder at the north end..."): the part before " - " is the title, the rest

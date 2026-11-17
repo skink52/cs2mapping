@@ -187,7 +187,7 @@ function startFlight(p, pawn, dest) {
   const list = (points.aircraft[team] || []).filter(a => live(a.ent));
   // a human takes one a script bot flies when none is free: the bot gives it up in this same call (aiYieldAircraft)
   const ac = list.find(a => a.pilot === p.slot) || list.find(a => a.pilot < 0) || (p.bot ? undefined : aiYieldAircraft(team, p));
-  if (!ac) { toast(p, "No aircraft free - back to the trenches", 4); return false; }
+  if (!ac) { toast(p, "No aircraft available. Return to the line.", 4); return false; }
   ac.pilot = p.slot;
   const A = CONFIG.AIR;
   const base = dest ? dest.pos : ac.park;
@@ -298,9 +298,9 @@ function tickAir(p, pawn, dt, pressed, held, steer) {
     const y = ya + bw.w * dh;
     const pz = clampN(aim.z + (clampN(home.z, -0.3, 0.3) - aim.z) * bw.w, -1, 1), hz = Math.sqrt(1 - pz * pz);
     aim = v3(Math.cos(y) * hz, Math.sin(y) * hz, pz);
-    prompt = bw.kind === "z" ? "Too high - engine starving" : "Leaving the front - turning back";
+    prompt = bw.kind === "z" ? "ALTITUDE TOO HIGH" : "LEAVING THE FRONT";
   } else a.wallSide = 0;
-  if (a.speed < A.V_STALL) { aim = vnorm(v3(aim.x, aim.y, Math.min(aim.z, -0.5))); prompt = "STALL - nose down"; }
+  if (a.speed < A.V_STALL) { aim = vnorm(v3(aim.x, aim.y, Math.min(aim.z, -0.5))); prompt = "STALL: NOSE DOWN"; }
   const gz = groundZ(a.pos.x, a.pos.y);
   a.gz = gz;
   // look-ahead pull-up warning (trees, hangars, hills), a few planes per tick
@@ -349,7 +349,7 @@ function tickAir(p, pawn, dt, pressed, held, steer) {
   if (a.ammo <= 0 && t >= a.reloadAt) { a.ammo = A.GUN_AMMO; }
   if ((held & CSInputs.ATTACK) && t >= a.nextGun && a.ammo > 0) {
     a.nextGun = t + A.GUN_INTERVAL; stats.gunRounds++; if (steer) stats.aiGunRounds++;
-    if (--a.ammo <= 0) { a.reloadAt = t + A.GUN_RELOAD; toast(p, "Belt empty - re-arming", 2); }
+    if (--a.ammo <= 0) { a.reloadAt = t + A.GUN_RELOAD; toast(p, "Guns empty. Reloading", 2); }
     if ((a.ammo % A.GUN_SOUND_EVERY) === 0) {
       const gk = ["gun", "gun2", "gun3"][a.ac.si++ % 3];
       fire("tw_plane_" + gk + "_" + a.ac.ent.GetEntityName().slice("tw_plane_".length), "StartSound");
@@ -381,7 +381,7 @@ function tickAir(p, pawn, dt, pressed, held, steer) {
     const be = a.ac.bombEnts.find(e => !bombs.some(b => b.ent === e));
     bombs.push({ pos: v3(a.pos.x, a.pos.y, a.pos.z - 20), vel: v3(a.f.x * a.speed, a.f.y * a.speed, a.f.z * a.speed), team: pawn.GetTeamNumber(), slot: p.slot, gen: p.gen, ent: be, ac: a.ac });
     stats.bombs++; if (steer) stats.aiBombs++;
-    toast(p, "Bomb away!", 1.5);
+    toast(p, "Bomb away", 1.5);
   }
   const smoking = pawn.GetHealth() <= CONFIG.AIR.SMOKE_HP;
   if (smoking !== !!a.smoking) { a.smoking = smoking; fire("tw_plane_smoke_" + a.ac.ent.GetEntityName().slice("tw_plane_".length), smoking ? "Start" : "Stop"); }

@@ -101,8 +101,8 @@ const CONFIG = {
   // blocked areas opened during the round: every map entity with this targetname is blown open (removed + explosion) at whichever
   // comes first, enemy kills by anyone since the round started or seconds since the round started. Map entities return every round.
   UNLOCKS: [
-    { name: "woodsopen", kills: 15, time: 240, msg: "THE WAY TO THE WOOD IS OPEN - ladder at the north end of the fire trench" },
-    { name: "undergroundopen", kills: 30, time: 480, msg: "THE MINE GALLERIES ARE OPEN - saps at the south end of the support trench" },
+    { name: "woodsopen", kills: 15, time: 240, msg: "THE WOOD IS OPEN - Climb out at the north end of the fire trench" },
+    { name: "undergroundopen", kills: 30, time: 480, msg: "THE MINES ARE BREACHED - Enter by the saps at the south end of the support trench" },
   ],
   CVARS: ["mp_respawn_on_death_t 1", "mp_respawn_on_death_ct 1", "mp_respawn_immunitytime 0", "mp_freezetime 0",
           "mp_roundtime 60", "mp_buy_anywhere 0", "mp_buytime 0", "mp_death_drop_gun 0", "mp_weapons_allow_map_placed 1",
@@ -152,7 +152,7 @@ const CONFIG = {
 const T = 2, CT = 3;
 const tagOf = (team) => (team === T ? "t" : "ct");
 const enemyOf = (team) => (team === T ? CT : T);
-const ROLE_NAME = { infantry: "INFANTRY", mortar: "TRENCH MORTAR CREW", air: "AIRCREW" };
+const ROLE_NAME = { infantry: "RIFLEMAN", mortar: "MORTAR CREW", air: "PILOT" };
 
 // ---- 10_util.js
 // 10_util: small helpers: entities, players, effects by name, vectors and angles, ground traces
@@ -429,12 +429,12 @@ function info(p, title, lines, foot, secs) {
 }
 function roleCard(p, role) {
   const team = p.team === T || p.team === CT ? p.team : CT;
-  if (role === "infantry") return info(p, "INFANTRY", [CONFIG.RIFLE_NAME[team], "Hold the line.", "Earn new equipment with multiple kills.",
-    "SHIFT+E / !swap to revert to old weapons."], "You'll go to the fire trench when you next deploy.");
-  if (role === "mortar") return info(p, "MORTARS", ["Crews of two.", "Aim on the map table: E, then WASD.", "MOUSE1 lock, SPACE fire.", "Load from the ammo box with E."],
-    "You'll join a mortar crew when you next deploy (if a seat is free).");
-  if (role === "air") return info(p, "AIRCRAFT", ["!air to nominate to be a pilot.", "Mouse steers, W/S throttle, A/D roll.", "MOUSE1 guns, MOUSE2 bombs.", "2 lives, back to ground."],
-    CONFIG.AIR_ENABLED ? "Nominated - you're more likely to be posted to the aerodrome." : "No aircraft yet - noted for later.");
+  if (role === "infantry") return info(p, "RIFLEMAN", [CONFIG.RIFLE_NAME[team], "Hold the fire trench.", "Kill streaks earn better weapons.",
+    "[SHIFT+E] or !swap: change weapon."], "Assigned from your next deployment.");
+  if (role === "mortar") return info(p, "MORTAR CREW", ["Two to a tube.", "[E] at the plotting table, [WASD] to aim.", "[MOUSE 1] set target, [SPACE] fire.", "[E] at the ammo box for a round."],
+    "Assigned from your next deployment, if a post is free.");
+  if (role === "air") return info(p, "PILOT", ["!air to volunteer.", "[MOUSE] steer, [W/S] throttle, [A/D] roll.", "[MOUSE 1] guns, [MOUSE 2] bomb.", "Two sorties, then back to the line."],
+    CONFIG.AIR_ENABLED ? "Volunteered. You're first in line for the next aircraft." : "No aircraft on this front yet.");
 }
 function banner(p, title, sub, secs) { hText(p, "tw_banner_title", title); hText(p, "tw_banner_sub", sub); p.bannerUntil = now() + (secs || 5); }
 // a front-wide headline ("THE WAY TO THE WOOD IS OPEN - ladder at the north end..."): the part before " - " is the title, the rest
@@ -534,7 +534,7 @@ function requestRole(p, role) {
   if (p.role === role) return;
   if (p.deployed) { stats.deferred++; return; }
   const open = role === "air" ? airFree(team, true) : role === "mortar" ? seatFree(team, true) : true;
-  if (!open) { toast(p, role === "air" ? "All aircraft are up - you're next in line" : "Mortar crews are full - you're next in line", 4); return; }
+  if (!open) { toast(p, role === "air" ? "All aircraft are up. You're next." : "All mortar posts are manned. You're next.", 4); return; }
   setRole(p, role, team);
 }
 // leaving a side (team switch, spectating, disconnect), alive or dead: the crew seat, the aircraft and the sight are given up
@@ -612,9 +612,9 @@ function deploy(p, pawn) {
   p.deployed = true; p.deployedAt = now(); p.lastActive = now(); p.outT = 0;
   if (p.role === "air" && !startFlight(p, pawn, dest)) { if (p.aiRole) aiDrop(p, pawn, "lost"); setRole(p, "infantry", team); deploy(p, pawn); return; }
   stats.deploys[p.role] = (stats.deploys[p.role] || 0) + 1;
-  const sub = p.role === "infantry" ? "Hold the fire trench. Dressing stations heal you." :
-              p.role === "mortar" ? "Crew " + (p.crew + 1) + ": plot at the table, fetch bombs, load and fire." :
-              "Mouse aim, A/D roll, W/S throttle, LMB guns, RMB bomb, E view. " + p.lives + " lives.";
+  const sub = p.role === "infantry" ? "Hold the fire trench." :
+              p.role === "mortar" ? "Tube " + (p.crew + 1) + ". Set a target, load, fire." :
+              "[E] cockpit view.   Sorties left: " + p.lives;
   banner(p, ROLE_NAME[p.role], sub, 5);
 }
 // the pilot rides inside the aircraft model: shrink the pawn rather than touching its render colour/alpha (changing the render
@@ -862,7 +862,7 @@ function startFlight(p, pawn, dest) {
   const list = (points.aircraft[team] || []).filter(a => live(a.ent));
   // a human takes one a script bot flies when none is free: the bot gives it up in this same call (aiYieldAircraft)
   const ac = list.find(a => a.pilot === p.slot) || list.find(a => a.pilot < 0) || (p.bot ? undefined : aiYieldAircraft(team, p));
-  if (!ac) { toast(p, "No aircraft free - back to the trenches", 4); return false; }
+  if (!ac) { toast(p, "No aircraft available. Return to the line.", 4); return false; }
   ac.pilot = p.slot;
   const A = CONFIG.AIR;
   const base = dest ? dest.pos : ac.park;
@@ -973,9 +973,9 @@ function tickAir(p, pawn, dt, pressed, held, steer) {
     const y = ya + bw.w * dh;
     const pz = clampN(aim.z + (clampN(home.z, -0.3, 0.3) - aim.z) * bw.w, -1, 1), hz = Math.sqrt(1 - pz * pz);
     aim = v3(Math.cos(y) * hz, Math.sin(y) * hz, pz);
-    prompt = bw.kind === "z" ? "Too high - engine starving" : "Leaving the front - turning back";
+    prompt = bw.kind === "z" ? "ALTITUDE TOO HIGH" : "LEAVING THE FRONT";
   } else a.wallSide = 0;
-  if (a.speed < A.V_STALL) { aim = vnorm(v3(aim.x, aim.y, Math.min(aim.z, -0.5))); prompt = "STALL - nose down"; }
+  if (a.speed < A.V_STALL) { aim = vnorm(v3(aim.x, aim.y, Math.min(aim.z, -0.5))); prompt = "STALL: NOSE DOWN"; }
   const gz = groundZ(a.pos.x, a.pos.y);
   a.gz = gz;
   // look-ahead pull-up warning (trees, hangars, hills), a few planes per tick
@@ -1024,7 +1024,7 @@ function tickAir(p, pawn, dt, pressed, held, steer) {
   if (a.ammo <= 0 && t >= a.reloadAt) { a.ammo = A.GUN_AMMO; }
   if ((held & CSInputs.ATTACK) && t >= a.nextGun && a.ammo > 0) {
     a.nextGun = t + A.GUN_INTERVAL; stats.gunRounds++; if (steer) stats.aiGunRounds++;
-    if (--a.ammo <= 0) { a.reloadAt = t + A.GUN_RELOAD; toast(p, "Belt empty - re-arming", 2); }
+    if (--a.ammo <= 0) { a.reloadAt = t + A.GUN_RELOAD; toast(p, "Guns empty. Reloading", 2); }
     if ((a.ammo % A.GUN_SOUND_EVERY) === 0) {
       const gk = ["gun", "gun2", "gun3"][a.ac.si++ % 3];
       fire("tw_plane_" + gk + "_" + a.ac.ent.GetEntityName().slice("tw_plane_".length), "StartSound");
@@ -1056,7 +1056,7 @@ function tickAir(p, pawn, dt, pressed, held, steer) {
     const be = a.ac.bombEnts.find(e => !bombs.some(b => b.ent === e));
     bombs.push({ pos: v3(a.pos.x, a.pos.y, a.pos.z - 20), vel: v3(a.f.x * a.speed, a.f.y * a.speed, a.f.z * a.speed), team: pawn.GetTeamNumber(), slot: p.slot, gen: p.gen, ent: be, ac: a.ac });
     stats.bombs++; if (steer) stats.aiBombs++;
-    toast(p, "Bomb away!", 1.5);
+    toast(p, "Bomb away", 1.5);
   }
   const smoking = pawn.GetHealth() <= CONFIG.AIR.SMOKE_HP;
   if (smoking !== !!a.smoking) { a.smoking = smoking; fire("tw_plane_smoke_" + a.ac.ent.GetEntityName().slice("tw_plane_".length), smoking ? "Start" : "Stop"); }
@@ -1180,7 +1180,7 @@ function fireMortar(team, k, firerSlot) {
   c.loader = -1; c.loaderGen = 0;
   for (const s of [c.a, c.b]) { const q = s >= 0 ? players.get(s) : undefined; if (q) q.firedAt = now(); }
   stats.shots++;
-  for (const s of [c.a, c.b]) if (s >= 0) toast(P(s), "Shot out! Splash in " + (t - now()).toFixed(1) + "s", 2.5);
+  for (const s of [c.a, c.b]) if (s >= 0) toast(P(s), "Round away. Impact in " + (t - now()).toFixed(1) + "s", 2.5);
   return true;
 }
 function effects(pos, quiet) {
@@ -1287,10 +1287,10 @@ function tickMortar(p, pawn, dt, pressed, held) {
     p.u = Math.max(0, Math.min(0.9999, p.u)); p.v = Math.max(0, Math.min(0.9999, p.v));
     if (pressed & CSInputs.ATTACK) {
       c.target = sightToWorld(team, p.u, p.v); stats.sightLocks++;
-      for (const s of [c.a, c.b]) if (s >= 0) toast(P(s), "Target locked: " + gridRef(p.u, p.v), 2);
+      for (const s of [c.a, c.b]) if (s >= 0) toast(P(s), "Target set: " + gridRef(p.u, p.v), 2);
     }
     if (pressed & CSInputs.JUMP) {
-      if (!fireMortar(team, p.crew, p.slot)) toast(p, c.loaded ? (c.target ? "Wait..." : "Lock a target first (MOUSE 1)") : "Tube is empty - fetch a bomb", 2);
+      if (!fireMortar(team, p.crew, p.slot)) toast(p, c.loaded ? (c.target ? "Tube clearing" : "Set a target first  [MOUSE 1]") : "Tube empty. Fetch a round", 2);
     }
     if (pressed & (CSInputs.USE | CSInputs.ATTACK2)) leaveSight(p, pawn);
     return "";
@@ -1307,24 +1307,24 @@ function tickMortar(p, pawn, dt, pressed, held) {
     return "[E] Use the mortar sight";
   }
   if (at === "ammo") {
-    if (c.loaded) return "The mortar is already loaded";
-    if (p.carrying) return "Carrying a bomb - load it at the mortar";
-    if (pressed & CSInputs.USE) { p.carrying = true; toast(p, "Bomb in hand", 1.5); return ""; }
+    if (c.loaded) return "Tube already loaded";
+    if (p.carrying) return "Load the round at the mortar";
+    if (pressed & CSInputs.USE) { p.carrying = true; toast(p, "Round taken", 1.5); return ""; }
     return "[E] Take a mortar bomb";
   }
   if (at === "tube") {
     if (p.carrying && !c.loaded) {
-      if (pressed & CSInputs.USE) { p.carrying = false; c.loaded = true; c.loader = p.slot; c.loaderGen = p.gen; stats.loads++; for (const s of [c.a, c.b]) if (s >= 0) toast(P(s), "Mortar loaded", 2); return ""; }
+      if (pressed & CSInputs.USE) { p.carrying = false; c.loaded = true; c.loader = p.slot; c.loaderGen = p.gen; stats.loads++; for (const s of [c.a, c.b]) if (s >= 0) toast(P(s), "Loaded", 2); return ""; }
       return "[E] Load the bomb";
     }
     if (c.loaded && c.target) {
       if (pressed & CSInputs.USE) { fireMortar(team, p.crew, p.slot); return ""; }
-      return now() < c.cooldown ? "Clearing the tube..." : "[E] FIRE";
+      return now() < c.cooldown ? "Tube clearing" : "[E] FIRE";
     }
-    if (c.loaded) return "Loaded - plot a target at the table";
-    return "Tube empty - fetch a bomb from the ammunition box";
+    if (c.loaded) return "Loaded. Set a target at the plotting table";
+    return "Tube empty. Fetch a round from the ammo box";
   }
-  return p.carrying ? "Carrying a bomb" : "";
+  return p.carrying ? "Carrying a round" : "";
 }
 
 function drawSight(p) {
@@ -1345,7 +1345,7 @@ function drawSight(p) {
   hText(p, "tw_t_range", "RANGE  " + Math.round(range * 0.0254) + " m");
   hText(p, "tw_t_grid", "GRID  " + gridRef(p.u, p.v) + (c.target ? "   LOCKED" : ""));
   hText(p, "tw_t_tube", "TUBE  " + (c.loaded ? "LOADED" : "EMPTY") + (now() < c.cooldown ? " (clearing)" : ""));
-  hText(p, "tw_t_state", c.loaded && c.target ? "READY - JUMP TO FIRE" : (!c.target ? "PLOT A TARGET" : "AWAITING BOMB"));
+  hText(p, "tw_t_state", c.loaded && c.target ? "READY   [SPACE] FIRE" : (!c.target ? "SET A TARGET" : "LOAD THE TUBE"));
 }
 
 // ---- 75_front.js
@@ -1469,7 +1469,7 @@ function aiYieldAircraft(team, h) {
     aiRelease(q, "yield");
     if (ac.pilot >= 0) continue;
     stats.yields.air++;
-    toast(h, "A bot pilot handed his aircraft over to you", 4);
+    toast(h, "You have the aircraft", 4);
     return ac;
   }
   return undefined;
@@ -1778,12 +1778,12 @@ function tickAfk(p, pawn, t, held) {
   const idle = t - (p.lastActive || t);
   if (p.air && idle >= CONFIG.AFK.PILOT) {
     endFlight(p, pawn, false); setRole(p, "infantry", p.team); deploy(p, pawn);
-    toast(p, "Away from the controls - your aircraft went home", 6);
+    toast(p, "Inactive. Your aircraft has returned to base.", 6);
     stats.afk++; p.lastActive = t;
   } else if (p.role === "mortar" && p.crew >= 0 && idle >= CONFIG.AFK.CREW) {
     if (p.inSight) leaveSight(p, pawn);
     setRole(p, "infantry", p.team);
-    toast(p, "Away too long - your mortar seat was given to someone else.", 6);
+    toast(p, "Inactive. Your mortar post has been reassigned.", 6);
     stats.afk++; p.lastActive = t;
   }
 }
@@ -1812,11 +1812,11 @@ function thinkPlayer(s, t, dt) {
       if (!p.role) chooseRole(p, pawn, team);
       hClass(p, "tw_brief", "show", true);
       hText(p, "tw_brief_role", ROLE_NAME[p.role] || "");
-      const lines = p.role === "mortar" ? ["Crew " + (p.crew + 1) + " of " + CONFIG.CREWS + ". Plot targets at the map table,", "fetch bombs from the ammunition box,", "load and fire the mortar. Swap jobs freely."]
-        : p.role === "air" ? ["Report to the aerodrome.", "Limited lives - then back to the trenches.", ""]
-        : ["Hold the fire trench. " + CONFIG.RIFLE_NAME[team] + ", pistol, knife.", CONFIG.STREAK_UPGRADE + " kills without dying earns a " + CONFIG.UPGRADE_NAME[team] + ".", "Dressing stations in the support trench heal you."];
+      const lines = p.role === "mortar" ? ["Tube " + (p.crew + 1) + " of " + CONFIG.CREWS + ". Two men to a tube.", "Set targets at the plotting table, carry rounds", "from the ammo box, load and fire. Share the work."]
+        : p.role === "air" ? ["Report to the aerodrome.", "You have two sorties. Lose them both", "and you're back in the trench."]
+        : ["Hold the fire trench. " + CONFIG.RIFLE_NAME[team] + ", pistol, knife.", CONFIG.STREAK_UPGRADE + " kills in one life earn the " + CONFIG.UPGRADE_NAME[team] + ".", "Wounded? Dressing stations are in the support trench."];
       hText(p, "tw_brief_l1", lines[0]); hText(p, "tw_brief_l2", lines[1]); hText(p, "tw_brief_l3", lines[2]);
-      hText(p, "tw_brief_count", "Moving up in " + Math.max(0, p.deployAt - t).toFixed(0) + "s   (chat: !mortar  !infantry  !roles)");
+      hText(p, "tw_brief_count", "Moving up in " + Math.max(0, p.deployAt - t).toFixed(0) + "s      !infantry   !mortar   !air   !roles");
       hClass(p, "tw_toast", "show", t < p.toastUntil);          // answers to role commands in the briefing room (were never shown)
       hClass(p, "tw_banner", "show", t < p.bannerUntil);        // a front headline reaches the briefing room too
       if (t >= p.deployAt) { hClass(p, "tw_brief", "show", false); p.first = false; deploy(p, pawn); }
@@ -1844,7 +1844,7 @@ function thinkPlayer(s, t, dt) {
         p.aacc = (p.aacc || 0) + CONFIG.HEAL_ARMOR_PER_S * dt;
         if (A < 100 && p.aacc >= 1) { const add = Math.floor(p.aacc); p.aacc -= add; pawn.SetArmor(Math.min(100, A + add)); }
         if (!pawn.HasHelmet()) pawn.SetHasHelmet(true);
-        prompt = (H < 100 || A < 100) ? "Dressing station - patching you up" : "Dressing station - fit for duty";
+        prompt = (H < 100 || A < 100) ? "Dressing station: treating wounds" : "Dressing station: fit for duty";
         break;
       }
     }
@@ -1862,15 +1862,15 @@ function thinkPlayer(s, t, dt) {
     hText(p, "tw_st_role", ROLE_NAME[p.role] || "");
     if (p.role === "infantry") {
       hText(p, "tw_st_l1", "Rifle: " + (p.upgraded ? CONFIG.UPGRADE_NAME[team] : CONFIG.RIFLE_NAME[team]));
-      hText(p, "tw_st_l2", p.upgraded ? "Marksman: upgrade issued" : "Streak " + p.streak + " / " + CONFIG.STREAK_UPGRADE + " for an upgrade");
+      hText(p, "tw_st_l2", p.upgraded ? "Upgrade issued" : "Kill streak " + p.streak + " / " + CONFIG.STREAK_UPGRADE);
       hText(p, "tw_st_l3", "Kills: " + p.kills);
     } else if (p.role === "mortar") {
       const c = crews[team][p.crew];
       const mate = c ? (p.seat === "a" ? c.b : c.a) : -1;
       const mn = mate >= 0 ? nameOf(mate) : "none";
-      hText(p, "tw_st_l1", "Crew " + (p.crew + 1) + "  -  mate: " + mn);
-      hText(p, "tw_st_l2", "Tube: " + (c && c.loaded ? "LOADED" : "empty") + "   Target: " + (c && c.target ? "set" : "none"));
-      hText(p, "tw_st_l3", "Mortar kills: " + p.mortarKills + (p.carrying ? "   (bomb in hand)" : ""));
+      hText(p, "tw_st_l1", "Tube " + (p.crew + 1) + "   Crewmate: " + mn);
+      hText(p, "tw_st_l2", "Tube " + (c && c.loaded ? "loaded" : "empty") + "   Target " + (c && c.target ? "set" : "none"));
+      hText(p, "tw_st_l3", "Mortar kills: " + p.mortarKills + (p.carrying ? "   Carrying a round" : ""));
     } else {
       hText(p, "tw_st_l1", "Lives: " + p.lives); hText(p, "tw_st_l2", ""); hText(p, "tw_st_l3", "");
     }
@@ -1934,7 +1934,7 @@ Instance.OnPlayerKill(({ player, attacker, inflictor, weapon }) => {
     vp.streak = 0; vp.upgraded = false; vp.carrying = false; vp.ammo = {};
     if (vp.inSight) leaveSight(vp, victim);
     // a life is spent only by a death in this life's sortie (dying in the briefing room before take-off cost a life before)
-    if (vp.role === "air" && vp.sortie) { vp.sortie = false; vp.lives--; if (vp.lives <= 0) toast(vp, "Shot down - back to the ground war", 4); }
+    if (vp.role === "air" && vp.sortie) { vp.sortie = false; vp.lives--; if (vp.lives <= 0) toast(vp, "Shot down. Back to the line.", 4); }
   }
   const ap = toPawn(attacker); if (!ap || ap === victim) return;
   const as = slotOfPawn(ap); if (as < 0) return;
@@ -1942,7 +1942,7 @@ Instance.OnPlayerKill(({ player, attacker, inflictor, weapon }) => {
   if (ap.GetTeamNumber() === victim.GetTeamNumber()) return;
   roundKills++;
   a.kills++; a.streak++; a.merit++;
-  if (a.role === "mortar") { a.mortarKills++; toast(a, "Direct hit!", 2); }
+  if (a.role === "mortar") { a.mortarKills++; toast(a, "Direct hit", 2); }
   if (a.role === "infantry" && !a.upgraded && a.streak >= CONFIG.STREAK_UPGRADE && ap.IsAlive()) {
     const team = ap.GetTeamNumber();
     const w = CONFIG.UPGRADE[team];
@@ -2022,16 +2022,16 @@ Instance.OnPlayerChat(({ player, text }) => {
     const lobby = !!(pw && pw.IsAlive() && !p.deployed && !p.air && !p.hidden);
     if (p.noUniform) {
       if (lobby && p.stockModel) { try { pw.SetModel(p.stockModel); } catch (e) {} }
-      toast(p, "Standard agent model" + (lobby ? "" : " from your next deploy") + " - !uniform to undo", 4);
+      toast(p, "Standard uniform" + (lobby ? "" : " from your next deployment") + ".   !uniform to switch back", 4);
     }
-    else { p.uniformDone = false; p.uniformAt = now(); toast(p, "Period uniform on" + (lobby ? "" : " from your next deploy"), 3); }
+    else { p.uniformDone = false; p.uniformAt = now(); toast(p, "Period uniform" + (lobby ? "" : " from your next deployment"), 3); }
   }
-  else if (t === "!random") { p.pref = ""; toast(p, "Roles will be chosen for you", 3); }
+  else if (t === "!random") { p.pref = ""; toast(p, "Role assigned automatically", 3); }
   else if (t === "!roles") {
     const cnt = (team, r) => { let n = 0; for (const q of players.values()) if (q.team === team && q.role === r) n++; return n; };
-    info(p, "COMBAT ROLES", ["INFANTRY (" + cnt(p.team, "infantry") + ")  -  !infantry", "MORTARS (" + cnt(p.team, "mortar") + "/" + (CONFIG.CREWS * 2) + ")  -  !mortar",
-      CONFIG.AIR_ENABLED ? "AIRCRAFT (" + cnt(p.team, "air") + "/" + CONFIG.AIR_SLOTS + ")  -  !air" : "", "!swap  -  switch between unlocked primaries"],
-      "Type a role's command to see its orders and ask for it.");
+    info(p, "COMBAT ROLES", ["!infantry    Riflemen  " + cnt(p.team, "infantry"), "!mortar    Mortar crews  " + cnt(p.team, "mortar") + " / " + (CONFIG.CREWS * 2),
+      CONFIG.AIR_ENABLED ? "!air    Pilots  " + cnt(p.team, "air") + " / " + CONFIG.AIR_SLOTS : "", "!swap    Change weapon"],
+      "Type a command to volunteer for that role.");
   }
 });
 // radar square of a point on the overview (resource/overviews: pos_x/pos_y = CONFIG.RADAR x0/y0, 1024 px x scale = span), lettered A-P

@@ -30,7 +30,7 @@ The user authorised pushing this branch (18 Nov) and deploying when the gate pas
 | E | Trench props: non-solid ones (solid 0 / no hull) and odd places | `make_map.py` dressing, check_world overlaps | listed and fixed | |
 | F | Forest LOD pop: fade / LOD distances on tree models (`fademindist` / `fademaxdist`, LOD switch), fewer vista swaps near play | `make_map.py` woodland | no visible LOD swap inside ~3000 u of play | |
 | G | Terrain grid: re-gridded / patched tiles show square seams (paint blend, normals, 16 vs 32 u grids) | `patch_terrain.py`, `make_map.py` terrain_paint | smooth blend across tiles; render checks | |
-| H | Flight HUD: dials only, no wooden dash plate | `tools/tw_hud.py`, `tw_cockpit.py` | hud_check green, picture looked at | |
-| I | Text tone: every player-facing string (HUD cards, toasts, banners, chat, briefing) rewritten AAA-style: short, direct, in-world | `src/modules/*.js`, `tw_hud.py` baked text | all strings listed in a table before/after; mock green | |
+| H | Flight HUD: dials only, no wooden dash plate | `tools/tw_hud.py`, `tw_cockpit.py` | hud_check green, picture looked at | done 18 Nov (hud_check green) |
+| I | Text tone: every player-facing string (HUD cards, toasts, banners, chat, briefing) rewritten AAA-style: short, direct, in-world | `src/modules/*.js`, `tw_hud.py` baked text | all strings listed in a table before/after; mock green | done 18 Nov: 47 strings rewritten (roles RIFLEMAN / MORTAR CREW / PILOT, [KEY] prompts, no chatty dashes); mocks + 10 scenarios green |
 | J | Visual fidelity pass + performance (draw distance, shadows, prop counts, particles, light count) | map, HUD | a perf budget written and met offline (counts) | |
 | K | Chain, gate, deploy, compile | `deploy_tw.py` | gate PASS, compiled | |
