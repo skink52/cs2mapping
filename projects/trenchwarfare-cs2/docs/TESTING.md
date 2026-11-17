@@ -83,6 +83,13 @@ Logs: `C:\source1\cs2port\logs\mg_trenchwarfare_assets.log` and `mg_trenchwarfar
 - [ ] H3. **Boundary turn:** fly straight out at each map edge (x about 6500, y about 5500). Expect one smooth turn home to one side, with no flip-flopping and no destruction. Do it again with the nose high. Record: R (`!pos` where it misbehaved).
 - [ ] H4. **Dive sound:** dive nose down 25 deg or more at full speed. Expect a 3 s howl that follows the aircraft, again after you level out and wait 6 s. Record: R.
 - [ ] H5. Crash into the ground: kill and explosion, credit to whoever last hit you within 10 s. Two lives, then infantry. Record: R.
+- [ ] H2b. **Pilot sights on the HUD (17 Nov 2026):** the gun pip (ring and bead) sits where the bullets go (on the crosshair, or
+  dimmed when nothing is in range) and the dashed amber bomb ring sits on the landing point, the size of the bomb's blast. Turn hard:
+  each becomes an arrow on the screen edge pointing at it (the bomb ring is often an arrow at the bottom in level flight). Check the
+  arrows point the right way (rotation) and the ring changes size with height (scale): the offline checker cannot draw either. If the
+  marks sit off the point they mark by a constant factor, the camera FOV is not 90 deg: change `AIR.SIGHT_HUD.FOCAL`. Record: R.
+- [ ] H2c. **Nobody else sees them:** a second player (or spectator) on the ground, under a pilot: no ring, pip or sight prop anywhere
+  in the world. Record: R.
 - [ ] H6. Sit still 60 s in the air (AFK). Expect the aircraft to go home and you to deploy as infantry. Record: R.
 
 ## I. Bots and low population

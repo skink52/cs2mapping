@@ -74,7 +74,13 @@ const CONFIG = {
     BOX_X: 6500, BOX_Y: 5500, ALT_MAX: 5000, ALT_MIN: 120,
     GUN_INTERVAL: 0.09, GUN_DAMAGE: 16, GUN_RANGE: 5200, GUN_SPREAD: 0.014, GUN_FROM: 150,
     BOMBS: 2, BOMB_REARM: 18, BOMB_RADIUS: 420, BOMB_DAMAGE: 240, GRAVITY: 800,
-    BSIGHT_RAISE: 260,                           // bomb-sight ring held this far above the landing point on the line to the camera (one-sided, faces the camera)
+    // pilot sights on the pilot's own HUD (17 Nov 2026: the world sight props were seen by everyone on the ground). Points are projected
+    // from the chase / cockpit camera: FOCAL px per unit of view tangent at 1080 high (CS2's 90 degrees across 4:3, as IRONFRAME; the
+    // custom camera using that FOV is unverified in CS2), snapped to STEP px, NX / NY steps either side of the centre (must match
+    // tools/tw_hud.py SIGHT_GRID). Past EDGE_X / EDGE_Y (a 16:9 screen less the mark, above CS2's health row) it becomes an edge arrow.
+    // The bomb ring is drawn at the bomb's real blast radius: RING_SCALES are the art's scale steps (art ring RING_ART px across).
+    SIGHT_HUD: { FOCAL: 720, STEP: 12, NX: 97, NY: 44, EDGE_X: 880, EDGE_Y: 384, RING_ART: 128,
+                 RING_SCALES: [0.25, 0.35, 0.5, 0.7, 1, 1.4, 2, 2.8] },
     HIT_SCALE: 0.4, HIT_MIN: 12,                 // rifle bullets on a plane: weapon damage x scale (at least HIT_MIN) to the pilot
     CRASH_CREDIT: 10,                            // seconds a hit keeps kill credit for a crash
     CAM_FOLLOW: { x: 0, y: 0, z: 70 }, CAM_OFFSET: { x: -380, y: 0, z: 70 },
@@ -692,29 +698,61 @@ function bombLanding(a) {
   }
   return v3(x, y, gz + 3);
 }
-function drawSights(a, pawn) {
-  const A = CONFIG.AIR, ac = a.ac;
-  if (ac.gsight && a.aim) {
-    const g = a.aim, d = Math.min(g.dist - 20, A.SIGHT_DIST * 3);
-    try { ac.gsight.Teleport({ position: vadd(g.s, g.dir, Math.max(200, d)), angles: angOf(g.dir) }); } catch (e) {}
+// a world point on the pilot's screen: px from the centre (x right, y down) at 1080 high, from the camera gunAim saved (a.camPos /
+// a.camB). null without a camera (script pilots). z = depth along the view (<= 1: behind the camera). IRONFRAME ifrHudProject.
+function sightProject(a, pt) {
+  const c = a.camPos, B = a.camB;
+  if (!c || !B || !pt) return null;
+  const d = v3(pt.x - c.x, pt.y - c.y, pt.z - c.z), F = CONFIG.AIR.SIGHT_HUD.FOCAL;
+  const z = vdot(d, B.f), x = -vdot(d, B.l), y = vdot(d, B.u);
+  if (!(z > 1)) return { x: x, y: -y, z: z };
+  return { x: F * x / z, y: -F * y / z, z: z };
+}
+// moves sight mark <id> (panels id / id+"y" / id+"a") to the projected point pr: a grid step inside the screen, or an arrow on the edge
+// pointing toward it (also when it is behind the camera). extra = more state classes for the art panel (the ring's size step)
+function placeSight(p, id, pr, state) {
+  const S = CONFIG.AIR.SIGHT_HUD;
+  if (!pr) { hClass(p, id, "on", false); return; }
+  let x = pr.x, y = pr.y, edge = !(pr.z > 1) || Math.abs(x) > S.EDGE_X || Math.abs(y) > S.EDGE_Y;
+  if (edge) {
+    if (Math.abs(x) < 1e-3 && Math.abs(y) < 1e-3) y = 1;           // straight behind: point down
+    const k = Math.min(S.EDGE_X / (Math.abs(x) || 1e-6), S.EDGE_Y / (Math.abs(y) || 1e-6));
+    x *= k; y *= k;
+    const dir = ((Math.round(Math.atan2(y, x) / (Math.PI / 4)) % 8) + 8) % 8;   // 0 right, clockwise on screen (y down)
+    hSwap(p, id + "a", "dir", "d" + dir);
   }
-  if (ac.bsight) {
-    if (a.bombs > 0) {
-      // the ring sits on the line from the chase camera to the landing point, BSIGHT_RAISE above the ground, facing the camera and
-      // scaled down by its distance: the pilot sees it on the landing point, players on the ground below see its undrawn back face
-      if (!a.land || a.tick % 4 === 0) a.land = bombLanding(a);
-      const l = a.land, h = Math.hypot(a.f.x, a.f.y) || 1, C = A.CAM_OFFSET, back = -(a.camBack || -C.x);
-      const cam = v3(a.pos.x + a.f.x / h * back, a.pos.y + a.f.y / h * back, a.pos.z + C.z);
-      const d = v3(cam.x - l.x, cam.y - l.y, cam.z - l.z), D = vlen(d) || 1;
-      const k = d.z > 1 ? Math.min(A.BSIGHT_RAISE / d.z, 0.6) : 0;
-      const pitch = Math.acos(Math.max(-1, Math.min(1, d.z / D))) * 180 / Math.PI, yaw = Math.atan2(d.y, d.x) * 180 / Math.PI;
-      try {
-        ac.bsight.Teleport({ position: vadd(l, d, k), angles: { pitch, yaw, roll: 0 } });
-        ac.bsight.SetModelScale(Math.max(0.2, 1 - k));
-      } catch (e) {}
+  else hSwap(p, id + "a", "dir", "");
+  const kx = clampN(Math.round(x / S.STEP), -S.NX, S.NX), ky = clampN(Math.round(y / S.STEP), -S.NY, S.NY);
+  hSwap(p, id, "x", "gx" + (kx + S.NX));
+  hSwap(p, id + "y", "y", "gy" + (ky + S.NY));
+  hSwap(p, id + "a", "st", edge ? "edge" : state);
+  hClass(p, id, "on", true);
+}
+// pilot sights, on the pilot's own HUD only (17 Nov 2026; until then world props every player on the ground could see): the gun pip at
+// the point the guns converge on (dim when they point at nothing inside GUN_RANGE), the bomb ring on the predicted landing point,
+// drawn at the bomb's blast radius on screen
+function drawSights(p, a) {
+  const A = CONFIG.AIR, S = A.SIGHT_HUD, ac = a.ac;
+  if (ac.gsight) park(ac, ac.gsight);                                   // old map props: never shown again (removed from the map later)
+  if (ac.bsight) park(ac, ac.bsight);
+  if (p.bot || !a.camPos) return;
+  const g = a.aim;
+  placeSight(p, "tw_gpip", g ? sightProject(a, vadd(g.s, g.dir, g.dist)) : null, g && g.hit ? "" : "far");
+  if (a.bombs > 0) {
+    if (!a.land || a.tick % 4 === 0) a.land = bombLanding(a);
+    const pr = sightProject(a, a.land);
+    const S2 = CONFIG.AIR.SIGHT_HUD;
+    let size = "";                                                        // off screen: no size (the edge arrow is not scaled)
+    if (pr && pr.z > 1 && Math.abs(pr.x) <= S2.EDGE_X && Math.abs(pr.y) <= S2.EDGE_Y) {
+      const want = 2 * S.FOCAL * A.BOMB_RADIUS / pr.z / S.RING_ART;       // the ring's scale for the blast radius at that depth
+      let best = 0;
+      for (let k = 1; k < S.RING_SCALES.length; k++) if (Math.abs(Math.log(S.RING_SCALES[k] / want)) < Math.abs(Math.log(S.RING_SCALES[best] / want))) best = k;
+      size = "s" + best;
     }
-    else park(ac, ac.bsight);
+    hSwap(p, "tw_bringa", "size", size);
+    placeSight(p, "tw_bring", pr, "");
   }
+  else hClass(p, "tw_bring", "on", false);
 }
 // turn rate (deg/s) for a speed: brisk when slow, wider when fast, mushy near the stall
 function turnRate(v) {
@@ -769,6 +807,7 @@ function gunAim(a, pawn, steer) {
   const B = angleBasis({ pitch: e ? e.pitch : 0, yaw: e ? e.yaw : 0, roll: 0 });
   const back = a.camBack || -A.CAM_OFFSET.x;
   const cam = a.view === "cockpit" ? cockpitPos(a) : vadd(vadd(v3(a.pos.x + F.x, a.pos.y + F.y, a.pos.z + F.z), B.f, -back), B.u, A.CAM_OFFSET.z);
+  a.camPos = cam; a.camB = B;                                            // drawSights projects the HUD sights from this camera
   const L = A.GUN_RANGE + back;
   const tr = Instance.TraceLine({ start: cam, end: vadd(cam, B.f, L), ignoreEntity: [a.ac.ent, pawn], traceHitboxes: true });
   const hitD = tr && tr.didHit ? Math.max(back + 150, tr.fraction * L) : L;
@@ -777,7 +816,7 @@ function gunAim(a, pawn, steer) {
   const want = vnorm(v3(pt.x - s.x, pt.y - s.y, pt.z - s.z));
   const g = A.GUN_GIMBAL * D2R;
   const dir = angleBetween(a.f, want) <= g ? want : rotateToward(a.f, want, g);
-  return { s, dir, dist: Math.max(200, Math.min(A.SIGHT_DIST * 3, vlen(v3(pt.x - s.x, pt.y - s.y, pt.z - s.z)))) };
+  return { s, dir, dist: Math.max(200, Math.min(A.SIGHT_DIST * 3, vlen(v3(pt.x - s.x, pt.y - s.y, pt.z - s.z)))), hit: !!(tr && tr.didHit) };
 }
 // the dive sound: a pool of map emitters tw_plane_dive_1..DIVE.EMITTERS lent to an aircraft for the length of the sound (SetSourceEntity
 // to it, then StartSound, as the engine's own emitter). Fewer map entities than one per aircraft; a busy emitter is never taken over
@@ -864,7 +903,7 @@ function endFlight(p, pawn, crashed) {
   }
   a.ac.pilot = -1;
   park(a.ac, a.ac.gsight); park(a.ac, a.ac.bsight);
-  hClass(p, "tw_fly", "show", false); hClass(p, "tw_prompt", "show", false);
+  hClass(p, "tw_fly", "show", false); hClass(p, "tw_prompt", "show", false); hClass(p, "tw_gpip", "on", false); hClass(p, "tw_bring", "on", false);
   if (pawn && live(pawn)) {
     try { const cam = pawn.GetCustomCamera(); if (cam) { cam.SetMode(CustomCameraMode.DISABLED); if (a.camParent) cam.SetParent(a.camParent); } } catch (e) {}
     try { if (pawn.IsAlive()) pawn.SetMoveType(CSMoveType.WALK); } catch (e) {}
@@ -1021,7 +1060,7 @@ function tickAir(p, pawn, dt, pressed, held, steer) {
   }
   const smoking = pawn.GetHealth() <= CONFIG.AIR.SMOKE_HP;
   if (smoking !== !!a.smoking) { a.smoking = smoking; fire("tw_plane_smoke_" + a.ac.ent.GetEntityName().slice("tw_plane_".length), smoking ? "Start" : "Stop"); }
-  drawSights(a, pawn);
+  drawSights(p, a);
   drawFlight(p, a, gz);
   return prompt;
 }

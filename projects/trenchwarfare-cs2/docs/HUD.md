@@ -41,6 +41,9 @@ four dial faces `tw_g_bank`, `tw_g_asi`, `tw_g_alt`, `tw_g_rpm`).
 | `tw_n_asi`, `tw_n_alt`, `tw_n_rpm`, `tw_n_bank`, `tw_card` | swap | `a0..a71` | 60_air: drawFlight | needle / compass card turned by N x 5 degrees (`rotateZ`) |
 | `tw_alt_drum`, `tw_hdg_txt`, `tw_ammo_txt`, `tw_fly_info` | text | | 60_air: drawFlight | altitude drum, heading, rounds left, lives / kills / re-arm line |
 | `tw_bomb1`, `tw_bomb2` | class | `on` | 60_air: drawFlight | bomb lamps |
+| `tw_gpip`, `tw_bring` | class + swap | `on`; `gx0..gx194` | 60_air: placeSight, drawSights, endFlight | pilot sights (pilot's screen only): gun pip, bomb ring; shown, and the x step from the screen centre (12 px, 97 = centre) |
+| `tw_gpipy`, `tw_bringy` | swap | `gy0..gy88` | 60_air: placeSight | the sight's y step (12 px, 44 = centre) |
+| `tw_gpipa`, `tw_bringa` | swap | `far`, `edge`, `d0..d7`, `s0..s7` | 60_air: placeSight, drawSights | the sight's art: `far` (guns on nothing in range), `edge` + `d0..d7` (off screen: an arrow on the edge, turned N x 45 deg), ring size `s0..s7` (the bomb's blast radius on screen) |
 <!-- HUD-CONTRACT-END -->
 
 56 ids, 4 groups of stepped classes (`x0..x191`, `y0..y191`, `a0..a71`, `mt` / `mct`), 2 toggles (`show`, `on`); the layout holds 67

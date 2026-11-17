@@ -27,6 +27,11 @@ IMGDIR = os.path.join(OUT, 'panorama/images/custom_game/tw'); os.makedirs(IMGDIR
 TM = 640             # map on the plotting board (px)
 STEPS = 192          # marker steps per axis = CONFIG.TARGET_STEPS
 MK = 80              # every marker is an MK x MK square, its art centred
+# pilot sights (17 Nov 2026): grid steps across the whole screen = src/modules/00_config.js AIR.SIGHT_HUD (checked in main())
+SIGHT_GRID = dict(STEP=12, NX=97, NY=44)
+PIP = 96             # gun pip art (px)
+RING = 128           # bomb ring art (px across the ring = SIGHT_HUD.RING_ART)
+RING_SCALES = [0.25, 0.35, 0.5, 0.7, 1, 1.4, 2, 2.8]
 LIVE = 'Stratum2, "Stratum2 Bold", Arial'
 SERIF = '"Noto Serif", Georgia, serif'
 MONO = '"Noto Mono", "Courier New", monospace'
@@ -76,7 +81,7 @@ def script_ids():
     for f in sorted(os.listdir(os.path.join(ROOT, 'src', 'modules'))):
         if not f.endswith('.js'): continue
         s = open(os.path.join(ROOT, 'src', 'modules', f), encoding='utf-8').read()
-        for m in re.finditer(r'\b(hText|hClass|hSwap|placeMarker|toast|info)\(\s*\w+\s*,\s*"(tw_\w+)"(\s*\+)?', s):
+        for m in re.finditer(r'\b(hText|hClass|hSwap|placeMarker|placeSight|toast|info)\(\s*\w+\s*,\s*"(tw_\w+)"(\s*\+)?', s):
             if m.group(1) in ('toast', 'info'): continue
             (pre if m.group(3) else lit).add(m.group(2))
         if 'function placeMarker' in s and 'id + "y"' in s: pre.add('<marker>y')
@@ -278,7 +283,41 @@ def m_pit():
     return im
 
 
-MARKERS = {'reticle': m_reticle, 'locked': m_locked, 'impact': m_impact, 'pit': m_pit}
+def m_pip():
+    """gun pip: a period ring-and-bead sight (cream with a dark edge so it reads on sky and on mud)"""
+    S = PIP; im = Image.new('RGBA', (S, S), (0, 0, 0, 0)); c = S / 2
+    for col, wd in (((20, 16, 12, 200), 5), ((244, 232, 196, 255), 2)):
+        d = ImageDraw.Draw(im)
+        d.ellipse((c - 30, c - 30, c + 30, c + 30), outline=col, width=wd)
+        for a, b in (((c, c - 44), (c, c - 18)), ((c, c + 18), (c, c + 44)), ((c - 44, c), (c - 18, c)), ((c + 18, c), (c + 44, c))):
+            d.line([a, b], fill=col, width=wd)
+    d = ImageDraw.Draw(im)
+    d.ellipse((c - 4, c - 4, c + 4, c + 4), fill=(20, 16, 12, 220)); d.ellipse((c - 2.5, c - 2.5, c + 2.5, c + 2.5), fill=(232, 70, 40, 255))
+    return im
+
+
+def m_ring():
+    """bomb ring: the blast circle on the ground ahead, dashed amber with a centre cross (RING px across, on a RING + 8 canvas)"""
+    S = RING + 8; im = Image.new('RGBA', (S, S), (0, 0, 0, 0)); c = S / 2; r = RING / 2
+    for col, wd in (((20, 16, 12, 190), 6), ((246, 196, 92, 255), 3)):
+        d = ImageDraw.Draw(im)
+        for k in range(24):
+            a0 = k * 15 + 2; d.arc((c - r, c - r, c + r, c + r), a0, a0 + 10, fill=col, width=wd)
+        d.line([(c - 10, c), (c + 10, c)], fill=col, width=wd); d.line([(c, c - 10), (c, c + 10)], fill=col, width=wd)
+    return im
+
+
+def m_edge(col=(244, 232, 196, 255)):
+    """off-screen arrow: a chevron pointing right (turned in 45 degree steps by the css)"""
+    S = PIP; im = Image.new('RGBA', (S, S), (0, 0, 0, 0)); c = S / 2
+    pts = [(c - 14, c - 22), (c + 22, c), (c - 14, c + 22), (c - 4, c)]
+    d = ImageDraw.Draw(im)
+    d.polygon([(x + (x - c) * 0.18, y + (y - c) * 0.18) for x, y in pts], fill=(20, 16, 12, 200)); d.polygon(pts, fill=col)
+    return im
+
+
+MARKERS = {'reticle': m_reticle, 'locked': m_locked, 'impact': m_impact, 'pit': m_pit, 'pip': m_pip, 'ring': m_ring, 'edge': m_edge,
+           'edge_bomb': lambda: m_edge((246, 196, 92, 255))}
 
 
 def make_art():
@@ -446,8 +485,31 @@ def build_layout():
     rule('.Lamp.on', background_image='url("%sfly_lamp_on.png")' % IMG)
     side = P('tw_side', '', P('tw_counter', '', P('tw_ammo_txt', tag='Label')) +
              P('tw_lamps', '', P('tw_bomb1', 'Lamp First') + P('tw_bomb2', 'Lamp')))
+    # pilot sights (17 Nov 2026; were world props every player could see): three nested panels per mark, one transform each:
+    # x step (.SCol gxN), y step (.SRow gyN), art (.SArt: state far / edge + dN arrow turn, ring size sN). 0.08 s linear ease
+    G = SIGHT_GRID; SB = RING + 8
+    rule('.SCol', width=px(SB), height='1080px', horizontal_align='center', opacity='0', overflow='noclip noclip',
+         transition_property='transform', transition_duration='0.08s', transition_timing_function='linear')
+    rule('.SCol.on', opacity='1')
+    rule('.SRow', width=px(SB), height=px(SB), margin_top=px(540 - SB // 2), overflow='noclip noclip',
+         transition_property='transform', transition_duration='0.08s', transition_timing_function='linear')
+    for k in range(2 * G['NX'] + 1): rule('.SCol.gx%d' % k, transform='translatex(%dpx)' % ((k - G['NX']) * G['STEP']))
+    for k in range(2 * G['NY'] + 1): rule('.SRow.gy%d' % k, transform='translatey(%dpx)' % ((k - G['NY']) * G['STEP']))
+    rule('.SArt', width=px(SB), height=px(SB), background_size='100% 100%', background_repeat='no-repeat', background_position='50% 50%')
+    rule('.SArt.Pip', background_image='url("%sm_pip.png")' % IMG, background_size='%dpx %dpx' % (PIP, PIP))
+    rule('.SArt.Pip.far', opacity='0.45')
+    rule('.SArt.Ring', background_image='url("%sm_ring.png")' % IMG)
+    for k, f in enumerate(RING_SCALES): rule('.SArt.Ring.s%d' % k, transform='scale3d(%g, %g, 1)' % (f, f))
+    rule('.SArt.Pip.edge', background_image='url("%sm_edge.png")' % IMG)
+    rule('.SArt.Ring.edge', background_image='url("%sm_edge_bomb.png")' % IMG, background_size='%dpx %dpx' % (PIP, PIP))
+    for cls in ('Pip', 'Ring'):                 # 4 classes: beats a ring size step (the script also clears the size on an edge)
+        for k in range(8): rule('.SArt.%s.edge.d%d' % (cls, k), transform='rotateZ(%ddeg)' % (k * 45))
+
+    def sight(sid, cls):
+        return P(sid, 'SCol', P(sid + 'y', 'SRow', P(sid + 'a', 'SArt ' + cls)))
     fly = P('tw_fly', '', P('tw_fly_help', tag='Label', text='MOUSE aim    A / D roll    W / S throttle    MOUSE 1 guns    MOUSE 2 bomb') +
-            P('tw_fly_info', tag='Label') + P('tw_dash', '', P('tw_dashrow', '', row)) + side)
+            P('tw_fly_info', tag='Label') + P('tw_dash', '', P('tw_dashrow', '', row)) + side +
+            sight('tw_bring', 'Ring') + sight('tw_gpip', 'Pip'))          # sights last: drawn over the dash
     parts.append(fly)
 
     # ---- never shown: makes CS2 compile the loading slides and the map icon along with the HUD (create/panorama.py preload)
@@ -485,7 +547,8 @@ def check_contract(xml, css_text):
         if p == '<marker>y': continue
         if not any(i.startswith(p) for i in con): prob.append('the script builds ids from "%s", which matches no contract id' % p)
     used = lambda i: i in lit or any(i.startswith(p) and re.match(r'^\d+y?$', i[len(p):]) for p in pre if p != '<marker>y') or \
-        (i.endswith('y') and (i[:-1] in lit or any(i[:-1].startswith(p) for p in pre if p != '<marker>y')))
+        (i.endswith('y') and (i[:-1] in lit or any(i[:-1].startswith(p) for p in pre if p != '<marker>y'))) or \
+        (i.endswith('a') and i[:-1] in lit)          # placeSight's art panel (id + "a")
     for i in con:
         if not used(i): prob.append('contract id %s is not written by the script (stale row?)' % i)
     return prob, con, xids
@@ -524,7 +587,13 @@ def states():
     s['fly'] = {'tw_fly': {'add': ['show']}, 'tw_n_asi': {'add': ['a14']}, 'tw_n_alt': {'add': ['a20']}, 'tw_n_rpm': {'add': ['a8']},
                 'tw_card': {'add': ['a62']}, 'tw_n_bank': {'add': ['a69']}, 'tw_alt_drum': {'text': '0 4'}, 'tw_hdg_txt': {'text': '050'},
                 'tw_ammo_txt': {'text': '0437'}, 'tw_bomb1': {'add': ['on']},
-                'tw_fly_info': {'text': 'LIVES 2   KILLS 3   BOMB 6s'}, 'tw_toast': {'add': ['show']}, 'tw_toast_text': {'text': 'Bomb away!'}}
+                'tw_fly_info': {'text': 'LIVES 2   KILLS 3   BOMB 6s'}, 'tw_toast': {'add': ['show']}, 'tw_toast_text': {'text': 'Bomb away!'},
+                'tw_gpip': {'add': ['on', 'gx%d' % (SIGHT_GRID['NX'] + 3)]}, 'tw_gpipy': {'add': ['gy%d' % (SIGHT_GRID['NY'] - 2)]},
+                'tw_bring': {'add': ['on', 'gx%d' % (SIGHT_GRID['NX'] - 6)]}, 'tw_bringy': {'add': ['gy%d' % (SIGHT_GRID['NY'] + 14)]},
+                'tw_bringa': {'add': ['s3']}}
+    s['fly_edge'] = dict(s['fly'], **{'tw_gpip': {'add': ['on', 'gx%d' % (SIGHT_GRID['NX'] + 73)]}, 'tw_gpipa': {'add': ['edge', 'd0']},
+                                      'tw_bring': {'add': ['on', 'gx%d' % (SIGHT_GRID['NX'] - 20)]}, 'tw_bringy': {'add': ['gy%d' % (SIGHT_GRID['NY'] + 32)]},
+                                      'tw_bringa': {'add': ['edge', 'd2']}})
     return s
 
 
@@ -551,6 +620,12 @@ def main():
     open(os.path.join(lay, NAME + '.xml'), 'w', newline='\n', encoding='utf-8').write(xml)
     open(os.path.join(sty, NAME + '.css'), 'w', newline='\n', encoding='utf-8').write(css_text)
     prob, con, xids = check_contract(xml, css_text)
+    cfg = open(os.path.join(ROOT, 'src', 'modules', '00_config.js'), encoding='utf-8').read()
+    m = re.search(r'SIGHT_HUD:\s*\{[^}]*?STEP:\s*(\d+),\s*NX:\s*(\d+),\s*NY:\s*(\d+)[^}]*?RING_ART:\s*(\d+),\s*RING_SCALES:\s*\[([^\]]*)\]', cfg, re.S)
+    if not m: prob.append('00_config.js has no AIR.SIGHT_HUD {STEP, NX, NY, RING_ART, RING_SCALES}')
+    elif (int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))) != (SIGHT_GRID['STEP'], SIGHT_GRID['NX'], SIGHT_GRID['NY'], RING) or \
+            [float(v) for v in m.group(5).split(',')] != RING_SCALES:
+        prob.append('AIR.SIGHT_HUD in 00_config.js differs from tw_hud.py SIGHT_GRID / RING / RING_SCALES')
     # every picture the css names exists (target_t/ct come from render_sight.py; slides and icon from render_slides.py)
     for u in sorted(set(re.findall(r'\{images\}/([^"\')]+)', css_text))):
         if not os.path.exists(os.path.join(OUT, 'panorama/images', u)):

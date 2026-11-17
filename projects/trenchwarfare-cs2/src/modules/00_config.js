@@ -69,7 +69,13 @@ const CONFIG = {
     BOX_X: 6500, BOX_Y: 5500, ALT_MAX: 5000, ALT_MIN: 120,
     GUN_INTERVAL: 0.09, GUN_DAMAGE: 16, GUN_RANGE: 5200, GUN_SPREAD: 0.014, GUN_FROM: 150,
     BOMBS: 2, BOMB_REARM: 18, BOMB_RADIUS: 420, BOMB_DAMAGE: 240, GRAVITY: 800,
-    BSIGHT_RAISE: 260,                           // bomb-sight ring held this far above the landing point on the line to the camera (one-sided, faces the camera)
+    // pilot sights on the pilot's own HUD (17 Nov 2026: the world sight props were seen by everyone on the ground). Points are projected
+    // from the chase / cockpit camera: FOCAL px per unit of view tangent at 1080 high (CS2's 90 degrees across 4:3, as IRONFRAME; the
+    // custom camera using that FOV is unverified in CS2), snapped to STEP px, NX / NY steps either side of the centre (must match
+    // tools/tw_hud.py SIGHT_GRID). Past EDGE_X / EDGE_Y (a 16:9 screen less the mark, above CS2's health row) it becomes an edge arrow.
+    // The bomb ring is drawn at the bomb's real blast radius: RING_SCALES are the art's scale steps (art ring RING_ART px across).
+    SIGHT_HUD: { FOCAL: 720, STEP: 12, NX: 97, NY: 44, EDGE_X: 880, EDGE_Y: 384, RING_ART: 128,
+                 RING_SCALES: [0.25, 0.35, 0.5, 0.7, 1, 1.4, 2, 2.8] },
     HIT_SCALE: 0.4, HIT_MIN: 12,                 // rifle bullets on a plane: weapon damage x scale (at least HIT_MIN) to the pilot
     CRASH_CREDIT: 10,                            // seconds a hit keeps kill credit for a crash
     CAM_FOLLOW: { x: 0, y: 0, z: 70 }, CAM_OFFSET: { x: -380, y: 0, z: 70 },
