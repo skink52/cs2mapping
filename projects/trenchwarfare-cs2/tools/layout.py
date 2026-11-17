@@ -16,16 +16,29 @@ XF, XB = 1641.0, 1791.0            # fire-trench bay / traverse-passage centre l
 XS = 2150.0                        # support trench
 HW = 36.0                          # half width (72 wide floor)
 STEP_D = 30.0                      # fire-step depth (in front of the bay floor)
-P = 384.0; NBAY = 15; Y0 = -NBAY * P / 2.0
+# 17 Nov 2026 short front (docs/SHORT_FRONT_DESIGN.md): 5 bays (was 15), the centre third. The forest skirmish and the mine galleries
+# keep their size and move in with the trench ends: FRONT_DY (-1920) is how far each end moved toward the centre; fy() moves a literal
+# y that belongs to a trench end (or the woods / galleries beyond it) by that much, keeping its sign.
+P = 384.0; NBAY = 5; Y0 = -NBAY * P / 2.0
+FRONT_Y = NBAY * P / 2.0           # 960: the fire trench runs y -FRONT_Y..FRONT_Y
+FRONT_DY = FRONT_Y - 2880.0        # -1920 (2880 = the 15-bay front's end)
+WOOD_DY = FRONT_DY                 # the woods (north) move south by 1920
+TUN_DY = -FRONT_DY                 # the galleries (south) move north by 1920
+
+
+def fy(v):
+    """a y literal of the 15-bay map that sits at or beyond a trench end, moved with that end"""
+    return v + (FRONT_DY if v > 0 else -FRONT_DY)
+
 DEPTH = 72.0                       # floor below local ground
-COMM_Y = [-1920.0, 0.0, 1920.0]    # communication trenches
-SHELTER_Y = [-1056.0, 576.0, 2304.0]  # heal shelters off the support trench
+COMM_Y = [0.0]                     # communication trenches (15 bays: -1920, 0, 1920)
+SHELTER_Y = [-576.0, 576.0]        # heal shelters off the support trench (15 bays: -1056, 576, 2304)
 MORTAR_X = 3200.0
-MORTAR_Y = [-1600.0, -800.0, 0.0, 800.0, 1600.0]
+MORTAR_Y = [-560.0, 560.0]         # 2 pits a side (15 bays: 5, -1600..1600 step 800); the user: "too many mortar stations"
 HANGAR_X = 6150.0
 RES = 16.0                         # trench raster cell
 RX0, RX1 = 1300.0, 2600.0          # raster extent (x), CT side
-RY0, RY1 = -3200.0, 3200.0
+RY0, RY1 = -FRONT_Y - 640.0, FRONT_Y + 640.0   # 15 bays: -3200, 3200
 
 
 def fire_centreline():
@@ -164,11 +177,11 @@ def craters(seed=7):
     def add(n, xr, yr, rr, dep):
         for _ in range(n):
             out.append((rng.uniform(*xr), rng.uniform(*yr), rng.uniform(*rr), rng.uniform(*dep)))
-    add(170, (-1480, 1480), (-3600, 3600), (70, 190), (0.35, 0.55))     # big, overlapping: no man's land
-    add(420, (-1500, 1500), (-3700, 3700), (24, 70), (0.3, 0.5))
+    add(170, (-1480, 1480), (fy(-3600), fy(3600)), (70, 190), (0.35, 0.55))     # big, overlapping: no man's land
+    add(420, (-1500, 1500), (fy(-3700), fy(3700)), (24, 70), (0.3, 0.5))
     for s in (-1, 1):
-        add(40, sorted((s * 2350, s * 3900)), (-3300, 3300), (40, 150), (0.25, 0.45))   # behind the lines
-        add(30, sorted((s * 3900, s * 5200)), (-4200, 4200), (40, 120), (0.2, 0.35))
+        add(40, sorted((s * 2350, s * 3900)), (fy(-3300), fy(3300)), (40, 150), (0.25, 0.45))   # behind the lines
+        add(30, sorted((s * 3900, s * 5200)), (fy(-4200), fy(4200)), (40, 120), (0.2, 0.35))
     add(60, (-1500, 1500), (-5800, 5800), (40, 140), (0.25, 0.4))       # flanks of no man's land
     return np.array(out)
 
@@ -255,12 +268,12 @@ def ground_at(x, y):
 
 
 def infantry_spawns(s):
-    """20 per side: one in each bay (on the floor, facing the enemy) + 5 in the support trench"""
+    """one in each bay (on the floor, facing the enemy) + 3 in the support trench (15 bays: 15 + 5)"""
     out = []
     for i in range(NBAY):
         y = Y0 + i * P + 128
         out.append((s * (XF + 8), y))
-    for y in (-2600, -1300, 300, 1300, 2600):
+    for y in (-704.0, 320.0, 704.0):                     # clear of the communication trench (y 0..160)
         out.append((s * support_x_at(y), y))
     return out
 
@@ -287,8 +300,8 @@ def plane_spawns(s):
 # ---------------------------------------------------------------- mine tunnels at the south end (both sides meet under no man's land)
 TUN_CELL = 16.0
 TUN_FLOOR = -260.0
-TUN_PORTAL_Y = -2816.0; TUN_SAP_Y = -3232.0; TUN_SAP_X = (2096.0, 2192.0); TUN_SAP_XC = 2144.0
-TUN_LANDING = (2032.0, -3360.0, 2208.0, -3232.0)
+TUN_PORTAL_Y = -2816.0 + TUN_DY; TUN_SAP_Y = -3232.0 + TUN_DY; TUN_SAP_X = (2096.0, 2192.0); TUN_SAP_XC = 2144.0
+TUN_LANDING = (2032.0, -3360.0 + TUN_DY, 2208.0, -3232.0 + TUN_DY)
 
 
 def tunnels():
@@ -299,7 +312,8 @@ def tunnels():
           (736, -3408, 816, -3312, 'cross'), (1376, -3408, 1456, -3312, 'cross'), (992, -3232, 1056, -3168, 'post'), (432, -3536, 496, -3488, 'post'),
           (1648, -3232, 1712, -3168, 'post')]
     out = []
-    for (x0, y0, x1, y1, k) in ct:
+    for (x0, y0, x1, y1, k) in ct:                           # the 15-bay coordinates, moved north with the support trench's end
+        y0 += TUN_DY; y1 += TUN_DY
         out.append((float(x0), float(y0), float(x1), float(y1), k)); out.append((float(-x1), float(y0), float(-x0), float(y1), k))
-    out.append((-176.0, -3536.0, 176.0, -3200.0, 'chamber'))
+    out.append((-176.0, -3536.0 + TUN_DY, 176.0, -3200.0 + TUN_DY, 'chamber'))
     return out

@@ -14,6 +14,10 @@ import vmaplib
 from vmaplib import ent
 import vmesh
 import layout as LY
+fy, TDY, WDY = LY.fy, LY.TUN_DY, LY.WOOD_DY   # short front (17 Nov 2026): literals at / beyond the trench ends move with them
+KY = LY.FRONT_Y / 2880.0                        # along-front positions of the 15-bay map scaled onto the short front (1/3)
+def sy(v): return v * KY
+def nk(n): return max(1, int(round(n * fy(3300) / 3300.0)))   # scatter counts follow the shorter strip (same density)
 from noise import fbm, hash01
 
 SRC, OUTPATH, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -124,7 +128,7 @@ for m in (BLEND_BATTLE, BLEND_FOREST): vmesh.TEX_SIZE[m] = (1024, 1024)
 
 
 def in_battle(x, y):
-    return (abs(x) < 4096) & (abs(y) < 4608)
+    return (abs(x) < 4096) & (abs(y) < fy(4608))
 
 
 # ---------------------------------------------------------------- standing water in the trenches (planned before the terrain so the floor can look wet)
@@ -183,11 +187,11 @@ def tun_floor(x, y):
         top = float(LY.ground_low(np.array([math.copysign(LY.TUN_SAP_XC, x)]), np.array([LY.TUN_PORTAL_Y + 24]))[0]) - LY.DEPTH - 12.0
         t = (y - LY.TUN_SAP_Y) / (LY.TUN_PORTAL_Y - LY.TUN_SAP_Y)
         return LY.TUN_FLOOR + t * (top - LY.TUN_FLOOR)
-    if abs(x) <= 176 and -3536 <= y <= -3200: return LY.TUN_FLOOR - 6.0
+    if abs(x) <= 176 and -3536 + TDY <= y <= -3200 + TDY: return LY.TUN_FLOOR - 6.0
     return LY.TUN_FLOOR + 2.0 * float(fbm(np.array([x / 300.0]), np.array([y / 300.0]), 2.2, 2, seed=61)[0])
 def tun_ceil(x, y):
     k = tun_in(x, y, strict=False)
-    h = 128.0 if (abs(x) <= 176 and -3536 <= y <= -3200) else 108.0 if (LY.TUN_LANDING[0] <= abs(x) <= LY.TUN_LANDING[2] and LY.TUN_LANDING[1] <= y <= LY.TUN_LANDING[3]) else 92.0
+    h = 128.0 if (abs(x) <= 176 and -3536 + TDY <= y <= -3200 + TDY) else 108.0 if (LY.TUN_LANDING[0] <= abs(x) <= LY.TUN_LANDING[2] and LY.TUN_LANDING[1] <= y <= LY.TUN_LANDING[3]) else 92.0
     g = float(LY.ground_low(np.array([x]), np.array([y]))[0])
     return min(tun_floor(x, y) + h, g - 6.0)
 def tun_cut(CX, CY, r):
@@ -224,7 +228,7 @@ def terrain_paint(X, Y, Z, D=None):
     ax, ay = np.abs(X), np.abs(Y)
     n1 = fbm(X / 900.0, Y / 900.0, 0.3, 4, seed=21); n2 = fbm(X / 220.0, Y / 220.0, 1.3, 3, seed=22)
     # distance outside the churned core (no man's land + trenches + mortar line)
-    dx = np.maximum(ax - 2500, 0); dy = np.maximum(ay - 3350, 0)
+    dx = np.maximum(ax - 2500, 0); dy = np.maximum(ay - fy(3350), 0)
     core = np.sqrt(dx ** 2 + dy ** 2)
     pits = np.full(X.shape, 1e9)
     for s in (-1, 1):
@@ -232,13 +236,13 @@ def terrain_paint(X, Y, Z, D=None):
             pits = np.minimum(pits, np.hypot(X - s * LY.MORTAR_X, Y - my))
     g = np.clip(core / 1100.0 + 0.35 * n1 + 0.15 * n2, 0, 1)
     g = g * np.clip((pits - 180) / 300.0, 0, 1)
-    g = np.where((ax > 3700) | (ay > 4300), np.maximum(g, np.clip(((np.maximum(ax - 3700, 0) + np.maximum(ay - 4300, 0)) / 300.0), 0, 1)), g)
+    g = np.where((ax > 3700) | (ay > fy(4300)), np.maximum(g, np.clip(((np.maximum(ax - 3700, 0) + np.maximum(ay - fy(4300), 0)) / 300.0), 0, 1)), g)
     if D is not None: g = np.where(D < 48, 0.0, g)
     # forest: dirt patches and tracks, the airfield stays grass
     f = np.clip((n1 - 0.05) * 2.2 + 0.6 * n2, 0, 1)
     air = (ax > 4300) & (ax < 6950) & (ay < 1150)
     f = np.where(air, np.clip(0.25 * n2, 0, 1), f)
-    f = np.where((ax < 4400) & (ay < 4900), np.minimum(f, np.clip(((np.maximum(ax - 4096, 0)) + np.maximum(ay - 4608, 0)) / 300.0, 0, 1)), f)
+    f = np.where((ax < 4400) & (ay < fy(4900)), np.minimum(f, np.clip(((np.maximum(ax - 4096, 0)) + np.maximum(ay - fy(4608), 0)) / 300.0, 0, 1)), f)
     w = np.where(in_battle(X, Y), g, f)
     t = np.clip(0.86 + 0.12 * n1 + 0.06 * n2, 0.7, 1.0)
     t = np.where(in_battle(X, Y) & (w < 0.3), t * 0.94, t)
@@ -254,11 +258,11 @@ def terrain_paint(X, Y, Z, D=None):
 TILE = 512
 def tile_res(cx, cy):
     ax, ay = abs(cx), abs(cy)
-    if ax - TILE / 2 < 2560 and ay - TILE / 2 < 3500: return 32
+    if ax - TILE / 2 < 2560 and ay - TILE / 2 < fy(3500): return 32
     for s in (-1, 1):
         for my in LY.MORTAR_Y:
             if abs(cx - s * LY.MORTAR_X) < 520 and abs(cy - my) < 520: return 32
-    if ax - TILE / 2 < 4400 and ay - TILE / 2 < 4600: return 64
+    if ax - TILE / 2 < 4400 and ay - TILE / 2 < fy(4600): return 64
     return 128
 
 tiles = {}
@@ -297,7 +301,7 @@ for (tx, ty), r in tiles.items():
         cx = (X[i, j] + X[i + 1, j + 1]) / 2; cy = (Y[i, j] + Y[i + 1, j + 1]) / 2
         return BLEND_BATTLE if in_battle(cx, cy) else BLEND_FOREST
     CXc = (X[:-1, :-1] + X[1:, 1:]) / 2; CYc = (Y[:-1, :-1] + Y[1:, 1:]) / 2
-    cut = tun_cut(CXc, CYc, r) if (abs(abs(tx + TILE / 2) - LY.TUN_SAP_XC) < 400 and abs(ty + TILE / 2 + 3000) < 400) else None
+    cut = tun_cut(CXc, CYc, r) if (abs(abs(tx + TILE / 2) - LY.TUN_SAP_XC) < 400 and abs(ty + TILE / 2 - (-3000 + TDY)) < 400) else None
     verts, faces, mats, (pa, ti) = vmesh.grid_sheet(X, Y, Z, fm, valid=None if cut is None or not cut.any() else ~cut, vert_attr=(PA, TI))
     vmesh.mesh_node(vmesh.polymesh_open(verts, faces, mats, paint=pa, tint=ti), GROUP, bake=True, shadows=True)
     nquads += len(faces)
@@ -630,29 +634,31 @@ def free(x, y, r=90):
 for s in (-1, 1):
     # wire belts: a fence line and a coil line in front of each fire trench, with gaps cut by shellfire
     for (xw, kind, gap) in ((1390, 'fence', 0.16), (1235, 'coil', 0.25)):
-        y = -3100.0
-        while y < 3100:
+        y = fy(-3100.0)
+        while y < fy(3100.0):
             if rng.rand() > gap:
                 x = xw + rng.uniform(-14, 14)
                 name = (('wire_fence_a', 'wire_fence_b')[rng.randint(2)]) if kind == 'fence' else 'wire_coil'
                 prop(name, s * x, y, gz(s * x, y) - 2, yaw_for(s, 0) + rng.uniform(-7, 7), solid='0')
             y += 128
-    for k in range(9):
-        x = rng.uniform(1050, 1460); y = rng.uniform(-3000, 3000)
+    for k in range(nk(9)):
+        x = rng.uniform(1050, 1460); y = rng.uniform(fy(-3000), fy(3000))
         prop('cheval', s * x, y, gz(s * x, y) - 1, rng.uniform(0, 360), roll=rng.uniform(-6, 6), check=True, pad=4)
 wrecks = [('wreck_tank', -380, 860, 34, 7, -5, -14), ('wreck_tank', 520, -1720, 205, -6, 4, -12),
           ('wreck_fieldgun', -880, -620, 300, 0, 7, -3), ('wreck_fieldgun', 1080, 2360, 140, 3, -9, -4),
           ('wreck_wheel', -840, -700, 20, 0, 0, -2), ('wreck_wheel', 300, 2900, 130, 0, 0, -2)]
+wrecks = [(w[0], w[1], sy(w[2])) + w[3:] for w in wrecks]
 for (nm, x, y, yaw, pitch, roll, sink) in wrecks:
     prop(nm, x, y, gz(x, y) + sink, yaw, pitch, roll)
 # downloaded models (CC-BY, see CREDITS.txt): knocked-out tanks, guns, battlefield clutter
 for (nm, x, y, yaw, pitch, roll, sink) in (('tank_a7v', 760, 1420, 70, 5, -7, -16), ('tank_renault_ft', -1040, -2350, 230, -6, 9, -10),
                                            ('gun_75mm', -2660, 900, 20, 0, 3, -3), ('howitzer_bl8', 2700, -2300, 160, 0, 0, -2)):
+    y = sy(y)
     prop(None, x, y, gz(x, y) + sink, yaw, pitch, roll, stock=EXT(nm))
 scatter_ext = [('stump_burnt', 26, (0, 1500)), ('helmet_brodie_ext', 10, (200, 1450)), ('helmet_stahl_ext', 10, (200, 1450))]
 for nm, n, xr in scatter_ext:
-    for _ in range(n):
-        x = rng.choice([-1, 1]) * rng.uniform(*xr); y = rng.uniform(-3300, 3300)
+    for _ in range(nk(n)):
+        x = rng.choice([-1, 1]) * rng.uniform(*xr); y = rng.uniform(fy(-3300), fy(3300))
         if not free(x, y, 90): continue
         sc = rng.uniform(0.8, 1.3) if nm == 'stump_burnt' else 1.0
         prop(None, x, y, gz(x, y) - (6 if nm == 'stump_burnt' else 0.5), rng.uniform(0, 360), rng.uniform(-5, 5), rng.uniform(-5, 5), scale=(sc, sc, sc), stock=EXT(nm), check=True, pad=3)
@@ -671,12 +677,12 @@ def scatter(n, xr, yr, names, min_d=110, mirror=True, zoff=-6, tilt=6, wall_clea
         if prop(names[rng.randint(len(names))], x, y, gz(x, y) + zoff, rng.uniform(0, 360), rng.uniform(-tilt, tilt), rng.uniform(-tilt, tilt), scale=(sc, sc, sc), check=True, pad=3) is None: continue
         placed_pts.append((x, y))
         c += 1
-scatter(46, (0, 1500), (-3400, 3400), TREES, min_d=260)
-scatter(70, (1450, 2700), (-3300, 3300), TREES + ['tree_shattered_c'], min_d=200)
-scatter(150, (0, 2800), (-3500, 3500), ['stump_a', 'stump_b', 'stump_a'], min_d=120, zoff=-8)
-scatter(24, (0, 2600), (-3400, 3400), ['log_fallen'], min_d=300, zoff=-4, tilt=3)
-scatter(40, (0, 1450), (-3300, 3300), ['helmet_brodie', 'helmet_stahl'], min_d=60, zoff=-1, tilt=25, wall_clear=60, scale_r=(1, 1))
-scatter(14, (0, 1450), (-3300, 3300), ['casings', 'shell_pile', 'crate_shells'], min_d=200, zoff=-2, tilt=8, scale_r=(1, 1))
+scatter(nk(46), (0, 1500), (fy(-3400), fy(3400)), TREES, min_d=260)
+scatter(nk(70), (1450, 2700), (fy(-3300), fy(3300)), TREES + ['tree_shattered_c'], min_d=200)
+scatter(nk(150), (0, 2800), (fy(-3500), fy(3500)), ['stump_a', 'stump_b', 'stump_a'], min_d=120, zoff=-8)
+scatter(nk(24), (0, 2600), (fy(-3400), fy(3400)), ['log_fallen'], min_d=300, zoff=-4, tilt=3)
+scatter(nk(40), (0, 1450), (fy(-3300), fy(3300)), ['helmet_brodie', 'helmet_stahl'], min_d=60, zoff=-1, tilt=25, wall_clear=60, scale_r=(1, 1))
+scatter(nk(14), (0, 1450), (fy(-3300), fy(3300)), ['casings', 'shell_pile', 'crate_shells'], min_d=200, zoff=-2, tilt=8, scale_r=(1, 1))
 # muddy water in the bigger craters of no man's land
 nw = 0
 for (cx, cy, r, dep) in sorted(LY.CRATERS.tolist(), key=lambda c: -c[2]):
@@ -698,10 +704,10 @@ for (cx, cy, r, dep) in sorted(LY.CRATERS.tolist(), key=lambda c: -c[2]):
 print('no man\'s land: %d puddles' % nw)
 
 # smoke: smouldering wrecks, a couple of burning craters, distant columns behind both lines
-for (x, y) in ((-380, 860), (520, -1720), (760, 1420), (-1040, -2350)):
+for (x, y) in ((-380, sy(860)), (520, sy(-1720)), (760, sy(1420)), (-1040, sy(-2350))):
     ent('info_particle_system', (x, y, gz(x, y) + 70), group=GROUP, effect_name='particles/burning_fx/barrel_burning_engine_smoke_dark.vpcf', start_active='1')
 for _ in range(3):
-    x, y = rng.uniform(-900, 900), rng.uniform(-2800, 2800)
+    x, y = rng.uniform(-900, 900), rng.uniform(fy(-2800), fy(2800))
     ent('info_particle_system', (x, y, gz(x, y) + 4), group=GROUP, effect_name='particles/burning_fx/env_fire_small_smoke.vpcf', start_active='1')
 for s_ in (-1, 1):
     for y in (-3900, -900, 2600):
@@ -710,8 +716,8 @@ for s_ in (-1, 1):
 
 # scattered metal debris across no man's land
 DEB = ['models/de_cache_s2/debris/debris_kit_01a/debris_metal_01%s.vmdl' % c for c in 'abcdefgh']
-for _ in range(70):
-    x = rng.uniform(-1300, 1300); y = rng.uniform(-3300, 3300)
+for _ in range(nk(70)):
+    x = rng.uniform(-1300, 1300); y = rng.uniform(fy(-3300), fy(3300))
     if not free(x, y, 70): continue
     prop(None, x, y, gz(x, y) - 1, rng.uniform(0, 360), rng.uniform(-10, 10), rng.uniform(-10, 10), stock=DEB[rng.randint(len(DEB))], solid='0', check=True, pad=2)
 
@@ -767,7 +773,7 @@ for s in (-1, 1):
         for tag, (px, py) in (('a', (tx + s * 38, ty)), ('b', (ax + s * 44, ay))):
             ang = (0, 180 if s > 0 else 0, 0)
             ent('info_teleport_destination', (px, py, surf_z(px, py, pad=16) + 8), ang, group=GROUP, targetname='mortarcrew_%s_%d_%s' % ('ct' if s > 0 else 't', k + 1, tag))
-    prop('sign_mortars_gb' if s > 0 else 'sign_mortars_de', s * (LY.MORTAR_X - 260), -1200, gz(s * (LY.MORTAR_X - 260), -1200), 0 if s > 0 else 180)
+    prop('sign_mortars_gb' if s > 0 else 'sign_mortars_de', s * (LY.MORTAR_X - 260), 0, gz(s * (LY.MORTAR_X - 260), 0), 0 if s > 0 else 180)   # between the 2 pits
 
 # ---------------------------------------------------------------- airfields (biplanes later): hangar, signs, spawn markers
 
@@ -856,17 +862,20 @@ WEED = ['models/props/de_nuke/hr_nuke/foliage/weed_cluster_01.vmdl', 'models/pro
         'models/foliage/weeds/ground_mid_grass_01a.vmdl', 'models/foliage/ground/ground_leaves_1.vmdl']
 
 
+MORTAR_EXT = max(abs(v) for v in LY.MORTAR_Y) + 440          # 15 bays: 2000 (pits to 1600)
+
+
 def woodland_ok(x, y):
     ax, ay = abs(x), abs(y)
-    if ax < 3550 and ay < 3500: return False                    # battle zone (shattered trees only)
+    if ax < 3550 and ay < fy(3500): return False                # battle zone (shattered trees only)
     if 4300 < ax < 6950 and ay < 1150: return False             # airfield clearing
-    if abs(ax - LY.MORTAR_X) < 420 and ay < 2000: return False
+    if abs(ax - LY.MORTAR_X) < 420 and ay < MORTAR_EXT: return False
     return True
 
 
 def near_play(x, y):
     ax, ay = abs(x), abs(y)
-    dx = max(0, ax - 3700); dy = max(0, ay - 3500)
+    dx = max(0, ax - 3700); dy = max(0, ay - fy(3500))
     da = max(0, max(4200 - ax, ax - 7000, 0)) if ay < 1300 else 9999
     return min(math.hypot(dx, dy), da + max(0, ay - 1150))
 
@@ -890,15 +899,15 @@ for gx in np.arange(-LY.MAP_X + 100, LY.MAP_X - 100, grid):
                 wx, wy = x + rng.uniform(-115, 115), y + rng.uniform(-115, 115)
                 prop(None, wx, wy, gz(wx, wy) - 1, rng.uniform(0, 360), stock=WEED[rng.randint(len(WEED))], solid="0", check=True)
 # the battle zone's edge: a few surviving trees and lots of weeds between the mortar line and the trenches
-for _ in range(160):
-    x = rng.choice([-1, 1]) * rng.uniform(2650, 3550); y = rng.uniform(-3400, 3400)
-    if abs(abs(x) - LY.MORTAR_X) < 360 and abs(y) < 2000: continue
+for _ in range(nk(160)):
+    x = rng.choice([-1, 1]) * rng.uniform(2650, 3550); y = rng.uniform(fy(-3400), fy(3400))
+    if abs(abs(x) - LY.MORTAR_X) < 360 and abs(y) < MORTAR_EXT: continue
     if rng.rand() < 0.3:
         prop(None, x, y, gz(x, y) - 4, rng.uniform(0, 360), stock=FULL[rng.choice([2, 3, 4, 5])], shadows='0')
     else:
         prop(None, x, y, gz(x, y) - 1, rng.uniform(0, 360), stock=WEED[rng.randint(len(WEED))], solid="0", check=True)
-for _ in range(160):
-    x = rng.choice([-1, 1]) * rng.uniform(1500, 3600); y = rng.uniform(-3500, 3500)
+for _ in range(nk(160)):
+    x = rng.choice([-1, 1]) * rng.uniform(1500, 3600); y = rng.uniform(fy(-3500), fy(3500))
     if not free(x, y, 70): continue
     prop(None, x, y, gz(x, y) - 1, rng.uniform(0, 360), stock=WEED[rng.choice([0, 1, 2])], solid="0", check=True)
 print('woodland: %d trees' % nt)
@@ -1001,9 +1010,9 @@ ent('env_volumetric_fog_controller', (192, 0, 2000), group=GROUP, targetname='tw
     NoiseSpeed='0.12', NoiseStrength='0.6', NoiseScale='.003 .003 .008', volume_depth_override='0', volume_first_slice_thickness='0')
 clone('post_processing_volume', (256, 0, 2000), postprocessing='postprocess/%s.vpost' % NAME, master='1', minexposure='0.6', maxexposure='1.8',
       enableexposure='1', fadetime='1.0', spawnflags='4097')
-clone('env_combined_light_probe_volume', (0, 0, 120), box_mins='-3900 -3700 -260', box_maxs='3900 4500 520', voxel_size='64.0', targetname='bf_probe')
+clone('env_combined_light_probe_volume', (0, 0, 120), box_mins='-3900 %g -260' % fy(-3700), box_maxs='3900 %g 520' % fy(4500), voxel_size='64.0', targetname='bf_probe')
 # coarse probes for the light-probed trees and clutter outside the battlefield (strips around bf_probe, gaps for the aerodrome probes)
-_far = [(-3900, -6300, 3900, -3700), (-3900, 4500, 3900, 6300)]
+_far = [(-3900, -6300, 3900, fy(-3700)), (-3900, fy(4500), 3900, 6300)]
 for s_ in (-1, 1):
     xa, xb = sorted((s_ * 3900, s_ * 7300)); ha, hb = sorted((s_ * (LY.HANGAR_X - 700), s_ * (LY.HANGAR_X + 700)))
     _far += [(xa, -6300, xb, -800), (xa, 800, xb, 6300), (xa, -800, ha, 800), (hb, -800, xb, 800)]
@@ -1030,15 +1039,15 @@ def hint(box, kind):
     ent('visibility_hint', c, group=GROUP, hintType=str(kind), box_mins='%g %g %g' % (-h[0], -h[1], -h[2]), box_maxs='%g %g %g' % (h[0], h[1], h[2]))
 for s in (-1, 1):
     a, b = sorted((s * 1290, s * 2620))
-    hint((a, -3600, -300, b, 3300, 360), 3)                  # trenches, saps and the landings
+    hint((a, fy(-3600), -300, b, fy(3300), 360), 3)          # trenches, saps and the landings
     a, b = sorted((s * 1290, s * 1800))
-    hint((a, 3300, -120, b, 3560, 360), 3)                   # skirmish track
+    hint((a, fy(3300), -120, b, fy(3560), 360), 3)           # skirmish track
     a, b = sorted((s * 2900, s * 3500))
-    hint((a, -1900, -160, b, 1900, 320), 3)                  # mortar pits
-hint((-1280, -3600, -300, 1280, -3150, -122), 3)              # mine galleries
-hint((-1280, -3150, -300, 1280, 2900, 460), 8)                # no man's land (Lower: big open space)
-hint((-1280, -3600, -121, 1280, -3150, 460), 8)
-hint((-1280, 2900, -160, 1280, 4500, 420), 3)                 # woods skirmish clearing
+    hint((a, -MORTAR_EXT + 140, -160, b, MORTAR_EXT - 140, 320), 3)   # mortar pits
+hint((-1280, fy(-3600), -300, 1280, fy(-3150), -122), 3)      # mine galleries
+hint((-1280, fy(-3150), -300, 1280, fy(2900), 460), 8)        # no man's land (Lower: big open space)
+hint((-1280, fy(-3600), -121, 1280, fy(-3150), 460), 8)
+hint((-1280, fy(2900), -160, 1280, fy(4500), 420), 3)         # woods skirmish clearing
 hint((-LW / 2 - 64, -LD / 2 - 64, LZ - 64, LW / 2 + 64, LD / 2 + 64, LZ + LH + 64), 3)
 hint((-SX - 64, -SY - 64, LZ - 128, SX + 64, SY + 64, LY.SKY_Z1 + 64), 9)
 # no cs_minimap_boundary: with it CS2 renders its own top-down minimap (it showed the lobby) instead of the overview txt + radar png
@@ -1048,10 +1057,15 @@ def banner_png():
     W, H = 2048, int(2048 * bh / bw)
     im = Image.new('RGB', (W, H), (34, 31, 26))
     dr = ImageDraw.Draw(im)
-    f1 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf', 80)
-    f2 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.ttf', 36)
-    f3 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.ttf', 30)
-    f4 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed.ttf', 26)
+    def _font(paths, size):                     # the Linux workspace's DejaVu, else Windows (the PC since Nov 2026)
+        for f in paths:
+            if os.path.exists(f): return ImageFont.truetype(f, size)
+        return ImageFont.load_default()
+    D = '/usr/share/fonts/truetype/dejavu/'
+    f1 = _font([D + 'DejaVuSerif-Bold.ttf', 'C:/Windows/Fonts/georgiab.ttf'], 80)
+    f2 = _font([D + 'DejaVuSansCondensed-Bold.ttf', 'C:/Windows/Fonts/arialbd.ttf'], 36)
+    f3 = _font([D + 'DejaVuSansCondensed-Bold.ttf', 'C:/Windows/Fonts/arialbd.ttf'], 30)
+    f4 = _font([D + 'DejaVuSansCondensed.ttf', 'C:/Windows/Fonts/arial.ttf'], 26)
     dr.rectangle((14, 14, W - 15, H - 15), outline=(170, 150, 110), width=6)
     def centre(t, y, f, col):
         bb = dr.textbbox((0, 0), t, font=f); dr.text(((W - (bb[2] - bb[0])) / 2 - bb[0], y), t, fill=col, font=f)
@@ -1082,7 +1096,7 @@ for m_ in (T_FLOOR, T_WALL): vmesh.TEX_SIZE[m_] = (1024, 1024)
 vmesh.TEX_SIZE[T_ROOF] = (1024, 512)
 c_ = LY.TUN_CELL
 TX_ = max(r_[2] for r_ in TUN)
-gx = np.arange(-TX_, TX_ + 1, c_); gy = np.arange(-3536.0, LY.TUN_PORTAL_Y + 1, c_)
+gx = np.arange(-TX_, TX_ + 1, c_); gy = np.arange(-3536.0 + TDY, LY.TUN_PORTAL_Y + 1, c_)
 nxc, nyc = len(gx) - 1, len(gy) - 1
 occ = np.zeros((nxc, nyc), bool)
 for i in range(nxc):
@@ -1166,14 +1180,14 @@ for s in (-1, 1):
     dx_ = LY.TUN_SAP_XC - 1648.0
     for (nm, x, y, yaw) in (('tl_bagpile', 1690, -3340, 0), ('tl_bagpile', 1660, -3348, 10), ('tl_planks', 1556, -3250, 90), ('tl_tools', 1700, -3260, 0),
                             ('tl_bucket', 1670, -3250, None), ('crate_long' if s > 0 else 'crate_german', 1560, -3345, 0), ('tl_wirereel', 1600, -3346, 0)):
-        tprop(nm, s * (x + dx_), y, None if yaw is None else (yaw if s > 0 else 180 - yaw))
-    for (x, y) in ((1024, -3200), (464, -3512), (1680, -3200)):           # listening posts: a bench and a telephone
+        tprop(nm, s * (x + dx_), y + TDY, None if yaw is None else (yaw if s > 0 else 180 - yaw))
+    for (x, y) in ((1024, -3200 + TDY), (464, -3512 + TDY), (1680, -3200 + TDY)):   # listening posts: a bench and a telephone
         tprop('tl_bench', s * x, y, 0 if s > 0 else 180)
         tprop(None, s * (x + 14), y + 4, 90, dz=18.0, stock=EXT('field_telephone'))
         tun_lamp(s * x, y, tun_ceil(s * x, y) - 18, 160, '255 170 96', rmax=110.0)
-    for (x, y) in ((LY.TUN_SAP_XC - 28, -3300), (900, -3270), (1500, -3460)):
+    for (x, y) in ((LY.TUN_SAP_XC - 28, -3300 + TDY), (900, -3270 + TDY), (1500, -3460 + TDY)):
         tprop('tl_lantern', s * x, y)
-    wall_sign('sign_sap_gb' if s > 0 else 'sign_sap_de', LY.TUN_SAP_XC, -2760)
+    wall_sign('sign_sap_gb' if s > 0 else 'sign_sap_de', LY.TUN_SAP_XC, -2760 + TDY)
     # portal: a heavier set framing the opening
     xp_ = s * LY.TUN_SAP_XC
     fl_ = tun_floor(xp_, LY.TUN_PORTAL_Y - 6)
@@ -1182,10 +1196,11 @@ for s in (-1, 1):
 for (nm, x, y, yaw, dz) in (('crate_shells', -24, -3380, 0, 0), ('crate_shells', 24, -3380, 0, 0), ('crate_shells', 0, -3380, 0, 12.6),
                             ('crate_shells', -24, -3352, 0, 0), ('crate_shells', 24, -3352, 0, 0), ('crate_shells', 0, -3352, 0, 12.6),
                             ('sandbag_low', 0, -3420, 0, 0), ('sandbag_low', 0, -3312, 0, 0), ('tl_wirereel', -110, -3470, 90, 0), ('tl_wirereel', 110, -3260, 90, 0)):
+    y += TDY
     prop(nm, x, y, tun_floor(x, y) + dz, yaw, check=True, pad=1.0)
-for (x, y) in ((0, -3300), (0, -3440)):            # the chamber keeps two shadowed lamps (only the sun overlaps them)
+for (x, y) in ((0, -3300 + TDY), (0, -3440 + TDY)):            # the chamber keeps two shadowed lamps (only the sun overlaps them)
     tun_lamp(x, y, tun_ceil(x, y) - 18, 600, '255 180 104', rmax=150.0, shadows=True)
-clone('env_combined_light_probe_volume', (0, -3216, -200), box_mins='-2260 -340 -90', box_maxs='2260 400 120', voxel_size='32.0', targetname='tunnel_probe')
+clone('env_combined_light_probe_volume', (0, -3216 + TDY, -200), box_mins='-2260 -340 -90', box_maxs='2260 400 120', voxel_size='32.0', targetname='tunnel_probe')
 print('mine tunnels: %d timber sets, %d lamps' % (nsets, nlamp))
 
 # ---------------------------------------------------------------- woods skirmish: a ladder out of the north end of each fire trench,
@@ -1229,12 +1244,12 @@ def _offset_path(pts, w):
     return out
 
 
-B_ = (1080.0, 3560.0)
+B_ = (1080.0, 3560.0 + WDY)                                                   # the woods: 15-bay coordinates moved with the north end
 spine = [(EXIT_X, EXIT_Y), (EXIT_X, EXIT_Y + 95.0), B_]                      # CT half; walking out of the trench
 left = _offset_path(spine, EXIT_W)                                            # west / south-west wall
 right = _offset_path(spine, -EXIT_W)                                          # east / north-east wall
-arena_e = [(1185, 3700), (1210, 3950), (1130, 4205), (905, 4350), (455, 4415), (0, 4395)]       # CT half of the clearing's rim
-arena_s = [(850, 3478), (450, 3452), (0, 3472)]
+arena_e = [(x, y + WDY) for x, y in ((1185, 3700), (1210, 3950), (1130, 4205), (905, 4350), (455, 4415), (0, 4395))]   # CT half of the clearing's rim
+arena_s = [(x, y + WDY) for x, y in ((850, 3478), (450, 3452), (0, 3472))]
 ct_loop = [right[0], right[1], right[2]] + arena_e                             # trench exit -> north-east wall -> rim to x = 0 (north)
 south_ct = [left[0], left[1], left[2]] + arena_s                               # trench exit -> south-west wall -> south rim to x = 0
 mir = lambda P: [(-p[0], p[1]) for p in P]
@@ -1323,7 +1338,7 @@ ncover = 0
 for name, cnt in cover:
     for _ in range(cnt):
         for attempt in range(25):
-            x_, y_ = SK.uniform(90, 1120), SK.uniform(3560, 4330)
+            x_, y_ = SK.uniform(90, 1120), SK.uniform(3560 + WDY, 4330 + WDY)
             if not inside_skirmish(x_, y_) or math.hypot(x_ - B_[0], y_ - B_[1]) < 170: continue
             yaw = SK.uniform(0, 360)
             ok = True
@@ -1343,12 +1358,21 @@ print('woods skirmish: exit at x=+-%.0f y=%.0f, %d clip walls, %d fence panels, 
 # the mine galleries and the lobby as boxes.
 LMRES = 'materials/tools/toolslightmapres.vmat'
 vmesh.TEX_SIZE[LMRES] = (64, 64)
-from matplotlib.path import Path as _MPath
+class _MPath:                       # even-odd point in polygon (was matplotlib.path.Path, not installed on the PC)
+    def __init__(self, poly): self.p = np.asarray(poly, float)
+    def contains_points(self, pts):
+        pts = np.asarray(pts, float); x, y = pts[:, 0], pts[:, 1]; inside = np.zeros(len(pts), bool)
+        P = self.p; Q = np.roll(P, -1, axis=0)
+        for (x0, y0), (x1, y1) in zip(P, Q):
+            if y0 == y1: continue
+            hit = ((y0 > y) != (y1 > y)) & (x < x0 + (y - y0) * (x1 - x0) / (y1 - y0))
+            inside ^= hit
+        return inside
 LC = 64.0
-lgx = np.arange(-3456.0, 3456.0 + 1, LC); lgy = np.arange(-3072.0, 4480.0 + 1, LC)
+lgx = np.arange(-3456.0, 3456.0 + 1, LC); lgy = np.arange(fy(-3072.0), fy(4480.0) + 1, LC)
 lnx, lny = len(lgx) - 1, len(lgy) - 1
 LX0, LY0_ = np.meshgrid(lgx[:-1], lgy[:-1], indexing='ij'); LX1, LY1_ = LX0 + LC, LY0_ + LC
-locc = (np.abs(LX0 + LC / 2) < 1600) & (LY0_ + LC / 2 > -2990) & (LY0_ + LC / 2 < 2990)        # no man's land
+locc = (np.abs(LX0 + LC / 2) < 1600) & (LY0_ + LC / 2 > fy(-2990)) & (LY0_ + LC / 2 < fy(2990))        # no man's land
 for s in (-1, 1):
     for (x0, y0, x1, y1, k) in LY.rects():
         a, b = sorted((s * x0, s * x1))
