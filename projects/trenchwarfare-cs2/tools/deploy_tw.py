@@ -16,7 +16,8 @@ usage (from the project folder):
             lips, sap mouths; docs/REVIEW_WORLD_2.md "Seams") -> 5_world_3 (patch_world_3: CT air-lane poplars, pit_t_2's shell rack,
             the pool poplar, crater pool rims; docs/REVIEW_WORLD_3.md) -> 6_sounds (patch_sounds, step 8: the sound entities; skipped
             with a note while tools/patch_sounds.py does not exist) -> 7_nav (patch_nav, step 4, reading the staged models in out/addon
-            like the gate: the rebuilt shelter of step 13) = the final map.
+            like the gate: the rebuilt shelter of step 13) -> 8_fog (patch_fog_2, 17 Nov 2026: gentle volumetric + cubemap fog)
+            = the final map.
             Then the radar is re-made from the final map (tools/make_radar.py --vmap <final>, tools/check_radar.py; outputs are
             step 8's staging in out/addon + out/game, their hashes recorded so a later re-make is noticed).
             Before stage 1 the user's map must be the recorded BASE (CRC32 2e3f90d0, the tw34 delivery the patches' target tables were
@@ -146,6 +147,7 @@ SIDE_FILES = {   # what each patch tool writes into an earlier step's folder bes
     '5_world_3': [],
     '6_sounds': [],
     '7_nav': [],
+    '8_fog': [],
 }
 SOUNDS_TOOL = os.path.join(HERE, 'patch_sounds.py')
 # step 8's radar is drawn from the map: re-made from the final chained map (its outputs are step 8's staging: out/addon, out/game)
@@ -273,6 +275,8 @@ def chain(a):
         ('6_sounds', [PY, '-u', 'tools/patch_sounds.py'], None),
         ('7_nav', [PY, '-u', 'tools/patch_nav.py', '--estimate', '--stage', os.path.join(OUT, 'addon'), '--targets', os.path.join(CHAIN, '7_nav.targets.json'),
                    '--report', os.path.join(CHAIN, '7_nav.report.json')], '7_nav.targets.json'),
+        ('8_fog', [PY, '-u', 'tools/patch_fog_2.py', '--no-guard', '--targets', os.path.join(CHAIN, '8_fog.targets.json'),
+                   '--report', os.path.join(CHAIN, '8_fog.report.json')], '8_fog.targets.json'),      # 17 Nov 2026: gentle fog back
     ]
     prev = dict(path=src, **h0)
     for name, cmd, tfile in stages:
