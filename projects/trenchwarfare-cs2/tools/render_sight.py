@@ -121,9 +121,10 @@ def finish(img, team, rng):
     d.text((cx + sgn * (L + 14), cy), 'N', font=F(GEORGIA_B, 20), fill=(52, 40, 30, 230), anchor='mm')
     # sheet title, bottom left
     t = 'TRENCH MAP'; sub = 'own works blue, enemy red'
-    d.rectangle((46, h - 96, 46 + 420, h - 30), fill=(236, 226, 200, 220), outline=(52, 40, 30, 200), width=2)
-    d.text((60, h - 77), t, font=F(STENCIL, 30), fill=(52, 40, 30, 235), anchor='lm')
-    d.text((60, h - 46), sub, font=F(GEORGIA, 16), fill=(52, 40, 30, 225), anchor='lm')
+    # 290 wide (was 420): with the short front's EXT 3600 the own pits sit in row 16 from column G (x ~0.41 w)
+    d.rectangle((46, h - 86, 46 + 290, h - 30), fill=(236, 226, 200, 220), outline=(52, 40, 30, 200), width=2)
+    d.text((58, h - 70), t, font=F(STENCIL, 24), fill=(52, 40, 30, 235), anchor='lm')
+    d.text((58, h - 44), sub, font=F(GEORGIA, 14), fill=(52, 40, 30, 225), anchor='lm')
     d.rectangle((0, 0, w - 1, h - 1), outline=(52, 40, 30, 255), width=3)
     return im
 
