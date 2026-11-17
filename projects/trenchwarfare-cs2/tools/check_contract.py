@@ -232,8 +232,9 @@ def main():
         'content %s, game vsndevts_c %s' % ('yes' if vtext else 'NO', 'yes' if g_vs else 'NO'))
 
     # ---------------------------------------------------------------- HUD
-    xmlp = os.path.join(a.addon, 'panorama', 'layout', 'custom_game', 'mg_trenchwarfare.xml')
-    cssp = os.path.join(a.addon, 'panorama', 'styles', 'custom_game', 'mg_trenchwarfare.css')
+    hud_root = a.stage if a.stage and os.path.isfile(os.path.join(a.stage, 'panorama', 'layout', 'custom_game', 'mg_trenchwarfare.xml')) else a.addon
+    xmlp = os.path.join(hud_root, 'panorama', 'layout', 'custom_game', 'mg_trenchwarfare.xml')   # --stage: the HUD that will be deployed
+    cssp = os.path.join(hud_root, 'panorama', 'styles', 'custom_game', 'mg_trenchwarfare.css')
     xml = open(xmlp, encoding='utf-8').read() if os.path.exists(xmlp) else ''
     css = open(cssp, encoding='utf-8').read() if os.path.exists(cssp) else ''
     xids = set(re.findall(r'\bid="([^"]+)"', xml))

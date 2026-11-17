@@ -60,11 +60,11 @@ function drawSights(p, a) {
   const A = CONFIG.AIR, S = A.SIGHT_HUD, ac = a.ac;
   if (ac.gsight) park(ac, ac.gsight);                                   // old map props: never shown again (removed from the map later)
   if (ac.bsight) park(ac, ac.bsight);
+  if (a.bombs > 0 && (!a.land || a.tick % 4 === 0)) a.land = bombLanding(a);   // before the bot return: 85_ai bombs on a.land
   if (p.bot || !a.camPos) return;
   const g = a.aim;
   placeSight(p, "tw_gpip", g ? sightProject(a, vadd(g.s, g.dir, g.dist)) : null, g && g.hit ? "" : "far");
   if (a.bombs > 0) {
-    if (!a.land || a.tick % 4 === 0) a.land = bombLanding(a);
     const pr = sightProject(a, a.land);
     const S2 = CONFIG.AIR.SIGHT_HUD;
     let size = "";                                                        // off screen: no size (the edge arrow is not scaled)
