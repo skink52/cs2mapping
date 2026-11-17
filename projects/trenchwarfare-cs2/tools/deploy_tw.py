@@ -172,7 +172,11 @@ def radar(final, rec):
     code, text, secs = run([PY, '-u', 'tools/make_radar.py', '--vmap', fin], os.path.join(CHAIN, 'radar_make.log'))
     r = dict(make_exit=code, make_seconds=round(secs, 1), make_last=(text.strip().splitlines() or [''])[-1][:200])
     if code == 0:
-        code2, text2, secs2 = run([PY, '-u', 'tools/check_radar.py'], os.path.join(CHAIN, 'radar_check.log'))
+        # the named points from THE FINAL MAP (out/digest.json is the deployed map's: after the short front it had the old points)
+        dg = os.path.join(CHAIN, 'final_digest.json')
+        run([PY, '-c', 'import sys, json; sys.path.insert(0, r"%s"); import mapdigest; json.dump(mapdigest.digest(r"%s"), open(r"%s", "w"))'
+             % (os.path.join(REPO, 'tools'), fin, dg)], os.path.join(CHAIN, 'radar_digest.log'))
+        code2, text2, secs2 = run([PY, '-u', 'tools/check_radar.py', '--digest', dg], os.path.join(CHAIN, 'radar_check.log'))
         r.update(check_exit=code2, check_seconds=round(secs2, 1), check_last=(text2.strip().splitlines() or [''])[-1][:200])
     r['files'] = {}
     for f in RADAR_FILES:
