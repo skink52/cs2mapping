@@ -42,11 +42,14 @@ GROUP = 'tw_gen'
 TOL = 2.0
 SHELTER = 'models/tw/shelter/shelter.vmdl'
 # the 6 dressing-station shelters (read from the step 7 map, 12 Nov 2026): tag, number (by y, as heal_<tg>_N), origin
-SHELTERS = [('t', 1, (-2238.0, -1056.0, -69.9)), ('t', 2, (-2238.0, 576.0, -69.84)), ('t', 3, (-2238.0, 2304.0, -76.17)),
-            ('ct', 1, (2238.0, -1056.0, -71.28)), ('ct', 2, (2238.0, 576.0, -72.9)), ('ct', 3, (2238.0, 2304.0, -71.32))]
+# short front (18 Nov 2026): from the layout (tools/layout.py SHELTER_Y; x = XS + 88, as make_map places the shelter); z is read from the
+# map (plan() matches x, y within TOL and takes the shelter's own origin). 15 bays had 3 a side at y -1056 / 576 / 2304.
+sys.path.append(HERE)
+import layout as _LY      # noqa: E402
+SHELTERS = [(tg, n + 1, (sg * (_LY.XS + 88.0), y)) for tg, sg in (('t', -1), ('ct', 1)) for n, y in enumerate(_LY.SHELTER_Y)]
 TIN_UP = 88.0                 # under the shelter roof (check_play T4: >= 72 u headroom at the dressing station)
 DIVE_EMITTERS = 4             # = CONFIG.AIR.DIVE.EMITTERS (tools/check_contract.py compares the two)
-RAIN_RELAY, RAIN_TILES = 'tw_rain', 12
+RAIN_RELAY = 'tw_rain'      # the rain tile count is whatever patch_terrain made (each one Start / Stop; checked in plan())
 # make_map.py's point_soundevent keys (the order Hammer writes them)
 SND_KEYS = [('startOnSpawn', '0'), ('toLocalPlayer', '0'), ('stopOnNew', '0'), ('saveAndRestore', '0'), ('vscripts', ''), ('parentname', ''),
             ('parentAttachmentName', ''), ('useLocalOffset', '0'), ('local.origin', ''), ('local.angles', ''), ('local.scales', '1 1 1'),
@@ -74,13 +77,13 @@ def plan(m):
     r = rel[0]
     if (m.g(r, b'customVisGroup') or b'').decode() != GROUP: raise Mismatch('%s is not in vis group %s' % (RAIN_RELAY, GROUP))
     conns = [m.conn_tuple(c) for c in m.conns(r)]
-    tiles = sorted({c[1] for c in conns})
-    if len(tiles) != RAIN_TILES or len(conns) != 2 * RAIN_TILES or any(c[1] not in names or m.cls(names[c[1]][0]) != 'info_particle_system' for c in conns) \
+    tiles = sorted({c[1] for c in conns}); RAIN_TILES = len(tiles)
+    if not RAIN_TILES or len(conns) != 2 * RAIN_TILES or any(c[1] not in names or m.cls(names[c[1]][0]) != 'info_particle_system' for c in conns) \
             or sorted((c[0], c[2]) for c in conns) != sorted([('OnUser1', 'Start'), ('OnUser2', 'Stop')] * RAIN_TILES):
         raise Mismatch('%s outputs are not the %d rain tiles\' Start / Stop: %s' % (RAIN_RELAY, RAIN_TILES, conns[:4]))
     found = {}
     for tg, n, o in SHELTERS:
-        hit = [e for e in ents if (m.P(e, 'model', '') or '') == SHELTER and near(m.origin(e), o)]
+        hit = [e for e in ents if (m.P(e, 'model', '') or '') == SHELTER and near(m.origin(e)[:2], o)]
         if len(hit) != 1: raise Mismatch('shelter %s_%d: %d at %s' % (tg, n, len(hit), o))
         if (m.g(hit[0], b'customVisGroup') or b'').decode() != GROUP: raise Mismatch('shelter %s_%d is not in %s' % (tg, n, GROUP))
         found[(tg, n)] = m.origin(hit[0])

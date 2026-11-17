@@ -55,7 +55,7 @@ CAP_REACH = 30.0                     # a sheet edge this close to a wall (true d
 SNAP_UNDER = 0.3
 SAP_RISE_ROWS = (1.0, 0.75, 0.5, 0.25)
 SAP_Y = LY.TUN_PORTAL_Y
-SAP_CAP = (2080.0, 2208.0, -2880.0, -2816.0)          # |x| range and y range of the terrain cut over the mouth
+SAP_CAP = (2080.0, 2208.0, -2880.0 + LY.TUN_DY, -2816.0 + LY.TUN_DY)   # |x| range and y range of the terrain cut over the mouth (short front: +1920)
 
 
 class Mismatch(Exception): pass

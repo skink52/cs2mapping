@@ -84,6 +84,51 @@ STATIC_ONLY = ('bakelighting', 'lodlevel', 'baketoworld', 'emissive', 'emissive_
 class Mismatch(Exception): pass
 
 
+def find_targets(m):
+    """short front (18 Nov 2026, docs/SHORT_FRONT_DESIGN.md): the regenerated map has new ids, so the tables are found by rule instead.
+    MOVES (M3 barrels) and the L5 water sheets were fixes to single generated objects: dropped (check_play / check_world re-check the new
+    map). -> MORTARS, BLOCKERS, MESHES (woods seeds), PARAMS_DUP, BENCH_DUP, TEMPLATE_DYN"""
+    sys.path.append(HERE)
+    import layout as LY
+    import numpy as np
+    s_ = lambda v: v.decode() if isinstance(v, bytes) else (v or '')
+    ents = m.entities()
+    mort = []
+    for tg, sg, mdl in (('t', -1, MW), ('ct', 1, M58)):
+        for k, my in enumerate(LY.MORTAR_Y):
+            hit = [e for e in ents if m.cls(e) == 'prop_static' and m.P(e, 'model', '') == mdl and near(m.origin(e)[:2], (sg * LY.MORTAR_X, my), 4)]
+            if len(hit) != 1: raise Mismatch('%d %s tubes at (%g, %g)' % (len(hit), mdl, sg * LY.MORTAR_X, my))
+            mort.append((hit[0], mdl, tuple(m.origin(hit[0])), tg, k + 1))
+    blk = []
+    for e in ents:
+        if m.cls(e) == 'prop_dynamic' and m.name(e) in ('undergroundopen', 'woodsopen') and m.P(e, 'model', '') in (RPB, RPB128):
+            vg = s_(m.g(e, b'customVisGroup'))
+            blk.append((e, m.P(e, 'model', ''), tuple(m.origin(e)), m.name(e), 'ours' if vg in ('tw_gen', 'woodsopen') else 'user'))
+    if len(blk) != 4: raise Mismatch('%d unlock blockers (want 4)' % len(blk))
+    tmpl = [b[0] for b in blk if b[4] == 'user']
+    par = node_parent(m); meshes = []
+    for i, p_ in par.items():
+        if m.type(i) != b'CMapMesh' or m.type(p_) != b'CMapEntity' or m.cls(p_) != 'func_nav_markup': continue
+        bb = m.bounds(i); cx, cy = (bb[0][0] + bb[1][0]) / 2, (bb[0][1] + bb[1][1]) / 2
+        if not (1180 <= abs(cx) <= 1240 and LY.FRONT_Y + 700 <= cy <= LY.FRONT_Y + 1400): continue
+        dx = -100.0 if cx > 0 else 100.0
+        xs = np.linspace(bb[0][0] + dx, bb[1][0] + dx, 5); ys = np.linspace(bb[0][1], bb[1][1], 5)
+        X, Y = np.meshgrid(xs, ys); g = float(LY.height(X.ravel(), Y.ravel()).min())
+        meshes.append((i, 'func_nav_markup', tuple(bb[0] + bb[1]), (dx, 0.0, round(g - 8.0 - bb[0][2], 2)), 'H3 woods seed %s at y %d' % ('CT' if cx > 0 else 'T', cy)))
+    if len(meshes) != 4: raise Mismatch('%d woods seeds (want 4)' % len(meshes))
+    prm = [e for e in ents if m.cls(e) == 'info_map_parameters' and m.name(e) != 'tw_params']
+    pdup = (prm[0], tuple(m.origin(prm[0]))) if len(prm) == 1 else None
+    kv = lambda i: sorted((x[0], x[2]) for x in m.props(i)['attrs'])
+    benches = [e for e in ents if m.cls(e) == 'prop_static' and m.P(e, 'model', '') == BENCH and s_(m.g(e, b'customVisGroup')) == 'tw_user']
+    bdup = None
+    for a_ in benches:
+        for b_ in benches:
+            oa, ob = m.origin(a_), m.origin(b_)
+            if a_ != b_ and oa[:2] == ob[:2] and 0 < oa[2] - ob[2] <= 1.01 and kv(a_) == kv(b_) and list(m.g(a_, b'angles')) == list(m.g(b_, b'angles')):
+                bdup = (a_, tuple(oa), b_, tuple(ob))
+    return mort, blk, meshes, pdup, bdup, (tmpl[0] if tmpl else blk[0][0])
+
+
 def near(a, b, tol=TOL): return all(abs(float(x) - float(y)) <= tol for x, y in zip(a, b))
 
 
@@ -131,6 +176,7 @@ def main(argv=None):
     ap.add_argument('--user-w5', action='store_true', help='drop tl_bench 72, the exact duplicate of 71 (REVIEW_WORLD_2 W5)')
     ap.add_argument('--render', action='store_true')
     ap.add_argument('--targets', default=None, help='where the guard target list goes (default out/step5/patch_world_1.targets.json)')
+    ap.add_argument('--find', action='store_true', help='short front: find the targets by rule on a regenerated map (find_targets)')
     a = ap.parse_args(argv)
     outp = os.path.abspath(a.out)
     if not safepath.inside(OUT, outp) or os.path.normcase(outp) == os.path.normcase(os.path.abspath(a.inp)):
@@ -145,6 +191,15 @@ def main(argv=None):
              prefix=['map_asset_references', 'map_subasset_reference_types', 'map_subasset_reference_names', 'map_subasset_reference_counts'], root=False)
     def declare(i, fields, why): T['modify'][str(nid(i))] = dict(i=i, fields=fields, why=why)
     log = []
+    global MORTARS, BLOCKERS, MESHES, MOVES, PARAMS_DUP, BENCH_DUP, TEMPLATE_DYN
+    if a.find:
+        try:
+            MORTARS, BLOCKERS, MESHES, PARAMS_DUP, BENCH_DUP, TEMPLATE_DYN = find_targets(m); MOVES = []
+        except Mismatch as ex:
+            sys.exit('patch_world_1: TARGET MISMATCH (--find), nothing written: %s' % ex)
+        if a.user_m2 and PARAMS_DUP is None: log.append('M2: no duplicate info_map_parameters on this map'); a.user_m2 = False
+        if a.user_w5 and BENCH_DUP is None: log.append('W5: no duplicate bench on this map'); a.user_w5 = False
+        if a.user_h1: sys.exit('patch_world_1: --user-h1 has no rule-based targets (and the user said never on this map)')
     try:
         # ---- verify every target first: nothing is changed unless all match
         for i, mdl, o, tg, k in MORTARS: expect_entity(m, i, 'prop_static', mdl, o, 'tw_gen')
@@ -163,7 +218,7 @@ def main(argv=None):
             pc = m.cls(par[i]) if m.type(par[i]) == b'CMapEntity' else 'worldspawn'
             bb = m.bounds(i)
             if pc != pcls or not near(bb[0] + bb[1], b): raise Mismatch('mesh %d: want %s %s, found %s %s' % (i, pcls, b, pc, [round(v, 2) for v in bb[0] + bb[1]]))
-            if list(m.g(i, b'origin')) != [0.0, 0.0, 0.0]: raise Mismatch('mesh %d: origin not 0 0 0' % i)
+            if not a.find and list(m.g(i, b'origin')) != [0.0, 0.0, 0.0]: raise Mismatch('mesh %d: origin not 0 0 0' % i)   # --find: moved meshes carry their move
         if a.user_h1:
             for i, o in BENCHES: expect_entity(m, i, 'prop_static', BENCH, o, 'tw_user')
         if a.user_m2:
@@ -194,7 +249,8 @@ def main(argv=None):
         oo = m.origin(i); dmx.set_(m.E[i], b'origin', dmx.T_V3, [oo[0] + d[0], oo[1] + d[1], oo[2] + d[2]])
         declare(i, ['origin'], why); log.append('%s: %d by %s' % (why, i, d))
     for i, pcls, b, d, why in MESHES:
-        dmx.set_(m.E[i], b'origin', dmx.T_V3, [float(d[0]), float(d[1]), float(d[2])])
+        o0 = list(m.g(i, b'origin') or [0.0, 0.0, 0.0])
+        dmx.set_(m.E[i], b'origin', dmx.T_V3, [float(o0[0] + d[0]), float(o0[1] + d[1]), float(o0[2] + d[2])])
         declare(i, ['origin'], why); bb = m.bounds(i); log.append('%s: mesh %d now %s' % (why, i, [round(v, 1) for v in bb[0] + bb[1]]))
     removed = []
     if a.user_h1 == 'unlock':
@@ -205,9 +261,9 @@ def main(argv=None):
     elif a.user_h1 == 'remove':
         removed += [i for i, o in BENCHES]; log.append('H1 opt-in: 24 benches deleted')
     if a.user_m2:
-        removed.append(PARAMS_DUP[0]); log.append('M2 opt-in: info_map_parameters 7 deleted')
+        removed.append(PARAMS_DUP[0]); log.append('M2 opt-in: info_map_parameters %d deleted' % PARAMS_DUP[0])
     if a.user_w5:
-        removed.append(BENCH_DUP[0]); log.append('W5 opt-in: tl_bench 72 deleted (exact copy of 71, 1 u above it)')
+        removed.append(BENCH_DUP[0]); log.append('W5 opt-in: tl_bench %d deleted (exact copy of %d, 1 u above it)' % (BENCH_DUP[0], BENCH_DUP[2]))
     for i in removed:
         T['remove'][str(nid(i))] = dict(i=i, why='opt-in removal')
         if not m.remove_node(i): sys.exit('patch_world_1: could not remove %d' % i)

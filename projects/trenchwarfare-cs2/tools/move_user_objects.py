@@ -35,9 +35,12 @@ SHELTER_MAP = {-1056.0: -576.0, 576.0: 576.0, 2304.0: None}     # old station y 
 def s_(v): return v.decode('utf-8', 'replace') if isinstance(v, bytes) else (v or '')
 
 
+def mesh_kids(m, i): return [c for c in m.children(i) if m.type(c) == b'CMapMesh']
+
+
 def where(m, i):
     t = s_(m.type(i))
-    if t == 'CMapMesh':
+    if t == 'CMapMesh' or (t == 'CMapEntity' and mesh_kids(m, i)):     # a brush entity (nav seed, clip): where its meshes are
         b = m.bounds(i)
         if b: return (b[0][0] + b[1][0]) / 2, (b[0][1] + b[1][1]) / 2, (b[0][2] + b[1][2]) / 2
     o = m.g(i, b'origin')
@@ -77,9 +80,10 @@ def main(argv=None):
         row = dict(node=i, cls=cls, name=s_(m.name(i)) if t == 'CMapEntity' else '', vg=s_(m.g(i, b'customVisGroup')), at=[round(p[0]), round(p[1])], zone=z)
         if dy is None: drop.append(i); rep['dropped'].append(row); continue
         if dy:
-            o = list(m.g(i, b'origin') or [0.0, 0.0, 0.0])
-            o[1] += dy
-            dmx.set_(m.E[i], b'origin', dmx.T_V3, [float(v) for v in o])
+            for j in (mesh_kids(m, i) if t == 'CMapEntity' and mesh_kids(m, i) else [i]):   # a brush entity: its meshes move (as patch_world_1)
+                o = list(m.g(j, b'origin') or [0.0, 0.0, 0.0])
+                o[1] += dy
+                dmx.set_(m.E[j], b'origin', dmx.T_V3, [float(v) for v in o])
             row['dy'] = round(dy, 1); rep['moved'].append(row)
         else: rep['kept'] += 1
     for i in drop: m.remove_node(i)

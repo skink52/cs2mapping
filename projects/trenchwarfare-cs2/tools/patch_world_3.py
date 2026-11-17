@@ -79,6 +79,11 @@ NML_X = 1450.0                       # crater pools are generated in no man's la
 class Mismatch(Exception): pass
 
 
+sys.path.append(HERE)
+import layout as _LY      # noqa: E402
+NPITS = len(_LY.MORTAR_Y)            # mortar pits a side (short front: 2; 15 bays: 5)
+
+
 def near(a, b, tol=TOL): return all(abs(float(x) - float(y)) <= tol for x, y in zip(a, b))
 
 
@@ -257,7 +262,7 @@ def plan_pit_sandbags(m, sc, sides, seed):
         s = 1 if tg == 'ct' else -1
         phi0 = math.pi if s > 0 else 0.0                 # toward the enemy (CT faces -x)
         enemy = np.array([o[:2] for o, _ in fs if o[0] * s < 0], float)
-        for k in range(1, 6):
+        for k in range(1, NPITS + 1):
             pn = ents.get('mortarpit_%s_%d' % (tg, k))
             if pn is None or m.cls(pn) != 'info_target' or (m.g(pn, b'customVisGroup') or b'').decode() != GROUP:
                 raise Mismatch('pit sandbags: mortarpit_%s_%d is not a generated info_target' % (tg, k))
@@ -366,7 +371,11 @@ def main(argv=None):
     # W9 option, OFF by default: pending the user's decision (docs/REVIEW_WORLD_3.md W9); a bare flag means 'both'
     ap.add_argument('--pit-sandbags', nargs='?', const='both', choices=('both', 'ct', 't'), default=None,
                     help='one more sandbag course on the enemy-facing arc of the mortar pits (both sides / one side); off by default')
+    ap.add_argument('--find', action='store_true', help='short front (regenerated map): skip T7 / W2b / L4, the fixes to single objects '
+                    'of the 15-bay generation (check_play re-checks the new map); W8 and W9 are rules and run as before')
     a = ap.parse_args(argv)
+    global TREES
+    if a.find: TREES = []
     for st_ in (sys.stdout, sys.stderr):
         if hasattr(st_, 'reconfigure'): st_.reconfigure(encoding='utf-8', errors='replace')
     inp, outp = os.path.abspath(a.inp), os.path.abspath(a.out)
@@ -389,13 +398,14 @@ def main(argv=None):
         for (i, nid, s0, s1, why) in ti:
             sc_ = m.g(i, b'scales') or [1, 1, 1]
             if not all(abs(v - s0) < 5e-4 for v in sc_): raise Mismatch('nodeID %d: want uniform scale %.4f, found %s' % (nid, s0, sc_))
-        rnid, rmdl, ro, yaw0, dyaw, mv = RACK_T
-        ri = expect(m, nodes, rnid, 'prop_static', rmdl, ro)
-        if abs(((m.g(ri, b'angles') or [0, 0, 0])[1] - yaw0 + 180) % 360 - 180) > 0.5: raise Mismatch('rack %d: yaw is not %.1f' % (rnid, yaw0))
-        pnid, pmdl, po, pool_nid = POOL_TREE
-        pi = expect(m, nodes, pnid, 'prop_static', pmdl, po)
-        pn = nodes.get(pool_nid)
-        if pn is None or m.type(pn) != b'CMapMesh' or (m.g(pn, b'customVisGroup') or b'').decode() != GROUP: raise Mismatch('pool %d is not a generated mesh' % pool_nid)
+        if not a.find:
+            rnid, rmdl, ro, yaw0, dyaw, mv = RACK_T
+            ri = expect(m, nodes, rnid, 'prop_static', rmdl, ro)
+            if abs(((m.g(ri, b'angles') or [0, 0, 0])[1] - yaw0 + 180) % 360 - 180) > 0.5: raise Mismatch('rack %d: yaw is not %.1f' % (rnid, yaw0))
+            pnid, pmdl, po, pool_nid = POOL_TREE
+            pi = expect(m, nodes, pnid, 'prop_static', pmdl, po)
+            pn = nodes.get(pool_nid)
+            if pn is None or m.type(pn) != b'CMapMesh' or (m.g(pn, b'customVisGroup') or b'').decode() != GROUP: raise Mismatch('pool %d is not a generated mesh' % pool_nid)
     except Mismatch as ex:
         sys.exit('patch_world_3: TARGET MISMATCH, nothing written: %s' % ex)
 
@@ -408,37 +418,38 @@ def main(argv=None):
         declare(nid, i, ['scales'], why + ': scale %.4f -> %.4f' % (s0, s1))
         rep['trees'].append(dict(nodeID=nid, id=i, origin=[round(v, 1) for v in m.origin(i)], scale=[s0, s1], why=why))
 
-    # ---- pit_t_2: the rack along the breastwork
-    ang = list(m.g(ri, b'angles') or [0, 0, 0]); oo = m.origin(ri)
-    dmx.set_(m.E[ri], b'angles', dmx.T_V3, [float(ang[0]), float((ang[1] + dyaw) % 360.0), float(ang[2])])
-    dmx.set_(m.E[ri], b'origin', dmx.T_V3, [oo[0] + mv[0], oo[1] + mv[1], oo[2] + mv[2]])
-    declare(rnid, ri, ['angles', 'origin'], 'W2b pit_t_2: shell rack turned along the breastwork (yaw +90, 8 u out): seats a and b joined')
-    rep['rack'] = dict(nodeID=rnid, id=ri, yaw=[round(ang[1], 3), round((ang[1] + dyaw) % 360.0, 3)], origin=[[round(v, 2) for v in oo], [round(oo[k] + mv[k], 2) for k in range(3)]])
+    if not a.find:                                   # 15-bay single-object fixes (--find: regenerated map, skipped)
+        # ---- pit_t_2: the rack along the breastwork
+        ang = list(m.g(ri, b'angles') or [0, 0, 0]); oo = m.origin(ri)
+        dmx.set_(m.E[ri], b'angles', dmx.T_V3, [float(ang[0]), float((ang[1] + dyaw) % 360.0), float(ang[2])])
+        dmx.set_(m.E[ri], b'origin', dmx.T_V3, [oo[0] + mv[0], oo[1] + mv[1], oo[2] + mv[2]])
+        declare(rnid, ri, ['angles', 'origin'], 'W2b pit_t_2: shell rack turned along the breastwork (yaw +90, 8 u out): seats a and b joined')
+        rep['rack'] = dict(nodeID=rnid, id=ri, yaw=[round(ang[1], 3), round((ang[1] + dyaw) % 360.0, 3)], origin=[[round(v, 2) for v in oo], [round(oo[k] + mv[k], 2) for k in range(3)]])
 
-    # ---- the poplar in the pool: straight out of it, onto the ground
-    rings = pool_rings(m, pn)
-    if rings is None: sys.exit('patch_world_3: pool %d is not a 12-gon prism' % pool_nid)
-    mi_, loop, pair, zt = rings
-    R = mi_['P'][loop][:, :2]; c = R.mean(0)
-    to = np.array(m.origin(pi)[:2]); d = to - c; d = d / np.hypot(*d)
-    s = (m.g(pi, b'scales') or [1, 1, 1])[0]
-    # the rim's distance from the centre along d (ray / polygon), then the trunk 8 u past it
-    best = 0.0
-    for k in range(len(R)):
-        p, q = R[k], R[(k + 1) % len(R)]
-        M_ = np.array([d, p - q]).T
-        if abs(np.linalg.det(M_)) < 1e-9: continue
-        t, u = np.linalg.solve(M_, p - c)
-        if t > 0 and 0 <= u <= 1: best = max(best, t)
-    newxy = c + d * (best + TRUNK_R * s + 8.0)
-    g0 = S.z(*m.origin(pi)[:2]); gz = min(S.z(newxy[0] + dx, newxy[1] + dy) for dx in (-TRUNK_R * s, 0, TRUNK_R * s) for dy in (-TRUNK_R * s, 0, TRUNK_R * s))
-    if not np.isfinite(gz) or gz < zt - 0.5: sys.exit('patch_world_3: no dry ground for the pool poplar at %s' % newxy.round(1))
-    newz = gz - 6.0
-    oldo = m.origin(pi)
-    dmx.set_(m.E[pi], b'origin', dmx.T_V3, [float(newxy[0]), float(newxy[1]), float(newz)])
-    declare(pnid, pi, ['origin'], 'L4 pool poplar out of the crater pool (%.0f u), set on the ground' % np.hypot(*(newxy - np.array(oldo[:2]))))
-    rep['pool_tree'] = dict(nodeID=pnid, id=pi, origin=[[round(v, 1) for v in oldo], [round(float(newxy[0]), 1), round(float(newxy[1]), 1), round(float(newz), 1)]],
-                            moved=round(float(np.hypot(*(newxy - np.array(oldo[:2])))), 1), ground_before=round(float(g0), 1), water=round(zt, 1))
+        # ---- the poplar in the pool: straight out of it, onto the ground
+        rings = pool_rings(m, pn)
+        if rings is None: sys.exit('patch_world_3: pool %d is not a 12-gon prism' % pool_nid)
+        mi_, loop, pair, zt = rings
+        R = mi_['P'][loop][:, :2]; c = R.mean(0)
+        to = np.array(m.origin(pi)[:2]); d = to - c; d = d / np.hypot(*d)
+        s = (m.g(pi, b'scales') or [1, 1, 1])[0]
+        # the rim's distance from the centre along d (ray / polygon), then the trunk 8 u past it
+        best = 0.0
+        for k in range(len(R)):
+            p, q = R[k], R[(k + 1) % len(R)]
+            M_ = np.array([d, p - q]).T
+            if abs(np.linalg.det(M_)) < 1e-9: continue
+            t, u = np.linalg.solve(M_, p - c)
+            if t > 0 and 0 <= u <= 1: best = max(best, t)
+        newxy = c + d * (best + TRUNK_R * s + 8.0)
+        g0 = S.z(*m.origin(pi)[:2]); gz = min(S.z(newxy[0] + dx, newxy[1] + dy) for dx in (-TRUNK_R * s, 0, TRUNK_R * s) for dy in (-TRUNK_R * s, 0, TRUNK_R * s))
+        if not np.isfinite(gz) or gz < zt - 0.5: sys.exit('patch_world_3: no dry ground for the pool poplar at %s' % newxy.round(1))
+        newz = gz - 6.0
+        oldo = m.origin(pi)
+        dmx.set_(m.E[pi], b'origin', dmx.T_V3, [float(newxy[0]), float(newxy[1]), float(newz)])
+        declare(pnid, pi, ['origin'], 'L4 pool poplar out of the crater pool (%.0f u), set on the ground' % np.hypot(*(newxy - np.array(oldo[:2]))))
+        rep['pool_tree'] = dict(nodeID=pnid, id=pi, origin=[[round(v, 1) for v in oldo], [round(float(newxy[0]), 1), round(float(newxy[1]), 1), round(float(newz), 1)]],
+                                moved=round(float(np.hypot(*(newxy - np.array(oldo[:2])))), 1), ground_before=round(float(g0), 1), water=round(zt, 1))
 
     # ---- W8: crater pool rims set onto the ground
     sheets = {}                                        # every water sheet: nodeID -> (world level, rim box) for the z-fight test

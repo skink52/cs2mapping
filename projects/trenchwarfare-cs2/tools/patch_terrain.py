@@ -39,6 +39,7 @@ from scipy import ndimage  # noqa: E402
 import terrain_img as TI  # noqa: E402
 sys.path.append(HERE)     # last: layout.py (and its noise import, identical to create/noise.py)
 import layout as LY       # noqa: E402
+fy, WDY = LY.fy, LY.WOOD_DY   # short front (18 Nov 2026): literals at / beyond the trench ends move with them
 
 OUT = os.path.join(PROJ, 'out')
 STEP = os.path.join(OUT, 'step7')
@@ -255,9 +256,9 @@ def protect_mask(m, sc, tiles, log):
         a, b = sorted((s * 3200.0, s * 4300.0)); rect_fill(L, a, -900.0, b, 900.0)
     # the woods skirmish: track, fence, clearing, exit ladders (walkable, user-edited)
     L = layer('woods skirmish')
-    rect_fill(L, -1400.0, 2750.0, 1400.0, 4560.0)
+    rect_fill(L, -1400.0, fy(2750.0), 1400.0, fy(4560.0))
     for s in (-1, 1):
-        L |= TI.along(X, Y, [(170.0, [(s * 1716.0, 2860.0), (s * 1716.0, 2995.0), (s * 1080.0, 3560.0)])])
+        L |= TI.along(X, Y, [(170.0, [(s * 1716.0, 2860.0 + WDY), (s * 1716.0, 2995.0 + WDY), (s * 1080.0, 3560.0 + WDY)])])
     # the terrain edge meets the 3D skybox
     L = layer('terrain edge')
     L |= (np.abs(X) >= X1 - 192.0) | (np.abs(Y) >= Y1 - 192.0)
@@ -477,18 +478,18 @@ def build_detail(H, w, Rdist, rmap, seamd, sc, seed, log, hard, quick=False):
     X, Y = lat_xy()
     rng = np.random.RandomState(seed)
     ax, ay = np.abs(X), np.abs(Y)
-    nml = (1 - TI.smoothstep(1300, 1480, ax)) * (1 - TI.smoothstep(3500, 3900, ay))
-    rear = TI.smoothstep(2250, 2450, ax) * (1 - TI.smoothstep(4300, 4500, ax)) * (1 - TI.smoothstep(4500, 4800, ay))
-    flank = (1 - TI.smoothstep(2200, 2400, ax)) * TI.smoothstep(3300, 3600, ay) * (1 - TI.smoothstep(5200, 5600, ay))
+    nml = (1 - TI.smoothstep(1300, 1480, ax)) * (1 - TI.smoothstep(fy(3500), fy(3900), ay))
+    rear = TI.smoothstep(2250, 2450, ax) * (1 - TI.smoothstep(4300, 4500, ax)) * (1 - TI.smoothstep(fy(4500), fy(4800), ay))
+    flank = (1 - TI.smoothstep(2200, 2400, ax)) * TI.smoothstep(fy(3300), fy(3600), ay) * (1 - TI.smoothstep(5200, 5600, ay))
     battle = np.maximum(np.maximum(nml, rear), flank)
     forest = 1 - battle
     F = np.zeros((NX, NY)); mud = np.zeros((NX, NY)); wet = np.zeros((NX, NY)); dirt = np.zeros((NX, NY))
     rec = dict(craters=[], puddles=[], tracks=[], ruts=[])
     # ---- fresh shell craters: no man's land thick, the rear and the flanks thinner (counter-battery fire near the mortar line)
-    zones = [('nml', (-1420, 1420), (-3450, 2700), (24.0, 64.0), (0.26, 0.36), 330),
-             ('rear', (2380, 4250), (-4500, 4500), (30.0, 90.0), (0.24, 0.34), 120),
-             ('flank', (-2250, 2250), (-5400, -3500), (60.0, 130.0), (0.22, 0.32), 40),
-             ('flank', (-2250, 2250), (4600, 5400), (60.0, 130.0), (0.22, 0.32), 20)]
+    zones = [('nml', (-1420, 1420), (fy(-3450), fy(2700)), (24.0, 64.0), (0.26, 0.36), 140),        # short front: 330 / 120 on 15 bays
+             ('rear', (2380, 4250), (fy(-4500), fy(4500)), (30.0, 90.0), (0.24, 0.34), 60),
+             ('flank', (-2250, 2250), (-5400, fy(-3500)), (60.0, 130.0), (0.22, 0.32), 60),
+             ('flank', (-2250, 2250), (fy(4600), 5400), (60.0, 130.0), (0.22, 0.32), 40)]
     placed = []
     for zone, xr, yr, rr, dr, want in zones:
         n = 0
@@ -595,7 +596,7 @@ def dense_candidates(tiles, sc, seed, hard):
     {(tx, ty): the unfrozen share the tile needs at 16 u to be worth re-gridding}"""
     want = {}
     for t in tiles:
-        if t['res'] == 32 and -1536 <= t['tx'] and t['tx'] + TILE <= 1536 and -3072 <= t['ty'] and t['ty'] + TILE <= 2560: want[(t['tx'], t['ty'])] = 0.40
+        if t['res'] == 32 and -1536 <= t['tx'] and t['tx'] + TILE <= 1536 and fy(-3072) <= t['ty'] and t['ty'] + TILE <= fy(2560): want[(t['tx'], t['ty'])] = 0.40
     lines = [(trk, half + 60.0) for p, trk, half in tank_tracks(sc, seed, hard)] + [(pts, 60.0) for s, e, pts in rut_lines()]
     for pts, reach in lines:
         P = np.asarray(pts, float)
@@ -1078,8 +1079,8 @@ def main(argv=None):
             add_fx_node(m, r['nodes'][0], 'tw_gen'); fx.append(dict(kind='crater smoke', name=p['name'], o=p['o'], effect=SMOKE_FX))
             T['add'].append(dict(type='CMapEntity', **{'class': 'info_particle_system'}, name=p['name'], why='smoke drifting from a fresh shell hole'))
         # rain over both trench systems, off at the start: tw_rain FireUser1 starts, FireUser2 stops (one relay drives both sides)
-        rt = fxkit.weather_tiles(((-2700.0, -3200.0, 0.0), (-1300.0, 3200.0, 700.0)), kind=RAIN_FX, name='tw_rain', tile=1024.0, start=False, group='tw_gen')
-        rc = fxkit.weather_tiles(((1300.0, -3200.0, 0.0), (2700.0, 3200.0, 700.0)), kind=RAIN_FX, name='tw_rainct', tile=1024.0, start=False, group='tw_gen')
+        rt = fxkit.weather_tiles(((-2700.0, fy(-3200.0), 0.0), (-1300.0, fy(3200.0), 700.0)), kind=RAIN_FX, name='tw_rain', tile=1024.0, start=False, group='tw_gen')
+        rc = fxkit.weather_tiles(((1300.0, fy(-3200.0), 0.0), (2700.0, fy(3200.0), 700.0)), kind=RAIN_FX, name='tw_rainct', tile=1024.0, start=False, group='tw_gen')
         relay = rt['nodes'][0]
         import primitives as Pm
         for node in rc['nodes'][1:]:
