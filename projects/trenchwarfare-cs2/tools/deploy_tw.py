@@ -16,13 +16,17 @@ usage (from the project folder):
             lips, sap mouths; docs/REVIEW_WORLD_2.md "Seams") -> 5_world_3 (patch_world_3: CT air-lane poplars, pit_t_2's shell rack,
             the pool poplar, crater pool rims; docs/REVIEW_WORLD_3.md) -> 6_sounds (patch_sounds, step 8: the sound entities; skipped
             with a note while tools/patch_sounds.py does not exist) -> 7_nav (patch_nav, step 4, reading the staged models in out/addon
-            like the gate: the rebuilt shelter of step 13) -> 8_fog (patch_fog_2, 17 Nov 2026: gentle volumetric + cubemap fog)
+            like the gate: the rebuilt shelter of step 13) -> 8_fog (patch_fog_2, 17 Nov 2026: gradient + cubemap fog) -> 9_user
+            (tools/user_edits.py apply: the user's Hammer edits, 18 Nov 2026)
             = the final map.
             Then the radar is re-made from the final map (tools/make_radar.py --vmap <final>, tools/check_radar.py; outputs are
             step 8's staging in out/addon + out/game, their hashes recorded so a later re-make is noticed).
             Before stage 1 the user's map must be the recorded BASE (CRC32 2e3f90d0, the tw34 delivery the patches' target tables were
-            read from). After a Hammer save it is not: the chain stops and says so; the patches' target tables then have to be re-read
-            from the new map's digest (ids change on a save) and BASE updated here. Every later stage checks that its input is the
+            read from), the last deploy's output, or a Hammer save of it. 18 Nov 2026: a Hammer save is captured by
+            tools/user_edits.py capture (its entity edits appended to user_edits.json; the chain stops if it changed something that
+            cannot be replayed, such as world geometry), the chain starts from the BASE backup as always, and the last stage
+            9_user replays every recorded edit, so the user's changes win over what is generated. The deploy may then replace
+            the captured save (its sha256 is passed as a --vmap-base; it is backed up first). Every later stage checks that its input is the
             byte-exact output of the stage before; every stage's output goes through tools/patch_guard.py --strict (only declared
             changes). With no opt-in flags the outputs are compared with the earlier steps' own outputs (out/mg_trenchwarfare_*.vmap).
             The patch tools also rewrite their step's records (out/step5..7 deploy lists, targets, report); the chain keeps the copies
@@ -102,6 +106,13 @@ def last_deployed_map(sha):
     return ents[0] if ents and ents[0][1].get('after') == sha else None
 
 
+def captured_saves():
+    """sha256 of every user save tools/user_edits.py has captured (those may be replaced by a deploy: their edits are replayed)"""
+    p = os.path.join(PROJ, 'user_edits.json')
+    if not os.path.isfile(p): return set()
+    with open(p, encoding='utf-8') as f: return {c['from_sha256'] for c in json.load(f).get('captures', [])}
+
+
 def base_backup():
     """a deploy backup of the base map (the chain checks its hash), or None"""
     for _, e in deploy_map_entries():
@@ -149,6 +160,7 @@ SIDE_FILES = {   # what each patch tool writes into an earlier step's folder bes
     '6_sounds': [],
     '7_nav': [],
     '8_fog': [],
+    '9_user': [],
 }
 SOUNDS_TOOL = os.path.join(HERE, 'patch_sounds.py')
 # step 8's radar is drawn from the map: re-made from the final chained map (its outputs are step 8's staging: out/addon, out/game)
@@ -249,11 +261,19 @@ def chain(a):
     base_from = USER_VMAP
     # the addon map is exactly what the last deploy wrote (the chain output, not a Hammer save): the base is read from a deploy backup
     cur = hashes(USER_VMAP)
-    if cur['sha256'] != BASE['sha256'] and last_deployed_map(cur['sha256']):
+    if cur['sha256'] != BASE['sha256'] and not last_deployed_map(cur['sha256']):
+        # 18 Nov 2026: a Hammer save of the deployed map: its edits are recorded in user_edits.json and replayed by stage 9_user
+        code, text, _ = run([PY, '-u', 'tools/user_edits.py', 'capture', '--map', USER_VMAP], os.path.join(CHAIN, '0_capture.log'))
+        if code != 0:
+            return stop('the user map was saved in Hammer and its changes could not be recorded (out/step9/chain/0_capture.log): %s'
+                        % (text.strip().splitlines() or [''])[-1][:300])
+        rec['user_save'] = dict(sha256=cur['sha256'], crc32=cur['crc32'])
+        print('  the addon map is a Hammer save (CRC32 %s): its edits are in user_edits.json (stage 9_user replays them)' % cur['crc32'])
+    if cur['sha256'] != BASE['sha256'] and (last_deployed_map(cur['sha256']) or cur['sha256'] in captured_saves()):
         bk = base_backup()
         if bk:
             base_from = bk
-            print('  the addon map is the last deploy\'s output (CRC32 %s); base read from its backup %s' % (cur['crc32'], bk))
+            print('  base read from the deploy backup %s (the addon map, CRC32 %s, is the last deploy\'s output or a captured save)' % (bk, cur['crc32']))
     shutil.copyfile(base_from, tmp)
     h0 = hashes(tmp)
     if h0['sha256'] != BASE['sha256']:
@@ -286,6 +306,9 @@ def chain(a):
                    '--report', os.path.join(CHAIN, '7_nav.report.json')], '7_nav.targets.json'),
         ('8_fog', [PY, '-u', 'tools/patch_fog_2.py', '--no-guard', '--targets', os.path.join(CHAIN, '8_fog.targets.json'),
                    '--report', os.path.join(CHAIN, '8_fog.report.json')], '8_fog.targets.json'),      # 17 Nov 2026: gentle fog back
+        # 18 Nov 2026: the user's Hammer edits (user_edits.json) last, so they win over everything generated
+        ('9_user', [PY, '-u', 'tools/user_edits.py', 'apply', '--targets', os.path.join(CHAIN, '9_user.targets.json'),
+                    '--report', os.path.join(CHAIN, '9_user.report.json')], '9_user.targets.json'),
     ]
     prev = dict(path=src, **h0)
     for name, cmd, tfile in stages:
@@ -642,13 +665,13 @@ def main(argv=None):
     if not os.path.isfile(fin) or hashes(fin)['sha256'] != ch['final']['sha256']:
         print('the chain\'s final map is missing or changed since the chain ran: run --chain again'); return 1
     cur = hashes(USER_VMAP) if os.path.isfile(USER_VMAP) else None
-    if cur and cur['sha256'] not in (BASE['sha256'], ch['final']['sha256']) and not last_deployed_map(cur['sha256']):
+    if cur and cur['sha256'] not in (BASE['sha256'], ch['final']['sha256']) and not last_deployed_map(cur['sha256'])             and cur['sha256'] not in captured_saves():
         print('the addon\'s map changed since the chain ran (CRC32 %s; base %s, chain output %s): saved in Hammer? Nothing deployed.'
               % (cur['crc32'], BASE['crc32'], ch['final']['crc32']))
         return 1
     print('chain: base CRC32 %s -> final %s (%s, %.1f MB), flags %s; addon map now: %s'
           % (ch['input']['crc32'], ch['final']['crc32'], ch['final']['path'], ch['final']['size'] / 1048576.0, ch['flags'],
-             'base' if cur and cur['sha256'] == BASE['sha256'] else 'the chain output (already deployed)' if cur and cur['sha256'] == ch['final']['sha256']
+             'base' if cur and cur['sha256'] == BASE['sha256'] else 'a Hammer save, captured in user_edits.json' if cur and cur['sha256'] in captured_saves() else 'the chain output (already deployed)' if cur and cur['sha256'] == ch['final']['sha256']
              else 'the last deploy\'s output (%s)' % last_deployed_map(cur['sha256'])[0] if cur else 'missing'))
     for st in ch['stages']:
         if st.get('skipped'):
@@ -683,13 +706,15 @@ def main(argv=None):
 
     cmd = [PY, '-I', os.path.join(REPO, 'create', 'deploy_addon.py'), '--addon', ADDON, '--list', lp, '--list-root', PROJ,
            '--src-root', os.path.join(OUT, 'addon'), '--record-dir', os.path.join(STEP9, 'deploy'),
-           '--vmap-base', BASE['sha256'], '--vmap-base', BASE['crc32'], '--strict-vmap',
+           '--vmap-base', BASE['sha256'], '--vmap-base', BASE['crc32'], '--strict-vmap'] + sum((['--vmap-base', h] for h in sorted(captured_saves())), []) + [
            '--json', os.path.join(STEP9, 'deploy_%s.json' % ('apply' if a.apply else 'dryrun')),
            '--label', 'trench chain %s flags %s' % (ch['final']['crc32'], json.dumps(ch['flags']))]
     for flag in ('apply', 'show', 'force_vmap', 'allow_open'):
         if getattr(a, flag): cmd.append('--' + flag.replace('_', '-'))
     print('deploy: %s' % ' '.join(cmd[2:4] + cmd[4:6]), flush=True)
     r = subprocess.run(cmd, cwd=PROJ)
+    if a.apply and r.returncode == 0:      # what the addon now holds: tools/user_edits.py capture diffs the next Hammer save against it
+        shutil.copyfile(fin, os.path.join(STEP9, 'deployed_map.vmap'))
     if g is not None and not g['ok']:
         print('NOTE: the gate has new failures: an --apply would be refused.')
     print('deploy_tw: %.0f s' % (time.time() - t0))

@@ -76,6 +76,8 @@ under `C:\source1\cs2port\autoport\watchdog.py` ([docs/BUILD.md](docs/BUILD.md))
 | world checks | `python tools/check_world.py <map> --stage out/addon`, `python tools/check_play.py <map> --stage out/addon` |
 | HUD, sounds, radar | `python tools/tw_hud.py out/addon`, `python tools/sounds.py out/addon <template vsndevts>`, `python tools/check_radar.py` ([docs/PRESENTATION.md](docs/PRESENTATION.md)) |
 | chain + gate + deploy dry run | `python -u tools/deploy_tw.py --chain` (about 10 min, watchdog); `python -u tools/deploy_tw.py` (merge + gate + dry run) |
+| the user's Hammer edits | `python tools/user_edits.py list` (recorded in `user_edits.json`; a Hammer save is captured by the chain and replayed as stage 9_user) |
+| loading slides | `python tools/render_slides.py` (after a chain: drawn from its radar) |
 | deploy | `python -u tools/deploy_tw.py --apply` (Hammer and `cs2 -tools` closed; copies changed files only, backs up first) |
 | compile | `build_maps.ps1 assets mg_trenchwarfare`, forced xml / css / js, `build_maps.ps1 final mg_trenchwarfare` ([docs/BUILD.md](docs/BUILD.md)) |
 

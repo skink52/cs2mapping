@@ -2,6 +2,22 @@
 
 Read this first when resuming. Newest state at the top.
 
+## The user edits the map in Hammer too (18 Nov 2026): never lose their changes
+
+The user: "Changed some small things on map too so make sure any future map adjustments read my changes". The map is still
+regenerated from the tw34 base on every `deploy_tw.py --chain`, but a Hammer save of the deployed map is now captured first
+(`tools/user_edits.py capture`, automatic in the chain): its entity edits go to **`user_edits.json`** (in git) and the last chain
+stage **9_user** replays them all, so they win over anything generated. Before changing the map:
+- run `python tools/user_edits.py list` to see what the user has placed, moved or deleted; do not re-add what they removed;
+- if a generator change moves or drops an object an edit points at, 9_user stops (NOT FOUND): re-place the edit, or drop it with the
+  user's OK, never silently;
+- a save that changes world geometry, vertex paint, brush entities or I/O cannot be replayed yet: capture refuses and the chain
+  stops (teach the generator or extend user_edits.py). Hammer's own save noise is ignored (lightmap UVs, tool-face UVs, default
+  paint streams, default keyvalues, light brightness re-derived from lumens).
+Capture 1 (18 Nov 13:23 save): gallery supports (9 moved, 5 removed), the fallen log by the airfield road moved, the German sap
+sign nudged, two wire coils added north-west of no man's land. Loading slides redrawn for the short front the same day
+(`tools/render_slides.py`, from the chain's radar; run it after a chain that changes the layout).
+
 ## Resume here: round 2 (started 18 Nov 2026)
 
 The user's round-2 list (ambience, fog, terrain grid seams, galleries, mortar sandbags, trench props, forest LOD pop, flight HUD,

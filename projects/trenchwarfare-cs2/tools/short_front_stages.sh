@@ -46,5 +46,10 @@ fi
 if [ "$FROM" = fog ]; then
   step fog
   python -u tools/patch_fog_2.py --in $C/7_nav.vmap --out $C/8_fog.vmap --targets $C/8_fog.targets.json --report $C/8_fog.report.json > $C/8_fog.log 2>&1 || exit 1
+  FROM=user
+fi
+if [ "$FROM" = user ]; then
+  step user
+  python -u tools/user_edits.py apply --in $C/8_fog.vmap --out $C/9_user.vmap --targets $C/9_user.targets.json --report $C/9_user.report.json > $C/9_user.log 2>&1 || exit 1
 fi
 step done

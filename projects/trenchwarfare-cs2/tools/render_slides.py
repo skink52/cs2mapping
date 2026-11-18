@@ -123,30 +123,33 @@ def stamp(img, xy, text, rot=-8, col=(170, 40, 30), size=30):
     img.alpha_composite(t, (int(xy[0] - t.size[0] / 2), int(xy[1] - t.size[1] / 2)))
 
 
+GALLERY_Y, WOOD_Y = -1448, 2010          # short front (18 Nov 2026): the galleries' and the wood's centres (make_map.py soundscapes)
 CREAM = (240, 232, 204, 255); BRASS = (196, 168, 104, 255); BLUE = (40, 80, 180); RED = (186, 40, 30)
-ROLES = [('INFANTRY', (236, 226, 192), '!infantry', ['Hold the fire trench. Rifle, pistol, knife.', '%d kills without dying: the marksman rifle.' % STREAK,
-                                                     'Dressing stations in the support trench heal you.']),
-         ('MORTARS', (240, 176, 84), '!mortar', ['Crews of two at the pits behind the line.', 'Plot at the table, fetch a bomb, load, fire.',
-                                                 'Watch the fall of shot on the trench map.']),
-         ('AIRCRAFT', (150, 200, 230), '!air', ['Dr.I against SPAD over the line.', 'Mouse steers, W / S throttle, A / D roll.',
-                                                'Guns on MOUSE 1, two bombs on MOUSE 2.'])]
+# 18 Nov 2026: the round-2 wording (docs/ROUND2_PLAN.md I): role names and [KEY] prompts as the HUD says them
+ROLES = [('RIFLEMAN', (236, 226, 192), '!infantry', ['Hold the fire trench. Rifle, pistol, knife.', '%d kills in one life earn the marksman rifle.' % STREAK,
+                                                     'Wounded? Dressing stations are in the support trench.']),
+         ('MORTAR CREW', (240, 176, 84), '!mortar', ['Two to a tube, in the pits behind the line.', 'Set a target, fetch a round, load, fire.',
+                                                     'Watch the fall of shot on the plotting board.']),
+         ('PILOT', (150, 200, 230), '!air', ['Dr.I against SPAD over the line.', '[MOUSE] steer, [W/S] throttle, [A/D] roll.',
+                                             '[MOUSE 1] guns, [MOUSE 2] bomb.'])]
 
 
 def slide_title():
-    upp = 8601.6 / 1920 * 0.98                                          # the whole radar square across the slide
-    v = View(-W / 2 * upp, 400 + H / 2 * upp, upp)
+    rg = json.load(open(os.path.join(ROOT, 'out', 'radar_region.json')))
+    upp = rg['span'] / 1920 * 0.98                                      # the whole radar square across the slide
+    v = View(-W / 2 * upp, rg['y0'] - rg['span'] / 2 + H / 2 * upp, upp)
     im = table_light(topview(v))
     px = v.px
     # the attack plans: both sides going over (grease pencil)
-    grease(im, [px(1950, 1180), px(950, 1080), px(-250, 820), px(-1480, 930)], BLUE, 9)
-    grease(im, [px(-1950, 120), px(-900, -60), px(300, 60), px(1480, -180)], RED, 9)
+    grease(im, [px(LY.XS, 700), px(950, 640), px(-250, 520), px(-LY.XF + 140, 600)], BLUE, 9)       # short front (18 Nov 2026)
+    grease(im, [px(-LY.XS, 230), px(-900, 140), px(300, 200), px(LY.XF - 140, 110)], RED, 9)      # above the role plate
     stamp(im, (1130, 300), 'SECRET', rot=-6, size=28)
     plate(im, (268, 116, 1060, 318))
     d = ImageDraw.Draw(im)
     tracked(d, (300, 166), 'THE WESTERN FRONT  /  1917', font(22, 'sans'), BRASS, 0.20)
     tracked(d, (296, 252), 'TRENCH WARFARE', font(76, 'title'), CREAM, 0.03)
     d.line([(300, 270), (1028, 270)], fill=(196, 168, 104, 150), width=2)
-    tracked(d, (300, 298), 'INFANTRY   TRENCH MORTARS   AIRCRAFT   AREAS OPEN AS THE ROUND GOES ON', font(16, 'sans'), (170, 196, 150, 255), 0.10)
+    tracked(d, (300, 298), 'RIFLEMEN   MORTAR CREWS   PILOTS   NEW GROUND OPENS AS THE FIGHT GOES ON', font(16, 'sans'), (170, 196, 150, 255), 0.10)
     x0, y0, cw = 268, 716, 352
     plate(im, (x0, y0, x0 + cw * 3 + 24, 936))
     d = ImageDraw.Draw(im)
@@ -176,19 +179,19 @@ def slide_mortar():
     bg.alpha_composite(mp, (280, 128))
     d = ImageDraw.Draw(bg)
     # a plotted target on the enemy fire trench, the gun-target line to crew 2
-    c = (640, 330); g = (860, 790)
+    c = (640, 330); g = (768, 865)                                   # to crew 2's pit
     red = (176, 30, 22, 235)
     d.line([c, g], fill=(30, 30, 30, 170), width=3)
     for r_ in (26, 54): d.ellipse([c[0] - r_, c[1] - r_, c[0] + r_, c[1] + r_], outline=red, width=5)
-    d.text((c[0] + 64, c[1] - 40), 'TGT 1   GRID H5', font=font(24, 'type'), fill=(150, 30, 24, 255))
+    d.text((c[0] + 84, c[1] - 40), 'TGT 1   GRID H4', font=font(24, 'type'), fill=(150, 30, 24, 255))
     plate(bg, (1010, 150, 1340, 300))
     d = ImageDraw.Draw(bg)
-    tracked(d, (1036, 216), 'MORTARS', font(46, 'title'), CREAM, 0.04)
-    tracked(d, (1038, 262), 'TWO MEN, ONE TUBE', font(17, 'sans'), (240, 176, 84, 255), 0.12)
-    steps = [('1', 'PLOT', 'At the table: E, then W A S D moves the sight; MOUSE 1 locks.'),
-             ('2', 'FETCH', 'A bomb from the ammunition box with E.'),
-             ('3', 'LOAD', 'E at the tube. The board says LOADED.'),
-             ('4', 'FIRE', 'SPACE at the table. Two seconds of whistle, then the burst.')]
+    tracked(d, (1036, 216), 'MORTAR CREW', font(40, 'title'), CREAM, 0.04)
+    tracked(d, (1038, 262), 'TWO TO A TUBE', font(17, 'sans'), (240, 176, 84, 255), 0.12)
+    steps = [('1', 'PLOT', '[E] at the plotting table. [WASD] aims, [MOUSE 1] sets the target.'),
+             ('2', 'FETCH', '[E] at the ammo box for a round.'),
+             ('3', 'LOAD', '[E] at the tube. The board reads LOADED.'),
+             ('4', 'FIRE', '[SPACE] at the table. A whistle, then the burst.')]
     y = 340
     plate(bg, (1010, 320, 1340, 900))
     d = ImageDraw.Draw(bg)
@@ -203,9 +206,9 @@ def slide_mortar():
 def slide_front():
     """the areas that open during the round (dusk grade). The map is turned a quarter: the wood (north) right, the mine
     galleries left, the German line at the top, so both areas fit inside the safe area."""
-    upp = 7.0
-    ylo = -3640 - 300 * upp                                            # slide x 300 = the galleries
-    xtop = -H / 2 * upp                                                # slide y 0 = world x -3780
+    upp = 4.0                                                          # short front (18 Nov 2026): galleries to wood is 3,460 u
+    ylo = GALLERY_Y - 380 * upp                                        # slide x 380 = the galleries
+    xtop = -H / 2 * upp                                                # slide y 0 = world x -2160
     v = View(xtop, ylo + W * upp, upp)                                 # a north-up view of the turned window (H wide, W high)
     R = Image.open(os.path.join(ROOT, 'out', 'radar_clean.png')).convert('RGB')
     rg = json.load(open(os.path.join(ROOT, 'out', 'radar_region.json')))
@@ -222,15 +225,15 @@ def slide_front():
     a *= np.clip(1.08 - 0.62 * r ** 1.8, 0.14, 1.08)[..., None]
     im = Image.fromarray((a.clip(0, 1) * 255).astype(np.uint8)).convert('RGBA')
     d = ImageDraw.Draw(im)
-    names = {'woodsopen': ('THE WOOD', (0, 3950), 'ladders at the north end of the fire trenches'),
-             'undergroundopen': ('MINE GALLERIES', (0, -3640), 'saps at the south end of the support trenches')}
+    names = {'woodsopen': ('THE WOOD', (0, WOOD_Y), 'climb out at the north end of the fire trench'),
+             'undergroundopen': ('THE MINES', (0, GALLERY_Y), 'saps at the south end of the support trench')}
     for nm, kills, secs in UNLOCK:
         title, (x, y), where = names.get(nm, (nm.upper(), (0, 0), ''))
         c = px(x, y)
         f = font(30, 'title'); f2 = font(15, 'sans')
-        l1 = 'OPENS AFTER %s KILLS OR %d MINUTES' % (kills, int(secs) // 60); l2 = where.upper()
+        l1 = 'OPENS AT %s KILLS OR %d MINUTES' % (kills, int(secs) // 60); l2 = where.upper()
         wd = max(f.getlength(title), f2.getlength(l1) * 1.08, f2.getlength(l2) * 1.08) + 50
-        cx, yb = (620, 430) if y < 0 else (1020, 640)
+        cx, yb = (720, 340) if y < 0 else (1020, 640)
         tip = (c[0] + (40 if y < 0 else -40), c[1])
         grease(im, [(cx + (-wd / 2 if y < 0 else wd / 2) * 0.8, yb + (60 if y < 0 else -40)), ((cx + tip[0]) / 2, (yb + tip[1]) / 2 + 40), tip], (240, 176, 84), 6)
         lay = Image.new('RGBA', im.size, (0, 0, 0, 0)); dl = ImageDraw.Draw(lay)
@@ -239,17 +242,17 @@ def slide_front():
         tracked(d, (cx, yb), title, f, CREAM, 0.08, 'm')
         tracked(d, (cx, yb + 28), l1, f2, (240, 176, 84, 255), 0.06, 'm')
         tracked(d, (cx, yb + 50), l2, f2, (214, 208, 186, 255), 0.06, 'm')
-    for (x, y, txt, col) in ((-1330, 1610, 'GERMAN LINES', (222, 150, 140)), (1300, 1610, 'BRITISH LINES', (160, 180, 230))):
+    for (x, y, txt, col) in ((-1100, 900, 'GERMAN LINES', (222, 150, 140)), (1100, 900, 'BRITISH LINES', (160, 180, 230))):
         c = px(x, y); f = font(26, 'title')
         tracked(d, (c[0] + 2, c[1] + 2), txt, f, (0, 0, 0, 220), 0.12, 'm'); tracked(d, (c[0], c[1]), txt, f, col + (255,), 0.12, 'm')
     plate(im, (268, 116, 830, 262))
     d = ImageDraw.Draw(im)
     tracked(d, (298, 196), 'THE FRONT MOVES', font(54, 'title'), CREAM, 0.03)
-    tracked(d, (300, 236), 'KILLS AND TIME BLOW NEW WAYS OPEN', font(17, 'sans'), (170, 196, 150, 255), 0.10)
+    tracked(d, (300, 236), 'NEW GROUND OPENS AS THE FIGHT GOES ON', font(17, 'sans'), (170, 196, 150, 255), 0.10)
     plate(im, (268, 838, 1316, 936))
     d = ImageDraw.Draw(im)
     x = 296
-    for key, txt in (('!roles', 'who is where'), ('!swap', 'back to the old rifle'), ('!uniform', 'period uniform on / off'), ('!pos', 'your radar square')):
+    for key, txt in (('!roles', 'roles and numbers'), ('!swap', 'change weapon'), ('!uniform', 'period uniform'), ('!pos', 'your grid square')):
         f = font(20, 'sans'); kw = f.getlength(key) + 22
         d.rounded_rectangle((x, 872, x + kw, 906), 5, outline=CREAM, width=2)
         d.text((x + kw / 2, 889), key, font=f, fill=CREAM, anchor='mm')
