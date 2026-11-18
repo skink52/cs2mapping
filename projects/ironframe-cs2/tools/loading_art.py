@@ -591,9 +591,12 @@ def credits_lines(title='IRONFRAME: Dunes'):
             'Progression and garage: Slime Servers minigame module']
 
 
+PLACE = {'Dunes': 'across sun-bleached desert dunes, rail cuttings and a ruined refinery',
+         'Sprawl': 'through a flooded neon megacity, over elevated expressways and between the towers'}
 def description(title='IRONFRAME: Dunes'):
+    place = PLACE.get(title.split(': ')[-1], 'across huge terrain')
     return '''[h1]%s[/h1]
-Giant robot arena combat for up to 64 pilots, in the style of Armored Core, Titanfall and Gundam. Boost, quick-boost and hover across huge terrain,
+Giant robot arena combat for up to 64 pilots, in the style of Armored Core, Titanfall and Gundam. Boost, quick-boost and hover %s,
 lock on, stagger your enemies and tear them apart.
 
 [h2]How to play[/h2]
@@ -623,7 +626,7 @@ lock on, stagger your enemies and tear them apart.
 
 Mech frames and weapon props are conversions of Garry's Mod Workshop models by their authors, credited in the addon; the original games' studios own the designs.
 Map, script and art by skink52 with AI-assisted tools.
-''' % title
+''' % (title, place)
 
 
 if __name__ == '__main__':

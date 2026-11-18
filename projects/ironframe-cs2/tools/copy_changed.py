@@ -6,8 +6,10 @@ one by one (1-2 fps for half a minute) and restarted the script. A new date on t
 so 289 files went through the compiler and the test server copy (tools/server_copy.py) re-copied 900 MB each time.
 A file that did not change is now not touched at all.
 
-usage:  python -I tools/copy_changed.py <src dir> <dst dir> [--glob "*.js"] [--flat]
+usage:  python -I tools/copy_changed.py <src dir> <dst dir> [--glob "*.js"] [--flat] [--map <map>]
         --glob: only files whose name matches; --flat: no subfolders (the files directly in src)
+        --map: skip other maps' per-map files (a name starting mg_ironframe_ whose part before the first dot is not <map>):
+               out/game is shared by the arenas, and Sprawl's Workshop upload carried Dunes' credits and overviews (18 Nov 2026)
 prints one line: N copied, M the same. Never deletes anything in dst.
 """
 import fnmatch, os, shutil, sys
@@ -26,10 +28,11 @@ def same(a, b):
 
 
 def main():
-    args, glob, flat, av = [], None, False, sys.argv[1:]
+    args, glob, flat, only_map, av = [], None, False, None, sys.argv[1:]
     i = 0
     while i < len(av):
         if av[i] == '--glob' and i + 1 < len(av): glob = av[i + 1]; i += 2; continue
+        if av[i] == '--map' and i + 1 < len(av): only_map = av[i + 1]; i += 2; continue
         if av[i] == '--flat': flat = True
         elif not av[i].startswith('--'): args.append(av[i])
         i += 1
@@ -41,6 +44,7 @@ def main():
         if flat: dirs[:] = []
         for f in files:
             if glob and not fnmatch.fnmatch(f, glob): continue
+            if only_map and f.startswith('mg_ironframe_') and f.split('.')[0] != only_map: continue
             s = os.path.join(root, f); t = os.path.join(dst, os.path.relpath(s, src))
             if os.path.isfile(t) and same(s, t): kept += 1; continue
             os.makedirs(os.path.dirname(t), exist_ok=True)

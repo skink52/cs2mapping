@@ -30,5 +30,5 @@ else
   python -I tools/copy_changed.py out/addon "$CONTENT"
 fi
 rm -rf "$CONTENT/_gen"
-[ -d out/game ] && python -I tools/copy_changed.py out/game "$GAME"
+[ -d out/game ] && python -I tools/copy_changed.py out/game "$GAME" --map "$MAP"
 echo "deployed $TITLE to $CONTENT and $GAME"

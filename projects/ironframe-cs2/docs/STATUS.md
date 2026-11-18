@@ -15,6 +15,8 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**18 Nov 2026: getting both maps server ready. The tracker is [SERVER_READY.md](SERVER_READY.md) (release blockers, client checks, unattended server checks); resume from its first row that is not DONE.**
+
 **14 Nov 2026, evening (skink52: "free to use compute power ... to improve both maps and the gamemode"; "the legs [of the heavy
 tripo model] are slightly angled outwards"). Builds 32-33: 19 suites PASS, mock PASS, plugin harness 3/3, both maps deployed, test
 server on Dunes (port 27015). Unseen in game.**
