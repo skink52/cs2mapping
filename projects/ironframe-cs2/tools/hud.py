@@ -712,8 +712,9 @@ CTRL_ROWS = [('W A S D', 'MOVE'), ('SHIFT', 'BOOST (HOLD IT)'), ('CTRL', 'QUICK 
 # letters wider, and what no longer fits the row is not drawn. The cards are now ONE picture each (bake_card: the same neon glyphs, drawn
 # at twice the size): the text cannot re-flow at any window size. Every other static row got slack (slbl).
 HELP_TIPS = ['MISSILES TRACK ONCE THE BRACKET IS RED', 'GOLD BAR: HOLD R + E = REFIT OR BLAST', 'KILLS AND RESTED GUNS GIVE AMMO BACK', 'HOLD TAB, THEN LET GO: THIS HELP']
-HELP_CMDS = [('!GARAGE', 'CHANGE YOUR MECH'), ('!LOADOUT 1-6', 'USE A SAVED LOADOUT'), ('!SPEC  !BACK', 'WATCH / RETURN'), ('!VOTE', 'VOTE ON THE NEXT MODE'),
-             ('!MODE', 'THIS MODE AND SCORE'), ('!PILOT', 'RANK, XP, CREDITS'), ('!CAM', 'CAMERA DISTANCE')]
+HELP_CMDS = [('!GARAGE', 'CHANGE YOUR MECH'), ('!LOADOUT 1-6', 'USE A SAVED LOADOUT'), ('!SPEC  !BACK', 'WATCH / RETURN'), ('!VOTE  !MODE', 'NEXT MODE / THIS ONE'),
+             ('!PILOT', 'RANK, XP, CREDITS'), ('!CAM', 'CAMERA DISTANCE'),
+             ('F3  !HUD', 'CS2 HUD + CHAT ON / OFF')]
 CPITCH = 20
 _CM = F.master('c28'); _CK = F.SIZES['XS'] / float(_CM.cap)          # the XS glyph master and its scale to layout px
 def card_w(t): return int(math.ceil(sum(_CM.adv.get(ord(ch), _CM.adv[63]) for ch in t.upper()) * _CK))

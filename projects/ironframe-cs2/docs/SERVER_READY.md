@@ -28,9 +28,18 @@ Status words: TODO, DOING, DONE (how far checked, in docs/reference/compatibilit
 ## C. Server checks I can run unattended (dedicated test server, bots, no client)
 | # | Item | Status |
 |---|---|---|
-| C1 | Sprawl on the dedicated server with CS2-bot fill: one full round, no crash, tick times | TODO (asks first: skink52's CS2 is open) |
-| C2 | Dunes the same, after the 14 Nov builds | TODO |
-| C3 | SlimeMG log: `ifr_srv hello`, `mgstat` lines at the round end, no DISALLOWED lines | TODO |
+| C1 | Sprawl on the dedicated server with CS2-bot fill: one full round, no crash, tick times | DONE 18 Nov 13:26-13:39 (simulated: bots only): 4 full Sortie rounds, no crash, script avg 2.8-3.5 ms a tick at 11-20 mechs, max 11-20 ms (87 ms once, the first minute) |
+| C2 | Dunes the same, after the 14 Nov builds | DONE 18 Nov 13:40-13:53 (bots only, plugin with the F3 toggle): no crash, a full round, avg 2.8-3.5 ms at 10-18 mechs, max 13-21 ms |
+| C3 | SlimeMG log: `ifr_srv hello`, `mgstat` lines at the round end, no DISALLOWED lines | DONE 18 Nov: hello on both maps, `mgstat_on`, rules / leaderboard / objective payloads each round, 0 DISALLOWED. No humans, so no stats written |
+
+Server-test notes (18 Nov): the test server loads maps as loose files under game/csgo, and both addons share most paths
+(script, materials): copy one map at a time (`server_copy.py remove` the other first) or the second map runs the first one's script.
+Workshop mounting has no such clash. The console's "Long frame ... 30 ms elapsed" lines come from this PC (de_dust2 warmup has them too).
+
+## E. Asked 18 Nov
+| # | Item | Status |
+|---|---|---|
+| E1 | F3 toggles CS2's HUD + chat in the mech (CS2 binds F3 to `autobuy` by default; the plugin catches it, no bind needed); `!hud` the same; help card row `F3  !HUD` (`!VOTE` and `!MODE` share a row so the card stays clear of the chat box) | Plugin built, harness 3/3, on the test server. Map: help card rebuilt in out/, not deployed (needs a map compile + upload). Not seen in game |
 
 ## D. Polish still open (STATUS.md "To do"; not blockers)
 IFF marker tint, vis near the Dunes train tunnels, hangar grime, post-processing, visible damage states and gibs, frame identities

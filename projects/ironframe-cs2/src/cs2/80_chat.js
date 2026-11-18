@@ -10,7 +10,7 @@ const HELP_LINES = [
   'WASD move, Shift boost, Ctrl quick boost, Space jump / hover. Mouse 1 / 2 fire the arms, R / E the shoulders',
   'Keep an enemy inside the ring to lock on; F switches target. Missiles track once the bracket is red',
   'Gold bar full: hold R + E. Light and medium frames refit (AP, EN, ammo), heavy frames blast. Kills and rested weapons give ammo back',
-  'Chat: !garage !loadout 1-6 !spec !back !afk !vote !mode !pilot !od',
+  'Chat: !garage !loadout 1-6 !spec !back !afk !vote !mode !pilot !od. F3 or !hud: CS2 HUD and chat on / off in the mech',
 ];
 /** a message to one player on the HUD line (three rows; longer text continues on a second page). queue = after what is showing, in order.
  *  prio 0 ambient (shown only when the line is free) | 1 normal | 2 important (gold, cuts in). Without one it is ranked by the core event being
