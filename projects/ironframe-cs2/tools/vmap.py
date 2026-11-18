@@ -85,7 +85,15 @@ if PICTURES:
     rel.save(os.path.join(prev_dir, '%s_relief.png' % N.ARENA))
     L.write_radar(OUT, N.MAP, rel, (bx0, by0, bx1, by1), game_out=GAME_OUT)
     L.write_icon(OUT, N.MAP, 'M32 2 L58 16 L58 48 L32 62 L6 48 L6 16 Z M32 14 L48 23 L48 41 L32 50 L16 41 L16 23 Z')
-    if os.environ.get('IF_SLIDES', 'pixel') == 'pixel':      # pixel-art slides of the map itself (tools/map_slides.py + pixel_slides.py)
+    # 18 Nov 2026 (skink52: no pixel-art mechs, "closer to the first loading screen", title only): textured Cycles renders of the map
+    # (tools/arenas/sprawl_preview_bl.py, daylight mode) kept outside git in SHOT_DIR/<arena>/*.png are framed with the title
+    shot_dir = os.path.join(os.environ.get('IF_SHOT_DIR', 'C:/source1/ironframe_work/slides'), N.ARENA)
+    shots = sorted(os.path.join(shot_dir, f) for f in os.listdir(shot_dir) if f.lower().endswith('.png')) if os.path.isdir(shot_dir) else []
+    if os.environ.get('IF_SLIDES', 'shots') == 'shots' and len(shots) >= 2:
+        r = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'map_slides.py'), '--shots', OUT, N.MAP, N.TITLE] + shots, capture_output=True, text=True)
+        print((r.stdout + r.stderr).strip()[-400:])
+        names = [f for f in os.listdir(os.path.join(OUT, 'panorama/images/map_icons/screenshots/1080p')) if f.startswith(N.MAP)]
+    elif os.environ.get('IF_SLIDES', 'pixel') in ('pixel', 'shots'):      # pixel-art slides of the map itself (tools/map_slides.py + pixel_slides.py)
         r = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'map_slides.py'), OUTPATH, OUT, N.MAP, N.TITLE, box], capture_output=True, text=True)
         print((r.stdout + r.stderr).strip()[-400:])
         names = [f for f in os.listdir(os.path.join(OUT, 'panorama/images/map_icons/screenshots/1080p')) if f.startswith(N.MAP)]

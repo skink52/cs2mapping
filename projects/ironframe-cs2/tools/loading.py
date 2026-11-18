@@ -42,7 +42,12 @@ def main(a):
     names = write_slides(out, N.MAP, C.slides({}, rel, os.path.join(ROOT, 'preview', 'arenas', '%s.png' % arena), N.TITLE))
     write_extras(out, os.path.join(ROOT, 'out', 'game'), N.MAP, N.TITLE)
     vm = os.environ.get('IF_CURRENT_VMAP') or 'C:/source1/links/content_addons/%s/maps/%s.vmap' % (N.MAP, N.MAP)
-    if os.environ.get('IF_SLIDES', 'pixel') == 'pixel' and os.path.exists(vm):   # pixel slides of the mapper's real vmap replace the poster slides
+    shot_dir = os.path.join(os.environ.get('IF_SHOT_DIR', 'C:/source1/ironframe_work/slides'), arena)   # textured renders first (vmap.py)
+    shots = sorted(os.path.join(shot_dir, f) for f in os.listdir(shot_dir) if f.lower().endswith('.png')) if os.path.isdir(shot_dir) else []
+    if os.environ.get('IF_SLIDES', 'shots') == 'shots' and len(shots) >= 2:
+        import map_slides as MS
+        MS.main(['--shots', out, N.MAP, N.TITLE] + shots)
+    elif os.environ.get('IF_SLIDES', 'pixel') in ('pixel', 'shots') and os.path.exists(vm):   # pixel slides of the mapper's real vmap replace the poster slides
         import map_slides as MS
         MS.main([vm, out, N.MAP, N.TITLE] + ([os.environ['IF_SLIDE_BOX']] if os.environ.get('IF_SLIDE_BOX') else ['-7300,-7300,-600,7300,7300,6200']))
     print('loading: radar, icon, %d slides for %s' % (len(names), N.MAP))

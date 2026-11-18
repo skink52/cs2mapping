@@ -83,10 +83,11 @@ def title_on(img, title, sub):
     d.text((x + 3, y + 3), title, font=f1, fill=(0, 0, 0))
     d.text((x, y), title, font=f1, fill=(235, 240, 255))
     d.line((x, y + 84, x + 520, y + 84), fill=(90, 200, 255), width=3)
-    d.text((x, y + 96), sub, font=f2, fill=(200, 210, 230))
+    if sub: d.text((x, y + 96), sub, font=f2, fill=(200, 210, 230))
     return img
 
 
+# 18 Nov 2026 (skink52): "no need for the second line too, just ironframe: dunes": framed shots carry the title only (IF_SLIDE_SUBS=1 for the old lines)
 SUBS = ['Hold the canyon', 'Every ridge is cover', 'Boost, dodge, lock on', '64 pilots, one arena', 'Break their stagger', 'Upgrade in the hangar']
 def shots(a):
     addon, mapname, title, files = a[0], a[1], a[2], a[3:]
@@ -94,7 +95,7 @@ def shots(a):
     out = []
     for i, f in enumerate(files[:10]):
         img = L.cover(Image.open(f).convert('RGB'))
-        img = title_on(grade(img.resize((W * SS, H * SS))), title, SUBS[i % len(SUBS)])
+        img = title_on(grade(img.resize((W * SS, H * SS))), title.upper(), SUBS[i % len(SUBS)] if os.environ.get('IF_SLIDE_SUBS') == '1' else '')
         out.append(img)
     L.write_slides(addon, mapname, out)
     print('map_slides: %d framed screenshots for %s' % (len(out), mapname))
@@ -137,7 +138,7 @@ def main(a):
     ground = float(np.percentile(allp[:, 2], 30))
     haze = (176, 120, 132)
     # four cinematic cameras: low over the edge looking across the arena, and one high establishing shot
-    shots = [((0.42, -0.46), 0.05, 0.0, 'Hold the canyon'), ((-0.44, 0.40), 0.07, 0.0, 'Every ridge is cover'),
+    cams = [((0.42, -0.46), 0.05, 0.0, 'Hold the canyon'), ((-0.44, 0.40), 0.07, 0.0, 'Every ridge is cover'),
              ((0.48, 0.30), 0.04, -0.05, 'Boost, dodge, lock on'), ((-0.30, -0.55), 0.22, -0.12, '64 pilots, one arena')]
     if os.environ.get('IF_SLIDES', 'pixel') == 'pixel':
         import pixel_slides as PS
@@ -147,7 +148,7 @@ def main(a):
         PS.workshop_icon().save(os.path.join(HERE, '..', 'preview', 'workshop_icon.png'))
         print('map_slides: %d pixel slides + workshop_icon.png for %s' % (len(slides), mapname)); return
     out = []
-    for i, ((sx, sy), up, dz, sub) in enumerate(shots):
+    for i, ((sx, sy), up, dz, sub) in enumerate(cams):
         cam = [c[0] + sx * ext, c[1] + sy * ext, ground + 380 + up * ext]
         look = [c[0] - sx * ext * 0.15, c[1] - sy * ext * 0.15, ground + 300 + dz * ext]
         yaw = math.degrees(math.atan2(look[1] - cam[1], look[0] - cam[0]))

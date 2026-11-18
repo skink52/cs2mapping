@@ -1,5 +1,9 @@
 """Cycles night render of a dumped Sprawl map (see sprawl_preview.py for the three steps and what the picture is and is not).
   blender -b --python tools/arenas/sprawl_preview_bl.py -- <work dir> <content dir>[;<content dir>] <out prefix> <shot>[,<shot>] [samples] [WxH]
+Daylight (any arena; 18 Nov 2026, the Dunes loading slides from textured renders instead of pixel art), all optional environment variables:
+  PREVIEW_SHOTS=<json {name: [eye, target, lens]}>  replaces SHOTS     PREVIEW_SKY=<equirect png> the world (PREVIEW_SKY_ROT deg, _STRENGTH)
+  PREVIEW_SUN=<elevation,yaw,strength>  a sun lamp (sky.py SUN)        PREVIEW_NO_LIGHTS=1  skip the map's point lights
+  PREVIEW_MIST=<density>  thin world-volume haze
 """
 import bpy, json, math, os, re, sys
 import numpy as np
@@ -142,6 +146,32 @@ def build_props():
     print('props: %d of %d models' % (n, len(cache)))
 
 
+if os.environ.get('PREVIEW_SHOTS'): SHOTS = {k: tuple(v) for k, v in json.load(open(os.environ['PREVIEW_SHOTS'])).items()}
+
+
+def day_world(w):
+    """the arena's own equirect sky as the world, a sun lamp where sky.py paints it, optional haze"""
+    nt = w.node_tree; bg = nt.nodes['Background']
+    sky = os.environ.get('PREVIEW_SKY')
+    if sky:
+        tex = nt.nodes.new('ShaderNodeTexEnvironment'); tex.image = bpy.data.images.load(sky)
+        mp = nt.nodes.new('ShaderNodeMapping'); co = nt.nodes.new('ShaderNodeTexCoord')
+        mp.inputs['Rotation'].default_value[2] = math.radians(float(os.environ.get('PREVIEW_SKY_ROT', '0')))
+        nt.links.new(co.outputs['Generated'], mp.inputs['Vector']); nt.links.new(mp.outputs['Vector'], tex.inputs['Vector'])
+        nt.links.new(tex.outputs['Color'], bg.inputs['Color']); bg.inputs['Strength'].default_value = float(os.environ.get('PREVIEW_SKY_STRENGTH', '1.0'))
+    sun = os.environ.get('PREVIEW_SUN')
+    if sun:
+        el, yaw, k = (float(v) for v in sun.split(','))
+        ld = bpy.data.lights.new('sun', 'SUN'); ld.energy = k; ld.angle = math.radians(1.5); ld.color = (1.0, 0.86, 0.68)
+        ob = bpy.data.objects.new('sun', ld); bpy.context.scene.collection.objects.link(ob)
+        d = Vector((math.cos(math.radians(el)) * math.cos(math.radians(yaw)), math.cos(math.radians(el)) * math.sin(math.radians(yaw)), math.sin(math.radians(el))))
+        ob.rotation_euler = (-d).to_track_quat('-Z', 'Y').to_euler()
+    mist = os.environ.get('PREVIEW_MIST')
+    if mist:
+        vs = nt.nodes.new('ShaderNodeVolumeScatter'); vs.inputs['Density'].default_value = float(mist); vs.inputs['Color'].default_value = (0.95, 0.78, 0.66, 1)
+        nt.links.new(vs.outputs['Volume'], nt.nodes['World Output'].inputs['Volume'])
+
+
 def build_lights():
     lights = json.load(open(os.path.join(WORK, 'lights.json')))
     for i, l in enumerate(lights):
@@ -154,9 +184,11 @@ def build_lights():
 def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene
-    build_map(); build_props(); build_lights()
+    build_map(); build_props()
+    if not os.environ.get('PREVIEW_NO_LIGHTS'): build_lights()
     w = bpy.data.worlds.new('w'); sc.world = w; w.use_nodes = True
     bg = w.node_tree.nodes['Background']; bg.inputs[0].default_value = (0.035, 0.04, 0.085, 1); bg.inputs[1].default_value = 0.5
+    if os.environ.get('PREVIEW_SKY') or os.environ.get('PREVIEW_SUN'): day_world(w)
     sc.render.engine = 'CYCLES'; sc.cycles.samples = SAMPLES; sc.cycles.use_denoising = True
     prefs = bpy.context.preferences.addons['cycles'].preferences
     for dev in ('OPTIX', 'CUDA', 'HIP', 'ONEAPI'):
