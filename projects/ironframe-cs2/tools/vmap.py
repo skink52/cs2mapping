@@ -89,11 +89,19 @@ if PICTURES:
     # (tools/arenas/sprawl_preview_bl.py, daylight mode) kept outside git in SHOT_DIR/<arena>/*.png are framed with the title
     shot_dir = os.path.join(os.environ.get('IF_SHOT_DIR', 'C:/source1/ironframe_work/slides'), N.ARENA)
     shots = sorted(os.path.join(shot_dir, f) for f in os.listdir(shot_dir) if f.lower().endswith('.png')) if os.path.isdir(shot_dir) else []
-    if os.environ.get('IF_SLIDES', 'shots') == 'shots' and len(shots) >= 2:
+    live = os.environ.get('IF_CURRENT_VMAP') or 'C:/source1/links/content_addons/%s/maps/%s.vmap' % (N.MAP, N.MAP)
+    if os.environ.get('IF_SLIDES', 'first') == 'first':     # the very first IRONFRAME screen (relief + 3D corners), from the mapper's live vmap
+        sheet = prev
+        if os.path.exists(live):
+            sheet = os.path.join(prev_dir, '%s_live.png' % N.ARENA)
+            r = subprocess.run([sys.executable, '-I', os.path.join(TOOLS, 'vmap_preview.py'), live, sheet, box], capture_output=True, text=True)
+            print((r.stdout + r.stderr).strip()[-300:])
+        names = L.write_slides(OUT, N.MAP, C.first_slides(rel, sheet, N.TITLE))
+    elif os.environ.get('IF_SLIDES') == 'shots' and len(shots) >= 2:
         r = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'map_slides.py'), '--shots', OUT, N.MAP, N.TITLE] + shots, capture_output=True, text=True)
         print((r.stdout + r.stderr).strip()[-400:])
         names = [f for f in os.listdir(os.path.join(OUT, 'panorama/images/map_icons/screenshots/1080p')) if f.startswith(N.MAP)]
-    elif os.environ.get('IF_SLIDES', 'pixel') in ('pixel', 'shots'):      # pixel-art slides of the map itself (tools/map_slides.py + pixel_slides.py)
+    elif os.environ.get('IF_SLIDES') == 'pixel':      # pixel-art slides of the map itself (tools/map_slides.py + pixel_slides.py)
         r = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'map_slides.py'), OUTPATH, OUT, N.MAP, N.TITLE, box], capture_output=True, text=True)
         print((r.stdout + r.stderr).strip()[-400:])
         names = [f for f in os.listdir(os.path.join(OUT, 'panorama/images/map_icons/screenshots/1080p')) if f.startswith(N.MAP)]

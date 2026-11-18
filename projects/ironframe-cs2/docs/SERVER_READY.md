@@ -10,10 +10,10 @@ Status words: TODO, DOING, DONE (how far checked, in docs/reference/compatibilit
 | # | Item | Status |
 |---|---|---|
 | A1 | Steam description for each map (`<addon> STEAM DESCRIPTION.txt`) | DONE 18 Nov: Sprawl's was missing; both now name their setting (tools/loading_art.py `PLACE`) |
-| A2 | Workshop preview image | Exists: preview/workshop_icon.png (shared pixel icon, 1024). A per-map image is optional |
+| A2 | Workshop preview image; loading slides | Icon: preview/workshop_icon.png. Slides (18 Nov, skink52's picks): the first screen's chunky 3D look from low-res Cycles renders (tools/map_slides.py --pixel; renders in C:/source1/ironframe_work/slides/<arena>_px), HUD font title only, sky in view. Dunes compiled 15:15; Sprawl 15:16 (its slides, radar and icon had never compiled: its HUD css preloaded Dunes' names) |
 | A3 | Other maps' files in each game addon (Sprawl had Dunes' credits; both had all three radar overviews): they would ship in the upload | DONE 18 Nov: moved to backups/stray_maps_20261118; deploy.sh now copies out/game with `copy_changed.py --map $MAP` |
 | A4 | Visibility: every frame / weapon port has `permission: none` (docs/CREDITS.md), so no public upload. Recommended: **Unlisted**, as Hellmatch (3821892329) is: the server mounts it, it is not in search | NEEDS SKINK52 |
-| A5 | Workshop upload of both maps (skink52 uploads; the server can only mount Workshop items) | NEEDS SKINK52 (after A4) |
+| A5 | Dunes READY to upload 18 Nov 15:20 (vpk + cache check clean, script / HUD / slides compiled, stale mg_ironframe_dunes.vjs_c moved to backups). Workshop upload of both maps (skink52 uploads; the server can only mount Workshop items) | NEEDS SKINK52 (after A4) |
 | A6 | slime-mg-gm: mode `mech` leaves `Pending`: map lines with the two Workshop ids, `DefaultMap`, a maps.md row, release (steps: slime-mg-gm docs/add-a-mode.md) | TODO once A5 gives ids |
 
 ## B. Verified only by tests: needs a client on the server (skink52, one session, ~20 min; TESTING.md)

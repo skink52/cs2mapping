@@ -44,10 +44,16 @@ def main(a):
     vm = os.environ.get('IF_CURRENT_VMAP') or 'C:/source1/links/content_addons/%s/maps/%s.vmap' % (N.MAP, N.MAP)
     shot_dir = os.path.join(os.environ.get('IF_SHOT_DIR', 'C:/source1/ironframe_work/slides'), arena)   # textured renders first (vmap.py)
     shots = sorted(os.path.join(shot_dir, f) for f in os.listdir(shot_dir) if f.lower().endswith('.png')) if os.path.isdir(shot_dir) else []
-    if os.environ.get('IF_SLIDES', 'shots') == 'shots' and len(shots) >= 2:
+    if os.environ.get('IF_SLIDES', 'first') == 'first':      # the very first IRONFRAME screen (vmap.py): relief + 3D corners of the live vmap
+        sheet = os.path.join(ROOT, 'preview', 'arenas', '%s_live.png' % arena)
+        if os.path.exists(vm):
+            import subprocess
+            subprocess.run([sys.executable, '-I', os.path.join(ROOT, '..', '..', 'tools', 'vmap_preview.py'), vm, sheet, os.environ.get('IF_SLIDE_BOX', '-7400,-7400,-700,7400,7400,6300')])
+        write_slides(out, N.MAP, C.first_slides(rel, sheet if os.path.exists(sheet) else rel_p.replace('_relief', ''), N.TITLE))
+    elif os.environ.get('IF_SLIDES') == 'shots' and len(shots) >= 2:
         import map_slides as MS
         MS.main(['--shots', out, N.MAP, N.TITLE] + shots)
-    elif os.environ.get('IF_SLIDES', 'pixel') in ('pixel', 'shots') and os.path.exists(vm):   # pixel slides of the mapper's real vmap replace the poster slides
+    elif os.environ.get('IF_SLIDES') == 'pixel' and os.path.exists(vm):   # pixel slides of the mapper's real vmap replace the poster slides
         import map_slides as MS
         MS.main([vm, out, N.MAP, N.TITLE] + ([os.environ['IF_SLIDE_BOX']] if os.environ.get('IF_SLIDE_BOX') else ['-7300,-7300,-600,7300,7300,6200']))
     print('loading: radar, icon, %d slides for %s' % (len(names), N.MAP))

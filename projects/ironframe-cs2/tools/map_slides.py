@@ -1,6 +1,7 @@
 """Loading slides drawn from the map itself (the original IRONFRAME style, skink52 preferred it over the poster art):
 cinematic views of the current .vmap's arena under the arena's own sky, with distance haze and the title.
 usage: python -I tools/map_slides.py <map.vmap> <addon out> <map name> [title] [x0,y0,z0,x1,y1,z1]
+       python -I tools/map_slides.py --pixel <addon out> <map name> <title> <low-res render1.png> <render2> [...]   chunky 3D (default)
        python -I tools/map_slides.py --shots <addon out> <map name> <title> <shot1.png|jpg> <shot2> [...]   frames in-game screenshots (best)
 Writes panorama/images/map_icons/screenshots/1080p/<map>.png, _1.png ... (via create/loading.py write_slides).
 """
@@ -100,6 +101,58 @@ def shots(a):
     L.write_slides(addon, mapname, out)
     print('map_slides: %d framed screenshots for %s' % (len(out), mapname))
 
+# 18 Nov 2026 (skink52: "keep font more consistent with gameplay font ... basic tooltips that don't read like AI"): the HUD's Cinzel
+# (create/fonts/Cinzel-Variable.ttf, Bold) with its soft glow, gold key names as on the help card, one keys line per slide
+TIPS = [[('SHIFT', 1), (' BOOST     ', 0), ('CTRL', 1), (' QUICK BOOST     ', 0), ('SPACE', 1), (' HOVER', 0)],
+        [('MOUSE 1 / 2', 1), (' ARMS     ', 0), ('R / E', 1), (' SHOULDERS     ', 0), ('F', 1), (' NEXT TARGET', 0)],
+        [('MISSILES TRACK ONCE THE BRACKET IS RED', 0)],
+        [('!GARAGE', 1), (' CHANGE YOUR MECH     ', 0), ('F3', 1), (' CHAT IN THE MECH', 0)]]
+TXT, GOLD = (242, 246, 250), (255, 210, 90)
+
+
+def hud_font(sz):
+    from PIL import ImageFont
+    f = ImageFont.truetype(os.path.join(ROOT, 'create', 'fonts', 'Cinzel-Variable.ttf'), sz)
+    try: f.set_variation_by_name('Bold')
+    except Exception: pass
+    return f
+
+
+def glow_text(im, xy, parts, f, glow=6):
+    """parts [(text, gold?)] in a row, each with the HUD's dark halo and a faint glow of its own colour"""
+    lay = Image.new('RGBA', im.size, (0, 0, 0, 0)); d = ImageDraw.Draw(lay); x, y = xy
+    for t, g in parts:
+        d.text((x, y), t, font=f, fill=(GOLD if g else TXT) + (255,)); x += d.textlength(t, font=f)
+    a = lay.split()[3]
+    halo = Image.new('RGBA', im.size, (0, 0, 0, 255)); halo.putalpha(a.filter(ImageFilter.GaussianBlur(glow)).point(lambda v: min(255, v * 2)))
+    soft = lay.filter(ImageFilter.GaussianBlur(glow * 1.5)); soft.putalpha(soft.split()[3].point(lambda v: v // 2))
+    base = im.convert('RGBA'); base.alpha_composite(halo); base.alpha_composite(soft); base.alpha_composite(lay)
+    return base.convert('RGB')
+
+
+def pixel_shot(low, title, tip=None, colours=40):
+    """18 Nov 2026 (skink52: "updated versions of that same style" (the very first screen: chunky 3D), "views like you took in the most
+    recent version, but with a pixely type of vibe ... the skybox visible"): a low-res Cycles render (480x270, tools/arenas/sprawl_preview_bl.py,
+    so depth and props are right) blown up x4 nearest-neighbour, a reduced palette, the first screen's shade, the title and a keys line"""
+    import loading as LL
+    im = low.convert('RGB')
+    im = im.quantize(colors=colours, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert('RGB')
+    im = im.resize((W, H), Image.NEAREST)
+    im = LL.shade(im, top=0.3, bottom=0.45)
+    im = glow_text(im, (80, 52), [(title.upper(), 0)], hud_font(96))
+    if tip: im = glow_text(im, (84, H - 110), tip, hud_font(40), glow=4)
+    return im
+
+
+def pixel_shots(a):
+    """--pixel <addon> <map> <title> <low1.png> <low2> ...: pixel_shot each, write the slides"""
+    addon, mapname, title, files = a[0], a[1], a[2], a[3:]
+    n = int(os.environ.get('IF_SLIDE_COLOURS', '128' if 'sprawl' in mapname else '40'))   # neon needs more colours than dusk sand
+    out = [pixel_shot(Image.open(f), title, None, n) for f in files[:10]]   # skink52 18 Nov: "remove tooltips" (TIPS kept, unused)
+    L.write_slides(addon, mapname, out)
+    print('map_slides: %d pixel shots for %s' % (len(out), mapname))
+
+
 def pixel_views(polys, addon, haze, c, ext, ground):
     """4 low-res (480x270) renders: polygons drawn 2x supersampled then box-filtered down (soft edges quantise cleanly)"""
     global W, H
@@ -124,6 +177,7 @@ def pixel_views(polys, addon, haze, c, ext, ground):
 
 def main(a):
     if a and a[0] == '--shots': return shots(a[1:])
+    if a and a[0] == '--pixel': return pixel_shots(a[1:])
     if len(a) < 3: sys.exit(__doc__)
     src, addon, mapname = a[0], a[1], a[2]
     title = a[3] if len(a) > 3 else 'IRONFRAME: DUNES'

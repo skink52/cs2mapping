@@ -486,6 +486,26 @@ def font(sz):
     return ImageFont.load_default()
 
 
+def first_slides(rel_img, preview_path, title):
+    """the very first IRONFRAME loading screen (9 Nov 2026, the arena agent), back on 18 Nov 2026 (skink52: "the very first one EVER when
+    the addon was first made ... somewhat pixelart like but 3D"; title only, "no need for the second line"): the shaded relief with the
+    title, then corners of the 3D preview sheet (tools/vmap_preview.py: from NE / NW / SW / SE, 640x400 each) blown up to 1080 so the
+    views go chunky. preview_path should be a sheet of the mapper's live vmap."""
+    import loading as L
+    title = title.upper()
+    def head(im, sz):
+        d = ImageDraw.Draw(im)
+        d.text((84, 64), title, font=font(sz), fill=(0, 0, 0))
+        d.text((80, 60), title, font=font(sz), fill=(255, 232, 200))
+        return im
+    out = [head(L.shade(L.cover(rel_img.resize((1920, 1920)), 1920, 1080), top=0.55, bottom=0.45), 150)]
+    if preview_path and os.path.exists(preview_path):
+        sheet = Image.open(preview_path).convert('RGB')
+        for crop in ((640, 0, 1280, 400), (1280, 0, 1920, 400), (640, 400, 1280, 800)):   # 4 slides: the HUD css preloads 4
+            out.append(head(L.shade(L.cover(sheet.crop(crop), 1920, 1080), top=0.5, bottom=0.5), 110))
+    return out
+
+
 def slides(A, rel_img, preview_path, title):
     """4 loading slides (title, controls, modes, tips): drawn by tools/loading_art.py from textured mech renders; the arena pictures are no longer used"""
     import loading_art
