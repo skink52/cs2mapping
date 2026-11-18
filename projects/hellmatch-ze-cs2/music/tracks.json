@@ -1,0 +1,41 @@
+[
+ {
+  "id": "theme",
+  "file": "theme.mp3",
+  "pool": "opener",
+  "title": "Hellmatch Theme (trailer)",
+  "by": "skink52"
+ },
+ {
+  "id": "gen01",
+  "file": "gen01.mp3",
+  "pool": "long",
+  "title": "Ferrous Pulse",
+  "by": "Generated for Hellmatch with tools/compose.py (original, CC0)",
+  "seconds": 207.3
+ },
+ {
+  "id": "gen02",
+  "file": "gen02.mp3",
+  "pool": "long",
+  "title": "Chainsaw Vespers",
+  "by": "Generated for Hellmatch with tools/compose.py (original, CC0)",
+  "seconds": 195.7
+ },
+ {
+  "id": "gen03",
+  "file": "gen03.mp3",
+  "pool": "long",
+  "title": "Low Orbit of Hell",
+  "by": "Generated for Hellmatch with tools/compose.py (original, CC0)",
+  "seconds": 194.5
+ },
+ {
+  "id": "gen04",
+  "file": "gen04.mp3",
+  "pool": "long",
+  "title": "Valkyrie Fragstorm",
+  "by": "Generated for Hellmatch with tools/compose.py (original, CC0)",
+  "seconds": 193.3
+ }
+]

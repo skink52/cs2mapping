@@ -17,6 +17,7 @@ On the PC, Claude Code runs from `C:\source1` and reaches CS2, `C:\source2` and 
 |---|---|---|
 | TTT, TTT script, ttt_ maps | `projects/cs2mapTTT/` (the script) + `ports/ttt_*/` (map ports) | `projects/cs2mapTTT/CLAUDE.md` |
 | Hellmatch, FreeDM, Freedoom DM | `projects/hellmatch-cs2/` | `projects/hellmatch-cs2/docs/STATUS.md` |
+| Hellmatch ZE, zombie escape, mg_hellescape | `projects/hellmatch-ze-cs2/` (standalone; never edits hellmatch-cs2) | `projects/hellmatch-ze-cs2/docs/STATUS.md` (Resume here), `projects/hellmatch-cs2/docs/ZE_DESIGN.md` |
 | Space Racer, Neon Racer, Depth Racer, racing | `projects/space-racer-cs2/` (themes via `SPR_THEME`) | `projects/space-racer-cs2/README.md`, `docs/DESIGN.md` |
 | Puppet Brawl, fighter, fighting game | `projects/cs2-fighter/` | `projects/cs2-fighter/README.md` |
 | Trench warfare, WW1, mg_trenchwarfare, custom rifles | `projects/trenchwarfare-cs2/` | `projects/trenchwarfare-cs2/NOTES.md` |

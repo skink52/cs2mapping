@@ -77,6 +77,7 @@ Each original addon lives in [`projects/`](projects), with its full history (mer
 | Project | Folder |
 |---|---|
 | Hellmatch CS2: Doom-style deathmatch from Freedoom's levels, 4 arenas × 16 players, entirely in cs_script (Freedoom content under [its own licence](projects/hellmatch-cs2/FREEDOOM_LICENSE.txt)) | [projects/hellmatch-cs2](projects/hellmatch-cs2) |
+| Hellmatch ZE: zombie escape on Freedoom single-player levels, T and CT arenas side by side, the dead return as monsters in the other side's arena (in progress; Freedoom content under [its own licence](projects/hellmatch-ze-cs2/FREEDOOM_LICENSE.txt)) | [projects/hellmatch-ze-cs2](projects/hellmatch-ze-cs2) |
 | Space Racer (plus Neon and Depth themes): 32-car anti-grav racer with generated tracks | [projects/space-racer-cs2](projects/space-racer-cs2) |
 | mg_trenchwarfare: WW1 trenches with procedural props, mortars, biplanes and custom rifles | [projects/trenchwarfare-cs2](projects/trenchwarfare-cs2) |
 | [projects/monsoon-cs2](projects/monsoon-cs2/) | mg_monsoon: second battle map of the mg_trenchwarfare series (Vietnam valley, helicopters, howitzer and rocket batteries, Conquest). In progress, paused; resume from its NOTES.md. |

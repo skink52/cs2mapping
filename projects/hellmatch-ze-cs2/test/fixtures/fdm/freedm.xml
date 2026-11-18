@@ -1,0 +1,366 @@
+<root>
+	<styles>
+		<include src="file://{resources}/styles/custom_game/freedm.css" />
+	</styles>
+	<Panel class="FdmWrap" hittest="false">
+<Panel id="fdm_opts" class="FdmOpts" hittest="false">
+<Panel id="fdm_root" class="FdmRoot" hittest="false">
+<Panel id="fdm_flash" class="Flash" hittest="false" />
+<Panel id="fdm_screen" class="Screen" hittest="false">
+<Panel id="fdm_wpn" class="Wpn" hittest="false">
+<Panel id="fdm_wbob" class="WBob" hittest="false">
+<Panel id="fdm_wspr" class="WSpr" hittest="false" />
+<Panel id="fdm_wflash" class="WSpr" hittest="false" />
+</Panel>
+</Panel>
+<Panel class="Line MsgLine" hittest="false">
+<Panel id="fdm_msgimg" class="TImg" hittest="false" />
+<Panel id="fdm_msg0" class="Ch" hittest="false" />
+<Panel id="fdm_msg1" class="Ch" hittest="false" />
+<Panel id="fdm_msg2" class="Ch" hittest="false" />
+<Panel id="fdm_msg3" class="Ch" hittest="false" />
+<Panel id="fdm_msg4" class="Ch" hittest="false" />
+<Panel id="fdm_msg5" class="Ch" hittest="false" />
+<Panel id="fdm_msg6" class="Ch" hittest="false" />
+<Panel id="fdm_msg7" class="Ch" hittest="false" />
+<Panel id="fdm_msg8" class="Ch" hittest="false" />
+<Panel id="fdm_msg9" class="Ch" hittest="false" />
+<Panel id="fdm_msg10" class="Ch" hittest="false" />
+<Panel id="fdm_msg11" class="Ch" hittest="false" />
+<Panel id="fdm_msg12" class="Ch" hittest="false" />
+<Panel id="fdm_msg13" class="Ch" hittest="false" />
+<Panel id="fdm_msg14" class="Ch" hittest="false" />
+<Panel id="fdm_msg15" class="Ch" hittest="false" />
+<Panel id="fdm_msg16" class="Ch" hittest="false" />
+<Panel id="fdm_msg17" class="Ch" hittest="false" />
+<Panel id="fdm_msg18" class="Ch" hittest="false" />
+<Panel id="fdm_msg19" class="Ch" hittest="false" />
+<Panel id="fdm_msg20" class="Ch" hittest="false" />
+<Panel id="fdm_msg21" class="Ch" hittest="false" />
+<Panel id="fdm_msg22" class="Ch" hittest="false" />
+<Panel id="fdm_msg23" class="Ch" hittest="false" />
+<Panel id="fdm_msg24" class="Ch" hittest="false" />
+<Panel id="fdm_msg25" class="Ch" hittest="false" />
+<Panel id="fdm_msg26" class="Ch" hittest="false" />
+<Panel id="fdm_msg27" class="Ch" hittest="false" />
+<Panel id="fdm_msg28" class="Ch" hittest="false" />
+<Panel id="fdm_msg29" class="Ch" hittest="false" />
+<Panel id="fdm_msg30" class="Ch" hittest="false" />
+<Panel id="fdm_msg31" class="Ch" hittest="false" />
+<Panel id="fdm_msg32" class="Ch" hittest="false" />
+<Panel id="fdm_msg33" class="Ch" hittest="false" />
+<Panel id="fdm_msg34" class="Ch" hittest="false" />
+<Panel id="fdm_msg35" class="Ch" hittest="false" />
+<Panel id="fdm_msg36" class="Ch" hittest="false" />
+<Panel id="fdm_msg37" class="Ch" hittest="false" />
+<Panel id="fdm_msg38" class="Ch" hittest="false" />
+<Panel id="fdm_msg39" class="Ch" hittest="false" />
+<Panel id="fdm_msg40" class="Ch" hittest="false" />
+<Panel id="fdm_msg41" class="Ch" hittest="false" />
+<Panel id="fdm_msg42" class="Ch" hittest="false" />
+<Panel id="fdm_msg43" class="Ch" hittest="false" />
+<Panel id="fdm_msg44" class="Ch" hittest="false" />
+<Panel id="fdm_msg45" class="Ch" hittest="false" />
+<Panel id="fdm_msg46" class="Ch" hittest="false" />
+<Panel id="fdm_msg47" class="Ch" hittest="false" />
+<Panel id="fdm_msg48" class="Ch" hittest="false" />
+<Panel id="fdm_msg49" class="Ch" hittest="false" />
+<Panel id="fdm_msg50" class="Ch" hittest="false" />
+<Panel id="fdm_msg51" class="Ch" hittest="false" />
+<Panel id="fdm_msg52" class="Ch" hittest="false" />
+<Panel id="fdm_msg53" class="Ch" hittest="false" />
+<Panel id="fdm_msg54" class="Ch" hittest="false" />
+<Panel id="fdm_msg55" class="Ch" hittest="false" />
+</Panel>
+<Panel class="Line MsgLine MsgLine2" hittest="false">
+<Panel id="fdm_msgbimg" class="TImg" hittest="false" />
+<Panel id="fdm_msgb0" class="Ch" hittest="false" />
+<Panel id="fdm_msgb1" class="Ch" hittest="false" />
+<Panel id="fdm_msgb2" class="Ch" hittest="false" />
+<Panel id="fdm_msgb3" class="Ch" hittest="false" />
+<Panel id="fdm_msgb4" class="Ch" hittest="false" />
+<Panel id="fdm_msgb5" class="Ch" hittest="false" />
+<Panel id="fdm_msgb6" class="Ch" hittest="false" />
+<Panel id="fdm_msgb7" class="Ch" hittest="false" />
+<Panel id="fdm_msgb8" class="Ch" hittest="false" />
+<Panel id="fdm_msgb9" class="Ch" hittest="false" />
+<Panel id="fdm_msgb10" class="Ch" hittest="false" />
+<Panel id="fdm_msgb11" class="Ch" hittest="false" />
+<Panel id="fdm_msgb12" class="Ch" hittest="false" />
+<Panel id="fdm_msgb13" class="Ch" hittest="false" />
+<Panel id="fdm_msgb14" class="Ch" hittest="false" />
+<Panel id="fdm_msgb15" class="Ch" hittest="false" />
+<Panel id="fdm_msgb16" class="Ch" hittest="false" />
+<Panel id="fdm_msgb17" class="Ch" hittest="false" />
+<Panel id="fdm_msgb18" class="Ch" hittest="false" />
+<Panel id="fdm_msgb19" class="Ch" hittest="false" />
+<Panel id="fdm_msgb20" class="Ch" hittest="false" />
+<Panel id="fdm_msgb21" class="Ch" hittest="false" />
+<Panel id="fdm_msgb22" class="Ch" hittest="false" />
+<Panel id="fdm_msgb23" class="Ch" hittest="false" />
+<Panel id="fdm_msgb24" class="Ch" hittest="false" />
+<Panel id="fdm_msgb25" class="Ch" hittest="false" />
+<Panel id="fdm_msgb26" class="Ch" hittest="false" />
+<Panel id="fdm_msgb27" class="Ch" hittest="false" />
+<Panel id="fdm_msgb28" class="Ch" hittest="false" />
+<Panel id="fdm_msgb29" class="Ch" hittest="false" />
+<Panel id="fdm_msgb30" class="Ch" hittest="false" />
+<Panel id="fdm_msgb31" class="Ch" hittest="false" />
+<Panel id="fdm_msgb32" class="Ch" hittest="false" />
+<Panel id="fdm_msgb33" class="Ch" hittest="false" />
+<Panel id="fdm_msgb34" class="Ch" hittest="false" />
+<Panel id="fdm_msgb35" class="Ch" hittest="false" />
+<Panel id="fdm_msgb36" class="Ch" hittest="false" />
+<Panel id="fdm_msgb37" class="Ch" hittest="false" />
+<Panel id="fdm_msgb38" class="Ch" hittest="false" />
+<Panel id="fdm_msgb39" class="Ch" hittest="false" />
+<Panel id="fdm_msgb40" class="Ch" hittest="false" />
+<Panel id="fdm_msgb41" class="Ch" hittest="false" />
+<Panel id="fdm_msgb42" class="Ch" hittest="false" />
+<Panel id="fdm_msgb43" class="Ch" hittest="false" />
+<Panel id="fdm_msgb44" class="Ch" hittest="false" />
+<Panel id="fdm_msgb45" class="Ch" hittest="false" />
+<Panel id="fdm_msgb46" class="Ch" hittest="false" />
+<Panel id="fdm_msgb47" class="Ch" hittest="false" />
+<Panel id="fdm_msgb48" class="Ch" hittest="false" />
+<Panel id="fdm_msgb49" class="Ch" hittest="false" />
+<Panel id="fdm_msgb50" class="Ch" hittest="false" />
+<Panel id="fdm_msgb51" class="Ch" hittest="false" />
+<Panel id="fdm_msgb52" class="Ch" hittest="false" />
+<Panel id="fdm_msgb53" class="Ch" hittest="false" />
+<Panel id="fdm_msgb54" class="Ch" hittest="false" />
+<Panel id="fdm_msgb55" class="Ch" hittest="false" />
+</Panel>
+<Panel class="Line CtrLine Big" hittest="false">
+<Panel id="fdm_ctrimg" class="TImg" hittest="false" />
+<Panel id="fdm_ctr0" class="Ch" hittest="false" />
+<Panel id="fdm_ctr1" class="Ch" hittest="false" />
+<Panel id="fdm_ctr2" class="Ch" hittest="false" />
+<Panel id="fdm_ctr3" class="Ch" hittest="false" />
+<Panel id="fdm_ctr4" class="Ch" hittest="false" />
+<Panel id="fdm_ctr5" class="Ch" hittest="false" />
+<Panel id="fdm_ctr6" class="Ch" hittest="false" />
+<Panel id="fdm_ctr7" class="Ch" hittest="false" />
+<Panel id="fdm_ctr8" class="Ch" hittest="false" />
+<Panel id="fdm_ctr9" class="Ch" hittest="false" />
+<Panel id="fdm_ctr10" class="Ch" hittest="false" />
+<Panel id="fdm_ctr11" class="Ch" hittest="false" />
+<Panel id="fdm_ctr12" class="Ch" hittest="false" />
+<Panel id="fdm_ctr13" class="Ch" hittest="false" />
+<Panel id="fdm_ctr14" class="Ch" hittest="false" />
+<Panel id="fdm_ctr15" class="Ch" hittest="false" />
+<Panel id="fdm_ctr16" class="Ch" hittest="false" />
+<Panel id="fdm_ctr17" class="Ch" hittest="false" />
+<Panel id="fdm_ctr18" class="Ch" hittest="false" />
+<Panel id="fdm_ctr19" class="Ch" hittest="false" />
+<Panel id="fdm_ctr20" class="Ch" hittest="false" />
+<Panel id="fdm_ctr21" class="Ch" hittest="false" />
+<Panel id="fdm_ctr22" class="Ch" hittest="false" />
+<Panel id="fdm_ctr23" class="Ch" hittest="false" />
+</Panel>
+<Panel class="Line InfLine1" hittest="false">
+<Panel id="fdm_inf1_img" class="TImg" hittest="false" />
+<Panel id="fdm_inf1_0" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_1" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_2" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_3" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_4" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_5" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_6" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_7" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_8" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_9" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_10" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_11" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_12" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_13" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_14" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_15" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_16" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_17" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_18" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_19" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_20" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_21" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_22" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_23" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_24" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_25" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_26" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_27" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_28" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_29" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_30" class="Ch" hittest="false" />
+<Panel id="fdm_inf1_31" class="Ch" hittest="false" />
+</Panel>
+<Panel class="Line InfLine2" hittest="false">
+<Panel id="fdm_inf2_img" class="TImg" hittest="false" />
+<Panel id="fdm_inf2_0" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_1" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_2" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_3" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_4" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_5" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_6" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_7" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_8" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_9" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_10" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_11" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_12" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_13" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_14" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_15" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_16" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_17" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_18" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_19" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_20" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_21" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_22" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_23" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_24" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_25" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_26" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_27" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_28" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_29" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_30" class="Ch" hittest="false" />
+<Panel id="fdm_inf2_31" class="Ch" hittest="false" />
+</Panel>
+<Panel class="Line SpecLine" hittest="false">
+<Panel id="fdm_specimg" class="TImg" hittest="false" />
+<Panel id="fdm_spec0" class="Ch" hittest="false" />
+<Panel id="fdm_spec1" class="Ch" hittest="false" />
+<Panel id="fdm_spec2" class="Ch" hittest="false" />
+<Panel id="fdm_spec3" class="Ch" hittest="false" />
+<Panel id="fdm_spec4" class="Ch" hittest="false" />
+<Panel id="fdm_spec5" class="Ch" hittest="false" />
+<Panel id="fdm_spec6" class="Ch" hittest="false" />
+<Panel id="fdm_spec7" class="Ch" hittest="false" />
+<Panel id="fdm_spec8" class="Ch" hittest="false" />
+<Panel id="fdm_spec9" class="Ch" hittest="false" />
+<Panel id="fdm_spec10" class="Ch" hittest="false" />
+<Panel id="fdm_spec11" class="Ch" hittest="false" />
+<Panel id="fdm_spec12" class="Ch" hittest="false" />
+<Panel id="fdm_spec13" class="Ch" hittest="false" />
+<Panel id="fdm_spec14" class="Ch" hittest="false" />
+<Panel id="fdm_spec15" class="Ch" hittest="false" />
+<Panel id="fdm_spec16" class="Ch" hittest="false" />
+<Panel id="fdm_spec17" class="Ch" hittest="false" />
+<Panel id="fdm_spec18" class="Ch" hittest="false" />
+<Panel id="fdm_spec19" class="Ch" hittest="false" />
+<Panel id="fdm_spec20" class="Ch" hittest="false" />
+<Panel id="fdm_spec21" class="Ch" hittest="false" />
+<Panel id="fdm_spec22" class="Ch" hittest="false" />
+<Panel id="fdm_spec23" class="Ch" hittest="false" />
+<Panel id="fdm_spec24" class="Ch" hittest="false" />
+<Panel id="fdm_spec25" class="Ch" hittest="false" />
+<Panel id="fdm_spec26" class="Ch" hittest="false" />
+<Panel id="fdm_spec27" class="Ch" hittest="false" />
+<Panel id="fdm_spec28" class="Ch" hittest="false" />
+<Panel id="fdm_spec29" class="Ch" hittest="false" />
+<Panel id="fdm_spec30" class="Ch" hittest="false" />
+<Panel id="fdm_spec31" class="Ch" hittest="false" />
+</Panel>
+<Panel class="Line SpecLine SpecLine2" hittest="false">
+<Panel id="fdm_spec2_img" class="TImg" hittest="false" />
+<Panel id="fdm_spec2_0" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_1" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_2" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_3" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_4" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_5" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_6" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_7" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_8" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_9" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_10" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_11" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_12" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_13" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_14" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_15" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_16" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_17" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_18" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_19" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_20" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_21" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_22" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_23" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_24" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_25" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_26" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_27" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_28" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_29" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_30" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_31" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_32" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_33" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_34" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_35" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_36" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_37" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_38" class="Ch" hittest="false" />
+<Panel id="fdm_spec2_39" class="Ch" hittest="false" />
+</Panel>
+</Panel>
+<Panel id="fdm_sbarbox" class="SBarBox" hittest="false">
+<Panel id="fdm_team" class="Team" hittest="false" />
+<Panel id="fdm_sbar" class="SBar" hittest="false">
+<Panel class="SBarBg" hittest="false" />
+<Panel id="fdm_ammo0" class="Dig Big" hittest="false" />
+<Panel id="fdm_ammo1" class="Dig Big" hittest="false" />
+<Panel id="fdm_ammo2" class="Dig Big" hittest="false" />
+<Panel id="fdm_hp0" class="Dig Big" hittest="false" />
+<Panel id="fdm_hp1" class="Dig Big" hittest="false" />
+<Panel id="fdm_hp2" class="Dig Big" hittest="false" />
+<Panel id="fdm_frag0" class="Dig Big" hittest="false" />
+<Panel id="fdm_frag1" class="Dig Big" hittest="false" />
+<Panel id="fdm_frag2" class="Dig Big" hittest="false" />
+<Panel id="fdm_ar0" class="Dig Big" hittest="false" />
+<Panel id="fdm_ar1" class="Dig Big" hittest="false" />
+<Panel id="fdm_ar2" class="Dig Big" hittest="false" />
+<Panel class="PctH" hittest="false" />
+<Panel class="PctA" hittest="false" />
+<Panel id="fdm_am0c0" class="Dig Small" hittest="false" />
+<Panel id="fdm_am0c1" class="Dig Small" hittest="false" />
+<Panel id="fdm_am0c2" class="Dig Small" hittest="false" />
+<Panel id="fdm_am0m0" class="Dig Small" hittest="false" />
+<Panel id="fdm_am0m1" class="Dig Small" hittest="false" />
+<Panel id="fdm_am0m2" class="Dig Small" hittest="false" />
+<Panel id="fdm_am1c0" class="Dig Small" hittest="false" />
+<Panel id="fdm_am1c1" class="Dig Small" hittest="false" />
+<Panel id="fdm_am1c2" class="Dig Small" hittest="false" />
+<Panel id="fdm_am1m0" class="Dig Small" hittest="false" />
+<Panel id="fdm_am1m1" class="Dig Small" hittest="false" />
+<Panel id="fdm_am1m2" class="Dig Small" hittest="false" />
+<Panel id="fdm_am2c0" class="Dig Small" hittest="false" />
+<Panel id="fdm_am2c1" class="Dig Small" hittest="false" />
+<Panel id="fdm_am2c2" class="Dig Small" hittest="false" />
+<Panel id="fdm_am2m0" class="Dig Small" hittest="false" />
+<Panel id="fdm_am2m1" class="Dig Small" hittest="false" />
+<Panel id="fdm_am2m2" class="Dig Small" hittest="false" />
+<Panel id="fdm_am3c0" class="Dig Small" hittest="false" />
+<Panel id="fdm_am3c1" class="Dig Small" hittest="false" />
+<Panel id="fdm_am3c2" class="Dig Small" hittest="false" />
+<Panel id="fdm_am3m0" class="Dig Small" hittest="false" />
+<Panel id="fdm_am3m1" class="Dig Small" hittest="false" />
+<Panel id="fdm_am3m2" class="Dig Small" hittest="false" />
+<Panel id="fdm_faceb" class="FaceB" hittest="false" />
+<Panel id="fdm_face" class="Face" hittest="false" />
+</Panel>
+</Panel>
+<Panel class="FdmPreload" hittest="false">
+<Panel class="FdmPre1" hittest="false" />
+<Panel class="FdmPre2" hittest="false" />
+<Panel class="FdmPre3" hittest="false" />
+<Panel class="FdmPre4" hittest="false" />
+<Panel class="FdmPre5" hittest="false" />
+</Panel>
+</Panel>
+</Panel>
+	</Panel>
+</root>

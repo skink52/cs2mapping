@@ -1,0 +1,24 @@
+{
+  "base": "m01",
+  "ze": {
+    "map": "MAP01", "title": "TEST OUTPOST", "author_credit": "FreeDM MAP01 (test fixture)",
+    "time_limit": 420,
+    "humans": { "start": "player_starts", "health": 100, "loadout": ["pistol", "shotgun"], "keys": "remove" },
+    "zombies": { "cap": 48, "map_monsters": { "use": true, "skill": "hard" }, "player_classes": ["IMP", "DEMON", "LOSTSOUL"], "respawn_seconds": 4 },
+    "spawn_groups": {
+      "west": { "points": [[-1216, -64, 45], [-80, -704, 90], [-720, 816, 270]], "ai": { "IMP": 3, "DEMON": 1 } },
+      "south": { "sector": 106, "ai": { "ZOMBIE": 3, "IMP": 2 }, "trickle": { "every": 6, "max": 8 } }
+    },
+    "blocks": [ { "id": "door", "lines": [190], "until": "stage:2" } ],
+    "stages": [
+      { "id": 1, "name": "HOLD THE ENTRANCE", "start": "round", "hold": 15, "zone": { "sector": 99 }, "zombie_spawns": ["west"],
+        "on_done": [ { "message": "MOVE OUT - HEAD NORTH-WEST" } ] },
+      { "id": 2, "name": "REACH THE NORTH ROOM", "start": { "stage_done": 1 }, "hold": 20, "zone": { "sector": 55 }, "zombie_spawns": ["south"],
+        "on_start": [ { "teleport_zombies": { "behind": true } } ] },
+      { "id": 3, "name": "DEFEAT THE GUARDIAN", "start": { "stage_done": 2 },
+        "boss": { "type": "BARON", "at": [-1216, -64, 45], "health_scale": "players", "music": "boss" } },
+      { "id": 4, "name": "ESCAPE", "start": { "stage_done": 3 }, "hold": 15, "zone": { "sector": 34 }, "escape": true, "zombie_spawns": ["west", "south"],
+        "on_start": [ { "score": 1 } ] }
+    ]
+  }
+}
