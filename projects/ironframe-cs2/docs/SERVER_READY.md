@@ -39,7 +39,7 @@ Workshop mounting has no such clash. The console's "Long frame ... 30 ms elapsed
 ## E. Asked 18 Nov
 | # | Item | Status |
 |---|---|---|
-| E1 | F3 toggles CS2's HUD + chat in the mech (CS2 binds F3 to `autobuy` by default; the plugin catches it, no bind needed); `!hud` the same; help card row `F3  !HUD` (`!VOTE` and `!MODE` share a row so the card stays clear of the chat box) | Plugin built, harness 3/3, on the test server. Map: help card rebuilt in out/, not deployed (needs a map compile + upload). Not seen in game |
+| E1 | F3 toggles CS2's HUD + chat in the mech (CS2 binds F3 to `autobuy` by default; the plugin catches it, no bind needed); `!hud` the same; help card row `F3  !HUD` (`!VOTE` and `!MODE` share a row so the card stays clear of the chat box) | Plugin built, harness 3/3, on the test server. Map: Dunes script + HUD deployed and compiled 18 Nov 14:24 (in its next upload); Sprawl next (its own build, out/sprawl). Not seen in game |
 
 ## D. Polish still open (STATUS.md "To do"; not blockers)
 IFF marker tint, vis near the Dunes train tunnels, hangar grime, post-processing, visible damage states and gibs, frame identities
