@@ -19,9 +19,9 @@ Status words: TODO, DOING, DONE (how far checked, in docs/reference/compatibilit
 ## B. Verified only by tests: needs a client on the server (skink52, one session, ~20 min; TESTING.md)
 | # | Item | Status |
 |---|---|---|
-| B1 | World sounds on the dedicated server (`!snd 1-4`). Expected to work once the map is a mounted Workshop addon | NEEDS SKINK52 (after A5) |
+| B1 | World sounds on the dedicated server (`!snd 1-4`). 18 Nov, skink52 on the test server: menu sounds and the pilot's own tones (ifr.ui.*, `use_world_position = false`) are heard; every positioned sound is silent, `!snd 1-4` too (2 and 4 go to one client). So the files reach the client and the send path is not it: positioned (3D) playback is. Next: the client console after `!snd 1` (the in-game console works while the server owns vconsole) | NEEDS SKINK52 |
 | B2 | Pilot payload round trip: `ifr_pilot` multi-page mailboxes, loadout save / buy / upgrade reaching the DB | NEEDS SKINK52 |
-| B3 | CS2 HUD hidden in a live mech and back when dead (`hud` op, bit 4), chat relay while hidden | NEEDS SKINK52 |
+| B3 | CS2 HUD hidden in a live mech and back when dead (`hud` op, bit 4), chat relay while hidden | DONE 18 Nov: in-game verified by skink52 (hides in the mech, garage HUD right) |
 | B4 | Killfeed (humans only), kill credit for AI kills via bot stand-ins | NEEDS SKINK52 |
 | B5 | Client frame cost: heavy overdrive, many HUDs | NEEDS SKINK52 |
 
@@ -39,7 +39,8 @@ Workshop mounting has no such clash. The console's "Long frame ... 30 ms elapsed
 ## E. Asked 18 Nov
 | # | Item | Status |
 |---|---|---|
-| E1 | F3 toggles CS2's HUD + chat in the mech (CS2 binds F3 to `autobuy` by default; the plugin catches it, no bind needed); `!hud` the same; help card row `F3  !HUD` (`!VOTE` and `!MODE` share a row so the card stays clear of the chat box) | Plugin built, harness 3/3, on the test server. Map: Dunes script + HUD deployed and compiled 18 Nov 14:24 (in its next upload); Sprawl next (its own build, out/sprawl). Not seen in game |
+| E2 | Bottom-left `F3  TOGGLE CHAT` tag (skink52 18 Nov), only in a live mech with the server present (`ifr_f3`, hud.py `f3tag`) | Built, 19 suites PASS (hud_ids walks it), Dunes deployed + compiled 14:40 and on the test server (needs a map reload). Not seen in game |
+| E1 | In-game verified 18 Nov (skink52: "f3: works"). F3 toggles CS2's HUD + chat in the mech (CS2 binds F3 to `autobuy` by default; the plugin catches it, no bind needed); `!hud` the same; help card row `F3  !HUD` (`!VOTE` and `!MODE` share a row so the card stays clear of the chat box) | Plugin built, harness 3/3, on the test server. Map: Dunes script + HUD deployed and compiled 18 Nov 14:24 (in its next upload); Sprawl next (its own build, out/sprawl). Not seen in game |
 
 ## D. Polish still open (STATUS.md "To do"; not blockers)
 IFF marker tint, vis near the Dunes train tunnels, hangar grime, post-processing, visible damage states and gibs, frame identities

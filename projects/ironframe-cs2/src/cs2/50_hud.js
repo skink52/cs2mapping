@@ -538,6 +538,7 @@ function ifrHudVitals(slot, m) {
   ifrHudSet(slot, 'ifr_stgring', 'stOn', m.staggered > 0);
   ifrHudLadder(slot, 'qb', m.qbCd > 0 ? 1 - m.qbCd / IFR_HUD_QB_CD : 1);
   ifrHudSet(slot, 'ifr_lag', 'stOn', m.landLag > 0);
+  ifrHudSet(slot, 'ifr_f3', 'stOn', typeof serverMode !== 'undefined' && serverMode);   // F3 / !hud: CS2's HUD and chat (SlimeMG server only)
   ifrHudSet(slot, 'ifr_boost', 'stOn', !!m.boosting && !m.assault);
   ifrHudSet(slot, 'ifr_boost', 'stAssault', !!m.boosting && !!m.assault);
   ifrHudSet(slot, 'ifr_shield', 'stOn', m.protect > 0 || m.dropT > 0);

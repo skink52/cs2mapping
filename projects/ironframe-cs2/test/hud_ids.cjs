@@ -60,6 +60,8 @@ for (const S of [1, 2]) {
     for (const od of [[0.4, 0], [1, 0], [1, 1]]) { me.overdrive = od[0]; me.odPhase = od[1]; A.ifrHudVitals(S, me); A.ifrHudWeapons(S, me.weapons); flush(); now += 0.5; }
   }
   me.boosting = true; me.assault = true; A.ifrHudVitals(S, me); me.enStalled = 0; A.ifrHudVitals(S, me); flush();
+  // the F3 TOGGLE CHAT tag (ifr_f3) shows only with a SlimeMG server present
+  vm.runInContext('serverMode = true', base); A.ifrHudVitals(S, me); flush(); vm.runInContext('serverMode = false', base);
   const ml = wst(byId.get(213), { mlHold: 1, mlDone: 2, mlock: [20, 21, 22, 23].map((sl, k) => ({ slot: sl, p: 1, done: k < 2 })) });
   me.weapons = [wst(byId.get(101)), wst(byId.get(103)), wst(byId.get(201)), ml];
   for (const lk of [{ target: 20, stage: 0, t: 0.1 }, { target: 20, stage: 1, t: 0.35 }, { target: 20, stage: 1, t: 0.7 }, { target: 20, stage: 1, t: 1.1 }, { target: 20, stage: 2, t: 2 }, { target: -1, stage: 0, t: 0 }]) {

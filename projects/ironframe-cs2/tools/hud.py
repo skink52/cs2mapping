@@ -409,6 +409,13 @@ buffs = P(None, 'Fight ' + h.place(w=BFW, h=5 * 46, right=24, y=470), bf)
 VIT_SHIFT = int(round((VW + 20) / 2 - 18 - (360 + MECH_GAP / 2)))
 rule('.VitPos', transform='translatex(%dpx)' % VIT_SHIFT)
 vitals = P(None, 'Fight VitPos ' + h.place(w=VW + 20, h=VH, center=True, y=VY), [P(None, 'VIn ' + h.place(w=VW, h=VH, x=18, y=0), vit + wboxes)])
+# 18 Nov 2026 (skink52: "a small text box at very bottom left of screen for 'F3 TOGGLE CHAT'"): on a SlimeMG server the plugin hides CS2's
+# HUD and chat box in a live mech, and F3 (CS2's default autobuy key) or !hud keeps them. Shown only in a live mech with the server present
+# (stand-alone, F3 does nothing). Bottom left under where the chat box sits: that box is hidden whenever this matters.
+rule('.F3Tag', opacity='0'); rule('.F3Tag.stOn', opacity='0.85')
+reg('ifr_f3', ['stOn'], prio=3)
+f3tag = P(None, 'Fight ' + h.place(w=224, h=28, x=20, y=1046), [P('ifr_f3', 'PPl F3Tag ' + h.place(w=216, h=22, x=0, y=0), [
+    slbl('F3', '', 30, 18, 'XS', 'Gold', x=8, y=2), slbl('TOGGLE CHAT', '', 160, 18, 'XS', 'Text', x=44, y=2)])])
 
 # ================================================================ FIGHT: reticle (centre), threats, missile warning
 RB, RY = 480, 300           # reticle box (centre at 540)
@@ -1080,7 +1087,7 @@ if len(slides) >= 1:
 else:
     print('hud: no loading slides in %s yet; nothing preloaded (re-run hud.py after loading.py)' % OUT)
 
-screen = P(None, 'Screen', [pre, vitals, buffs, reticle, lockroot, radar, pilot, streakp, ident, mode, objt, cap, badges, kill, line, loadc, ctrl, helpc, intro, death, podium, board, spec, garage])
+screen = P(None, 'Screen', [pre, vitals, f3tag, buffs, reticle, lockroot, radar, pilot, streakp, ident, mode, objt, cap, badges, kill, line, loadc, ctrl, helpc, intro, death, podium, board, spec, garage])
 root = P('ifr_root', 'IfrRoot', [screen])
 # neon type: css per size / glyph class (proportional widths), colour pictures, team accent and state tints
 def rgb(k): return tuple(int(PAL[k][i:i + 2], 16) for i in (1, 3, 5))
