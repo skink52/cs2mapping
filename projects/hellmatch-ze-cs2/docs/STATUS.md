@@ -5,10 +5,10 @@ Hellmatch (`projects/hellmatch-cs2`, addon `mg_freedm`) is never modified. skink
 control - do the problem solving independently ... AAA quality, with the hellmatch graphics").
 
 ## Resume here
-19 Nov 2026: both workstreams finished (see their progress files); addon deployed into mg_hellescape (content + game) with
-`python tools/deploy.py`; map compile via build_maps.ps1 (log build/compile_wrap.log). After the compile: restore
-`C:\source1\cs2port\existing_ports.txt` from build/existing_ports.before_compile.txt if build_maps.ps1 added an mg_hellescape line,
-check the vpk in the game addon, then hand over TESTING_HELLESCAPE.md to skink52 for the first in-game test.
+**v1 (Phase 1) is built, deployed and compiled (19 Nov 2026), not yet run in CS2.** skink52 tests with `TESTING_HELLESCAPE.md`
+(`map mg_hellescape`, `bot_quota 16`). Any findings from that test go first, ahead of the Phase 2 rows below.
+After a map build, build_maps.ps1 adds `mg_hellescape [in progress, built] [skink]` to `C:\source1\cs2port\existing_ports.txt`: back the
+file up before and restore it after (it is a port list; this is not a port).
 Rebuild: `PYTHON=python sh tools/build_all.sh` (~1 min with music cached; under the watchdog), then `python tools/deploy.py`.
 Workstreams (disjoint files, each with its own progress file):
 - **Pipeline** (owns `tools/`, `ze/`, `music/`, `ref/`, `preview/`, `out/`, `build/`): `docs/progress_pipeline.md`
@@ -63,4 +63,11 @@ Read both progress files; continue the first unfinished row of each.
 | 1.7 | HUD lines + renderer distance cull | game | done 19 Nov (simulated) |
 | 1.8 | Zombie view art, HUD art, loading screens, music, vmap with lobby/booth/cache | pipeline | done 19 Nov (simulated) |
 | 1.9 | Tests: sim + mock scenarios + perf at 32/64 | game | done 19 Nov (simulated) |
-| 1.10 | Assemble addon, copy compiled Hellmatch assets, compile map (resourcecompiler), deliver, test checklist | coordinator | deployed 19 Nov (tools/deploy.py, manifest build/deploy/); map compile running |
+| 1.10 | Assemble addon, copy compiled Hellmatch assets, compile map (resourcecompiler), deliver, test checklist | coordinator | done 19 Nov: deployed (tools/deploy.py, manifest build/deploy/), compiled with build_maps.ps1 in 1.7 min, 0 failed, vpk 2.4 MB, all new assets compiled; existing_ports.txt restored |
+| 2.1 | Class choice on respawn (keys while dead) + class HUD; lost soul polish | game | todo |
+| 2.2 | 3-5 more maps with sidecars (candidates from the 19 Nov survey: E1M1, E2M1, E3M1, MAP02, MAP06; fit two placements each, check world bounds) + map rotation/vote | pipeline+game | todo |
+| 2.3 | Knockback/balance tuning per class from sim runs; zombie "rage" pickup at stage starts | game | todo |
+| 2.4 | Hear-check alternative for level music: if the OPL render is doubtful, keep Hellmatch tracks only (no new downloads without skink52) | pipeline | todo |
+| 3.1 | Player boss takeover (Use at the boss spawn or most human kills); AI resumes on death/leave | game | todo |
+| 4.1 | Loading screens per map, Workshop art + description (Freedoom licence text), WORKSHOP_CHANGELOG, mgstat hooks | pipeline | todo |
+| 4.2 | Rebuild, deploy, compile, update TESTING_HELLESCAPE.md; then COMPLETE (awaiting skink52's playtest) | coordinator | todo |
