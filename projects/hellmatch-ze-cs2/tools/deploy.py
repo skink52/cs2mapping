@@ -27,12 +27,15 @@ content = os.path.join(cs2, 'content', 'csgo_addons', addon)
 game = os.path.join(cs2, 'game', 'csgo_addons', addon)
 
 if not dry:
+    # refuse while CS2 from THIS install runs (tools mode or a game that may have the addon open); a separate dedicated server
+    # install (e.g. C:\cs2server) never has this addon open, so it doesn't block a deploy
+    ps = "Get-CimInstance Win32_Process -Filter \"Name='cs2.exe'\" | ForEach-Object { $_.ExecutablePath }"
     try:
-        out = subprocess.run(['tasklist', '/FI', 'IMAGENAME eq cs2.exe', '/NH'], capture_output=True, text=True).stdout
+        paths = subprocess.run(['powershell', '-NoProfile', '-NonInteractive', '-Command', ps], capture_output=True, text=True).stdout.splitlines()
     except OSError:
-        out = ''
-    if 'cs2.exe' in out.lower():
-        sys.exit('cs2.exe is running: close CS2/Hammer before deploying (nothing was copied)')
+        paths = ['(unknown: could not list processes)' + cs2]
+    if any(os.path.normcase(cs2) in os.path.normcase(x.strip()) for x in paths if x.strip()):
+        sys.exit('cs2.exe from %s is running: close CS2/Hammer before deploying (nothing was copied)' % cs2)
 
 plan_file = json.load(open(os.path.join(ROOT, 'build', 'copy_plan.json')))
 hm_c, hm_g = plan_file['hellmatch_content'], plan_file['hellmatch_game']
@@ -62,6 +65,10 @@ if missing:
 pairs = [(s, d) for d, s in list(pairs_c.items()) + list(pairs_g.items()) if os.path.isfile(s)]
 os.makedirs(content, exist_ok=True); os.makedirs(game, exist_ok=True)
 plan = safepath.plan_pairs(pairs, [content, game])
+# Hellmatch's files are only seed copies: once in the addon (and maybe recompiled there by the map build) they are left alone,
+# so a deploy never swaps them back and forces a recompile; ZE's own build output is always updated
+hm_roots = tuple(os.path.normcase(os.path.normpath(r)) for r in (hm_c, hm_g))
+plan = [p for p in plan if not (p['op'] == 'modify' and os.path.normcase(os.path.normpath(p['src'])).startswith(hm_roots))]
 s = safepath.summarise(plan)
 print('deploy %s: create %d, modify %d, same %d, %.1f MB to write%s' % (addon, s['create'], s['modify'], s['same'], s['bytes_written'] / 1e6, ' (dry run)' if dry else ''))
 bdir = os.path.join(ROOT, 'build', 'deploy')
