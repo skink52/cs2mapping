@@ -20,6 +20,25 @@ for (const c of Object.values(ZCLASS)) {
   c.hp = Math.round(MOBJINFO[MT[c.key]].spawnhealth * c.hpMul);
 }
 
+// stage bosses a zombie player can drive (3.1): ZCLASS 'B_<type>'. melee: [dice sides, x, +] on ATTACK (none: ATTACK
+// fires too); missile on the ability key (MOUSE2 / R) with its cooldown; spread: that many shots fanned out (degrees).
+// Health is the boss's own (set at the takeover), speed a little under a marine's.
+const ZBOSS = {
+  BARON: { atkName: 'CLAW', ability: 'FIREBALL', melee: [8, 5, 10], missile: 'BARONBALL', cd: 1.0, speedMul: 0.85 },
+  KNIGHT: { atkName: 'CLAW', ability: 'FIREBALL', melee: [8, 4, 8], missile: 'BARONBALL', cd: 0.9, speedMul: 0.9 },
+  REVENANT: { atkName: 'PUNCH', ability: 'MISSILE', melee: [10, 4, 6], missile: 'TRACER', cd: 1.1, speedMul: 1.0 },
+  MANCUBUS: { atkName: 'FIREBALLS', ability: 'FIREBALLS', melee: null, missile: 'FATSHOT', spread: [-8, 8], cd: 1.4, speedMul: 0.75 },
+  ARACHNOTRON: { atkName: 'PLASMA', ability: 'PLASMA', melee: null, missile: 'ARACHPLASMA', cd: 0.25, speedMul: 0.85 },
+  CYBERDEMON: { atkName: 'ROCKET', ability: 'ROCKET', melee: null, missile: 'ROCKET', cd: 0.8, speedMul: 0.8 },
+};
+for (const [T, b] of Object.entries(ZBOSS)) {
+  if (MT['ZPLAYER_B_' + T] === undefined) continue;
+  const k = 'B_' + T;
+  ZCLASS[k] = Object.assign({ key: k, type: T, boss: true, name: String(MOBJINFO[MT[T]].name).toUpperCase(), hpMul: 1, mt: MT['ZPLAYER_B_' + T],
+    up: SN('ZBV_UP'), ready: SN('ZBV_READY'), attack: SN(b.melee ? 'ZBV_MELEE1' : 'ZBV_FIRE1'), alt: SN('ZBV_FIRE1'),
+    hp: MOBJINFO[MT[T]].spawnhealth }, b, { cd: Math.round(b.cd * TICRATE) });
+}
+
 // 0 = neither (barrels, items), 1 = human, 2 = horde (monsters and zombie players)
 function zeFaction(mo) {
   if (mo.player) return mo.player.zclass ? 2 : 1;
@@ -37,11 +56,11 @@ function makeZombie(p, cls) {
 
 function zombieReborn(p) {
   const c = ZCLASS[p.zclass];
-  p.health = c.hp;
+  p.health = c.boss ? c.hp : Math.round(c.hp * zeCfg().zHp * zeHumanScale());   // a boss body gets the boss's health after
   p.weaponowned.fill(false);
   p.readyweapon = WP_FIST; p.pendingweapon = WP_NOCHANGE;
   p.ammo = [0, 0, 0, 0];
-  p.zcd = 0; p.zdash = 0; p.zhit = false;
+  p.zcd = 0; p.zdash = 0; p.zhit = false; p.zdv = null;
   p.speedMul = c.speedMul;
 }
 
@@ -60,9 +79,20 @@ function zMeleeTarget(mo, range) {
   return best;
 }
 
+// the round's ZE settings (DEFAULT_CFG.ze merged with the CS2 config) from inside an arena's tic
+function zeCfg() { return G && G.ze ? G.ze.round.zcfg : DEFAULT_CFG.ze; }
+
+// a zombie player's body is as tough as the humans it hunts are many (live humans in its arena when it rises): from
+// 8 humans up the class's own health, fewer -> less (a lone survivor faces bodies at about half health)
+function zeHumanScale() {
+  const c = zeCfg(), h = G && G.ze ? G.ze.humans().length : 8;
+  return Math.max(c.zHpMin, Math.min(c.zHpMax, c.zHpBase + c.zHpPerHuman * h));
+}
+
 function zHit(p, t, damage, kind, sound) {
   const mo = p.mo;
   p.zkind = kind;
+  damage = Math.max(1, Math.round(damage * zeCfg().zDamage));
   damageMobj(t, mo, mo, damage);
   p.zkind = undefined;
   spawnBlood(t.x, t.y, t.z + t.height / 2, damage);
@@ -76,6 +106,7 @@ function zBodyAttack(p) { if (p.mo && p.playerstate === 'live') setMobjState(p.m
 function zombieThink(p) {
   const mo = p.mo;
   if (p.zcd > 0) p.zcd--;
+  if (p.zdash > 0 && p.zdv && !p.zhit) zDashCarry(p);
   if (p.zdash > 0) {
     p.zdash--;
     if (!p.zhit) {
@@ -83,15 +114,48 @@ function zombieThink(p) {
         if (!targetable(t)) continue;
         if (Math.abs(t.x - mo.x) > t.radius + mo.radius + 10 || Math.abs(t.y - mo.y) > t.radius + mo.radius + 10 || Math.abs(t.z - mo.z) > 48) continue;
         p.zhit = true;
-        if (p.zclass === 'DEMON') zHit(p, t, ((P_Random() % 10) + 1) * 4 + 10, 'zDEMON', 'sgtatk');
-        else zHit(p, t, ((P_Random() % 8) + 1) * 4 + 6, 'zLOSTSOUL', 'sklatk');
+        // lunge 2d10-ish (12-30), dash a little over Doom's skull (7-28): a charge that lands hurts, but a single one never kills
+        if (p.zclass === 'DEMON') zHit(p, t, ((P_Random() % 10) + 1) * 2 + 10, 'zDEMON', 'sgtatk');
+        else zHit(p, t, ((P_Random() % 8) + 1) * 3 + 4, 'zLOSTSOUL', 'sklatk');
         // the charge stops dead on a hit (as a lost soul's does)
         mo.momx *= 0.2; mo.momy *= 0.2; mo.momz = 0; p.zdash = Math.min(p.zdash, 4);
         break;
       }
     }
-    if (p.zclass === 'LOSTSOUL' && p.zdash === 0) mo.momz = 0;
+    if (p.zdash === 0) zDashEnd(p);
   }
+}
+
+// a charge (demon lunge, lost soul dash) holds its speed for its whole length, like Doom's charging skull: floor friction
+// and gravity don't eat it. Running into a wall (or a ledge) stops it dead, as a skull's does, instead of skating along
+// the wall; a glancing touch only slides.
+function zDashCarry(p) {
+  const mo = p.mo, v = p.zdv;
+  if (v.started) {
+    const want = Math.hypot(v.x, v.y), got = Math.hypot(mo.x - v.lx, mo.y - v.ly);
+    if (want > 4 && got < want * 0.4 && Math.abs(mo.z - v.lz) < Math.abs(v.z) * 0.4 + 1) {
+      mo.momx = mo.momy = 0; mo.momz = Math.min(0, mo.momz);
+      p.zdash = 0; p.zdv = null;
+      startSound(mo, 'dmpain');   // the bump
+      return;
+    }
+  }
+  v.started = true; v.lx = mo.x; v.ly = mo.y; v.lz = mo.z;
+  mo.momx = v.x; mo.momy = v.y;
+  if (v.fly) {
+    // a lost soul flies along its aim; at the floor or the ceiling it carries on level
+    let z = v.z;
+    if ((z < 0 && mo.z <= mo.floorz) || (z > 0 && mo.z + mo.height >= mo.ceilingz)) z = 0;
+    mo.momz = z;
+  }
+}
+
+// the end of a charge: a little of it carries on (so it doesn't stop like a wall), and a lost soul hangs for a moment
+function zDashEnd(p) {
+  const mo = p.mo;
+  if (p.zdv) { mo.momx *= 0.35; mo.momy *= 0.35; }
+  if (p.zclass === 'LOSTSOUL') mo.momz = 0;
+  p.zdv = null;
 }
 
 function zAbilityReady(p) { return p.zcd <= 0; }
@@ -125,10 +189,10 @@ const ZE_WEAPON_ACTIONS = {
     if (c === 'LOSTSOUL') startSound(p.mo, 'sklatk');
     else if (c === 'DEMON' && p.psprites[0].state === SN('ZDMN_LUNGE1')) startSound(p.mo, 'sgtsit');
   },
-  // imp claw: Doom's 3d8 (x3) plus a little, so a pack of imps is a threat to a marine with armour
+  // imp claw: Doom's own (1d8 x3, 3-24); balance runs (test/sim_ze.cjs, Nov 2026) had the old +6 wiping humans by stage 2
   A_ZClaw(p) {
     const t = zMeleeTarget(p.mo, MELEERANGE + 8);
-    if (t) zHit(p, t, (P_Random() % 8 + 1) * 3 + 6, 'zIMP', 'claw');
+    if (t) zHit(p, t, (P_Random() % 8 + 1) * 3, 'zIMP', 'claw');
     else startSound(p.mo, 'bgact');
     noiseAlert(p.mo, p.mo);
   },
@@ -140,10 +204,30 @@ const ZE_WEAPON_ACTIONS = {
     p.zkind = undefined;
     if (th) th.zfire = true;
   },
-  // demon bite: Doom's 4d10 (x4), the demon's only attack besides the lunge
+  // a boss's melee (a baron's claw: 15-50) and its missile (the monster's own, fanned out for a mancubus)
+  A_ZBossMelee(p) {
+    const c = ZCLASS[p.zclass], m = c.melee || [8, 3, 6];
+    const t = zMeleeTarget(p.mo, MELEERANGE + 20);
+    if (t) zHit(p, t, (P_Random() % m[0] + 1) * m[1] + m[2], 'zBOSS', 'claw');
+    else startSound(p.mo, 'dmact');
+    noiseAlert(p.mo, p.mo);
+  },
+  A_ZBossMissile(p) {
+    const c = ZCLASS[p.zclass], mo = p.mo;
+    if (!c || !c.boss || MT[c.missile] === undefined) return;
+    p.zcd = c.cd;
+    const base = mo.angle;
+    for (const off of c.spread || [0]) {
+      mo.angle = normAngle(base + off);
+      const th = spawnPlayerMissile(mo, MT[c.missile]);
+      if (th) { th.zkind = 'zBOSSfire'; if (AIM.linetarget) th.tracer = AIM.linetarget; }
+    }
+    mo.angle = base;
+  },
+  // demon bite: 8-26 a bite, about 1.7 bites a second (Doom's monster bites 4-40 but far less often)
   A_ZBite(p) {
     const t = zMeleeTarget(p.mo, MELEERANGE + 12);
-    if (t) zHit(p, t, ((P_Random() % 10) + 1) * 4 + 4, 'zDEMON', 'sgtatk');
+    if (t) zHit(p, t, ((P_Random() % 10) + 1) * 2 + 6, 'zDEMON', 'sgtatk');
     else startSound(p.mo, 'dmact');
   },
   // demon lunge: a burst of speed along the view; the first human it runs into is bitten (zombieThink)
@@ -151,9 +235,10 @@ const ZE_WEAPON_ACTIONS = {
     const mo = p.mo;
     p.zcd = ZCLASS.DEMON.cd;
     zBodyAttack(p);
-    const sp = 26;
+    const sp = 22;   // held for the whole lunge (zDashCarry): about 240 units
     mo.momx = sp * Math.cos(mo.angle * DEG); mo.momy = sp * Math.sin(mo.angle * DEG);
-    p.zdash = 14; p.zhit = false;
+    p.zdash = 11; p.zhit = false;
+    p.zdv = { x: mo.momx, y: mo.momy, z: 0, fly: false, started: false, lx: 0, ly: 0, lz: 0 };
   },
   // lost soul dash: Doom's skull charge (speed 20), aimed by the view, up and down too
   A_ZDash(p) {
@@ -166,6 +251,7 @@ const ZE_WEAPON_ACTIONS = {
     mo.momx = sp * c * Math.cos(mo.angle * DEG); mo.momy = sp * c * Math.sin(mo.angle * DEG);
     mo.momz = -sp * Math.sin(pitch * DEG) / ZSCALE_AIM;
     p.zdash = 12; p.zhit = false;
+    p.zdv = { x: mo.momx, y: mo.momy, z: mo.momz, fly: true, started: false, lx: 0, ly: 0, lz: 0 };
   },
 };
 Object.assign(WEAPON_ACTIONS, ZE_WEAPON_ACTIONS);

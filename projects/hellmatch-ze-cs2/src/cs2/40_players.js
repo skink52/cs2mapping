@@ -31,7 +31,7 @@ function park(slot) {
     if (cam) { cam.SetParent(undefined); cam.SetMode(CustomCameraMode.CONTROLLED_POSITION); }
   });
   if (!cam) warnOnce("nocam", "GetCustomCamera returned nothing - players will see their pawn's own view");
-  pk = { pawn, cam, booth, camMode: CustomCameraMode.CONTROLLED_POSITION, lastYaw: 0, lastPitch: 0, edges: { next: false, prev: false }, lockYaw: null, lockUntil: 0 };
+  pk = { pawn, cam, booth, camMode: CustomCameraMode.CONTROLLED_POSITION, lastYaw: 0, lastPitch: 0, edges: { next: false, prev: false }, tapAlt: false, tapUse: false, lockYaw: null, lockUntil: 0 };
   parked.set(slot, pk);
   if (CONFIG.HIDE_CS_HUD) guard("hidehud", () => Console.ClientCommand(slot, "cl_draw_only_deathnotices 1"));
   return pk;
@@ -60,8 +60,10 @@ const IN_NEXT = CONFIG.NEXT_WEAPON.map((k) => CSInputs[k]);
 const IN_PREV = CONFIG.PREV_WEAPON.map((k) => CSInputs[k]);
 function sampleInput(slot, p, pk, sampleAll, now) {
   const pawn = pk.pawn;
-  for (let i = 0; i < IN_NEXT.length; i++) if (pawn.WasInputJustPressed(IN_NEXT[i])) pk.edges.next = true;
+  for (let i = 0; i < IN_NEXT.length; i++) if (pawn.WasInputJustPressed(IN_NEXT[i])) { pk.edges.next = true; pk.tapAlt = true; }
   for (let i = 0; i < IN_PREV.length; i++) if (pawn.WasInputJustPressed(IN_PREV[i])) pk.edges.prev = true;
+  // a tap of E (or a zombie's ability key) shorter than the gap to the next Doom tic still counts for that tic
+  for (let i = 0; i < IN_USE.length; i++) if (pawn.WasInputJustPressed(IN_USE[i])) pk.tapUse = true;
   // view angles every tick (the view lock after a teleport and AFK turning both follow them)
   const ang = pawn.GetEyeAngles();
   let yaw = normAngle(ang.yaw);
@@ -83,14 +85,24 @@ function sampleInput(slot, p, pk, sampleAll, now) {
   let buttons = 0;
   if (pawn.IsInputPressed(IN_ATTACK)) buttons |= BT_ATTACK;
   // a zombie has no weapons to switch: the weapon keys (right click, R) are its ability
-  if (p.zclass) for (let i = 0; i < IN_NEXT.length; i++) if (pawn.IsInputPressed(IN_NEXT[i])) { buttons |= BT_ALT; break; }
-  for (let i = 0; i < IN_USE.length; i++) if (pawn.IsInputPressed(IN_USE[i])) { buttons |= BT_USE; break; }
+  if (p.zclass) {
+    if (pk.tapAlt && p.playerstate === "live") buttons |= BT_ALT;
+    else for (let i = 0; i < IN_NEXT.length; i++) if (pawn.IsInputPressed(IN_NEXT[i])) { buttons |= BT_ALT; break; }
+  }
+  if (pk.tapUse) buttons |= BT_USE;
+  else for (let i = 0; i < IN_USE.length; i++) if (pawn.IsInputPressed(IN_USE[i])) { buttons |= BT_USE; break; }
+  pk.tapAlt = pk.tapUse = false;
   p.cmd.buttons = buttons;
   return fwd || back || left || right || buttons || turned;
 }
 
 function applyEdges(p, pk) {
-  if (p.zclass) { pk.edges.next = pk.edges.prev = false; return; }
+  if (p.zclass) {
+    // a zombie has no weapons: while it is dead / rising, the weapon keys (R, right click / F) pick the next body's class
+    if ((pk.edges.next || pk.edges.prev) && p.person && rm) rm.zeCycleClass(p.person, pk.edges.next ? 1 : -1);
+    pk.edges.next = pk.edges.prev = false;
+    return;
+  }
   if (pk.edges.next) { cycleWeapon(p, 1); pk.edges.next = false; }
   if (pk.edges.prev) { cycleWeapon(p, -1); pk.edges.prev = false; }
 }
@@ -118,7 +130,9 @@ function placeCamera(pk, view, alpha, controlled) {
   }
   // the eye sits a little in front of the marine's chest so players never look out through their own model
   // (a zombie class is wider than a marine: its eye sits at the front of its own body)
-  const fwd = mo.player && mo.player.zclass ? Math.max(CONFIG.EYE_FORWARD, mo.radius - 4) : CONFIG.EYE_FORWARD;
+  // but always 6 units inside its own collision radius, so a wall it presses against (a lost soul's dash) never comes
+  // closer to the camera than that and doesn't show through
+  const fwd = mo.player && mo.player.zclass ? Math.min(mo.radius - 6, Math.max(CONFIG.EYE_FORWARD, mo.radius - 4)) : CONFIG.EYE_FORWARD;
   if (fwd) { const a = mo.angle * Math.PI / 180; x += Math.cos(a) * fwd; y += Math.sin(a) * fwd; }
   const pos = v.world(x, y, z);
   // no IsValid() every tick: a camera removed under us makes the call throw (or do nothing); it is checked then

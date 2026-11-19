@@ -29,6 +29,7 @@ function buildCfg() {
     map: Z.MAP, cap: Z.CAP, killDelayTics: Z.KILL_DELAY_TICS, drawWindowTics: Z.DRAW_WINDOW_TICS,
     zombieRespawnTics: Math.round(Z.ZOMBIE_RESPAWN * TICRATE), timeLimitTics: Z.TIME_LIMIT * TICRATE,
     aiBase: Z.AI_BASE, aiPerHuman: Z.AI_PER_HUMAN, classes: Z.CLASSES.slice(), holdScore: Z.HOLD_SCORE, escapeScore: Z.ESCAPE_SCORE,
+    aiDamage: Z.AI_DAMAGE, zDamage: Z.ZOMBIE_DAMAGE, zHp: Z.ZOMBIE_HP, bossTakeover: Z.BOSS_TAKEOVER,
   });
   return c;
 }
@@ -311,6 +312,23 @@ function handleArenaEvents(a) {
         guard("music", () => musicBoss());
         break;
       case "zeMusic": guard("music", () => (e.id === "boss" ? musicBoss() : musicStart(e.id || "level", rm.base && rm.base.id))); break;
+      // player bosses: the offer (zombie players see "PRESS E TO BECOME THE BOSS" while a.ze.offer is up), the takeover, the AI taking it back
+      case "zeBossOptIn":
+        e.player.message = "BOSS REQUESTED - MOST HUMAN KILLS WINS"; e.player.messageTime = a.leveltime;
+        break;
+      case "zeBossTaken": {
+        const pe = e.player.person;
+        if (pe) pe.zeBossUntil = Instance.GetGameTime() + 5;
+        centerMsgs.set(a, { text: "THE BOSS IS A PLAYER!", until: Instance.GetGameTime() + 3 });
+        sayAll(`${ZE_SIDE_NAME[a.zeSide]}: ${e.player.name} is the ${e.name.toLowerCase()}`);
+        log(`${a.mapId}: ${e.player.name} took over the boss (${e.why})`);
+        break;
+      }
+      case "zeBossBack":
+        if (e.player) { e.player.message = "THE AI TOOK THE BOSS BACK"; e.player.messageTime = a.leveltime; }
+        if (e.player && e.player.person) e.player.person.zeBossUntil = 0;
+        log(`${a.mapId}: the AI took the boss back from ${e.player ? e.player.name : "?"} (${e.why})`);
+        break;
       case "zeScore":
         if (!GameRules.IsWarmupPeriod()) for (const p of e.players) { const c = controllerOf(p.slot); if (c && e.points) guard("zescore", () => c.AddScore(e.points)); }
         break;
@@ -413,10 +431,17 @@ function infoFor(pe, now) {
   } else if (pe.afk) spec = "AFK - TYPE !BACK TO PLAY";
   else if (me && me.zclass) {
     const c = ZCLASS[me.zclass];
-    if (me.playerstate !== "live" || !me.mo) spec = "RISING AS A ZOMBIE...";
+    const rising = me.playerstate !== "live" || !me.mo;
+    const offer = a.ze && a.ze.offer && a.ze.bossEligible(me);
+    const recent = me.message && a.leveltime - me.messageTime < 4 * TICRATE;   // who killed them stays readable
+    // while dead / rising: the class of the next body, R (or right click) cycles it (F goes back)
+    if (rising) { spec = "CLASS: " + c.name + "  [R] NEXT"; if (!recent) msg = "RISING AS A ZOMBIE..."; }
     else spec = c.name + "  " + c.ability + (me.zcd > 0 ? " " + (me.zcd / TICRATE).toFixed(1) + "S" : " READY");
     if (pe.zeBannerUntil > now) msg = "YOU ARE A ZOMBIE - HUNT THE " + ZE_SIDE_NAME[a.zeSide] + " HUMANS";
-    else if (pe.zeClassUntil > now) msg = "YOU ARE " + (c.key === "IMP" ? "AN " : "A ") + c.name + " - MOUSE2 / R: " + c.ability;
+    else if (pe.zeClassUntil > now && !rising && !c.boss) msg = "YOU ARE " + (c.key === "IMP" ? "AN " : "A ") + c.name + " - MOUSE2 / R: " + c.ability;
+    if (c.boss && pe.zeBossUntil > now) msg = c.melee ? "YOU ARE THE BOSS - MOUSE1 " + c.atkName + "  MOUSE2/R " + c.ability : "YOU ARE THE BOSS - MOUSE1/MOUSE2/R: " + c.ability;
+    // a new boss is up for takeover: the first E near a zombie spawn takes it, else most human kills among who asked
+    if (offer && !a.ze.offer.opted.has(me)) msg = "PRESS E TO BECOME THE BOSS";
   } else if (me && a.countdown > 0) spec = "HUMANS: HOLD THE ZONES, ESCAPE";
   // !help: controls on the message line and chat commands at the bottom, over whatever was there
   if (pe.helpUntil > now) {

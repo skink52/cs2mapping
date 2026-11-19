@@ -1,5 +1,7 @@
 # Loading screen picture, radar (overview) image, overview file and map icon.
 #   panorama/images/map_icons/screenshots/1080p/<map>.png, _1, _2   loading screens (CS2 asks for <map>_png)
+#   ... _3, _4, ...: one per ZE level (title, Freedoom author credit, the stage list, the level's automap with the
+#   hold zones, the boss and the start); the loading screen cycles the numbered pictures
 #   panorama/images/overheadmaps/<map>_radar.psd                     radar / overview (CS2 asks for <map>_radar_psd)
 #   panorama/images/map_icons/map_icon_<map>.svg                     map icon (CS2 asks for map_icon_<map>.vsvg)
 #   game/resource/overviews/<map>.txt                                where the radar sits in the world (GAME folder)
@@ -81,14 +83,15 @@ def loading_screen():
     for L in LEVEL_CREDITS:
         paste_text(base, L, 130, yc, 2, grey); yc += 28
     # controls, right
-    base.alpha_composite(Image.new('RGBA', (1120, 420), (0, 0, 0, 175)), (760, 560))
+    base.alpha_composite(Image.new('RGBA', (1120, 456), (0, 0, 0, 175)), (760, 560))
     x0, x1, y = 800, 1080, 590
     paste_text(base, 'CONTROLS', x0, y, 5, gold); y += 66
     rows = [('W A S D', 'MOVE'), ('MOUSE', 'AIM'), ('MOUSE 1', 'FIRE'), ('E / SPACE', 'USE, OPEN DOORS'),
             ('R / MOUSE 2', 'NEXT WEAPON'), ('F', 'PREVIOUS WEAPON'), ('SHIFT', 'WALK'),
-            ('AS A DEMON', 'MOUSE 1 ATTACK'), ('CHAT', '!HELP !HUD !SPEC !AFK !BACK')]
+            ('AS A DEMON', 'MOUSE 1 CLAW / BITE'), ('', 'MOUSE 2 OR R: ABILITY'), ('CHAT', '!HELP !HUD !SPEC !AFK !BACK')]
     for a, b in rows:
-        paste_text(base, a, x0, y, 3, gold); paste_text(base, b, x1, y, 3, white); y += 36
+        if a: paste_text(base, a, x0, y, 3, gold)
+        paste_text(base, b, x1, y, 3, white); y += 36
     paste_text(base, '(/HELP WORKS TOO)', x1, y, 3, grey)
     paste_text(base, DISCLAIMER, 130, 1040, 2, grey)
     path = os.path.join(OUT, 'panorama/images/map_icons/screenshots/1080p')
@@ -185,7 +188,126 @@ def icon():
     os.makedirs(path, exist_ok=True)
     open(os.path.join(path, 'map_icon_%s.svg' % MAP), 'w', newline='\n').write(svg)
 
+# ---------------------------------------------------------------- one loading screen per ZE level
+STAGE_COL = [(80, 200, 255), (120, 255, 120), (255, 120, 255), (255, 200, 60), (255, 255, 255)]
+MONSTER_NAMES = {'BARON': 'PAIN LORD', 'KNIGHT': 'PAIN BRINGER', 'MANCUBUS': 'COMBAT SLUG', 'ARACHNOTRON': 'TECHNOSPIDER',
+                 'CYBERDEMON': 'ASSAULT TRIPOD', 'MASTERMIND': 'LARGE TECHNOSPIDER', 'CACO': 'TRILOBITE',
+                 'REVENANT': 'DARK SOLDIER', 'ARCHVILE': 'FLAME BRINGER', 'PAINELEMENTAL': 'SUMMONER'}
+
+
+def level_map(L, W, H):
+    """the level as a Doom automap (walls red, steps brown, ceiling changes yellow) with the ZE overlay: hold zones in
+    their stage colour and numbered, the boss spot, the player start"""
+    from PIL import ImageDraw
+    v, secs, ze = L['v'], L['s'], L.get('ze') or {}
+    bb = L['bb']
+    pad = 30
+    sc = min((W - 2 * pad) / max(1, bb[2] - bb[0]), (H - 2 * pad) / max(1, bb[3] - bb[1]))
+    ox = pad + ((W - 2 * pad) - (bb[2] - bb[0]) * sc) / 2; oy = pad + ((H - 2 * pad) - (bb[3] - bb[1]) * sc) / 2
+    S = 2
+    P = lambda x, y: ((ox + (x - bb[0]) * sc) * S, (oy + (bb[3] - y) * sc) * S)
+    img = Image.new('RGBA', (W * S, H * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    stages = ze.get('stages', [])
+    zone_of = {}
+    for k, st in enumerate(stages):
+        z = st.get('zone') or {}
+        for sid in ([z['sector']] if 'sector' in z else z.get('sectors', [])): zone_of.setdefault(sid, k)
+    marks = []
+    for ln in L['l']:
+        a, b, flags, special, tag, fs, bs = ln[:7]
+        p1, p2 = P(v[a * 2], v[a * 2 + 1]), P(v[b * 2], v[b * 2 + 1])
+        if bs < 0: col, w = (200, 40, 40), 2 * S
+        elif secs[fs][0] != secs[bs][0]: col, w = (150, 110, 60), S
+        elif secs[fs][1] != secs[bs][1]: col, w = (200, 180, 60), S
+        else: col, w = None, 0
+        k = zone_of.get(fs, zone_of.get(bs)) if bs < 0 or (fs in zone_of) != (bs in zone_of) else None
+        if k is not None:
+            col, w = STAGE_COL[k % len(STAGE_COL)], 3 * S
+            marks.append((k, p1, p2))
+        if col: d.line([p1, p2], fill=col, width=w)
+    for k, st in enumerate(stages):
+        z = st.get('zone') or {}
+        if 'box' in z:
+            x1, y1, x2, y2 = z['box']; q1, q2 = P(x1, y2), P(x2, y1)
+            d.rectangle([q1, q2], outline=STAGE_COL[k % len(STAGE_COL)], width=3 * S)
+            marks.append((k, q1, q2))
+    img = img.resize((W, H), Image.LANCZOS)
+    # stage numbers at the middle of each zone, the boss, the start
+    cen = {}
+    for k, p1, p2 in marks:
+        c = cen.setdefault(k, [0, 0, 0]); c[0] += (p1[0] + p2[0]) / 2 / S; c[1] += (p1[1] + p2[1]) / 2 / S; c[2] += 1
+    for k, (x, y, n) in cen.items():
+        t = text_image(str(stages[k].get('id', k + 1)), 4, STAGE_COL[k % len(STAGE_COL)])
+        img.alpha_composite(t, (int(x / n - t.width / 2), int(y / n - t.height / 2)))
+    for k, st in enumerate(stages):
+        if 'boss' in st:
+            x, y = P(*st['boss']['at'][:2]); x /= S; y /= S
+            t = text_image('BOSS', 2, (255, 80, 255))
+            img.alpha_composite(t, (int(x - t.width / 2), int(y - t.height / 2)))
+    for t in L.get('t', []):
+        if t[3] == 1:
+            x, y = P(t[0], t[1]); x /= S; y /= S
+            s_ = text_image('START', 2, (80, 255, 80)); img.alpha_composite(s_, (int(x - s_.width / 2), int(y - s_.height / 2)))
+            break
+    return img
+
+
+def stage_line(st):
+    if 'boss' in st:
+        b = st['boss'].get('type', '')
+        return 'BOSS: %s' % MONSTER_NAMES.get(b, b)
+    if st.get('escape'): return 'ESCAPE: HOLD THE EXIT %dS' % st.get('hold', 0)
+    return 'HOLD %dS' % st.get('hold', 0)
+
+
+def level_screens(first=3):
+    seen = []
+    for L in _LV:
+        if L.get('side') not in (None, 't') or L['base'] in seen: continue
+        seen.append(L['base'])
+    W, H = 1920, 1080
+    path = os.path.join(OUT, 'panorama/images/map_icons/screenshots/1080p')
+    gold, white, grey = (255, 200, 60), (235, 235, 235), (165, 165, 165)
+    out = []
+    for k, base_id in enumerate(seen):
+        L = next(x for x in _LV if x['base'] == base_id and x.get('side') in (None, 't'))
+        ze = L.get('ze') or {}
+        bg = title.scene('wide', os.path.join(OUT, 'materials/fdm/sky/sky_color.png')).filter(ImageFilter.GaussianBlur(6))
+        arr = np.array(bg).astype(np.float32) * 0.22
+        base = Image.fromarray(arr.clip(0, 255).astype(np.uint8)).convert('RGBA')
+        base.alpha_composite(Image.new('RGBA', (1060, 1000), (0, 0, 0, 150)), (820, 40))
+        base.alpha_composite(level_map(L, 1040, 980), (830, 50))
+        base.alpha_composite(title.logo(560), (90, 40))
+        y = 190
+        paste_text(base, (ze.get('title') or L['title']).upper(), 100, y, 6, gold); y += 70
+        au = ' '.join(re.sub(r'"[^"]*"', '', L.get('author') or '').split()).upper()
+        paste_text(base, 'FREEDOOM %s%s' % (L['name'], ' BY' if au else ''), 100, y, 3, white); y += 34
+        # long author lists wrap at about 30 characters
+        line = ''
+        for wd in au.split():
+            if len(line) + len(wd) + 1 > 30:
+                paste_text(base, line, 100, y, 3, white); y += 34; line = wd
+            else: line = (line + ' ' + wd).strip()
+        if line: paste_text(base, line, 100, y, 3, white); y += 34
+        y += 30
+        paste_text(base, 'STAGES', 100, y, 5, gold); y += 64
+        for i, st in enumerate(ze.get('stages', [])):
+            col = STAGE_COL[i % len(STAGE_COL)]
+            paste_text(base, '%s %s' % (st.get('id', i + 1), st.get('name', '').upper()), 100, y, 3, col); y += 32
+            paste_text(base, '  ' + stage_line(st), 100, y, 2, grey); y += 36
+        y += 20
+        tl = ze.get('time_limit')
+        if tl: paste_text(base, 'ROUND LIMIT %d:%02d' % (tl // 60, tl % 60), 100, y, 3, white); y += 40
+        paste_text(base, 'FIRST TEAM OUT WINS', 100, y, 3, white)
+        paste_text(base, DISCLAIMER, 100, 1040, 2, grey)
+        name = '%s_%d.png' % (MAP, first + k)
+        base.convert('RGB').save(os.path.join(path, name))
+        out.append(name)
+    return out
+
 loading_screen()
 p = radar()
 icon()
+print('level loading screens:', ' '.join(level_screens()))
 print('loading screen, radar (pos %.0f, %.0f, scale %.2f), icon' % p)

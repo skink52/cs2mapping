@@ -278,7 +278,7 @@ if (/\bstats\b/.test(OPTS)) src = src.replace('SERVER_STATS: false', 'SERVER_STA
 if (OPTS.includes('monsters')) src = src.replace('MONSTER_CHANCE: 0.15', 'MONSTER_CHANCE: 1');
 if (OPTS.includes('hudcheck')) src = src.replace('const HUD_LINE_CHECK = false;', 'const HUD_LINE_CHECK = true;');
 if (OPTS.includes('nolinecache')) src = src.replace(/function hudSame\(slot, prefix, value\) \{/, 'function hudSame(slot, prefix, value) { return false;');
-src += '\nglobalThis.__Arena = Arena; globalThis.__RM = RoundManager; globalThis.__stats = () => ({ statPending: typeof statPending === "undefined" ? new Map() : statPending, statsOn: typeof statsOn !== "undefined" && statsOn }); globalThis.__dbg = () => ({ rm, views, parked, hudCheckMiss, hudCache, phase, vote: typeof vote === "undefined" ? null : vote });\n';
+src += '\nglobalThis.__ZCLASS = typeof ZCLASS === "undefined" ? null : ZCLASS; globalThis.__Arena = Arena; globalThis.__RM = RoundManager; globalThis.__stats = () => ({ statPending: typeof statPending === "undefined" ? new Map() : statPending, statsOn: typeof statsOn !== "undefined" && statsOn }); globalThis.__dbg = () => ({ rm, views, parked, hudCheckMiss, hudCache, phase, vote: typeof vote === "undefined" ? null : vote });\n';
 const ctx = vm.createContext({ __api: api, console, Math, Date, JSON, Map, Set, Array, Object, String, Number, Error, Infinity, NaN });
 vm.runInContext(src, ctx, { filename: 'freedm.js' });
 

@@ -17,7 +17,7 @@ const OBITS = {
   chaingun: '%o was mowed down by %k\'s chaingun.', rocket: '%o rode %k\'s rocket.',
   rocketsplash: '%o almost dodged %k\'s rocket.', plasma: '%o was melted by %k\'s plasma rifle.',
   bfg: '%o was disintegrated by %k\'s SKAG 1337.', telefrag: '%o was telefragged by %k.', barrel: '%o was blown up by %k\'s barrel.',
-  zIMP: '%o was clawed by %k.', zIMPfire: '%o was burned by %k\'s fireball.', zDEMON: '%o was eaten by %k.', zLOSTSOUL: '%o was spooked by %k.',
+  zIMP: '%o was clawed by %k.', zIMPfire: '%o was burned by %k\'s fireball.', zDEMON: '%o was eaten by %k.', zLOSTSOUL: '%o was spooked by %k.', zBOSS: '%o was torn apart by %k.', zBOSSfire: '%o was blasted by %k.',
   selfrocket: '%o should have stood back.', selfbfg: '%o got too close to their own SKAG 1337.', selfbarrel: '%o went boom.',
   slime: '%o melted.', crush: '%o was squished.', world: '%o died.', suicide: '%o suicides.',
 };
@@ -368,7 +368,7 @@ class Arena {
     else if (inflictor && inflictor.type === MT.ROCKET) kind = self ? 'selfrocket' : (ctx === 'direct' ? 'rocket' : 'rocketsplash');
     else if (inflictor && inflictor.type === MT.PLASMA) kind = 'plasma';
     else if (inflictor && (inflictor.type === MT.BFG || ctx === 'bfgspray')) kind = self ? 'selfbfg' : 'bfg';
-    else if (killer && !self && killer.zclass) kind = inflictor && inflictor.zfire ? 'zIMPfire' : killer.zkind || ('z' + killer.zclass);   // ZE: clawed, burned, bitten...
+    else if (killer && !self && killer.zclass) kind = inflictor && inflictor.zkind ? inflictor.zkind : inflictor && inflictor.zfire ? 'zIMPfire' : killer.zkind || (ZCLASS[killer.zclass] && ZCLASS[killer.zclass].boss ? 'zBOSS' : 'z' + killer.zclass);   // ZE: clawed, burned, bitten...
     else if (killer && !self) {
       const w = killer.readyweapon;
       kind = ['fist', 'pistol', 'shotgun', 'chaingun', 'rocket', 'plasma', 'bfg', 'chainsaw', 'ssg'][w] || 'world';
@@ -384,6 +384,17 @@ class Arena {
     }
     const text = (OBITS[kind] || OBITS.world).replace('%o', hudName(victim.name)).replace('%k', killer ? hudName(killer.name) : '');
     this.events.push({ type: 'kill', victim, killer: self || this.coop ? null : killer, kind, text, time: this.leveltime });
+    if (this.ze) {
+      // ZE: humans killed by a zombie player this round (who gets a boss when several ask), and a player-driven boss
+      // going down counts for its human killer like the AI boss would (boss score, stats, message)
+      if (killer && !self && killer.zclass && !victim.zclass && killer.person) killer.person.zeHumanKills = (killer.person.zeHumanKills || 0) + 1;
+      if (victim.mo && victim.mo.boss) {
+        const hk = killer && !self && !killer.zclass ? killer : null;
+        if (hk) hk.killcount++;
+        if (this.director) this.director.bossKilled++;
+        this.events.push({ type: 'monsterKill', mo: victim.mo, killer: hk, boss: true, name: victim.mo.info.name, time: this.leveltime, player: victim });
+      }
+    }
   }
 }
 

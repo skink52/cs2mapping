@@ -1,6 +1,6 @@
 #!/bin/sh
 # Rebuilds the Hellmatch ZE addon sources from the Freedoom checkout into out/addon (content) and out/game (game folder
-# extras). Levels: every ze/<map>.json (or HZE_LEVELS=map01,e1m1). About 6-8 minutes on the PC (the OPL music render
+# extras). Levels: every ze/<map>.json (or HZE_LEVELS=map01,e1m1); Workshop images in out/workshop. About 6-8 minutes on the PC (the OPL music render
 # is most of it on the first run; it is cached in build/music). Run it under the hang watchdog (see the project README).
 #   PYTHON=python (default; python3 may be the Windows Store stub)   FREEDOOM_DIR (default C:/source1/freedoom)
 #   HZE_SPRITES=1 rebuilds the sprite models with sprites.py instead of reusing Hellmatch's
@@ -14,6 +14,8 @@ rm -rf out/addon out/game && mkdir -p out/addon/maps out/game build
 
 step "levels (convert once, place twice) + sidecars"
 $PY tools/convert.py out/addon ${HZE_LEVELS:-}
+step "ZE routes (every stage reachable, every gate holds: tools/zereach.py)"
+for f in ze/*.json; do $PY tools/zereach.py "$f"; done
 step "core test module"
 node tools/build.mjs
 node -e "
@@ -40,6 +42,7 @@ step "sounds + sky"
 $PY tools/extras.py out/addon SKY1
 step "loading screens, radar, overview, icon"
 $PY tools/loading.py out/addon out/game
+$PY tools/workshop_art.py out/addon
 $PY tools/lobby.py
 $PY tools/vmf.py out/addon
 step "map"

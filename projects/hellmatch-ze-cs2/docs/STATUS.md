@@ -1,11 +1,21 @@
 # Hellmatch ZE: status
 
+**COMPLETE (19 Nov 2026), awaiting skink52's first playtest.** Every tracker row is done and checked as far as it can be without
+CS2 (simulated / compiled). Handoff: `map mg_hellescape`, `bot_quota 16`, then `TESTING_HELLESCAPE.md` (all four levels, classes,
+boss takeover, round rules). Playtest findings start the next round of work (new tracker rows; tune CONFIG.ZE first).
+Before uploading to the Workshop: put the item ID into `docs/WORKSHOP_DESCRIPTION.txt`; art is in `out/workshop/`.
+
 Design, findings and the phased plan: `projects/hellmatch-cs2/docs/ZE_DESIGN.md` (19 Nov 2026). Read it before any work.
 Hellmatch (`projects/hellmatch-cs2`, addon `mg_freedm`) is never modified. skink52 gave full autonomy on 19 Nov 2026 ("you have total
 control - do the problem solving independently ... AAA quality, with the hellmatch graphics").
 
 ## Resume here
-**v1 (Phase 1) is built, deployed and compiled (19 Nov 2026), not yet run in CS2.** skink52 tests with `TESTING_HELLESCAPE.md`
+**Phase 2-4 built 19 Nov 2026 (afternoon): 4 levels (MAP01, E1M1, E3M1, MAP06), class choice, balance pass, player boss
+takeover, loading screens, Workshop art/description (`out/workshop/`, `docs/WORKSHOP_*`). Simulated only; not yet run in CS2.**
+Open after the playtest: E1M1 stage 2 (bots rarely climb the lift to the flooded hall even with the lift made perpetual; humans can
+ride it); E3M1 escape run long for bots; bot rounds run 2-3 min (humans should last longer: tune CONFIG.ZE after the test);
+2v2 / 4v4 arenas reach the boss about half the time; Workshop description needs the real item ID; level music renders unheard.
+Earlier: **v1 (Phase 1) built, deployed and compiled (19 Nov 2026 morning).** skink52 tests with `TESTING_HELLESCAPE.md`
 (`map mg_hellescape`, `bot_quota 16`). Any findings from that test go first, ahead of the Phase 2 rows below.
 After a map build, build_maps.ps1 adds `mg_hellescape [in progress, built] [skink]` to `C:\source1\cs2port\existing_ports.txt`: back the
 file up before and restore it after (it is a port list; this is not a port).
@@ -23,6 +33,8 @@ Read both progress files; continue the first unfinished row of each.
 - Push: never without asking. In-game playtest: skink52.
 
 ## Contract between the workstreams (change only by editing here first)
+- Sidecar `lower_lift` options: `stay` (lowers for good), `perpetual` (Doom's perpetual platform: keeps cycling; used by E1M1's
+  lift 103 so nobody needs its switch), `speed` "fast".
 - Addon folder / map: `mg_hellescape` (`tools/names.py`: NAME "Hellmatch ZE", MAP "mg_hellescape"). Script file `maps/scripts/hellescape.js`.
 - Entity names, model and material paths, sound events keep Hellmatch's `fdm_` / `models/fdm/...` / `fdm.*` names, so the compiled
   sprite, HUD and sound files can be copied from the Hellmatch game addon without recompiling (decision 19 Nov: replaces the `hze_` idea).
@@ -38,6 +50,10 @@ Read both progress files; continue the first unfinished row of each.
   exactly these sprite names/frames in its psprite states.
 - HUD text: new fixed strings the game side shows (stage names come from sidecars) are added to `build/hud_strings.json` by the
   build; game side lists any new fixed strings in `src/core/zz_hud_strings.json` (array of strings), the build merges it.
+- Music (pipeline, 19 Nov 2026, row 2.4): `_gen/music.json` boss-pool tracks carry `level` = the ZE level ids they belong to,
+  comma-separated (`e1m8` -> "e1m1", `e2m8` -> "map01,map06", `e3m8` -> "e3m1"). Requested from the game side (optional):
+  `musicBoss` prefers boss tracks whose `level` list holds the round's level, else the whole boss pool (today it shuffles the
+  whole pool, which also works).
 - cs_script: the current API only (`Entities.*`, `ent.FireInput`, `Console.Log`, `GameRules.*`); `create/test/api.py --strict --check`
   and `sh create/test/tscheck.sh` clean on the built `hellescape.js`.
 
@@ -64,10 +80,10 @@ Read both progress files; continue the first unfinished row of each.
 | 1.8 | Zombie view art, HUD art, loading screens, music, vmap with lobby/booth/cache | pipeline | done 19 Nov (simulated) |
 | 1.9 | Tests: sim + mock scenarios + perf at 32/64 | game | done 19 Nov (simulated) |
 | 1.10 | Assemble addon, copy compiled Hellmatch assets, compile map (resourcecompiler), deliver, test checklist | coordinator | done 19 Nov: deployed (tools/deploy.py, manifest build/deploy/), compiled with build_maps.ps1 in 1.7 min, 0 failed, vpk 2.4 MB, all new assets compiled; existing_ports.txt restored |
-| 2.1 | Class choice on respawn (keys while dead) + class HUD; lost soul polish | game | todo |
-| 2.2 | 3-5 more maps with sidecars (candidates from the 19 Nov survey: E1M1, E2M1, E3M1, MAP02, MAP06; fit two placements each, check world bounds) + map rotation/vote | pipeline+game | todo |
-| 2.3 | Knockback/balance tuning per class from sim runs; zombie "rage" pickup at stage starts | game | todo |
-| 2.4 | Hear-check alternative for level music: if the OPL render is doubtful, keep Hellmatch tracks only (no new downloads without skink52) | pipeline | todo |
-| 3.1 | Player boss takeover (Use at the boss spawn or most human kills); AI resumes on death/leave | game | todo |
-| 4.1 | Loading screens per map, Workshop art + description (Freedoom licence text), WORKSHOP_CHANGELOG, mgstat hooks | pipeline | todo |
-| 4.2 | Rebuild, deploy, compile, update TESTING_HELLESCAPE.md; then COMPLETE (awaiting skink52's playtest) | coordinator | todo |
+| 2.1 | Class choice on respawn (keys while dead) + class HUD; lost soul polish | game | done 19 Nov (simulated) |
+| 2.2 | 3-5 more maps with sidecars (candidates from the 19 Nov survey: E1M1, E2M1, E3M1, MAP02, MAP06; fit two placements each, check world bounds) + map rotation/vote | pipeline+game | done 19 Nov (simulated) |
+| 2.3 | Knockback/balance tuning per class from sim runs; zombie "rage" pickup at stage starts | game | done 19 Nov (simulated) |
+| 2.4 | Hear-check alternative for level music: if the OPL render is doubtful, keep Hellmatch tracks only (no new downloads without skink52) | pipeline | done 19 Nov (simulated) |
+| 3.1 | Player boss takeover (Use at the boss spawn or most human kills); AI resumes on death/leave | game | done 19 Nov (simulated) |
+| 4.1 | Loading screens per map, Workshop art + description (Freedoom licence text), WORKSHOP_CHANGELOG, mgstat hooks | pipeline | done 19 Nov (simulated) |
+| 4.2 | Rebuild, deploy, compile, update TESTING_HELLESCAPE.md; then COMPLETE (awaiting skink52's playtest) | coordinator | done 19 Nov: deployed + compiled (0 failed, vpk 2.5 MB, all 4 levels), tracker restored |

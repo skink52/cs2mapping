@@ -412,9 +412,18 @@ for (const [key, mon, st, death, xdeath] of [['ZPLAYER_IMP', 'IMP', 'ZB_IMP', 'T
     spawnhealth: m.spawnhealth, flags: MF_SOLID | MF_SHOOTABLE | MF_DROPOFF | MF_NOTDMATCH, painsound: m.painsound, deathsound: m.deathsound,
     activesound: m.activesound, attacksound: m.attacksound });
 }
+// ... and the body of each stage boss a zombie player can take over (00_b_ze_states.js ZE_BOSS_TYPES)
+for (const T of ZE_BOSS_TYPES) {
+  const m = MOBJINFO[MT[T]], d = MONSTER_DEFS[T];
+  defMobj('ZPLAYER_B_' + T, { kind: 'player', zclass: T, zboss: true, name: m.name, spawnstate: 'ZB_' + T, seestate: 'ZB_' + T + '_RUN1', painstate: 'ZB_' + T + '_PAIN1',
+    painchance: m.painchance, missilestate: 'ZB_' + T + '_ATK1', deathstate: d.deathstate, xdeathstate: d.xdeathstate || undefined, radius: m.radius, height: m.height,
+    mass: m.mass, spawnhealth: m.spawnhealth, flags: MF_SOLID | MF_SHOOTABLE | MF_DROPOFF | MF_NOTDMATCH, painsound: m.painsound, deathsound: m.deathsound,
+    activesound: m.activesound, attacksound: m.attacksound, seesound: m.seesound });
+}
 for (const info of MOBJINFO) if (info.kind === 'player') {
   const st = info.key === 'PLAYER' ? 'PLAY' : STATES[info.spawnstate].name;
-  info.runFirst = SN(st + '_RUN1'); info.runLast = SN(st === 'ZB_SKUL' ? st + '_RUN2' : st + '_RUN4');
+  const runs = info.zboss ? ZE_BOSS_RUNS[info.zclass] : st === 'ZB_SKUL' ? 2 : 4;
+  info.runFirst = SN(st + '_RUN1'); info.runLast = SN(st + '_RUN' + runs);
   info.atk1 = info.missilestate; info.atk2 = info.key === 'PLAYER' ? SN('PLAY_ATK2') : info.missilestate;
   info.stand = info.spawnstate;
 }

@@ -1,0 +1,369 @@
+{
+  "map": "MAP06",
+  "wad": "levels/map06.wad",
+  "wad_sha1": "776ff084c4adc9d1cd73e72bad8a69c0ee548c26",
+  "title": "Janus Terminal",
+  "author_credit": "Freedoom CREDITS-LEVELS (MAP06)",
+  "time_limit": 600,
+  "humans": {
+    "start": "player_starts",
+    "health": 100,
+    "loadout": [
+      "pistol",
+      "shotgun"
+    ],
+    "keys": "remove"
+  },
+  "zombies": {
+    "cap": 48,
+    "map_monsters": {
+      "use": true,
+      "skill": "hard",
+      "replace": {
+        "SHOTGUY": "IMP",
+        "CHAINGUY": "DEMON",
+        "REVENANT": "IMP",
+        "ARCHVILE": "DEMON",
+        "ARACHNOTRON": "CACO"
+      },
+      "drop": []
+    },
+    "player_classes": [
+      "IMP",
+      "DEMON",
+      "LOSTSOUL"
+    ],
+    "respawn_seconds": 4
+  },
+  "spawn_groups": {
+    "hub_west": {
+      "points": [
+        [
+          -600,
+          -160,
+          0
+        ],
+        [
+          -660,
+          -40,
+          0
+        ],
+        [
+          -520,
+          -240,
+          0
+        ],
+        [
+          -640,
+          60,
+          0
+        ]
+      ],
+      "radius": 64,
+      "ai": {
+        "ZOMBIE": 4,
+        "IMP": 3,
+        "DEMON": 1
+      },
+      "trickle": {
+        "every": 6,
+        "max": 12
+      }
+    },
+    "rotunda": {
+      "sector": 37,
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2,
+        "ZOMBIE": 2
+      },
+      "trickle": {
+        "every": 5,
+        "max": 12
+      }
+    },
+    "pillar_hall": {
+      "sector": 65,
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2,
+        "LOSTSOUL": 1
+      },
+      "trickle": {
+        "every": 6,
+        "max": 10
+      }
+    },
+    "stair_room": {
+      "sector": 72,
+      "ai": {
+        "IMP": 2,
+        "DEMON": 2
+      },
+      "trickle": {
+        "every": 7,
+        "max": 8
+      }
+    },
+    "court_south": {
+      "points": [
+        [
+          700,
+          1150,
+          90
+        ],
+        [
+          1300,
+          1100,
+          90
+        ],
+        [
+          500,
+          1150,
+          90
+        ],
+        [
+          1450,
+          1300,
+          180
+        ]
+      ],
+      "radius": 64,
+      "ai": {
+        "DEMON": 3,
+        "IMP": 4,
+        "LOSTSOUL": 2
+      },
+      "trickle": {
+        "every": 4,
+        "max": 16
+      }
+    },
+    "court_north": {
+      "points": [
+        [
+          700,
+          1900,
+          270
+        ],
+        [
+          1000,
+          1980,
+          270
+        ],
+        [
+          1400,
+          1950,
+          270
+        ]
+      ],
+      "radius": 64,
+      "ai": {
+        "IMP": 3,
+        "CACO": 1,
+        "LOSTSOUL": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 10
+      }
+    }
+  },
+  "blocks": [
+    {
+      "id": "west_doors",
+      "lines": [
+        57,
+        65,
+        244,
+        251
+      ],
+      "until": "never"
+    },
+    {
+      "id": "east_door",
+      "lines": [
+        297,
+        305
+      ],
+      "until": "stage:2"
+    },
+    {
+      "id": "stair_gate",
+      "lines": [
+        477
+      ],
+      "until": "stage:3"
+    },
+    {
+      "id": "blue_door",
+      "lines": [
+        182,
+        186
+      ],
+      "until": "stage:4"
+    }
+  ],
+  "stages": [
+    {
+      "id": 1,
+      "name": "HOLD THE EAST GATE",
+      "start": "round",
+      "hold": 52,
+      "zone": {
+        "box": [
+          40,
+          -300,
+          392,
+          120
+        ]
+      },
+      "zombie_spawns": [
+        "hub_west"
+      ],
+      "on_start": [
+        {
+          "message": "HOLD THE EAST GATE OF THE TERMINAL"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "east_door"
+        },
+        {
+          "open_door": {
+            "sector": 35
+          }
+        },
+        {
+          "open_door": {
+            "sector": 39
+          }
+        },
+        {
+          "message": "THE EAST WING IS OPEN"
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "HOLD THE PILLAR HALL",
+      "start": {
+        "stage_done": 1
+      },
+      "hold": 59,
+      "zone": {
+        "sector": 65
+      },
+      "zombie_spawns": [
+        "rotunda",
+        "hub_west"
+      ],
+      "on_start": [
+        {
+          "spawn_group": "rotunda"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "stair_gate"
+        },
+        {
+          "message": "THE STAIRS TO THE YARD ARE OPEN"
+        },
+        {
+          "teleport_zombies": {
+            "behind": true
+          }
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "DESTROY THE TRIPOD",
+      "start": {
+        "line_crossed": 575
+      },
+      "boss": {
+        "type": "CYBERDEMON",
+        "at": [
+          1000,
+          1250,
+          270
+        ],
+        "health_scale": "players",
+        "music": "boss"
+      },
+      "zombie_spawns": [
+        "pillar_hall",
+        "stair_room"
+      ],
+      "on_start": [
+        {
+          "message": "AN ASSAULT TRIPOD HOLDS THE YARD"
+        },
+        {
+          "music": "boss"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "blue_door"
+        },
+        {
+          "open_door": {
+            "sector": 20,
+            "speed": "fast"
+          }
+        },
+        {
+          "message": "BLUE GATE OPEN - RUN BACK TO THE HUB"
+        },
+        {
+          "score": 2
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "ESCAPE",
+      "start": {
+        "stage_done": 3
+      },
+      "hold": 30,
+      "zone": {
+        "sectors": [
+          62,
+          63
+        ]
+      },
+      "escape": true,
+      "zombie_spawns": [
+        "court_south",
+        "court_north"
+      ],
+      "on_start": [
+        {
+          "spawn_group": "court_north"
+        },
+        {
+          "message": "NORTH WING - REACH THE TERMINAL EXIT"
+        }
+      ],
+      "on_done": [
+        {
+          "message": "ESCAPED"
+        },
+        {
+          "score": 3
+        }
+      ]
+    }
+  ]
+}

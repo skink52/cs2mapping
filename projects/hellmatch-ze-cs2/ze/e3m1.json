@@ -1,0 +1,315 @@
+{
+  "map": "E3M1",
+  "wad": "levels/e3m1.wad",
+  "wad_sha1": "8a3e0b7891d4af2da21da3f5da2f8f22bc0e51b8",
+  "title": "Land of the Lost",
+  "author_credit": "Freedoom CREDITS-LEVELS (E3M1)",
+  "time_limit": 600,
+  "humans": {
+    "start": "player_starts",
+    "health": 100,
+    "loadout": [
+      "pistol",
+      "shotgun"
+    ],
+    "keys": "remove"
+  },
+  "zombies": {
+    "cap": 48,
+    "map_monsters": {
+      "use": true,
+      "skill": "hard",
+      "replace": {
+        "SHOTGUY": "IMP",
+        "CHAINGUY": "DEMON"
+      },
+      "drop": []
+    },
+    "player_classes": [
+      "IMP",
+      "DEMON",
+      "LOSTSOUL"
+    ],
+    "respawn_seconds": 4
+  },
+  "spawn_groups": {
+    "blood_pit": {
+      "sectors": [
+        13
+      ],
+      "ai": {
+        "IMP": 4,
+        "DEMON": 2,
+        "ZOMBIE": 2
+      },
+      "trickle": {
+        "every": 5,
+        "max": 14
+      }
+    },
+    "temple_hall": {
+      "sectors": [
+        27,
+        29,
+        31
+      ],
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 10
+      }
+    },
+    "stair_head": {
+      "sectors": [
+        11,
+        15,
+        16
+      ],
+      "ai": {
+        "IMP": 2,
+        "DEMON": 2,
+        "ZOMBIE": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 10
+      }
+    },
+    "west_ledge": {
+      "sectors": [
+        60,
+        62,
+        65
+      ],
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2,
+        "LOSTSOUL": 1
+      },
+      "trickle": {
+        "every": 6,
+        "max": 10
+      }
+    },
+    "blood_ring": {
+      "sectors": [
+        108
+      ],
+      "ai": {
+        "IMP": 3,
+        "LOSTSOUL": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 10
+      }
+    },
+    "cave_north": {
+      "sectors": [
+        79
+      ],
+      "ai": {
+        "DEMON": 3,
+        "IMP": 4,
+        "LOSTSOUL": 2
+      },
+      "trickle": {
+        "every": 4,
+        "max": 16
+      }
+    }
+  },
+  "blocks": [
+    {
+      "id": "pit_shortcut",
+      "lines": [
+        416,
+        474,
+        475,
+        764
+      ],
+      "until": "never"
+    },
+    {
+      "id": "stair_barrier",
+      "lines": [
+        58
+      ],
+      "until": "stage:2"
+    },
+    {
+      "id": "temple_west",
+      "lines": [
+        325
+      ],
+      "until": "stage:3"
+    },
+    {
+      "id": "exit_door",
+      "lines": [
+        644,
+        646
+      ],
+      "until": "stage:4"
+    }
+  ],
+  "stages": [
+    {
+      "id": 1,
+      "name": "HOLD THE STAIRS",
+      "start": "round",
+      "hold": 45,
+      "zone": {
+        "sectors": [
+          5,
+          6,
+          7
+        ]
+      },
+      "zombie_spawns": [
+        "blood_pit"
+      ],
+      "on_start": [
+        {
+          "message": "HOLD THE STAIRS - THE BARRIER WILL FALL"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "stair_barrier"
+        },
+        {
+          "lower_floor": {
+            "sector": 9
+          }
+        },
+        {
+          "message": "THE BARRIER IS DOWN - GO NORTH"
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "HOLD THE TEMPLE PLAZA",
+      "start": {
+        "stage_done": 1
+      },
+      "hold": 59,
+      "zone": {
+        "sector": 32
+      },
+      "zombie_spawns": [
+        "temple_hall",
+        "stair_head"
+      ],
+      "on_start": [
+        {
+          "spawn_group": "temple_hall"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "temple_west"
+        },
+        {
+          "message": "THE WEST CAVES ARE OPEN"
+        },
+        {
+          "teleport_zombies": {
+            "behind": true
+          }
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "KILL THE CAVE SPIDER",
+      "start": {
+        "line_crossed": 340
+      },
+      "boss": {
+        "type": "ARACHNOTRON",
+        "at": [
+          -1812,
+          872,
+          90
+        ],
+        "health_scale": "players",
+        "music": "boss"
+      },
+      "zombie_spawns": [
+        "west_ledge",
+        "blood_ring"
+      ],
+      "on_start": [
+        {
+          "message": "A TECHNOSPIDER GUARDS THE LOST CAVE"
+        },
+        {
+          "music": "boss"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "exit_door"
+        },
+        {
+          "open_door": {
+            "sector": 100
+          }
+        },
+        {
+          "message": "THE EXIT GATE IS OPEN"
+        },
+        {
+          "score": 2
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "ESCAPE",
+      "start": {
+        "stage_done": 3
+      },
+      "hold": 30,
+      "zone": {
+        "sectors": [
+          103,
+          105,
+          106
+        ]
+      },
+      "escape": true,
+      "zombie_spawns": [
+        "cave_north",
+        "blood_ring"
+      ],
+      "on_start": [
+        {
+          "spawn_group": "cave_north"
+        },
+        {
+          "message": "RUN SOUTH TO THE GATE AND HOLD IT"
+        }
+      ],
+      "on_done": [
+        {
+          "message": "ESCAPED"
+        },
+        {
+          "score": 3
+        }
+      ]
+    }
+  ]
+}

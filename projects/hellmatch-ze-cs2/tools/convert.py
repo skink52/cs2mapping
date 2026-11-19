@@ -302,19 +302,20 @@ class Materials:
         self.sizes = {}
 
     def texsize(self, kind, name):
-        k = (kind, name)
+        k = (kind, name + (assets.d1_suffix(name) if kind == 'w' else ''))
         if k not in self.sizes:
             img = assets.texture(name) if kind == 'w' else assets.flat(name)
             self.sizes[k] = (img.shape[1], img.shape[0]) if img is not None else (64, 64)
         return self.sizes[k]
 
     def write_png(self, kind, name, shift=0):
-        k = (kind, name, shift)
+        sfx = assets.d1_suffix(name) if kind == 'w' else ''
+        k = (kind, name + sfx, shift)
         if k in self.tex_done: return
         self.tex_done.add(k)
         img = assets.texture(name) if kind == 'w' else assets.flat(name)
         if shift: img = np.roll(img, -shift, axis=1)   # a scrolling wall's frame: the texture moved `shift` pixels left
-        fname = name.lower() + ('_x%d' % shift if shift else '')
+        fname = name.lower() + sfx + ('_x%d' % shift if shift else '')
         d = os.path.join(self.out, ADDON_MAT, 'tex' if kind == 'w' else 'flat')
         os.makedirs(d, exist_ok=True)
         big = np.repeat(np.repeat(img, UPS, 0), UPS, 1)
@@ -332,11 +333,12 @@ class Materials:
 
     def get(self, kind, name, light, alpha=False, scroll=False, shift=0):
         step = max(0, min(15, light))
-        key = '%s_%s_l%d%s%s%s' % (kind, name.lower(), step, 'a' if alpha else '', 's' if scroll else '', '_x%d' % shift if shift else '')
+        sfx = assets.d1_suffix(name) if kind == 'w' else ''
+        key = '%s_%s_l%d%s%s%s' % (kind, name.lower() + sfx, step, 'a' if alpha else '', 's' if scroll else '', '_x%d' % shift if shift else '')
         key = key.replace('-', '_')
         if key not in self.mats:
             self.write_png(kind, name, shift)
-            tname = name.lower() + ('_x%d' % shift if shift else '')
+            tname = name.lower() + sfx + ('_x%d' % shift if shift else '')
             sub = 'tex' if kind == 'w' else 'flat'
             path = '%s/m/%s.vmat' % (ADDON_MAT, key)
             b = brightness(step)
@@ -753,10 +755,10 @@ if __name__ == '__main__':
         names_ = sorted(os.path.splitext(os.path.basename(p))[0].lower() for p in glob.glob(os.path.join(ROOT, 'ze', '*.json')))
     if not names_:
         raise SystemExit('convert: no levels given and no sidecars in ze/')
-    phases = {'p1' if n.startswith('e') else 'p2' for n in names_}
-    if len(phases) > 1:
-        print('convert: WARNING Phase 1 and Phase 2 levels mixed; the texture set follows Phase 1 (DOOM1_VERSIONS)')
-    assets.set_texture_set(('DOOM1_VERSIONS',) if 'p1' in phases else ())
+    def texset(n):
+        # each level is built with its own phase's texture set; the few textures Phase 1 defines differently get a
+        # `_d1` file/material name (assets.d1_suffix), so Phase 1 and Phase 2 levels can share one addon
+        assets.set_texture_set(('DOOM1_VERSIONS',) if n.startswith('e') else ())
     credits = level_credits()
     mats = Materials(out)
     levels = [Level(n, mats) for n in names_]
@@ -769,6 +771,7 @@ if __name__ == '__main__':
     offs = pack([(L.tag + sd, L.bbox) for L in levels for sd in SIDES])
     allprops = []; rt = []
     for L in levels:
+        texset(L.tag)
         L.build()
         models = L.write(out)
         for sd in SIDES:

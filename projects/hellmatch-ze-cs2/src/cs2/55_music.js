@@ -42,6 +42,11 @@ function musicPlay(t) {
 function musicNext() {
   if (!music.list.length) {
     music.list = MUSIC_TRACKS.filter((t) => t.pool === music.pool && (music.pool !== "level" || !t.level || t.level === music.level));
+    // a boss stage prefers the boss tracks made for this level (track.level: comma-separated ZE level ids), else any
+    if (music.pool === "boss" && music.level) {
+      const mine = music.list.filter((t) => String(t.level || "").split(",").map((x) => x.trim()).includes(music.level));
+      if (mine.length) music.list = mine;
+    }
     if (!music.list.length) { music.cur = null; return; }
     for (let i = music.list.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

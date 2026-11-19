@@ -17,6 +17,7 @@ fixed = msgs + ['FIGHT!', 'RESPAWNING...', 'SPECTATING', '1', '2', '3', 'RED TEA
                 # Hellmatch ZE
                 'ZOMBIE ESCAPE', 'T ESCAPED', 'CT ESCAPED', 'T WIN', 'CT WIN', 'YOU ARE A ZOMBIE', 'YOU ESCAPED',
                 'HOLD THE ZONE', 'BOSS DEFEATED', 'THE HUMANS ESCAPED', 'ALL HUMANS DEAD']
+monsters_src = open(os.path.join(ROOT, 'src/core/00_a_monsters.js'), encoding='utf-8').read()
 for p in sorted(glob.glob(os.path.join(ROOT, 'ze', '*.json'))):
     sc = json.load(open(p, encoding='utf-8'))
     for st in sc.get('stages', []):
@@ -25,6 +26,13 @@ for p in sorted(glob.glob(os.path.join(ROOT, 'ze', '*.json'))):
             for a in st.get(key, []) or []:
                 if 'message' in a: fixed.append(a['message'])
     if sc.get('title'): fixed.append(sc['title'])
+    # the boss bar names the guardian (its sidecar name, else the monster's name from 00_a_monsters.js)
+    for st in sc.get('stages', []):
+        b = st.get('boss') or {}
+        if b.get('name'): fixed.append(b['name'])
+        elif b.get('type'):
+            mt = re.search(r"^\s*%s: \{ kind: 'monster'.*?name: '([^']+)'" % re.escape(b['type']), monsters_src, re.M)
+            if mt: fixed.append(mt.group(1))
 game = os.path.join(ROOT, 'src/core/zz_hud_strings.json')
 if os.path.exists(game):
     extra = json.load(open(game, encoding='utf-8'))

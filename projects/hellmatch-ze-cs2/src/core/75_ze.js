@@ -14,6 +14,20 @@ MODES.ze = { name: 'ZOMBIE ESCAPE', teams: false, respawn: true, minPlayers: 1, 
 const ZE_SIDE_NAME = { 2: 'T', 3: 'CT' };
 const ZE_FILL_SKIP = new Set(['CYBERDEMON', 'MASTERMIND', 'ARCHVILE', 'PAINELEMENTAL']);   // never part of the respawning horde
 const ZE_DEFAULT_ROSTER = [['ZOMBIE', 4], ['SHOTGUY', 2], ['IMP', 4], ['DEMON', 2]];
+// bots' zombie classes: the share of each class among an arena's zombie players they aim for, by what the stage is
+const ZE_BOT_SHARE = { hold: { IMP: 0.4, DEMON: 0.45, LOSTSOUL: 0.15 }, boss: { IMP: 0.5, DEMON: 0.3, LOSTSOUL: 0.2 }, run: { IMP: 0.35, DEMON: 0.35, LOSTSOUL: 0.3 } };
+// stage bosses by type: hp x the "players" health, dmg x their hits on humans (on top of aiDamage for the AI). Set from
+// sim runs on the four ZE levels (19 Nov 2026): an arachnotron's plasma stream and a tripod's rockets wiped whole sides
+const ZE_BOSS_TUNE = {
+  BARON: { hp: 1, dmg: 1 }, KNIGHT: { hp: 1, dmg: 1 }, REVENANT: { hp: 0.9, dmg: 0.8 }, CACO: { hp: 1, dmg: 0.9 },
+  MANCUBUS: { hp: 0.8, dmg: 0.6 }, ARACHNOTRON: { hp: 0.7, dmg: 0.4 }, CYBERDEMON: { hp: 1, dmg: 0.5 }, MASTERMIND: { hp: 1, dmg: 0.4 },
+};
+function zeBossTune(mo) {
+  const key = mo.info.kind === 'monster' ? mo.info.key : mo.player && ZCLASS[mo.player.zclass] ? ZCLASS[mo.player.zclass].type : null;
+  return ZE_BOSS_TUNE[key] || { hp: 1, dmg: 1 };
+}
+const ZE_BOSS_OFFER = 5 * TICRATE;   // how long a new stage boss is up for a zombie player to take over
+const ZE_CLASS_PICK_GUARD = 10;   // tics after a death in which the class keys don't change the class (they were the ability)
 
 // does the segment a->b cross line l (between its ends)?
 function zeSegCross(ax, ay, bx, by, l) {
@@ -74,6 +88,9 @@ class ZeArena {
     this.crossed = new Set();     // WAD line ids a live human walked over (only lines the next stage waits for)
     this.escaped = 0;             // humans who were in the zone when the escape hold ended
     this.boss = null; this.bossMax = 0; this.bossName = ''; this.bossStage = null;
+    this.navAt = [];              // tics at which the bots' sector graph is rebuilt (doors and lifts the stages move)
+    this.offer = null;            // a boss up for takeover: { until, opted: Map(player -> tic it asked) }
+    this.bossPlayer = null;       // the zombie player driving the boss
     this.started = false;
     this.spots = null;            // every place a zombie may appear (map things, starts, group points), reachable
     this.progress = null;         // sector id -> distance from the human starts
@@ -193,6 +210,7 @@ class ZeArena {
   tic() {
     const a = this.a;
     if (!this.started || a.finished) return;
+    if (this.navAt.length && this.navAt.some((t) => a.leveltime >= t)) { this.navAt = this.navAt.filter((t) => a.leveltime < t); a.level.nav = null; a.level.navCache = null; }
     // delayed actions
     if (this.queue.length) for (let i = this.queue.length - 1; i >= 0; i--) if (a.leveltime >= this.queue[i].at) { const q = this.queue.splice(i, 1)[0]; this.act(q.act, true); }
     // stages run in order: the next one is looked at once the one before it is done (a line crossed or a switch used
@@ -210,6 +228,8 @@ class ZeArena {
     }
     if (ready && next.d.start && next.d.start.use_line !== undefined && next.readyAt === undefined) { next.readyAt = a.leveltime; this.used.delete(next.d.start.use_line); }
     if (ready && this.met(next.d.start || (next.i === 0 ? 'round' : { stage_done: this.stages[next.i - 1].id }))) this.startStage(next);
+    if (this.offer) this.offerTic();
+    if (this.bossPlayer) this.bossPlayerTic();
     for (const s of this.stages) {
       if (s.state === 'pending') continue;
       if (s.state !== 'active') continue;
@@ -230,7 +250,7 @@ class ZeArena {
       for (const name of s.d.zombie_spawns || []) {
         const g = this.groups.get(name);
         if (!g || !g.d.trickle) continue;
-        if (a.leveltime < g.nextTrickle || g.trickled >= (g.d.trickle.max || 10)) continue;
+        if (a.leveltime < g.nextTrickle || g.trickled >= Math.max(1, Math.round((g.d.trickle.max || 10) * (a.director ? a.director.mapScale() : 1)))) continue;
         g.nextTrickle = a.leveltime + Math.round((g.d.trickle.every || 8) * TICRATE);
         if (a.director && a.director.room() > 0) {
           const type = a.director.pickType(g.d.ai);
@@ -276,6 +296,9 @@ class ZeArena {
     // doors and lifts by tag, or (an extension for untagged manual doors) by sector: the sectors get a private tag
     // for the call, so Doom's own door / lift / floor movers run exactly as a switch would start them
     const mover = (fn) => {
+      // the bots' sector graph is cached and only knows doors that were open (or usable) when it was built: rebuild it
+      // while the door / lift / floor moves and after it has settled
+      for (const d of [1, 2, 4, 8]) this.navAt.push(a.leveltime + d * TICRATE);
       const secs = v.sector !== undefined ? [v.sector] : v.sectors;
       if (!secs) { fn({ tag: v.tag, special: 0 }); return; }
       for (const i of secs) {
@@ -288,7 +311,8 @@ class ZeArena {
     switch (k) {
       case 'open_door': mover((line) => doDoor(line, v.speed === 'fast' ? 'blazeOpen' : 'open')); break;
       case 'close_door': mover((line) => doDoor(line, v.speed === 'fast' ? 'blazeClose' : 'close')); break;
-      case 'lower_lift': mover((line) => { if (v.stay) doFloor(line, 'lowerFloorToLowest'); else doPlat(line, v.speed === 'fast' ? 'blazeDWUS' : 'downWaitUpStay', 0); }); break;
+      // perpetual: Doom's perpetual platform (special 87): the lift keeps cycling, so nobody (bots included) needs its switch
+      case 'lower_lift': mover((line) => { if (v.perpetual) doPlat(line, 'perpetualRaise', 0); else if (v.stay) doFloor(line, 'lowerFloorToLowest'); else doPlat(line, v.speed === 'fast' ? 'blazeDWUS' : 'downWaitUpStay', 0); }); break;
       case 'raise_floor': mover((line) => doFloor(line, 'raiseFloor')); break;
       case 'lower_floor': mover((line) => doFloor(line, 'lowerFloorToLowest')); break;
       case 'message': a.events.push({ type: 'zeMsg', text: String(typeof act.message === 'string' ? act.message : v.text || '').toUpperCase() }); break;
@@ -303,8 +327,10 @@ class ZeArena {
   spawnGroup(name) {
     const g = this.groups.get(name), d = this.a.director;
     if (!g || !d || !g.d.ai) return;
-    for (const [type, n] of Object.entries(g.d.ai)) {
+    const r = d.mapScale();
+    for (const [type, n0] of Object.entries(g.d.ai)) {
       if (MT[type] === undefined || MOBJINFO[MT[type]].kind !== 'monster') continue;
+      const n = Math.max(1, Math.round(n0 * r));
       for (let i = 0; i < n && d.room() > 0; i++) d.spawn(type, { group: name, minDist: 250 });
     }
   }
@@ -314,7 +340,10 @@ class ZeArena {
     const type = MT[b.type] !== undefined && MOBJINFO[MT[b.type]].kind === 'monster' ? b.type : 'BARON';
     const info = MOBJINFO[MT[type]];
     const n = Math.max(1, this.humans().length);
-    const health = Math.round(info.spawnhealth * (b.health_scale === 'none' ? 1 : (b.health_scale === 'players' || b.health_scale === undefined ? 0.5 + 0.15 * n : +b.health_scale || 1)));
+    // "players": 0.5 + 0.15 x live humans of the type's health; a heavy type (over 1000: tripod 4000, spider 3000) counts
+    // 1000 + a quarter of the rest, so its fight lasts a little longer than a pain lord's, not four times as long
+    const base = b.health_scale === 'players' || b.health_scale === undefined ? Math.min(info.spawnhealth, 1000 + Math.max(0, info.spawnhealth - 1000) * 0.25) : info.spawnhealth;
+    const health = Math.round(base * (ZE_BOSS_TUNE[type] || { hp: 1 }).hp * (b.health_scale === 'none' ? 1 : (b.health_scale === 'players' || b.health_scale === undefined ? 0.5 + 0.15 * n : +b.health_scale || 1)));
     const at = b.at || null;
     let mo = null;
     if (d) mo = at ? d.placeAt(type, at[0], at[1], at[2] || 0, { health, boss: true, awake: true }) : d.spawn(type, { health, boss: true, minDist: 600 });
@@ -322,6 +351,116 @@ class ZeArena {
     this.bossName = String(b.name || info.name || type).toUpperCase();
     if (!mo) { this.finishStage(s); return; }   // nowhere to put it: the stage is skipped (the build validates the spot)
     a.events.push({ type: 'zeBoss', name: this.bossName, music: b.music || 'boss' });
+    // a zombie player may take it over (3.1): offered for ZE_BOSS_OFFER tics
+    if (this.round.zcfg.bossTakeover !== false && ZCLASS['B_' + type] && b.takeover !== false) {
+      this.offer = { until: a.leveltime + ZE_BOSS_OFFER, opted: new Map() };
+      a.events.push({ type: 'zeBossOffer', name: this.bossName });
+    }
+  }
+
+  // ---------------------------------------------------------------- player bosses (3.1)
+  // who may take the boss: a zombie player of this arena (not a bot, not AFK, not already a boss) whose CS2 pawn is up
+  bossEligible(p) {
+    return !!p && !!p.zclass && !(ZCLASS[p.zclass] && ZCLASS[p.zclass].boss) && !p.spectating && !p.isBot && !!p.person &&
+      !p.person.afk && p.person.arena === this.a && p.respawnGate !== false;
+  }
+
+  // "near a zombie spawn": rising (a dead zombie comes back at a spawn), or within reach of a spawn point of the
+  // active stage, of any zombie spot, or of the boss itself
+  nearSpawn(p) {
+    const mo = p.mo;
+    if (p.playerstate !== 'live' || !mo || mo.removed) return true;
+    if (this.boss && !this.boss.removed && Math.hypot(this.boss.x - mo.x, this.boss.y - mo.y) < 384) return true;
+    const s = this.active();
+    for (const n of (s && s.d.zombie_spawns) || []) { const g = this.groups.get(n); if (g) for (const q of g.points) if (Math.hypot(q.x - mo.x, q.y - mo.y) < 256) return true; }
+    for (const q of this.spots || []) if (Math.abs(q.x - mo.x) < 192 && Math.abs(q.y - mo.y) < 192) return true;
+    return false;
+  }
+
+  // the offer: the first eligible player to press USE near a spawn gets the boss at once; a press anywhere else is an
+  // opt-in, and when the offer runs out the opted-in player with the most human kills this round gets it (ties: who
+  // asked first). Nobody: the AI keeps it.
+  offerTic() {
+    const a = this.a, o = this.offer;
+    if (!this.boss || this.boss.removed || this.boss.health <= 0 || this.boss.player) { this.offer = null; return; }
+    for (const p of a.players.values()) {
+      const down = !!(p.cmd.buttons & BT_USE), edge = down && !p.zOfferUse;
+      p.zOfferUse = down;
+      if (!edge || !this.bossEligible(p)) continue;
+      if (this.nearSpawn(p)) { this.takeOver(p, 'first'); return; }
+      if (!o.opted.has(p)) { o.opted.set(p, a.leveltime); a.events.push({ type: 'zeBossOptIn', player: p }); }
+    }
+    if (a.leveltime < o.until) return;
+    let best = null, bk = -1, bt = Infinity;
+    for (const [p, t] of o.opted) {
+      if (!this.bossEligible(p) || a.players.get(p.slot) !== p) continue;
+      const k = p.person.zeHumanKills || 0;
+      if (k > bk || (k === bk && t < bt)) { best = p; bk = k; bt = t; }
+    }
+    this.offer = null;
+    if (best) this.takeOver(best, 'kills');
+    else a.events.push({ type: 'zeBossOfferEnd' });
+  }
+
+  // the player gets the boss's body where it stands, with its health; the AI monster goes (no corpse, no kill)
+  takeOver(p, why) {
+    const a = this.a, m = this.boss;
+    const cls = m && ZCLASS['B_' + m.info.key];
+    if (!cls || m.removed || m.health <= 0 || m.player) return false;
+    const x = m.x, y = m.y, angle = m.angle, health = m.health;
+    this.offer = null;
+    a.run(() => {
+      if (p.mo && !p.mo.removed && p.playerstate === 'live') { const o = p.mo; spawnMobj(o.x, o.y, o.z, MT.TFOG); o.player = null; removeMobj(o); p.mo = null; }
+      m.boss = false;
+      removeMobj(m);
+      if (a.director) { a.director.spawned--; a.director.bossCount--; }
+      makeZombie(p, cls.key);
+      a.spawnPlayer(p, { x, y, angle, silent: true });
+      p.health = health; p.mo.health = health; p.mo.maxHealth = this.bossMax; p.mo.boss = true;
+      p.zbossMax = this.bossMax; p.protectUntil = 0;
+      startSound(p.mo, p.mo.info.seesound || 'brssit');
+    });
+    this.boss = p.mo; this.bossPlayer = p;
+    a.events.push({ type: 'zeBossTaken', player: p, name: this.bossName, why });
+    return true;
+  }
+
+  // every tic while a player drives the boss: killed -> the stage's own check ends it; gone, AFK or idle too long ->
+  // the Doom AI takes the body back
+  bossPlayerTic() {
+    const p = this.bossPlayer, a = this.a;
+    if (!p.mo || p.mo !== this.boss) { this.bossPlayer = null; return; }
+    if (p.mo.health <= 0 || p.playerstate !== 'live') { this.bossPlayer = null; return; }   // killed: the boss is down
+    const pe = p.person;
+    if (a.players.get(p.slot) !== p || p.spectating || !pe || pe.arena !== a) { this.bossRelease(p, 'left'); return; }
+    if (pe.afk) { this.bossRelease(p, 'afk'); return; }
+    if (!p.isBot && this.round.time - (pe.lastActive || 0) > this.round.zcfg.bossAfkTics) this.bossRelease(p, 'idle');
+  }
+
+  // the AI takes the boss back from its player (who left, went AFK or sat idle): a monster of the boss's type where the
+  // body stood, with its health; the player (if still here) rises as their own class again in 2 s
+  bossRelease(p, why) {
+    if (this.bossPlayer !== p) return false;
+    const a = this.a, mo = p.mo, cls = ZCLASS[p.zclass];
+    this.bossPlayer = null;
+    if (!mo || !cls || !cls.boss) return false;
+    const x = mo.x, y = mo.y, angle = mo.angle, health = Math.max(1, mo.health);
+    let nm = null;
+    a.run(() => {
+      if (!mo.removed) { mo.player = null; mo.boss = false; removeMobj(mo); }
+      if (p.mo === mo) p.mo = null;
+      p.playerstate = 'dead';
+      p.deathTime = a.leveltime - this.respawnTics + 2 * TICRATE;
+      p.zbossMax = 0;
+      if (a.director) {
+        nm = a.director.placeAt(cls.type, x, y, angle, { health, boss: true, awake: true });
+        if (!nm) nm = a.director.spawn(cls.type, { health, boss: true, minDist: 300, close: true });
+      }
+      if (nm) { nm.maxHealth = this.bossMax; startSound(nm, nm.info.seesound || 'brssit'); }
+    });
+    if (nm) this.boss = nm;
+    a.events.push({ type: 'zeBossBack', player: p, name: this.bossName, why });
+    return true;
   }
 
   // ---------------------------------------------------------------- humans
@@ -393,6 +532,8 @@ class ZeArena {
     let g = null;
     const s = this.active();
     if (s && s.d.zone) { const c = this.zoneCentre(s.d.zone); if (c) g = { x: c.x, y: c.y, zone: s.d.zone, hold: true }; }
+    // a boss stage: go and fight it (bots keep their distance, bot code)
+    else if (s && s.d.boss && this.boss && !this.boss.removed && this.boss.health > 0) g = { x: this.boss.x, y: this.boss.y, boss: this.boss };
     if (!g) {
       for (const p of this.stages) {
         if (p.state !== 'pending') continue;
@@ -435,7 +576,7 @@ class ZeDirector extends MonsterDirector {
     this.capN = Math.max(8, Math.min(64, zs.cap || zcfg.cap));   // live zombies here (AI + players)
     this.reserve = [];            // map monsters that didn't fit under the cap at the start: they come in later at their own spots
     this.roster = [];             // [type, weight]: what the respawning horde is made of (the map's own mix)
-    this.nextFill = 0; this.nextTrim = 0;
+    this.nextFill = 0; this.nextTrim = -1e9;
     this.aliveNow = 0;
     this.begun = false;
   }
@@ -454,6 +595,14 @@ class ZeDirector extends MonsterDirector {
     return Math.max(0, Math.min(this.capN - this.zombiePlayers(), this.zcfg.aiBase + this.zcfg.aiPerHuman * h));
   }
 
+  // the share of a level's monsters (and of each spawn group) used now, by the side's humans at the start: about all
+  // of them from 8 humans up, about half for 4, a third for 2 (spawn groups and trickles too)
+  mapScale() {
+    const h = Math.max(1, this.round().zeSizes[this.ze.side] || this.players().length);
+    return Math.max(0.3, Math.min(1, this.zcfg.mapScaleBase + this.zcfg.mapScalePerHuman * h));
+  }
+  round() { return this.ze.round; }
+
   pickType(ai) {
     if (ai) { const e = Object.entries(ai).filter(([k, n]) => MT[k] !== undefined && n > 0); if (e.length) return weightedPick(e); }
     return weightedPick(this.roster.length ? this.roster : ZE_DEFAULT_ROSTER);
@@ -467,11 +616,17 @@ class ZeDirector extends MonsterDirector {
     const mm = ((this.ze.sc.zombies || {}).map_monsters) || {};
     const replace = mm.replace || {}, drop = new Set(mm.drop || []);
     const mix = new Map();
+    // a level's monsters are many for a few humans: fewer humans than the map was made for -> an even share of them
+    // is placed now and the rest wait in the reserve (they come in as the fill asks for AI)
+    const r = this.mapScale();
+    let acc = 0;
     for (const m of a.mapMonsters) {
       let key = replace[m.key] || m.key;
       if (drop.has(key) || drop.has(m.key) || MT[key] === undefined) continue;
       if (!ZE_FILL_SKIP.has(key)) mix.set(key, (mix.get(key) || 0) + 1);
-      if (this.alive() >= this.capN) { this.reserve.push(Object.assign({}, m, { key })); continue; }
+      acc += r;
+      if (acc < 1 || this.alive() >= this.capN) { this.reserve.push(Object.assign({}, m, { key })); continue; }
+      acc -= 1;
       a.run(() => this.placeAt(key, m.x, m.y, m.angle, { ambush: m.ambush }));
     }
     this.roster = Array.from(mix.entries());
@@ -588,18 +743,34 @@ class ZeDirector extends MonsterDirector {
       if (!ok) ok = this.spawn(this.pickType(null), { minDist: 500 });
       this.nextFill = a.leveltime + (ok ? this.zcfg.fillGapTics : 2 * TICRATE);
     }
-    // over the cap (zombie players joined): the AI furthest from every human and out of the fight goes away
-    if (alive + zp > this.capN && a.leveltime >= this.nextTrim) {
-      this.nextTrim = a.leveltime + 2 * TICRATE;
+    // over the cap (zombie players joined): the AI furthest from every human and out of the fight goes away (far off,
+    // or at least 400 away and out of every human's sight); the further over, the quicker
+    const over = alive + zp - this.capN;
+    if (over > 0 && a.leveltime >= this.nextTrim + (over > 2 ? 8 : 2 * TICRATE)) {
+      this.nextTrim = a.leveltime;   // the last trim
       const hs = this.players();
-      let worst = null, wd = 0;
+      const cands = [];
+      let far = null;
       for (const m of a.mobjs) {
         if (m.info.kind !== 'monster' || m.health <= 0 || m.boss) continue;
         let near = 1e9;
         for (const p of hs) { const d = Math.hypot(p.mo.x - m.x, p.mo.y - m.y); if (d < near) near = d; }
-        if (near > wd && near > 1200) { wd = near; worst = m; }
+        if (near > 400) cands.push({ m, near });
+        else if (near > 160 && (!far || near > far.near)) far = { m, near };
       }
-      if (worst) a.run(() => { this.spawned--; removeMobj(worst); });
+      cands.sort((x, y) => y.near - x.near);
+      if (!cands.length && far) cands.push(far);
+      // up to `over` of them at once (a burst of humans dying brings that many zombie players in on one tic)
+      const gone = [];
+      a.run(() => {
+        for (const c of cands.slice(0, 12)) {
+          if (gone.length >= over) break;
+          if (c.near > 1200 || !hs.some((p) => checkSight(p.mo, c.m))) gone.push(c.m);
+        }
+      });
+      // well over and everything is in sight: the furthest one that isn't right on top of a human goes anyway
+      if (!gone.length && over > 2 && cands.length) gone.push(cands[0].m);
+      if (gone.length) a.run(() => { for (const m of gone) { this.spawned--; removeMobj(m); } });
     }
     if ((a.leveltime % (5 * TICRATE)) < 8) this.unstick();
   }
@@ -635,7 +806,7 @@ class ZeDirector extends MonsterDirector {
       if (re) { this.spawned--; removeMobj(m); }
     }
     for (const p of a.players.values()) {
-      if (!p.zclass || p.playerstate !== 'live' || !p.mo || !far(p.mo.x, p.mo.y)) continue;
+      if (!p.zclass || p.playerstate !== 'live' || !p.mo || p.mo.boss || !far(p.mo.x, p.mo.y)) continue;
       const s = this.zeSpot(p.mo.info, { minDist: 350, close: true });
       if (!s) continue;
       const ox = p.mo.x, oy = p.mo.y, oz = p.mo.z;
@@ -696,6 +867,7 @@ class ZeRound extends RoundManager {
     this.roundNumber++;
     this.time = 0;
     this.zeResult = null; this.wipedAt = {}; this.seen = new Set(); this.zeStarted = false;
+    for (const pe of this.people.values()) pe.zeHumanKills = 0;   // humans killed as a zombie this round (boss takeover)
     if (eligible.length < this.cfg.minPlayersToStart) {
       this.state = 'idle';
       this.events.push({ type: 'notEnough', count: eligible.length });
@@ -777,12 +949,58 @@ class ZeRound extends RoundManager {
     return p;
   }
 
+  // the classes a zombie player may be in this arena (the sidecar's list, else the config's); never a boss body
+  classList(arena) {
+    const sc = (arena && arena.ze && arena.ze.sc.zombies) || {};
+    const list = (sc.player_classes || this.zcfg.classes).filter((k) => ZCLASS[k] && !ZCLASS[k].boss);
+    return list.length ? list : ['IMP'];
+  }
+
+  // the class of a zombie's next body: a person's own pick (kept across deaths and rounds; the first one by slot),
+  // a bot's by what the horde in that arena lacks
   pickClass(pe, arena) {
-    const sc = (arena.ze && arena.ze.sc.zombies) || {};
-    const list = (sc.player_classes || this.zcfg.classes).filter((k) => ZCLASS[k]);
-    const use = list.length ? list : ['IMP'];
-    pe.zeClassN = (pe.zeClassN === undefined ? pe.slot : pe.zeClassN + 1);
-    return use[pe.zeClassN % use.length];
+    const list = this.classList(arena);
+    if (pe.bot) return this.botClass(pe, arena, list);
+    if (pe.zeClassPick === undefined || !ZCLASS[pe.zeClassPick]) pe.zeClassPick = list[pe.slot % list.length];
+    return list.includes(pe.zeClassPick) ? pe.zeClassPick : list[0];
+  }
+
+  // bots pick by need: each class has a share of the zombie players that suits the stage (holds want demons to break
+  // the line and imps to shoot over it; open running wants lost souls too); the class furthest below its share wins.
+  // A bot that died within 6 s of rising tries something else.
+  botClass(pe, arena, list) {
+    if (list.length === 1) return list[0];
+    const p = pe.player, count = {};
+    let n = 0;
+    for (const q of arena.players.values()) {
+      if (q === p || !q.zclass || q.spectating || !list.includes(q.zclass)) continue;
+      count[q.zclass] = (count[q.zclass] || 0) + 1; n++;
+    }
+    const s = arena.ze && arena.ze.active();
+    const want = s && s.d.boss ? ZE_BOT_SHARE.boss : s && s.d.zone ? ZE_BOT_SHARE.hold : ZE_BOT_SHARE.run;
+    const last = p && p.zclass, short = !!p && p.zeSpawns > 0 && p.deathTime - p.spawnTime < 6 * TICRATE;
+    let best = list[0], bv = -Infinity;
+    for (const k of list) {
+      let v = (want[k] || 0.2) * (n + 1) - (count[k] || 0) + (P_Random() & 15) / 64;
+      if (short && k === last) v -= 1;
+      if (v > bv) { bv = v; best = k; }
+    }
+    return best;
+  }
+
+  // a dead zombie player cycles their class (the weapon keys); the next body is that class. dir: +1 / -1
+  zeCycleClass(pe, dir) {
+    const p = pe && pe.player, a = pe && pe.arena;
+    if (!p || !a || !p.zclass || p.spectating || this.zeResult || (ZCLASS[p.zclass] && ZCLASS[p.zclass].boss)) return false;
+    if (p.playerstate === 'live' && p.mo && !p.mo.removed) return false;
+    if (a.leveltime - (p.deathTime || 0) < ZE_CLASS_PICK_GUARD) return false;   // an ability key pressed at the moment of death
+    const list = this.classList(a);
+    let i = list.indexOf(p.zclass);
+    i = i < 0 ? 0 : (i + (dir < 0 ? -1 : 1) + list.length) % list.length;
+    pe.zeClassPick = list[i];
+    makeZombie(p, list[i]);
+    this.events.push({ type: 'zeClass', person: pe, cls: list[i] });
+    return true;
   }
 
   // a human dead for the kill delay becomes a zombie in the other arena; the corpse stays where it fell
@@ -802,7 +1020,9 @@ class ZeRound extends RoundManager {
   }
 
   spawnZombie(a, p) {
-    if (p.zeSpawns > 0) makeZombie(p, this.pickClass(p.person, a));   // a new body each time: the class rotates
+    // a new body each time: the person's pick (changed while dead), a bot's by need, back from a boss body
+    if (p.zeSpawns > 0 || (ZCLASS[p.zclass] && ZCLASS[p.zclass].boss)) makeZombie(p, this.pickClass(p.person, a));
+    p.zbossMax = 0;
     const c = ZCLASS[p.zclass];
     const info = MOBJINFO[c.mt];
     let s = a.director.zeSpot(info, { minDist: 420 }) || a.director.zeSpot(info, { minDist: 250, close: true });
@@ -824,6 +1044,8 @@ class ZeRound extends RoundManager {
 
   leaveArena(pe, why) {
     if (pe.arena) this.seen.add(this.seenKey(pe));
+    // a boss's player leaving (disconnect, team change, AFK, spectate): the AI takes the boss back before the body goes
+    if (pe.arena && pe.arena.ze && pe.player && pe.arena.ze.bossPlayer === pe.player) pe.arena.ze.bossRelease(pe.player, why || 'left');
     super.leaveArena(pe, why);
   }
 
@@ -894,6 +1116,20 @@ class ZeRound extends RoundManager {
     this.checkAllEnds();
   }
 
+  // a dead zombie player's wait: the sidecar's (or the config's) respawn time, longer while zombie players outnumber
+  // the arena's live humans (zRespawnCatchup x the ratio over 1, at most zRespawnMax times): the last few humans get room
+  // to breathe instead of being buried by every teammate they lost. Worked out once per tic per arena.
+  zombieRespawnTics(a) {
+    if (a.zRespawnAt === a.leveltime) return a.zRespawnNow;
+    const z = this.zcfg;
+    let zp = 0, h = 0;
+    for (const p of a.players.values()) { if (p.spectating) continue; if (p.zclass) zp++; else if (p.playerstate === 'live') h++; }
+    const over = Math.max(0, zp / Math.max(1, h) - 1);
+    a.zRespawnAt = a.leveltime;
+    a.zRespawnNow = Math.round(a.ze.respawnTics * Math.min(z.zRespawnMax, 1 + z.zRespawnCatchup * over));
+    return a.zRespawnNow;
+  }
+
   zeArenaRules(a) {
     if (a.finished) return;
     let swaps = null;
@@ -903,7 +1139,7 @@ class ZeRound extends RoundManager {
         if (p.playerstate !== 'dead') continue;
         if (p.zeSwapAt === undefined) p.zeSwapAt = this.time + this.zcfg.killDelayTics;
         else if (this.time >= p.zeSwapAt && p.person) (swaps || (swaps = [])).push(p.person);
-      } else if ((p.playerstate === 'dead' || !p.mo) && a.countdown <= 0 && p.respawnGate !== false && a.leveltime - p.deathTime >= a.ze.respawnTics) {
+      } else if ((p.playerstate === 'dead' || !p.mo) && a.countdown <= 0 && p.respawnGate !== false && a.leveltime - p.deathTime >= this.zombieRespawnTics(a)) {
         a.run(() => this.spawnZombie(a, p));
       }
     }

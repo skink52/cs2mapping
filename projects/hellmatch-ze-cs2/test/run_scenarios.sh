@@ -21,4 +21,6 @@ run latejoin 4 2 25
 run teamchange 4 2 20
 run afk 4 2 45 afk
 run warmup 4 2 20 warmup
+run class_choice 4 4 40
+run boss_takeover 4 4 52
 exit $fail

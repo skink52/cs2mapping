@@ -85,7 +85,9 @@ function navSearch(level, nav, from, to, fx, fy) {
     for (const e of nav[u]) {
       if (done[e.to]) continue;
       const pp = portalPoint(e.line, px[u], py[u]);
-      const d = dist[u] + Math.hypot(pp.x - px[u], pp.y - py[u]);
+      // a damaging floor (nukage, blood, lava) costs a detour's worth: bots walk round it when there is a way round
+      const sp = level.sectors[e.to].special;
+      const d = dist[u] + Math.hypot(pp.x - px[u], pp.y - py[u]) + (sp === 4 || sp === 5 || sp === 7 || sp === 11 || sp === 16 ? 768 : 0);
       if (d < dist[e.to]) { dist[e.to] = d; px[e.to] = pp.x; py[e.to] = pp.y; first[e.to] = u === from ? e : first[u]; }
     }
   }

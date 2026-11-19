@@ -1,0 +1,381 @@
+{
+  "map": "E1M1",
+  "wad": "levels/e1m1.wad",
+  "wad_sha1": "00f4bc5c884e8ee00e207be42953415888e84c7e",
+  "title": "Outer Prison",
+  "author_credit": "Freedoom CREDITS-LEVELS (E1M1)",
+  "time_limit": 600,
+  "humans": {
+    "start": "player_starts",
+    "health": 100,
+    "loadout": [
+      "pistol",
+      "shotgun"
+    ],
+    "keys": "remove"
+  },
+  "zombies": {
+    "cap": 48,
+    "map_monsters": {
+      "use": true,
+      "skill": "hard",
+      "replace": {
+        "SHOTGUY": "IMP",
+        "CHAINGUY": "DEMON"
+      },
+      "drop": []
+    },
+    "player_classes": [
+      "IMP",
+      "DEMON",
+      "LOSTSOUL"
+    ],
+    "respawn_seconds": 4
+  },
+  "spawn_groups": {
+    "cell_block": {
+      "sectors": [
+        156,
+        157,
+        158,
+        159,
+        161,
+        163
+      ],
+      "ai": {
+        "ZOMBIE": 4,
+        "IMP": 2,
+        "DEMON": 1
+      },
+      "trickle": {
+        "every": 6,
+        "max": 12
+      }
+    },
+    "west_atrium": {
+      "sectors": [
+        91,
+        150
+      ],
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2,
+        "ZOMBIE": 2
+      },
+      "trickle": {
+        "every": 5,
+        "max": 12
+      }
+    },
+    "south_yard": {
+      "sectors": [
+        57
+      ],
+      "ai": {
+        "IMP": 4,
+        "DEMON": 2,
+        "SPECTRE": 1
+      },
+      "trickle": {
+        "every": 5,
+        "max": 14
+      }
+    },
+    "atrium_gate": {
+      "sectors": [
+        148,
+        149
+      ],
+      "ai": {
+        "IMP": 2,
+        "DEMON": 2
+      },
+      "trickle": {
+        "every": 7,
+        "max": 8
+      }
+    },
+    "flood_hall": {
+      "sectors": [
+        125,
+        123
+      ],
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 10
+      }
+    },
+    "cave_mouth": {
+      "sectors": [
+        35,
+        26
+      ],
+      "ai": {
+        "IMP": 3,
+        "LOSTSOUL": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 10
+      }
+    },
+    "cave_floor": {
+      "sectors": [
+        181,
+        39,
+        14
+      ],
+      "ai": {
+        "DEMON": 3,
+        "IMP": 4,
+        "LOSTSOUL": 2
+      },
+      "trickle": {
+        "every": 4,
+        "max": 16
+      }
+    }
+  },
+  "blocks": [
+    {
+      "id": "north_door",
+      "lines": [
+        55,
+        577
+      ],
+      "until": "never"
+    },
+    {
+      "id": "side_cells",
+      "lines": [
+        201,
+        203,
+        537,
+        539
+      ],
+      "until": "never"
+    },
+    {
+      "id": "south_gate",
+      "lines": [
+        599,
+        602
+      ],
+      "until": "stage:2"
+    },
+    {
+      "id": "cave_door",
+      "lines": [
+        345,
+        698
+      ],
+      "until": "stage:3"
+    },
+    {
+      "id": "pit_rim",
+      "lines": [
+        5,
+        98,
+        99,
+        100,
+        251,
+        252,
+        271,
+        288,
+        316,
+        326,
+        526,
+        531,
+        797,
+        798,
+        978,
+        980,
+        981,
+        1001,
+        1004,
+        1008,
+        1083
+      ],
+      "until": "stage:4"
+    }
+  ],
+  "stages": [
+    {
+      "id": 1,
+      "name": "HOLD THE SOUTH GATE",
+      "start": "round",
+      "hold": 52,
+      "zone": {
+        "sector": 149
+      },
+      "zombie_spawns": [
+        "cell_block",
+        "west_atrium"
+      ],
+      "on_start": [
+        {
+          "message": "HOLD THE SOUTH GATE OF THE ATRIUM"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "south_gate"
+        },
+        {
+          "lower_lift": {
+            "sector": 103,
+            "perpetual": true
+          }
+        },
+        {
+          "open_door": {
+            "sector": 100
+          }
+        },
+        {
+          "message": "THE SOUTH GATE IS OPEN"
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "HOLD THE FLOODED HALL",
+      "start": {
+        "stage_done": 1
+      },
+      "hold": 59,
+      "zone": {
+        "sector": 120
+      },
+      "zombie_spawns": [
+        "south_yard",
+        "atrium_gate"
+      ],
+      "on_start": [
+        {
+          "spawn_group": "south_yard"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "cave_door"
+        },
+        {
+          "open_door": {
+            "sector": 54,
+            "speed": "slow"
+          }
+        },
+        {
+          "message": "THE CAVE DOOR IS OPENING"
+        },
+        {
+          "teleport_zombies": {
+            "behind": true
+          }
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "SLAY THE CAVE SLUG",
+      "start": {
+        "line_crossed": 149
+      },
+      "boss": {
+        "type": "MANCUBUS",
+        "at": [
+          2352,
+          1222,
+          225
+        ],
+        "health_scale": "players",
+        "music": "boss"
+      },
+      "zombie_spawns": [
+        "flood_hall",
+        "cave_mouth"
+      ],
+      "on_start": [
+        {
+          "message": "A COMBAT SLUG NESTS IN THE CAVE"
+        },
+        {
+          "music": "boss"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "pit_rim"
+        },
+        {
+          "message": "DROP INTO THE PIT - RUN NORTH"
+        },
+        {
+          "open_door": {
+            "sector": 71,
+            "speed": "fast"
+          }
+        },
+        {
+          "score": 2
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "ESCAPE",
+      "start": {
+        "stage_done": 3
+      },
+      "hold": 30,
+      "zone": {
+        "sectors": [
+          66,
+          67
+        ]
+      },
+      "escape": true,
+      "zombie_spawns": [
+        "cave_floor",
+        "cave_mouth"
+      ],
+      "on_start": [
+        {
+          "spawn_group": "cave_floor"
+        },
+        {
+          "open_door": {
+            "sector": 51
+          }
+        },
+        {
+          "open_door": {
+            "sector": 64
+          }
+        },
+        {
+          "message": "BLUE WING - RUN TO THE EXIT AND HOLD IT"
+        }
+      ],
+      "on_done": [
+        {
+          "message": "ESCAPED"
+        },
+        {
+          "score": 3
+        }
+      ]
+    }
+  ]
+}

@@ -244,7 +244,7 @@ function hudPlayer(slot, p, arena, info) {
   // numbers
   const ammoType = WEAPONINFO[p.readyweapon].ammo;
   hudNumber(slot, "fdm_ammo", 3, ammoType === AM_NOAMMO ? null : p.ammo[ammoType], "b");
-  hudNumber(slot, "fdm_hp", 3, p.health, "b");
+  hudNumber(slot, "fdm_hp", 3, p.zbossMax ? Math.ceil(100 * Math.max(0, p.health) / p.zbossMax) : p.health, "b");   // a player boss: percent
   hudNumber(slot, "fdm_ar", 3, p.armorpoints, "b");
   const fragVal = arena && arena.teamsActive && p.team >= 0 ? arena.teamScore[p.team] : p.frags;
   hudNumber(slot, "fdm_frag", 3, fragVal, "b");

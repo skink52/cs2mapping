@@ -71,10 +71,22 @@ def parse_textures(defined=('FREEDM',)):
 TEXDEFS = parse_textures()
 
 _tc = {}
+TEXSET = ('FREEDM',)
 def set_texture_set(defined):
     """switch the texture definitions (e.g. ('DOOM1_VERSIONS',) for Phase 1 maps, () for Phase 2)"""
-    global TEXDEFS
-    TEXDEFS = parse_textures(defined); _tc.clear()
+    global TEXDEFS, TEXSET
+    TEXDEFS = parse_textures(defined); _tc.clear(); TEXSET = tuple(defined)
+
+_d1diff = None
+def d1_suffix(name):
+    """'_d1' when the current set is Phase 1's and `name` is one of the textures Phase 1 defines differently from Phase 2
+    (textures.cfg #ifdef DOOM1_VERSIONS: BIGDOOR7, STEP*, SW*, SKY*...), so both versions can live in one addon"""
+    global _d1diff
+    if 'DOOM1_VERSIONS' not in TEXSET: return ''
+    if _d1diff is None:
+        a, b = parse_textures(('DOOM1_VERSIONS',)), parse_textures(())
+        _d1diff = {k for k in a if b.get(k) != a[k]}
+    return '_d1' if name.upper() in _d1diff else ''
 
 def texture(name):
     name = name.upper()

@@ -11,8 +11,12 @@ const CONFIG = {
     DRAW_WINDOW_TICS: 35,        // both sides wiped within this many tics of each other: a draw
     ZOMBIE_RESPAWN: 4,           // seconds before a dead zombie comes back (behind the humans), unless the sidecar says otherwise
     TIME_LIMIT: 600,             // seconds, unless the sidecar's time_limit says otherwise; then most live humans, then furthest stage
-    AI_BASE: 6, AI_PER_HUMAN: 2, // AI zombies wanted in an arena: AI_BASE + AI_PER_HUMAN x live humans (capped by CAP)
+    AI_BASE: 2, AI_PER_HUMAN: 2.5, // AI zombies wanted in an arena: AI_BASE + AI_PER_HUMAN x live humans (capped by CAP)
+    AI_DAMAGE: 0.6,              // the AI horde's hits on humans, against Doom's (1 = Doom's own)
+    ZOMBIE_DAMAGE: 1,            // zombie players' claw / bite / lunge / dash (the classes' own numbers x this)
+    ZOMBIE_HP: 1,                // zombie players' health (x this, on top of the scaling by the humans they hunt)
     KNOCKBACK: 1.6,              // shots push zombie players this much harder than Doom's mass rule alone
+    BOSS_TAKEOVER: true,         // a zombie player may take over a stage boss (E within 5 s of it appearing)
     CLASSES: ["IMP", "DEMON", "LOSTSOUL"],   // zombie classes in rotation when the sidecar doesn't list its own
     DRAW_DIST: 3000,             // Doom units: things farther than this from everyone looking at an arena are not drawn (props freed)
     HOLD_SCORE: 1, ESCAPE_SCORE: 3,          // CS2 score for each live human when a hold completes / for an escape

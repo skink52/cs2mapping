@@ -264,6 +264,10 @@ function damageMobj(target, inflictor, source, damage) {
   }
   if (player) {
     if (damage < 10000 && player.powers[PW_INVULN]) return;
+    // ZE: the AI horde hits humans for less than Doom's monsters (there are dozens of them and they never stop coming)
+    if (G.ze && !player.zclass && damage < 10000 && source && source.info && source.info.kind === 'monster') damage = Math.max(1, Math.round(damage * G.ze.round.zcfg.aiDamage));
+    // ... and a stage boss (AI or player-driven) by its type (ZE_BOSS_TUNE: the rapid-fire ones hit for less)
+    if (G.ze && !player.zclass && damage < 10000 && source && source.boss) damage = Math.max(1, Math.round(damage * zeBossTune(source).dmg));
     if (player.armortype) {
       let saved = player.armortype === 1 ? Math.floor(damage / 3) : Math.floor(damage / 2);
       if (player.armorpoints <= saved) { saved = player.armorpoints; player.armortype = 0; }

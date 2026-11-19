@@ -20,8 +20,15 @@ const DEFAULT_CFG = {
   staggerArenas: false,
   // Hellmatch ZE (75_ze.js): cap = live zombies per arena (AI + players); AI wanted = aiBase + aiPerHuman x live humans
   ze: { cap: 48, killDelayTics: TICRATE, drawWindowTics: TICRATE, zombieRespawnTics: 4 * TICRATE, zombieFirstTics: 2 * TICRATE,
-    timeLimitTics: 600 * TICRATE, aiBase: 6, aiPerHuman: 2, fillGapTics: Math.round(1.2 * TICRATE), lateHumanTics: 120 * TICRATE,
-    classes: ['IMP', 'DEMON', 'LOSTSOUL'], holdScore: 1, escapeScore: 3, map: null },
+    timeLimitTics: 600 * TICRATE, aiBase: 2, aiPerHuman: 2.5, fillGapTics: Math.round(1.2 * TICRATE), lateHumanTics: 120 * TICRATE,
+    classes: ['IMP', 'DEMON', 'LOSTSOUL'], holdScore: 1, escapeScore: 3, map: null,
+    // balance (test/sim_ze.cjs runs, 19 Nov 2026): the AI hits humans for 0.6 of Doom; a level's monsters are scaled by the
+    // side's humans (mapScaleBase + mapScalePerHuman x humans, 0.3..1); a zombie player's health by its arena's live humans
+    // (zHpBase + zHpPerHuman x humans, zHpMin..zHpMax); zDamage / zHp scale zombie players' hits and health on top
+    zDamage: 1, zHp: 1, aiDamage: 0.6, mapScaleBase: 0.1, mapScalePerHuman: 0.11,
+    zHpBase: 0.4, zHpPerHuman: 0.075, zHpMin: 0.55, zHpMax: 1.2,
+    bossTakeover: true, bossAfkTics: 10 * TICRATE,
+    zRespawnCatchup: 0.5, zRespawnMax: 3 },   // zombie players' respawn x (1 + catchup x (zombie players / live humans - 1)), at most x max   // a zombie player may drive a stage boss; idle this long -> AI again   // zombie players' hits, their health, and the AI's damage to humans (multipliers)
   arena: { zeKnockback: 1.6, altdeath: true, itemRespawnTics: 30 * TICRATE, spawnProtectTics: 2 * TICRATE, freelookAim: true, viewBob: true, botSkill: 0.35, teamSuicidePenalty: true,
     maxMonsterCorpses: 24, maxLostSouls: 20 },
 };

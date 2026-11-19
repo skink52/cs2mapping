@@ -6,7 +6,7 @@ usage: vmap_env.py <current.vmap> <out.vmap> <addon_out_dir>
 Everything this writes is tagged with the vis group "fdm_env", so running it again replaces its own work and leaves
 the rest of the map (including anything placed by hand in Hammer) untouched.
 """
-import os, sys, json
+import os, re, sys, json
 sys.path.insert(0, os.path.dirname(__file__))
 import dmx
 from vmaplib import *
@@ -138,10 +138,14 @@ for k, sn in enumerate(missing_snd):
 print('env: %d new sprite models, %d new sounds added to the map' % (len(missing_models), len(missing_snd)))
 
 # ---------------------------------------------------------------- level geometry props: always match the current build
+LEVEL_MODEL = re.compile(r'models/fdm/(map\d\d|e\dm\d|dm\d\d|m\d\d)/')   # m01.. = Hellmatch's FreeDM levels
+
+
 def is_level_prop(c):
     if c.type != 'CMapEntity': return False
     ep = c.get('entity_properties')
-    return ep.get('classname') in ('prop_static', 'prop_dynamic') and (ep.get('model') or '').startswith('models/fdm/m')
+    # every converted level's models: models/fdm/<level>/ (MAPnn, ExMy for Phase 1 ZE levels, DMnn); not models/fdm/spr
+    return ep.get('classname') in ('prop_static', 'prop_dynamic') and bool(LEVEL_MODEL.match(ep.get('model') or ''))
 
 props = json.load(open(os.path.join(OUT, '_gen/props.json')))
 for p in props:

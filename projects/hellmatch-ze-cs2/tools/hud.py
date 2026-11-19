@@ -257,6 +257,15 @@ M = names.MAP
 PRELOAD = (('FdmPre1', 'map_icons/screenshots/1080p/%s.png' % M), ('FdmPre2', 'overheadmaps/%s_radar.psd' % M),
            ('FdmPre3', 'map_icons/map_icon_%s.svg' % M), ('FdmPre4', 'map_icons/screenshots/1080p/%s_1.png' % M),
            ('FdmPre5', 'map_icons/screenshots/1080p/%s_2.png' % M))
+# one loading screen per ZE level after those (tools/loading.py level_screens: <map>_3, _4, ...)
+try:
+    import json as _json
+    _bases = []
+    for _L in _json.load(open(os.path.join(OUT, '_gen/levels.json'))):
+        if _L['base'] not in _bases: _bases.append(_L['base'])
+except (OSError, ValueError, KeyError):
+    _bases = []
+PRELOAD += tuple(('FdmPre%d' % (6 + i), 'map_icons/screenshots/1080p/%s_%d.png' % (M, 3 + i)) for i in range(len(_bases)))
 for cls, src in PRELOAD:
     rule('.' + cls, width='1px', height='1px', opacity='0', visibility='collapse', background_image='url("file://{images}/%s")' % src)
 preload = P(None, 'FdmPreload', [P(None, cls) for cls, _ in PRELOAD])

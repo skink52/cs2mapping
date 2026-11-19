@@ -83,8 +83,8 @@ function zeBotThink(arena, p) {
       if (aimed && dist < reach) cmd.buttons |= BT_ATTACK;
       else if (aimed && ready) {
         if (p.zclass === 'IMP' && dist > 180 && dist < 1400 && P_Random() < 60) cmd.buttons |= BT_ALT;
-        else if (p.zclass === 'DEMON' && dist > 90 && dist < 420) cmd.buttons |= BT_ALT;
-        else if (p.zclass === 'LOSTSOUL' && dist < 560) cmd.buttons |= BT_ALT;
+        else if (p.zclass === 'DEMON' && dist > 90 && dist < 260) cmd.buttons |= BT_ALT;     // a lunge carries ~240
+        else if (p.zclass === 'LOSTSOUL' && dist > 48 && dist < 300) cmd.buttons |= BT_ALT;  // a dash carries ~290
       }
     } else {
       // hunt: the nearest human by the sector graph
@@ -108,6 +108,11 @@ function zeBotThink(arena, p) {
       if (g.hold && inside && dg < 200) {
         moveAng = away;
         if (moveAng === null && (lt % 50) < 12) moveAng = normAngle(mo.angle + 90 * b.strafe);   // shuffle in place
+      } else if (g.boss && dg < 420 && arena.run(() => checkSight(mo, g.boss))) {
+        // in sight of the boss: circle it at a distance (backing off when it comes close), shooting
+        const toward = pointToAngle(mo.x, mo.y, g.x, g.y);
+        moveAng = away !== null ? away : dg < 260 ? normAngle(toward + 180 + 45 * b.strafe) : normAngle(toward + 90 * b.strafe);
+        if (!t) face = toward;
       } else moveAng = zeBotRoute(arena, p, b, g.x, g.y);
       if (g.use && dg < 80) {
         const lx = (g.use.x1 + g.use.x2) / 2, ly = (g.use.y1 + g.use.y2) / 2;

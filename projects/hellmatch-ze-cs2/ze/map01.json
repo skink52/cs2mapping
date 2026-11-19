@@ -5,51 +5,327 @@
   "title": "Hydroelectric Plant",
   "author_credit": "Freedoom CREDITS-LEVELS (MAP01)",
   "time_limit": 540,
-  "humans": { "start": "player_starts", "health": 100, "loadout": ["pistol", "shotgun"], "keys": "remove" },
+  "humans": {
+    "start": "player_starts",
+    "health": 100,
+    "loadout": [
+      "pistol",
+      "shotgun"
+    ],
+    "keys": "remove"
+  },
   "zombies": {
     "cap": 48,
-    "map_monsters": { "use": true, "skill": "hard", "replace": { "SHOTGUY": "IMP", "CHAINGUY": "DEMON" }, "drop": [] },
-    "player_classes": ["IMP", "DEMON", "LOSTSOUL"],
+    "map_monsters": {
+      "use": true,
+      "skill": "hard",
+      "replace": {
+        "SHOTGUY": "IMP",
+        "CHAINGUY": "DEMON"
+      },
+      "drop": []
+    },
+    "player_classes": [
+      "IMP",
+      "DEMON",
+      "LOSTSOUL"
+    ],
     "respawn_seconds": 4
   },
   "spawn_groups": {
-    "start_corridor": { "sectors": [8, 9, 10, 129], "ai": { "ZOMBIE": 4, "IMP": 3, "DEMON": 1 }, "trickle": { "every": 6, "max": 12 } },
-    "hall":           { "sectors": [29, 30], "ai": { "IMP": 4, "DEMON": 2, "ZOMBIE": 2 }, "trickle": { "every": 5, "max": 14 } },
-    "pump_north":     { "points": [[1904, -96, 270], [2000, 0, 270], [1856, 48, 270], [1952, -448, 270]], "radius": 64,
-                        "ai": { "IMP": 3, "DEMON": 3 }, "trickle": { "every": 6, "max": 10 } },
-    "boss_room":      { "sectors": [178], "ai": { "IMP": 3, "DEMON": 2 }, "trickle": { "every": 6, "max": 10 } },
-    "flood_cave":     { "sectors": [137, 150], "ai": { "DEMON": 3, "IMP": 4, "LOSTSOUL": 2 }, "trickle": { "every": 4, "max": 16 } }
+    "start_corridor": {
+      "sectors": [
+        8,
+        9,
+        10,
+        129
+      ],
+      "ai": {
+        "ZOMBIE": 4,
+        "IMP": 3,
+        "DEMON": 1
+      },
+      "trickle": {
+        "every": 6,
+        "max": 12
+      }
+    },
+    "hall": {
+      "sectors": [
+        29,
+        30
+      ],
+      "ai": {
+        "IMP": 4,
+        "DEMON": 2,
+        "ZOMBIE": 2
+      },
+      "trickle": {
+        "every": 5,
+        "max": 14
+      }
+    },
+    "pump_north": {
+      "points": [
+        [
+          1904,
+          -96,
+          270
+        ],
+        [
+          2000,
+          0,
+          270
+        ],
+        [
+          1856,
+          48,
+          270
+        ],
+        [
+          1952,
+          -448,
+          270
+        ]
+      ],
+      "radius": 64,
+      "ai": {
+        "IMP": 3,
+        "DEMON": 3
+      },
+      "trickle": {
+        "every": 6,
+        "max": 10
+      }
+    },
+    "boss_room": {
+      "sectors": [
+        178
+      ],
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 10
+      }
+    },
+    "flood_cave": {
+      "sectors": [
+        137,
+        150
+      ],
+      "ai": {
+        "DEMON": 3,
+        "IMP": 4,
+        "LOSTSOUL": 2
+      },
+      "trickle": {
+        "every": 4,
+        "max": 16
+      }
+    }
   },
   "blocks": [
-    { "id": "north_lift", "lines": [453, 597, 630, 827], "until": "never" },
-    { "id": "back_channel", "lines": [498], "until": "never" },
-    { "id": "floodgate", "lines": [330, 332], "until": "stage:2" },
-    { "id": "pump_stairs", "lines": [364, 1084, 1085], "until": "stage:3" },
-    { "id": "turbine_door", "lines": [721, 876], "until": "stage:4" }
+    {
+      "id": "north_lift",
+      "lines": [
+        453,
+        597,
+        630,
+        827
+      ],
+      "until": "never"
+    },
+    {
+      "id": "back_channel",
+      "lines": [
+        498
+      ],
+      "until": "never"
+    },
+    {
+      "id": "floodgate",
+      "lines": [
+        330,
+        332
+      ],
+      "until": "stage:2"
+    },
+    {
+      "id": "pump_stairs",
+      "lines": [
+        364,
+        1084,
+        1085
+      ],
+      "until": "stage:3"
+    },
+    {
+      "id": "turbine_door",
+      "lines": [
+        721,
+        876
+      ],
+      "until": "stage:4"
+    }
   ],
   "stages": [
-    { "id": 1, "name": "HOLD THE FLOODGATE", "start": "round",
-      "hold": 40, "zone": { "sector": 53 },
-      "zombie_spawns": ["start_corridor", "hall"],
-      "on_start": [ { "message": "HOLD THE FLOODGATE CORRIDOR" } ],
-      "on_done": [ { "unblock": "floodgate" }, { "open_door": { "sector": 56 } }, { "message": "THE FLOODGATE IS OPEN" },
-                   { "score": 1 } ] },
-    { "id": 2, "name": "HOLD THE PUMP STATION", "start": { "stage_done": 1 },
-      "hold": 45, "zone": { "box": [1904, -992, 2080, -776] },
-      "zombie_spawns": ["hall", "pump_north"],
-      "on_start": [ { "spawn_group": "pump_north" } ],
-      "on_done": [ { "unblock": "pump_stairs" }, { "message": "THE STAIRS ARE CLEAR - GO DOWN" },
-                   { "teleport_zombies": { "behind": true } }, { "score": 1 } ] },
-    { "id": 3, "name": "DEFEAT THE TURBINE GUARDIAN", "start": { "line_crossed": 472 },
-      "boss": { "type": "BARON", "at": [1472, -896, 90], "health_scale": "players", "music": "boss" },
-      "zombie_spawns": ["pump_north"],
-      "on_start": [ { "message": "A PAIN LORD GUARDS THE TURBINES" }, { "music": "boss" } ],
-      "on_done": [ { "unblock": "turbine_door" }, { "open_door": { "sector": 161, "speed": "slow" } },
-                   { "message": "THE TURBINE DOOR IS OPENING" }, { "score": 2 } ] },
-    { "id": 4, "name": "ESCAPE", "start": { "stage_done": 3 },
-      "hold": 20, "zone": { "sectors": [143, 144] }, "escape": true,
-      "zombie_spawns": ["flood_cave", "boss_room"],
-      "on_start": [ { "spawn_group": "flood_cave" }, { "message": "RUN TO THE EXIT AND HOLD IT" } ],
-      "on_done": [ { "message": "ESCAPED" }, { "score": 3 } ] }
+    {
+      "id": 1,
+      "name": "HOLD THE FLOODGATE",
+      "start": "round",
+      "hold": 52,
+      "zone": {
+        "sector": 53
+      },
+      "zombie_spawns": [
+        "start_corridor",
+        "hall"
+      ],
+      "on_start": [
+        {
+          "message": "HOLD THE FLOODGATE CORRIDOR"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "floodgate"
+        },
+        {
+          "open_door": {
+            "sector": 56
+          }
+        },
+        {
+          "message": "THE FLOODGATE IS OPEN"
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "HOLD THE PUMP STATION",
+      "start": {
+        "stage_done": 1
+      },
+      "hold": 59,
+      "zone": {
+        "box": [
+          1904,
+          -992,
+          2080,
+          -776
+        ]
+      },
+      "zombie_spawns": [
+        "hall",
+        "pump_north"
+      ],
+      "on_start": [
+        {
+          "spawn_group": "pump_north"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "pump_stairs"
+        },
+        {
+          "message": "THE STAIRS ARE CLEAR - GO DOWN"
+        },
+        {
+          "teleport_zombies": {
+            "behind": true
+          }
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "DEFEAT THE TURBINE GUARDIAN",
+      "start": {
+        "line_crossed": 472
+      },
+      "boss": {
+        "type": "BARON",
+        "at": [
+          1472,
+          -896,
+          90
+        ],
+        "health_scale": "players",
+        "music": "boss"
+      },
+      "zombie_spawns": [
+        "pump_north"
+      ],
+      "on_start": [
+        {
+          "message": "A PAIN LORD GUARDS THE TURBINES"
+        },
+        {
+          "music": "boss"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "turbine_door"
+        },
+        {
+          "open_door": {
+            "sector": 161,
+            "speed": "slow"
+          }
+        },
+        {
+          "message": "THE TURBINE DOOR IS OPENING"
+        },
+        {
+          "score": 2
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "ESCAPE",
+      "start": {
+        "stage_done": 3
+      },
+      "hold": 30,
+      "zone": {
+        "sectors": [
+          143,
+          144
+        ]
+      },
+      "escape": true,
+      "zombie_spawns": [
+        "flood_cave",
+        "boss_room"
+      ],
+      "on_start": [
+        {
+          "spawn_group": "flood_cave"
+        },
+        {
+          "message": "RUN TO THE EXIT AND HOLD IT"
+        }
+      ],
+      "on_done": [
+        {
+          "message": "ESCAPED"
+        },
+        {
+          "score": 3
+        }
+      ]
+    }
   ]
 }

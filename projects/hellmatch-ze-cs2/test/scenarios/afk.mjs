@@ -12,4 +12,6 @@ const steps = timeline([
     want(rm(api).humansAlive(2) <= before - 1, `T humans down by one: ${before} -> ${rm(api).humansAlive(2)}`);
   }],
 ]);
-export default { setup(api) { api.manual.add(0); }, tick: (api) => { god(api); steps(api); }, check: () => [...probs] };
+// every human is invulnerable: a side wiped before 30 s would end the round and restart the AFK clock (seed-dependent)
+const allGod = (api) => { for (const a of rm(api).arenas) for (const p of a.players.values()) if (!p.zclass) p.powers[0] = 1 << 20; };
+export default { setup(api) { api.manual.add(0); }, tick: (api) => { god(api); allGod(api); steps(api); }, check: () => [...probs] };

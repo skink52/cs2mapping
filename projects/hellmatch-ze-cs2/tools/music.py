@@ -3,12 +3,19 @@ theme (pool "opener"), written as MP3s plus _gen/music.json (id, pool, seconds, 
 events, the map and the script.
 
 usage: music.py <addon_out>
+       music.py --warm map01,e1m1,...     render + check + cache those level tracks only (no addon output)
 
 Where each track comes from (first that works; results are cached in build/music):
   1. build/music/<id>.mp3 from an earlier run
   2. adlmidiplay ($ADLMIDI or build/libADLMIDI, tools/get_adlmidi.sh) + ffmpeg loudnorm: the Hellmatch render chain
   3. the Hellmatch content addon's rendered copy (sounds/fdm/music/<id>.mp3, read only): same render, same loudness
   4. tools/oplmidi.py: Freedoom's GENMIDI patches on a numpy OPL2 model (no external tools)
+An oplmidi render is checked by numbers (tools/music_check.py: clipping, DC, silence, length; verdict cached as
+build/music/<id>.check.json); a level track with a fault is left out of the playlist, and the level then plays
+Hellmatch's four generated tracks (always in every level's playlist) and the boss pool.
+Boss music: each level's boss stage plays the boss pool; BOSS_FOR picks the track per level (Phase 1 maps their own
+episode's boss level: E1 -> E1M8, E3 -> E3M8; others E2M8). Every boss track carries its level in `level`; the game
+(55_music.js musicBoss) plays the pool, and per level once it filters the boss pool by `level` like the level pool.
 """
 import json, os, re, shutil, subprocess, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -22,6 +29,11 @@ HELLMATCH_MUSIC = os.environ.get('HELLMATCH_CONTENT', r'C:/Program Files (x86)/S
 BANK, CHIPS = '72', '2'           # DMXOPL3 (Sneakernets, MIT), two OPL3 chips so no notes drop
 TARGET = 'I=-16:TP=-1.5:LRA=11'
 BOSS = os.environ.get('HZE_BOSS_TRACK', 'e2m8')     # Freedoom E2M8 (a Phase 1 boss level); Hellmatch has it compiled
+BOSS_FOR = {'e1': 'e1m8', 'e2': 'e2m8', 'e3': 'e3m8', 'e4': 'e4m8'}   # Hellmatch has all four rendered and compiled
+
+
+def boss_for(base):
+    return BOSS_FOR.get(base[:2], BOSS) if base.startswith('e') else BOSS
 
 
 def have(tool):
@@ -54,19 +66,27 @@ def render_adl(tid, mp3):
     os.remove(wav); os.remove(mid)
 
 
-def track(tid):
-    """(mp3 path, how) for a Freedoom track id ('map01', 'e2m8', ...)"""
+def track(tid, check=False):
+    """(mp3 path, how, check dict or None) for a Freedoom track id ('map01', 'e2m8', ...); with check, an oplmidi render
+    (new or cached without a verdict) is checked by numbers"""
+    import music_check
     os.makedirs(CACHE, exist_ok=True)
     mp3 = os.path.join(CACHE, tid + '.mp3')
-    if os.path.exists(mp3): return mp3, 'cached'
-    if os.path.exists(ADLMIDI) and have('ffmpeg'):
-        render_adl(tid, mp3); return mp3, 'adlmidi'
+    cj = os.path.join(CACHE, tid + '.check.json')
     hm = os.path.join(HELLMATCH_MUSIC, tid + '.mp3')
-    if os.path.exists(hm):
-        shutil.copy(hm, mp3); return mp3, 'hellmatch render'
+    if os.path.exists(mp3):
+        if os.path.exists(cj): return mp3, 'cached', json.load(open(cj))
+        if not check or os.path.exists(hm): return mp3, 'cached', None
+    elif os.path.exists(ADLMIDI) and have('ffmpeg'):
+        render_adl(tid, mp3); return mp3, 'adlmidi', None
+    elif os.path.exists(hm):
+        shutil.copy(hm, mp3); return mp3, 'hellmatch render', None
     import oplmidi
-    oplmidi.save(oplmidi.render(os.path.join(assets.FD, 'musics/d_%s.mid' % tid)), mp3)
-    return mp3, 'oplmidi'
+    st = oplmidi.render(os.path.join(assets.FD, 'musics/d_%s.mid' % tid))
+    oplmidi.save(st, mp3)
+    r = music_check.check(st, oplmidi.OUT_SR)
+    json.dump(r, open(cj, 'w'), indent=1)
+    return mp3, 'oplmidi', r
 
 
 def seconds(path):
@@ -85,19 +105,37 @@ def opener():
     return t, src
 
 
+if OUT == '--warm':
+    for tid in sys.argv[2].split(','):
+        src, how, r = track(tid.strip().lower(), check=True)
+        print('music: %s %s %s' % (tid, how, 'ok' if not r or r['ok'] else 'FAULT ' + '; '.join(r['faults'])), json.dumps(r) if r else '')
+    sys.exit(0)
 levels = json.load(open(os.path.join(OUT, '_gen/levels.json')))
 bases = sorted({L['base'] for L in levels})
 names = titles()
 d = os.path.join(OUT, 'sounds/fdm/music'); os.makedirs(d, exist_ok=True)
 tracks = []
-for pool, ids in (('level', bases), ('boss', [BOSS])):
-    for tid in ids:
-        src, how = track(tid)
-        shutil.copy(src, os.path.join(d, tid + '.mp3'))
-        title, by = names.get(tid, (tid.upper(), ''))
-        tracks.append({'id': tid, 'pool': pool, 'seconds': round(seconds(src), 1), 'title': title, 'by': by,
-                       'level': tid if pool == 'level' else '', 'source': how})
-        print('music: %s %s (%s, %.0f s)' % (pool, tid, how, tracks[-1]['seconds']))
+dropped = []
+for tid in bases:
+    src, how, r = track(tid, check=True)
+    if r and not r['ok']:
+        dropped.append((tid, r['faults']))
+        print('music: level %s DROPPED (%s): %s' % (tid, how, '; '.join(r['faults'])))
+        continue
+    shutil.copy(src, os.path.join(d, tid + '.mp3'))
+    title, by = names.get(tid, (tid.upper(), ''))
+    tracks.append({'id': tid, 'pool': 'level', 'seconds': round(seconds(src), 1), 'title': title, 'by': by,
+                   'level': tid, 'source': how})
+    print('music: level %s (%s, %.0f s)%s' % (tid, how, tracks[-1]['seconds'], ' check ok' if r else ''))
+boss_levels = {}
+for b in bases: boss_levels.setdefault(boss_for(b), []).append(b)
+for tid, lv in sorted(boss_levels.items()):
+    src, how, _ = track(tid)
+    shutil.copy(src, os.path.join(d, tid + '.mp3'))
+    title, by = names.get(tid, (tid.upper(), ''))
+    tracks.append({'id': tid, 'pool': 'boss', 'seconds': round(seconds(src), 1), 'title': title, 'by': by,
+                   'level': ','.join(lv), 'source': how})
+    print('music: boss %s for %s (%s, %.0f s)' % (tid, ','.join(lv), how, tracks[-1]['seconds']))
 # Hellmatch's generated tracks (rendered and loudness-matched for Hellmatch, heard in game) join every level's playlist, so a
 # round never rests on one short Freedoom render; level '' = any level (55_music.js)
 for x in json.load(open(os.path.join(ROOT, 'music/tracks.json'))):
@@ -118,5 +156,6 @@ lines = ['Hellmatch ZE music.', '',
          'Level and boss tracks from Freedoom, BSD licence like the rest of Freedoom, rendered from the original MIDI with',
          'libADLMIDI (Nuked OPL3, DMXOPL3 bank by Sneakernets, MIT) or with tools/oplmidi.py (Freedoom\'s own GENMIDI patches).', '']
 lines += ['%-7s %-34s %s' % (x['id'].upper(), x['title'], x['by']) for x in tracks]
+lines += ['', 'Left out after the numeric check (tools/music_check.py): ' + ', '.join('%s (%s)' % (t.upper(), '; '.join(f)) for t, f in dropped)] if dropped else []
 open(os.path.join(OUT, 'MUSIC_CREDITS.txt'), 'w', newline='\n').write('\n'.join(lines) + '\n')
 print('music: %d tracks, %.1f MB' % (len(tracks), sum(os.path.getsize(os.path.join(d, x['id'] + '.mp3')) for x in tracks) / 1e6))
