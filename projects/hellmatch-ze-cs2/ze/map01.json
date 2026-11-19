@@ -15,7 +15,7 @@
     "keys": "remove"
   },
   "zombies": {
-    "cap": 48,
+    "cap": 96,
     "map_monsters": {
       "use": true,
       "skill": "hard",
@@ -202,6 +202,24 @@
           "message": "THE FLOODGATE IS OPEN"
         },
         {
+          "resupply": {
+            "ammo": 0.5,
+            "health": 25
+          }
+        },
+        {
+          "give": [
+            "ssg",
+            "chaingun"
+          ]
+        },
+        {
+          "surge": {
+            "group": "hall",
+            "count": 8
+          }
+        },
+        {
           "score": 1
         }
       ]
@@ -243,6 +261,18 @@
           }
         },
         {
+          "resupply": {
+            "ammo": 0.6,
+            "health": 25,
+            "armor": 25
+          }
+        },
+        {
+          "give": [
+            "rocket"
+          ]
+        },
+        {
           "score": 1
         }
       ]
@@ -272,6 +302,11 @@
         },
         {
           "music": "boss"
+        },
+        {
+          "give": [
+            "plasma"
+          ]
         }
       ],
       "on_done": [
@@ -286,6 +321,12 @@
         },
         {
           "message": "THE TURBINE DOOR IS OPENING"
+        },
+        {
+          "resupply": {
+            "ammo": 0.5,
+            "health": 25
+          }
         },
         {
           "score": 2

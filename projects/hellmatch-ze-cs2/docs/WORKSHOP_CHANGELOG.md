@@ -5,9 +5,11 @@ Newest first. Each entry is the text pasted into the Workshop item's change note
 ## First release (not yet uploaded)
 - Hellmatch ZE: zombie escape in one CS2 map. T and CT each run their own copy of the same Freedoom level; hold the zones,
   kill the guardian, hold the exit. The first team out wins.
-- Four levels, each with four stages: Hydroelectric Plant (MAP01, pain lord), Outer Prison (E1M1, combat slug),
-  Land of the Lost (E3M1, technospider) and Janus Terminal (MAP06, assault tripod). A different level each round until
-  all have been played.
+- Six levels: Hydroelectric Plant (MAP01, pain lord), Outer Prison (E1M1, combat slug), Land of the Lost (E3M1,
+  technospider) and Janus Terminal (MAP06, assault tripod) with four stages each, and two long ones with six: Supply Depot
+  (E1M4: pain bringer, then a pain lord over the nukage) and Crude Processing Center (MAP03: dark soldier, then an assault
+  tripod in the core). A different level each round until all have been played.
+- Every finished hold refills ammo and health; the stages hand out weapon upgrades; demons come in surges.
 - Die and you rise as a demon in the other team's level: imp (fireball), flesh worm (lunge) or deadflare (dash), on
   Mouse 2 or R. Kills on enemy humans are real CS2 kills.
 - Bots play both sides: human bots follow the stages, demon bots chase.

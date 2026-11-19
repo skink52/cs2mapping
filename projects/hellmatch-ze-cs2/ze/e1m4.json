@@ -1,0 +1,695 @@
+{
+  "map": "E1M4",
+  "wad": "levels/e1m4.wad",
+  "wad_sha1": "6a3d93a665ba7a80b1097f0caad3d4c8123fa2bb",
+  "title": "Supply Depot",
+  "author_credit": "Freedoom CREDITS-LEVELS (E1M4)",
+  "time_limit": 780,
+  "humans": {
+    "start": "player_starts",
+    "health": 100,
+    "loadout": [
+      "pistol",
+      "shotgun"
+    ],
+    "keys": "remove"
+  },
+  "zombies": {
+    "cap": 96,
+    "map_monsters": {
+      "use": true,
+      "skill": "hard",
+      "replace": {
+        "SHOTGUY": "IMP",
+        "CHAINGUY": "DEMON"
+      },
+      "drop": []
+    },
+    "player_classes": [
+      "IMP",
+      "DEMON",
+      "LOSTSOUL"
+    ],
+    "respawn_seconds": 4
+  },
+  "spawn_groups": {
+    "south_annex": {
+      "sectors": [
+        13,
+        25
+      ],
+      "ai": {
+        "ZOMBIE": 4,
+        "IMP": 2,
+        "DEMON": 1
+      },
+      "trickle": {
+        "every": 6,
+        "max": 12
+      }
+    },
+    "south_yards": {
+      "points": [
+        [
+          200,
+          -1300,
+          90
+        ],
+        [
+          1600,
+          -1300,
+          90
+        ],
+        [
+          900,
+          -2150,
+          90
+        ]
+      ],
+      "radius": 96,
+      "ai": {
+        "DEMON": 2,
+        "IMP": 3,
+        "ZOMBIE": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 12
+      }
+    },
+    "ring_west": {
+      "points": [
+        [
+          72,
+          -700,
+          0
+        ],
+        [
+          300,
+          -800,
+          0
+        ],
+        [
+          400,
+          -1000,
+          0
+        ]
+      ],
+      "radius": 64,
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2,
+        "ZOMBIE": 2
+      },
+      "trickle": {
+        "every": 5,
+        "max": 12
+      }
+    },
+    "ring_east": {
+      "points": [
+        [
+          1500,
+          -800,
+          180
+        ],
+        [
+          1000,
+          -1000,
+          270
+        ],
+        [
+          1640,
+          -826,
+          180
+        ]
+      ],
+      "radius": 64,
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2
+      },
+      "trickle": {
+        "every": 5,
+        "max": 12
+      }
+    },
+    "east_room": {
+      "sectors": [
+        27,
+        29
+      ],
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2,
+        "SPECTRE": 1
+      },
+      "trickle": {
+        "every": 5,
+        "max": 12
+      }
+    },
+    "east_stairs": {
+      "sectors": [
+        143,
+        144,
+        145
+      ],
+      "ai": {
+        "IMP": 2,
+        "DEMON": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 10
+      }
+    },
+    "pillar_hall": {
+      "points": [
+        [
+          1600,
+          -560,
+          180
+        ],
+        [
+          1600,
+          -120,
+          180
+        ],
+        [
+          1000,
+          -320,
+          0
+        ]
+      ],
+      "radius": 64,
+      "ai": {
+        "DEMON": 3,
+        "IMP": 3
+      },
+      "trickle": {
+        "every": 5,
+        "max": 12
+      }
+    },
+    "sludge_west": {
+      "sectors": [
+        157
+      ],
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2,
+        "LOSTSOUL": 1
+      },
+      "trickle": {
+        "every": 5,
+        "max": 12
+      }
+    },
+    "west_rooms": {
+      "sectors": [
+        162
+      ],
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2,
+        "ZOMBIE": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 12
+      }
+    },
+    "east_corridor": {
+      "sectors": [
+        186
+      ],
+      "ai": {
+        "DEMON": 3,
+        "IMP": 4,
+        "SPECTRE": 1
+      },
+      "trickle": {
+        "every": 4,
+        "max": 16
+      }
+    },
+    "platform": {
+      "sectors": [
+        192
+      ],
+      "ai": {
+        "IMP": 3,
+        "LOSTSOUL": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 10
+      }
+    },
+    "walkway_north": {
+      "points": [
+        [
+          0,
+          1300,
+          270
+        ],
+        [
+          100,
+          1200,
+          270
+        ]
+      ],
+      "radius": 48,
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2
+      },
+      "trickle": {
+        "every": 5,
+        "max": 10
+      }
+    },
+    "north_hall": {
+      "sectors": [
+        255,
+        256
+      ],
+      "ai": {
+        "IMP": 4,
+        "DEMON": 3,
+        "LOSTSOUL": 2
+      },
+      "trickle": {
+        "every": 4,
+        "max": 16
+      }
+    },
+    "blue_stairs": {
+      "sectors": [
+        189,
+        251,
+        252,
+        253,
+        254
+      ],
+      "ai": {
+        "IMP": 2,
+        "DEMON": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 8
+      }
+    }
+  },
+  "blocks": [
+    {
+      "id": "west_door",
+      "lines": [
+        79,
+        82
+      ],
+      "until": "never"
+    },
+    {
+      "id": "east_annex",
+      "lines": [
+        1645,
+        1649
+      ],
+      "until": "never"
+    },
+    {
+      "id": "west_yellow",
+      "lines": [
+        1205,
+        1208
+      ],
+      "until": "never"
+    },
+    {
+      "id": "east_far",
+      "lines": [
+        1380
+      ],
+      "until": "never"
+    },
+    {
+      "id": "yellow_east",
+      "lines": [
+        267,
+        272
+      ],
+      "until": "stage:2"
+    },
+    {
+      "id": "sludge_gate",
+      "lines": [
+        1048,
+        1049,
+        1051
+      ],
+      "until": "stage:3"
+    },
+    {
+      "id": "yellow_north",
+      "lines": [
+        547,
+        1229
+      ],
+      "until": "stage:4"
+    },
+    {
+      "id": "blue_door",
+      "lines": [
+        1295,
+        1299
+      ],
+      "until": "stage:6"
+    },
+    {
+      "id": "exit_door",
+      "lines": [
+        1981,
+        1986
+      ],
+      "until": "stage:6"
+    }
+  ],
+  "stages": [
+    {
+      "id": 1,
+      "name": "HOLD THE ENTRY HALL",
+      "start": "round",
+      "hold": 50,
+      "zone": {
+        "sector": 7
+      },
+      "zombie_spawns": [
+        "south_annex",
+        "south_yards",
+        "ring_west",
+        "ring_east"
+      ],
+      "on_start": [
+        {
+          "open_door": {
+            "sector": 273
+          }
+        },
+        {
+          "message": "HOLD THE ENTRY HALL"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "yellow_east"
+        },
+        {
+          "open_door": {
+            "sector": 28
+          }
+        },
+        {
+          "message": "THE EAST GATE IS OPEN"
+        },
+        {
+          "resupply": {
+            "ammo": 0.5,
+            "health": 25
+          }
+        },
+        {
+          "give": [
+            "chaingun",
+            "chainsaw"
+          ]
+        },
+        {
+          "surge": {
+            "group": "south_annex",
+            "count": 8
+          }
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "HOLD THE PILLAR HALL",
+      "start": {
+        "stage_done": 1
+      },
+      "hold": 60,
+      "zone": {
+        "box": [
+          1100,
+          -560,
+          1520,
+          -100
+        ]
+      },
+      "zombie_spawns": [
+        "east_room",
+        "east_stairs",
+        "ring_east"
+      ],
+      "on_start": [
+        {
+          "message": "DOWN THE STAIRS - HOLD THE PILLAR HALL"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "sludge_gate"
+        },
+        {
+          "message": "CROSS THE SLUDGE PIT BRIDGE"
+        },
+        {
+          "resupply": {
+            "ammo": 0.6,
+            "health": 25,
+            "armor": 25
+          }
+        },
+        {
+          "give": [
+            "rocket"
+          ]
+        },
+        {
+          "teleport_zombies": {
+            "behind": true
+          }
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "SLAY THE SLUDGE WARDEN",
+      "start": {
+        "zone_entered": {
+          "sectors": [
+            151,
+            153,
+            158
+          ]
+        }
+      },
+      "boss": {
+        "type": "KNIGHT",
+        "name": "SLUDGE WARDEN",
+        "at": [
+          640,
+          -520,
+          90
+        ],
+        "health_scale": "players",
+        "music": "boss"
+      },
+      "zombie_spawns": [
+        "pillar_hall",
+        "sludge_west",
+        "west_rooms"
+      ],
+      "on_start": [
+        {
+          "message": "A PAIN BRINGER RISES FROM THE SLUDGE"
+        },
+        {
+          "music": "boss"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "yellow_north"
+        },
+        {
+          "open_door": {
+            "sector": 175
+          }
+        },
+        {
+          "message": "THE NORTH DOOR IS OPEN"
+        },
+        {
+          "resupply": {
+            "ammo": 0.5,
+            "health": 25
+          }
+        },
+        {
+          "score": 2
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "HOLD THE NUKAGE WALKWAY",
+      "start": {
+        "stage_done": 3
+      },
+      "hold": 60,
+      "zone": {
+        "box": [
+          250,
+          740,
+          400,
+          900
+        ]
+      },
+      "zombie_spawns": [
+        "east_corridor",
+        "sludge_west",
+        "platform"
+      ],
+      "on_start": [
+        {
+          "message": "HOLD THE WALKWAY OVER THE NUKAGE"
+        },
+        {
+          "surge": {
+            "group": "east_corridor",
+            "count": 10
+          }
+        }
+      ],
+      "on_done": [
+        {
+          "message": "SOMETHING STIRS IN THE NUKAGE"
+        },
+        {
+          "resupply": {
+            "ammo": 0.6,
+            "health": 25,
+            "armor": 50
+          }
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "SLAY THE NUKAGE PAIN LORD",
+      "start": {
+        "stage_done": 4
+      },
+      "boss": {
+        "type": "BARON",
+        "name": "NUKAGE PAIN LORD",
+        "at": [
+          0,
+          1300,
+          270
+        ],
+        "health_scale": "players",
+        "music": "boss"
+      },
+      "zombie_spawns": [
+        "east_corridor",
+        "walkway_north"
+      ],
+      "on_start": [
+        {
+          "message": "A PAIN LORD WADES OUT OF THE NUKAGE"
+        },
+        {
+          "music": "boss"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "blue_door"
+        },
+        {
+          "open_door": {
+            "sector": 188,
+            "speed": "fast"
+          }
+        },
+        {
+          "message": "THE BLUE DOOR IS OPEN - RUN NORTH"
+        },
+        {
+          "resupply": {
+            "ammo": 0.5,
+            "health": 25
+          }
+        },
+        {
+          "score": 2
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "ESCAPE",
+      "start": {
+        "stage_done": 5
+      },
+      "hold": 30,
+      "zone": {
+        "sectors": [
+          141,
+          35,
+          125
+        ]
+      },
+      "escape": true,
+      "zombie_spawns": [
+        "north_hall",
+        "blue_stairs"
+      ],
+      "on_start": [
+        {
+          "open_door": {
+            "sector": 126
+          }
+        },
+        {
+          "spawn_group": "north_hall"
+        },
+        {
+          "message": "RUN TO THE EXIT AND HOLD IT"
+        }
+      ],
+      "on_done": [
+        {
+          "message": "ESCAPED"
+        },
+        {
+          "score": 3
+        }
+      ]
+    }
+  ]
+}

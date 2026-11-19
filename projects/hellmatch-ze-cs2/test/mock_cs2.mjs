@@ -196,22 +196,26 @@ for (let i = 0; i < HUMANS + BOTS; i++) players.push(new Controller(i, (i < HUMA
 
 // ---------------------------------------------------------------- mgstat (server stats for a plugin)
 // 'stats': SERVER_STATS on. 'statsinput': off in CONFIG, a plugin sends RunScriptInput mgstat_on at t=5 s.
-// Checks every command against the plugin's contract and that monster kills by humans all arrive.
-const mg = { sent: 0, byStat: {}, bad: [], bots: 0, early: 0, perSecond: new Map() };
+// Checks every command against the plugin's contract (docs/SERVER_STATS_NOTE.md: only these names; best_* with an n) and
+// that every stat the playsim says a human earned arrives (counted here from the playsim's own hooks, below).
+const MG_STATS = ['pve_kills', 'boss_kills', 'lms_wins', 'ze_escapes', 'ze_survivor_wins', 'ze_holds', 'ze_infections', 'ze_zombie_kills', 'ze_boss_takeovers', 'ze_boss_player_kills', 'best_ze_stage'];
+const mg = { sent: 0, byStat: {}, bad: [], bots: 0, early: 0, perSecond: new Map(), best: new Map(), bySlot: new Map() };
 function mgstat(c) {
   mg.sent++;
   if (!c.startsWith('echo mgstat ')) { mg.bad.push(c); return; }   // a bare mgstat never reaches a plugin on a Workshop map
   c = c.slice(5);
   const m = /^mgstat (\d+) ([a-z_]+)(?: (\d+))?$/.exec(c);
-  if (!m || /[;"]/.test(c)) { mg.bad.push(c); return; }
+  if (!m || /[;"]/.test(c) || !MG_STATS.includes(m[2]) || (m[2].startsWith('best_') && !m[3])) { mg.bad.push(c); return; }
   const ctrl = players.find((p) => p.slot === +m[1] && p.connected);
   if (!ctrl || ctrl.bot) mg.bots++;
   if (OPTS.includes('statsinput') && time < 5) mg.early++;
-  mg.byStat[m[2]] = (mg.byStat[m[2]] || 0) + (m[3] ? +m[3] : 1);
+  if (m[2].startsWith('best_')) { const k = m[1] + ' ' + m[2]; mg.best.set(k, Math.max(mg.best.get(k) || 0, +m[3])); }
+  else mg.byStat[m[2]] = (mg.byStat[m[2]] || 0) + (m[3] ? +m[3] : 1);
+  { const k = m[1]; const o = mg.bySlot.get(k) || {}; o[m[2]] = m[2].startsWith('best_') ? Math.max(o[m[2]] || 0, +m[3]) : (o[m[2]] || 0) + (m[3] ? +m[3] : 1); mg.bySlot.set(k, o); }
   const key = m[1] + ' ' + m[2] + ' ' + Math.floor(time);
   mg.perSecond.set(key, (mg.perSecond.get(key) || 0) + 1);
 }
-const mgTruth = { pve: 0, boss: 0, lms: 0 };
+const mgTruth = { pve: 0, boss: 0, lms: 0, ze_escapes: 0, ze_survivor_wins: 0, ze_holds: 0, ze_infections: 0, ze_zombie_kills: 0, ze_boss_takeovers: 0, ze_boss_player_kills: 0, best: new Map() };
 
 // ---------------------------------------------------------------- Instance
 const hooks = {};
@@ -273,14 +277,18 @@ if (OPTS.includes('bossonly')) src = src.replace(/MODE_WEIGHTS: \{[^}]*\}/, 'MOD
 if (OPTS.includes('lmsonly')) src = src.replace(/MODE_WEIGHTS: \{[^}]*\}/, 'MODE_WEIGHTS: { ffa: 0, tdm: 0, elim: 0, lms: 100, boss: 0 }');
 if (OPTS.includes('noboss')) src = src.replace(/MODE_WEIGHTS: \{[^}]*\}/, 'MODE_WEIGHTS: { ffa: 35, tdm: 35, elim: 20, lms: 10, boss: 0 }');
 if (OPTS.includes('novote')) src = src.replace('VOTE: true', 'VOTE: false');
-if (/\bstats\b/.test(OPTS)) src = src.replace('SERVER_STATS: false', 'SERVER_STATS: true');   // the round flow as before the vote
+if (/\bstats\b/.test(OPTS)) src = src.replace('SERVER_STATS: false', 'SERVER_STATS: true');
+// 'zemap=<id>': always that ZE level (CONFIG.ZE.MAP)
+{ const zm = /zemap=([a-z0-9]+)/.exec(OPTS); if (zm) src = src.replace(/MAP: null,/, 'MAP: "' + zm[1] + '",'); }   // the round flow as before the vote
 { const dm = /diff=([0-9.]+)/.exec(OPTS); if (dm) src = src.replace(/difficulty: [0-9.]+ \}/, 'difficulty: ' + dm[1] + ' }'); }
 if (OPTS.includes('monsters')) src = src.replace('MONSTER_CHANCE: 0.15', 'MONSTER_CHANCE: 1');
 if (OPTS.includes('hudcheck')) src = src.replace('const HUD_LINE_CHECK = false;', 'const HUD_LINE_CHECK = true;');
 if (OPTS.includes('nolinecache')) src = src.replace(/function hudSame\(slot, prefix, value\) \{/, 'function hudSame(slot, prefix, value) { return false;');
-src += '\nglobalThis.__ZCLASS = typeof ZCLASS === "undefined" ? null : ZCLASS; globalThis.__Arena = Arena; globalThis.__RM = RoundManager; globalThis.__stats = () => ({ statPending: typeof statPending === "undefined" ? new Map() : statPending, statsOn: typeof statsOn !== "undefined" && statsOn }); globalThis.__dbg = () => ({ rm, views, parked, hudCheckMiss, hudCache, phase, vote: typeof vote === "undefined" ? null : vote });\n';
+src += '\nglobalThis.__ZCLASS = typeof ZCLASS === "undefined" ? null : ZCLASS; globalThis.__Arena = Arena; globalThis.__RM = RoundManager; globalThis.__ZeArena = typeof ZeArena === "undefined" ? null : ZeArena; globalThis.__ZeRound = typeof ZeRound === "undefined" ? null : ZeRound; globalThis.__LEVELS = LEVELS; globalThis.__stats = () => ({ statPending: typeof statPending === "undefined" ? new Map() : statPending, statsOn: typeof statsOn !== "undefined" && statsOn }); globalThis.__dbg = () => ({ rm, views, parked, hudCheckMiss, hudCache, phase, vote: typeof vote === "undefined" ? null : vote });\n';
 const ctx = vm.createContext({ __api: api, console, Math, Date, JSON, Map, Set, Array, Object, String, Number, Error, Infinity, NaN });
 vm.runInContext(src, ctx, { filename: 'freedm.js' });
+// 'sccap=none': the sidecars' zombies.cap (a maximum since Round 3) left out, so the cap formula alone sets the horde (worst case)
+if (OPTS.includes('sccap=none') && ctx.__LEVELS) for (const L of ctx.__LEVELS) if (L.ze && L.ze.zombies) { L.ze.zombies = Object.assign({}, L.ze.zombies); delete L.ze.zombies.cap; }
 
 // ---------------------------------------------------------------- run
 // what the plugin should end up with: monster kills by humans (outside warmup) and human LMS winners, counted in the playsim
@@ -293,6 +301,45 @@ vm.runInContext(src, ctx, { filename: 'freedm.js' });
     if (on() && human(k)) { mgTruth.pve++; if (mo.boss) mgTruth.boss++; }
     return mk.call(this, mo, source, inflictor);
   };
+  // ZE (Round 3): kills between players, holds, escapes, wins, takeovers, the furthest stage, a player boss killed
+  const pk = ctx.__Arena.prototype.onPlayerKilled;
+  ctx.__Arena.prototype.onPlayerKilled = function (v, k, inf, src) {
+    if (this.ze && on() && k && k !== v && human(k)) {
+      if (k.zclass && !v.zclass) { mgTruth.ze_infections++; if (ctx.__ZCLASS[k.zclass] && ctx.__ZCLASS[k.zclass].boss) mgTruth.ze_boss_player_kills++; }
+      else if (!k.zclass && v.zclass) { mgTruth.ze_zombie_kills++; if (v.mo && v.mo.boss) { mgTruth.pve++; mgTruth.boss++; } }
+    }
+    return pk.call(this, v, k, inf, src);
+  };
+  if (ctx.__ZeArena) {
+    const Z = ctx.__ZeArena.prototype;
+    const live = (ze) => [...ze.a.players.values()].filter((p) => !p.zclass && !p.spectating && p.playerstate === 'live' && p.mo && !p.mo.removed);
+    const fs = Z.finishStage;
+    Z.finishStage = function (s) {
+      if (s.state !== 'done' && on()) {
+        const hs = live(this).filter(human);
+        if (s.d.escape) mgTruth.ze_escapes += s.d.zone ? hs.filter((p) => this.zoneHas(s.d.zone, p.mo.x, p.mo.y)).length : hs.length;
+        else if (s.total > 0) mgTruth.ze_holds += hs.length;
+      }
+      return fs.call(this, s);
+    };
+    const ss = Z.startStage;
+    Z.startStage = function (s) {
+      if (on()) for (const p of live(this).filter(human)) { const k = p.slot + ' best_ze_stage'; mgTruth.best.set(k, Math.max(mgTruth.best.get(k) || 0, s.i + 1)); }
+      return ss.call(this, s);
+    };
+    const to = Z.takeOver;
+    Z.takeOver = function (p, why) { const ok = to.call(this, p, why); if (ok && on() && human(p)) mgTruth.ze_boss_takeovers++; return ok; };
+  }
+  if (ctx.__ZeRound) {
+    const fz = ctx.__ZeRound.prototype.finishZe;
+    ctx.__ZeRound.prototype.finishZe = function (winner, why) {
+      if (!this.zeResult && winner && on()) {
+        const a = this.arenaFor(winner, 'human');
+        if (a) for (const p of a.players.values()) if (!p.zclass && !p.spectating && p.playerstate === 'live' && p.mo && !p.mo.removed && human(p)) mgTruth.ze_survivor_wins++;
+      }
+      return fz.call(this, winner, why);
+    };
+  }
   const fa = ctx.__RM.prototype.finishArena;
   ctx.__RM.prototype.finishArena = function (a, winner) {
     if (!a.finished && a.modeKey === 'lms' && winner.player && on() && human(winner.player)) mgTruth.lms++;
@@ -306,7 +353,7 @@ const manual = new Set();
 const SCEN = (OPTS.match(/scenario=([^,]+)/) || [])[1];
 const scen = SCEN ? (await import(pathToFileURL(path.resolve(SCEN)).href)).default : null;
 const sapi = {
-  get time() { return time; }, players, hooks, manual, stats, winReasons, ctx, hudLine,
+  get time() { return time; }, players, hooks, manual, stats, winReasons, ctx, hudLine, mg, mgTruth,
   get rounds() { return rounds; }, get warmup() { return warmup; }, set warmup(v) { warmup = v; },
   dbg: () => ctx.__dbg(), log: (m) => console.log(`[scenario t=${time.toFixed(2)}] ${m}`),
   ctrl: (slot) => players.find((c) => c.slot === slot && c.connected),
@@ -439,6 +486,11 @@ while (time < SECONDS) {
     if (OPTS.includes('perf') && time > 10) {
       const now = { mv: stats.moves + stats.teleports, hud: stats.hudCalls, snd: stats.sounds, sp: stats.spawned };
       const pv = perf.prev || now; perf.prev = now;
+      // ZE: the biggest horde (live AI) and the most zombie players per arena, sampled each second
+      if (perf.ms.length % 64 === 0) for (const a of (ctx.__dbg().rm.arenas || [])) if (a.director && !a.finished) {
+        const k = a.mapId; const z = (perf.horde ||= {})[k] ||= { ai: 0, zp: 0, cap: a.director.capN || 0 };
+        z.ai = Math.max(z.ai, a.director.aliveNow || 0); z.zp = Math.max(z.zp, a.director.zombiePlayers ? a.director.zombiePlayers() : 0);
+      }
       perf.ms.push(d); perf.mv.push(now.mv - pv.mv); perf.hud.push(now.hud - pv.hud); perf.snd += now.snd - pv.snd; perf.sp += now.sp - pv.sp;
     }
     if (d > 16) (stats.slow ||= []).push(`${time.toFixed(1)}s:${d.toFixed(0)}ms`);
@@ -538,13 +590,25 @@ if (OPTS.includes('spec')) {
   console.log(`!back from other spectators: ${spec.backs.in} joined, ${spec.backs.stay} kept spectating; problems ${spec.problems.length}`, spec.problems.slice(0, 6).join(' | '));
 }
 {
-  const pend = { pve: 0, boss: 0 };
-  for (const s of ctx.__stats().statPending.values()) { pend.pve += s.pve; pend.boss += s.boss; }
-  const got = { pve: (mg.byStat.pve_kills || 0) + pend.pve, boss: (mg.byStat.boss_kills || 0) + pend.boss, lms: mg.byStat.lms_wins || 0 };
+  // what is still waiting in the script's batch (sent within a second) counts as arrived
+  const pend = {};
+  for (const [slot, s] of ctx.__stats().statPending) for (const [k, n] of Object.entries(s)) {
+    const key = { pve_kills: 'pve', boss_kills: 'boss' }[k] || k;
+    if (k.startsWith('best_')) { const bk = slot + ' ' + k; mg.best.set(bk, Math.max(mg.best.get(bk) || 0, n)); } else pend[key] = (pend[key] || 0) + n;
+  }
+  const got = { pve: (mg.byStat.pve_kills || 0) + (pend.pve || 0), boss: (mg.byStat.boss_kills || 0) + (pend.boss || 0), lms: mg.byStat.lms_wins || 0 };
+  const diffs = [];
+  for (const k of ['pve', 'boss', 'lms']) if (got[k] !== mgTruth[k]) diffs.push(`${k} ${got[k]} != ${mgTruth[k]}`);
+  for (const k of MG_STATS) if (k.startsWith('ze_')) { const n = (mg.byStat[k] || 0) + (pend[k] || 0); if (n !== mgTruth[k]) diffs.push(`${k} ${n} != ${mgTruth[k]}`); }
+  // best_ze_stage: the highest n sent per player is the furthest stage they started as a live human
+  for (const [k, n] of mgTruth.best) if ((mg.best.get(k) || 0) !== n) diffs.push(`${k} ${mg.best.get(k) || 0} != ${n}`);
+  for (const [k, n] of mg.best) if (!mgTruth.best.has(k)) diffs.push(`${k} ${n} sent, never reached`);
   const twice = [...mg.perSecond.values()].filter((n) => n > 1).length;
-  const ok = !mg.bad.length && !mg.bots && !mg.early && got.pve === mgTruth.pve && got.boss === mgTruth.boss && got.lms === mgTruth.lms;
-  console.log(`mgstat: ${mg.sent} commands ${JSON.stringify(mg.byStat)} (+ pending ${pend.pve}/${pend.boss}); expected pve ${mgTruth.pve} boss ${mgTruth.boss} lms ${mgTruth.lms}; ` +
-    `bad ${mg.bad.length}${mg.bad.length ? ' e.g. ' + mg.bad[0] : ''}, bot/empty slots ${mg.bots}, before the switch ${mg.early}, same player+stat twice in a second ${twice} -> ${ok ? 'OK' : 'PROBLEM'}`);
+  const ok = !mg.bad.length && !mg.bots && !mg.early && !diffs.length;
+  mg.ok = ok; mg.diffs = diffs;
+  const zeTruth = Object.fromEntries(Object.entries(mgTruth).filter(([k, v]) => k.startsWith('ze_') && v));
+  console.log(`mgstat: ${mg.sent} commands ${JSON.stringify(mg.byStat)} best ${JSON.stringify([...mg.best.values()])} (+ pending ${JSON.stringify(pend)}); expected pve ${mgTruth.pve} boss ${mgTruth.boss} lms ${mgTruth.lms} ${JSON.stringify(zeTruth)}; ` +
+    `bad ${mg.bad.length}${mg.bad.length ? ' e.g. ' + mg.bad[0] : ''}, bot/empty slots ${mg.bots}, before the switch ${mg.early}, same player+stat twice in a second ${twice}${diffs.length ? ', differ: ' + diffs.slice(0, 6).join('; ') : ''} -> ${ok ? 'OK' : 'PROBLEM'}`);
 }
 if (OPTS.includes('hudcheck')) console.log(`hud line cache check: ${ctx.__dbg().hudCheckMiss} skipped panels that differed`);
 if (OPTS.includes('perf') && perf.ms.length) {
@@ -552,6 +616,7 @@ if (OPTS.includes('perf') && perf.ms.length) {
   const avg = (a) => a.reduce((t, x) => t + x, 0) / a.length;
   const n = perf.ms.length;
   console.log(`perf over ${n} server ticks: script ms avg ${avg(perf.ms).toFixed(2)} p50 ${q(perf.ms, .5).toFixed(2)} p95 ${q(perf.ms, .95).toFixed(2)} p99 ${q(perf.ms, .99).toFixed(2)} max ${Math.max(...perf.ms).toFixed(1)}`);
+  if (perf.horde) console.log('  horde per arena (most live AI / most zombie players / cap): ' + Object.entries(perf.horde).map(([k, z]) => `${k} ${z.ai}/${z.zp}/${z.cap}`).join(', '));
   console.log(`  entity moves per tick avg ${avg(perf.mv).toFixed(0)} p99 ${q(perf.mv, .99)} max ${Math.max(...perf.mv)}; HUD changes per tick avg ${avg(perf.hud).toFixed(0)} p99 ${q(perf.hud, .99)}; sounds/s ${(perf.snd / (n / 64)).toFixed(0)}; new props/s ${(perf.sp / (n / 64)).toFixed(1)}`);
 }
 if (OPTS.includes('churn')) {

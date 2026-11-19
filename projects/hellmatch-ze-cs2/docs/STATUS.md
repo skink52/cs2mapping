@@ -32,6 +32,32 @@ Read both progress files; continue the first unfinished row of each.
   cs2.exe was not running. Before any deploy check `Get-Process cs2` and never write into an addon open in `cs2 -tools`.
 - Push: never without asking. In-game playtest: skink52.
 
+## Round 3 (19 Nov 2026, skink52: "weapons run out of ammo", "not enough enemies to feel like a horde, scale with playercount",
+## "any larger maps?", "server stat-tracking for the interesting stats")
+Contract for this round (game = src/test, pipeline = tools/ze/docs):
+- **Ammo and upgrades** (game, defaults in CONFIG.ZE; sidecar actions override per stage):
+  - AI zombie deaths drop ammo: `DROP_CHANCE` 0.35, the type weighted by what live humans in that arena carry (clips / shells
+    mostly, rockets / cells rarer), Doom dropped items (no respawn), removed after `DROP_SECONDS` 30 if not picked up.
+  - Sidecar action `{"resupply": {"ammo": 0.5, "health": 25, "armor": 0}}`: every live human gets that share of max ammo for each
+    ammo type they can use, plus health / armour up to 100. A completed hold with no `resupply` action gets `HOLD_RESUPPLY`
+    (same shape, default ammo 0.5, health 25).
+  - Sidecar action `{"give": ["chaingun", "ssg"]}`: every live human gets these weapons (with a start load of ammo), HUD
+    "UPGRADE: CHAINGUN". A sidecar with no `give` anywhere gets the default ladder: stage 1 done -> ssg + chaingun, stage 2 done ->
+    rocket, boss stage start -> plasma (`UPGRADE_LADDER`). Weapon ids: pistol shotgun ssg chaingun rocket plasma bfg chainsaw.
+  - `AMMO_FLOOR`: a human's bullets refill 1 per second while below 50, so nobody is ever left with fists only.
+- **Horde scaling** (game): per-arena cap = clamp(`CAP_BASE` 24 + `CAP_PER_PLAYER` 4 x players placed in that arena at round
+  start, `CAP_MIN` 32, `CAP_MAX` 96); a sidecar `zombies.cap` is now a maximum. AI wanted = `AI_BASE` 8 + `AI_PER_HUMAN` 5 x live
+  humans, counting awake AI only (under the cap less zombie players); the level's own sleeping monsters take at most 30% of the cap;
+  `AI_DAMAGE` 0.5. All six sidecars set `zombies.cap` 96 (a maximum), so the formula decides. Sidecar action `{"surge": {"group": "<spawn group>", "count": "auto"}}` and an
+  automatic surge at every hold start, boss start and escape start: 6 + 3 x live humans from the stage's spawn groups, HUD
+  "HERE THEY COME". Budget: mock at 64 players avg < 3 ms, p99 < 8 ms; far AI (no human within 2000 units) think every 4th tic.
+- **Server stats** (game; names fixed, plugin note `docs/SERVER_STATS_NOTE.md`): `ze_escapes`, `ze_survivor_wins`, `ze_holds`,
+  `ze_infections`, `ze_zombie_kills`, `ze_boss_takeovers`, `ze_boss_player_kills`, `best_ze_stage` (n = stage number), plus the
+  existing `pve_kills`, `boss_kills`. Sent through `echo mgstat <slot> <stat> [n]`, humans only (no bots), not in warmup.
+- **Larger maps** (pipeline): two larger, mostly linear maps with 5-6 stages, rounds ~8-10 min, placed twice and inside +-16000 with
+  the four existing levels; `resupply` / `give` / `surge` actions added to every sidecar (validator `tools/ze_sidecar.py` and
+  `tools/zereach.py` accept them).
+
 ## Contract between the workstreams (change only by editing here first)
 - Sidecar `lower_lift` options: `stay` (lowers for good), `perpetual` (Doom's perpetual platform: keeps cycling; used by E1M1's
   lift 103 so nobody needs its switch), `speed` "fast".

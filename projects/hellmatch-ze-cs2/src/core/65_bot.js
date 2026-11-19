@@ -9,10 +9,15 @@ function buildNav(level) {
   const nav = level.sectors.map(() => []);
   const passable = (a, b, l) => {
     if (NAV_DOORS.has(l.special) && b === l.backsector) return true;   // closed doors open on use
+    // ... and out of a door sector through its other door line (a closed door's far side: the door is open by then)
+    if (NAV_DOORS.has(l.special) && a === l.backsector) return b.floorheight - a.floorheight <= MAXSTEP;
     if (b.floorheight - a.floorheight > MAXSTEP) return false;
     return Math.min(a.ceilingheight, b.ceilingheight) - Math.max(a.floorheight, b.floorheight) >= 56;
   };
   const LIFT_LINES = new Set([62, 123, 21, 122, 88, 120, 10, 121]);
+  // perpetual lifts moving in this level now (sector id -> plat: low, high)
+  const perp = new Map();
+  if (G && G.level === level && G.activeplats) for (const p of G.activeplats) if (p.type === 'perpetualRaise' && p.status !== 'in_stasis') perp.set(p.sector.id, p);
   for (const l of level.lines) {
     // teleporters: walking over the line moves you to the destination sector
     if ((l.special === 97 || l.special === 39) && l.frontsector) {
@@ -40,8 +45,18 @@ function buildNav(level) {
     if (len < 34) continue;
     const a = l.frontsector, b = l.backsector;
     const e = { line: l, len };
-    if (passable(a, b, l)) nav[a.id].push(Object.assign({ to: b.id }, e));
-    if (passable(b, a, l)) nav[b.id].push(Object.assign({ to: a.id }, e));
+    const ab = passable(a, b, l), ba = passable(b, a, l);
+    if (ab) nav[a.id].push(Object.assign({ to: b.id }, e));
+    if (ba) nav[b.id].push(Object.assign({ to: a.id }, e));
+    // a perpetual lift (Doom's special 87 / a ZE sidecar's lower_lift perpetual): on and off it at whichever end of its
+    // travel fits, waiting for it (edge.perpetual: the bot waits at the edge while the step is too high)
+    const pa = perp.get(a.id), pb = perp.get(b.id);
+    if (pa || pb) {
+      const lo = (s, q) => (q ? q.low : s.floorheight), hi = (s, q) => (q ? q.high : s.floorheight);
+      const ok = (s, ps, t, pt) => lo(t, pt) - hi(s, ps) <= MAXSTEP && Math.min(s.ceilingheight, t.ceilingheight) - Math.max(lo(s, ps), lo(t, pt)) >= 56;
+      if (!ab && ok(a, pa, b, pb)) nav[a.id].push(Object.assign({ to: b.id, perpetual: true }, e));
+      if (!ba && ok(b, pb, a, pa)) nav[b.id].push(Object.assign({ to: a.id, perpetual: true }, e));
+    }
   }
   level.nav = nav;
   return nav;

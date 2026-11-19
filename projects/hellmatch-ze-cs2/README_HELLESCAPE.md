@@ -6,7 +6,7 @@ Zombie escape for Counter-Strike 2, built on Hellmatch: Freedoom levels rebuilt 
 - **Stages.** Hold zones while gates open, kill the stage guardian, then hold the exit. The first team to escape wins.
 - **Dying turns you.** A human who dies rises as a demon (serpentipede, flesh worm or deadflare) in the *other* team's
   copy, and hunts them alongside the level's own monsters.
-- Levels (a different one each round until all have been played), four stages each:
+- Levels (a different one each round until all have been played), four stages each (six on the two long levels):
   - **Hydroelectric Plant** (Freedoom MAP01): hold the floodgate, hold the pump station, the turbine guardian (pain lord), escape
     through the flooded cave.
   - **Outer Prison** (Freedoom E1M1): hold the south gate, hold the flooded hall, the cave slug (combat slug), drop into the pit
@@ -15,6 +15,11 @@ Zombie escape for Counter-Strike 2, built on Hellmatch: Freedoom levels rebuilt 
     (technospider), run south to the exit gate.
   - **Janus Terminal** (Freedoom MAP06): hold the east gate, hold the pillar hall, the assault tripod in the yard, then run back
     through the blue gate to the terminal exit.
+  - **Supply Depot** (Freedoom E1M4, long): hold the entry hall, hold the pillar hall, a pain bringer in the sludge pit, hold
+    the walkway over the nukage, a pain lord on the walkway, then run north through the blue door to the exit.
+  - **Crude Processing Center** (Freedoom MAP03, long): hold the gallery, hold the pump room, a dark soldier among the pillars,
+    hold the crossroads, ride down to the core and destroy the assault tripod, then hold the exit lift.
+- Every finished hold refills ammo and health, and the stages hand out weapon upgrades as you go.
 
 Controls: Hellmatch's (WASD, mouse, E/Space to use, R / Mouse 2 next weapon, F previous weapon). As a demon, Mouse 1 attacks
 (claw / bite) and Mouse 2 or R uses the ability (fireball / lunge / dash, with a cooldown shown on the HUD).

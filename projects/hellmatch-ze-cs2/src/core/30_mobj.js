@@ -20,7 +20,7 @@ function spawnMobj(x, y, z, type) {
     // property reads fast everywhere instead of falling back to slow lookups)
     movedir: undefined, movecount: undefined, threshold: undefined, lastlook: undefined,
     wave: undefined, maxHealth: undefined, idleSince: undefined, bestNear: undefined, progressAt: undefined,
-    spawnedBy: undefined, corpseColor: undefined, boss: undefined, zfire: undefined,
+    spawnedBy: undefined, corpseColor: undefined, boss: undefined, zfire: undefined, zfar: undefined, zfarAt: undefined,
   };
   if (info.kind === 'monster') {
     mo.movedir = DI_NODIR; mo.movecount = 0; mo.threshold = 0; mo.lastlook = P_Random() & 3;
@@ -317,8 +317,10 @@ function killMobj(source, target, inflictor) {
   target.tics -= P_Random() & 3;
   if (target.tics < 1) target.tics = 1;
   if (!monster) return;
+  // ZE: the AI drops ammo the humans use, now and then (75_ze.js ZeArena.dropFor), instead of Doom's weapon drops
+  if (G.ze) G.ze.dropFor(target);
   // zombies drop their weapon
-  const drop = target.type === MT.ZOMBIE ? MT.CLIP : target.type === MT.SHOTGUY ? MT.SHOTGUN : target.type === MT.CHAINGUY ? MT.CHAINGUN : null;
+  const drop = G.ze ? null : target.type === MT.ZOMBIE ? MT.CLIP : target.type === MT.SHOTGUY ? MT.SHOTGUN : target.type === MT.CHAINGUY ? MT.CHAINGUN : null;
   if (drop !== null) {
     const mo = spawnMobj(target.x, target.y, ONFLOORZ, drop);
     mo.flags |= MF_DROPPED;
@@ -439,7 +441,8 @@ function touchSpecialThing(special, toucher) {
       if (!givePower(player, PW_INVIS)) return; msg = MSG.GOTINVIS; sound = 'getpow'; break;
     case 'ammo': {
       const am = +a, n = +b;
-      if (!giveAmmo(player, am, (special.flags & MF_DROPPED) ? 0 : n)) return;
+      // (ZE: the horde's ammo drops are the full small item; Doom's dropped clip is half of one)
+      if (!giveAmmo(player, am, (special.flags & MF_DROPPED) && !G.ze ? 0 : n)) return;
       msg = [[MSG.GOTCLIP, MSG.GOTCLIPBOX], [MSG.GOTSHELLS, MSG.GOTSHELLBOX], [MSG.GOTCELL, MSG.GOTCELLBOX], [MSG.GOTROCKET, MSG.GOTROCKBOX]][am][n === 5 ? 1 : 0];
       break;
     }

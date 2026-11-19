@@ -16,6 +16,10 @@ function zeBotRoute(arena, p, b, tx, ty) {
   if (!e) return pointToAngle(mo.x, mo.y, tx, ty);
   const pp = portalPoint(e.line, mo.x, mo.y);
   const near = Math.hypot(pp.x - mo.x, pp.y - mo.y);
+  // a perpetual lift: at the edge (or riding it), wait while the step is too high, then go
+  if (e.perpetual && near < 72) {
+    if (arena.level.sectors[e.to].floorheight - mo.sector.floorheight > MAXSTEP) return null;
+  }
   if (e.lift && e.line.frontsector && e.line.backsector && Math.abs(e.line.frontsector.floorheight - e.line.backsector.floorheight) > MAXSTEP) {
     // the lift is up: walk to its switch and press use
     const tp = portalPoint(e.trigger, mo.x, mo.y);
@@ -27,6 +31,46 @@ function zeBotRoute(arena, p, b, tx, ty) {
     return pointToAngle(mo.x, mo.y, tx, ty);
   }
   return pointToAngle(mo.x, mo.y, pp.x, pp.y);
+}
+
+// a human bot's weapon in a horde. The rocket launcher is a last resort, for a target well away with nothing close: the
+// rocket leaves 8 tics after the trigger, and in a packed hold a teammate or a zombie has often stepped in front by then
+// (Round 3 sims: more bots killed by their own rockets than by the horde while it was their first choice)
+function zeBotWeaponFor(p, dist, close) {
+  const has = (w, am, n) => p.weaponowned[w] && (am === AM_NOAMMO || p.ammo[am] >= n);
+  if (dist < 300 && has(WP_SUPERSHOTGUN, AM_SHELL, 2)) return WP_SUPERSHOTGUN;
+  if (has(WP_PLASMA, AM_CELL, 1)) return WP_PLASMA;
+  if (has(WP_CHAINGUN, AM_CLIP, 1)) return WP_CHAINGUN;
+  if (has(WP_SUPERSHOTGUN, AM_SHELL, 2)) return WP_SUPERSHOTGUN;
+  if (has(WP_SHOTGUN, AM_SHELL, 1)) return WP_SHOTGUN;
+  if (dist > 500 && close > 400 && has(WP_MISSILE, AM_MISL, 1)) return WP_MISSILE;
+  if (dist < 80 && has(WP_CHAINSAW, AM_NOAMMO, 0)) return WP_CHAINSAW;
+  if (has(WP_PISTOL, AM_CLIP, 1)) return WP_PISTOL;
+  return WP_FIST;
+}
+
+// another live human within range of mo and within about 25 degrees of the aim
+function zeMateInLine(arena, mo, face, range) {
+  for (const h of arena.playerMobjs) {
+    if (h === mo) continue;
+    const dx = h.x - mo.x, dy = h.y - mo.y;
+    if (Math.abs(dx) > range || Math.abs(dy) > range) continue;
+    const d = Math.hypot(dx, dy);
+    if (d < 140 || (d < range && Math.abs(angleDiff(pointToAngle(mo.x, mo.y, h.x, h.y), face)) < 30 + 40 * 16 / Math.max(16, d))) return true;
+  }
+  return false;
+}
+
+// nothing solid in the first `len` units of the aim (three parallel lines a rocket's width apart)
+function zeClearAhead(arena, mo, face, len) {
+  const c = Math.cos(face * DEG), s = Math.sin(face * DEG);
+  return arena.run(() => {
+    for (const o of [0, -14, 14]) {
+      const x = mo.x - s * o, y = mo.y + c * o;
+      if (!walkableLine(x, y, x + c * len, y + s * len)) return false;
+    }
+    return true;
+  });
 }
 
 function zeBotThink(arena, p) {
@@ -64,6 +108,7 @@ function zeBotThink(arena, p) {
         }
       }
       if (cands.length > 1) cands.sort(byDistThenOrder);
+      b.close = cands.length ? cands[0].d : 1e9;   // the nearest zombie or monster (in sight or not): no rockets then
       for (let i = 0; i < cands.length && i < 6; i++) if (checkSight(mo, cands[i].mo)) { best = cands[i].mo; break; }
       cands.length = 0;
     });
@@ -96,9 +141,13 @@ function zeBotThink(arena, p) {
   } else {
     if (t) {
       face = pointToAngle(mo.x, mo.y, t.x, t.y) + b.aimErr;
-      const w = botWeaponFor(p, dist);
+      const close = Math.min(b.close === undefined ? 1e9 : b.close, dist);
+      const w = zeBotWeaponFor(p, dist, close);
       if (w !== p.readyweapon && p.pendingweapon === WP_NOCHANGE) p.wantWeapon = w;
-      if (Math.abs(angleDiff(mo.angle, face)) < 12 && lt >= b.reactUntil && P_Random() < 70 + skill * 185) cmd.buttons |= BT_ATTACK;
+      // a rocket: never with a zombie close, nor through a teammate standing in front (it bursts on their back), nor
+      // with a wall or a corner right in front (it bursts as it leaves the launcher)
+      const rocketNear = p.readyweapon === WP_MISSILE && (dist < 450 || close < 350 || zeMateInLine(arena, mo, face, 400) || !zeClearAhead(arena, mo, face, 160));
+      if (!rocketNear && Math.abs(angleDiff(mo.angle, face)) < 12 && lt >= b.reactUntil && P_Random() < 70 + skill * 185) cmd.buttons |= BT_ATTACK;
     }
     const g = arena.ze ? arena.ze.botGoal() : null;
     const away = t && dist < 200 ? pointToAngle(t.x, t.y, mo.x, mo.y) : null;   // back off from a zombie at arm's length

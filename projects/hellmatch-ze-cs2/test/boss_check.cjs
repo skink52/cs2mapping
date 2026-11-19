@@ -33,6 +33,14 @@ for (const base of bases) {
   const bs = ze.stages.find((s) => s.d.boss);
   a.run(() => { for (const s of ze.stages) if (s.i < bs.i) ze.finishStage(s); });
   if (bs.d.start && bs.d.start.line_crossed !== undefined) ze.crossed.add(bs.d.start.line_crossed);
+  if (bs.d.start && bs.d.start.use_line !== undefined) ze.used.add(bs.d.start.use_line);
+  // a zone_entered start (E1M4, MAP03): a live human bot walked into the zone
+  if (bs.d.start && bs.d.start.zone_entered) {
+    const c = ze.zoneCentre(bs.d.start.zone_entered), h = ze.humans()[0];
+    let ok = false;
+    if (c && h) for (const [dx, dy] of [[0, 0], [48, 0], [-48, 0], [0, 48], [0, -48], [96, 96], [-96, -96]]) { a.run(() => { ok = C.teleportMove ? C.teleportMove(h.mo, c.x + dx, c.y + dy) : false; }); if (ok) break; }
+    if (!ok) bad(`${base}: could not put a human into the boss stage's start zone`);
+  }
   tic(3, god);
   if (bs.state !== 'active' || !ze.boss) { bad(`${base}: boss stage not up (${bs.state})`); continue; }
   const type = ze.boss.info.key, hp0 = ze.boss.health;

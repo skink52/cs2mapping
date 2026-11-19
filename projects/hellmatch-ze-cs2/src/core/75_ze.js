@@ -26,6 +26,23 @@ function zeBossTune(mo) {
   const key = mo.info.kind === 'monster' ? mo.info.key : mo.player && ZCLASS[mo.player.zclass] ? ZCLASS[mo.player.zclass].type : null;
   return ZE_BOSS_TUNE[key] || { hp: 1, dmg: 1 };
 }
+// weapons by the sidecar's ids (humans.loadout, give) and the ammo a weapon comes with (a start load)
+const ZE_WEAPONS = { fist: WP_FIST, pistol: WP_PISTOL, shotgun: WP_SHOTGUN, ssg: WP_SUPERSHOTGUN, chaingun: WP_CHAINGUN, rocket: WP_MISSILE, plasma: WP_PLASMA, chainsaw: WP_CHAINSAW, bfg: WP_BFG };
+const ZE_START_AMMO = { [WP_PISTOL]: [AM_CLIP, 50], [WP_SHOTGUN]: [AM_SHELL, 24], [WP_SUPERSHOTGUN]: [AM_SHELL, 24], [WP_CHAINGUN]: [AM_CLIP, 100], [WP_MISSILE]: [AM_MISL, 10], [WP_PLASMA]: [AM_CELL, 100], [WP_BFG]: [AM_CELL, 80] };
+// ammo drops: the small Doom items by ammo type (AM_CLIP, AM_SHELL, AM_CELL, AM_MISL) and how much each type is wanted
+// against the others when the humans use it equally (clips and shells mostly, cells and rockets rarer)
+const ZE_DROP_ITEM = ['CLIP', 'SHELL', 'CELL', 'ROCKETAMMO'];
+const ZE_DROP_WEIGHT = [1, 1, 0.3, 0.3];
+function zeUsesAmmo(p, am) {
+  for (let w = 0; w < NUMWEAPONS; w++) if (p.weaponowned[w] && WEAPONINFO[w].ammo === am) return true;
+  return false;
+}
+// does any stage of a sidecar have this action (on_start / on_done)?
+function zeHasAction(sc, key) {
+  for (const st of (sc && sc.stages) || []) for (const act of (st.on_start || []).concat(st.on_done || [])) if (act && typeof act === 'object' && Object.keys(act)[0] === key) return true;
+  return false;
+}
+const zeStageHas = (d, key) => (d.on_start || []).concat(d.on_done || []).some((act) => act && typeof act === 'object' && Object.keys(act)[0] === key);
 const ZE_BOSS_OFFER = 5 * TICRATE;   // how long a new stage boss is up for a zombie player to take over
 const ZE_CLASS_PICK_GUARD = 10;   // tics after a death in which the class keys don't change the class (they were the ability)
 
@@ -68,6 +85,24 @@ function zeProgressMap(level, starts) {
   return dist;
 }
 
+// where an AI zombie chasing a human heads for when Doom's straight line won't do: the next portal of the sector-graph
+// route to its target (a point just past it once there). Null: the target is near, in the same sector, or the route
+// needs a lift switch or a monster-blocking line (Doom's own chase then)
+function zeChaseVia(mo) {
+  const t = mo.target;
+  if (!t || mo.boss || mo.player) return null;
+  const dx = t.x - mo.x, dy = t.y - mo.y;
+  if (dx * dx + dy * dy < 256 * 256) return null;
+  const e = navNext(G.level, mo.x, mo.y, t.x, t.y);
+  if (!e || e.lift || (e.line.flags & ML_BLOCKMONSTERS)) return null;
+  if (e.perpetual && G.level.sectors[e.to].floorheight - mo.sector.floorheight > MAXSTEP) return null;
+  const l = e.line, pp = portalPoint(l, mo.x, mo.y);
+  if (Math.abs(pp.x - mo.x) + Math.abs(pp.y - mo.y) > 40) return pp;
+  // at the portal: a point 48 past it, on the side of the next sector
+  const len = Math.hypot(l.dx, l.dy) || 1, front = l.frontsector && l.frontsector.id === e.to ? 1 : -1;
+  return { x: pp.x + front * l.dy / len * 48, y: pp.y - front * l.dx / len * 48 };
+}
+
 // ---------------------------------------------------------------------------------- stage engine
 class ZeArena {
   constructor(round, arena, side, sidecar) {
@@ -95,18 +130,22 @@ class ZeArena {
     this.spots = null;            // every place a zombie may appear (map things, starts, group points), reachable
     this.progress = null;         // sector id -> distance from the human starts
     this.lastMsg = null;
+    this.drops = [];              // ammo dropped by the AI: { mo, until } (gone when picked up or after zcfg.dropTics)
+    this.dropW = null; this.dropWAt = -1e9;   // ammo type weights for drops (worked out once a second)
+    this.gifts = [];              // weapon ids given this round (a late human gets them too)
+    this.ladder = null;           // the default upgrade ladder when the sidecar has no give action
   }
 
   // ---------------------------------------------------------------- set up (arena context, after load)
   setup() {
     const a = this.a, L = a.level;
-    const starts = a.humanStarts && a.humanStarts.length ? a.humanStarts : a.dmstarts;
-    this.progress = zeProgressMap(L, starts.length ? starts : [{ x: 0, y: 0 }]);
     for (const [name, d] of Object.entries(this.sc.spawn_groups || {})) this.groups.set(name, { d, points: this.groupPoints(d), trickled: 0, nextTrickle: 0 });
     // every block starts shut; it opens when its condition is met
     for (const b of this.blocks) this.setBlock(b, true);
-    // candidate zombie spots: the level's own monster and item spots, starts, teleport landings, group points; only
-    // places a walker can reach from the human starts, 96 apart
+    // a sidecar that gives no weapons anywhere gets the default ladder (stage 1 done, stage 2 done, a boss stage starts)
+    this.ladder = zeHasAction(this.sc, 'give') ? null : (this.round.zcfg.upgradeLadder || null);
+    // candidate zombie spots: the level's own monster and item spots, starts, teleport landings, group points, 96 apart;
+    // layout() keeps the ones a walker can reach from the human starts now
     const pts = [];
     for (const m of a.mapMonsters) pts.push({ x: m.x, y: m.y });
     for (const s of a.dmstarts) pts.push({ x: s.x, y: s.y });
@@ -118,12 +157,23 @@ class ZeArena {
     }
     for (const g of this.groups.values()) for (const p of g.points) pts.push({ x: p.x, y: p.y });
     const out = [];
-    for (const p of pts) {
-      const sid = L.sectorAt(p.x, p.y).id;
-      if (this.progress[sid] === Infinity) continue;
-      if (!out.some((q) => Math.abs(q.x - p.x) < 96 && Math.abs(q.y - p.y) < 96)) out.push({ x: p.x, y: p.y, prog: this.progress[sid] });
-    }
+    for (const p of pts) if (!out.some((q) => Math.abs(q.x - p.x) < 96 && Math.abs(q.y - p.y) < 96)) out.push({ x: p.x, y: p.y, sec: L.sectorAt(p.x, p.y).id });
+    this.spotPts = out;
+    this.layout();
+  }
+
+  // how far along the level each sector is (walking distance from the human starts over the bots' sector graph) and the
+  // zombie spots reachable now. Worked out again whenever a block opens or a stage moves a door / lift / floor: a sector
+  // behind a door the script opens later is out of reach (Infinity) until then, and so are the spots in it
+  layout() {
+    const a = this.a, L = a.level;
+    const starts = a.humanStarts && a.humanStarts.length ? a.humanStarts : a.dmstarts;
+    this.progress = zeProgressMap(L, starts.length ? starts : [{ x: 0, y: 0 }]);
+    const out = [];
+    for (const p of this.spotPts || []) if (this.progress[p.sec] !== Infinity) out.push({ x: p.x, y: p.y, prog: this.progress[p.sec] });
     this.spots = out;
+    this.layoutDirty = false;
+    this.layoutVer = (this.layoutVer || 0) + 1;
   }
 
   groupPoints(d) {
@@ -151,6 +201,7 @@ class ZeArena {
     if (on) b.saved = (b.d.lines || []).map((i) => L.lines[i] ? [i, L.lines[i].flags, L.lines[i].special] : null).filter(Boolean);
     for (const [i, f, sp] of b.saved || []) { L.lines[i].flags = on ? f | ML_BLOCKING | ML_BLOCKMONSTERS : f; L.lines[i].special = on ? 0 : sp; }
     L.nav = null; L.navCache = null;   // the bots' routes change with the block
+    this.layoutDirty = true;
   }
 
   // ---------------------------------------------------------------- conditions
@@ -163,18 +214,42 @@ class ZeArena {
     if (z.sectors) return z.sectors.includes(id);
     return false;
   }
+  // where bots head for in a zone: its centre if a walker can reach it now, else the reachable point inside the zone
+  // nearest the centre (E1M4's pillar hall box has the pillar itself in the middle). Remembered per layout.
   zoneCentre(z) {
     if (!z) return null;
-    if (z.box) return { x: (z.box[0] + z.box[2]) / 2, y: (z.box[1] + z.box[3]) / 2 };
-    const ids = z.sector !== undefined ? [z.sector] : z.sectors || [];
-    const cen = zeSectorCentres(this.a.level);
-    let x = 0, y = 0, n = 0;
-    for (const i of ids) if (cen[i]) { x += cen[i].x; y += cen[i].y; n++; }
-    if (!n) return null;
-    // a centre that falls outside the zone (an L-shaped room): the nearest group-style sample inside it
-    const c = { x: x / n, y: y / n };
-    if (this.zoneHas(z, c.x, c.y)) return c;
-    const pts = this.groupPoints({ sectors: ids });
+    const memo = this.centreMemo || (this.centreMemo = new Map());
+    const m = memo.get(z);
+    if (m && m.v === this.layoutVer) return m.c;
+    const c = this.zoneCentreNow(z);
+    memo.set(z, { v: this.layoutVer, c });
+    return c;
+  }
+  zoneCentreNow(z) {
+    const L = this.a.level, prog = this.progress;
+    const ok = (x, y) => !prog || prog[L.sectorAt(x, y).id] !== Infinity;
+    let c;
+    if (z.box) c = { x: (z.box[0] + z.box[2]) / 2, y: (z.box[1] + z.box[3]) / 2 };
+    else {
+      const ids = z.sector !== undefined ? [z.sector] : z.sectors || [];
+      const cen = zeSectorCentres(L);
+      let x = 0, y = 0, n = 0;
+      for (const i of ids) if (cen[i]) { x += cen[i].x; y += cen[i].y; n++; }
+      if (!n) return null;
+      c = { x: x / n, y: y / n };
+    }
+    if (this.zoneHas(z, c.x, c.y) && ok(c.x, c.y) && this.a.fitSpot(c.x, c.y, 24)) return c;
+    // samples inside the zone, nearest the centre first: the first a walker can reach and stand on
+    let pts;
+    if (z.box) {
+      pts = [];
+      const b = z.box, x1 = Math.min(b[0], b[2]), x2 = Math.max(b[0], b[2]), y1 = Math.min(b[1], b[3]), y2 = Math.max(b[1], b[3]);
+      const step = Math.max(24, Math.ceil(Math.max(x2 - x1, y2 - y1) / 12));
+      for (let x = x1 + step / 2; x < x2; x += step) for (let y = y1 + step / 2; y < y2; y += step) pts.push({ x, y });
+    } else pts = this.groupPoints({ sectors: z.sector !== undefined ? [z.sector] : z.sectors || [] });
+    pts.sort((p, q) => Math.hypot(p.x - c.x, p.y - c.y) - Math.hypot(q.x - c.x, q.y - c.y));
+    for (const p of pts) if (ok(p.x, p.y) && this.a.fitSpot(p.x, p.y, 24)) return { x: p.x, y: p.y };
+    for (const p of pts) if (ok(p.x, p.y)) return { x: p.x, y: p.y };
     return pts.length ? { x: pts[0].x, y: pts[0].y } : c;
   }
   humans() {
@@ -210,7 +285,8 @@ class ZeArena {
   tic() {
     const a = this.a;
     if (!this.started || a.finished) return;
-    if (this.navAt.length && this.navAt.some((t) => a.leveltime >= t)) { this.navAt = this.navAt.filter((t) => a.leveltime < t); a.level.nav = null; a.level.navCache = null; }
+    if (this.navAt.length && this.navAt.some((t) => a.leveltime >= t)) { this.navAt = this.navAt.filter((t) => a.leveltime < t); a.level.nav = null; a.level.navCache = null; this.layoutDirty = true; }
+    if (this.layoutDirty && this.spotPts) this.layout();
     // delayed actions
     if (this.queue.length) for (let i = this.queue.length - 1; i >= 0; i--) if (a.leveltime >= this.queue[i].at) { const q = this.queue.splice(i, 1)[0]; this.act(q.act, true); }
     // stages run in order: the next one is looked at once the one before it is done (a line crossed or a switch used
@@ -260,13 +336,140 @@ class ZeArena {
     }
     // blocks
     for (const b of this.blocks) if (b.on && b.d.until && this.met(b.d.until)) this.setBlock(b, false);
+    // once a second: dropped ammo nobody took goes, and bullets creep back up to the floor (never fists only)
+    if ((a.leveltime % TICRATE) === (a.index * 7) % TICRATE) this.secondTic();
+  }
+
+  secondTic() {
+    const a = this.a, z = this.round.zcfg;
+    if (this.drops.length) {
+      let keep = 0;
+      for (const d of this.drops) {
+        if (d.mo.removed) continue;
+        if (a.leveltime >= d.until) { removeMobj(d.mo); continue; }
+        this.drops[keep++] = d;
+      }
+      this.drops.length = keep;
+    }
+    if (z.ammoFloor > 0) for (const p of this.humans()) {
+      const n = p.ammo[AM_CLIP];
+      if (n >= z.ammoFloor || n >= p.maxammo[AM_CLIP]) continue;
+      p.ammo[AM_CLIP] = n + 1;
+      // out of everything and on the fist: back to a gun (Doom's giveAmmo switch for a first clip)
+      if (n === 0 && p.readyweapon === WP_FIST && p.pendingweapon === WP_NOCHANGE) p.pendingweapon = p.weaponowned[WP_CHAINGUN] ? WP_CHAINGUN : WP_PISTOL;
+    }
+  }
+
+  // ---------------------------------------------------------------- ammo, weapons, surges (Round 3)
+  // an AI zombie died: maybe some ammo where it fell (Doom's dropped items: never respawn), the kind the humans here use
+  dropFor(mo) {
+    const z = this.round.zcfg, a = this.a;
+    if (!(z.dropChance > 0) || P_Random() >= z.dropChance * 256) return null;
+    if (a.leveltime - this.dropWAt >= TICRATE) {
+      this.dropWAt = a.leveltime;
+      const w = this.dropW || (this.dropW = [0, 0, 0, 0]);
+      w[0] = w[1] = w[2] = w[3] = 0;
+      for (const p of this.humans()) for (let am = 0; am < 4; am++) if (zeUsesAmmo(p, am)) w[am] += ZE_DROP_WEIGHT[am] * (1.3 - p.ammo[am] / (p.maxammo[am] || 1));
+    }
+    const w = this.dropW, tot = w[0] + w[1] + w[2] + w[3];
+    if (!(tot > 0)) return null;
+    let r = (P_Random() / 256) * tot, am = 0;
+    while (am < 3 && r >= w[am]) { r -= w[am]; am++; }
+    const it = spawnMobj(mo.x, mo.y, ONFLOORZ, MT[ZE_DROP_ITEM[am]]);
+    it.flags |= MF_DROPPED;
+    this.drops.push({ mo: it, until: a.leveltime + (z.dropTics || 30 * TICRATE) });
+    // every item is a prop in CS2: the oldest one goes when too many lie about
+    if (this.drops.length > (z.dropMax || 40)) { const o = this.drops.shift(); if (!o.mo.removed) removeMobj(o.mo); }
+    return it;
+  }
+
+  // {"resupply": {"ammo": share, "health": n, "armor": n}}: every live human gets that share of the max of each ammo type
+  // they can use, and health / armour up to 100
+  resupply(v) {
+    const r = Object.assign({}, this.round.zcfg.holdResupply || {}, v && typeof v === 'object' ? v : {});
+    const share = Math.max(0, +r.ammo || 0), hp = Math.max(0, +r.health || 0), ar = Math.max(0, +r.armor || 0);
+    const got = [];
+    for (const p of this.humans()) {
+      for (let am = 0; am < 4; am++) if (share > 0 && zeUsesAmmo(p, am)) {
+        const old = p.ammo[am];
+        p.ammo[am] = Math.min(p.maxammo[am], old + Math.max(1, Math.round(share * p.maxammo[am])));
+        if (!old && p.readyweapon === WP_FIST && p.pendingweapon === WP_NOCHANGE) p.pendingweapon = p.weaponowned[WP_CHAINGUN] ? WP_CHAINGUN : WP_PISTOL;
+      }
+      if (hp > 0 && p.health < 100) { p.health = Math.min(100, p.health + hp); p.mo.health = p.health; }
+      if (ar > 0 && p.armorpoints < 100) { p.armorpoints = Math.min(100, p.armorpoints + ar); if (!p.armortype) p.armortype = 1; }
+      p.bonuscount += BONUSADD;
+      startLocalSound(p, 'itemup');
+      got.push(p);
+    }
+    if (got.length) this.a.events.push({ type: 'zeResupply', players: got });
+  }
+
+  // a weapon for a human (Doom's P_GiveWeapon for a weapon you don't have, with a start load of its ammo)
+  giveTo(p, w, switchTo) {
+    const had = p.weaponowned[w];
+    p.weaponowned[w] = true;
+    const am = ZE_START_AMMO[w];
+    if (am) p.ammo[am[0]] = Math.min(p.maxammo[am[0]], Math.max(p.ammo[am[0]], am[1]));
+    if (!had && switchTo) p.pendingweapon = w;
+    return !had;
+  }
+
+  // {"give": ["chaingun", "ssg"]}: every live human gets these weapons; the first new one is brought up
+  give(list) {
+    const ids = (Array.isArray(list) ? list : [list]).map((x) => String(x).toLowerCase()).filter((id) => ZE_WEAPONS[id] !== undefined && id !== 'fist');
+    if (!ids.length) return;
+    for (const id of ids) if (!this.gifts.includes(id)) this.gifts.push(id);
+    const got = [];
+    for (const p of this.humans()) {
+      let sw = true;
+      for (const id of ids) if (this.giveTo(p, ZE_WEAPONS[id], sw)) sw = false;
+      p.bonuscount += BONUSADD;
+      startLocalSound(p, 'wpnup');
+      got.push(p);
+    }
+    if (got.length) this.a.events.push({ type: 'zeGive', players: got, weapons: ids });
+  }
+
+  // the default ladder (no give action in the sidecar): entries "done:N" when the Nth stage is done, "start:N" when it
+  // starts, "boss" when a boss stage starts
+  ladderStep(key) {
+    if (!this.ladder) return;
+    for (const e of this.ladder) if (e && e.on === key && e.give) this.give(e.give);
+  }
+
+  // {"surge": {"group": "<spawn group>", "count": "auto" | n}}: a burst of AI at once, in packs (the group's points, else the
+  // active stage's groups, else behind and on the flanks of the humans); "auto" = surgeBase + surgePerHuman x live humans
+  surge(v) {
+    const a = this.a, z = this.round.zcfg, d = a.director;
+    if (!d || a.finished) return 0;
+    v = v && typeof v === 'object' ? v : {};
+    const h = this.humans().length;
+    if (!h) return 0;
+    const count = v.count === undefined || v.count === 'auto' ? Math.round(z.surgeBase + z.surgePerHuman * h) : Math.max(0, Math.round(+v.count || 0));
+    let groups = v.group ? [v.group] : Array.isArray(v.groups) ? v.groups.slice() : null;
+    if (!groups) { const s = this.active(); groups = s && s.d.zombie_spawns ? s.d.zombie_spawns.slice() : []; }
+    groups = groups.filter((n) => this.groups.has(n));
+    const made = d.burst(count, groups);
+    if (made > 0) a.events.push({ type: 'zeSurge', count: made, auto: !!v.auto });
+    return made;
   }
 
   startStage(s) {
-    s.state = 'active'; s.startedAt = this.a.leveltime;
-    this.a.events.push({ type: 'zeStage', phase: 'start', stage: s, name: s.name });
+    const a = this.a, z = this.round.zcfg;
+    s.state = 'active'; s.startedAt = a.leveltime;
+    a.events.push({ type: 'zeStage', phase: 'start', stage: s, name: s.name });
+    // how far each live human got this round (the best_ze_stage stat)
+    const hs = this.humans();
+    for (const p of hs) if (p.person && s.i + 1 > (p.person.zeBestStage || 0)) p.person.zeBestStage = s.i + 1;
+    if (hs.length) a.events.push({ type: 'zeReach', players: hs, stage: s.i + 1 });
     for (const act of s.d.on_start || []) this.act(act);
     for (const name of s.d.zombie_spawns || []) this.spawnGroup(name);
+    this.ladderStep('start:' + (s.i + 1));
+    if (s.d.boss) this.ladderStep('boss');
+    // a hold, a boss or the escape starts: "HERE THEY COME" a moment later (after the stage's name or BOSS INCOMING),
+    // unless the sidecar surges here itself
+    if (z.autoSurge !== false && (s.d.boss || s.d.escape || (s.d.zone && s.left > 0)) && !(s.d.on_start || []).some((x) => x && x.surge !== undefined))
+      this.queue.push({ at: a.leveltime + (z.surgeDelayTics || 0) + (s.d.boss ? TICRATE : 0), act: { surge: { count: 'auto', auto: true } } });
     if (s.d.boss) this.spawnBoss(s);
     else if (!(s.left > 0)) this.finishStage(s);   // no hold, no boss: a trigger stage, done at once
   }
@@ -275,15 +478,20 @@ class ZeArena {
     if (s.state === 'done') return;
     s.state = 'done'; s.doneAt = this.a.leveltime;
     const z = s.d.zone;
-    if (s.d.escape) {
-      // the humans inside the zone when the hold ends have escaped (none inside: everyone alive who held it last)
-      this.escaped = z ? this.humansIn(z) : this.humans().length;
-      if (!this.escaped && !z) this.escaped = this.humans().length;
-    }
     const scored = this.humans();
+    if (s.d.escape) {
+      // the humans inside the zone when the hold ends have escaped (no zone: everyone alive)
+      const out = z ? scored.filter((p) => this.zoneHas(z, p.mo.x, p.mo.y)) : scored;
+      this.escaped = out.length;
+      if (out.length) this.a.events.push({ type: 'zeEscaped', players: out });
+    } else if (s.total > 0 && scored.length) this.a.events.push({ type: 'zeHold', players: scored, stage: s.i + 1 });
     if (scored.length) this.a.events.push({ type: 'zeScore', players: scored, points: s.d.escape ? this.round.zcfg.escapeScore : this.round.zcfg.holdScore, why: s.d.escape ? 'escape' : 'hold' });
     this.a.events.push({ type: 'zeStage', phase: 'done', stage: s, name: s.name, escape: !!s.d.escape, escaped: this.escaped });
     for (const act of s.d.on_done || []) this.act(act);
+    if (s.d.escape) return;
+    // the default ladder's weapons, then a completed hold's resupply (unless the stage has its own)
+    this.ladderStep('done:' + (s.i + 1));
+    if (s.total > 0 && !zeStageHas(s.d, 'resupply') && this.round.zcfg.holdResupply) this.resupply(this.round.zcfg.holdResupply);
   }
 
   // ---------------------------------------------------------------- actions (sidecar section 3)
@@ -320,6 +528,9 @@ class ZeArena {
       case 'teleport_zombies': if (a.director) a.director.relocate(!!v.behind || v.behind === undefined); break;
       case 'unblock': { const id = typeof act.unblock === 'string' ? act.unblock : v.id; for (const b of this.blocks) if (b.d.id === id) this.setBlock(b, false); break; }
       case 'music': a.events.push({ type: 'zeMusic', id: typeof act.music === 'string' ? act.music : v.id }); break;
+      case 'resupply': this.resupply(act.resupply); break;
+      case 'give': this.give(act.give); break;
+      case 'surge': this.surge(act.surge); break;
       case 'score': { const pts = typeof act.score === 'number' ? act.score : v.points || 1; const h = this.humans(); if (h.length) a.events.push({ type: 'zeScore', players: h, points: pts, why: 'score' }); break; }
     }
   }
@@ -471,17 +682,23 @@ class ZeArena {
     const sizes = this.round.zeSizes || {};
     const mine = sizes[this.side] || 0, theirs = sizes[this.side === 2 ? 3 : 2] || 0;
     if (theirs > mine && mine > 0) p.health = Math.round(p.health * 1.25);
-    const W = { fist: WP_FIST, pistol: WP_PISTOL, shotgun: WP_SHOTGUN, ssg: WP_SUPERSHOTGUN, chaingun: WP_CHAINGUN, rocket: WP_MISSILE, plasma: WP_PLASMA, chainsaw: WP_CHAINSAW, bfg: WP_BFG };
-    const AMMO = { [WP_PISTOL]: [AM_CLIP, 50], [WP_SHOTGUN]: [AM_SHELL, 24], [WP_SUPERSHOTGUN]: [AM_SHELL, 24], [WP_CHAINGUN]: [AM_CLIP, 100], [WP_MISSILE]: [AM_MISL, 10], [WP_PLASMA]: [AM_CELL, 100], [WP_BFG]: [AM_CELL, 80] };
     let last = null;
     for (const name of hu.loadout || ['pistol', 'shotgun']) {
-      const w = W[String(name).toLowerCase()];
+      const w = ZE_WEAPONS[String(name).toLowerCase()];
       if (w === undefined) continue;
       p.weaponowned[w] = true; last = w;
-      const am = AMMO[w];
+      const am = ZE_START_AMMO[w];
       if (am) p.ammo[am[0]] = Math.max(p.ammo[am[0]], Math.min(p.maxammo[am[0]], am[1]));
     }
+    // a late human gets what the others were given this round
+    for (const id of this.gifts) this.giveTo(p, ZE_WEAPONS[id], false);
     if (last !== null) { p.readyweapon = last; p.pendingweapon = last; }
+    // a late human joining mid-stage has reached that stage too
+    if (p.person) {
+      let n = 0;
+      for (const s of this.stages) if (s.state !== 'pending') n = s.i + 1;
+      if (n > (p.person.zeBestStage || 0)) { p.person.zeBestStage = n; this.a.events.push({ type: 'zeReach', players: [p], stage: n }); }
+    }
   }
 
   // distinct start spots around the player starts (1-4) for a whole side
@@ -493,6 +710,16 @@ class ZeArena {
       const s = starts.length ? starts[i % starts.length] : { x: 0, y: 0, angle: 0 };
       let f = a.fitSpot(s.x, s.y, 192, taken);
       if (!f) for (const o of starts) { f = a.fitSpot(o.x, o.y, 192, taken); if (f) break; }
+      // starts on small pads (MAP03): fitSpot keeps to the start's own sector, so look round it in the next sectors too
+      // (walkable from the start); two players on one spot can never move again
+      if (!f) for (let r = 64; r <= 320 && !f; r += 64) for (const o of starts) {
+        for (let k = 0; k < 8 && !f; k++) {
+          const x = o.x + r * Math.cos(k * Math.PI / 4), y = o.y + r * Math.sin(k * Math.PI / 4);
+          if (!a.inside(x, y) || !a.run(() => walkableLine(o.x, o.y, x, y))) continue;
+          f = a.fitSpot(x, y, 32, taken);
+        }
+        if (f) break;
+      }
       const spot = { x: f ? f.x : s.x, y: f ? f.y : s.y, angle: s.angle, silent: true };
       taken.push(spot);
       out.set(p, spot);
@@ -570,15 +797,24 @@ class ZeArena {
 // ---------------------------------------------------------------------------------- the horde
 class ZeDirector extends MonsterDirector {
   constructor(arena, ze, zcfg) {
-    super(arena, 'ze', { maxAlive: zcfg.cap });
+    super(arena, 'ze', { maxAlive: zcfg.cap || zcfg.capMax || 96 });
     this.ze = ze; this.zcfg = zcfg;
-    const zs = (ze.sc && ze.sc.zombies) || {};
-    this.capN = Math.max(8, Math.min(64, zs.cap || zcfg.cap));   // live zombies here (AI + players)
+    this.capN = ZeDirector.capFor(zcfg, ze.sc, (ze.round.zeSizes || {})[ze.side] || 0);   // live zombies here (AI + players)
     this.reserve = [];            // map monsters that didn't fit under the cap at the start: they come in later at their own spots
     this.roster = [];             // [type, weight]: what the respawning horde is made of (the map's own mix)
     this.nextFill = 0; this.nextTrim = -1e9;
-    this.aliveNow = 0;
+    this.aliveNow = 0; this.awakeNow = 0;
+    this.packNo = 0;              // packs sent so far (they take turns: the stage's spawn groups, behind, the flanks)
     this.begun = false;
+  }
+
+  // the arena's cap: capBase + capPerPlayer x the players placed here at round start, within capMin..capMax (cfg.cap: a
+  // fixed number instead); a sidecar's zombies.cap is a maximum on top
+  static capFor(zcfg, sc, placed) {
+    let cap = zcfg.cap > 0 ? zcfg.cap : Math.max(zcfg.capMin || 32, Math.min(zcfg.capMax || 96, (zcfg.capBase || 24) + (zcfg.capPerPlayer || 4) * placed));
+    const zs = (sc && sc.zombies) || {};
+    if (zs.cap > 0) cap = Math.min(cap, zs.cap);
+    return Math.max(8, Math.round(cap));
   }
 
   players() {
@@ -619,19 +855,24 @@ class ZeDirector extends MonsterDirector {
     // a level's monsters are many for a few humans: fewer humans than the map was made for -> an even share of them
     // is placed now and the rest wait in the reserve (they come in as the fill asks for AI)
     const r = this.mapScale();
-    let acc = 0;
+    let acc = 0, placed = 0;
     for (const m of a.mapMonsters) {
       let key = replace[m.key] || m.key;
       if (drop.has(key) || drop.has(m.key) || MT[key] === undefined) continue;
       if (!ZE_FILL_SKIP.has(key)) mix.set(key, (mix.get(key) || 0) + 1);
       acc += r;
-      if (acc < 1 || this.alive() >= this.capN) { this.reserve.push(Object.assign({}, m, { key })); continue; }
+      // (the level's own monsters wait asleep: at most sleepMax of the cap, the horde needs the rest)
+      if (acc < 1 || placed >= this.sleepMax()) { this.reserve.push(Object.assign({}, m, { key })); continue; }
+      placed++;
       acc -= 1;
       a.run(() => this.placeAt(key, m.x, m.y, m.angle, { ambush: m.ambush }));
     }
     this.roster = Array.from(mix.entries());
     this.nextFill = a.leveltime + 3 * TICRATE;
   }
+
+  // how many of the level's own monsters may wait asleep at once (a big level would fill the whole cap with them)
+  sleepMax() { return Math.round(this.capN * (this.zcfg.sleepShare === undefined ? 0.3 : this.zcfg.sleepShare)); }
 
   // a monster at a given spot (the nearest clear one within 96 units); asleep unless awake is asked
   placeAt(type, x, y, angle, opts) {
@@ -660,7 +901,9 @@ class ZeDirector extends MonsterDirector {
   }
 
   // a spot for a zombie (AI or player): the active stage's spawn groups, else behind the humans; out of the humans'
-  // sight and at least minDist from all of them. close: the nearest such spot behind them (bringing a straggler back)
+  // sight and at least minDist from all of them. close: the nearest such spot behind them (bringing a straggler back).
+  // flank: a spot level with the humans (about as far along the level as they are) instead of behind them; groups: false
+  // ignores the stage's spawn groups. The spot found carries its candidate point (base) for a pack around it.
   zeSpot(info, opts) {
     const a = this.a, ze = this.ze;
     const minDist = opts && opts.minDist !== undefined ? opts.minDist : 450;
@@ -668,17 +911,26 @@ class ZeDirector extends MonsterDirector {
     let cands = [];
     const groups = [];
     if (opts && opts.group) groups.push(opts.group);
-    else { const s = ze.active(); if (s) for (const n of s.d.zombie_spawns || []) groups.push(n); }
+    else if (!(opts && opts.groups === false)) { const s = ze.active(); if (s) for (const n of s.d.zombie_spawns || []) groups.push(n); }
     for (const n of groups) { const g = ze.groups.get(n); if (g) for (const p of g.points) cands.push(p); }
     const fromGroup = cands.length > 0;
     if (fromGroup) shuffle(cands);
     else {
       const spots = ze.spots || [];
       if (hs.length) {
-        let minProg = Infinity;
-        for (const p of hs) { const v = ze.progress[a.level.sectorAt(p.mo.x, p.mo.y).id]; if (v < minProg) minProg = v; }
-        const behind = spots.filter((s) => s.prog < minProg - 128).sort((x, y) => y.prog - x.prog);
-        cands = behind.length >= 3 ? behind : spots.slice().sort((x, y) => (minProg === Infinity ? 0 : Math.abs(x.prog - minProg) - Math.abs(y.prog - minProg)));
+        let minProg = Infinity, maxProg = -Infinity;
+        for (const p of hs) { const v = ze.progress[a.level.sectorAt(p.mo.x, p.mo.y).id]; if (v < minProg) minProg = v; if (v > maxProg && v !== Infinity) maxProg = v; }
+        if (opts && opts.flank && minProg !== Infinity) {
+          const side = spots.filter((s) => s.prog >= minProg - 500 && s.prog <= maxProg + 400);
+          if (side.length >= 3) cands = shuffle(side);
+        }
+        if (!cands.length) {
+          // the nearest few spots behind the humans, in a random order (a pack from the same doorway every time is a
+          // conveyor belt, not a horde)
+          const behind = spots.filter((s) => s.prog < minProg - 128).sort((x, y) => y.prog - x.prog);
+          if (behind.length >= 3) { cands = behind.slice(0, 10); shuffle(cands); cands = cands.concat(behind.slice(10)); }
+          else cands = spots.slice().sort((x, y) => (minProg === Infinity ? 0 : Math.abs(x.prog - minProg) - Math.abs(y.prog - minProg)));
+        }
       } else cands = shuffle(spots.slice());
     }
     let fallback = null;
@@ -693,7 +945,7 @@ class ZeDirector extends MonsterDirector {
       let seen = false;
       const probe = { x: f.x, y: f.y, z: a.level.sectorAt(f.x, f.y).floorheight, height: info.height, sector: null };
       for (const p of hs) if (Math.abs(p.mo.x - f.x) < 2500 && Math.abs(p.mo.y - f.y) < 2500 && checkSight(p.mo, probe)) { seen = true; break; }
-      const spot = { x: f.x, y: f.y, near };
+      const spot = { x: f.x, y: f.y, near, base: c };
       if (!seen) return spot;
       if (!fallback) fallback = spot;
     }
@@ -707,32 +959,96 @@ class ZeDirector extends MonsterDirector {
     const a = this.a;
     const spot = a.run(() => this.zeSpot(info, opts));
     if (!spot) return null;
-    return a.run(() => {
-      const mo = spawnMobj(spot.x, spot.y, ONFLOORZ, MT[type]);
-      if (!checkPosition(mo, spot.x, spot.y) || TM.ceilingz - TM.floorz < mo.height || TM.floorz - mo.sector.floorheight > MAXSTEP) { removeMobj(mo); return null; }
-      mo.floorz = TM.floorz; mo.ceilingz = TM.ceilingz; mo.z = TM.floorz; mo.pz = mo.z;
-      if (info.flags & MF_FLOAT) { mo.z = Math.min(mo.ceilingz - mo.height, mo.floorz + 24); mo.pz = mo.z; }
-      if (opts && opts.health) { mo.health = opts.health; mo.maxHealth = opts.health; }
-      if (opts && opts.boss) { mo.boss = true; this.bossCount++; }
-      const fog = spawnMobj(spot.x, spot.y, mo.z, MT.TFOG);
-      startSound(fog, 'telept');
-      this.wake(mo);
-      this.spawned++;
-      a.onMonsterSpawned(mo, null);
-      return mo;
+    return a.run(() => this.spawnAt(type, spot.x, spot.y, opts));
+  }
+
+  // an AI zombie at (x, y) if it fits there, awake, out of a teleport fog (quiet: no sound, for the rest of a pack)
+  spawnAt(type, x, y, opts) {
+    const info = MOBJINFO[MT[type]], a = this.a;
+    const mo = spawnMobj(x, y, ONFLOORZ, MT[type]);
+    if (!checkPosition(mo, x, y) || TM.ceilingz - TM.floorz < mo.height || TM.floorz - mo.sector.floorheight > MAXSTEP) { removeMobj(mo); return null; }
+    mo.floorz = TM.floorz; mo.ceilingz = TM.ceilingz; mo.z = TM.floorz; mo.pz = mo.z;
+    if (info.flags & MF_FLOAT) { mo.z = Math.min(mo.ceilingz - mo.height, mo.floorz + 24); mo.pz = mo.z; }
+    if (opts && opts.health) { mo.health = opts.health; mo.maxHealth = opts.health; }
+    if (opts && opts.boss) { mo.boss = true; this.bossCount++; }
+    const fog = spawnMobj(x, y, mo.z, MT.TFOG);
+    if (!(opts && opts.quiet)) startSound(fog, 'telept');
+    this.wake(mo);
+    this.spawned++;
+    a.onMonsterSpawned(mo, null);
+    return mo;
+  }
+
+  // a pack: up to n AI at once around one hidden spot (from a spawn group, behind the humans or on a flank); the types
+  // from the group's own mix (else the map's). Returns how many came.
+  pack(n, where) {
+    const a = this.a, ze = this.ze;
+    const g = where.group ? ze.groups.get(where.group) : null;
+    const ai = g && g.d.ai ? g.d.ai : null;
+    let type = this.pickType(ai);
+    const info = MOBJINFO[MT[type]];
+    const spot = a.run(() => this.zeSpot(info, { minDist: where.minDist || 450, group: where.group, flank: where.flank, groups: false }));
+    if (!spot) return 0;
+    let made = 0;
+    a.run(() => {
+      for (let i = 0; i < n; i++) {
+        if (i) type = this.pickType(ai);
+        const inf = MOBJINFO[MT[type]];
+        const f = i === 0 ? spot : a.fitSpot(spot.base.x, spot.base.y, 192, null, inf.radius, inf.height, inf);
+        if (!f) continue;
+        if (this.spawnAt(type, f.x, f.y, { quiet: i > 0 })) made++;
+      }
     });
+    return made;
+  }
+
+  // a burst of count AI in packs (packMin..packMax each) taking turns between the given spawn groups and the spots behind
+  // and on the flanks of the humans; never over the cap. Returns how many came.
+  burst(count, groups) {
+    const z = this.zcfg;
+    let room = this.capN - this.zombiePlayers() - this.alive();
+    let made = 0, fails = 0;
+    while (made < count && room > 0 && fails < 4) {
+      const n = Math.min(count - made, room, z.packMax || 6);
+      const k = this.packNo++;
+      const where = groups && groups.length ? (k % 3 === 2 ? { flank: true } : { group: groups[k % groups.length] }) : { flank: (k & 1) === 1 };
+      const got = this.pack(n, where);
+      if (!got) fails++;
+      made += got; room -= got;
+    }
+    return made;
+  }
+
+  // one pass over the horde with each check: live AI, how many are awake (a map monster still asleep where the mapper put
+  // it is an ambush ahead, not part of the pressure: it doesn't count against the AI wanted), and the far flags (AI with
+  // no live human within farDist thinks every farEvery-th tic only, Arena.tic). Returns the live AI count.
+  survey() {
+    const far = this.zcfg.farDist || 0, hs = this.a.playerMobjs;
+    let alive = 0, awake = 0;
+    for (const m of this.a.mobjs) {
+      if (m.info.kind !== 'monster') continue;
+      if (m.health > 0) { alive++; if (STATES[m.state].action !== 'A_Look') awake++; }
+      let f = far > 0 && m.health > 0 && !m.boss;
+      if (f) for (const h of hs) if (Math.abs(h.x - m.x) < far && Math.abs(h.y - m.y) < far && Math.hypot(h.x - m.x, h.y - m.y) < far) { f = false; break; }
+      m.zfar = f;
+    }
+    this.awakeNow = awake;
+    return alive;
   }
 
   tic() {
     const a = this.a;
     if (a.finished || !this.begun) return;
     if ((a.leveltime & 7) !== (a.index & 7)) return;   // the horde is checked 4-5 times a second (arenas offset)
-    const alive = this.aliveNow = this.alive();
+    const alive = this.aliveNow = this.survey();
     const zp = this.zombiePlayers();
-    // fill: the reserve first (at its own spots, when out of sight), then the map's mix behind the humans
-    if (a.leveltime >= this.nextFill && alive < this.aiTarget() && alive + zp < this.capN) {
+    // fill: the reserve first (at its own spots, when out of sight), then packs of the map's mix (a few at once from one
+    // hidden spot, taking turns: the stage's spawn groups, behind the humans, their flanks). The AI wanted counts the
+    // awake AI; everything counts against the cap.
+    const want = Math.min(this.aiTarget(), this.capN - zp - (alive - this.awakeNow));
+    if (a.leveltime >= this.nextFill && this.awakeNow < want) {
       let ok = null;
-      if (this.reserve.length) {
+      if (this.reserve.length && alive - this.awakeNow < this.sleepMax()) {
         const m = this.reserve[0];
         const hs = this.players();
         const far = hs.every((p) => Math.hypot(p.mo.x - m.x, p.mo.y - m.y) > 700);
@@ -740,8 +1056,18 @@ class ZeDirector extends MonsterDirector {
         this.reserve.push(this.reserve.shift());
         if (ok) this.reserve.pop();
       }
-      if (!ok) ok = this.spawn(this.pickType(null), { minDist: 500 });
-      this.nextFill = a.leveltime + (ok ? this.zcfg.fillGapTics : 2 * TICRATE);
+      const short = want - this.awakeNow - (ok ? 1 : 0);
+      const pmin = this.zcfg.packMin || 3, pmax = this.zcfg.packMax || 6;
+      // a pack once enough are missing (or a straggler or two after a quiet spell)
+      if (!ok && short > 0 && (short >= pmin || a.leveltime - this.nextFill > 4 * TICRATE)) {
+        const n = Math.min(short, pmin + (P_Random() % (pmax - pmin + 1)));
+        const s = this.ze.active(), groups = s && s.d.zombie_spawns ? s.d.zombie_spawns.filter((g) => this.ze.groups.has(g)) : [];
+        const k = this.packNo++;
+        const where = groups.length && k % 3 === 0 ? { group: groups[(k / 3 | 0) % groups.length], minDist: 500 } : { flank: k % 3 === 2, minDist: 500 };
+        const got = this.pack(n, where);
+        ok = got > 0;
+        this.nextFill = a.leveltime + (ok ? (this.zcfg.packGapTics || 2 * TICRATE) : 2 * TICRATE);
+      } else if (ok) this.nextFill = a.leveltime + (this.zcfg.fillGapTics || TICRATE);
     }
     // over the cap (zombie players joined): the AI furthest from every human and out of the fight goes away (far off,
     // or at least 400 away and out of every human's sight); the further over, the quicker
@@ -772,26 +1098,39 @@ class ZeDirector extends MonsterDirector {
       if (!gone.length && over > 2 && cands.length) gone.push(cands[0].m);
       if (gone.length) a.run(() => { for (const m of gone) { this.spawned--; removeMobj(m); } });
     }
-    if ((a.leveltime % (5 * TICRATE)) < 8) this.unstick();
+    if ((a.leveltime % 88) < 8) this.unstick();   // every 2.5 s
   }
 
   // stuck AI (Doom's chase is greedy): no headway towards the nearest human for 20 s and not fighting on the same floor ->
   // back in behind the humans. Unlike Boss Battle, a sleeping monster is left asleep: the map's own monsters wait ahead
+  // Also the horde's leash (a director's job, like Left 4 Dead's): awake AI that has been 1000+ from every human for 6 s
+  // and is out of their sight (or 1600+ away) is recycled: it goes, and as many come back in packs behind the humans
+  // and on their flanks. Without it a hold far from where the horde was is fought by a trickle.
   unstick() {
     const a = this.a, players = this.players();
     if (!players.length) return;
+    const recycle = [];
     for (const m of Array.from(a.mobjs)) {
       if (m.info.kind !== 'monster' || m.health <= 0 || m.boss) continue;
-      if (STATES[m.state].action === 'A_Look') { m.bestNear = undefined; continue; }
+      if (STATES[m.state].action === 'A_Look') { m.bestNear = undefined; m.zfarAt = undefined; continue; }
       let nearest = null, near = 1e9;
       for (const p of players) { const d = Math.hypot(p.mo.x - m.x, p.mo.y - m.y); if (d < near) { near = d; nearest = p; } }
+      if (near > 1000) {
+        if (m.zfarAt === undefined) m.zfarAt = a.leveltime;
+        else if (a.leveltime - m.zfarAt >= 6 * TICRATE && (near > 1600 || !a.run(() => players.some((p) => checkSight(p.mo, m))))) { recycle.push(m); continue; }
+      } else m.zfarAt = undefined;
       if (m.bestNear === undefined || near < m.bestNear - 64) { m.bestNear = near; m.progressAt = a.leveltime; continue; }
-      if (a.leveltime - (m.progressAt || 0) < 20 * TICRATE) continue;
+      // (left far behind, 1400+ away: back in after 8 s, not 20)
+      if (a.leveltime - (m.progressAt || 0) < (near > 1400 ? 8 : 20) * TICRATE) continue;
       const sameFloor = (m.flags & MF_FLOAT) || Math.abs(nearest.mo.z - m.z) <= 2 * MAXSTEP;
       if (sameFloor && (near < 160 || a.run(() => checkSight(m, nearest.mo)))) { m.progressAt = a.leveltime; m.bestNear = near; continue; }
       const re = this.spawn(m.info.key, { health: m.health, minDist: 350, close: true });
       if (re) { this.spawned--; a.run(() => removeMobj(m)); }
       else m.progressAt = a.leveltime;
+    }
+    if (recycle.length) {
+      a.run(() => { for (const m of recycle) { this.spawned--; removeMobj(m); } });
+      this.burst(recycle.length, null);
     }
   }
 
@@ -867,7 +1206,7 @@ class ZeRound extends RoundManager {
     this.roundNumber++;
     this.time = 0;
     this.zeResult = null; this.wipedAt = {}; this.seen = new Set(); this.zeStarted = false;
-    for (const pe of this.people.values()) pe.zeHumanKills = 0;   // humans killed as a zombie this round (boss takeover)
+    for (const pe of this.people.values()) { pe.zeHumanKills = 0; pe.zeBestStage = 0; }   // humans killed as a zombie this round (boss takeover), furthest stage reached as a human
     if (eligible.length < this.cfg.minPlayersToStart) {
       this.state = 'idle';
       this.events.push({ type: 'notEnough', count: eligible.length });
@@ -1197,6 +1536,9 @@ class ZeRound extends RoundManager {
       for (const p of a.players.values()) p.frozenEnd = true;
       this.events.push({ type: 'arenaEnd', arena: a, result: a.result });
     }
-    this.events.push({ type: 'zeEnd', winner, why, text });
+    // the winning side's live humans (the ze_survivor_wins stat)
+    const wa = winner ? this.arenaFor(winner, 'human') : null;
+    const survivors = wa ? Array.from(wa.players.values()).filter((p) => !p.zclass && !p.spectating && p.playerstate === 'live' && p.mo && !p.mo.removed) : [];
+    this.events.push({ type: 'zeEnd', winner, why, text, survivors });
   }
 }

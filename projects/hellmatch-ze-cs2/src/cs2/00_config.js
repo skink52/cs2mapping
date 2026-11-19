@@ -6,13 +6,28 @@ const CONFIG = {
   // ---- zombie escape (core defaults in DEFAULT_CFG.ze; a map's sidecar can set cap, respawn_seconds, time_limit, classes)
   ZE: {
     MAP: null,                   // e.g. "e1m1" to always play that ZE level (null = rotate through the ZE levels)
-    CAP: 48,                     // live zombies per arena, AI and zombie players together (AI yields to players); up to 64
+    // live zombies per arena, AI and zombie players together (AI yields to players): CAP_BASE + CAP_PER_PLAYER x the players
+    // placed in that arena at round start, within CAP_MIN..CAP_MAX; a map's sidecar zombies.cap is a maximum on top
+    CAP_BASE: 24, CAP_PER_PLAYER: 4, CAP_MIN: 32, CAP_MAX: 96,
     KILL_DELAY_TICS: 35,         // Doom tics (35 a second) from a human's death to their swap into the other arena
     DRAW_WINDOW_TICS: 35,        // both sides wiped within this many tics of each other: a draw
     ZOMBIE_RESPAWN: 4,           // seconds before a dead zombie comes back (behind the humans), unless the sidecar says otherwise
     TIME_LIMIT: 600,             // seconds, unless the sidecar's time_limit says otherwise; then most live humans, then furthest stage
-    AI_BASE: 2, AI_PER_HUMAN: 2.5, // AI zombies wanted in an arena: AI_BASE + AI_PER_HUMAN x live humans (capped by CAP)
-    AI_DAMAGE: 0.6,              // the AI horde's hits on humans, against Doom's (1 = Doom's own)
+    AI_BASE: 8, AI_PER_HUMAN: 5, // AI zombies wanted in an arena: AI_BASE + AI_PER_HUMAN x live humans (under the cap)
+    // a surge ("HERE THEY COME"): SURGE_BASE + SURGE_PER_HUMAN x live humans at once, in packs from behind and the flanks;
+    // at every hold, boss and escape start (AUTO_SURGE) and wherever a map's sidecar asks for one
+    SURGE_BASE: 6, SURGE_PER_HUMAN: 3, AUTO_SURGE: true,
+    FAR_AI: 2000,                // Doom units: AI with no live human this close thinks every 4th tic (cheaper big hordes)
+    // ammo and upgrades: an AI zombie's death drops ammo DROP_CHANCE of the time (the kind the arena's humans use, clips and
+    // shells mostly), gone after DROP_SECONDS; a completed hold gives HOLD_RESUPPLY (share of max ammo for each ammo type a
+    // human can use, health / armour up to 100) unless the map's sidecar has its own; maps without "give" actions hand out
+    // UPGRADE_LADDER ("done:N": the Nth stage done, "boss": a boss stage starts; ids pistol shotgun ssg chaingun rocket
+    // plasma bfg chainsaw); a human's bullets refill 1 a second while below AMMO_FLOOR (never fists only)
+    DROP_CHANCE: 0.35, DROP_SECONDS: 30,
+    HOLD_RESUPPLY: { ammo: 0.5, health: 25, armor: 0 },
+    UPGRADE_LADDER: [{ on: "done:1", give: ["chaingun", "ssg"] }, { on: "done:2", give: ["rocket"] }, { on: "boss", give: ["plasma"] }],
+    AMMO_FLOOR: 50,
+    AI_DAMAGE: 0.5,              // the AI horde's hits on humans, against Doom's (1 = Doom's own); a bigger horde hits lighter
     ZOMBIE_DAMAGE: 1,            // zombie players' claw / bite / lunge / dash (the classes' own numbers x this)
     ZOMBIE_HP: 1,                // zombie players' health (x this, on top of the scaling by the humans they hunt)
     KNOCKBACK: 1.6,              // shots push zombie players this much harder than Doom's mass rule alone

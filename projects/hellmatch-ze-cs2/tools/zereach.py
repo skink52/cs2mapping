@@ -15,7 +15,9 @@ on_done / this on_start; doors opened likewise):
   - the next stage's hold zone is NOT reachable while stage k is a hold (a gate really gates), unless the next stage starts
     by line_crossed (then the route to its line must be open: a walk-on stage);
   - no exit line (11, 51, 52, 124, 197, 198) is reachable before the escape stage (blocked exits are fine);
-  - every spawn group of the stage has a point in a sector reachable at that stage (zombies spawn behind the humans).
+  - every spawn group of the stage has a point in a sector reachable at that stage (zombies spawn behind the humans);
+  - every `surge` group (on_start: reachable while the stage runs; on_done: reachable once the next stage runs) likewise.
+`resupply` and `give` change no route and are accepted as they are (ze_sidecar.py checks their shape).
 """
 import json, math, os, re, sys
 
@@ -228,7 +230,7 @@ def main():
     exits = [(li, l) for li, l in enumerate(m['lines']) if l['special'] in EXITS]
     fails = []
     unblocked, opened = set(), set()
-    prev = None
+    prev = None; prev_done_surges = []
     for k, s in enumerate(stages):
         # state while stage k runs
         for a in s.get('on_start', []) or []:
@@ -266,9 +268,18 @@ def main():
         for g in s.get('zombie_spawns', []) or []:
             if g in groups and not group_sectors(groups[g], geo) & seen:
                 fails.append('%s: spawn group %s is not in a reachable sector' % (tag, g))
+        for a in s.get('on_start', []) or []:
+            g = (a.get('surge') or {}).get('group') if isinstance(a.get('surge'), dict) else None
+            if g in groups and not group_sectors(groups[g], geo) & seen:
+                fails.append('%s: on_start surge group %s is not in a reachable sector' % (tag, g))
+        if prev_done_surges:
+            for g in prev_done_surges:
+                if g in groups and not group_sectors(groups[g], geo) & seen:
+                    fails.append('%s: the previous stage on_done surge group %s is not in a reachable sector' % (tag, g))
         newly = seen - (prev or set())
         print('%s: %d sectors reachable (+%d)%s' % (tag, len(seen), len(newly), (': ' + ' '.join(map(str, sorted(newly)))) if verbose else ''))
         prev = seen
+        prev_done_surges = [a['surge'].get('group') for a in s.get('on_done', []) or [] if isinstance(a.get('surge'), dict)]
         for a in s.get('on_done', []) or []:
             if 'unblock' in a: unblocked.add(a['unblock'] if isinstance(a['unblock'], str) else a['unblock'].get('id'))
             opened |= action_sectors(a, m)

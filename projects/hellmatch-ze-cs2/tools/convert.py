@@ -726,16 +726,27 @@ class Level:
 WORLD = 16000    # every placement stays inside +-WORLD (CS2's world is +-16384)
 
 
-def pack(items, lim=15600, gap=2048):
-    """shelf-pack placements [(pid, (x0, y0, x1, y1))] into the world; returns the centre offset per pid"""
+# the lobby, pawn booth and model cache (tools/vmap.py: x +-1024, y -768..4712 at z -12000), plus one gap all round: no
+# placement may overlap it in x/y, so nothing of a level ever sits above or below those rooms
+KEEP_OUT = [(-1024, -768, 1024, 4712)]
+
+
+def pack(items, lim=15600, gap=2048, keep_out=KEEP_OUT):
+    """shelf-pack placements [(pid, (x0, y0, x1, y1))] into the world, tallest first, stepping past the keep-out boxes;
+    returns the centre offset per pid"""
     items = sorted(items, key=lambda it: (-(it[1][3] - it[1][1]), it[0]))
+    ko = [(a - gap, b - gap, c + gap, d + gap) for a, b, c, d in keep_out]
     x = -lim; y = -lim; shelf = 0; res = {}
     for pid, bb in items:
         w = bb[2] - bb[0]; h = bb[3] - bb[1]
-        if x + w > lim:
-            x = -lim; y += shelf + gap; shelf = 0
-        if x + w > lim or y + h > lim:
-            raise SystemExit('convert: the placements do not fit in +-%d (at %s)' % (lim, pid))
+        while True:
+            if x + w > lim:
+                x = -lim; y += shelf + gap; shelf = 0
+            if y + h > lim:
+                raise SystemExit('convert: the placements do not fit in +-%d (at %s)' % (lim, pid))
+            hit = [k for k in ko if x < k[2] and x + w > k[0] and y < k[3] and y + h > k[1]]
+            if not hit: break
+            x = max(k[2] for k in hit)
         res[pid] = (x + w / 2, y + h / 2)
         x += w + gap; shelf = max(shelf, h)
     return res

@@ -316,7 +316,13 @@ class Arena {
         if (p.mo && !p.mo.removed && p.playerstate === 'live' && !p.zclass) this.playerMobjs.push(p.mo);   // what monsters hunt: never zombie players
       }
       const list = Array.from(this.mobjs);
-      for (const mo of list) if (!mo.removed) mobjThinker(mo);
+      // ZE: AI with no live human within farDist (flagged by the horde check) thinks every farEvery-th tic only
+      const far = this.ze ? this.ze.round.zcfg.farEvery || 0 : 0, lt = this.leveltime;
+      for (const mo of list) {
+        if (mo.removed) continue;
+        if (far > 1 && mo.zfar && (lt + mo.id) % far) { mo.px = mo.x; mo.py = mo.y; mo.pz = mo.z; mo.pangle = mo.angle; continue; }
+        mobjThinker(mo);
+      }
       runThinkers();
       respawnSpecials();
       if (this.director) this.director.tic();

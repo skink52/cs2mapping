@@ -38,7 +38,7 @@ const outDir = path.join(here, 'out');
 fs.mkdirSync(outDir, { recursive: true });
 const exportsLine = `module.exports = { LEVELS, Arena, RoundManager, DEFAULT_CFG, MT, STATES, SN, MOBJINFO, BT_ATTACK, BT_USE, arenaSizes, botThink, cycleWeapon, selectSlot, checkPositionProbe, ` +
   `checkSight: typeof checkSight === 'function' ? checkSight : undefined, MF_SOLID, MF_SHOOTABLE, MF_PICKUP, ` +
-  `ZeRound: typeof ZeRound === 'function' ? ZeRound : undefined, ZE: typeof ZE === 'object' ? ZE : undefined, ZCLASS: typeof ZCLASS === 'object' ? ZCLASS : undefined, WEAPON_ACTIONS, damageMobj, get TM() { return TM; }, get G() { return G; } };\n`;
+  `ZeRound: typeof ZeRound === 'function' ? ZeRound : undefined, ZeArena: typeof ZeArena === 'function' ? ZeArena : undefined, ZeDirector: typeof ZeDirector === 'function' ? ZeDirector : undefined, ZE: typeof ZE === 'object' ? ZE : undefined, ZCLASS: typeof ZCLASS === 'object' ? ZCLASS : undefined, WEAPON_ACTIONS, damageMobj, buildNav: typeof buildNav === 'function' ? buildNav : undefined, teleportMove: typeof teleportMove === 'function' ? teleportMove : undefined, navNext: typeof navNext === 'function' ? navNext : undefined, get TM() { return TM; }, get G() { return G; } };\n`;
 fs.writeFileSync(path.join(outDir, name + '_core.cjs'), core + `\nconst LEVELS = ${lv};\n` + exportsLine);
 const cs2 = path.join(src, 'cs2');
 if (fs.existsSync(cs2)) {

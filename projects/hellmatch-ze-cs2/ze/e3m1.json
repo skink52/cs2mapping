@@ -15,7 +15,7 @@
     "keys": "remove"
   },
   "zombies": {
-    "cap": 48,
+    "cap": 96,
     "map_monsters": {
       "use": true,
       "skill": "hard",
@@ -190,6 +190,23 @@
           "message": "THE BARRIER IS DOWN - GO NORTH"
         },
         {
+          "resupply": {
+            "ammo": 0.5,
+            "health": 25
+          }
+        },
+        {
+          "give": [
+            "chaingun"
+          ]
+        },
+        {
+          "surge": {
+            "group": "blood_pit",
+            "count": 6
+          }
+        },
+        {
           "score": 1
         }
       ]
@@ -226,6 +243,18 @@
           }
         },
         {
+          "resupply": {
+            "ammo": 0.6,
+            "health": 25,
+            "armor": 25
+          }
+        },
+        {
+          "give": [
+            "rocket"
+          ]
+        },
+        {
           "score": 1
         }
       ]
@@ -256,6 +285,11 @@
         },
         {
           "music": "boss"
+        },
+        {
+          "give": [
+            "plasma"
+          ]
         }
       ],
       "on_done": [
@@ -269,6 +303,12 @@
         },
         {
           "message": "THE EXIT GATE IS OPEN"
+        },
+        {
+          "resupply": {
+            "ammo": 0.5,
+            "health": 25
+          }
         },
         {
           "score": 2

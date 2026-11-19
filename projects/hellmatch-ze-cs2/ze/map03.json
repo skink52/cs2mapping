@@ -1,0 +1,644 @@
+{
+  "map": "MAP03",
+  "wad": "levels/map03.wad",
+  "wad_sha1": "c86e61218ccb13101f35ef3fe9890a65b2c84354",
+  "title": "Crude Processing Center",
+  "author_credit": "Freedoom CREDITS-LEVELS (MAP03)",
+  "time_limit": 840,
+  "humans": {
+    "start": "player_starts",
+    "health": 100,
+    "loadout": [
+      "pistol",
+      "shotgun"
+    ],
+    "keys": "remove"
+  },
+  "zombies": {
+    "cap": 96,
+    "map_monsters": {
+      "use": true,
+      "skill": "hard",
+      "replace": {
+        "SHOTGUY": "IMP",
+        "CHAINGUY": "DEMON"
+      },
+      "drop": []
+    },
+    "player_classes": [
+      "IMP",
+      "DEMON",
+      "LOSTSOUL"
+    ],
+    "respawn_seconds": 4
+  },
+  "spawn_groups": {
+    "west_wing": {
+      "points": [
+        [
+          -200,
+          650,
+          0
+        ],
+        [
+          -200,
+          300,
+          0
+        ]
+      ],
+      "radius": 64,
+      "ai": {
+        "ZOMBIE": 3,
+        "IMP": 3,
+        "DEMON": 1
+      },
+      "trickle": {
+        "every": 6,
+        "max": 12
+      }
+    },
+    "east_wing": {
+      "sectors": [
+        8
+      ],
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2,
+        "ZOMBIE": 2
+      },
+      "trickle": {
+        "every": 5,
+        "max": 12
+      }
+    },
+    "gallery_back": {
+      "sectors": [
+        3,
+        4,
+        5
+      ],
+      "ai": {
+        "IMP": 2,
+        "DEMON": 2
+      },
+      "trickle": {
+        "every": 7,
+        "max": 8
+      }
+    },
+    "blue_hall": {
+      "sectors": [
+        244,
+        250
+      ],
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2,
+        "SPECTRE": 1
+      },
+      "trickle": {
+        "every": 5,
+        "max": 12
+      }
+    },
+    "crossing": {
+      "sectors": [
+        50,
+        54
+      ],
+      "ai": {
+        "DEMON": 3,
+        "IMP": 3
+      },
+      "trickle": {
+        "every": 5,
+        "max": 12
+      }
+    },
+    "pillar_hall": {
+      "points": [
+        [
+          100,
+          -300,
+          0
+        ],
+        [
+          860,
+          -300,
+          180
+        ],
+        [
+          100,
+          -700,
+          0
+        ]
+      ],
+      "radius": 64,
+      "ai": {
+        "IMP": 4,
+        "DEMON": 2,
+        "LOSTSOUL": 2
+      },
+      "trickle": {
+        "every": 5,
+        "max": 14
+      }
+    },
+    "south_stairs": {
+      "sectors": [
+        29,
+        222
+      ],
+      "ai": {
+        "IMP": 3,
+        "DEMON": 2,
+        "ZOMBIE": 2
+      },
+      "trickle": {
+        "every": 5,
+        "max": 12
+      }
+    },
+    "north_arm": {
+      "sectors": [
+        216
+      ],
+      "ai": {
+        "IMP": 4,
+        "DEMON": 2,
+        "LOSTSOUL": 1
+      },
+      "trickle": {
+        "every": 4,
+        "max": 14
+      }
+    },
+    "south_arm": {
+      "sectors": [
+        133
+      ],
+      "ai": {
+        "DEMON": 3,
+        "IMP": 2
+      },
+      "trickle": {
+        "every": 5,
+        "max": 10
+      }
+    },
+    "column_hall": {
+      "sectors": [
+        178
+      ],
+      "ai": {
+        "IMP": 4,
+        "DEMON": 2
+      },
+      "trickle": {
+        "every": 5,
+        "max": 12
+      }
+    },
+    "core_room": {
+      "points": [
+        [
+          4440,
+          -700,
+          180
+        ],
+        [
+          4440,
+          -1100,
+          180
+        ],
+        [
+          3950,
+          -700,
+          0
+        ],
+        [
+          3950,
+          -1100,
+          0
+        ]
+      ],
+      "radius": 64,
+      "ai": {
+        "DEMON": 4,
+        "IMP": 4,
+        "LOSTSOUL": 2
+      },
+      "trickle": {
+        "every": 4,
+        "max": 18
+      }
+    },
+    "lift_foot": {
+      "sectors": [
+        15,
+        99
+      ],
+      "ai": {
+        "IMP": 2,
+        "DEMON": 2
+      },
+      "trickle": {
+        "every": 6,
+        "max": 8
+      }
+    },
+    "exit_hall": {
+      "sectors": [
+        275
+      ],
+      "ai": {
+        "IMP": 3,
+        "DEMON": 3,
+        "LOSTSOUL": 2
+      },
+      "trickle": {
+        "every": 4,
+        "max": 14
+      }
+    }
+  },
+  "blocks": [
+    {
+      "id": "blue_door",
+      "lines": [
+        1468,
+        1473
+      ],
+      "until": "stage:2"
+    },
+    {
+      "id": "east_gate",
+      "lines": [
+        226,
+        229
+      ],
+      "until": "stage:3"
+    },
+    {
+      "id": "south_gate",
+      "lines": [
+        236,
+        239
+      ],
+      "until": "stage:4"
+    },
+    {
+      "id": "red_door",
+      "lines": [
+        1276,
+        1280
+      ],
+      "until": "stage:5"
+    },
+    {
+      "id": "exit_hall",
+      "lines": [
+        1651
+      ],
+      "until": "stage:6"
+    }
+  ],
+  "stages": [
+    {
+      "id": 1,
+      "name": "HOLD THE GALLERY",
+      "start": "round",
+      "hold": 50,
+      "zone": {
+        "sector": 22
+      },
+      "zombie_spawns": [
+        "west_wing",
+        "east_wing",
+        "gallery_back"
+      ],
+      "on_start": [
+        {
+          "message": "HOLD THE GALLERY"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "blue_door"
+        },
+        {
+          "open_door": {
+            "sector": 247
+          }
+        },
+        {
+          "message": "THE BLUE DOOR IS OPEN - GO EAST"
+        },
+        {
+          "resupply": {
+            "ammo": 0.5,
+            "health": 25
+          }
+        },
+        {
+          "give": [
+            "ssg",
+            "chaingun"
+          ]
+        },
+        {
+          "surge": {
+            "group": "west_wing",
+            "count": 8
+          }
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "HOLD THE PUMP ROOM",
+      "start": {
+        "stage_done": 1
+      },
+      "hold": 55,
+      "zone": {
+        "sector": 249
+      },
+      "zombie_spawns": [
+        "east_wing",
+        "blue_hall"
+      ],
+      "on_start": [
+        {
+          "message": "THROUGH THE BLUE DOOR - HOLD THE ROOM"
+        }
+      ],
+      "on_done": [
+        {
+          "open_door": {
+            "tag": 19,
+            "speed": "fast"
+          }
+        },
+        {
+          "unblock": "east_gate"
+        },
+        {
+          "open_door": {
+            "sector": 46,
+            "speed": "fast"
+          }
+        },
+        {
+          "message": "THE EAST GATE IS OPEN"
+        },
+        {
+          "resupply": {
+            "ammo": 0.6,
+            "health": 25,
+            "armor": 25
+          }
+        },
+        {
+          "give": [
+            "rocket"
+          ]
+        },
+        {
+          "teleport_zombies": {
+            "behind": true
+          }
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "KILL THE SLUDGE SOLDIER",
+      "start": {
+        "zone_entered": {
+          "sector": 264
+        }
+      },
+      "boss": {
+        "type": "REVENANT",
+        "name": "SLUDGE SOLDIER",
+        "at": [
+          800,
+          -450,
+          180
+        ],
+        "health_scale": "players",
+        "music": "boss"
+      },
+      "zombie_spawns": [
+        "pillar_hall",
+        "crossing"
+      ],
+      "on_start": [
+        {
+          "message": "A DARK SOLDIER STALKS THE PILLARS"
+        },
+        {
+          "music": "boss"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "south_gate"
+        },
+        {
+          "open_door": {
+            "sector": 49,
+            "speed": "fast"
+          }
+        },
+        {
+          "lower_lift": {
+            "sector": 61,
+            "perpetual": true
+          }
+        },
+        {
+          "message": "BACK TO THE HUB - THE SOUTH GATE"
+        },
+        {
+          "resupply": {
+            "ammo": 0.5,
+            "health": 25
+          }
+        },
+        {
+          "give": [
+            "chainsaw"
+          ]
+        },
+        {
+          "teleport_zombies": {
+            "behind": true
+          }
+        },
+        {
+          "score": 2
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "HOLD THE CROSSROADS",
+      "start": {
+        "stage_done": 3
+      },
+      "hold": 60,
+      "zone": {
+        "box": [
+          2300,
+          -1000,
+          2500,
+          -790
+        ]
+      },
+      "zombie_spawns": [
+        "north_arm",
+        "south_arm",
+        "south_stairs"
+      ],
+      "on_start": [
+        {
+          "message": "HOLD THE CROSSROADS"
+        },
+        {
+          "surge": {
+            "group": "north_arm",
+            "count": 10
+          }
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "red_door"
+        },
+        {
+          "open_door": {
+            "sector": 233
+          }
+        },
+        {
+          "message": "THE RED DOOR IS OPEN - GO EAST"
+        },
+        {
+          "resupply": {
+            "ammo": 0.6,
+            "health": 25,
+            "armor": 50
+          }
+        },
+        {
+          "give": [
+            "plasma"
+          ]
+        },
+        {
+          "score": 1
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "DESTROY THE REFINERY TRIPOD",
+      "start": {
+        "zone_entered": {
+          "sectors": [
+            15,
+            99
+          ]
+        }
+      },
+      "boss": {
+        "type": "CYBERDEMON",
+        "name": "REFINERY TRIPOD",
+        "at": [
+          4400,
+          -900,
+          180
+        ],
+        "health_scale": "players",
+        "music": "boss"
+      },
+      "zombie_spawns": [
+        "core_room",
+        "lift_foot"
+      ],
+      "on_start": [
+        {
+          "message": "AN ASSAULT TRIPOD GUARDS THE CORE"
+        },
+        {
+          "music": "boss"
+        }
+      ],
+      "on_done": [
+        {
+          "unblock": "exit_hall"
+        },
+        {
+          "message": "THE EXIT HALL IS OPEN - NORTH"
+        },
+        {
+          "resupply": {
+            "ammo": 0.5,
+            "health": 25
+          }
+        },
+        {
+          "score": 2
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "ESCAPE",
+      "start": {
+        "stage_done": 5
+      },
+      "hold": 30,
+      "zone": {
+        "sectors": [
+          203,
+          306
+        ]
+      },
+      "escape": true,
+      "zombie_spawns": [
+        "core_room",
+        "exit_hall"
+      ],
+      "on_start": [
+        {
+          "lower_floor": {
+            "sector": 306
+          }
+        },
+        {
+          "spawn_group": "exit_hall"
+        },
+        {
+          "message": "RUN TO THE EXIT LIFT AND HOLD IT"
+        }
+      ],
+      "on_done": [
+        {
+          "message": "ESCAPED"
+        },
+        {
+          "score": 3
+        }
+      ]
+    }
+  ]
+}

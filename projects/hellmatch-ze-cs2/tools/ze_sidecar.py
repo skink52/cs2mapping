@@ -15,7 +15,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 CEIL_ACTIONS = {'open_door', 'close_door'}
 FLOOR_ACTIONS = {'lower_lift', 'raise_floor', 'lower_floor'}
-OTHER_ACTIONS = {'message', 'spawn_group', 'teleport_zombies', 'unblock', 'music', 'score', 'block'}
+OTHER_ACTIONS = {'message', 'spawn_group', 'teleport_zombies', 'unblock', 'music', 'score', 'block', 'resupply', 'give', 'surge'}
+# Round 3 (STATUS.md "Round 3"): resupply {ammo 0..1, health, armor}, give [weapon ids], surge {group, count "auto" | n}
+WEAPONS = {'pistol', 'shotgun', 'ssg', 'chaingun', 'rocket', 'plasma', 'bfg', 'chainsaw'}
+RESUPPLY_KEYS = {'ammo', 'health', 'armor'}
 START_KINDS = {'line_crossed', 'stage_done', 'use_line', 'zone_entered'}
 
 
@@ -125,6 +128,26 @@ class Checker:
             elif kind in ('unblock', 'block'):
                 b = arg if isinstance(arg, str) else (arg or {}).get('id')
                 if b not in blocks: self.err(p, 'block %r is not defined' % b)
+            elif kind == 'resupply':
+                if not isinstance(arg, dict) or not arg: self.err(p, 'resupply takes an object {ammo, health, armor}'); continue
+                for k2, v in arg.items():
+                    if k2 not in RESUPPLY_KEYS: self.err(p, 'resupply: unknown key %r (ammo, health, armor)' % k2)
+                    elif not isinstance(v, (int, float)) or isinstance(v, bool) or v < 0: self.err(p, 'resupply.%s must be a number >= 0' % k2)
+                    elif k2 == 'ammo' and v > 1: self.err(p, 'resupply.ammo is a share of max ammo (0..1)')
+                    elif k2 != 'ammo' and v > 200: self.err(p, 'resupply.%s over 200' % k2)
+            elif kind == 'give':
+                if not isinstance(arg, list) or not arg: self.err(p, 'give takes a non-empty list of weapon ids'); continue
+                for w in arg:
+                    if w not in WEAPONS: self.err(p, 'give: unknown weapon %r (%s)' % (w, ' '.join(sorted(WEAPONS))))
+                if len(set(arg)) != len(arg): self.err(p, 'give: a weapon repeats')
+            elif kind == 'surge':
+                if not isinstance(arg, dict): self.err(p, 'surge takes an object {group, count}'); continue
+                for k2 in arg:
+                    if k2 not in ('group', 'count'): self.err(p, 'surge: unknown key %r (group, count)' % k2)
+                if arg.get('group') not in groups: self.err(p, 'surge: spawn group %r is not defined' % arg.get('group'))
+                c = arg.get('count', 'auto')
+                if c != 'auto' and (not isinstance(c, int) or isinstance(c, bool) or not 1 <= c <= 96):
+                    self.err(p, 'surge.count must be "auto" or a whole number 1..96')
             elif kind not in OTHER_ACTIONS:
                 self.err(p, 'unknown action %r' % kind)
 

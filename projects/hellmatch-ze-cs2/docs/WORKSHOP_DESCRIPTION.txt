@@ -13,23 +13,26 @@ Zombie escape inside one CS2 map, in the retro 90s look of Hellmatch. T and CT e
 [list]
 [*]A team that finishes the escape stage with a human in the exit wins at once.
 [*]A team with no humans left loses; if both are wiped on the same tick it is a draw.
-[*]At the time limit (9 to 10 minutes) the team with more humans alive wins, then the team further along the stages.
+[*]At the time limit (9 to 14 minutes) the team with more humans alive wins, then the team further along the stages.
 [/list]
 
 [h2]Levels[/h2]
-Each round plays one level, a different one each round until all have been played:
+A different level each round until all have been played:
 [list]
-[*][b]Hydroelectric Plant[/b] (Freedoom MAP01): hold the floodgate, hold the pump station, defeat the turbine guardian (a pain lord), escape through the flooded cave.
-[*][b]Outer Prison[/b] (Freedoom E1M1): hold the south gate of the atrium, hold the flooded hall, slay the cave slug (a combat slug), drop into the pit and run through the blue wing to the exit.
-[*][b]Land of the Lost[/b] (Freedoom E3M1): hold the stairs out of the blood pit, hold the temple plaza, kill the cave spider (a technospider), run south to the exit gate.
-[*][b]Janus Terminal[/b] (Freedoom MAP06): hold the east gate of the terminal, hold the pillar hall, destroy the assault tripod in the yard, then run all the way back through the blue gate to the terminal exit.
+[*][b]Hydroelectric Plant[/b] (MAP01): hold the floodgate and the pump station, defeat the pain lord, escape through the flooded cave.
+[*][b]Outer Prison[/b] (E1M1): hold the atrium gate and the flooded hall, slay the combat slug, drop into the pit and run to the exit.
+[*][b]Land of the Lost[/b] (E3M1): hold the stairs and the temple plaza, kill the technospider, run south to the exit gate.
+[*][b]Janus Terminal[/b] (MAP06): hold the east gate and the pillar hall, destroy the assault tripod, run back to the exit.
+[*][b]Supply Depot[/b] (E1M4, long): two holds, a pain bringer in the sludge pit, hold the nukage walkway, a pain lord, run north.
+[*][b]Crude Processing Center[/b] (MAP03, long): two holds, a dark soldier among the pillars, hold the crossroads, an assault tripod in the core, hold the exit lift.
 [/list]
+Weapons upgrade as the stages fall, and every finished hold refills ammo and health.
 
 [h2]Controls[/h2]
 As a human: W A S D move (always running), Shift walk, mouse aim, Mouse 1 fire, E or Space use (doors, switches), R or Mouse 2 next weapon, F previous weapon.
 As a demon: Mouse 1 claw / bite, [b]Mouse 2 or R: your ability[/b] (imp fireball, flesh worm lunge, deadflare dash; the HUD shows when it is ready).
 While rising: R / Mouse 2 next class, F previous. Boss stage: press E in the first 5 s to become the boss yourself.
-Music too loud or too quiet? It follows the [b]Main Menu Music[/b] slider in the audio settings (snd_menumusic_volume).
+Music volume: the [b]Main Menu Music[/b] slider (snd_menumusic_volume).
 Chat commands (! or /): [b]!help[/b] controls, [b]!hud[/b] status bar size, [b]!spec[/b] watch, [b]!afk[/b] sit out, [b]!back[/b] rejoin.
 
 [h2]Server notes[/h2]
@@ -37,19 +40,19 @@ Chat commands (! or /): [b]!help[/b] controls, [b]!hud[/b] status bar size, [b]!
 [*]Map: mg_hellescape, game type Custom. Load it by Workshop ID: host_workshop_map <this item's ID>.
 [*]Nothing to install. The map sets its own round rules (no buying or money, freeze time 0, its own round time; respawns are handled by the script). Set APPLY_CVARS to false in maps/scripts/hellescape.js to keep your own config.
 [*]Plugins that get in the way: AFK managers, no-respawn plugins, spawn protection, teamkill punishment and anything that blocks scripted damage (kills are applied through the map script so the killfeed and scoreboard work).
-[*]CS2 bots play: human bots follow the stages, demon bots chase the humans. bot_quota fills empty slots; up to 64 players.
-[*]The console prints "script time" once a minute so you can check the server load. SERVER_STATS in the script's settings sends monster kills to a server stats plugin (mgstat commands; off by default).
-[*]Early build. Please report problems in the discussions, with the console lines if you have them.
+[*]CS2 bots play (bot_quota fills empty slots); up to 64 players.
+[*]The console prints "script time" once a minute. SERVER_STATS in the script's settings sends stats to a server stats plugin (mgstat commands; off by default).
+[*]Early build. Please report problems in the discussions.
 [/list]
 
 [h2]How it was made[/h2]
-The code (the map script, the level converter, the stage files and the build tools) and most of the engineering were done with an AI coding assistant (Claude, by Anthropic), directed, tested and tuned by skink52. Hellmatch ZE is built on Hellmatch and reuses its code and art. The four "GEN" music tracks were generated for Hellmatch (original, CC0). Everything else you see and hear is the Freedoom project's work, used under its BSD licence (below). Source code: https://github.com/skink52/cs2mapping/tree/main/projects/hellmatch-ze-cs2
+The code (map script, level converter, stage files, build tools) and most of the engineering were done with an AI coding assistant (Claude, by Anthropic), directed, tested and tuned by skink52. Hellmatch ZE is built on Hellmatch and reuses its code and art. The four "GEN" music tracks were generated for Hellmatch (original, CC0). Everything else you see and hear is Freedoom's work, under its BSD licence (below). Source code: https://github.com/skink52/cs2mapping/tree/main/projects/hellmatch-ze-cs2
 
 Hellmatch ZE is an unofficial fan project. It is not affiliated with or endorsed by the Freedoom project, id Software, Bethesda or Valve; Freedoom is named only to credit its content.
 
 [h2]Credits[/h2]
-Levels: Outer Prison (E1M1) by Gabriel "YukiHerz" Antonio; Land of the Lost (E3M1) and Janus Terminal (MAP06) by Jay "Jayextee" Trent; Hydroelectric Plant (MAP01) by Samuel "Blastfrog" Oliver, Luiz Henrique "Xindage" Gasparin Jeronimo and Jon Dowland. Textures, sprites, sounds and music: the Freedoom project (freedoom.github.io).
-Level music, rendered from Freedoom's MIDI files with the addon's own OPL2 model and Freedoom's GENMIDI instruments: E1M1 "Steel and Brass" by J.Astartes and Mr795; E3M1 "Intrare In Infernum" and MAP01 "Not My First Rodeo..." by Lola "BlueWorrior" Harvey; MAP06 "Refrigeration" by Korp, based on "Dark Trail" by Tyler "Picklehammer" P. Boss stages (rendered with libADLMIDI, Nuked OPL3, DMXOPL3 bank by Shannon "Sneakernets" Freeman, MIT): E1M8 "On the Next Day" by Kevin "Velvetic" Martins; E2M8 "Treble Dissension" by Korp; E3M8 "The Zenith" by Lola "BlueWorrior" Harvey. Theme: the Hellmatch trailer track by skink52.
+Levels: Outer Prison (E1M1) by Gabriel "YukiHerz" Antonio; Supply Depot (E1M4) by GeekMarine; Crude Processing Center (MAP03) by Jeremy "SgtCrispy" Elder; Land of the Lost (E3M1) and Janus Terminal (MAP06) by Jay "Jayextee" Trent; Hydroelectric Plant (MAP01) by Samuel "Blastfrog" Oliver, Luiz Henrique "Xindage" Gasparin Jeronimo and Jon Dowland. Textures, sprites, sounds and music: the Freedoom project (freedoom.github.io).
+Level music, rendered from Freedoom's MIDI files with the addon's own OPL2 model and Freedoom's GENMIDI instruments: E1M1 "Steel and Brass" by J.Astartes and Mr795; E3M1 "Intrare In Infernum" and MAP01 "Not My First Rodeo..." by Lola "BlueWorrior" Harvey; MAP06 "Refrigeration" by Korp, based on "Dark Trail" by Tyler "Picklehammer" P.; E1M4 "Flood the City" by Kevin "Velvetic" Martins and Jonathan "julnen" Martins; MAP03 "Demon Dance" by Discoholic Boss stages (rendered with libADLMIDI, Nuked OPL3, DMXOPL3 bank by Shannon "Sneakernets" Freeman, MIT): E1M8 "On the Next Day" by Kevin "Velvetic" Martins; E2M8 "Treble Dissension" by Korp; E3M8 "The Zenith" by Lola "BlueWorrior" Harvey. Theme: the Hellmatch trailer track by skink52.
 
 [h2]Freedoom licence[/h2]
 Copyright © 2001-2024

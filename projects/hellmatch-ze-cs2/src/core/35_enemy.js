@@ -148,7 +148,11 @@ function newChaseDir(actor) {
   if (!actor.target) { actor.movedir = DI_NODIR; return; }
   const olddir = actor.movedir === undefined ? DI_NODIR : actor.movedir;
   const turnaround = DIR_OPPOSITE[olddir];
-  const deltax = actor.target.x - actor.x, deltay = actor.target.y - actor.y;
+  let tx = actor.target.x, ty = actor.target.y;
+  // ZE: the horde walks the sector graph towards a human out of reach (Doom's straight-line chase leaves a big horde
+  // stuck on the far side of walls); 75_ze.js zeChaseVia
+  if (G.ze) { const v = zeChaseVia(actor); if (v) { tx = v.x; ty = v.y; } }
+  const deltax = tx - actor.x, deltay = ty - actor.y;
   const d = [DI_NODIR, DI_NODIR, DI_NODIR];
   if (deltax > 10) d[1] = DI_EAST; else if (deltax < -10) d[1] = DI_WEST;
   if (deltay < -10) d[2] = DI_SOUTH; else if (deltay > 10) d[2] = DI_NORTH;

@@ -23,4 +23,8 @@ run afk 4 2 45 afk
 run warmup 4 2 20 warmup
 run class_choice 4 4 40
 run boss_takeover 4 4 52
+run ze_ammo 4 4 30 zemap=map01
+run ze_stats 4 4 50 stats,zemap=map01
+run ze_stats 4 4 50 stats,warmup,zemap=map01
+run ze_stats 4 4 50 zemap=map01
 exit $fail

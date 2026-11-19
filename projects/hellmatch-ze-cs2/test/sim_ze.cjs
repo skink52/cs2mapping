@@ -1,22 +1,26 @@
 // Bots-only Hellmatch ZE rounds, played to a result in the playsim (no CS2).
-//   node test/sim_ze.cjs [players=12] [rounds=2] [core module=test/out/ze_core.cjs] [seed]
+//   node test/sim_ze.cjs [players=12] [rounds=2] [core module=test/out/hellescape_core.cjs] [seed]
+// Env: ZECFG / ARENACFG (cfg overrides, e.g. '{"map":"e1m4"}'), HP, CAP, SCCAP=none (sidecar caps off), PRE=<module> (a debug hook
+// required after the core module). Ends with a SIMJSON line (test/balance_ze.cjs sums those).
 // Prints per round: the map, sides, stage progress per arena, swaps, kills by kind, the result and timing.
 const path = require('path');
 const N = +(process.argv[2] || 12), ROUNDS = +(process.argv[3] || 2);
-const mod = path.resolve(process.argv[4] || path.join(__dirname, 'out/ze_core.cjs'));
+const mod = path.resolve(process.argv[4] || path.join(__dirname, 'out/hellescape_core.cjs'));
 const SEED = process.argv[5];
 if (SEED !== undefined) {
   let s = +SEED >>> 0;
   const now0 = 1790000000000; Date.now = () => now0;   // P_Random is seeded from the clock
   Math.random = () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
-const C = require(mod);
+const C = require(mod); if (process.env.PRE) require(process.env.PRE);
 const cfg = JSON.parse(JSON.stringify(C.DEFAULT_CFG));
 // HP=<n>: humans start with this much health (to reach the late stages on bots); CAP=<n>: zombie cap
 if (process.env.HP) for (const L of C.LEVELS) if (L.ze) L.ze.humans = Object.assign({}, L.ze.humans, { health: +process.env.HP });
 // ZECFG='{"aiBase":4,...}' / ARENACFG='{"zeKnockback":2}': overrides merged into cfg.ze / cfg.arena (balance runs)
 if (process.env.ZECFG) Object.assign(cfg.ze, JSON.parse(process.env.ZECFG));
 if (process.env.ARENACFG) Object.assign(cfg.arena, JSON.parse(process.env.ARENACFG));
+// SCCAP=none: the sidecars' zombies.cap (a maximum since Round 3) is ignored: the cap formula alone
+if (process.env.SCCAP === 'none') for (const L of C.LEVELS) if (L.ze && L.ze.zombies) { L.ze.zombies = Object.assign({}, L.ze.zombies); delete L.ze.zombies.cap; }
 // (a sidecar's own zombies.cap wins over the config's, so CAP sets both)
 if (process.env.CAP) { cfg.ze.cap = +process.env.CAP; for (const L of C.LEVELS) if (L.ze) L.ze.zombies = Object.assign({}, L.ze.zombies, { cap: +process.env.CAP }); }
 // count the zombie classes' moves (ability use, hits) by wrapping their action functions
@@ -57,6 +61,10 @@ function dashAudit(a) {
     }
   }
 }
+// Round 3: ammo drops made / picked up, the most AI alive at once, per round (summed into the SIMJSON line at the end)
+let dropsMade = 0;
+if (C.ZeArena) { const f = C.ZeArena.prototype.dropFor; C.ZeArena.prototype.dropFor = function (mo) { const it = f.call(this, mo); if (it) dropsMade++; return it; }; }
+const summary = { rounds: 0, secs: 0, escapes: 0, arenas: 0, stage2: 0, stage3: 0, results: {}, surges: 0, surgeAI: 0, gives: 0, resupplies: 0, drops: 0, dropsTaken: 0, maxAI: 0, caps: [] };
 const rm = new C.ZeRound(C.LEVELS, cfg);
 for (let i = 0; i < N; i++) rm.addPerson(i, 'bot' + i, i % 2 ? 3 : 2, true);
 let fails = 0, totalTics = 0, worst = 0;
@@ -64,6 +72,7 @@ const t0 = performance.now();
 for (let r = 0; r < ROUNDS; r++) {
   if (!rm.startRound()) { console.log('round did not start', JSON.stringify(rm.events)); process.exit(1); }
   const kinds = {}, ev = {}, clsCount = {};
+  const drops0 = dropsMade; let taken = 0;
   let tics = 0, swaps = 0, zspawns = 0, maxAlive = [0, 0], maxZp = [0, 0];
   const stageLog = [];
   while (rm.state === 'running' && tics < 35 * 900) {
@@ -75,6 +84,9 @@ for (let r = 0; r < ROUNDS; r++) {
       if (dashes.length) dashAudit(a);
       for (const e of a.events) {
         if (e.type === 'kill') kinds[e.kind] = (kinds[e.kind] || 0) + 1;
+        else if (e.type === 'zeSurge') { summary.surges++; summary.surgeAI += e.count; ev.zeSurge = (ev.zeSurge || 0) + 1; }
+        else if (e.type === 'zeGive') { summary.gives++; ev.zeGive = (ev.zeGive || 0) + 1; }
+        else if (e.type === 'zeResupply') { summary.resupplies++; ev.zeResupply = (ev.zeResupply || 0) + 1; }
         else if (e.type === 'zeStage') stageLog.push(`${a.mapId}@${Math.round(tics / 35)}s ${e.phase} ${e.name}${e.escape ? ' escaped ' + e.escaped : ''}`);
         else ev[e.type] = (ev[e.type] || 0) + 1;
       }
@@ -92,9 +104,20 @@ for (let r = 0; r < ROUNDS; r++) {
   }
   totalTics += tics;
   const res = rm.zeResult;
+  for (const a of rm.arenas) for (const p of a.players.values()) taken += p.stats.pickups || 0;
+  summary.rounds++; summary.secs += tics / 35; summary.drops += dropsMade - drops0; summary.dropsTaken += taken;
+  if (res) { summary.results[res.why] = (summary.results[res.why] || 0) + 1; if (res.why === 'escape') summary.escapes++; }
+  for (const a of rm.arenas) {
+    summary.arenas++;
+    if (a.ze.stages[1] && a.ze.stages[1].state !== 'pending') summary.stage2++;
+    if (a.ze.stages[2] && a.ze.stages[2].state !== 'pending') summary.stage3++;
+    summary.maxAI = Math.max(summary.maxAI, maxAlive[a.index]);
+    if (!summary.caps.includes(a.director.capN)) summary.caps.push(a.director.capN);
+  }
   const desc = rm.arenas.map((a) => `${a.mapId}(side ${a.zeSide}) stages ${a.ze.reached()}/${a.ze.stages.length} AI max ${maxAlive[a.index]} zombie players max ${maxZp[a.index]}`).join(' | ');
   console.log(`round ${r + 1}: ${rm.base && rm.base.id} ${N} bots, ${(tics / 35).toFixed(0)}s -> ${res ? res.text + ' (' + res.why + ', wiped at ' + JSON.stringify(rm.wipedAt) + ', tic ' + rm.time + ')' : 'NO RESULT'}`);
   console.log('  ' + desc);
+  console.log(`  drops ${dropsMade - drops0} (pickups by humans ${taken}), caps ${rm.arenas.map((a) => a.director.capN).join('/')}`);
   console.log(`  swaps ${swaps}, zombie spawns ${zspawns} ${JSON.stringify(clsCount)}, kills ${JSON.stringify(kinds)}`);
   console.log(`  events ${JSON.stringify(ev)}`);
   console.log('  stages: ' + stageLog.join('; '));
@@ -107,5 +130,6 @@ for (const [k, l] of Object.entries(dashLog)) if (l.length) {
   console.log(`  ${k} charges ${l.length}: hit a human ${l.filter((x) => x.hit).length}, median ${med.toFixed(0)} units, short (<40% / wall) ${ds.filter((x) => x < (k === 'DEMON' ? 96 : 115)).length}`);
 }
 if (dashBad) { console.log(`DASH: ${dashBad} tics with a charging body inside a wall or outside its sector's gap`); fails++; }
+console.log('SIMJSON ' + JSON.stringify(summary));
 console.log(`sim_ze ${totalTics} tics in ${ms} ms -> ${(ms / totalTics).toFixed(3)} ms per tic (worst ${worst.toFixed(1)} ms) for ${N} bots; ${fails ? 'PROBLEMS ' + fails : 'OK'}`);
 process.exit(fails ? 1 : 0);

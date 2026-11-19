@@ -26,10 +26,13 @@ function buildCfg() {
   c.arena.botSkill = CONFIG.BOT_SKILL;
   c.arena.zeKnockback = Z.KNOCKBACK;
   Object.assign(c.ze, {
-    map: Z.MAP, cap: Z.CAP, killDelayTics: Z.KILL_DELAY_TICS, drawWindowTics: Z.DRAW_WINDOW_TICS,
+    map: Z.MAP, capBase: Z.CAP_BASE, capPerPlayer: Z.CAP_PER_PLAYER, capMin: Z.CAP_MIN, capMax: Z.CAP_MAX, killDelayTics: Z.KILL_DELAY_TICS, drawWindowTics: Z.DRAW_WINDOW_TICS,
     zombieRespawnTics: Math.round(Z.ZOMBIE_RESPAWN * TICRATE), timeLimitTics: Z.TIME_LIMIT * TICRATE,
     aiBase: Z.AI_BASE, aiPerHuman: Z.AI_PER_HUMAN, classes: Z.CLASSES.slice(), holdScore: Z.HOLD_SCORE, escapeScore: Z.ESCAPE_SCORE,
     aiDamage: Z.AI_DAMAGE, zDamage: Z.ZOMBIE_DAMAGE, zHp: Z.ZOMBIE_HP, bossTakeover: Z.BOSS_TAKEOVER,
+    surgeBase: Z.SURGE_BASE, surgePerHuman: Z.SURGE_PER_HUMAN, autoSurge: Z.AUTO_SURGE, farDist: Z.FAR_AI,
+    dropChance: Z.DROP_CHANCE, dropTics: Math.round(Z.DROP_SECONDS * TICRATE), holdResupply: Object.assign({}, Z.HOLD_RESUPPLY),
+    upgradeLadder: JSON.parse(JSON.stringify(Z.UPGRADE_LADDER)), ammoFloor: Z.AMMO_FLOOR,
   });
   return c;
 }
@@ -189,17 +192,26 @@ function monsterScore(arena, e) {
 }
 
 // ---------------------------------------------------------------- stats for a server plugin (CONFIG.SERVER_STATS)
-// "mgstat <slot> <stat> [n]": the plugin adds n (default 1) to that player's count for the server's current mode.
-// pve_kills (every monster kill, Boss Battle or monsters loose in deathmatch), boss_kills (a boss, also a pve kill),
-// lms_wins (the last man standing). Monster kills are added up per player and sent once a second (SERVER_STATS_EVERY),
-// and before the player's slot is freed and at the end of the round. Bots and warmup don't count.
+// "mgstat <slot> <stat> [n]": the plugin adds n (default 1) to that player's count for the server's current mode
+// (best_* stats: the plugin keeps the highest n). Names (docs/SERVER_STATS_NOTE.md):
+//   pve_kills            AI monsters killed (boss_kills: a stage boss, also a pve kill)
+//   ze_escapes           a live human in the escape zone when the escape completed
+//   ze_survivor_wins     a live human on the winning side when the round ended
+//   ze_holds             a live human when a timed hold completed
+//   ze_infections        as a zombie player, killed a human (ze_boss_player_kills: while driving a boss, also an infection)
+//   ze_zombie_kills      as a human, killed a zombie player
+//   ze_boss_takeovers    took control of a stage boss
+//   best_ze_stage n      the furthest stage reached as a live human this round
+// Everything is added up per player and sent once a second at most (SERVER_STATS_EVERY), before the player's slot is
+// freed and at the end of the round; best_ze_stage keeps its highest n. Humans only: never bots, never in warmup.
 // PvP kills and deaths are real CS2 kills, so the plugin gets those from game events. Each goes out as "echo mgstat ...": a
 // dedicated server drops any command a Workshop map sends that isn't on Valve's allow list, and echo is on it (the plugin reads echo lines).
 let statsOn = !!CONFIG.SERVER_STATS;
-const statPending = new Map();   // slot -> { pve, boss }
+const statPending = new Map();   // slot -> { <stat>: n } (best_* stats: the highest n)
+const STAT_ORDER = ["pve_kills", "boss_kills", "ze_zombie_kills", "ze_infections", "ze_boss_player_kills", "ze_boss_takeovers", "ze_holds", "ze_escapes", "ze_survivor_wins", "best_ze_stage"];
 let statNext = 0;
-function statSend(slot, stat, n) {
-  const cmd = "echo mgstat " + Math.floor(slot) + " " + String(stat).replace(/[^a-z0-9_]/gi, "") + (n > 1 ? " " + Math.floor(n) : "");
+function statSend(slot, stat, n, always) {
+  const cmd = "echo mgstat " + Math.floor(slot) + " " + String(stat).replace(/[^a-z0-9_]/gi, "") + (n > 1 || always ? " " + Math.floor(n) : "");
   guard("mgstat", () => Console.ServerCommand(cmd));
 }
 function statHuman(slot) {
@@ -207,19 +219,25 @@ function statHuman(slot) {
   const c = controllerOf(slot);
   return !!c && !c.IsBot();
 }
-function statMonster(slot, boss) {
+// add n to a player's stat (best_*: keep the highest n), sent with the next flush
+function statAdd(slot, stat, n) {
   if (!statHuman(slot)) return;
   let s = statPending.get(slot);
-  if (!s) { s = { pve: 0, boss: 0 }; statPending.set(slot, s); }
-  s.pve++;
-  if (boss) s.boss++;
+  if (!s) { s = {}; statPending.set(slot, s); }
+  if (stat.startsWith("best_")) s[stat] = Math.max(s[stat] || 0, n);
+  else s[stat] = (s[stat] || 0) + (n === undefined ? 1 : n);
 }
+function statMonster(slot, boss) {
+  statAdd(slot, "pve_kills");
+  if (boss) statAdd(slot, "boss_kills");
+}
+function statPlayers(list, stat, n) { for (const p of list || []) if (p && !p.isBot) statAdd(p.slot, stat, n); }
 function statFlush(slot) {
   const s = statPending.get(slot);
   if (!s) return;
   statPending.delete(slot);
-  if (s.pve) statSend(slot, "pve_kills", s.pve);
-  if (s.boss) statSend(slot, "boss_kills", s.boss);
+  for (const k of STAT_ORDER) if (s[k]) statSend(slot, k, s[k], k.startsWith("best_"));
+  for (const k of Object.keys(s)) if (!STAT_ORDER.includes(k) && s[k]) statSend(slot, k, s[k], k.startsWith("best_"));
 }
 function statFlushAll() { for (const slot of Array.from(statPending.keys())) statFlush(slot); }
 function statTick(now) {
@@ -287,6 +305,33 @@ function processKills(now) {
 }
 
 // ---------------------------------------------------------------- events from the playsim
+// kills between players: a zombie player's human kill (an infection; also a boss player kill while driving a boss), a
+// human's zombie player kill
+function zeKillStats(e) {
+  const k = e.killer, v = e.victim;
+  if (!k || !v || k === v || !statsOn) return;
+  if (k.zclass && !v.zclass) {
+    statAdd(k.slot, "ze_infections");
+    if (ZCLASS[k.zclass] && ZCLASS[k.zclass].boss) statAdd(k.slot, "ze_boss_player_kills");
+  } else if (!k.zclass && v.zclass) statAdd(k.slot, "ze_zombie_kills");
+}
+
+// a line for a human's bottom HUD line ("UPGRADE: CHAINGUN + SSG", "RESUPPLY"): queued, each shown for 3 s in turn
+function zeNote(p, text) {
+  const pe = p && p.person;
+  if (!pe || pe.bot) return;
+  const q = pe.zeNotes || (pe.zeNotes = []);
+  if (q.length < 4) q.push({ text, until: 0 });
+}
+function zeNoteNow(pe, now) {
+  const q = pe.zeNotes;
+  if (!q || !q.length) return "";
+  while (q.length && q[0].until && now >= q[0].until) q.shift();
+  if (!q.length) return "";
+  if (!q[0].until) q[0].until = now + 3;
+  return q[0].text;
+}
+
 function handleArenaEvents(a) {
   const view = views.get(a);
   for (const e of a.events) {
@@ -294,7 +339,7 @@ function handleArenaEvents(a) {
       case "sound": if (view) playSound(view, e); break;
       case "localsound": if (view && e.player.mo) playSound(view, { sfx: e.sfx, mo: e.player.mo, x: e.player.mo.x, y: e.player.mo.y, z: e.player.mo.z + 40 }); break;
       case "msg": e.player.message = e.text; e.player.messageTime = a.leveltime; break;
-      case "kill": onDoomKill(a, e); break;
+      case "kill": onDoomKill(a, e); zeKillStats(e); break;
       case "teleport": case "spawn": faceView(e.player.slot, e.angle); break;
       case "fight": centerMsgs.set(a, { text: "FIGHT!", until: Instance.GetGameTime() + 1.2 }); break;
       // zombie escape: stages, messages, the boss, score
@@ -318,6 +363,7 @@ function handleArenaEvents(a) {
         break;
       case "zeBossTaken": {
         const pe = e.player.person;
+        statAdd(e.player.slot, "ze_boss_takeovers");
         if (pe) pe.zeBossUntil = Instance.GetGameTime() + 5;
         centerMsgs.set(a, { text: "THE BOSS IS A PLAYER!", until: Instance.GetGameTime() + 3 });
         sayAll(`${ZE_SIDE_NAME[a.zeSide]}: ${e.player.name} is the ${e.name.toLowerCase()}`);
@@ -329,6 +375,13 @@ function handleArenaEvents(a) {
         if (e.player && e.player.person) e.player.person.zeBossUntil = 0;
         log(`${a.mapId}: the AI took the boss back from ${e.player ? e.player.name : "?"} (${e.why})`);
         break;
+      // Round 3: ammo and upgrades (a line at the bottom of each human's screen), surges, stats
+      case "zeGive": for (const p of e.players) zeNote(p, "UPGRADE: " + e.weapons.join(" + ").toUpperCase()); break;
+      case "zeResupply": for (const p of e.players) zeNote(p, "RESUPPLY"); break;
+      case "zeSurge": centerMsgs.set(a, { text: "HERE THEY COME", until: Instance.GetGameTime() + 2.5 }); break;
+      case "zeHold": statPlayers(e.players, "ze_holds"); break;
+      case "zeEscaped": statPlayers(e.players, "ze_escapes"); break;
+      case "zeReach": statPlayers(e.players, "best_ze_stage", e.stage); break;
       case "zeScore":
         if (!GameRules.IsWarmupPeriod()) for (const p of e.players) { const c = controllerOf(p.slot); if (c && e.points) guard("zescore", () => c.AddScore(e.points)); }
         break;
@@ -369,6 +422,7 @@ function handleRoundEvents() {
         if (e.person.player) { e.person.player.message = "YOU DIED - YOU RISE AS A ZOMBIE"; e.person.player.messageTime = e.to.leveltime; }
         dlog(`${e.person.name}: human of ${ZE_SIDE_NAME[e.person.zeSide]} -> zombie in ${e.to.mapId}`);
         break;
+      case "zeEnd": statPlayers(e.survivors, "ze_survivor_wins"); break;
       case "zeZombie":
         if (e.first && e.person) e.person.zeBannerUntil = Instance.GetGameTime() + 4;
         if (e.person) e.person.zeClassUntil = Instance.GetGameTime() + 2.5;
@@ -443,6 +497,7 @@ function infoFor(pe, now) {
     // a new boss is up for takeover: the first E near a zombie spawn takes it, else most human kills among who asked
     if (offer && !a.ze.offer.opted.has(me)) msg = "PRESS E TO BECOME THE BOSS";
   } else if (me && a.countdown > 0) spec = "HUMANS: HOLD THE ZONES, ESCAPE";
+  else if (me) spec = zeNoteNow(pe, now);
   // !help: controls on the message line and chat commands at the bottom, over whatever was there
   if (pe.helpUntil > now) {
     msg = me && me.zclass ? "MOUSE1 ATTACK  MOUSE2/R ABILITY  E USE" : "R NEXT  F PREV  E USE  SHIFT WALK";
