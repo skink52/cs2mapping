@@ -20,17 +20,26 @@ Zombie escape for Counter-Strike 2, built on Hellmatch: Freedoom levels rebuilt 
   - **Crude Processing Center** (Freedoom MAP03, long): hold the gallery, hold the pump room, a dark soldier among the pillars,
     hold the crossroads, ride down to the core and destroy the assault tripod, then hold the exit lift.
 - Every finished hold refills ammo and health, and the stages hand out weapon upgrades as you go.
+- **Escape finale.** A team that escapes is teleported into a small deathmatch arena, **Issues of Claveria** (FreeDM
+  DM03): "T'S ESCAPED - BUT WILL THE CTS BE HOT ON THEIR TRAIL?". If the other team is wiped, the escaped team wins. If
+  it escapes too, it joins them ("CTS TRACKED DOWN THE REMAINING TS - FIGHT TO BE THE FINAL SURVIVORS"): T against CT,
+  weapons, ammo and health kept, the arena's own pickups to grab, and a death there is final. The last team standing wins
+  the round; at the time limit the team with more live humans wins, a tie goes to the team that escaped first.
+- Playtest fixes (round 4): the deadflare floats like the monster; demons respawn only where they can walk to the humans
+  and get through doors (stage files: spawns out of a sealed pit, route doors held open); a softer red damage flash; demon
+  players pass through each other and through monster demons.
 
 Controls: Hellmatch's (WASD, mouse, E/Space to use, R / Mouse 2 next weapon, F previous weapon). As a demon, Mouse 1 attacks
 (claw / bite) and Mouse 2 or R uses the ability (fireball / lunge / dash, with a cooldown shown on the HUD).
-Winning: the last team with humans alive wins; a team that escapes wins at once; at the time limit the team with more humans
-alive wins (then the team further along).
+Winning: a team with no humans left loses; a team that escapes goes to the finale arena (above); at the time limit the team
+with more humans alive wins (then the team further along).
 Chat: !help !hud !spec !afk !back.
 
 ## Credits and licences
 
 - Levels, textures, sprites, sounds and music: the Freedoom project, modified BSD licence (`FREEDOOM_LICENSE.txt`,
-  `FREEDOOM_CREDITS.txt`). Level authors: Freedoom's `CREDITS-LEVELS`. This addon is not affiliated with or endorsed by
+  `FREEDOOM_CREDITS.txt`). Level authors: Freedoom's `CREDITS-LEVELS` (the finale arena, DM03 Issues of Claveria, by
+  Luiz Henrique "Xindage" Gasparin Jeronimo). This addon is not affiliated with or endorsed by
   the Freedoom project.
 - Music: each level's Freedoom track (rendered with the addon's own OPL2 model and Freedoom's GENMIDI patches, checked by
   numbers for clipping, DC and silence), Freedoom boss tracks E1M8 / E2M8 / E3M8 (libADLMIDI, Nuked OPL3, DMXOPL3 bank),

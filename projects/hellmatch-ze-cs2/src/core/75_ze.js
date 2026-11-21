@@ -170,10 +170,55 @@ class ZeArena {
     const starts = a.humanStarts && a.humanStarts.length ? a.humanStarts : a.dmstarts;
     this.progress = zeProgressMap(L, starts.length ? starts : [{ x: 0, y: 0 }]);
     const out = [];
-    for (const p of this.spotPts || []) if (this.progress[p.sec] !== Infinity) out.push({ x: p.x, y: p.y, prog: this.progress[p.sec] });
+    for (const p of this.spotPts || []) if (this.progress[p.sec] !== Infinity) out.push({ x: p.x, y: p.y, prog: this.progress[p.sec], sec: p.sec });
     this.spots = out;
     this.layoutDirty = false;
     this.layoutVer = (this.layoutVer || 0) + 1;
+  }
+
+  // 4.2: the sectors a zombie can walk from to a live human of this arena now (sector id -> 1), over the bots' sector
+  // graph as it stands (blocked lines are out of it; doors a script opens or closes rebuild it, tic()): manual doors open
+  // for zombies (zeBumpDoor, E), key doors only once the side holds the key when keys are kept, lifts that need a switch
+  // don't count. Worked out at most every 16 tics (sooner after the graph or the layout changed). Null: no live human.
+  reachToHumans() {
+    const a = this.a, L = a.level, nav = buildNav(L);
+    const m = this.reachMemo;
+    if (m && m.nav === nav && m.ver === this.layoutVer && m.keys === this.keys.size && a.leveltime - m.t < 16) return m.r;
+    const hs = this.humans();
+    let r = null;
+    if (hs.length) {
+      const n = L.sectors.length;
+      let rev = nav.zeRev;
+      if (!rev || nav.zeRevKeys !== this.keys.size) {
+        rev = [];
+        for (let i = 0; i < n; i++) rev.push([]);
+        for (let u = 0; u < n; u++) for (const e of nav[u]) if (this.zombiePasses(e)) rev[e.to].push(u);
+        nav.zeRev = rev; nav.zeRevKeys = this.keys.size;
+      }
+      r = new Uint8Array(n);
+      const q = [];
+      for (const p of hs) { const id = p.mo.sector ? p.mo.sector.id : L.sectorAt(p.mo.x, p.mo.y).id; if (!r[id]) { r[id] = 1; q.push(id); } }
+      while (q.length) { const v = q.pop(); for (const u of rev[v]) if (!r[u]) { r[u] = 1; q.push(u); } }
+    }
+    this.reachMemo = { nav, ver: this.layoutVer, keys: this.keys.size, t: a.leveltime, r };
+    return r;
+  }
+  zombiePasses(e) {
+    if (e.lift) return false;
+    const kc = this.keysKept && e.line ? ZE_KEY_DOORS[e.line.special] : undefined;
+    return !kc || this.keys.has(kc);
+  }
+  // can a zombie at (x, y) (sector id sec, when known) walk to a live human now? (true when nobody is alive to check)
+  reachable(x, y, sec) {
+    const r = this.reachToHumans();
+    if (!r) return true;
+    return !!r[sec !== undefined ? sec : this.a.level.sectorAt(x, y).id];
+  }
+  // the mover thinkers running now (doors, lifts, floors, ceilings), as a number that changes when one starts or stops
+  moverSig() {
+    let h = 0, n = 0;
+    for (const t of this.a.thinkers) if (!t.removed && t.sector && t.type !== 'perpetualRaise') { h = (h * 31 + t.sector.id + 1) | 0; n++; }
+    return h * 64 + n;
   }
 
   groupPoints(d) {
@@ -342,6 +387,11 @@ class ZeArena {
 
   secondTic() {
     const a = this.a, z = this.round.zcfg;
+    // a door, lift or floor the level itself moved (a switch, a walk-over line, a manual door) started or stopped: the
+    // sector graph (and the zombie spots, 4.2) follow what is open now; stage actions already schedule their own rebuild
+    const sig = this.moverSig();
+    if (this.moverWas !== undefined && sig !== this.moverWas) { a.level.nav = null; a.level.navCache = null; this.layoutDirty = true; }
+    this.moverWas = sig;
     if (this.drops.length) {
       let keep = 0;
       for (const d of this.drops) {
@@ -862,13 +912,21 @@ class ZeDirector extends MonsterDirector {
       if (!ZE_FILL_SKIP.has(key)) mix.set(key, (mix.get(key) || 0) + 1);
       acc += r;
       // (the level's own monsters wait asleep: at most sleepMax of the cap, the horde needs the rest)
-      if (acc < 1 || placed >= this.sleepMax()) { this.reserve.push(Object.assign({}, m, { key })); continue; }
+      // (4.2: one shut away from the humans for now, e.g. behind MAP06's west doors, waits in the reserve until reachable)
+      if (acc < 1 || placed >= this.sleepMax() || !this.walkable(m.x, m.y)) { this.reserve.push(Object.assign({}, m, { key })); continue; }
       placed++;
       acc -= 1;
       a.run(() => this.placeAt(key, m.x, m.y, m.angle, { ambush: m.ambush }));
     }
     this.roster = Array.from(mix.entries());
     this.nextFill = a.leveltime + 3 * TICRATE;
+  }
+
+  // a map monster's own spot is in play: reachable from the human starts as the level is open now (4.2: not shut away
+  // for good, like MAP06's west wing behind its never-opening doors; an ambush below a drop ahead still counts)
+  walkable(x, y) {
+    const ze = this.ze;
+    return !ze.progress || ze.progress[this.a.level.sectorAt(x, y).id] !== Infinity;
   }
 
   // how many of the level's own monsters may wait asleep at once (a big level would fill the whole cap with them)
@@ -912,11 +970,16 @@ class ZeDirector extends MonsterDirector {
     const groups = [];
     if (opts && opts.group) groups.push(opts.group);
     else if (!(opts && opts.groups === false)) { const s = ze.active(); if (s) for (const n of s.d.zombie_spawns || []) groups.push(n); }
-    for (const n of groups) { const g = ze.groups.get(n); if (g) for (const p of g.points) cands.push(p); }
+    // 4.2: only places a zombie can walk from to a live human now (a spawn group or spot cut off behind a shut door or a
+    // block is skipped; nothing connected: no spot, a zombie player then rises near a human, ZeRound.spawnZombie)
+    const reach = hs.length ? ze.reachToHumans() : null;
+    const ok = reach ? (p) => !!reach[p.sec !== undefined ? p.sec : (p.sec = a.level.sectorAt(p.x, p.y).id)] : null;
+    for (const n of groups) { const g = ze.groups.get(n); if (g) for (const p of g.points) if (!ok || ok(p)) cands.push(p); }
     const fromGroup = cands.length > 0;
     if (fromGroup) shuffle(cands);
     else {
-      const spots = ze.spots || [];
+      let spots = ze.spots || [];
+      if (ok) spots = spots.filter(ok);
       if (hs.length) {
         let minProg = Infinity, maxProg = -Infinity;
         for (const p of hs) { const v = ze.progress[a.level.sectorAt(p.mo.x, p.mo.y).id]; if (v < minProg) minProg = v; if (v > maxProg && v !== Infinity) maxProg = v; }
@@ -1051,7 +1114,7 @@ class ZeDirector extends MonsterDirector {
       if (this.reserve.length && alive - this.awakeNow < this.sleepMax()) {
         const m = this.reserve[0];
         const hs = this.players();
-        const far = hs.every((p) => Math.hypot(p.mo.x - m.x, p.mo.y - m.y) > 700);
+        const far = hs.every((p) => Math.hypot(p.mo.x - m.x, p.mo.y - m.y) > 700) && this.walkable(m.x, m.y);
         if (far) ok = a.run(() => this.placeAt(m.key, m.x, m.y, m.angle, { ambush: m.ambush }));
         this.reserve.push(this.reserve.shift());
         if (ok) this.reserve.pop();
@@ -1168,6 +1231,7 @@ class ZeRound extends RoundManager {
     this.zeSizes = {};
     this.seen = new Set();       // people who already played this round (a rejoin comes back as a zombie)
     this.base = null;            // the ZE level being played: { id, title, t, c }
+    this.finale = null;          // the escape finale (Round 4): { arena, sides: { 2|3: { at, entered: Map(slot -> person) } }, first, sameTic, fight }
   }
 
   zeLevels() {
@@ -1205,7 +1269,7 @@ class ZeRound extends RoundManager {
     }
     this.roundNumber++;
     this.time = 0;
-    this.zeResult = null; this.wipedAt = {}; this.seen = new Set(); this.zeStarted = false;
+    this.zeResult = null; this.wipedAt = {}; this.seen = new Set(); this.zeStarted = false; this.finale = null;
     for (const pe of this.people.values()) { pe.zeHumanKills = 0; pe.zeBestStage = 0; }   // humans killed as a zombie this round (boss takeover), furthest stage reached as a human
     if (eligible.length < this.cfg.minPlayersToStart) {
       this.state = 'idle';
@@ -1261,11 +1325,17 @@ class ZeRound extends RoundManager {
     return arena;
   }
 
-  // the arena a person plays in: a human in its own side's arena, a zombie in the other one (solo: the only one)
+  // the arena a person plays in: a human in its own side's arena, a zombie in the other one (solo: the only one). The
+  // finale arena is never one of these, and a zombie never goes into an arena that is over (its side escaped)
   arenaFor(side, role) {
-    const own = this.arenas.find((a) => a.zeSide === side) || null;
+    let own = null, other = null;
+    for (const a of this.arenas) {
+      if (a.zeFinale) continue;
+      if (a.zeSide === side) { if (!own) own = a; } else if (!other) other = a;
+    }
     if (role === 'human') return own;
-    return this.arenas.find((a) => a.zeSide !== side) || (this.solo ? own : null);
+    if (other) return other.finished ? null : other;
+    return this.solo && own && !own.finished ? own : null;
   }
 
   joinArena(pe, arena, atStart, role) {
@@ -1366,8 +1436,24 @@ class ZeRound extends RoundManager {
     const info = MOBJINFO[c.mt];
     let s = a.director.zeSpot(info, { minDist: 420 }) || a.director.zeSpot(info, { minDist: 250, close: true });
     if (!s) {
-      const st = a.dmstarts.length ? a.dmstarts[(P_Random() * a.dmstarts.length) >> 8] : { x: 0, y: 0 };
-      const f = a.fitSpot(st.x, st.y, 128, null, info.radius, info.height);
+      // a start a zombie can walk to the humans from; else a free spot 256-512 from a live human, in a sector connected to
+      // the humans (out of sight is not asked for here); else any start (the old fallback)
+      const near = a.dmstarts.filter((q) => a.ze.reachable(q.x, q.y));
+      let f = null;
+      if (near.length) { const st = near[(P_Random() * near.length) >> 8]; f = a.fitSpot(st.x, st.y, 128, null, info.radius, info.height); }
+      const hs = a.ze.humans();
+      if (!f && hs.length) {
+        const h = hs[(P_Random() * hs.length) >> 8].mo;
+        for (const r of [512, 384, 256]) {
+          for (let k = 0; k < 8 && !f; k++) {
+            const x = h.x + r * Math.cos(k * Math.PI / 4), y = h.y + r * Math.sin(k * Math.PI / 4);
+            if (!a.inside(x, y) || !a.ze.reachable(x, y)) continue;
+            f = a.fitSpot(x, y, 48, null, info.radius, info.height);
+          }
+          if (f) break;
+        }
+      }
+      if (!f && a.dmstarts.length) { const st = a.dmstarts[(P_Random() * a.dmstarts.length) >> 8]; f = a.fitSpot(st.x, st.y, 128, null, info.radius, info.height); }
       if (!f) return false;
       s = { x: f.x, y: f.y };
     }
@@ -1394,7 +1480,8 @@ class ZeRound extends RoundManager {
   canJoin(pe) {
     if (this.state !== 'running' || pe.arena || this.zeResult) return false;
     if (pe.csTeam !== 2 && pe.csTeam !== 3) return false;
-    return !!(this.arenaFor(pe.csTeam, 'zombie') || this.arenaFor(pe.csTeam, 'human'));
+    if (pe.zeFinaleOut === this.roundNumber) return false;   // died in the finale: out for the round
+    return !!(this.arenaFor(pe.csTeam, 'zombie') || (this.lateHumanOk(pe) && this.arenaFor(pe.csTeam, 'human')));
   }
 
   // late joiners: a human during the first stage of their side's arena (and only once a round), else a zombie
@@ -1413,18 +1500,155 @@ class ZeRound extends RoundManager {
     if (this.pending.length) return false;   // arenas still being built: tried again a moment later
     if (!this.canJoin(pe)) { this.spectate(pe); return false; }
     const human = this.lateHumanOk(pe);
-    const arena = human ? this.arenaFor(pe.csTeam, 'human') : this.arenaFor(pe.csTeam, 'zombie') || this.arenaFor(pe.csTeam, 'human');
+    const arena = human ? this.arenaFor(pe.csTeam, 'human') : this.arenaFor(pe.csTeam, 'zombie');
     if (!arena || arena.finished) { this.spectate(pe); return false; }
     this.joinArena(pe, arena, false, human ? 'human' : 'zombie');
     return true;
   }
 
+  // live humans of a side: in its own arena and in the finale
   humansAlive(side) {
     const a = this.arenaFor(side, 'human');
-    if (!a) return 0;
     let n = 0;
-    for (const p of a.players.values()) if (!p.zclass && !p.spectating && p.playerstate === 'live') n++;
+    if (a) for (const p of a.players.values()) if (!p.zclass && !p.spectating && p.playerstate === 'live') n++;
+    return n + this.finaleAlive(side);
+  }
+  finaleAlive(side) {
+    const F = this.finale && this.finale.arena;
+    let n = 0;
+    if (F) for (const p of F.players.values()) if (!p.spectating && p.playerstate === 'live' && p.person && p.person.zeSide === side) n++;
     return n;
+  }
+  // the live humans of a side at the end (the ze_survivor_wins stat): its own arena's and the finale's
+  zeSurvivors(side) {
+    const out = [];
+    const a = this.arenaFor(side, 'human');
+    if (a) for (const p of a.players.values()) if (!p.zclass && !p.spectating && p.playerstate === 'live' && p.mo && !p.mo.removed) out.push(p);
+    const F = this.finale && this.finale.arena;
+    if (F) for (const p of F.players.values()) if (!p.spectating && p.playerstate === 'live' && p.mo && !p.mo.removed && p.person && p.person.zeSide === side) out.push(p);
+    return out;
+  }
+  // tics left on the round's ZE clock (the shortest time limit of the two arenas, from the later fight start)
+  zeTimeLeftTics() {
+    let limit = Infinity, started = -Infinity;
+    for (const a of this.arenas) {
+      if (a.zeFinale || !a.ze) continue;
+      limit = Math.min(limit, a.ze.timeLimitTics);
+      started = Math.max(started, a.startTime + this.cfg.countdownTics);
+    }
+    return limit === Infinity ? 0 : limit - (this.time - started);
+  }
+
+  // ---------------------------------------------------------------- the escape finale (Round 4 contract, docs/STATUS.md)
+  // The level record with finale: true is a third arena, built when the first side escapes: no horde, no stages (its
+  // monsters are left out, its items kept). An escaping side's live humans move there with what they carry; once both
+  // sides are in, T and CT fight (same side can't hurt each other) and a death there is final for the round. The last
+  // side standing wins. No record (or a one-side round): an escape wins at once, as before.
+  finaleLevel() { for (const L of this.levels) if (L.finale) return L; return null; }
+
+  buildFinale(L) {
+    const arena = new Arena(this.arenas.length, Object.assign({}, this.cfg.arena));
+    arena.load(L);
+    arena.modeKey = 'ze'; arena.mode = MODES.ze;
+    arena.teamsActive = true; arena.coop = false; arena.friendlyFire = false;   // T vs CT; same side off
+    arena.mapId = L.id; arena.mapTitle = L.title || L.id; arena.zeSide = 0; arena.zeFinale = true;
+    // spawn at the deathmatch starts (type 11), then the player starts 1-4 when there are few of them
+    if (arena.coopStarts && arena.dmstarts.length < 8) {
+      for (const s of arena.coopStarts) if (!arena.dmstarts.some((q) => Math.abs(q.x - s.x) < 1 && Math.abs(q.y - s.y) < 1)) arena.dmstarts.push({ x: s.x, y: s.y, angle: s.angle });
+    }
+    arena.startTime = this.time; arena.countdown = 0;
+    arena.index = this.arenas.length;
+    this.arenas.push(arena);
+    this.events.push({ type: 'arenaBuilt', arena });
+    return arena;
+  }
+
+  // the arenas in list have just escaped: their live humans go to the finale; their own arenas are over
+  toFinale(list) {
+    const S = ZE_SIDE_NAME;
+    let F = this.finale;
+    if (!F) F = this.finale = { arena: this.buildFinale(this.finaleLevel()), sides: {}, first: 0, sameTic: false, fight: false };
+    let last = 0;
+    for (const a of list) {
+      const side = a.zeSide;
+      if (F.sides[side]) continue;
+      const movers = a.ze.humans();
+      F.sides[side] = { at: this.time, entered: new Map() };
+      if (!F.first) F.first = side;
+      else if (F.sides[F.first].at === this.time) F.sameTic = true;
+      last = side;
+      a.finished = true; a.finishedAt = a.time;
+      a.result = { text: S[side] + ' ESCAPED', ze: true, winner: 0, why: 'escaped', timeout: false };
+      for (const p of a.players.values()) p.frozenEnd = true;
+      for (const p of movers) if (p.person) this.moveToFinale(p.person, p, F);
+    }
+    if (!last) return;
+    const first = F.first, other = first === 2 ? 3 : 2;
+    let text, short;
+    if (F.sides[2] && F.sides[3]) {
+      F.fight = true;
+      const second = last === first ? other : last;   // (both on one tic: the other side tracked down the first)
+      const prey = second === 2 ? 3 : 2;
+      text = S[second] + 'S TRACKED DOWN THE REMAINING ' + S[prey] + 'S - FIGHT TO BE THE FINAL SURVIVORS';
+      short = 'FINAL FIGHT!';
+    } else {
+      text = S[first] + "'S ESCAPED - BUT WILL THE " + S[other] + 'S BE HOT ON THEIR TRAIL?';
+      short = S[first] + "'S ESCAPED!";
+    }
+    this.events.push({ type: 'zeFinale', text, short, fight: F.fight, side: last, arena: F.arena });
+  }
+
+  // a live human into the finale with their weapons, ammo, health and armour, at a start away from the other side
+  moveToFinale(pe, old, F) {
+    const A = old.arena || pe.arena, arena = F.arena;
+    const keep = {
+      health: old.health, armorpoints: old.armorpoints, armortype: old.armortype, backpack: old.backpack,
+      weaponowned: old.weaponowned.slice(), ammo: old.ammo.slice(), maxammo: old.maxammo.slice(),
+      readyweapon: old.pendingweapon !== WP_NOCHANGE && old.weaponowned[old.pendingweapon] ? old.pendingweapon : old.readyweapon,
+    };
+    if (A) A.removePlayer(pe.slot);
+    const p = arena.addPlayer(pe.slot, pe.name, pe.zeSide === 3 ? 1 : 0, this.colorFor(arena));
+    p.person = pe; p.isBot = pe.bot; p.respawnGate = old.respawnGate;
+    p.frags = old.frags; p.deaths = old.deaths;
+    pe.arena = arena; pe.player = p; pe.status = 'playing'; pe.spec = null; pe.zeRole = 'human';
+    const spot = arena.pickSpawnSpot(p);
+    arena.spawnPlayer(p, { x: spot.x, y: spot.y, angle: spot.angle });
+    arena.run(() => {
+      p.health = Math.max(1, keep.health); p.mo.health = p.health;
+      p.armorpoints = keep.armorpoints; p.armortype = keep.armortype; p.backpack = keep.backpack;
+      for (let w = 0; w < NUMWEAPONS; w++) p.weaponowned[w] = !!keep.weaponowned[w];
+      p.ammo = keep.ammo; p.maxammo = keep.maxammo;
+      p.readyweapon = p.weaponowned[keep.readyweapon] ? keep.readyweapon : WP_PISTOL;
+      p.pendingweapon = WP_NOCHANGE;
+      setupPsprites(p);
+    });
+    F.sides[pe.zeSide].entered.set(pe.slot, pe);
+    this.events.push({ type: 'zeFinaleJoin', person: pe, arena });
+    return p;
+  }
+
+  // per tic in the finale: a death there is final (after the kill delay the player watches; no zombie, no respawn)
+  finaleRules(a) {
+    if (a.finished) return;
+    let outs = null;
+    for (const p of a.players.values()) {
+      if (p.spectating || p.playerstate !== 'dead') continue;
+      if (!p.zeFinaleDeath) { p.zeFinaleDeath = true; p.zeFinaleOutAt = this.time + this.zcfg.killDelayTics; }
+      else if (this.time >= p.zeFinaleOutAt && p.person) (outs || (outs = [])).push(p.person);
+    }
+    if (outs) for (const pe of outs) this.finaleOut(pe);
+  }
+
+  finaleOut(pe) {
+    const a = pe.arena, p = pe.player;
+    if (!a || !p) return;
+    a.makeSpectator(p);   // the corpse stays where it fell
+    a.players.delete(pe.slot);
+    pe.zeFinaleOut = this.roundNumber;
+    this.seen.add(this.seenKey(pe));
+    pe.arena = null; pe.player = null; pe.status = 'none';
+    this.spectate(pe, a);
+    this.events.push({ type: 'zeFinaleOut', person: pe, arena: a });
   }
 
   tic(remainingSeconds) {
@@ -1443,12 +1667,12 @@ class ZeRound extends RoundManager {
         }
       }
       for (const p of a.players.values()) {
-        if (p.isBot) zeBotThink(a, p);
+        if (p.isBot) { if (a.zeFinale) botThink(a, p); else zeBotThink(a, p); }
         if (p.frozen || a.finished) { p.cmd.forwardmove = 0; p.cmd.sidemove = 0; p.cmd.buttons = 0; }
       }
       a.tic();
       if ((a.leveltime & 31) === 0) a.rescueOutside();
-      this.zeArenaRules(a);
+      if (a.zeFinale) this.finaleRules(a); else this.zeArenaRules(a);
     }
     this.checkAfk();
     this.checkZe(remainingSeconds);
@@ -1488,32 +1712,43 @@ class ZeRound extends RoundManager {
 
   checkZe(remainingSeconds) {
     if (this.pending.length || this.zeResult || !this.arenas.length) return;
-    if (this.arenas.some((a) => a.countdown > 0)) return;
+    const main = this.arenas.filter((a) => !a.zeFinale);
+    if (main.some((a) => a.countdown > 0)) return;
     const win = this.zcfg.drawWindowTics;
-    // escape: a side that got a human out wins at once (both on one tic: a draw)
-    const out = this.arenas.filter((a) => a.ze.escaped > 0);
-    if (out.length) { this.finishZe(out.length > 1 ? 0 : out[0].zeSide, 'escape'); return; }
+    // escape: with a finale level (and both sides playing) the side's humans go to the finale; without one, a side that
+    // got a human out wins at once (both on one tic: a draw)
+    const out = main.filter((a) => !a.finished && a.ze.escaped > 0);
+    if (out.length) {
+      if (this.solo || !this.finaleLevel()) { this.finishZe(out.length > 1 ? 0 : out[0].zeSide, 'escape'); return; }
+      this.toFinale(out);
+    }
+    // both sides in the finale: the last side standing there wins (both gone on one tic: a draw)
+    const F = this.finale;
+    if (F && F.sides[2] && F.sides[3]) {
+      const n2 = this.finaleAlive(2), n3 = this.finaleAlive(3);
+      if (!n2 || !n3) { this.finishZe(n2 ? 2 : n3 ? 3 : 0, 'finale'); return; }
+    }
     // the escape hold ended with nobody in the zone: that side failed (its humans are overrun)
-    for (const a of this.arenas) if (a.ze.stages.some((s) => s.d.escape && s.state === 'done') && !a.ze.escaped && this.wipedAt[a.zeSide] === undefined) this.wipedAt[a.zeSide] = this.time;
-    for (const a of this.arenas) if (this.wipedAt[a.zeSide] === undefined && this.humansAlive(a.zeSide) === 0) this.wipedAt[a.zeSide] = this.time;
+    for (const a of main) if (!a.finished && a.ze.stages.some((s) => s.d.escape && s.state === 'done') && !a.ze.escaped && this.wipedAt[a.zeSide] === undefined) this.wipedAt[a.zeSide] = this.time;
+    for (const a of main) if (this.wipedAt[a.zeSide] === undefined && this.humansAlive(a.zeSide) === 0) this.wipedAt[a.zeSide] = this.time;
     const w2 = this.wipedAt[2], w3 = this.wipedAt[3];
     if (this.solo) {
-      const side = this.arenas[0].zeSide;
+      const side = main[0].zeSide;
       if (this.wipedAt[side] !== undefined) { this.finishZe(side === 2 ? 3 : 2, 'wipe'); return; }
     } else if (w2 !== undefined || w3 !== undefined) {
       if (w2 !== undefined && w3 !== undefined && Math.abs(w2 - w3) <= win) { this.finishZe(0, 'wipe'); return; }
       const first = w2 !== undefined && (w3 === undefined || w2 <= w3) ? 2 : 3;
       if (this.time >= this.wipedAt[first] + win) { this.finishZe(first === 2 ? 3 : 2, 'wipe'); return; }
     }
-    const limit = Math.min(...this.arenas.map((a) => a.ze.timeLimitTics));
-    const started = Math.max(...this.arenas.map((a) => a.startTime + this.cfg.countdownTics));
-    if (this.time - started >= limit || (remainingSeconds !== undefined && remainingSeconds <= 0)) this.timeUp();
+    if (this.zeTimeLeftTics() <= 0 || (remainingSeconds !== undefined && remainingSeconds <= 0)) this.timeUp();
   }
 
   timeUp() {
     if (this.zeResult || !this.arenas.length) return;
     const h2 = this.humansAlive(2), h3 = this.humansAlive(3);
     let w = h2 > h3 ? 2 : h3 > h2 ? 3 : 0;
+    // during the finale a tie goes to the side that escaped first
+    if (!w && this.finale && this.finale.first && !this.finale.sameTic) w = this.finale.first;
     if (!w && !this.solo) {
       const r2 = (this.arenaFor(2, 'human') || { ze: { reached: () => 0 } }).ze.reached(), r3 = (this.arenaFor(3, 'human') || { ze: { reached: () => 0 } }).ze.reached();
       w = r2 > r3 ? 2 : r3 > r2 ? 3 : 0;
@@ -1527,6 +1762,7 @@ class ZeRound extends RoundManager {
     let text;
     if (why === 'escape') text = winner ? S[winner] + ' HUMANS ESCAPED!' : 'DRAW - BOTH ESCAPED';
     else if (why === 'wipe') text = winner ? S[winner] + ' WIN - ' + S[winner === 2 ? 3 : 2] + ' OVERRUN' : 'DRAW - ALL OVERRUN';
+    else if (why === 'finale') text = winner ? S[winner] + ' WIN THE FINAL FIGHT' : 'DRAW - NO SURVIVORS';
     else text = winner ? 'TIME UP - ' + S[winner] + ' WIN' : 'TIME UP - DRAW';
     this.zeResult = { winner, why, text };
     for (const a of this.arenas) {
@@ -1536,9 +1772,12 @@ class ZeRound extends RoundManager {
       for (const p of a.players.values()) p.frozenEnd = true;
       this.events.push({ type: 'arenaEnd', arena: a, result: a.result });
     }
-    // the winning side's live humans (the ze_survivor_wins stat)
-    const wa = winner ? this.arenaFor(winner, 'human') : null;
-    const survivors = wa ? Array.from(wa.players.values()).filter((p) => !p.zclass && !p.spectating && p.playerstate === 'live' && p.mo && !p.mo.removed) : [];
-    this.events.push({ type: 'zeEnd', winner, why, text, survivors });
+    // the winning side's live humans (the ze_survivor_wins stat), and every human of it who reached the finale, alive or
+    // not, and is still here (ze_finale_wins)
+    const survivors = winner ? this.zeSurvivors(winner) : [];
+    const finaleWinners = [];
+    const fs = winner && this.finale ? this.finale.sides[winner] : null;
+    if (fs) for (const pe of fs.entered.values()) if (this.people.get(pe.slot) === pe) finaleWinners.push({ slot: pe.slot, isBot: pe.bot, name: pe.name });
+    this.events.push({ type: 'zeEnd', winner, why, text, survivors, finaleWinners });
   }
 }

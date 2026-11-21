@@ -56,9 +56,20 @@ _LV = json.load(open(os.path.join(OUT, '_gen/levels.json')))
 LEVEL_CREDITS = []
 for _L in _LV:
     _au = ' '.join(re.sub(r'"[^"]*"', '', _L.get('author') or '').split())     # nicknames dropped to fit one line
-    _c = 'FREEDOOM %s %s%s' % (_L['name'], _L['title'].upper(), (' BY ' + _au.upper()) if _au else '')
-    _c = _c[:110]
+    _c = '%s %s%s%s' % (_L['name'], _L['title'].upper(), (' BY ' + _au.upper()) if _au else '', ' (FINALE)' if _L.get('finale') else '')
     if _c not in LEVEL_CREDITS: LEVEL_CREDITS.append(_c)
+
+
+def wrap(text, scale, width):
+    """split text into lines no wider than `width` pixels at this scale (continuation lines indented)"""
+    out, cur = [], ''
+    for w in text.split():
+        nxt = (cur + ' ' + w) if cur else w
+        if cur and text_image(nxt, scale).width > width:
+            out.append(cur); cur = '   ' + w
+        else: cur = nxt
+    if cur: out.append(cur)
+    return out
 
 def loading_screen():
     W, H = 1920, 1080
@@ -75,13 +86,17 @@ def loading_screen():
     # how a round goes, left
     y = 560
     paste_text(base, 'EVERY ROUND', 130, y, 4, gold); y += 56
-    for line in ['BOTH TEAMS RUN THE SAME LEVEL', 'HOLD ZONES TO OPEN GATES', 'DEFEAT THE GUARDIAN', 'REACH THE EXIT FIRST TO WIN',
+    for line in ['BOTH TEAMS RUN THE SAME LEVEL', 'HOLD ZONES TO OPEN GATES', 'DEFEAT THE GUARDIAN', 'ESCAPE, THEN WIN THE FINALE',
                  'DIE AND YOU RISE AS A DEMON', "IN THE OTHER TEAM'S LEVEL", '']:
         if line: paste_text(base, line, 130, y, 3, white)
         y += 36
-    yc = 1040 - 28 * len(LEVEL_CREDITS)      # level credits above the disclaimer, clear of the controls box
-    for L in LEVEL_CREDITS:
-        paste_text(base, L, 130, yc, 2, grey); yc += 28
+    # level credits top right, between the tagline and the controls box (round 4: seven levels no longer fit under the
+    # round text without running under the controls box)
+    lines = [ln for L in LEVEL_CREDITS for ln in wrap(L, 2, 1880 - 1000)]
+    yc = max(292, 548 - 24 * (len(lines) + 1))     # below the title line, right of the tagline, above the controls box
+    paste_text(base, 'LEVELS FROM FREEDOOM', 1000, yc, 2, gold); yc += 24
+    for L in lines:
+        paste_text(base, L, 1000, yc, 2, grey); yc += 24
     # controls, right
     base.alpha_composite(Image.new('RGBA', (1120, 456), (0, 0, 0, 175)), (760, 560))
     x0, x1, y = 800, 1080, 590
@@ -163,7 +178,7 @@ def radar():
     for L in levels:
         bb, off = L['bb'], L['off']
         px, py = to_px(off[0] + (bb[0] + bb[2]) / 2, off[1] + (bb[1] + bb[3]) / 2)
-        t = text_image(L['title'] + (' (T)' if L.get('side') == 't' else ' (CT)' if L.get('side') == 'c' else ''), 2, (255, 255, 255))
+        t = text_image(L['title'] + (' (T)' if L.get('side') == 't' else ' (CT)' if L.get('side') == 'c' else ' (FINALE)' if L.get('finale') else ''), 2, (255, 255, 255))
         img.alpha_composite(t, (int(px / S - t.width / 2), int(py / S - t.height / 2)))
     path = os.path.join(OUT, 'panorama/images/overheadmaps')
     os.makedirs(path, exist_ok=True)

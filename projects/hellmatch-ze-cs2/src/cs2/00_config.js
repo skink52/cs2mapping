@@ -40,6 +40,10 @@ const CONFIG = {
   ROUND_SECONDS: 660,            // the script sets the CS2 round timer to this at round start (above the ZE time limit)
   ITEMS_RESPAWN: true,           // Doom "deathmatch 2.0": items respawn, weapons are picked up
   FREELOOK_AIM: true,            // aim up/down with the mouse when autoaim finds nothing
+  // red screen when hurt (Doom's palette shift, toned down after the 20 Nov playtest): MAX_STEP = strongest red class used
+  // (1-8, about 11% opacity each; Doom goes to 8), SCALE = tint per point of damage taken (Doom 1), FADE = tint lost per
+  // tic (Doom 1: a big hit stayed red for 3 s). Pickup gold, berserk and invulnerability tints are Doom's own.
+  DAMAGE_TINT: { MAX_STEP: 3, SCALE: 0.6, FADE: 1.25 },
 
   // ---- monster kills on the CS2 scoreboard (Score column; the Kills column and rank plugins need a server plugin)
   MONSTER_SCORE: 1,              // points per AI zombie killed (a CS2 kill is worth 2); 0 = off

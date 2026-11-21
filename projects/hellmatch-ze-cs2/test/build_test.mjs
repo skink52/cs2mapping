@@ -2,6 +2,7 @@
 // tested before (or without) the pipeline's out/addon. Writes into test/out/ (gitignored).
 //   node test/build_test.mjs [--src <dir with core/ and cs2/>] [--levels <levels.json>] [--consts <file>] [--name <base>]
 //   --fixture: use the FreeDM fixture levels even when the pipeline's out/addon/_gen/levels.json exists
+//   --nofinale: leave the finale level record out (the build without one); without it a missing record is made from FreeDM MAP02
 // Outputs test/out/<name>_core.cjs (Node module for sim/audit) and test/out/<name>.js (the CS2 point_script).
 // Defaults: this project's src, the pipeline's out/addon/_gen/levels.json when present, else
 // test/fixtures/fdm/levels_dm01_dm02.json + test/fixtures/ze/*.json sidecars; consts = test/fixtures/fdm/consts.js
@@ -33,6 +34,13 @@ if (!arg('levels') && levelsFile !== pipeLevels && fs.existsSync(zeDir) && !proc
     for (const side of ['t', 'c']) levels.push({ ...L, id: id + side, base: id, side, ze: fx.ze, title: fx.ze.title || L.title, author: fx.ze.author_credit || '', off: side === 't' ? L.off : [L.off[0], L.off[1], L.off[2] + 4096] });
   }
 }
+// Round 4 finale (docs/STATUS.md "Round 4 contract"): one record with finale: true. The pipeline's levels.json carries its
+// own (e.g. dm03f); a build without one (the FreeDM fixture) gets FreeDM MAP02 placed once as the finale, unless --nofinale
+if (!process.argv.includes('--nofinale') && !levels.some((l) => l.finale)) {
+  const fx = JSON.parse(fs.readFileSync(path.join(here, 'fixtures/fdm/levels_dm01_dm02.json'), 'utf8'));
+  const L = fx.find((l) => l.id === 'm02') || fx[fx.length - 1];
+  levels.push({ ...L, id: L.id + 'f', base: L.id, side: 'f', finale: true, title: L.title, author: L.author || '' });
+} else if (process.argv.includes('--nofinale')) levels = levels.filter((l) => !l.finale);
 const lv = JSON.stringify(levels);
 const outDir = path.join(here, 'out');
 fs.mkdirSync(outDir, { recursive: true });

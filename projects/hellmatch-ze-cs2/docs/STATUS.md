@@ -32,6 +32,32 @@ Read both progress files; continue the first unfinished row of each.
   cs2.exe was not running. Before any deploy check `Get-Process cs2` and never write into an addon open in `cs2 -tools`.
 - Push: never without asking. In-game playtest: skink52.
 
+## Round 4: playtest findings (queued 20 Nov 2026; skink52's own test; do when usage resets, 21 Nov 13:30)
+Done 21 Nov 2026 (scheduled run + main session): 19/19 mock scenarios incl. finale escape/fight/none/clock; perf 64 players avg 2.71 ms, p99 8.4 (was 1.93 / 4.5: watch in game); deployed + compiled (0 failed). Order was: game = src/test, pipeline = tools/ze; rebuild, mock scenarios, deploy, compile, commit locally.
+| Step | What | Owner | State |
+|---|---|---|---|
+| 4.1 | Lost soul zombie player body doesn't float: the player-driven SKUL must hover like the monster (MF_FLOAT/NOGRAVITY height, bob), view height to match | game | done 21 Nov (simulated) |
+| 4.2 | Zombies can respawn somewhere cut off from the live humans (seen on MAP06 Janus Terminal, maybe behind a press-E door that didn't open): zombie spawn spots only in sectors connected to the humans' current area by the current open/blocked state (reuse the progress map), and zombie players get door use (or doors in their way open) | game (+ pipeline if a map06 sidecar block/door is wrong) | done 21 Nov (simulated) |
+| 4.3 | Damage red screen overlay too intense: tone it down (lower max alpha / shorter fade; maybe CONFIG value), keep the pickup/berserk tints | game (src/cs2/30_hud.js + CSS via tools/hud.py) | done 21 Nov (simulated) |
+| 4.4 | Zombie players have no collision with each other (and with AI zombies) so packs don't jam; still solid to humans and walls; keep shootable | game | done 21 Nov (simulated) |
+| 4.5 | Escape finale: a side that escapes is teleported to a small deathmatch arena (new compact arena; pick a FreeDM-style small level or a closed room of an existing map; placed once, inside world bounds) with "T'S ESCAPED - BUT WILL THE CTS BE HOT ON THEIR TRAIL?"; if the other side escapes too, they join: "CTS TRACKED DOWN THE REMAINING TS - FIGHT TO BE THE FINAL SURVIVORS"; last side standing wins the CS2 round (if the other side is wiped instead, the escaped side wins as now). Kills are real CS2 kills; stats: ze_escapes as now + `ze_finale_wins`. Update SERVER_STATS_NOTE.md, TESTING, README, Workshop text | game + pipeline | done 21 Nov (simulated) |
+
+Round 4 contract (21 Nov 2026, coordinator; change only by editing here first):
+- **Finale level record** (pipeline): `out/addon/_gen/levels.json` gets exactly one extra record with `finale: true`, `side: "f"`,
+  id `<base>f` (e.g. `dm07f`), `base`, `title`, `author`, its own `off` (placed once, inside +-16000, clear of the 12 ZE placements
+  and the lobby/booth/cache keep-out), own mover/anim names `fdm_<id>_...`, all THINGS kept with WAD index, and **no `ze` field**.
+  The level is small (fits 2-16 players), one connected walkable area with no key doors, and has at least 8 deathmatch starts
+  (thing type 11) all reachable from each other; weapons/ammo/health pickups stay. Its geometry goes into the vmap and copy plan
+  like the other levels. A build without it (fixtures, `HZE_LEVELS` lists) must still work.
+- **Finale rules** (game): the game finds the record by `finale: true` and builds it as a third arena (no AI horde, no stages; the
+  level's monsters removed, its items kept). Side A escapes -> its live humans are moved there (spawn at type-11 starts, then 1-4),
+  keep weapons/ammo/health, centre "T'S ESCAPED - BUT WILL THE CTS BE HOT ON THEIR TRAIL?" (CT form "CT'S ESCAPED - BUT WILL THE TS
+  BE HOT ON THEIR TRAIL?") to everyone; `ze_escapes` as now. Side B wiped -> A wins (as now). Side B escapes -> moved in too, centre
+  "CTS TRACKED DOWN THE REMAINING TS - FIGHT TO BE THE FINAL SURVIVORS" (or the T form); T vs CT damage on, same-side off; a finale
+  death is final for the round (spectate, no zombie). Last side standing wins the CS2 round; `ze_finale_wins` to every human on the
+  winning side who reached the finale (alive or not), humans only, not warmup. Clock end during the finale: more live humans wins,
+  tie -> the side that escaped first. No finale record -> escape wins as before. New fixed HUD strings in `src/core/zz_hud_strings.json`.
+
 ## Round 3 (19 Nov 2026, skink52: "weapons run out of ammo", "not enough enemies to feel like a horde, scale with playercount",
 ## "any larger maps?", "server stat-tracking for the interesting stats")
 Contract for this round (game = src/test, pipeline = tools/ze/docs):

@@ -1,30 +1,30 @@
 [h1]Hellmatch ZE[/h1]
-Zombie escape inside one CS2 map, in the retro 90s look of Hellmatch. T and CT each run their own copy of the same Freedoom level at the same time: hold zones while gates open, kill the level's guardian, then hold the exit. Every human who dies rises as a demon in the [i]other[/i] team's copy and hunts them alongside the level's monsters. The first team to get out wins. No plugins: the whole game is the map's own script. To try it, subscribe and start it from Play > Workshop Maps with some bots (bot_quota 16).
+Zombie escape inside one CS2 map, in the retro 90s look of Hellmatch. T and CT each run their own copy of the same Freedoom level at the same time: hold zones while gates open, kill the level's guardian, then hold the exit. Every human who dies rises as a demon in the [i]other[/i] team's copy and hunts them alongside the level's monsters. Get out first, then survive the finale arena. No plugins: the whole game is the map's own script. To try it, subscribe and start it from Play > Workshop Maps with some bots (bot_quota 16).
 
 [h2]How a round goes[/h2]
 [list]
 [*]Both teams start as humans at the start of their copy of the level (pistol and shotgun; the level's weapons and pickups are there to grab).
-[*]Stages run in order and the HUD shows the current one: [b]HOLD[/b] stages count down while at least one human stands in the zone (the timer pauses, not resets, when nobody is in it); a gate opens when the hold is done. A [b]BOSS[/b] stage spawns the level's guardian, with more health the more humans are alive. The last stage is the [b]ESCAPE[/b]: hold the exit to the end.
-[*]Side routes are shut, so the way on is the way the stages open. Demons and monsters keep coming from behind.
+[*]Stages run in order, shown on the HUD: [b]HOLD[/b] stages count down while a human stands in the zone (the timer pauses when nobody is in it); then a gate opens. A [b]BOSS[/b] stage spawns the level's guardian, with more health the more humans are alive. The last stage is the [b]ESCAPE[/b]: hold the exit to the end.
+[*]Side routes are shut; the way on is the way the stages open. Demons keep coming from behind.
 [*]Die and you rise as a demon in the other team's level: an imp (fireball), a flesh worm (lunge) or a deadflare (dash). Demons respawn after a few seconds behind the humans. Every human killed by a demon player is a real CS2 kill for that player.
 [/list]
 
 [h2]Winning[/h2]
 [list]
-[*]A team that finishes the escape stage with a human in the exit wins at once.
-[*]A team with no humans left loses; if both are wiped on the same tick it is a draw.
-[*]At the time limit (9 to 14 minutes) the team with more humans alive wins, then the team further along the stages.
+[*]A team that holds the exit to the end escapes into the [b]finale[/b], a small deathmatch arena (FreeDM's Issues of Claveria), weapons kept. If the other team is wiped, the escaped team wins. If it escapes too, it joins them: T against CT, a death there is final, last team standing wins.
+[*]A team with no humans left loses; both wiped on the same tick is a draw.
+[*]At the time limit (9 to 14 minutes) the team with more humans alive wins, then the team further along (in the finale, the first team out).
 [/list]
 
 [h2]Levels[/h2]
 A different level each round until all have been played:
 [list]
-[*][b]Hydroelectric Plant[/b] (MAP01): hold the floodgate and the pump station, defeat the pain lord, escape through the flooded cave.
-[*][b]Outer Prison[/b] (E1M1): hold the atrium gate and the flooded hall, slay the combat slug, drop into the pit and run to the exit.
-[*][b]Land of the Lost[/b] (E3M1): hold the stairs and the temple plaza, kill the technospider, run south to the exit gate.
-[*][b]Janus Terminal[/b] (MAP06): hold the east gate and the pillar hall, destroy the assault tripod, run back to the exit.
-[*][b]Supply Depot[/b] (E1M4, long): two holds, a pain bringer in the sludge pit, hold the nukage walkway, a pain lord, run north.
-[*][b]Crude Processing Center[/b] (MAP03, long): two holds, a dark soldier among the pillars, hold the crossroads, an assault tripod in the core, hold the exit lift.
+[*][b]Hydroelectric Plant[/b] (MAP01): floodgate, pump station, a pain lord, out past the flooded cave.
+[*][b]Outer Prison[/b] (E1M1): atrium gate, flooded hall, a combat slug, drop into the pit and run.
+[*][b]Land of the Lost[/b] (E3M1): stairs, temple plaza, a technospider, run south to the gate.
+[*][b]Janus Terminal[/b] (MAP06): east gate, pillar hall, an assault tripod, run back to the exit.
+[*][b]Supply Depot[/b] (E1M4, long): two holds, a pain bringer, the nukage walkway, a pain lord.
+[*][b]Crude Processing Center[/b] (MAP03, long): two holds, a dark soldier, the crossroads, an assault tripod, the exit lift.
 [/list]
 Weapons upgrade as the stages fall, and every finished hold refills ammo and health.
 
@@ -39,10 +39,10 @@ Chat commands (! or /): [b]!help[/b] controls, [b]!hud[/b] status bar size, [b]!
 [list]
 [*]Map: mg_hellescape, game type Custom. Load it by Workshop ID: host_workshop_map <this item's ID>.
 [*]Nothing to install. The map sets its own round rules (no buying or money, freeze time 0, its own round time; respawns are handled by the script). Set APPLY_CVARS to false in maps/scripts/hellescape.js to keep your own config.
-[*]Plugins that get in the way: AFK managers, no-respawn plugins, spawn protection, teamkill punishment and anything that blocks scripted damage (kills are applied through the map script so the killfeed and scoreboard work).
+[*]Plugins that get in the way: AFK managers, no-respawn plugins, spawn protection, teamkill punishment, anything that blocks scripted damage.
 [*]CS2 bots play (bot_quota fills empty slots); up to 64 players.
 [*]The console prints "script time" once a minute. SERVER_STATS in the script's settings sends stats to a server stats plugin (mgstat commands; off by default).
-[*]Early build. Please report problems in the discussions.
+[*]Early build: please report problems in the discussions.
 [/list]
 
 [h2]How it was made[/h2]
@@ -51,7 +51,7 @@ The code (map script, level converter, stage files, build tools) and most of the
 Hellmatch ZE is an unofficial fan project. It is not affiliated with or endorsed by the Freedoom project, id Software, Bethesda or Valve; Freedoom is named only to credit its content.
 
 [h2]Credits[/h2]
-Levels: Outer Prison (E1M1) by Gabriel "YukiHerz" Antonio; Supply Depot (E1M4) by GeekMarine; Crude Processing Center (MAP03) by Jeremy "SgtCrispy" Elder; Land of the Lost (E3M1) and Janus Terminal (MAP06) by Jay "Jayextee" Trent; Hydroelectric Plant (MAP01) by Samuel "Blastfrog" Oliver, Luiz Henrique "Xindage" Gasparin Jeronimo and Jon Dowland. Textures, sprites, sounds and music: the Freedoom project (freedoom.github.io).
+Levels: Issues of Claveria (FreeDM DM03, the finale) by Luiz Henrique "Xindage" Gasparin Jeronimo; Outer Prison (E1M1) by Gabriel "YukiHerz" Antonio; Supply Depot (E1M4) by GeekMarine; Crude Processing Center (MAP03) by Jeremy "SgtCrispy" Elder; Land of the Lost (E3M1) and Janus Terminal (MAP06) by Jay "Jayextee" Trent; Hydroelectric Plant (MAP01) by Samuel "Blastfrog" Oliver, Luiz Henrique "Xindage" Gasparin Jeronimo and Jon Dowland. Textures, sprites, sounds and music: the Freedoom project (freedoom.github.io).
 Level music, rendered from Freedoom's MIDI files with the addon's own OPL2 model and Freedoom's GENMIDI instruments: E1M1 "Steel and Brass" by J.Astartes and Mr795; E3M1 "Intrare In Infernum" and MAP01 "Not My First Rodeo..." by Lola "BlueWorrior" Harvey; MAP06 "Refrigeration" by Korp, based on "Dark Trail" by Tyler "Picklehammer" P.; E1M4 "Flood the City" by Kevin "Velvetic" Martins and Jonathan "julnen" Martins; MAP03 "Demon Dance" by Discoholic Boss stages (rendered with libADLMIDI, Nuked OPL3, DMXOPL3 bank by Shannon "Sneakernets" Freeman, MIT): E1M8 "On the Next Day" by Kevin "Velvetic" Martins; E2M8 "Treble Dissension" by Korp; E3M8 "The Zenith" by Lola "BlueWorrior" Harvey. Theme: the Hellmatch trailer track by skink52.
 
 [h2]Freedoom licence[/h2]

@@ -262,7 +262,7 @@ try:
     import json as _json
     _bases = []
     for _L in _json.load(open(os.path.join(OUT, '_gen/levels.json'))):
-        if _L['base'] not in _bases: _bases.append(_L['base'])
+        if _L['base'] not in _bases and not _L.get('finale'): _bases.append(_L['base'])   # the finale has no loading screen
 except (OSError, ValueError, KeyError):
     _bases = []
 PRELOAD += tuple(('FdmPre%d' % (6 + i), 'map_icons/screenshots/1080p/%s_%d.png' % (M, 3 + i)) for i in range(len(_bases)))

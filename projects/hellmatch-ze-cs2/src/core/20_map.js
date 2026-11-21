@@ -62,6 +62,12 @@ const TM = {
   ceilingline: null, spechit: [], blockline: null, hitThing: null,
 };
 
+// ZE: a zombie player's body or an AI monster (not a missile, a probe or a human); safe on fitSpot's probes
+function zeHorde(mo) {
+  if (mo.player) return !!mo.player.zclass;
+  return !!mo.info && mo.info.kind === 'monster' && !(mo.flags & MF_MISSILE);
+}
+
 function sameTeamNoFF(a, b) {
   if (!a || !b || a === b) return false;
   if (G.ze) { const fa = zeFaction(a); return fa !== 0 && fa === zeFaction(b); }   // ZE: humans vs monsters + zombie players
@@ -94,6 +100,9 @@ function PIT_CheckThing(thing) {
   const blockdist = thing.radius + tt.radius;
   if (Math.abs(thing.x - TM.x) >= blockdist || Math.abs(thing.y - TM.y) >= blockdist) return true;
   if (thing === tt) return true;
+  // ZE (4.4): zombie players pass through each other and through the AI horde (and the horde through them), so packs
+  // never jam in a doorway; they stay solid to humans and walls, and shootable
+  if (G.ze && (tt.player || thing.player) && zeHorde(tt) && zeHorde(thing)) return true;
   // a charging lost soul slams into whatever it hits
   if (tt.flags & MF_SKULLFLY) {
     const damage = ((P_Random() % 8) + 1) * tt.info.damage;
@@ -163,7 +172,10 @@ function tryMove(thing, x, y) {
   if (!(thing.flags & MF_NOCLIP)) {
     if (TM.ceilingz - TM.floorz < thing.height) return false;
     floatok = true;
-    if (TM.ceilingz - thing.z < thing.height) return false;
+    if (TM.ceilingz - thing.z < thing.height) {
+      if (!(thing.player && thing.player.zclass && zHovers(thing.player))) return false;
+      thing.z = Math.max(TM.floorz, TM.ceilingz - thing.height);   // 4.1: a floating body ducks under a ceiling it fits under
+    }
     if (TM.floorz - thing.z > MAXSTEP) return false;
     if (!(thing.flags & (MF_DROPOFF | MF_FLOAT)) && TM.floorz - TM.dropoffz > MAXSTEP) return false;
   }
@@ -588,6 +600,7 @@ function teleportMove(thing, x, y) {
   for (let bx = xl; bx <= xh; bx++) for (let by = yl; by <= yh; by++)
     blockThingsIterator(bx, by, (th) => {
       if (!(th.flags & MF_SHOOTABLE) || th === thing) return true;
+      if (G.ze && (th.player || thing.player) && zeHorde(th) && zeHorde(thing)) return true;   // ZE: no telefrag inside the horde (4.4)
       const bd = th.radius + thing.radius;
       if (Math.abs(th.x - x) >= bd || Math.abs(th.y - y) >= bd) return true;
       stomp.push(th); return true;

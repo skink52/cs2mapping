@@ -409,8 +409,8 @@ for (const [key, mon, st, death, xdeath] of [['ZPLAYER_IMP', 'IMP', 'ZB_IMP', 'T
   const m = MOBJINFO[MT[mon]];
   defMobj(key, { kind: 'player', zclass: mon, name: m.name, spawnstate: st, seestate: st + '_RUN1', painstate: st + '_PAIN', painchance: Math.min(255, m.painchance),
     missilestate: st + '_ATK1', deathstate: death, xdeathstate: xdeath || undefined, radius: m.radius, height: m.height, mass: m.mass,
-    spawnhealth: m.spawnhealth, flags: MF_SOLID | MF_SHOOTABLE | MF_DROPOFF | MF_NOTDMATCH, painsound: m.painsound, deathsound: m.deathsound,
-    activesound: m.activesound, attacksound: m.attacksound });
+    spawnhealth: m.spawnhealth, flags: MF_SOLID | MF_SHOOTABLE | MF_DROPOFF | MF_NOTDMATCH | (mon === 'LOSTSOUL' ? MF_NOGRAVITY : 0), painsound: m.painsound, deathsound: m.deathsound,
+    activesound: m.activesound, attacksound: m.attacksound });   // (4.1: the lost soul's body floats, no gravity; 45_zombie.js zHover)
 }
 // ... and the body of each stage boss a zombie player can take over (00_b_ze_states.js ZE_BOSS_TYPES)
 for (const T of ZE_BOSS_TYPES) {

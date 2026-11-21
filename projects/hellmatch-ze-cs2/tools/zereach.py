@@ -1,6 +1,7 @@
 """ZE route check: which sectors a human can reach during each stage, with that stage's blocks and opened doors.
 
 usage: zereach.py ze/<map>.json [--verbose]      exit 1 when a check fails
+       zereach.py --finale dm03                  the escape finale arena: >= 8 DM starts, all mutually reachable, no keys
 
 Walk model (Doom): a two-sided line is passable when it is not impassable (flag 1) and not blocked by the sidecar, the step
 up is at most 24 and the opening at least 56 high. A door / lift sector (convert.classify_movers) counts as open when a stage
@@ -11,11 +12,15 @@ door is shut only by a block.
 
 Checks per stage k (state while stage k runs: blocks lifted by `until: stage:j` with j <= k or by an `unblock` in an earlier
 on_done / this on_start; doors opened likewise):
-  - its hold zone / boss spot / line_crossed start line is reachable (the start line with the earlier stages' doors open);
+  - its hold zone / boss spot / line_crossed start line is reachable (the start line with the earlier stages' doors open),
+    and the zone / boss spot also without any press of Use (route doors opened by stage actions; round 4);
   - the next stage's hold zone is NOT reachable while stage k is a hold (a gate really gates), unless the next stage starts
     by line_crossed (then the route to its line must be open: a walk-on stage);
   - no exit line (11, 51, 52, 124, 197, 198) is reachable before the escape stage (blocked exits are fine);
   - every spawn group of the stage has a point in a sector reachable at that stage (zombies spawn behind the humans);
+  - from every point of every spawn group (and on_start surge group) of the stage a zombie can walk (drops one-way) to
+    where the humans are (hold zone, boss spot, start line) with only stage-opened doors and walk-over lines working: no zombie spawns behind a door or lift that
+    needs a press of Use (row 4.2: zombies respawning cut off on MAP06);
   - every `surge` group (on_start: reachable while the stage runs; on_done: reachable once the next stage runs) likewise.
 `resupply` and `give` change no route and are accepted as they are (ze_sidecar.py checks their shape).
 """
@@ -28,6 +33,11 @@ from wad import load_map
 
 EXITS = {11, 51, 52, 124, 197, 198}
 TELEPORTS = {39, 97}
+# Doom line specials worked by walking over them (W1/WR, incl. the teleports): they fire without anyone pressing Use.
+# Everything else that moves a sector (manual doors, switches S1/SR, gun lines G1/GR) needs a player to act.
+WALK = {2, 3, 4, 5, 6, 8, 10, 12, 13, 16, 17, 19, 22, 25, 30, 35, 36, 37, 38, 39, 40, 44, 52, 53, 54, 56, 57, 58, 59,
+        72, 73, 74, 75, 76, 77, 79, 80, 81, 82, 83, 84, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 100, 104,
+        105, 106, 107, 108, 109, 110, 119, 120, 121, 124, 125, 126, 128, 129, 130, 141}
 
 
 class Geo:
@@ -140,8 +150,9 @@ def group_sectors(g, geo):
     return out
 
 
-def reach(m, geo, starts, blocked, opened, floor_mv, ceil_mv):
-    """sectors reachable from `starts` (pieces); `blocked` line ids, `opened` mover sector ids (stage actions)"""
+def reach(m, geo, starts, blocked, opened, floor_mv, ceil_mv, use_ok=True):
+    """sectors reachable from `starts` (pieces); `blocked` line ids, `opened` mover sector ids (stage actions).
+    use_ok False: only stage actions and walk-over lines move sectors (nobody presses Use on a door or switch)"""
     S = m['sectors']; L = m['lines']
     tags = {}
     for i, s in enumerate(S):
@@ -197,6 +208,7 @@ def reach(m, geo, starts, blocked, opened, floor_mv, ceil_mv):
         for li, l in enumerate(L):
             sp = l['special']
             if not sp or li in blocked or li not in LP: continue
+            if not use_ok and sp not in WALK: continue
             if not set(LP[li]) & seen: continue
             b = sec_of_side(m, l['s2'])
             if sp in convert.MANUAL_DOORS and b is not None: new.add(b)
@@ -216,8 +228,37 @@ def action_sectors(a, m):
     return set(v.get('sectors', []))
 
 
+KEY_DOORS = {26, 27, 28, 32, 33, 34, 99, 133, 134, 135, 136, 137}
+
+
+def finale(name):
+    """the escape finale arena (round 4): at least 8 deathmatch starts (thing 11), every one reachable from every other
+    without a press of Use, no key doors; exit 1 otherwise"""
+    m = load_map(os.path.join(assets.FD, 'levels', name.lower() + '.wad'))
+    geo = Geo(m)
+    floor_mv, ceil_mv, _ = convert.classify_movers(m)
+    fails = []
+    dms = [(i, t) for i, t in enumerate(m['things']) if t['type'] == 11]
+    if len(dms) < 8: fails.append('%d deathmatch starts (at least 8)' % len(dms))
+    keys = [li for li, l in enumerate(m['lines']) if l['special'] in KEY_DOORS]
+    if keys: fails.append('key door lines %s' % keys)
+    pcs = {i: geo.piece_at(t['x'], t['y']) for i, t in dms}
+    for i, pc in pcs.items():
+        reach(m, geo, {pc}, set(), set(), floor_mv, ceil_mv, use_ok=False)
+        cut = [j for j, q in pcs.items() if q not in m['_last_pieces']]
+        if cut: fails.append('from start thing %d the starts %s are out of reach' % (i, cut))
+    allr = reach(m, geo, set(pcs.values()), set(), set(), floor_mv, ceil_mv, use_ok=False)
+    xs = [v[0] for v in m['verts']]; ys = [v[1] for v in m['verts']]
+    print('finale %s: %d x %d, %d deathmatch starts, %d of %d sectors in the walkable area, %d things' % (
+        name, max(xs) - min(xs), max(ys) - min(ys), len(dms), len(allr), len(m['sectors']), len(m['things'])))
+    for f in fails: print('FAIL', f)
+    print('finale %s: %s' % (name, 'ok' if not fails else '%d problem(s)' % len(fails)))
+    sys.exit(1 if fails else 0)
+
+
 def main():
     if len(sys.argv) < 2: raise SystemExit(__doc__)
+    if sys.argv[1] == '--finale': return finale(sys.argv[2])
     path = sys.argv[1]; verbose = '--verbose' in sys.argv
     sc = json.load(open(path, encoding='utf-8'))
     m = load_map(os.path.join(assets.FD, sc['wad']))
@@ -249,6 +290,13 @@ def main():
         if 'boss' in s:
             bs = geo.sector_at(*s['boss']['at'][:2])
             if bs not in seen: fails.append('%s: boss spot (sector %d) not reachable' % (tag, bs))
+        # the humans' route needs no press of Use either (route doors are opened by stage actions, so they stay open
+        # for the zombies following and for bots): some of the hold zone and the boss spot reachable from the starts
+        if zs or 'boss' in s:
+            easy = reach(m, geo, starts, blocked, opened, floor_mv, ceil_mv, use_ok=False)
+            if zs and not zs & easy: fails.append('%s: hold zone %s needs a press of Use to reach' % (tag, sorted(zs)))
+            if 'boss' in s and geo.sector_at(*s['boss']['at'][:2]) not in easy:
+                fails.append('%s: boss spot needs a press of Use to reach' % tag)
         st = s.get('start')
         if isinstance(st, dict) and 'line_crossed' in st:
             l = m['lines'][st['line_crossed']]
@@ -268,6 +316,41 @@ def main():
         for g in s.get('zombie_spawns', []) or []:
             if g in groups and not group_sectors(groups[g], geo) & seen:
                 fails.append('%s: spawn group %s is not in a reachable sector' % (tag, g))
+        # zombies must reach the humans from every spawn point without anyone pressing Use: walk from each spawn point
+        # (drops are one-way, so from the spawn, not from the humans) to where the humans are this stage (hold zone, boss
+        # spot, start line) with only stage-opened doors and walk-over lines working
+        home = set()
+        zn = s.get('zone') or {}
+        if 'box' in zn:
+            # a box zone: the pieces under it (a sector number reused beyond a door must not count)
+            x1, y1, x2, y2 = zn['box']
+            home = {geo.piece_at(x1 + (x2 - x1) * (i + .5) / 9, y1 + (y2 - y1) * (j + .5) / 9) for i in range(9) for j in range(9)}
+        else:
+            for sec in zs: home.update(geo.sector_pieces.get(sec, []))
+        if 'boss' in s: home.add(geo.piece_at(*s['boss']['at'][:2]))
+        if isinstance(st, dict) and 'line_crossed' in st:
+            home.update(p for p in geo.line_pieces(st['line_crossed']) if p is not None)
+        if home:
+            memo = {}
+
+            def joins(pc):
+                if pc not in memo:
+                    reach(m, geo, {pc}, blocked, opened, floor_mv, ceil_mv, use_ok=False)
+                    memo[pc] = bool(m['_last_pieces'] & home)
+                return memo[pc]
+            sgroups = list(s.get('zombie_spawns', []) or [])
+            sgroups += [a['surge']['group'] for a in s.get('on_start', []) or [] if isinstance(a.get('surge'), dict)]
+            for g in dict.fromkeys(sgroups):
+                if g not in groups: continue
+                gr = groups[g]
+                cut = ['point %s' % (p[:2],) for p in gr.get('points', []) if not joins(geo.piece_at(p[0], p[1]))]
+                # the game samples a grid over the whole sector, so every piece of it must connect (MAP06 reuses
+                # sector numbers on both sides of a door)
+                secs = ([gr['sector']] if 'sector' in gr else []) + list(gr.get('sectors', []))
+                cut += ['sector %d' % sc for sc in secs if not all(joins(pc) for pc in geo.sector_pieces.get(sc, []))]
+                if cut:
+                    fails.append('%s: spawn group %s cannot walk to the humans without someone pressing Use (%s)'
+                                 % (tag, g, ', '.join(cut)))
         for a in s.get('on_start', []) or []:
             g = (a.get('surge') or {}).get('group') if isinstance(a.get('surge'), dict) else None
             if g in groups and not group_sectors(groups[g], geo) & seen:

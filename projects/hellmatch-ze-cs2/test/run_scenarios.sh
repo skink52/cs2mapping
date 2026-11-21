@@ -27,4 +27,22 @@ run ze_ammo 4 4 30 zemap=map01
 run ze_stats 4 4 50 stats,zemap=map01
 run ze_stats 4 4 50 stats,warmup,zemap=map01
 run ze_stats 4 4 50 zemap=map01
+# Round 4: lost soul floats + damage tint (4.1/4.3), zombie respawns connected to the humans + doors (4.2), no zombie
+# collisions (4.4), the escape finale (4.5) with and without stats / in warmup, the clock rule, no finale record
+run ze_float 4 4 24 zemap=map01
+run ze_respawn 4 12 45 zemap=map06
+run ze_collide 4 4 20 zemap=map01
+run finale_escape 4 4 30 stats,zemap=map01
+run finale_escape 4 4 30 stats,warmup,zemap=map01
+run finale_fight 4 4 30 stats,zemap=map01
+run finale_fight 4 4 30 stats,warmup,zemap=map01
+run finale_fight 4 4 30 zemap=map01
+run finale_clock 4 4 20 stats,zemap=map01
+run finale_none 4 4 15 zemap=map01
+run finale_escape 4 4 30 zemap=map01
+run finale_fight 4 4 30 stats,zemap=map01
+run finale_fight 4 4 30 stats,warmup,zemap=map01
+run finale_fight 4 4 30 zemap=map01
+run finale_none 4 4 30 zemap=map01
+run finale_clock 4 4 30 zemap=map01
 exit $fail

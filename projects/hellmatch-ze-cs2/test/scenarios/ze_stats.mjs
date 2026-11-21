@@ -6,8 +6,9 @@
 //   kills a T bot human as the boss (ze_infections + ze_boss_player_kills); human 2 kills the player boss (ze_zombie_kills,
 //   pve_kills, boss_kills); the escape stage, human 2 in its zone when it completes (ze_escapes), the T side wins
 //   (ze_survivor_wins for 2, none for CT human 3); best_ze_stage for 2 = the escape stage's number.
+// Without the finale level record (Round 4 finale: test/scenarios/finale_*.mjs), so the escape wins at once.
 // The mock's own mgstat check (every stat the playsim says a human earned arrived, names / format, no bots) must say OK too.
-import { rm, pe, killDoom, liveZombie, timeline, invariants, checker, god } from './_lib.mjs';
+import { rm, pe, killDoom, liveZombie, timeline, invariants, checker, god, noFinale } from './_lib.mjs';
 const { probs, want } = checker();
 const IN = { USE: 128 };
 const arenaT = (api) => rm(api).arenas.find((a) => a.zeSide === 2);
@@ -86,8 +87,14 @@ const steps = timeline([
   [27, (api) => want(!!rm(api).zeResult && rm(api).zeResult.why === 'escape' && rm(api).zeResult.winner === 2, 'the round ended with the T escape: ' + JSON.stringify(rm(api).zeResult))],
 ]);
 export default {
-  setup(api) { for (const s of [0, 1, 2, 3]) api.manual.add(s); },
-  tick(api) { god(api); steps(api); invariants(api, probs); },
+  setup(api) { noFinale(api); for (const s of [0, 1, 2, 3]) api.manual.add(s); },   // the escape ends the round (finale: finale_*.mjs)
+  tick(api) {
+    god(api);
+    // the T bot humans are the boss's victim at 22 s: the horde mustn't get them first (Round 4: packs no longer jam)
+    if (api.time < 22.5) { const a = arenaT(api); if (a) for (const p of a.players.values()) if (p.isBot && !p.zclass && p.playerstate === 'live') p.powers[0] = 1 << 20; }
+    else if (api.time < 22.6) { const a = arenaT(api); if (a) for (const p of a.players.values()) if (p.isBot && !p.zclass) p.powers[0] = 0; }
+    steps(api); invariants(api, probs);
+  },
   check(api) {
     const on = api.ctx.__stats().statsOn && !api.warmup;
     if (!on) {

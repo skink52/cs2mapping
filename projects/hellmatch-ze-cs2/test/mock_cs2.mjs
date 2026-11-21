@@ -198,7 +198,7 @@ for (let i = 0; i < HUMANS + BOTS; i++) players.push(new Controller(i, (i < HUMA
 // 'stats': SERVER_STATS on. 'statsinput': off in CONFIG, a plugin sends RunScriptInput mgstat_on at t=5 s.
 // Checks every command against the plugin's contract (docs/SERVER_STATS_NOTE.md: only these names; best_* with an n) and
 // that every stat the playsim says a human earned arrives (counted here from the playsim's own hooks, below).
-const MG_STATS = ['pve_kills', 'boss_kills', 'lms_wins', 'ze_escapes', 'ze_survivor_wins', 'ze_holds', 'ze_infections', 'ze_zombie_kills', 'ze_boss_takeovers', 'ze_boss_player_kills', 'best_ze_stage'];
+const MG_STATS = ['pve_kills', 'boss_kills', 'lms_wins', 'ze_escapes', 'ze_survivor_wins', 'ze_holds', 'ze_infections', 'ze_zombie_kills', 'ze_boss_takeovers', 'ze_boss_player_kills', 'ze_finale_wins', 'best_ze_stage'];
 const mg = { sent: 0, byStat: {}, bad: [], bots: 0, early: 0, perSecond: new Map(), best: new Map(), bySlot: new Map() };
 function mgstat(c) {
   mg.sent++;
@@ -215,7 +215,7 @@ function mgstat(c) {
   const key = m[1] + ' ' + m[2] + ' ' + Math.floor(time);
   mg.perSecond.set(key, (mg.perSecond.get(key) || 0) + 1);
 }
-const mgTruth = { pve: 0, boss: 0, lms: 0, ze_escapes: 0, ze_survivor_wins: 0, ze_holds: 0, ze_infections: 0, ze_zombie_kills: 0, ze_boss_takeovers: 0, ze_boss_player_kills: 0, best: new Map() };
+const mgTruth = { pve: 0, boss: 0, lms: 0, ze_escapes: 0, ze_survivor_wins: 0, ze_holds: 0, ze_infections: 0, ze_zombie_kills: 0, ze_boss_takeovers: 0, ze_boss_player_kills: 0, ze_finale_wins: 0, best: new Map(), finale: { 2: new Set(), 3: new Set() } };
 
 // ---------------------------------------------------------------- Instance
 const hooks = {};
@@ -331,12 +331,22 @@ if (OPTS.includes('sccap=none') && ctx.__LEVELS) for (const L of ctx.__LEVELS) i
     Z.takeOver = function (p, why) { const ok = to.call(this, p, why); if (ok && on() && human(p)) mgTruth.ze_boss_takeovers++; return ok; };
   }
   if (ctx.__ZeRound) {
+    // who reached the finale, by side (counted from the move itself; the script's own list is what is checked)
+    const mf = ctx.__ZeRound.prototype.moveToFinale;
+    if (mf) ctx.__ZeRound.prototype.moveToFinale = function (pe, old, F) { if (pe && !pe.bot) mgTruth.finale[pe.zeSide].add(pe.slot); return mf.call(this, pe, old, F); };
     const fz = ctx.__ZeRound.prototype.finishZe;
     ctx.__ZeRound.prototype.finishZe = function (winner, why) {
       if (!this.zeResult && winner && on()) {
-        const a = this.arenaFor(winner, 'human');
-        if (a) for (const p of a.players.values()) if (!p.zclass && !p.spectating && p.playerstate === 'live' && p.mo && !p.mo.removed && human(p)) mgTruth.ze_survivor_wins++;
+        // live humans of the winning side: in its own arena and (Round 4) in the finale arena
+        for (const a of this.arenas) {
+          const own = a === this.arenaFor(winner, 'human');
+          if (!own && !a.zeFinale) continue;
+          for (const p of a.players.values()) if (!p.zclass && !p.spectating && p.playerstate === 'live' && p.mo && !p.mo.removed && human(p) && (own || (p.person && p.person.zeSide === winner))) mgTruth.ze_survivor_wins++;
+        }
+        // ze_finale_wins: every human of the winning side who was moved into the finale (alive or not) and is still here
+        for (const slot of mgTruth.finale[winner] || []) if (players.some((c) => c.slot === slot && c.connected && !c.bot)) mgTruth.ze_finale_wins++;
       }
+      if (!this.zeResult) { mgTruth.finale[2].clear(); mgTruth.finale[3].clear(); }
       return fz.call(this, winner, why);
     };
   }
@@ -606,7 +616,7 @@ if (OPTS.includes('spec')) {
   const twice = [...mg.perSecond.values()].filter((n) => n > 1).length;
   const ok = !mg.bad.length && !mg.bots && !mg.early && !diffs.length;
   mg.ok = ok; mg.diffs = diffs;
-  const zeTruth = Object.fromEntries(Object.entries(mgTruth).filter(([k, v]) => k.startsWith('ze_') && v));
+  const zeTruth = Object.fromEntries(Object.entries(mgTruth).filter(([k, v]) => k.startsWith('ze_') && typeof v === 'number' && v));
   console.log(`mgstat: ${mg.sent} commands ${JSON.stringify(mg.byStat)} best ${JSON.stringify([...mg.best.values()])} (+ pending ${JSON.stringify(pend)}); expected pve ${mgTruth.pve} boss ${mgTruth.boss} lms ${mgTruth.lms} ${JSON.stringify(zeTruth)}; ` +
     `bad ${mg.bad.length}${mg.bad.length ? ' e.g. ' + mg.bad[0] : ''}, bot/empty slots ${mg.bots}, before the switch ${mg.early}, same player+stat twice in a second ${twice}${diffs.length ? ', differ: ' + diffs.slice(0, 6).join('; ') : ''} -> ${ok ? 'OK' : 'PROBLEM'}`);
 }

@@ -20,7 +20,7 @@ DIST = os.path.join(ROOT, 'out/workshop')
 PREVIEW = os.path.join(ROOT, 'preview')
 SKY = os.path.join(OUT, 'materials/fdm/sky/sky_color.png')
 LEVELS = json.load(open(os.path.join(OUT, '_gen/levels.json')))
-NMAPS = len({L['base'] for L in LEVELS})
+NMAPS = len({L['base'] for L in LEVELS if not L.get('finale')})   # ZE levels; the escape finale arena is not one
 DISCLAIMER = 'USES CONTENT FROM THE FREEDOOM PROJECT (BSD LICENCE). NOT AFFILIATED WITH OR ENDORSED BY THE FREEDOOM PROJECT.'
 
 

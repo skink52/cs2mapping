@@ -199,6 +199,22 @@ function updateFace(p) {
 // !text sizes (tools/hud.py TEXT_SIZES; "normal" has no class)
 const TEXT_SCALE = { tiny: 0.6, small: 0.8, normal: 1, large: 1.25, huge: 1.5 };
 
+// the red damage tint step (0 = none) for a player (CONFIG.DAMAGE_TINT): new damage (damagecount went up) adds SCALE per
+// point, it fades by FADE per Doom tic, and never shows more than MAX_STEP. Kept on the Doom player, so spectators of
+// the same player see the same tint (a second look in the same tic changes nothing)
+function damageTint(p, arena) {
+  const T = CONFIG.DAMAGE_TINT || { MAX_STEP: 8, SCALE: 1, FADE: 1 };
+  const lt = arena ? arena.leveltime : 0;
+  const dt = p.hudTintT === undefined ? 0 : Math.max(0, lt - p.hudTintT);
+  p.hudTintT = lt;
+  const dc = p.damagecount, prev = p.hudTintDc || 0;
+  p.hudTintDc = dc;
+  let lvl = Math.max(0, (p.hudTint || 0) - dt * T.FADE);
+  if (dc > prev) lvl = Math.min(T.MAX_STEP * 8, lvl + (dc - prev) * T.SCALE);
+  p.hudTint = lvl;
+  return lvl > 0 ? Math.max(1, Math.min(T.MAX_STEP, 8, Math.ceil(lvl / 8))) : 0;
+}
+
 // ---------------------------------------------------------------- per player HUD refresh
 const weaponClassMemo = [];
 function weaponClass(psp) {
@@ -257,9 +273,10 @@ function hudPlayer(slot, p, arena, info) {
   hudSwap(slot, "fdm_faceb", HUD_FB[p.color & 15]);
   // screen tint (Doom's palette shifts)
   let tint = null;
-  let cnt = p.damagecount;
-  if (p.powers[PW_STRENGTH]) { const bzc = 12 - (p.powers[PW_STRENGTH] >> 6); if (bzc > cnt) cnt = bzc; }
-  if (cnt) tint = HUD_RED[Math.min(8, (cnt + 7) >> 3)];
+  const red = damageTint(p, arena);
+  const bzc = p.powers[PW_STRENGTH] ? 12 - (p.powers[PW_STRENGTH] >> 6) : 0;   // berserk: Doom's own fading red
+  const step = Math.max(red, bzc > 0 ? Math.min(8, (bzc + 7) >> 3) : 0);
+  if (step) tint = HUD_RED[step];
   else if (p.bonuscount) tint = HUD_GOLD[Math.min(4, (p.bonuscount + 7) >> 3)];
   else if (p.powers[PW_INVULN] > 4 * 32 || (p.powers[PW_INVULN] & 8)) tint = "invul";
   hudSwap(slot, "fdm_flash", tint);

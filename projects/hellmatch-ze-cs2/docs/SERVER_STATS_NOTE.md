@@ -25,8 +25,15 @@ map side (cs2mapping `projects/hellmatch-ze-cs2`). Nothing in it has been tested
 | `ze_boss_takeovers` | 1 | took control of a stage boss |
 | `ze_boss_player_kills` | 1 | killed a human while driving a boss |
 | `best_ze_stage` | stage number | furthest stage reached as a live human this round (keep the max: `best_*` rule) |
+| `ze_finale_wins` | 1 | (round 4) the player's side won the escape finale: sent to every human of the winning side who reached the finale arena, alive or dead at the end |
 
-`ze_survivor_wins` ends in `_wins`, so SlimeMG's existing rule also records it in `stat_events`.
+`ze_survivor_wins` and `ze_finale_wins` end in `_wins`, so SlimeMG's existing rule also records them in `stat_events`.
+
+**Escape finale (round 4, 21 Nov 2026).** A side that escapes is moved into a small deathmatch arena (FreeDM DM03) and gets
+`ze_escapes` as before. If the other side is wiped, the escaped side wins. If the other side escapes too, both fight there,
+T against CT (real CS2 kills, counted from game events as now; a finale death is final for the round). The last side standing
+wins the CS2 round, and every human of the winning side who reached the arena gets `ze_finale_wins`, whether still alive or
+not. Humans only, never bots, never in warmup, same `echo mgstat <slot> <stat> [n]` path.
 
 ## What to add on the server
 1. **Map catalog / mode**: add `mg_hellescape` (its Workshop ID once uploaded) as its own mode, e.g. "Zombie Escape", so its
@@ -39,7 +46,7 @@ map side (cs2mapping `projects/hellmatch-ze-cs2`). Nothing in it has been tested
    Bots: the script drives them (human bots follow the stages, zombie bots hunt); `bot_quota 8` with `bot_quota_mode fill` is a
    reasonable start (bots fill both sides' arenas and both hordes).
 3. **ChangeAtTimeLimitMaps**: add `mg_hellescape`, like `mg_hellmatch` (the map's rounds run under its own control).
-4. **Stats display** (optional): show `ze_escapes`, `ze_survivor_wins`, `ze_infections`, `best_ze_stage` on the stats page or `!stats`
+4. **Stats display** (optional): show `ze_escapes`, `ze_survivor_wins`, `ze_finale_wins`, `ze_infections`, `best_ze_stage` on the stats page or `!stats`
    for this mode.
 5. **Test** on the server once the map is uploaded: console shows `[hellmatch] ... server stats on (mgstat)` after map start;
    escape a round and check `ze_escapes` / `ze_survivor_wins` rows for the right players; die to a zombie player and check

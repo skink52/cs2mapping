@@ -319,6 +319,11 @@
       ],
       "on_start": [
         {
+          "open_door": {
+            "sector": 239
+          }
+        },
+        {
           "message": "HOLD THE GALLERY"
         }
       ],
@@ -510,6 +515,16 @@
       ],
       "on_start": [
         {
+          "open_door": {
+            "sector": 167
+          }
+        },
+        {
+          "open_door": {
+            "sector": 236
+          }
+        },
+        {
           "message": "HOLD THE CROSSROADS"
         },
         {
@@ -575,6 +590,11 @@
         "lift_foot"
       ],
       "on_start": [
+        {
+          "open_door": {
+            "sector": 298
+          }
+        },
         {
           "message": "AN ASSAULT TRIPOD GUARDS THE CORE"
         },

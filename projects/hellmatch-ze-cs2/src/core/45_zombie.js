@@ -12,7 +12,11 @@ const ZCLASS = {
   DEMON: { key: 'DEMON', name: 'DEMON', ability: 'LUNGE', hpMul: 2.2, speedMul: 1.08, cd: Math.round(3.5 * TICRATE), up: 'ZDMN_UP', ready: 'ZDMN_READY',
     attack: 'ZDMN_BITE1', alt: 'ZDMN_LUNGE1', mt: 0 },
   LOSTSOUL: { key: 'LOSTSOUL', name: 'LOST SOUL', ability: 'DASH', hpMul: 1.2, speedMul: 1.12, cd: Math.round(1.2 * TICRATE), up: 'ZSKL_UP', ready: 'ZSKL_READY',
-    attack: 'ZSKL_DASH1', alt: 'ZSKL_DASH1', mt: 0 },
+    attack: 'ZSKL_DASH1', alt: 'ZSKL_DASH1', mt: 0,
+    // 4.1: the body floats like the monster (MF_NOGRAVITY): hover units above the floor (Doom's floaters drift to their
+    // target's height + half their own, 28 for a skull level with a marine), a gentle bob of bob units over bobTics,
+    // the eye view units above the body's bottom (the skull's eyes, not a marine's 41)
+    hover: 28, bob: 3, bobTics: 70, view: 32 },
 };
 for (const c of Object.values(ZCLASS)) {
   c.mt = MT['ZPLAYER_' + c.key];
@@ -60,8 +64,45 @@ function zombieReborn(p) {
   p.weaponowned.fill(false);
   p.readyweapon = WP_FIST; p.pendingweapon = WP_NOCHANGE;
   p.ammo = [0, 0, 0, 0];
-  p.zcd = 0; p.zdash = 0; p.zhit = false; p.zdv = null;
+  p.zcd = 0; p.zdash = 0; p.zhit = false; p.zdv = null; p.zDoorAt = 0;
   p.speedMul = c.speedMul;
+  if (c.view) { p.viewheight = c.view; p.deltaviewheight = 0; }
+}
+
+// 4.1: a floating body (the lost soul): alive, its class hovers
+function zHovers(p) {
+  const c = p.zclass && ZCLASS[p.zclass];
+  return !!c && !!c.hover && p.playerstate === 'live' && !!p.mo && !p.mo.removed;
+}
+
+// per tic: steer the floating body to its hover height over the floor under it (stepping onto a ledge lifts it, off one
+// it sinks), under the ceiling, with a slow bob; a dash flies free (zDashCarry) and the body drifts back afterwards
+function zHover(p) {
+  const mo = p.mo, c = ZCLASS[p.zclass];
+  if (p.zdash > 0 && p.zdv) return;
+  const bob = c.bob * Math.sin(((G.leveltime + p.slot * 13) % c.bobTics) / c.bobTics * 2 * Math.PI);
+  let want = mo.floorz + c.hover + bob;
+  if (want + mo.height > mo.ceilingz) want = mo.ceilingz - mo.height;
+  if (want < mo.floorz) want = mo.floorz;
+  mo.momz = Math.max(-FLOATSPEED, Math.min(FLOATSPEED, (want - mo.z) * 0.3));
+}
+
+// 4.2: a zombie player running into a closed manual door (a press-E door) opens it, as Doom's monsters do: the door
+// lines met by the failed move (TM.spechit); a door already moving is left alone unless it is closing (it opens again)
+function zeBumpDoor(mo) {
+  const p = mo.player;
+  if (!p || (p.zDoorAt || 0) > G.leveltime) return false;
+  for (let i = TM.spechit.length - 1; i >= 0; i--) {
+    const ld = TM.spechit[i];
+    if (!NAV_DOORS.has(ld.special) || !ld.backsector) continue;
+    if (pointOnLineSide(mo.x, mo.y, ld) === 1) continue;
+    const d = ld.backsector.specialdata;
+    if (d && !(d.kind === 'door' && d.direction === -1)) continue;
+    p.zDoorAt = G.leveltime + 8;
+    useSpecialLine(mo, ld, 0);
+    return true;
+  }
+  return false;
 }
 
 // the nearest human in front of a zombie within reach (melee): Doom's melee range check, in a cone
@@ -106,6 +147,7 @@ function zBodyAttack(p) { if (p.mo && p.playerstate === 'live') setMobjState(p.m
 function zombieThink(p) {
   const mo = p.mo;
   if (p.zcd > 0) p.zcd--;
+  if (ZCLASS[p.zclass].hover) zHover(p);
   if (p.zdash > 0 && p.zdv && !p.zhit) zDashCarry(p);
   if (p.zdash > 0) {
     p.zdash--;

@@ -90,6 +90,7 @@ function xyMovement(mo) {
       xmove = ymove = 0;
     }
     if (!tryMove(mo, ptryx, ptryy)) {
+      if (mo.player && G.ze && mo.player.zclass) zeBumpDoor(mo);   // 4.2: doors in a zombie's way open for it
       if (mo.player) slideMove(mo);
       else if (mo.flags & MF_MISSILE) {
         if (TM.ceilingline && TM.ceilingline.backsector && TM.ceilingline.backsector.sky &&
@@ -107,7 +108,7 @@ function xyMovement(mo) {
     if ((mo.flags & MF_MISSILE) && G.inside && !G.inside(mo.x, mo.y)) removeMobj(mo);
     return;
   }
-  if (mo.z > mo.floorz) return;
+  if (mo.z > mo.floorz && !(player && player.zclass && zHovers(player))) return;   // a floating body has friction (4.1)
   if (mo.flags & MF_CORPSE) {
     if ((mo.momx > 0.25 || mo.momx < -0.25 || mo.momy > 0.25 || mo.momy < -0.25) && mo.floorz !== mo.sector.floorheight) return;
   }
@@ -122,7 +123,7 @@ function xyMovement(mo) {
 }
 
 function zMovement(mo) {
-  if (mo.player && mo.z < mo.floorz) {
+  if (mo.player && mo.z < mo.floorz && !(mo.player.zclass && zHovers(mo.player))) {
     mo.player.viewheight -= mo.floorz - mo.z;
     mo.player.deltaviewheight = (VIEWHEIGHT - mo.player.viewheight) / 8;
   }

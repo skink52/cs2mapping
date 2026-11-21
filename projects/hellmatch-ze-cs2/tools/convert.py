@@ -1,12 +1,17 @@
 """Freedoom Phase 1/2 level -> CS2 converter (Hellmatch ZE).
 
 usage: convert.py <addon_out> [e1m1,map01,...]   (default: every level with a sidecar in ze/)
+       HZE_FINALE=dm03 (default; "none" leaves it out): the escape finale's deathmatch arena, a FreeDM level
 
 Every chosen level is converted ONCE (models/fdm/<base>/...) and placed TWICE: ids <base>t (T arena) and <base>c
 (CT arena), each with its own world offset and its own mover / animated-surface entity names (fdm_<id>_f12), sharing
 the model files. The level record keeps every THING with its WAD index (= its position in `t`), whatever its skill
 flags, monsters and keys included; the game side filters. ze/<base>.json (the ZE sidecar) is validated against the WAD
 and embedded as `ze` in both records.
+
+The escape finale (round 4) is one FreeDM level placed ONCE: id <base>f (dm03f), side "f", `finale: true`, no `ze`, all
+THINGS kept. Its models go to Hellmatch's folder for that level (dmNN -> models/fdm/mNN/, the same converter code), so the
+compiled models can be copied from the Hellmatch game addon when the sources come out identical (tools/hm_assets.py plan).
 
 For every map: static geometry chunks + one rigid block model per moving floor/ceiling,
 .vmat materials (unlit, tinted per Doom light level), 4x upscaled textures, and the level data
@@ -373,6 +378,8 @@ STEP = 24              # a player steps up anything this high, so lower walls up
 PASS = 64              # an opening lower than this (above the floor) can't be walked under: its upper wall gets pressed against
 
 LEVEL_NAMES = ['e%dm%d' % (e, m) for e in range(1, 5) for m in range(1, 10)] + ['map%02d' % i for i in range(1, 33)]
+DM_NAMES = ['dm%02d' % i for i in range(1, 33)]     # FreeDM: only as the escape finale
+FINALE_DEFAULT = 'dm03'     # "Issues of Claveria": compact (1864 x 1824), 10 DM starts, one connected area, no keys
 
 
 def level_credits():
@@ -389,12 +396,15 @@ def level_credits():
 
 
 class Level:
-    def __init__(self, name, mats):
+    def __init__(self, name, mats, finale=False):
         name = name.lower()
-        if name not in LEVEL_NAMES:
-            raise SystemExit('convert: unknown level %r (Phase 1 e1m1..e4m9, Phase 2 map01..map32)' % name)
+        if name not in (DM_NAMES if finale else LEVEL_NAMES):
+            raise SystemExit('convert: unknown level %r (%s)' % (name, 'FreeDM dm01..dm32' if finale else 'Phase 1 e1m1..e4m9, Phase 2 map01..map32'))
         self.idx = name
-        self.tag = name
+        self.finale = finale
+        # model folder / file names: Hellmatch's for a FreeDM level (dm03 -> m03), so its compiled models can be reused
+        self.tag = 'm' + name[2:] if finale else name
+        self.base = name
         self.wad = os.path.join(LEVELS, name + '.wad')
         self.m = load_map(self.wad)
         if not self.m['nodes'] or not self.m['ssectors'] or not self.m['segs']:
@@ -704,8 +714,8 @@ class Level:
         m = self.m
         sec_of_side = lambda s: m['sides'][s]['sector'] if s >= 0 else -1
         d = dict(
-            id=pid, base=self.tag, side=side, name=self.tag.upper(),
-            title=credits.get(self.tag, (self.tag.upper(), ''))[0], author=credits.get(self.tag, ('', ''))[1],
+            id=pid, base=self.base, side=side, name=self.base.upper(),
+            title=credits.get(self.base, (self.base.upper(), ''))[0], author=credits.get(self.base, ('', ''))[1],
             off=[offset[0] - self.center[0], offset[1] - self.center[1], offset[2]],
             v=[c for v in m['verts'] for c in v],
             l=[[l['v1'], l['v2'], l['flags'], l['special'], l['tag'], sec_of_side(l['s1']), sec_of_side(l['s2'])]
@@ -718,8 +728,9 @@ class Level:
             mf=sorted(self.floor_mv), mc=sorted(self.ceil_mv),
             an=[[q['name'], q['anim'], q['tics']] for q in props if q['anim']],
             bb=list(self.bbox),
-            ze=ze,
         )
+        if self.finale: d['finale'] = True     # the escape finale: no `ze` field at all (Round 4 contract)
+        else: d['ze'] = ze
         return d
 
 
@@ -769,35 +780,40 @@ if __name__ == '__main__':
     def texset(n):
         # each level is built with its own phase's texture set; the few textures Phase 1 defines differently get a
         # `_d1` file/material name (assets.d1_suffix), so Phase 1 and Phase 2 levels can share one addon
-        assets.set_texture_set(('DOOM1_VERSIONS',) if n.startswith('e') else ())
+        # FreeDM (the finale) uses FreeDM's own set, as Hellmatch does: it only adds the LOGO* textures Phase 2 lacks
+        assets.set_texture_set(('DOOM1_VERSIONS',) if n.startswith('e') else ('FREEDM',) if n.startswith('dm') else ())
     credits = level_credits()
     mats = Materials(out)
     levels = [Level(n, mats) for n in names_]
+    fin = os.environ.get('HZE_FINALE', FINALE_DEFAULT).strip().lower()
+    finale = Level(fin, mats, finale=True) if fin and fin != 'none' else None
     sidecars = {}
     for L in levels:
         p = os.path.join(ROOT, 'ze', L.tag + '.json')
         sidecars[L.tag] = ze_sidecar.load(p, L.wad, L.m) if os.path.exists(p) else None
         if sidecars[L.tag] is None:
             print('convert: %s has no sidecar (ze/%s.json); its records carry ze = null' % (L.tag, L.tag))
-    offs = pack([(L.tag + sd, L.bbox) for L in levels for sd in SIDES])
+    items = [(L.tag + sd, L.bbox) for L in levels for sd in SIDES]
+    if finale: items.append((finale.base + 'f', finale.bbox))
+    offs = pack(items)
     allprops = []; rt = []
-    for L in levels:
-        texset(L.tag)
+    for L in levels + ([finale] if finale else []):
+        texset(L.base)
         L.build()
         models = L.write(out)
-        for sd in SIDES:
-            pid = L.tag + sd
+        for sd in (('f',) if L.finale else SIDES):
+            pid = L.base + sd
             ox, oy = offs[pid]
             off = (round(ox), round(oy), -2048)
             props = L.place(pid, off)
-            allprops += [dict(q, level=pid, base=L.tag) for q in props]
-            r = L.runtime(pid, sd, off, props, credits, sidecars[L.tag])
+            allprops += [dict(q, level=pid, base=L.base) for q in props]
+            r = L.runtime(pid, sd, off, props, credits, None if L.finale else sidecars[L.tag])
             ext = (r['off'][0] + L.bbox[0], r['off'][1] + L.bbox[1], r['off'][0] + L.bbox[2], r['off'][1] + L.bbox[3])
             if min(ext) < -WORLD or max(ext) > WORLD:
                 raise SystemExit('convert: %s extends to %s, outside +-%d' % (pid, ext, WORLD))
             rt.append(r)
             print(pid, 'off', r['off'], 'extent', ext)
-        print(L.tag, "backings", L.backings, ' '.join('%s %d/%d' % (k, v[1], v[0]) for k, v in L.faces.items()),
+        print(L.base + (' (finale, models/fdm/%s)' % L.tag if L.finale else ''), "backings", L.backings, ' '.join('%s %d/%d' % (k, v[1], v[0]) for k, v in L.faces.items()),
               "chunks", sum(1 for p in models if not p["mover"]), "movers", sum(1 for p in models if p["mover"]),
               'tris', sum(p['tris'] for p in models), 'things', len(L.m['things']))
     os.makedirs(os.path.join(out, '_gen'), exist_ok=True)

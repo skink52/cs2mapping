@@ -201,6 +201,7 @@ function monsterScore(arena, e) {
 //   ze_infections        as a zombie player, killed a human (ze_boss_player_kills: while driving a boss, also an infection)
 //   ze_zombie_kills      as a human, killed a zombie player
 //   ze_boss_takeovers    took control of a stage boss
+//   ze_finale_wins       reached the escape finale and the side won the round (alive or not)
 //   best_ze_stage n      the furthest stage reached as a live human this round
 // Everything is added up per player and sent once a second at most (SERVER_STATS_EVERY), before the player's slot is
 // freed and at the end of the round; best_ze_stage keeps its highest n. Humans only: never bots, never in warmup.
@@ -208,7 +209,7 @@ function monsterScore(arena, e) {
 // dedicated server drops any command a Workshop map sends that isn't on Valve's allow list, and echo is on it (the plugin reads echo lines).
 let statsOn = !!CONFIG.SERVER_STATS;
 const statPending = new Map();   // slot -> { <stat>: n } (best_* stats: the highest n)
-const STAT_ORDER = ["pve_kills", "boss_kills", "ze_zombie_kills", "ze_infections", "ze_boss_player_kills", "ze_boss_takeovers", "ze_holds", "ze_escapes", "ze_survivor_wins", "best_ze_stage"];
+const STAT_ORDER = ["pve_kills", "boss_kills", "ze_zombie_kills", "ze_infections", "ze_boss_player_kills", "ze_boss_takeovers", "ze_holds", "ze_escapes", "ze_survivor_wins", "ze_finale_wins", "best_ze_stage"];
 let statNext = 0;
 function statSend(slot, stat, n, always) {
   const cmd = "echo mgstat " + Math.floor(slot) + " " + String(stat).replace(/[^a-z0-9_]/gi, "") + (n > 1 || always ? " " + Math.floor(n) : "");
@@ -260,11 +261,13 @@ function onDoomKill(arena, e) {
   const v = e.victim, k = e.killer;
   for (const p of [v, k]) if (p) { p.message = e.text; p.messageTime = arena.leveltime; }
   if (CONFIG.REAL_KILLS && GameRules.IsWarmupPeriod()) warnOnce("warmupkills", "warmup: kills are not sent to the CS2 scoreboard until warmup ends");
+  // only zombie <-> human kills; in the finale (Round 4) T <-> CT kills between humans
+  const across = !!k && k !== v && e.kind !== "monster" && (arena.zeFinale ? !!k.person && !!v.person && k.person.zeSide !== v.person.zeSide : !!k.zclass !== !!v.zclass);
   if (!CONFIG.REAL_KILLS || realKillsBroken || GameRules.IsWarmupPeriod()) {
-    if (CONFIG.ADD_SCORE && k && k !== v && !!k.zclass !== !!v.zclass) { const c = controllerOf(k.slot); if (c) guard("addscore", () => c.AddScore(1)); }
+    if (CONFIG.ADD_SCORE && across) { const c = controllerOf(k.slot); if (c) guard("addscore", () => c.AddScore(1)); }
     return;
   }
-  const credited = k && k !== v && e.kind !== "monster" && !!k.zclass !== !!v.zclass;   // only zombie <-> human kills
+  const credited = across;
   v.respawnGate = false;
   pendingKills.push({ at: Instance.GetGameTime() + CONFIG.KILL_DELAY, victim: v.slot, killer: credited ? k.slot : null, player: v, since: Instance.GetGameTime() });
 }
@@ -272,6 +275,7 @@ function onDoomKill(arena, e) {
 // the Doom player that a pending kill belongs to now (a dead human has become a zombie in the other arena meanwhile)
 function killOwner(k) {
   const pe = rm.person(k.victim);
+  if (pe && k.player.zeFinaleDeath) return k.player;   // a finale death: the player may be watching by now, the kill still goes out
   if (!pe || !pe.player) return null;
   if (pe.player === k.player) return pe.player;
   return k.player.zclass ? null : (pe.zeRole === "zombie" && pe.player.zclass ? pe.player : null);
@@ -422,7 +426,23 @@ function handleRoundEvents() {
         if (e.person.player) { e.person.player.message = "YOU DIED - YOU RISE AS A ZOMBIE"; e.person.player.messageTime = e.to.leveltime; }
         dlog(`${e.person.name}: human of ${ZE_SIDE_NAME[e.person.zeSide]} -> zombie in ${e.to.mapId}`);
         break;
-      case "zeEnd": statPlayers(e.survivors, "ze_survivor_wins"); break;
+      case "zeEnd": statPlayers(e.survivors, "ze_survivor_wins"); statPlayers(e.finaleWinners, "ze_finale_wins"); break;
+      // the escape finale (Round 4): the message in the centre for everyone (as one image when the HUD build has it;
+      // else a short centre line and the whole sentence on everyone's message line)
+      case "zeFinale": {
+        const img = typeof HUD_STRING_INDEX !== "undefined" && HUD_STRING_INDEX.has(e.text);
+        const until = Instance.GetGameTime() + 5;
+        for (const a of rm.arenas) {
+          centerMsgs.set(a, { text: img ? e.text : e.short, until });
+          if (!img) for (const p of a.players.values()) { p.message = e.text; p.messageTime = a.leveltime; }
+        }
+        sayAll(e.text);
+        log(`finale: ${e.text} (${e.arena.mapId})`);
+        break;
+      }
+      case "zeFinaleOut":
+        if (e.person) dlog(`${e.person.name}: killed in the finale - watching`);
+        break;
       case "zeZombie":
         if (e.first && e.person) e.person.zeBannerUntil = Instance.GetGameTime() + 4;
         if (e.person) e.person.zeClassUntil = Instance.GetGameTime() + 2.5;
@@ -454,6 +474,12 @@ function arenaLines(a, now) {
     line2 = (rm.solo ? `${ZE_SIDE_NAME[a.zeSide]} ${rm.humansAlive(a.zeSide)} ALIVE` : `T ${rm.humansAlive(2)} ALIVE  CT ${rm.humansAlive(3)} ALIVE`) + "  " + zeClock(left);
     if (st.boss) bar = (st.boss.name.length > 14 ? "BOSS" : st.boss.name) + " " + zeBar(st.boss.frac);
     else if (st.frac >= 0) bar = st.holding ? (st.escape ? "ESCAPE " : "HOLD ") + zeBar(st.frac) : "ZONE EMPTY - TIMER PAUSED";
+  } else if (a.zeFinale && rm.finale) {
+    // the escape finale: who is in, both sides' live humans (the finale and their own arenas), the round's clock
+    const F = rm.finale;
+    line1 = F.fight ? "FINAL FIGHT" : "ESCAPED";
+    line2 = `T ${rm.humansAlive(2)} ALIVE  CT ${rm.humansAlive(3)} ALIVE  ` + zeClock(Math.ceil(rm.zeTimeLeftTics() / TICRATE));
+    bar = F.fight ? "LAST SIDE STANDING WINS" : "ESCAPED - THEY MAY FOLLOW";
   }
   let center = "";
   const cm = centerMsgs.get(a);

@@ -111,7 +111,10 @@ if OUT == '--warm':
         print('music: %s %s %s' % (tid, how, 'ok' if not r or r['ok'] else 'FAULT ' + '; '.join(r['faults'])), json.dumps(r) if r else '')
     sys.exit(0)
 levels = json.load(open(os.path.join(OUT, '_gen/levels.json')))
-bases = sorted({L['base'] for L in levels})
+bases = sorted({L['base'] for L in levels if not L.get('finale')})
+# the escape finale (round 4) gets no level track of its own: it plays from the boss pool (its base joins a boss track's
+# `level` list, so musicBoss can prefer it there)
+finales = sorted({L['base'] for L in levels if L.get('finale')})
 names = titles()
 d = os.path.join(OUT, 'sounds/fdm/music'); os.makedirs(d, exist_ok=True)
 tracks = []
@@ -128,7 +131,7 @@ for tid in bases:
                    'level': tid, 'source': how})
     print('music: level %s (%s, %.0f s)%s' % (tid, how, tracks[-1]['seconds'], ' check ok' if r else ''))
 boss_levels = {}
-for b in bases: boss_levels.setdefault(boss_for(b), []).append(b)
+for b in bases + finales: boss_levels.setdefault(boss_for(b), []).append(b)
 for tid, lv in sorted(boss_levels.items()):
     src, how, _ = track(tid)
     shutil.copy(src, os.path.join(d, tid + '.mp3'))

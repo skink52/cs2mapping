@@ -4,7 +4,8 @@ usage: zepreview.py <level> [--ze ze/<level>.json] [--size 1800] [--labels] [--c
 
 Sectors are filled by floor height (dark = low); one-sided lines white, steps grey, door lines yellow, lift/floor lines
 cyan, exit lines magenta, key doors in their key colour; tags in yellow. Things: player starts 1-4 green (numbered),
-hard-skill monsters red (others dim), keys as coloured squares, the rest small grey dots.
+hard-skill monsters red (others dim), keys as coloured squares, deathmatch starts (11) cyan rings, weapons / ammo /
+health / armour orange dots, the rest small grey dots.
 --labels writes sector numbers (white) and special line numbers (yellow); --crop zooms to a Doom-unit box.
 --ze overlays the sidecar: hold zones per stage (translucent, labelled), blocks (thick red), spawn groups (orange), boss.
 """
@@ -99,8 +100,15 @@ def main():
             hard = t['flags'] & 4 and not t['flags'] & 16
             rr = r * (2.2 if ty in BOSSY else 1.3)
             d.ellipse([x - rr, y - rr, x + rr, y + rr], fill=(255, 40, 40, 255 if hard else 90))
-        elif ty in (11, 2, 3):
+        elif ty == 11:
+            # deathmatch start (the escape finale's spawns): cyan ring with an arrow
+            d.ellipse([x - r * 2, y - r * 2, x + r * 2, y + r * 2], outline=(0, 230, 255), width=3)
+            ang = math.radians(t['angle'])
+            d.line([x, y, x + math.cos(ang) * r * 5, y - math.sin(ang) * r * 5], fill=(0, 230, 255), width=2)
+        elif ty in (2, 3):
             pass
+        elif 2001 <= ty <= 2006 or ty in (2010, 2011, 2012, 2013, 2014, 2015, 2018, 2019, 2047, 2048, 2049, 8, 17, 2007, 2008, 2046):
+            d.ellipse([x - r, y - r, x + r, y + r], fill=(255, 200, 40))   # weapons / ammo / health / armour
         else:
             d.ellipse([x - 1, y - 1, x + 1, y + 1], fill=(150, 150, 150))
         if a.labels and (ty in MONSTERS or ty in KEYS or 1 <= ty <= 4):

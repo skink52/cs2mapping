@@ -112,10 +112,24 @@
       }
     },
     "flood_cave": {
-      "sectors": [
-        137,
-        150
+      "points": [
+        [
+          240,
+          -1300,
+          90
+        ],
+        [
+          790,
+          -1020,
+          180
+        ],
+        [
+          960,
+          -1000,
+          180
+        ]
       ],
+      "radius": 64,
       "ai": {
         "DEMON": 3,
         "IMP": 4,
@@ -185,6 +199,11 @@
         "hall"
       ],
       "on_start": [
+        {
+          "open_door": {
+            "sector": 27
+          }
+        },
         {
           "message": "HOLD THE FLOODGATE CORRIDOR"
         }

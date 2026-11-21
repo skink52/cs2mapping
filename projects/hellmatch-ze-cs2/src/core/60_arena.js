@@ -63,6 +63,7 @@ class Arena {
     this.zeSide = 0;              // the CS2 side (2 T, 3 CT) whose humans play here
     this.mapMonsters = [];        // ZE: the level's own monsters (the director places them, filtered by the sidecar)
     this.humanStarts = null;      // ZE: player starts 1-4 (humans start there)
+    this.zeFinale = false;        // ZE: the escape finale arena (Round 4; ZeRound.buildFinale)
   }
 
   run(fn) { const prev = G; G = this; try { return fn(); } finally { G = prev; } }
@@ -335,7 +336,7 @@ class Arena {
   isProtected(p) { return this.finished || this.leveltime < p.protectUntil; }
   onTeleport(p, angle) { this.events.push({ type: 'teleport', player: p, angle }); }
   onExitLine(p) {
-    if (this.ze) return false;   // ZE: the sidecar's escape stage is the way out
+    if (this.ze || this.zeFinale) return false;   // ZE: the sidecar's escape stage is the way out; the finale level's exit (DM03's closet) does nothing
     if (p) this.message(p, 'Exits are disabled in this game.');
     return false;
   }

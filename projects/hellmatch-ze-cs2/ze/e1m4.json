@@ -399,6 +399,11 @@
           }
         },
         {
+          "open_door": {
+            "sector": 18
+          }
+        },
+        {
           "message": "HOLD THE ENTRY HALL"
         }
       ],
@@ -458,6 +463,11 @@
         "ring_east"
       ],
       "on_start": [
+        {
+          "open_door": {
+            "sector": 45
+          }
+        },
         {
           "message": "DOWN THE STAIRS - HOLD THE PILLAR HALL"
         }
@@ -571,6 +581,11 @@
         "platform"
       ],
       "on_start": [
+        {
+          "open_door": {
+            "sector": 237
+          }
+        },
         {
           "message": "HOLD THE WALKWAY OVER THE NUKAGE"
         },

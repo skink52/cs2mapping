@@ -26,7 +26,9 @@ function newPlayer(slot, name) {
     face: undefined, faceIdx: undefined, faceTic: undefined, extralight: undefined,
     respawnGate: undefined, respawnNow: undefined, bot: undefined, wantWeapon: undefined,
     // Hellmatch ZE: zombie class (ZCLASS key) and its state; undefined for a human
-    zclass: undefined, speedMul: undefined, zcd: 0, zdash: 0, zhit: false, zeSwapAt: undefined,
+    zclass: undefined, speedMul: undefined, zcd: 0, zdash: 0, zhit: false, zeSwapAt: undefined, zdv: undefined, zDoorAt: 0,
+    // finale (4.5) and the HUD's damage tint (4.3)
+    zeFinaleDeath: undefined, zeFinaleOutAt: undefined, hudTint: 0, hudTintDc: 0, hudTintT: undefined,
   };
 }
 
@@ -86,6 +88,12 @@ function calcHeight(p) {
   p.bob /= 4;
   if (p.bob > MAXBOB) p.bob = MAXBOB;
   const onground = mo.z <= mo.floorz;
+  // 4.1: a floating body's eye rides with it (its own view height, the hover bob included)
+  if (p.zclass && zHovers(p)) {
+    p.viewz = mo.z + p.viewheight;
+    if (p.viewz > mo.ceilingz - 4) p.viewz = mo.ceilingz - 4;
+    return;
+  }
   if (!onground) {
     p.viewz = mo.z + VIEWHEIGHT;
     if (p.viewz > mo.ceilingz - 4) p.viewz = mo.ceilingz - 4;
@@ -113,7 +121,7 @@ function calcHeight(p) {
 function movePlayer(p) {
   const cmd = p.cmd, mo = p.mo;
   mo.angle = cmd.angle;
-  const onground = mo.z <= mo.floorz;
+  const onground = mo.z <= mo.floorz || (!!p.zclass && zHovers(p));   // a floating body steers in the air
   const sp = p.speedMul || 1;   // ZE zombie classes run a little faster or slower than a marine
   if (cmd.forwardmove && onground) thrust(p, mo.angle, cmd.forwardmove * sp * 2048 / 65536);
   if (cmd.sidemove && onground) thrust(p, mo.angle - 90, cmd.sidemove * sp * 2048 / 65536);
