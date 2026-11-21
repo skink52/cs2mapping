@@ -100,3 +100,19 @@ Load: `map mg_hellescape` from the tools build, then `bot_add` a few times (or `
 - [ ] Flesh worm: the jaws frame the screen when idle, close on a bite, red on a lunge.
 - [ ] Deadflare: flames at the screen edges, a flare, the dash streak.
 - [ ] Frames sit like the weapons do (no gap at the bottom while bobbing; scale matches the pistol).
+
+## Round 4 fixes and the escape finale (21 Nov 2026)
+- [ ] Deadflare (lost soul) body hovers off the floor with a slow bob; view height feels right; it ducks under low ceilings and
+      climbs onto ledges; after a dash it sinks back to hover height. Any motion sickness from the bob: report it.
+- [ ] MAP06 Janus Terminal, whole round: zombies never respawn somewhere cut off from the live humans.
+- [ ] A zombie walking into a closed press-E door opens it; E at a door still works.
+- [ ] Red damage flash is softer and fades in about half a second; pickup gold, berserk red and invulnerability look as before.
+- [ ] Zombie players pass through each other and through AI monsters (packs don't jam); humans still block them and can shoot them.
+- [ ] One side escapes: its survivors arrive in the DM03 "Issues of Claveria" arena with their weapons; message
+      "T'S ESCAPED - BUT WILL THE CTS BE HOT ON THEIR TRAIL?" (or the CT form). Other side wiped: escaped side wins the round.
+- [ ] Other side escapes too: they join; "CTS TRACKED DOWN THE REMAINING TS - FIGHT TO BE THE FINAL SURVIVORS"; T vs CT kills
+      show in the killfeed / scoreboard, same-side shots do nothing, a finale death spectates; last side standing wins the round.
+- [ ] DM03's exit closet does nothing. Clock running out in the finale: more live humans wins (tie: who escaped first).
+- [ ] Server stats (if the plugin is on): `ze_finale_wins` for every human on the winning side who reached the finale.
+- [ ] Horde strength: zombies no longer jam and monsters no longer wait behind shut doors, so it is harder; tune
+      CONFIG.ZE AI_DAMAGE / AI_PER_HUMAN if humans never get far.

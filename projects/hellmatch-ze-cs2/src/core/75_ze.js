@@ -1021,7 +1021,8 @@ class ZeDirector extends MonsterDirector {
     if (!info) return null;
     const a = this.a;
     const spot = a.run(() => this.zeSpot(info, opts));
-    if (!spot || !a.run(() => this.ze.reachable(spot.x, spot.y))) return null;
+    // (a stage boss always comes, even when no spot leads to the humans: else its stage would be skipped)
+    if (!spot || (!(opts && opts.boss) && !a.run(() => this.ze.reachable(spot.x, spot.y)))) return null;
     return a.run(() => this.spawnAt(type, spot.x, spot.y, opts));
   }
 

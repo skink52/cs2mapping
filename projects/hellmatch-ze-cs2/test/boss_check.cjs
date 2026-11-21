@@ -73,7 +73,8 @@ for (const base of bases) {
   if (ze.bossPlayer || ai.length !== 1 || ai[0].info.key !== type || ze.boss !== ai[0]) bad(`${base}: AI did not take the ${type} back (${ai.length})`);
   else if (ai[0].health !== hpBody) bad(`${base}: AI boss health ${ai[0].health} != body ${hpBody}`);
   if (bs.state !== 'active') bad(`${base}: stage ended on the hand-back`);
-  tic(35 * 3, () => { god(); z.person.lastActive = rm.time; });
+  // (the AI boss is kept alive meanwhile: god-mode bots could shoot it down before the second takeover)
+  tic(35 * 3, () => { god(); z.person.lastActive = rm.time; if (ze.boss && !ze.boss.player && ze.boss.health > 0 && ze.boss.health < 100) ze.boss.health = 100; });
   if (z.playerstate !== 'live' || C.ZCLASS[z.zclass].boss) bad(`${base}: ex-boss player not back as a zombie (${z.playerstate} ${z.zclass})`);
   // again, and a human kills it
   ze.offer = { until: a.leveltime + 175, opted: new Map() };

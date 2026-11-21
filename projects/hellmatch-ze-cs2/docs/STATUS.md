@@ -10,6 +10,9 @@ Hellmatch (`projects/hellmatch-cs2`, addon `mg_freedm`) is never modified. skink
 control - do the problem solving independently ... AAA quality, with the hellmatch graphics").
 
 ## Resume here
+**Round 4 done 21 Nov 2026 (simulated, deployed, compiled): floating lost soul, connected zombie respawns + door use, softer damage
+tint, no zombie-zombie collision, escape finale in DM03. Awaiting skink52's playtest (`TESTING_HELLESCAPE.md` Round 4 section);
+the horde is stronger now (tune CONFIG.ZE AI_DAMAGE / AI_PER_HUMAN first).**
 **Phase 2-4 built 19 Nov 2026 (afternoon): 4 levels (MAP01, E1M1, E3M1, MAP06), class choice, balance pass, player boss
 takeover, loading screens, Workshop art/description (`out/workshop/`, `docs/WORKSHOP_*`). Simulated only; not yet run in CS2.**
 Open after the playtest: E1M1 stage 2 (bots rarely climb the lift to the flooded hall even with the lift made perpetual; humans can
@@ -33,7 +36,7 @@ Read both progress files; continue the first unfinished row of each.
 - Push: never without asking. In-game playtest: skink52.
 
 ## Round 4: playtest findings (queued 20 Nov 2026; skink52's own test; do when usage resets, 21 Nov 13:30)
-Done 21 Nov 2026 (scheduled run + main session): 19/19 mock scenarios incl. finale escape/fight/none/clock; perf 64 players avg 2.71 ms, p99 8.4 (was 1.93 / 4.5: watch in game); deployed + compiled (0 failed). Order was: game = src/test, pipeline = tools/ze; rebuild, mock scenarios, deploy, compile, commit locally.
+Done 21 Nov 2026 (scheduled run): 29/29 mock scenarios incl. float/respawn/collide and finale escape/fight/clock/none; boss_check 6/6; perf 64 players avg 1.5-1.8 ms, p99 4.8-6.8 (was 1.31 / 3.48); api/tsc clean; final build deployed + compiled (0 failed, 1.1 min), existing_ports.txt restored. Finale arena FreeDM DM03 (`dm03f`). Order was: game = src/test, pipeline = tools/ze; rebuild, mock scenarios, deploy, compile, commit locally.
 | Step | What | Owner | State |
 |---|---|---|---|
 | 4.1 | Lost soul zombie player body doesn't float: the player-driven SKUL must hover like the monster (MF_FLOAT/NOGRAVITY height, bob), view height to match | game | done 21 Nov (simulated) |
