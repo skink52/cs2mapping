@@ -91,8 +91,9 @@ export default {
   tick(api) {
     god(api);
     // the T bot humans are the boss's victim at 22 s: the horde mustn't get them first (Round 4: packs no longer jam)
-    if (api.time < 22.5) { const a = arenaT(api); if (a) for (const p of a.players.values()) if (p.isBot && !p.zclass && p.playerstate === 'live') p.powers[0] = 1 << 20; }
-    else if (api.time < 22.6) { const a = arenaT(api); if (a) for (const p of a.players.values()) if (p.isBot && !p.zclass) p.powers[0] = 0; }
+    // (and they stand still while the boss is up for takeover, so their god mode doesn't shoot it down first)
+    if (api.time < 22.5) { const a = arenaT(api); if (a) for (const p of a.players.values()) if (p.isBot && !p.zclass && p.playerstate === 'live') { p.powers[0] = 1 << 20; p.frozen = api.time >= 18.9; } }
+    else if (api.time < 22.6) { const a = arenaT(api); if (a) for (const p of a.players.values()) if (p.isBot && !p.zclass) { p.powers[0] = 0; p.frozen = false; } }
     steps(api); invariants(api, probs);
   },
   check(api) {

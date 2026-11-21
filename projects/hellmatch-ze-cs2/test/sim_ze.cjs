@@ -107,17 +107,20 @@ for (let r = 0; r < ROUNDS; r++) {
   for (const a of rm.arenas) for (const p of a.players.values()) taken += p.stats.pickups || 0;
   summary.rounds++; summary.secs += tics / 35; summary.drops += dropsMade - drops0; summary.dropsTaken += taken;
   if (res) { summary.results[res.why] = (summary.results[res.why] || 0) + 1; if (res.why === 'escape') summary.escapes++; }
-  for (const a of rm.arenas) {
+  // Round 4: a side that escaped into the finale counts as an escape (summary.finales: rounds that reached the finale)
+  if (rm.finale) { summary.finales = (summary.finales || 0) + 1; if (res && res.why !== 'escape') summary.escapes++; }
+  const zeArenas = rm.arenas.filter((a) => !a.zeFinale);
+  for (const a of zeArenas) {
     summary.arenas++;
     if (a.ze.stages[1] && a.ze.stages[1].state !== 'pending') summary.stage2++;
     if (a.ze.stages[2] && a.ze.stages[2].state !== 'pending') summary.stage3++;
     summary.maxAI = Math.max(summary.maxAI, maxAlive[a.index]);
     if (!summary.caps.includes(a.director.capN)) summary.caps.push(a.director.capN);
   }
-  const desc = rm.arenas.map((a) => `${a.mapId}(side ${a.zeSide}) stages ${a.ze.reached()}/${a.ze.stages.length} AI max ${maxAlive[a.index]} zombie players max ${maxZp[a.index]}`).join(' | ');
+  const desc = zeArenas.map((a) => `${a.mapId}(side ${a.zeSide}) stages ${a.ze.reached()}/${a.ze.stages.length} AI max ${maxAlive[a.index]} zombie players max ${maxZp[a.index]}`).join(' | ');
   console.log(`round ${r + 1}: ${rm.base && rm.base.id} ${N} bots, ${(tics / 35).toFixed(0)}s -> ${res ? res.text + ' (' + res.why + ', wiped at ' + JSON.stringify(rm.wipedAt) + ', tic ' + rm.time + ')' : 'NO RESULT'}`);
-  console.log('  ' + desc);
-  console.log(`  drops ${dropsMade - drops0} (pickups by humans ${taken}), caps ${rm.arenas.map((a) => a.director.capN).join('/')}`);
+  console.log('  ' + desc + (rm.finale ? ` | finale ${rm.finale.arena.mapId}: ${Object.keys(rm.finale.sides).map((k) => (k === '2' ? 'T' : 'CT') + ' in at ' + Math.round(rm.finale.sides[k].at / 35) + 's').join(', ')}${rm.finale.fight ? ', fight' : ''}` : ''));
+  console.log(`  drops ${dropsMade - drops0} (pickups by humans ${taken}), caps ${zeArenas.map((a) => a.director.capN).join('/')}`);
   console.log(`  swaps ${swaps}, zombie spawns ${zspawns} ${JSON.stringify(clsCount)}, kills ${JSON.stringify(kinds)}`);
   console.log(`  events ${JSON.stringify(ev)}`);
   console.log('  stages: ' + stageLog.join('; '));

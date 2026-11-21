@@ -188,13 +188,11 @@ class ZeArena {
     let r = null;
     if (hs.length) {
       const n = L.sectors.length;
-      let rev = nav.zeRev;
-      if (!rev || nav.zeRevKeys !== this.keys.size) {
-        rev = [];
-        for (let i = 0; i < n; i++) rev.push([]);
-        for (let u = 0; u < n; u++) for (const e of nav[u]) if (this.zombiePasses(e)) rev[e.to].push(u);
-        nav.zeRev = rev; nav.zeRevKeys = this.keys.size;
-      }
+      // the reverse graph is built fresh each time (cheap: a few hundred sectors, at most every 16 tics): a copy cached on the
+      // nav went stale when doors / blocks changed its edges in place, and zombies came in cut off (MAP06, ze_respawn scenario)
+      const rev = [];
+      for (let i = 0; i < n; i++) rev.push([]);
+      for (let u = 0; u < n; u++) for (const e of nav[u]) if (this.zombiePasses(e)) rev[e.to].push(u);
       r = new Uint8Array(n);
       const q = [];
       for (const p of hs) { const id = p.mo.sector ? p.mo.sector.id : L.sectorAt(p.mo.x, p.mo.y).id; if (!r[id]) { r[id] = 1; q.push(id); } }
@@ -607,7 +605,9 @@ class ZeArena {
     const health = Math.round(base * (ZE_BOSS_TUNE[type] || { hp: 1 }).hp * (b.health_scale === 'none' ? 1 : (b.health_scale === 'players' || b.health_scale === undefined ? 0.5 + 0.15 * n : +b.health_scale || 1)));
     const at = b.at || null;
     let mo = null;
-    if (d) mo = at ? d.placeAt(type, at[0], at[1], at[2] || 0, { health, boss: true, awake: true }) : d.spawn(type, { health, boss: true, minDist: 600 });
+    // (the sidecar's spot, else further round it if the horde stands there, else a spot of the horde's own)
+    if (d && at) mo = d.placeAt(type, at[0], at[1], at[2] || 0, { health, boss: true, awake: true }) || d.placeAt(type, at[0], at[1], at[2] || 0, { health, boss: true, awake: true, radius: 256 });
+    if (d && !mo) mo = d.spawn(type, { health, boss: true, minDist: 600 }) || d.spawn(type, { health, boss: true, minDist: 300, close: true });
     this.boss = mo; this.bossMax = health; this.bossStage = s;
     this.bossName = String(b.name || info.name || type).toUpperCase();
     if (!mo) { this.finishStage(s); return; }   // nowhere to put it: the stage is skipped (the build validates the spot)
@@ -935,7 +935,7 @@ class ZeDirector extends MonsterDirector {
   // a monster at a given spot (the nearest clear one within 96 units); asleep unless awake is asked
   placeAt(type, x, y, angle, opts) {
     const info = MOBJINFO[MT[type]];
-    const f = this.a.fitSpot(x, y, 96, null, info.radius, info.height, info);
+    const f = this.a.fitSpot(x, y, (opts && opts.radius) || 96, null, info.radius, info.height, info);
     if (!f) return null;
     const mo = spawnMobj(f.x, f.y, (info.flags & MF_SPAWNCEILING) ? ONCEILINGZ : ONFLOORZ, MT[type]);
     mo.angle = mo.pangle = angle || 0;
@@ -979,7 +979,7 @@ class ZeDirector extends MonsterDirector {
     if (fromGroup) shuffle(cands);
     else {
       let spots = ze.spots || [];
-      if (ok) spots = spots.filter(ok);
+      if (ok) { const f = spots.filter(ok); spots = f.length || !(opts && opts.boss) ? f : spots; }   // a boss always comes
       if (hs.length) {
         let minProg = Infinity, maxProg = -Infinity;
         for (const p of hs) { const v = ze.progress[a.level.sectorAt(p.mo.x, p.mo.y).id]; if (v < minProg) minProg = v; if (v > maxProg && v !== Infinity) maxProg = v; }
@@ -1021,7 +1021,7 @@ class ZeDirector extends MonsterDirector {
     if (!info) return null;
     const a = this.a;
     const spot = a.run(() => this.zeSpot(info, opts));
-    if (!spot) return null;
+    if (!spot || !a.run(() => this.ze.reachable(spot.x, spot.y))) return null;
     return a.run(() => this.spawnAt(type, spot.x, spot.y, opts));
   }
 
@@ -1058,7 +1058,7 @@ class ZeDirector extends MonsterDirector {
         if (i) type = this.pickType(ai);
         const inf = MOBJINFO[MT[type]];
         const f = i === 0 ? spot : a.fitSpot(spot.base.x, spot.base.y, 192, null, inf.radius, inf.height, inf);
-        if (!f) continue;
+        if (!f || !ze.reachable(f.x, f.y)) continue;   // 4.2: each member's own spot must still lead to a live human
         if (this.spawnAt(type, f.x, f.y, { quiet: i > 0 })) made++;
       }
     });
