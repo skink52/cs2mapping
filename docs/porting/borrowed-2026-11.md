@@ -65,5 +65,5 @@ report or an opt-in step until a map skink52 has played shows the problem.
 |---|---|
 | Register new steps in `stage_c.py` / `run_pass.py`; pipeline.md and tools/README.md rows | done 24 Nov |
 | `python ci/check_repo.py`, `check_links.py`, `unittest discover -s tools/tests` (311) and `-s autoport/tests` (91), api check | done 24 Nov, all pass |
-| Copy changed tools to `C:\source1\cs2port\tools`, check sizes | todo |
+| Copy changed tools to `C:\source1\cs2port\tools`, check sizes | done 24 Nov, byte for byte |
 | Commit (no push without asking) | done 24 Nov, not pushed |
