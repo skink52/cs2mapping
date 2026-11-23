@@ -12,8 +12,14 @@ displaybrush  func_brush / func_illusionary that only display (never solid, no n
               world surface of the same material -> world meshes with Physics Type None, so they bake with the surface around them
 origindup     world meshes that are the importer's copies of brush entities at their local coordinates (around 0 0 0): reported in stage C,
               deleted only by the stage D pass `origindup` (skink52: delete only when they are a problem)
+thintrig      boost / gravity triggers (push, AddOutput basevelocity / gravity) at most 4 u high: reported (stage C); stage D `thintrigfix`
+              raises their top face to 6 u (opt-in; idea from CS2-Porter vmf.py, MIT, copyright bcanusar)
+spawnlift     spawns on or up to 8 u in the floor (mapsanity spawn_in_floor): reported (stage C); stage D `spawnliftfix` puts them 2 u above the
+              floor when a player fits there (opt-in; idea from CS2-Porter vmf.py, MIT, copyright bcanusar)
+numnames      names (and target / parentname / output targets) the importer read as numbers ("000" -> "0", "1.01" -> "1.010000") -> the
+              VMF's exact text (VMF needed; run before io; CS2-Porter vmf.py decimal_values, MIT, copyright bcanusar)
 """
-import math, random, collections
+import math, random, collections, re
 import numpy as np
 import dmx, vmapedit as V, vmf as vmfmod
 
@@ -362,3 +368,170 @@ def origin_duplicates(m, c, vmfp, delete=False):
     else:
         c.todo.append('origindup: %d world meshes look like the importer\'s copies of brush entities at the origin (run stage D origindup to delete them if they are in the way): %s' % (len(found), desc))
     return len(found)
+
+
+# ---------------------------------------------------------------- thin boost / gravity triggers (B2, Nov 2026)
+# Idea from CS2-Porter vmf.py (MIT, copyright bcanusar), adapted: it raises the top of boost / gravity trigger_multiples at most 4 u high
+# to 6 u, on the claim that CS2 misses touches on them. Nothing here has shown that in a map skink52 played, and on 14 Nov 2026 13 thin
+# triggers on ba_jail_keimusho were thickened on an untested guess and reverted the same day. So the stage C step only REPORTS
+# (`thintrig`); the stage D pass `thintrigfix` moves the top faces up, for a map where a boost was seen not to fire in game.
+THIN_MAX = 4.0        # a boost / gravity trigger at most this high (z) is reported
+THIN_TO = 6.0         # thintrigfix: its height afterwards (top face moved up, bottom kept)
+BOOST_CLASSES = ('trigger_push', 'trigger_gravity', 'trigger_multiple', 'trigger_once')
+
+
+def _boost_kind(m, e):
+    """'push' / 'gravity' / 'basevelocity' when the trigger changes a player's velocity or gravity, else None"""
+    cls = m.cls(e)
+    if cls == 'trigger_push': return 'push'
+    if cls == 'trigger_gravity': return 'gravity'
+    if cls not in BOOST_CLASSES: return None
+    for cc in m.conns(e):
+        inp = (dmx.get(cc, b'inputName') or b'').decode('utf-8', 'replace').lower()
+        par = (dmx.get(cc, b'overrideParam') or b'').decode('utf-8', 'replace').lower()
+        if inp == 'addoutput' and 'basevelocity' in par: return 'basevelocity'
+        if inp == 'addoutput' and 'gravity' in par: return 'gravity'
+        if inp == 'runscriptinput' and par.startswith(('pushin_', 'gravity_', 'launch_')): return 'push' if par.startswith(('pushin_', 'launch_')) else 'gravity'
+    return None
+
+
+def thin_triggers(m, c, fix=False, max_h=THIN_MAX, to=THIN_TO):
+    """report (fix=False) or raise the top face of (fix=True) boost / gravity triggers at most max_h units high; returns [(name, kind, h)]"""
+    found = []
+    for e in m.entities():
+        kind = _boost_kind(m, e)
+        if kind is None: continue
+        b = m.bounds(e)
+        if not b: continue
+        lo, hi = b; h = hi[2] - lo[2]
+        if h > max_h + 1e-3: continue
+        label = '%s %s' % (m.cls(e), m.name(e) or '(unnamed, node %s)' % m.g(e, b'nodeID'))
+        found.append((label, kind, round(h, 2), [round(x) for x in lo], [round(x) for x in hi]))
+        if not fix: continue
+        top = hi[2]; dz = to - h
+        for ch in [n for n, _ in m.walk(e)] if m.children(e) else []:
+            if m.type(ch) != b'CMapMesh': continue
+            if any(abs(x) > 1e-4 for x in m.g(ch, b'angles', [0, 0, 0])) or any(abs(x - 1) > 1e-4 for x in m.g(ch, b'scales', [1, 1, 1])): continue
+            oz = m.g(ch, b'origin', [0, 0, 0])[2]
+            st = _stream(m, m.g(ch, b'meshData'), b'vertexData', b'position')
+            if st is None: continue
+            a = dmx.geta(m.E[st], b'data')
+            a[2] = [[p[0], p[1], p[2] + dz] if p[2] + oz >= top - 0.01 else list(p) for p in a[2]]
+    if not found: return found
+    desc = '; '.join('%s (%s, %g u high, %s..%s)' % x for x in found)[:900]
+    if fix:
+        c.log.append('thintrigfix: %d boost/gravity triggers at most %g u high: top face raised to %g u high (bottom kept): %s' % (len(found), max_h, to, desc))
+        c.todo.append('thintrigfix: check in game that the %d raised boost/gravity triggers fire once per touch and nothing else changed' % len(found))
+    else:
+        c.todo.append('thintrig: %d boost/gravity triggers are at most %g u high (CS2-Porter reports CS2 can miss touches on these; not seen in our ports yet). If one does not fire in game, run stage D thintrigfix: %s' % (len(found), max_h, desc))
+    return found
+
+
+# ---------------------------------------------------------------- spawns in the floor (B3, Nov 2026)
+# From CS2-Porter vmf.py _lift_spawns (MIT, copyright bcanusar), adapted to mapsanity's mesh floors: a spawn whose origin is on the floor
+# or up to 8 u in it goes to 2 u above the highest floor under its five footprint columns, when nothing solid is within 72 u above that.
+# mapsanity (read-only) reports these as spawn_in_floor ("all teams are full", cs2-map-mcp's finding). Spawns 0.05-2 u above the floor
+# (spawn_low) are left alone: imported spawns sit at 0.6-0.8 and play. The stage C step reports; stage D `spawnliftfix` moves them.
+SPAWN_LIFT = 2.0
+SPAWN_SINK = 8.0
+SPAWN_COLS = [(0.0, 0.0)] + [(sx * 15.5, sy * 15.5) for sx in (-1, 1) for sy in (-1, 1)]
+
+
+def spawn_lift(m, c, fix=False):
+    import mapsanity as MS
+    spawns = [e for e in m.by_class('info_player_terrorist', 'info_player_counterterrorist', 'info_player_start')]
+    if not spawns: return []
+    cells = {(int(math.floor((m.origin(e)[0] + dx) / MS.CELL)), int(math.floor((m.origin(e)[1] + dy) / MS.CELL)))
+             for e in spawns for dx in (-16, 16) for dy in (-16, 16)}
+    tris = MS.solid_triangles(m, cells)
+    out = []
+    for e in spawns:
+        o = m.origin(e)
+        near = [t for t in tris if min(p[0] for p in t) <= o[0] + 17 and max(p[0] for p in t) >= o[0] - 17
+                and min(p[1] for p in t) <= o[1] + 17 and max(p[1] for p in t) >= o[1] - 17]
+        fl = [MS.floor_below(near, (o[0] + dx, o[1] + dy, o[2]), start=SPAWN_SINK, drop=0.5 + SPAWN_SINK) for dx, dy in SPAWN_COLS]
+        fl = [z for z in fl if z is not None]
+        if not fl: continue
+        floor = max(fl)
+        if o[2] - floor >= 0.05: continue                       # standing on it (or above): not in the floor
+        z = round(floor + SPAWN_LIFT, 2)
+        ok = MS.ceiling_above(near, (o[0], o[1], z), foot=0.01) is None
+        label = '%s %s at %s' % (m.cls(e), m.name(e) or '(unnamed)', ' '.join('%g' % round(x, 1) for x in o))
+        out.append((label, round(o[2] - floor, 2), z, ok))
+        if fix and ok: dmx.set_(m.E[e], b'origin', dmx.T_V3, [float(o[0]), float(o[1]), float(z)])
+    if not out: return out
+    moved = [x for x in out if x[3]]; stuck = [x for x in out if not x[3]]
+    desc = lambda L: '; '.join('%s (%+g u, to z %g)' % x[:3] for x in L)[:700]
+    if fix:
+        if moved: c.log.append('spawnliftfix: %d spawns on or in the floor moved to 2 u above it: %s' % (len(moved), desc(moved)))
+        if stuck: c.todo.append('spawnliftfix: %d spawns in the floor left in place (no 72 u of headroom above the lifted spot): %s' % (len(stuck), desc(stuck)))
+    else:
+        c.todo.append('spawnlift: %d spawns on or up to 8 u in the floor (CS2 may refuse them: "all teams are full"; %d can be lifted 2 u above it '
+                      'with stage D spawnliftfix, %d have no room): %s' % (len(out), len(moved), len(stuck), desc(out)))
+    return out
+
+
+# ---------------------------------------------------------------- names that look like numbers (B4, Nov 2026)
+# Valve's importer reads entity values that look like numbers as numbers: mg_antique_course's path_tracks "001".."003" and sounds "000"
+# came out as "1".."3" and "0" (targetname, target and parentname alike, 23 Nov 2026), and CS2-Porter (vmf.py decimal_values, MIT,
+# copyright bcanusar) reports "1.01" -> "1.010000". Outputs still name the original text ("000" PlaySound), so they reach nothing, and two
+# names can collapse into one ("0" and "000"). `numnames` puts the exact VMF text back on name-like keys and output targets, before `io`
+# restores the dropped outputs. A converted value with more than one possible original is listed, not guessed.
+NAME_KEYS = ('targetname', 'target', 'parentname', 'filtername', 'damagefilter', 'landmark', 'measurereference', 'measuretarget',
+             'lightingorigin', 'sourceentityname', 'cpoint1', 'cpoint2', 'cpoint3', 'cpoint4', 'template01', 'template02', 'template03',
+             'template04', 'template05', 'template06', 'template07', 'template08', 'template09', 'template10', 'target_destination')
+
+
+def imported_form(v):
+    """the text the importer writes for a value that looks like a number (None when it keeps the text as it is)"""
+    t = v.strip()
+    if re.fullmatch(r'[-+]?\d+', t):
+        f = str(int(t))
+    elif re.fullmatch(r'[-+]?(?:\d+\.\d*|\.\d+)', t):
+        f = '%f' % float(t)
+    else:
+        return None
+    return f if f != v else None
+
+
+def numeric_names(m, c, vmfp):
+    world, ents = _vmf(vmfp)
+    names = {(e.get('targetname') or '') for e in ents} - {''}
+    back = collections.defaultdict(set)                  # (key, imported text) -> originals
+    for e in ents:
+        for k, v in e.kv:
+            kl = k.lower()
+            if kl in NAME_KEYS or (v in names and kl not in ('classname', 'model')):
+                f = imported_form(v)
+                if f is not None: back[(kl, f)].add(v)
+        for cn in (x for x in e.ch if x.name == 'connections'):
+            for _k, v in cn.kv:
+                tgt = v.split('\x1b' if '\x1b' in v else ',')[0]
+                f = imported_form(tgt)
+                if f is not None: back[('@target', f)].add(tgt)
+    if not back: return 0
+    for e in ents:                                       # a VMF name that already is the converted text makes that text ambiguous
+        for k, v in e.kv:
+            if (k.lower(), v) in back: back[(k.lower(), v)].add(v)
+        for cn in (x for x in e.ch if x.name == 'connections'):
+            for _k, v in cn.kv:
+                tgt = v.split('\x1b' if '\x1b' in v else ',')[0]
+                if ('@target', tgt) in back: back[('@target', tgt)].add(tgt)
+    fixed = collections.Counter(); unsure = set()
+    for e in m.entities():
+        for a in m.props(e)['attrs']:
+            if not isinstance(a[2], bytes): continue
+            key = (a[0].decode('utf-8', 'replace').lower(), a[2].decode('utf-8', 'replace'))
+            orig = back.get(key)
+            if not orig: continue
+            if len(orig) == 1: a[2] = next(iter(orig)).encode('utf-8'); fixed[key[0]] += 1
+            else: unsure.add('%s "%s" (was one of %s)' % (key[0], key[1], ', '.join(sorted(orig))))
+    for e, cc in m.all_conns():
+        t = (dmx.get(cc, b'targetName') or b'').decode('utf-8', 'replace')
+        orig = back.get(('@target', t)) or back.get(('targetname', t))
+        if orig and len(orig) == 1: dmx.set_(cc, b'targetName', dmx.T_STR, next(iter(orig)).encode('utf-8')); fixed['output target'] += 1
+        elif orig: unsure.add('output target "%s" (was one of %s)' % (t, ', '.join(sorted(orig))))
+    n = sum(fixed.values())
+    if n: c.log.append('numnames: %d values the importer read as numbers put back as the VMF text (%s)' % (n, ', '.join('%s %d' % kv for kv in sorted(fixed.items()))))
+    if unsure: c.todo.append('numnames: names the importer changed that could come from several VMF names, left as they are: %s' % '; '.join(sorted(unsure))[:600])
+    return n

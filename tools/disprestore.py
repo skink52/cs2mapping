@@ -1,5 +1,6 @@
 """Rebuild CS:GO displacements the importer dropped, straight from the BSP (dispinfo/dispverts), as closed meshes:
-displaced top surface with the original texture projection, toolsnodraw sides and a flat toolsnodraw back 4 units below its lowest point.
+displaced top surface with the original texture projection and blend paint (vertex alphas -> VertexPaintBlendParams), toolsnodraw sides and a
+flat toolsnodraw back 4 units below its lowest point.
 Usage: disprestore.py <vmap in> <bsp> <vmap out> [skip box x0,y0,z0,x1,y1,z1 ...]
 (SUB maps materials with no CS2 copy to a stand-in; displacements centred in a skip box, e.g. an old 3D skybox, are left out)"""
 import struct, numpy as np
@@ -168,6 +169,15 @@ def build(d):
     setd(stream(vd, b'position'), b'data', [[float(x) for x in p - ctr] for p in verts])
     fvd = dmx.get(MD, b'faceVertexData'); setd(m.E[fvd], b'size', nhe)
     setd(stream(fvd, b'texcoord'), b'data', fv_tc); setd(stream(fvd, b'normal'), b'data', fv_n); setd(stream(fvd, b'tangent'), b'data', fv_t)
+    # blend paint: the BSP's displacement alphas (WorldVertexTransition layer B) -> VertexPaintBlendParams, alpha/255 in every channel as
+    # the importer writes it (23 Nov 2026, Batch B1; method of tools/blendpaint.py). A paint stream copied from the template is resized too.
+    al = d['alpha'].reshape(-1); paint = [[0.0] * 4 for _ in range(nhe)]
+    for f, (q, k) in enumerate(faces):
+        if k != 'top': continue
+        for i in range(len(q)):
+            a = round(float(al[q[i]]) / 255.0, 6); paint[he_id[(q[i - 1], q[i])]] = [a, a, a, a]
+    if stream(fvd, b'VertexPaintBlendParams') is not None or al.max() > 0.5:
+        import blendpaint; blendpaint._put(m, fvd, 1, 1, paint, False)
     ed = dmx.get(MD, b'edgeData'); setd(m.E[ed], b'size', nund); setd(stream(ed, b'flags'), b'data', [0] * nund)
     fd = dmx.get(MD, b'faceData'); setd(m.E[fd], b'size', nf)
     setd(stream(fd, b'textureScale'), b'data', [[float(su), float(sv)] if k == 'top' else [0.25, 0.25] for _, k in faces])

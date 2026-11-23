@@ -494,3 +494,317 @@ def relight(m, c, vmfpath, scale=1.0):
     if n_style: c.todo.append('relight: %d lights got a CS:GO light style pattern in light_style - check they flicker in game' % n_style)
     c.todo.append('relight: brightness scale (1000 lumens per 265 _light) is not checked against a real CS2 bake - compare a few rooms with CS:GO')
     return n_omni + n_barn
+
+
+# ------------------------------------------------------------------ lightcal: brightness from the compiled light list + line traces (opt-in)
+# From CS2-Porter lighting.py (MIT, copyright bcanusar), adapted. What we took: the falloff constants vrad really used (the BSP's
+# light list, not a re-derivation from the keys), and matching each light over the distances to the surfaces round it (line traces
+# through the BSP tree) instead of one fixed distance. What we kept of ours, and why:
+#   - the brightness scale (1000 lumens = legacy 1 = a 265 _light at 100 u, the importer's own conversion where it doesn't write nan);
+#     CS2-Porter anchors 1000 lumens to a 200 _light because that is what the importer writes for the nan lights, which is
+#     Hammer's legacy-1 fallback, not a conversion. So a quadratic light gets the same value from lightcal as from relight.
+#   - spot cones: lumens times the cone's share of the sphere (cs2-slop-porting); CS2-Porter says a light_barn of N lumens is as
+#     bright as a light_omni2 of N. Neither is checked in game: open question.
+#   - no overbright cap on HDR maps (CS2-Porter caps at 4); the LDR cap of 2 (8-bit lightmaps can't show more) is taken.
+# Checked against the compiled light list: vrad's _fifty_percent_distance falloff is 2/65.25 x (1 + x/D + 63.25 (x/D)^2), i.e. the
+# 50% point traded half-way to a straight line; ttt_cg_skyscraper_2017_b1's 50 such lights all have c = 0.03065. falloff_ratio's
+# linear fallback (relight / lightbright) makes them ~8x too bright at 128 u; lightcal fixes that, opt-in until seen in game.
+CAL_RAYS = 64
+CAL_TRACE = 4096.0
+CAL_NEAR = 48.0           # surfaces closer than this are left out (full white in both games) unless too few are further away
+CAL_MIN_HITS = 8
+CAL_CAP_LDR = 2.0         # an LDR-compiled map's lightmaps hold at most 2x full brightness (overbright)
+CAL_DEFAULT_D = (128.0, 256.0, 384.0)
+S1_LEGACY1 = 1e4 * 265.0 / 255.0   # vrad intensity of a quadratic 265 _light (white): legacy 1 on our scale
+CAL_MATCH = 4.0           # vmap light within this of a compiled light = the same light
+
+
+class BspTracer:
+    """Line traces against the solid leaves of a compiled map's BSP tree (displacements are not in the tree: rays pass through
+    them to the brush underneath). From CS2-Porter lighting.py BspTracer (MIT, copyright bcanusar), adapted."""
+
+    def __init__(s, b):
+        import struct, texlights as T
+        planes = b.lump(T.LUMP_PLANES)
+        s.planes = [struct.unpack_from('<4f', planes, o) for o in range(0, len(planes) - 19, 20)]
+        nodes = b.lump(T.LUMP_NODES)
+        s.nodes = [struct.unpack_from('<3i', nodes, o) for o in range(0, len(nodes) - 31, 32)]
+        leafs = b.lump(T.LUMP_LEAFS); size = 56 if b.version(T.LUMP_LEAFS) == 0 else 32
+        s.solid = [bool(struct.unpack_from('<i', leafs, o)[0] & 1) for o in range(0, len(leafs) - size + 1, size)]
+        models = b.lump(T.LUMP_MODELS)
+        s.head = struct.unpack_from('<i', models, 36)[0] if len(models) >= 48 else 0
+
+    def _hit(s, node, f0, f1, p0, p1):
+        while node >= 0:
+            pn, c0, c1 = s.nodes[node]
+            nx, ny, nz, dist = s.planes[pn]
+            d0 = nx * p0[0] + ny * p0[1] + nz * p0[2] - dist
+            d1 = nx * p1[0] + ny * p1[1] + nz * p1[2] - dist
+            if d0 >= 0 and d1 >= 0: node = c0; continue
+            if d0 < 0 and d1 < 0: node = c1; continue
+            frac = d0 / (d0 - d1); fm = f0 + (f1 - f0) * frac
+            pm = (p0[0] + (p1[0] - p0[0]) * frac, p0[1] + (p1[1] - p0[1]) * frac, p0[2] + (p1[2] - p0[2]) * frac)
+            near, far = (c0, c1) if d0 >= 0 else (c1, c0)
+            hit = s._hit(near, f0, fm, p0, pm)
+            if hit is not None: return hit
+            node, f0, p0 = far, fm, pm
+        leaf = -node - 1
+        return f0 if 0 <= leaf < len(s.solid) and s.solid[leaf] else None
+
+    def trace(s, start, d, length=CAL_TRACE):
+        """distance to the first solid along the ray, None when nothing is hit within length"""
+        end = (start[0] + d[0] * length, start[1] + d[1] * length, start[2] + d[2] * length)
+        try: f = s._hit(s.head, 0.0, 1.0, tuple(start), end)
+        except RecursionError: f = None
+        return None if f is None else f * length
+
+
+def _sphere(n):
+    g = math.pi * (3.0 - math.sqrt(5.0)); out = []
+    for i in range(n):
+        z = 1.0 - 2.0 * (i + 0.5) / n; r = math.sqrt(max(0.0, 1.0 - z * z)); a = g * i
+        out.append((r * math.cos(a), r * math.sin(a), z))
+    return out
+
+
+_DIRS = _sphere(CAL_RAYS)
+_DIRS_DENSE = _sphere(CAL_RAYS * 8)
+
+
+def _solve3(x1, y1, x2, y2, x3, y3):
+    det = (x1 - x2) * (x1 - x3) * (x2 - x3)
+    if det == 0: return None
+    a = (x3 * (-y1 + y2) + x2 * (y1 - y3) + x1 * (-y2 + y3)) / det
+    b = (x3 * x3 * (y1 - y2) + x1 * x1 * (y2 - y3) + x2 * x2 * (-y1 + y3)) / det
+    c = (x1 * x3 * (-x1 + x3) * y2 + x2 * x2 * (x3 * y1 - x1 * y3) + x2 * (-(x3 * x3 * y1) + x1 * x1 * y3)) / det
+    return a, b, c
+
+
+def vrad_falloff(e):
+    """VMF light -> the compiled-light dict world_lights() gives ('intensity' peak channel only, 'c', 'l', 'q', 'radius', 'type',
+    'normal', 'stopdot2'), worked out as vrad does, for lights missing from the BSP. _fifty_percent_distance: quadratic through
+    (0,1) (d50,y2) (d0,256); while it isn't monotonic, y2 moves towards the straight line in 1% steps (for the usual d0 = 2 x d50
+    this lands half-way, y2 = 65.25, as the compiled constants show); scaled so the value at d50 is 2; intensity NOT normalised to
+    100 u. Other falloffs: constant / linear / quadratic as given (all 0 -> constant 1), intensity x attn(100)."""
+    def fl(k, d=0.0):
+        try: return float(e.get(k) or d)
+        except ValueError: return d
+    _r, _g, _b, inten = vmf_light(e)
+    peak = inten / 255.0
+    d50 = fl('_fifty_percent_distance'); radius = 0.0
+    if d50 > 0:
+        d0 = fl('_zero_percent_distance')
+        if d0 < d50: d0 = 2.0 * d50
+        lin = 1.0 + (256.0 - 1.0) * d50 / d0
+        abc = None
+        for t in range(0, 101):
+            y2 = 2.0 + (lin - 2.0) * t / 100.0
+            abc = _solve3(0.0, 1.0, d50, y2, d0, 256.0)
+            if abc and abc[0] >= 0 and abc[1] >= 0: break
+        a, bb, cc = abc if abc else (0.0, 1.0, 0.0)
+        v50 = cc + d50 * (bb + d50 * a); k = 2.0 / v50 if v50 > 0 else 1.0
+        cc, l, q = cc * k, bb * k, a * k
+    else:
+        cc, l, q = max(fl('_constant_attn'), 0.0), max(fl('_linear_attn'), 0.0), max(fl('_quadratic_attn'), 0.0)
+        radius = fl('_distance')
+        if cc < 1e-4 and l < 1e-4 and q < 1e-4: cc = 1.0
+        peak *= cc + 100.0 * l + 1e4 * q
+    cone = fl('_cone', 45.0)
+    return {'type': 2 if (e.get('classname') or '').lower() == 'light_spot' else 1, 'intensity': (peak, peak, peak), 'c': cc, 'l': l, 'q': q,
+            'radius': radius, 'normal': None, 'stopdot2': math.cos(math.radians(cone))}
+
+
+def s1_brightness(wl, d):
+    """Source 1 brightness d units from a compiled light (peak channel; 1 = the texture at full brightness)"""
+    if wl.get('radius') and d > wl['radius']: return 0.0
+    att = wl['c'] + wl['l'] * d + wl['q'] * d * d
+    return max(wl['intensity']) / att if att > 0 else 0.0
+
+
+def _directions(wl):
+    if wl['type'] != 2 or not wl.get('normal'): return _DIRS
+    n = wl['normal']
+    return [d for d in _DIRS_DENSE if d[0] * n[0] + d[1] * n[1] + d[2] * n[2] >= wl['stopdot2']] or [tuple(n)]
+
+
+def match_legacy(wl, dists, cap=None):
+    """legacy brightness (our scale) of a CS2 inverse-square light that gives the surfaces at `dists` the Source 1 light of wl
+    (geometric mean of brightness x d^2, brightness counted up to cap). None when nothing is lit."""
+    hits = [d for d in dists if d is not None]
+    use = [d for d in hits if d >= CAL_NEAR]
+    if len(use) < CAL_MIN_HITS: use = [max(d, 16.0) for d in hits] or list(CAL_DEFAULT_D)
+    logs = []
+    for d in use:
+        s = s1_brightness(wl, d)
+        if cap: s = min(s, cap)
+        if s > 0: logs.append(math.log(s * d * d))
+    if not logs: return None
+    return math.exp(sum(logs) / len(logs)) / S1_LEGACY1
+
+
+def _set_legacy(m, e, leg, quadratic, radius=0.0):
+    old_leg = 1.0
+    try: old_leg = float(m.P(e, 'brightness_legacy', '1') or 1)
+    except ValueError: pass
+    if not math.isfinite(old_leg) or old_leg <= 0: old_leg = 1.0
+    leg = max(leg, 1e-4)
+    m.setp(e, 'brightness_legacy', '%g' % round(leg, 6)); m.setp(e, 'brightness', '%g' % round(math.log2(leg), 6))
+    if not quadratic:
+        rng = max(256.0, RANGE_Q * math.sqrt(leg))
+        m.setp(e, 'range', '%.0f' % (min(rng, radius) if radius > 0 else rng))
+    if m.cls(e) == 'light_omni2':
+        m.setp(e, 'brightness_lumens', '%d' % max(1, round(1000 * leg)))
+        m.setp(e, 'brightness_candelas', '%d' % max(1, round(1000 * leg / (4 * math.pi))))
+        m.setp(e, 'brightness_nits', '%d' % max(1, round(9816 * leg)))
+    else:
+        try: base = float(m.P(e, 'brightness_lumens', '1000') or 1000) / old_leg
+        except ValueError: base = 1000.0
+        m.setp(e, 'brightness_lumens', '%d' % max(1, round(base * leg)))
+
+
+def lightmap_check(b, tracer, comp, limit=40):
+    """How well the compiled falloff predicts what CS:GO baked: for floor points straight under up to `limit` point lights, the
+    compiled lightmap luxel (style 0, peak channel, 1 = full brightness) over the sum of every listed light's direct light there
+    (cosine-weighted, lights behind a wall left out, no bounce). Returns (median ratio, samples) or (None, 0). mg_antique_course (HDR): 0.92 over 60."""
+    import struct, statistics, texlights as T
+    hdr = T.hdr_lit(b)
+    lm = b.lump(T.LUMP_LIGHTING_HDR if hdr else T.LUMP_LIGHTING)
+    fdata = b.lump(T.LUMP_FACES_HDR) if hdr and b.size(T.LUMP_FACES_HDR) else b.lump(T.LUMP_FACES)
+    if not lm or not fdata: return None, 0
+    ti, vdata, edata, sdata, pdata = (b.lump(i) for i in (T.LUMP_TEXINFO, T.LUMP_VERTEXES, T.LUMP_EDGES, T.LUMP_SURFEDGES, T.LUMP_PLANES))
+    floors = []
+    for o in range(0, len(fdata) - 55, 56):
+        pn, side, _on, first, num, tix = struct.unpack_from('<HBBihh', fdata, o)
+        lofs, = struct.unpack_from('<i', fdata, o + 20)
+        if lofs < 0 or tix < 0 or fdata[o + 16] == 255: continue
+        n = struct.unpack_from('<3f', pdata, pn * 20)
+        if side: n = tuple(-x for x in n)
+        if n[2] < 0.9: continue
+        pts = []
+        for k in range(num):
+            se = struct.unpack_from('<i', sdata, (first + k) * 4)[0]
+            a, c2 = struct.unpack_from('<2H', edata, abs(se) * 4)
+            pts.append(struct.unpack_from('<3f', vdata, (a if se >= 0 else c2) * 12))
+        floors.append((pts, n, lofs, struct.unpack_from('<2i', fdata, o + 28), struct.unpack_from('<2i', fdata, o + 36), struct.unpack_from('<8f', ti, tix * 72 + 32)))
+    def luxel(p):
+        for pts, n, lofs, mins, size, lv in floors:
+            if abs(sum((p[k] - pts[0][k]) * n[k] for k in range(3))) > 1.0 or not T._inside(p, pts, n): continue
+            s_ = min(max(int(round(sum(p[k] * lv[k] for k in range(3)) + lv[3] - mins[0])), 0), size[0])
+            t_ = min(max(int(round(sum(p[k] * lv[4 + k] for k in range(3)) + lv[7] - mins[1])), 0), size[1])
+            i = lofs + 4 * (t_ * (size[0] + 1) + s_)
+            if i + 4 > len(lm): return None
+            r, g, bb, e = struct.unpack_from('<BBBb', lm, i)
+            return max(r, g, bb) * 2.0 ** e / 255.0
+        return None
+    ratios = []
+    for w in [w for w in comp if w['type'] == T.EMIT_POINT and w['style'] == 0][:limit]:
+        o = w['origin']; h = tracer.trace(o, (0.0, 0.0, -1.0), 2048.0)
+        if not h or h < 16: continue
+        p = (o[0], o[1], o[2] - h)
+        meas = luxel(p)
+        q = (p[0], p[1], p[2] + 1.0); pred = 0.0
+        for v in comp:
+            if v['type'] != T.EMIT_POINT or v['origin'][2] <= q[2]: continue
+            d = max(math.dist(v['origin'], p), 1.0); s = s1_brightness(v, d); cos = (v['origin'][2] - p[2]) / d
+            if s * cos < 1e-4: continue
+            dq = max(math.dist(v['origin'], q), 1.0)
+            hit = tracer.trace(q, tuple((v['origin'][k] - q[k]) / dq for k in range(3)), dq)   # traced from 1 u above the floor
+            if hit is not None and hit < dq - 2.0: continue              # wall in between: no direct light
+            pred += s * cos
+        if meas and pred > 0: ratios.append(meas / pred)
+    return (statistics.median(ratios), len(ratios)) if ratios else (None, 0)
+
+
+def relight_legacy(e):
+    """the legacy brightness relight / lightbright give a VMF light (our CS:GO falloff fit at FIT_DIST)"""
+    _r, _g, _b, inten = vmf_light(e)
+    return max(inten * falloff_ratio(e) / 265.0, 1e-4)
+
+
+def calibrate(m, c, bsp, apply=False, vmfpath=None, cap_hdr=None, check=True):
+    """Stage step / pass `lightcal` (opt-in; report only unless apply): every light_omni2 / light_barn at the place of a compiled
+    CS:GO light gets the brightness that gives the surfaces round it (64 line traces through the BSP tree; spots: inside the
+    cone) the same light as the compiled falloff did. Lights the BSP doesn't list use vrad_falloff on the VMF entity at that
+    place when vmfpath is given.
+    The report compares with two things: the vmap's current value (which on a map never relit is still the importer's: ~8x too
+    bright for _fifty_percent_distance lights, so a large ratio there is the importer, not lightcal) and, with the VMF, what
+    relight would give. check=True also measures the compiled lightmaps against the compiled falloff (lightmap_check), the
+    evidence that the model behind lightcal is right for this map.
+    Returns [(name or origin, class, current legacy, calibrated legacy, relight legacy or None)]."""
+    import texlights as T
+    b = T.Bsp(bsp) if isinstance(bsp, str) else bsp
+    tracer = BspTracer(b)
+    hdr = T.hdr_lit(b)
+    cap = cap_hdr if hdr else CAL_CAP_LDR
+    comp = [w for w in T.world_lights(b) if w['type'] in (T.EMIT_POINT, T.EMIT_SPOT)]
+    vents = []
+    if vmfpath and os.path.exists(vmfpath):
+        import vmf as vmfmod
+        root = vmfmod.parse(open(vmfpath, encoding='utf-8', errors='replace').read())
+        vents = [e for e in root.ch if e.name == 'entity' and (e.get('classname') or '').lower() in ('light', 'light_spot') and e.get('origin')]
+    def vmf_at(o, cls):
+        best, bd = None, CAL_MATCH ** 2
+        for v in vents:
+            if (v.get('classname') or '').lower() != cls: continue
+            try: d2 = sum((float(a) - bb) ** 2 for a, bb in zip(v.get('origin').split(), o))
+            except ValueError: continue
+            if d2 <= bd: best, bd = v, d2
+        return best
+    rows = []; changed = unmatched = nfifty = 0
+    for e in m.by_class('light_omni2', 'light_barn'):
+        o = m.origin(e); want = T.EMIT_POINT if m.cls(e) == 'light_omni2' else T.EMIT_SPOT
+        cand = [(sum((a - bb) ** 2 for a, bb in zip(w['origin'], o)), w) for w in comp if w['type'] == want]
+        best = min(cand, key=lambda x: x[0]) if cand else None
+        wl = best[1] if best and best[0] <= CAL_MATCH ** 2 else None
+        v = vmf_at(o, 'light' if want == T.EMIT_POINT else 'light_spot') if vents else None
+        if wl is None and v is not None:
+            wl = vrad_falloff(v)
+            if wl['type'] == 2: wl = None      # no aim direction for an unlisted spot: leave it
+        if wl is None: unmatched += 1; continue
+        dists = [tracer.trace(o, d) for d in _directions(wl)]
+        leg = match_legacy(wl, dists, cap)
+        if leg is None: continue
+        try: old = float(m.P(e, 'brightness_legacy', '1') or 1)
+        except ValueError: old = float('nan')
+        quadratic = wl['c'] == 0 and wl['l'] == 0
+        nfifty += wl['c'] > 0 and wl['q'] > 0
+        rows.append((m.name(e) or '%.0f %.0f %.0f' % tuple(o), m.cls(e), old, leg, relight_legacy(v) if v is not None else None))
+        if apply:
+            _set_legacy(m, e, leg, quadratic, wl.get('radius') or 0.0); changed += 1
+    def med(pairs):
+        r = sorted(a / b_ for a, b_ in pairs if b_ and math.isfinite(b_) and b_ > 0)
+        return (r[len(r) // 2], sum(1 for x in r if x > 2 or x < 0.5), len(r)) if r else (None, 0, 0)
+    cur = med((r[3], r[2]) for r in rows)
+    rel = med((r[3], r[4]) for r in rows if r[4] is not None)
+    raw = med((r[2], r[4]) for r in rows if r[4] is not None)          # current / relight: ~1 when the map was relit
+    parts = ['lightcal: %d lights matched to the compiled CS:GO light list (%s, cap %s; %d with _fifty_percent_distance falloff)' % (len(rows), 'HDR' if hdr else 'LDR', cap, nfifty)]
+    if cur[0] is not None: parts.append('calibrated / current vmap value: median x%.2f, %d more than 2x off' % cur[:2])
+    if rel[0] is not None: parts.append('calibrated / what relight gives: median x%.2f, %d more than 2x off' % rel[:2])
+    if raw[0] is not None and (raw[0] > 1.5 or raw[0] < 0.67):
+        parts.append('the current values are x%.2f of relight\'s, so this map was never relit (importer values): compare against relight, not current' % raw[0])
+    if check:
+        lc, n = lightmap_check(b, tracer, comp)
+        if lc is not None:
+            parts.append('compiled lightmap / compiled-falloff prediction under %d lights: median %.2f%s' % (n, lc, '' if hdr else ' (LDR lightmaps: rough)'))
+            if (lc < 0.5 or lc > 2.0) and n >= 10:
+                c.todo.append('lightcal: on this map the baked CS:GO lightmap is x%.2f of what the compiled light list predicts under its lights '
+                              '(other light: sky, bounce, spots or unlisted lights), so lightcal_apply may over- or under-correct here' % lc)
+    if unmatched: parts.append('%d lights not in the light list (left as they are)' % unmatched)
+    c.log.append('; '.join(parts) + ('; APPLIED' if apply else ' (report only)'))
+    if apply and changed:
+        c.todo.append('lightcal: %d lights re-set from the compiled CS:GO falloff + line traces: not in-game verified, compare a few rooms with CS:GO' % changed)
+    return rows
+
+
+def fifty_percent_note(c, vmfpath):
+    """TO CHECK line when the VMF has _fifty_percent_distance lights: relight / lightbright fit them with a linear falloff that the
+    compiled light list shows is wrong (~8x too bright at 128 u); lightcal (opt-in) uses the compiled constants."""
+    import re
+    try: txt = open(vmfpath, encoding='utf-8', errors='replace').read()
+    except OSError: return 0
+    n = len([v for v in re.findall(r'"_fifty_percent_distance"\s+"([^"]*)"', txt) if v.strip() not in ('', '0')])
+    if n:
+        c.todo.append('%d lights use _fifty_percent_distance: vrad compiled them as 2/65.25 x (1 + d/D + 63.25 (d/D)^2), not the linear falloff '
+                      'relight / lightbright assume (~8x too bright at 128 u). If rooms lit by them look too bright, stage the BSP and run the '
+                      'opt-in lightcal step' % n)
+    return n

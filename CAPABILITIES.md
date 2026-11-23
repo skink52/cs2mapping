@@ -63,6 +63,13 @@ mean are in [docs/reference/compatibility.md](docs/reference/compatibility.md); 
 - Built-in CS:GO particle effects (embers, burning engines, splashes, sparks, confetti) pointed at CS2's own copies so they play again.
 - Fires that burn and hurt again (CS2's own fire effect, switched and burnt out like the original) and sparks that spark again.
 - Huge floors cut into tiles so they light evenly; water given one lighting volume so its reflection doesn't show squares.
+- Lighting and look taken from the original map's compiled file *(opt-in, not yet checked in game)*: glowing light panels glow and light the room again, light brightness matched to how CS:GO lit each room, maps that had no baked light stay fully bright, colour-correction filters and tinted underwater views come across.
+- Blend terrain (two textures painted across the ground) keeps its painting when the ground has to be rebuilt.
+- Smoke stacks, floating dust, embers and sprite trails come back as particles; entity names that look like numbers (`000`) keep their exact text so the logic using them works.
+- Bhop and surf maps made for Momentum Mod keep their special triggers (teleports that keep speed, speed gates, slides, push pads) *(simulated only)*.
+- Paper-thin boost pads and spawns sunk into the floor are reported, and fixed on request.
+- Blend terrain rebuilt with both textures, so painted grass / rock edges show; spotlight beams (including CS:GO's rotating ones) rebuilt as glowing cones; statues of CS:GO agents, hostages and chickens switched to CS2's own models *(on request)*.
+- A minimap drawn from where bots and players can actually walk (the compiled map's nav mesh), as an option beside the floor-based one; tighter on maps with big unreachable scenery.
 - Importer leftovers cleaned up: sea floors under water put back, trigger volumes spread over several pieces split so they work, decorative brushes merged into the world for even lighting, stray copies of moving parts in the middle of the map found.
 - Physics props (crates, balls) pushed by players according to how heavy they are *(optional step)*.
 - Material names the importer mangled (spaces in folder names) pointed back at the real files.
@@ -117,6 +124,7 @@ map logic before it goes on the Workshop. Multi-game and scripted maps need the 
 - Convert Garry's Mod Workshop hats, glasses and masks into CS2 hats a server can put on any player (stock agents or converted models): they follow the head through every animation, sit right on each model's head, and are hidden in the wearer's own first-person view. Placement comes from the items' Pointshop data or is fitted automatically, with a preview picture of each on a CS2 head.
 - Animated characters driven by script, with hand-keyed and motion-capture animation retargeted onto the CS2 skeleton (toolkit: mocap retarget, joint checks, rig model writer; game-specific animation *(project repos)*).
 - Read and preview CS2's built-in textures and models to reuse them.
+- SmartProps (Hammer's procedural fences, pipes, railings, scatters): a checker that finds the mistakes that make one place nothing, plus authoring notes.
 
 **Weapons** ([details](docs/creation/custom-weapons.md))
 - New weapons without plugins by replacing a stock weapon's entry: new model, magazine size, spare ammo, zoom, scope.

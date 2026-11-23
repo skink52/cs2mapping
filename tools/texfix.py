@@ -289,6 +289,27 @@ def overlay_geometry(m, c, vmfpath, depth=None, only_placeholders=True):
 # ------------------------------------------------------------------ brush face texture scales
 def _bad(sc): return min(abs(sc[0]), abs(sc[1])) < 0.01 or max(abs(sc[0]), abs(sc[1])) > 8
 
+IMPORT_PLACEHOLDER = 8192.0   # texture width the importer assumes for a material it can't find yet (its scale and shift are written for it)
+
+
+def implied_widths(uv, tc, u, v, sc):
+    """(width, height) the stored texture coordinates imply for a face's scale / axes: W = (dP . axis / scale) / d(texcoord), from
+    the first corner pair that moves enough along each axis; None when either can't be read. From CS2-Porter uvfix.py (MIT,
+    copyright bcanusar), adapted."""
+    out = []
+    (p0, i0) = uv[0]
+    for ci, ax in ((0, u), (1, v)):
+        w = None
+        for (p1, i1) in uv[1:]:
+            if not sc[ci]: break
+            dp = sum((p1[k] - p0[k]) * ax[k] for k in range(3)) / sc[ci]
+            du = tc[i1][ci] - tc[i0][ci]
+            if abs(dp) > 2.0 and abs(du) > 1e-9: w = dp / du; break
+        if w is None or w <= 0: return None
+        out.append(w)
+    return tuple(out)
+
+
 PLANE_TOL = 0.6   # every face corner within this of the VMF side's plane (importer leaves corners ~0.1 off; measuring at one corner tilted d by 1.5-3u)
 ROUND_TOL = 2.5   # rounded/bevelled corners: corners up to this far off the plane, normals agree, centre inside the brush
 PUSH_TOL = 6.0    # flat faces parallel to a side but pushed out up to this far (all corners the same distance off)
@@ -462,7 +483,7 @@ def face_scales(m, c, vmfpath):
             faces.append(dict(mat=mat, fi=fi, sc=scs, u=us, v=vs, ratio=ratio, tgt=tgt, uv=uv, tc=tc, sliver=sliver, cands=cands))
     per = collections.defaultdict(list)
     for fc in faces: per[fc['mat']].append(fc)
-    res = {}; uv_done = set(); no_tex = set(); no_size = collections.Counter(); usual = 0
+    res = {}; uv_done = set(); no_tex = set(); no_size = collections.Counter(); usual = 0; placeholder = collections.Counter()
     for mat, fl in per.items():
         matched = [fc['ratio'] for fc in fl if fc['ratio']]
         bad = [fc['ratio'] for fc in fl if fc['ratio'] and _bad(fc['sc'][fc['fi']]) and not (lo <= fc['ratio'][0] <= hi and lo <= fc['ratio'][1] <= hi)]
@@ -482,7 +503,9 @@ def face_scales(m, c, vmfpath):
                     for (p1, i1) in fc['uv'][1:]:
                         dp = sum((p1[k] - p0[k]) * ax[k] for k in range(3)) / fc['sc'][fc['fi']][ci]
                         du = fc['tc'][i1][ci] - fc['tc'][i0][ci]
-                        if abs(dp) > 2.0 and abs(du) > 1e-9: tv[ci][round(dp / du)] += 1; break
+                        if abs(dp) > 2.0 and abs(du) > 1e-9:
+                            if abs(abs(dp / du) - IMPORT_PLACEHOLDER) > 0.01 * IMPORT_PLACEHOLDER: tv[ci][round(dp / du)] += 1   # the importer's 8192 says nothing
+                            break
             if tv[0] and tv[1]:
                 (a, na), (b, nb) = tv[0].most_common(1)[0], tv[1].most_common(1)[0]
                 if a > 0 and b > 0 and na >= 0.6 * sum(tv[0].values()) and nb >= 0.6 * sum(tv[1].values()): ts = (a, b, 1.0)
@@ -497,6 +520,14 @@ def face_scales(m, c, vmfpath):
             elif not r and _bad(sc0): cnt[2] += 1
             if fix and (r[0] <= 0 or r[1] <= 0): fix = False
             tg = fc['tgt']
+            if not fix and not tg and ts and fc['uv'] and abs(ts[0] - IMPORT_PLACEHOLDER) > 1 and abs(ts[1] - IMPORT_PLACEHOLDER) > 1:
+                w = implied_widths(fc['uv'], fc['tc'], u0, v0, sc0)
+                if w and all(abs(w[k] - IMPORT_PLACEHOLDER) <= 0.01 * IMPORT_PLACEHOLDER for k in (0, 1)):
+                    rr = (w[0] / ts[0], w[1] / ts[1])     # importer's width / Hammer's: scale x rr, shift / rr keeps every texcoord
+                    fc['sc'][fi] = [sc0[0] * rr[0], sc0[1] * rr[1]]
+                    fc['u'][fi] = u0[:3] + [u0[3] / rr[0]]; fc['v'][fi] = v0[:3] + [v0[3] / rr[1]]
+                    placeholder[os.path.basename(mat)[:-5]] += 1
+                    continue
             if tg and (abs(sc0[0] - tg['us']) > 1e-4 * max(1.0, abs(tg['us'])) or abs(sc0[1] - tg['vs']) > 1e-4 * max(1.0, abs(tg['vs']))
                        or any(abs(u0[k] - tg['ua'][k]) > 0.01 or abs(v0[k] - tg['va'][k]) > 0.01 for k in range(4))):
                 fc['sc'][fi] = [tg['us'], tg['vs']]; fc['u'][fi] = list(tg['ua']); fc['v'][fi] = list(tg['va'])
@@ -527,6 +558,9 @@ def face_scales(m, c, vmfpath):
     if renamed: c.log.append('face texture scales: vmap materials not in the VMF matched to the one VMF material with the same file name: %s'
                              % ', '.join('%s (%d)' % kv for kv in sorted(renamed.items()))[:900])
     if usual: c.log.append('face texture scales: %d sliver faces with no VMF side given their material\'s usual scale' % usual)
+    if placeholder: c.log.append('face texture scales: %d faces with no single VMF mapping still had the importer\'s 8192-wide scale (material missing at import): '
+                                 'scale and shift set for the addon texture size, texture coordinates unchanged: %s'
+                                 % (sum(placeholder.values()), ', '.join('%s (%d)' % kv for kv in placeholder.most_common())[:900]))
     if done: c.log.append('face texture mapping repaired: %d faces re-scaled / re-shifted from the VMF, %d faces with texture coordinates rewritten: %s'
                           % (sum(a + b for a, b, _, _ in res.values()), sum(d for _, _, _, d in res.values()), ', '.join(done)[:900]))
     absurd = collections.Counter(fc['mat'] for fc in faces if _bad(fc['sc'][fc['fi']]))

@@ -53,14 +53,8 @@ def trace(A, B, C, O, d, chunk=48):
         hit = ok & (u >= -1e-6) & (v >= -1e-6) & (u + v <= 1 + 1e-6) & (t > 1.0)
         yield s, np.where(hit, t, np.inf)
 
-def run(m, c, spacing=64.0):
-    ents = {m.P(e, 'classname'): e for e in m.entities()}
-    meshes = all_meshes(m)
-    A, B, C, mid, kind = tris_of(m, meshes)
-    N = np.cross(B - A, C - A); N /= np.maximum(np.linalg.norm(N, axis=1), 1e-9)[:, None]
-    # playable space: empty-space regions containing spawns / teleports / lights
-    world = [pl for node, ent in meshes if ent is None for pl in mesh_polys(m, node)]
-    vs = 32.0
+def play_space(m, world, vs=32.0):
+    """(labels, playable labels, grid origin, voxel size, voxel lookup): empty-space regions containing spawns / teleports / lights"""
     solid, lo = voxelise(world, vs); lab, _ = label_empty(solid); shape = np.array(lab.shape)
     vox = lambda p: tuple(np.clip(np.floor((np.asarray(p) - lo) / vs).astype(int), 0, shape - 1))
     play = set()
@@ -70,6 +64,47 @@ def run(m, c, spacing=64.0):
             if l: play.add(l)
     exterior = set(np.unique(np.concatenate([lab[0].ravel(), lab[-1].ravel(), lab[:, 0].ravel(), lab[:, -1].ravel(), lab[:, :, 0].ravel(), lab[:, :, -1].ravel()])))
     play -= exterior; play.discard(0)
+    return lab, play, lo, vs, vox
+
+
+def sun_props(skyname, **over):
+    """light_environment keys (stationary sun + sky ambient from env_sky `skyname`); `over` replaces any of them"""
+    props = dict(enabled=1, color='255 246 228', brightness='1.5', range=512, castshadows=1, nearclipplane=1, shadowpriority=-1, style=0, pattern='',
+                 fademindist=-250, fademaxdist=1250, rendertocubemaps=1, priority=0, lightgroup='', bouncescale='1.0', renderdiffuse=1, renderspecular=1,
+                 rendertransmissive=1, directlight=3, indirectlight=1, angulardiameter='0.5', cascadecrossfade='.1', cascadedistancefade='.05',
+                 skycolor='200 220 255', skyintensity='1.25', skytexture=skyname, skytexturescale='1.0', skyambientbounce='0 0 0', sunlightminbrightness=32,
+                 skydirectlight=1, skybouncescale='1.0', brightnessscale='1.0', ambient_occlusion=0, max_occlusion_distance='16.0',
+                 fully_occluded_fraction='1.0', occlusion_exponent='1.0', baked_light_indexing=1, minroughness=0, clientSideEntity=1)
+    props.update(over)
+    return props
+
+
+def probe_volumes(m, lab, play, lo, vs):
+    """env_combined_light_probe_volumes over the playable voxels, in 2048-unit slices along the longest axis; returns the count"""
+    idx = np.argwhere(np.isin(lab, list(play)))
+    P = lo + (idx + 0.5) * vs
+    ax = int(np.argmax(P.max(0) - P.min(0))); n_vol = 0
+    start = P[:, ax].min()
+    while start <= P[:, ax].max():
+        sel = P[(P[:, ax] >= start) & (P[:, ax] < start + 2048)]
+        start += 2048
+        if not len(sel): continue
+        mn, mx = sel.min(0) - 48, sel.max(0) + 48; o = (mn + mx) / 2
+        props = dict(StartDisabled=0, cubemaptexture='', bakenearz='2.0', bakefarz='4096.0', lightgroup='', moveable=0, lightprobetexture='',
+                     box_mins='%f %f %f' % tuple(mn - o), box_maxs='%f %f %f' % tuple(mx - o), voxel_size='48.0', flood_fill=1, voxelize=1,
+                     light_probe_volume_from_cubemap=0, storage=-1, indoor_outdoor_level=0, edge_fade_dists='0 32 0', clientSideEntity=1)
+        m.new_entity('env_combined_light_probe_volume', o, props); n_vol += 1
+    return n_vol
+
+
+def run(m, c, spacing=64.0):
+    ents = {m.P(e, 'classname'): e for e in m.entities()}
+    meshes = all_meshes(m)
+    A, B, C, mid, kind = tris_of(m, meshes)
+    N = np.cross(B - A, C - A); N /= np.maximum(np.linalg.norm(N, axis=1), 1e-9)[:, None]
+    # playable space: empty-space regions containing spawns / teleports / lights
+    world = [pl for node, ent in meshes if ent is None for pl in mesh_polys(m, node)]
+    lab, play, lo, vs, vox = play_space(m, world)
     # floor samples
     S = []
     for mat, loop in world:
@@ -124,29 +159,11 @@ def run(m, c, spacing=64.0):
         sky = ents.get('env_sky'); skyname = (m.P(sky, 'targetname') if sky is not None else '') or 'sky'
         if sky is not None and not m.P(sky, 'targetname'): m.setp(sky, 'targetname', skyname)
         allp = np.vstack([A, B, C]); top = allp.max(0); ctr = (allp.min(0) + top) / 2
-        props = dict(enabled=1, color='255 246 228', brightness='1.5', range=512, castshadows=1, nearclipplane=1, shadowpriority=-1, style=0, pattern='',
-                     fademindist=-250, fademaxdist=1250, rendertocubemaps=1, priority=0, lightgroup='', bouncescale='1.0', renderdiffuse=1, renderspecular=1,
-                     rendertransmissive=1, directlight=3, indirectlight=1, angulardiameter='0.5', cascadecrossfade='.1', cascadedistancefade='.05',
-                     skycolor='200 220 255', skyintensity='1.25', skytexture=skyname, skytexturescale='1.0', skyambientbounce='0 0 0', sunlightminbrightness=32,
-                     skydirectlight=1, skybouncescale='1.0', brightnessscale='1.0', ambient_occlusion=0, max_occlusion_distance='16.0',
-                     fully_occluded_fraction='1.0', occlusion_exponent='1.0', baked_light_indexing=1, minroughness=0, clientSideEntity=1)
-        m.new_entity('light_environment', (ctr[0], ctr[1], top[2] - 64), props, angles=sun_ang)
+        m.new_entity('light_environment', (ctr[0], ctr[1], top[2] - 64), sun_props(skyname), angles=sun_ang)
         c.log.append('daylight: added a stationary light_environment (sun pitch %g yaw %g, brightness 1.5, sky ambient 1.25 from env_sky "%s")' % (sun_ang[0], sun_ang[1], skyname))
     # light probe volumes
     if 'env_combined_light_probe_volume' not in ents and play:
-        idx = np.argwhere(np.isin(lab, list(play)))
-        P = lo + (idx + 0.5) * vs
-        ax = int(np.argmax(P.max(0) - P.min(0))); n_vol = 0
-        start = P[:, ax].min()
-        while start <= P[:, ax].max():
-            sel = P[(P[:, ax] >= start) & (P[:, ax] < start + 2048)]
-            start += 2048
-            if not len(sel): continue
-            mn, mx = sel.min(0) - 48, sel.max(0) + 48; o = (mn + mx) / 2
-            props = dict(StartDisabled=0, cubemaptexture='', bakenearz='2.0', bakefarz='4096.0', lightgroup='', moveable=0, lightprobetexture='',
-                         box_mins='%f %f %f' % tuple(mn - o), box_maxs='%f %f %f' % tuple(mx - o), voxel_size='48.0', flood_fill=1, voxelize=1,
-                         light_probe_volume_from_cubemap=0, storage=-1, indoor_outdoor_level=0, edge_fade_dists='0 32 0', clientSideEntity=1)
-            m.new_entity('env_combined_light_probe_volume', o, props); n_vol += 1
+        n_vol = probe_volumes(m, lab, play, lo, vs)
         c.log.append('daylight: map had no light probe volumes (players and weapons get no indirect light without them) - added %d env_combined_light_probe_volume over the playable space' % n_vol)
     for e in m.entities():
         if m.P(e, 'classname') == 'post_processing_volume':
@@ -156,3 +173,72 @@ def run(m, c, spacing=64.0):
                 m.setp(e, 'maxexposure', '2.0'); m.setp(e, 'enableexposure', '1')
                 c.log.append('daylight: post_processing_volume maxexposure %g -> 2.0 so auto exposure can brighten dark rooms' % mx)
     c.todo.append('daylight: check the course in game - ceilings no longer cast shadows, so indoor floors get sun and sky light; adjust the light_environment brightness / angle if it looks too bright')
+
+
+# ------------------------------------------------------------------ fully-bright maps (no baked light in the BSP)
+# From CS2-Porter lighting.py fullbright_map + vmf.add_fullbright_sun + materials.py (unlit world materials) (MIT, copyright
+# bcanusar), adapted: detection from the BSP's lightmap lumps (texlights.lightmaps_lit); the world vmats in the addon go unlit
+# (csgo_unlitgeneric shows the texture at full brightness, as CS:GO drew a map with no lightmaps); a shadowless sun straight down
+# and probe volumes give players and weapons light. None of the 57 BSPs on the PC (Nov 2026) is fully bright, so this is unit
+# tested only; it runs as a report in stage C and changes the map only as the opt-in `fullbright` pass.
+FULLBRIGHT_SUN = 'fullbright_sun'
+
+
+def is_fullbright(c, bsp=None):
+    """True / False from the BSP's lightmaps, None when no BSP is staged"""
+    import texlights as T
+    p = T.find_bsp(c, bsp)
+    return None if not p else not T.lightmaps_lit(T.Bsp(p))
+
+
+def unlit_vmat(txt):
+    """csgo_complex world vmat -> csgo_unlitgeneric with the same TextureColor; None when it is see-through, self-lit or another shader"""
+    import re
+    ms = re.search(r'(?im)^(\s*"?shader"?\s+")([^"]+)("\s*)$', txt)
+    if not ms or 'csgo_complex' not in ms.group(2).lower(): return None
+    if re.search(r'(?im)^\s*"?F_(TRANSLUCENT|ALPHA_TEST|SELF_ILLUM|BLEND_MODE|LAYERS)"?\s+"?[1-9]', txt): return None
+    return txt[:ms.start(2)] + 'csgo_unlitgeneric.vfx' + txt[ms.end(2):]
+
+
+def fullbright(m, c, bsp=None, apply=True):
+    """Pass `fullbright`: when the BSP has no baked light, world vmats in the addon -> unlit, a shadowless stationary sun straight
+    down (when the map has no light_environment) and probe volumes (when it has none). apply=False only logs what it found.
+    Returns True when the map is fully bright."""
+    import os, assets
+    fb = is_fullbright(c, bsp)
+    if fb is None:
+        if apply: c.todo.append('fullbright: no BSP staged (<root>/source1/maps/%s.bsp): fully-bright check skipped' % c.addon)
+        return False
+    if not fb: return False
+    if not apply:
+        c.todo.append('fullbright: the BSP has no baked light (no lightmaps, or all black): CS:GO drew this map fully bright. Run the opt-in '
+                      'fullbright pass (unlit world materials, shadowless sun for players and weapons)'); return True
+    unlit, kept, stock = [], [], []
+    for mat in sorted(assets.mesh_materials(m)):
+        if not mat.endswith('.vmat') or mat.startswith('materials/tools/') or 'skybox' in mat: continue
+        if mat in c.files: txt = c.files[mat].decode('utf-8', 'replace')
+        elif os.path.exists(os.path.join(c.content, mat)): txt = open(os.path.join(c.content, mat), encoding='utf-8', errors='replace').read()
+        else: stock.append(mat); continue
+        new = unlit_vmat(txt)
+        if new is None: kept.append(mat); continue
+        c.write(mat, new); unlit.append(mat)
+    ents = {m.P(e, 'classname') for e in m.entities()}
+    added = []
+    if 'light_environment' not in ents:
+        pts = [m.origin(e) for e in m.entities() if (m.P(e, 'classname') or '').startswith('info_player_')] or [(0.0, 0.0, 0.0)]
+        o = tuple(sum(p[k] for p in pts) / len(pts) for k in range(3))
+        m.new_entity('light_environment', o, sun_props('', targetname=FULLBRIGHT_SUN, castshadows=0, brightness='1.0', skyintensity='1.0',
+                                                       skydirectlight=0), angles=(90.0, 0.0, 0.0))
+        added.append('a shadowless stationary sun straight down')
+    if 'env_combined_light_probe_volume' not in ents:
+        meshes = all_meshes(m)
+        world = [pl for node, ent in meshes if ent is None for pl in mesh_polys(m, node)]
+        if world:
+            lab, play, lo, vs, _ = play_space(m, world)
+            if play: added.append('%d light probe volumes' % probe_volumes(m, lab, play, lo, vs))
+    c.log.append('fullbright: no baked light in the BSP (CS:GO drew the map fully bright): %d world materials -> csgo_unlitgeneric%s%s'
+                 % (len(unlit), '; added ' + ', '.join(added) if added else '',
+                    '; %d see-through / self-lit / other-shader materials left lit' % len(kept) if kept else ''))
+    if stock: c.todo.append('fullbright: %d stock CS2 materials on world meshes stay lit (not in the addon): %s' % (len(stock), ', '.join(stock)[:600]))
+    c.todo.append('fullbright: unit tested only (no fully-bright CS:GO map on the PC): check in game that walls show their texture at full brightness and players are lit')
+    return True

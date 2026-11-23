@@ -1,6 +1,8 @@
 """resourcecompiler wrapper: one map with a named preset, single assets, and a build-log reader that says what went wrong.
 
-  python rcompile.py asset <content file> [...] [--force] [--log FILE] [--json]      compile assets (.vmat .vmdl .vtex .vpcf .vsndevts ...)
+  python rcompile.py asset <content file|glob> [...] [--list FILE] [--force] [--log FILE] [--json] [--dry-run]
+                                                                                     compile assets (.vmat .vmdl .vtex .vpcf .vsndevts ...);
+                                                                                     two or more go to the compiler as one -filelist run
   python rcompile.py map <map.vmap> [--preset fast|nav|full|final|entities|lighting] [--novis] [--threads N] [--log FILE] [--dry-run] [--json]
   python rcompile.py analyze <build log> [--json]                                    read a log someone else wrote (build_maps.ps1, Hammer)
   python rcompile.py presets                                                         the flags of every preset
@@ -105,10 +107,32 @@ def _real(p):
     return os.path.realpath(p).replace('\\', '/')
 
 
-def asset_argv(paths, force=False, cs2=None, threads=None):
+def asset_argv(paths, force=False, cs2=None, threads=None, filelist=None):
+    """one -i per path, or -filelist <file> (one path per line, UTF-8, no BOM) when filelist is given: a long batch stays one
+    compiler run without hitting Windows' 32k command-line limit (the -filelist route follows Hammer5Tools' CompilerService, MIT)"""
     argv = [compiler_path(cs2), '-threads', str(threads or threads_default()), '-nop4', '-quiet']
-    for p in paths: argv += ['-i', _real(p)]
+    if filelist: argv += ['-filelist', filelist]
+    else:
+        for p in paths: argv += ['-i', _real(p)]
     return argv + (['-f'] if force else [])
+
+
+def expand_inputs(paths, listfile=None):
+    """the inputs: paths as given (globs with * ? [ ] expanded, ** crosses folders), plus the lines of listfile (# comments);
+    sorted and without duplicates, so a batch is the same whichever way it was asked for"""
+    import glob as _glob
+    items = list(paths or [])
+    if listfile:
+        with open(listfile, encoding='utf-8-sig') as f:
+            items += [ln.strip() for ln in f if ln.strip() and not ln.lstrip().startswith('#')]
+    out = []
+    for p in items:
+        out += sorted(_glob.glob(p, recursive=True)) if any(c in p for c in '*?[') else [p]
+    seen, res = set(), []
+    for p in out:
+        k = os.path.normcase(os.path.realpath(p))
+        if k not in seen: seen.add(k); res.append(p)
+    return res
 
 
 def read_log(path):
@@ -233,11 +257,27 @@ def build_map(vmap, preset='fast', threads=None, novis=False, log=None, timeout=
 def compile_assets(paths, force=False, log=None, timeout=600, cs2=None):
     rc = compiler_path(cs2)
     if not os.path.exists(rc): raise FileNotFoundError('resourcecompiler.exe not found at %s' % rc)
+    if not paths: raise FileNotFoundError('no input files')
     missing = [p for p in paths if not os.path.exists(p)]
     if missing: raise FileNotFoundError(', '.join(missing))
-    code, text, secs = _run(asset_argv(paths, force, cs2), log, timeout, os.path.dirname(rc))
+    listfile = None
+    if len(paths) > 1:
+        import tempfile
+        fd, listfile = tempfile.mkstemp(prefix='rcompile_', suffix='.inputs')
+        with os.fdopen(fd, 'w', encoding='utf-8', newline='\n') as f:
+            f.write('\n'.join(_real(p) for p in paths) + '\n')
+    try:
+        code, text, secs = _run(asset_argv(paths, force, cs2, filelist=listfile), log, timeout, os.path.dirname(rc))
+    finally:
+        if listfile:
+            try: os.remove(listfile)
+            except OSError: pass
     res = analyze(text)
-    res.update({'exit_code': code, 'seconds': secs, 'ok': code == 0 and not (res['summary'] or {}).get('failed') and not res['crashed']})
+    res.update({'exit_code': code, 'seconds': secs, 'inputs': len(paths),
+                'ok': code == 0 and not (res['summary'] or {}).get('failed') and not res['crashed']})
+    if len(paths) > 1:
+        # one run's summary line covers the whole batch: it does not say which input failed (Hammer5Tools compile-verify notes)
+        res['note'] = 'batch of %d: the summary covers the whole run; recompile a failed one alone to read its own errors' % len(paths)
     return _level(res)
 
 
@@ -256,7 +296,9 @@ def _print(res, as_json):
 def main(argv=None):
     ap = argparse.ArgumentParser(description='resourcecompiler wrapper and log reader')
     sub = ap.add_subparsers(dest='cmd', required=True)
-    a1 = sub.add_parser('asset'); a1.add_argument('paths', nargs='+'); a1.add_argument('--force', action='store_true')
+    a1 = sub.add_parser('asset'); a1.add_argument('paths', nargs='*'); a1.add_argument('--force', action='store_true')
+    a1.add_argument('--list', help='text file with one input per line (# comments), added to the paths')
+    a1.add_argument('--dry-run', action='store_true', help='print the inputs and the command, compile nothing')
     a2 = sub.add_parser('map'); a2.add_argument('vmap'); a2.add_argument('--preset', default='fast', choices=list(PRESETS))
     a2.add_argument('--novis', action='store_true'); a2.add_argument('--threads', type=int); a2.add_argument('--dry-run', action='store_true')
     a2.add_argument('--timeout', type=float)
@@ -273,6 +315,12 @@ def main(argv=None):
         return 1 if (res['summary'] or {}).get('failed') or res['crashed'] else 0
     if a.cmd == 'map' and a.dry_run:
         print(subprocess.list2cmdline(map_argv(a.vmap, a.preset, a.threads, a.novis))); return 0
+    if a.cmd == 'asset':
+        a.paths = expand_inputs(a.paths, a.list)
+        if a.dry_run:
+            for p in a.paths: print('input\t%s' % p)
+            print(subprocess.list2cmdline(asset_argv(a.paths, a.force, filelist='<list file>' if len(a.paths) > 1 else None)))
+            return 0
     try:
         res = build_map(a.vmap, a.preset, a.threads, a.novis, a.log, a.timeout) if a.cmd == 'map' else compile_assets(a.paths, a.force, a.log)
     except (FileNotFoundError, RuntimeError, ValueError) as ex:

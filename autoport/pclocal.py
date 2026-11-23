@@ -1,7 +1,7 @@
 """Run the pipeline in a local workspace on the PC instead of the cloud one (Claude Code on the PC).
 
   python pclocal.py deliver <manifest.json> [...] [--force] [--dry-run]   copy prep.py's (staged, PC path) pairs to the PC paths
-  python pclocal.py root <addon> [<root>]                     build the stage C working root for an addon
+  python pclocal.py root <addon> [<root>] [<map.bsp>]         build the stage C working root for an addon
   python pclocal.py apply <addon> [<root>] [--dry-run]        copy stage C's output back to the addon (only changed files, each backed up first)
   python pclocal.py rollback <addon> [<root>] [--dry-run]     undo the newest apply of that addon from its manifest (or: rollback <manifest.json>,
                                                               which is also how a deliver is undone: rollback <root>\\out\\deliver_<stamp>.json)
@@ -112,7 +112,8 @@ def _safe_extract(z, dest):
             n += 1
     return n
 
-def root(addon, r):
+def root(addon, r, bsp=None):
+    """bsp: the map's CS:GO .bsp, copied to source1/maps/<addon>.bsp for the steps that read the compiled map (texlights, lightcal, fullbright)"""
     addon = safepath.addon_name(addon)
     addons = os.path.join(CS2, 'content', 'csgo_addons')
     link = os.path.join(r, 'content', addon); real = os.path.join(addons, addon)
@@ -134,6 +135,10 @@ def root(addon, r):
             if safepath.is_link(d): sys.exit('%s is a link (to %s): the working root must hold real folders' % (d, safepath.link_target(d)))
         try: copied.append('%s %s' % (os.path.basename(dst), {'same': 'unchanged', 'create': 'copied', 'modify': 'replaced (content differed)'}[copy_if_changed(src, dst)]))
         except OSError as ex: sys.exit('working root not built: %s' % ex)
+    if bsp and os.path.isfile(bsp):
+        try: copied.append('%s.bsp %s' % (addon, {'same': 'unchanged', 'create': 'copied', 'modify': 'replaced (content differed)'}[
+                copy_if_changed(bsp, os.path.join(r, 'source1', 'maps', addon + '.bsp'))]))
+        except OSError as ex: copied.append('%s.bsp not copied (%s)' % (addon, ex))
     print('root inputs: ' + '; '.join(copied))
     emb = os.path.join(r, 'embedded', addon); n = 0
     if safepath.is_link(emb): sys.exit('%s is a link (to %s): remove it with rmdir, then run root again' % (emb, safepath.link_target(emb)))
@@ -201,7 +206,7 @@ if __name__ == '__main__':
     if len(args) < 2: sys.exit(__doc__)
     cmd = args[0]
     if cmd == 'deliver': deliver(args[1:], force, dry_run=dry)
-    elif cmd == 'root': root(args[1], args[2] if len(args) > 2 else DEFAULT_ROOT)
+    elif cmd == 'root': root(args[1], args[2] if len(args) > 2 and not args[2].lower().endswith('.bsp') else DEFAULT_ROOT, bsp=next((x for x in args[2:] if x.lower().endswith('.bsp')), None))
     elif cmd == 'apply': apply(args[1], args[2] if len(args) > 2 else DEFAULT_ROOT, dry_run=dry)
     elif cmd == 'rollback': rollback(args[1], args[2] if len(args) > 2 else DEFAULT_ROOT, dry_run=dry)
     else: sys.exit(__doc__)

@@ -177,6 +177,32 @@ REFS_FILE = None
 SCAN = None          # vmap_refs.Scan of the map (which vmap/prefab used each material/model), when the run is vmap-driven
 
 
+# the line of a cs_mdl_import / resourcecompiler run worth keeping in the report: the last one that reads like an error
+ERROR_LINE_RE = re.compile(r"error|fail|cannot|can't|couldn't|could not|unable|exception|assert|crash|invalid|not found|missing|\[killed", re.I)
+ERROR_LINE_NOISE = re.compile(r"Failed to create CModelDocPhysicsHullFile Node|skipping absent PHY|^\s*0 errors?|successfully", re.I)
+
+
+def error_line(text, limit=220):
+    """last error-like line of a tool's output ('' if none): the importer's own words for why a model failed. Lines that appear on
+    every successful import too (physics hull node, absent PHY) are used only when nothing else matches."""
+    lines = [l.strip() for l in (text or "").splitlines() if l.strip()]
+    hits = [l for l in lines if ERROR_LINE_RE.search(l)]
+    real = [l for l in hits if not ERROR_LINE_NOISE.search(l)]
+    pick = (real or hits or lines[-1:] or [""])[-1]
+    return pick if len(pick) <= limit else pick[:limit - 3] + "..."
+
+
+def run_command_capture(cmd):
+    """run_command_safe that also returns the output (printed as before) -> (ok, text)"""
+    utl.print_I("--------------------------------")
+    utl.print_I("- Running Command: " + cmd)
+    utl.print_I("--------------------------------")
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True, errors="replace")
+    out = (result.stdout or "") + (result.stderr or "")
+    if out: print(out, end="" if out.endswith("\n") else "\n")
+    return result.returncode == 0, out
+
+
 def run_command_safe(cmd):
     utl.print_I("--------------------------------")
     utl.print_I("- Running Command: " + cmd)
@@ -273,6 +299,7 @@ def import_model(mdlfile, extraoptions, outName):
     for attempt in range(1, MDL_RETRIES + 1):
         print("- cs_mdl_import (attempt %d): %s" % (attempt, mdlfile))
         t0 = time.time()
+        start = os.path.getsize(log_path) if os.path.exists(log_path) else 0
         with open(log_path, "a", encoding="utf-8", errors="replace") as log:
             log.write("\n==== %s (attempt %d)\n%s\n" % (mdlfile, attempt, cmd)); log.flush()
             proc = subprocess.Popen(cmd, shell=True, stdout=log, stderr=subprocess.STDOUT)
@@ -288,9 +315,16 @@ def import_model(mdlfile, extraoptions, outName):
                     _kill_tree(proc); log.write("[killed: %s]\n" % stalled); break
         if os.path.exists(outName) and os.path.getmtime(outName) >= t0 - 2.5:
             return True, ""
+        said = ""
+        try:
+            with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                f.seek(start); said = error_line("\n".join(l for l in f.read().splitlines() if not l.startswith(("====", "cs_mdl_import "))))
+        except OSError:
+            pass
+        said = (' - cs_mdl_import said: "%s"' % said) if said else ""
         if stalled:
-            return False, "stalled: %s, killed (see %s)" % (stalled, os.path.basename(log_path))
-        last = "exit code %s, no .vmdl written" % proc.returncode
+            return False, "stalled: %s, killed (see %s)%s" % (stalled, os.path.basename(log_path), said)
+        last = "exit code %s, no .vmdl written%s" % (proc.returncode, said)
         if os.path.isdir(refs_dir) and _newest(refs_dir) >= t0 - 2.5: last += " (partial output in %s)" % os.path.basename(refs_dir)
     return False, last + " after %d attempts" % MDL_RETRIES
 
@@ -425,9 +459,11 @@ def phase1_models():
             continue
 
         resCompCmd = "resourcecompiler -retail -nop4 -game csgo \"%s\"" % outName
-        if not run_command_safe(resCompCmd):
+        ok, out = run_command_capture(resCompCmd)
+        if not ok:
             print("!! FAILED to compile model: %s" % mdlfile)
-            failed_compiles.append(mdlfile)
+            said = error_line(out)
+            failed_compiles.append(("%s  (resourcecompiler said: \"%s\")" % (mdlfile, said)) if said else mdlfile)
 
     print("Models already compiled and up to date, skipped: %d" % model_skipped)
 
@@ -720,10 +756,10 @@ def phase4_write_report(failed_imports, failed_compiles, still_needs_conversion,
     lines.append("=== TEXTURES - FULLY MISSING, NO SOURCE FOUND ANYWHERE (%d) ===" % len(fully_missing))
     lines.append("(these need the manual Crowbar/Blender/ModelDoc pipeline)")
     lines.extend(fully_missing or ["(none)"])
-    if failed_imports or fully_missing:
+    if failed_imports or failed_compiles or fully_missing:
         lines.append("")
         lines.append("=== WHY MISSING: where each is used, and files with the same name elsewhere ===")
-        lines.extend(explain_missing(list(failed_imports) + list(fully_missing), steam_root))
+        lines.extend(explain_missing(list(failed_imports) + list(failed_compiles) + list(fully_missing), steam_root))
 
     utl.EnsureFileWritable(report_path)
     with open(report_path, "w") as f:

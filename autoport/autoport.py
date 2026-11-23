@@ -159,7 +159,7 @@ def import_(m):
         n = re.findall(r'vmdlfix: (\d+) bodygroup choices named', read(m.log('vmdlfix')))
         if n and int(n[-1]): m.note('minor', 'vmdlfix.py named %s empty bodygroup choices, so those models compile now. See %s' % (n[-1], m.log('vmdlfix')))
 
-def root(m): pclocal.root(m.addon, WORK)
+def root(m): pclocal.root(m.addon, WORK, bsp=m.bsp)
 
 def stage_c(m):
     wait_closed(m)

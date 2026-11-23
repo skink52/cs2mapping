@@ -20,12 +20,20 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         fire (env_fire -> stock burning_fx particle + burn trigger_hurt; env_spark -> spark particle), particles (CS:GO particle system names -> CS2's particle of that name), splitfaces (lit faces over 512x512 cut on a 512 grid),
         waterprobe (one probe volume per water surface crossed by several; also runs after water / probefill / probedetail), culled (faces culled under
         water rebuilt from the VMF), displaybrush (display-only func_brush/func_illusionary -> world meshes), trigmat, toolpaths, trigsplit (multi-mesh
-        triggers -> one entity per piece), nullparams, origindup (delete the importer's copies of brush entities at the origin; stage C only reports them)
+        triggers -> one entity per piece), nullparams, origindup (delete the importer's copies of brush entities at the origin; stage C only reports them),
+        underwaterfog (after water: underwater vpost tinted per CS:GO water fog colour), colorcorrect (color_correction -> .vpost lookup table),
+        texlights (lights.rad texture lights -> self-illum / light_rect; needs the BSP), lightcal / lightcal_apply (light brightness from the
+        compiled light list + BSP traces: report / apply), fullbright (map with no baked light: unlit world, shadowless sun, probes),
+        blendpaint (displacement blend paint from the VMF), thintrigfix (thin boost/gravity triggers raised to 6 u), spawnliftfix (spawns in the
+        floor lifted), numnames (names the importer read as numbers get their VMF text back; run with io / droppedio), smoke (smoke / dust /
+        embers / trails -> particles), momentum (Momentum Mod triggers -> io script), blendupgrade (one-layer blend vmats from older
+        runs -> two layers; before blendpaint), spotbeam (point_spotlight / beam_spotlight -> cones), stockmodels (CS:GO chicken /
+        hostage / agent props -> CS2 stock models)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import tesla, probefill, repair, firefx, splitfaces, waterprobe, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol, ropes, particles, roundend
+import tesla, probefill, repair, firefx, splitfaces, waterprobe, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol, ropes, particles, roundend, texlights, postfx, smokestack, momentum, blendpaint, jsapi
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -82,6 +90,35 @@ def run(addon, root, passes):
     if 'water' in passes and watervol.run(m, c) and c.needs_underwater_vpost and not c.exists(watervol.VPOST):
         c.write(watervol.VPOST, open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'postprocess_filmic_underwater.vpost'), 'rb').read())
     if 'watersplit' in passes: watervol.split_volumes(m, c)
+    if 'underwaterfog' in passes: postfx.underwater(m, c)            # after water: a vpost per CS:GO water fog colour
+    if 'colorcorrect' in passes: postfx.color_correction(m, c, vmfp)
+    if 'texlights' in passes: texlights.run(m, c)
+    if 'lightcal' in passes or 'lightcal_apply' in passes:
+        bsp = texlights.find_bsp(c)
+        if bsp: lighting.calibrate(m, c, bsp, apply='lightcal_apply' in passes, vmfpath=vmfp)
+        else: c.todo.append('lightcal: no BSP staged at <root>/source1/maps/%s.bsp' % addon)
+    if 'fullbright' in passes: daylight.fullbright(m, c)
+    if 'blendupgrade' in passes and c.src:                         # one-layer blend vmats from older runs -> two layers
+        assets.upgrade_blends(m, c, c.src.vpk, c.src.arcs, src=c.src)
+    if 'blendpaint' in passes and os.path.exists(vmfp):
+        st, single = blendpaint.run(m, vmfp, c.content, log=c.log)
+        single = [x for x in single if 'materials/%s.vmat' % x not in c.files]   # rewritten in this run (blendupgrade)
+        if single: c.todo.append('blendpaint: blend materials with a single-layer vmat (paint shows only on a two-layer material): ' + ', '.join(single))
+    if 'numnames' in passes and os.path.exists(vmfp): repair.numeric_names(m, c, vmfp)
+    if 'thintrigfix' in passes: repair.thin_triggers(m, c, fix=True)
+    if 'spawnliftfix' in passes: repair.spawn_lift(m, c, fix=True)
+    if 'smoke' in passes: smokestack.run(m, c, vmfp)
+    if 'momentum' in passes:
+        momentum.run(m, c)
+        if getattr(c, 'momentum', None):
+            jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
+            js = open(jp, encoding='utf-8').read() if os.path.exists(jp) else stage_c.gen_script.build(addon, c.script)
+            c.write('maps/scripts/%s_io.js' % addon, jsapi.ensure_imports(momentum.patch_script(js, c.momentum)))
+            if not any(m.name(e) == c.script for e in m.by_class('point_script')):
+                spawn = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]
+                o = m.origin(spawn)
+                m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
+                c.log.append('added point_script %s (maps/scripts/%s_io.js)' % (c.script, addon))
     if 'nullparams' in passes: repair.null_params(m, c)
     if 'trigmat' in passes: repair.trigger_materials(m, c)
     if 'toolpaths' in passes: repair.tool_paths(m, c)
@@ -126,6 +163,12 @@ def run(addon, root, passes):
             o = m.origin(spawn)
             m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
             c.log.append('added point_script %s (maps/scripts/%s_io.js)' % (c.script, addon))
+    if 'spotbeam' in passes:
+        import spotbeam
+        spotbeam.run(m, c, spotbeam.from_vmf(vmfp) if os.path.exists(vmfp) else spotbeam.kept(m))
+    if 'stockmodels' in passes:
+        import stockmodels
+        stockmodels.run(m, c)
     if 'weaponmodels' in passes:
         import weaponmodels
         weaponmodels.run(m, c)

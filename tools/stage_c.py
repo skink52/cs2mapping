@@ -12,7 +12,7 @@ sky, skyvis, vis, beams, lights, alpha, probes, waterprobe, radar, assets, matfl
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import dmx, vmf as vmfmod, vmapedit as V, gen_script, repair, firefx, particles, splitfaces, waterprobe, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch, droppedio, ovlquad, ropes
+import dmx, vmf as vmfmod, vmapedit as V, gen_script, repair, firefx, particles, splitfaces, waterprobe, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch, droppedio, ovlquad, ropes, texlights, postfx, daylight, smokestack, momentum, jsapi
 
 CS2 = os.environ.get('CS2_ROOT') or r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 
@@ -104,7 +104,9 @@ def dropped_report(m, c, vmfpath):
     src = vmf_entities(vmfpath)
     cnt = collections.Counter(d.get('classname', '').lower() for d, _, _ in src)
     have = collections.Counter(m.cls(e).lower() for e in m.entities())
-    lost = ['%d %s (%s)' % (cnt[k], k, v) for k, v in DROPPED.items() if cnt[k] and not have[k]]
+    rebuilt = {'spotbeam': 'point_spotlight', 'smoke': 'func_dustmotes', 'colorcorrect': 'color_correction'}   # steps that rebuild these
+    skip = {cls for step, cls in rebuilt.items() if step in getattr(c, 'steps', ())}
+    lost = ['%d %s (%s)' % (cnt[k], k, v) for k, v in DROPPED.items() if cnt[k] and not have[k] and k not in skip]
     if lost: c.todo.append("the importer leaves these out (they're on its exclusion list, mostly cosmetic): " + ', '.join(lost))
 
 def restore_io(m, c, vmfpath):
@@ -468,7 +470,7 @@ def dead_entities(m, c):
     for e in pm: m.setp(e, 'classname', 'func_physbox')
     if pm: c.log.append('%d func_physbox_multiplayer (gone in CS2) -> func_physbox' % len(pm))
     st = m.by_class('env_spritetrail')
-    if st: c.todo.append('%d env_spritetrail (gone in CS2, cosmetic trails) - left out; a trail particle would replace them' % len(st))
+    if st and 'smoke' not in getattr(c, 'steps', ()): c.todo.append('%d env_spritetrail (gone in CS2, cosmetic trails) - left out; a trail particle would replace them' % len(st))
     for cl in ('env_screenoverlay', 'point_clientcommand', 'game_ui','logic_script', 'env_entity_igniter', 'func_precipitation', 'env_fog_controller'):
         es = m.by_class(cl)
         if es: c.todo.append('%d %s (%s) - not converted automatically, needs a look' % (len(es), cl, ', '.join(sorted(set(m.name(e) or '-' for e in es)))[:200]))
@@ -970,9 +972,11 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'dead', 'trigmat', 'toolpaths', 'trigsplit', 'rendermode', 'renderamt', 'steam', 'fire', 'particles', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'culled', 'displaybrush', 'splitfaces', 'sky', 'skyvis', 'vis', 'beams', 'ropes', 'lights', 'alpha', 'probes', 'waterprobe', 'radar', 'assets', 'matflags', 'origindup', 'droppedio']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'momentum', 'dead', 'trigmat', 'toolpaths', 'trigsplit', 'thintrig', 'spawnlift', 'rendermode', 'renderamt', 'steam', 'smoke', 'fire', 'particles', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'culled', 'displaybrush', 'splitfaces', 'sky', 'skyvis', 'vis', 'beams', 'spotbeam', 'ropes', 'lights', 'alpha', 'probes', 'waterprobe', 'radar', 'assets', 'matflags', 'origindup', 'droppedio']
+    c.steps = steps
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
+    if ('numnames' in steps or 'io' in steps) and os.path.exists(vmfp): repair.numeric_names(m, c, vmfp)   # "000" -> "0" undone before io
     if 'io' in steps or 'nullparams' in steps: repair.null_params(m, c)        # before restore_io: a "(null)" output would be re-added as a "" duplicate
     if 'io' in steps and os.path.exists(vmfp): restore_io(m, c, vmfp); dropped_report(m, c, vmfp)
     if 'io' in steps: io_fixups(m, c)
@@ -985,9 +989,12 @@ def run(addon, root, passes=None):
     if 'score' in steps: game_score(m, c)
     if 'speed' in steps: speedmod(m, c)
     if 'gravity' in steps: gravity.run(m, c)
+    if 'momentum' in steps: momentum.run(m, c)                # Momentum Mod triggers -> io script
     if 'dead' in steps: dead_entities(m, c)
     if 'trigmat' in steps: repair.trigger_materials(m, c)
     if 'trigsplit' in steps: repair.split_triggers(m, c)
+    if 'thintrig' in steps or 'thintrigfix' in steps: repair.thin_triggers(m, c, fix='thintrigfix' in steps)   # report; thintrigfix raises them
+    if 'spawnlift' in steps or 'spawnliftfix' in steps: repair.spawn_lift(m, c, fix='spawnliftfix' in steps)   # report; spawnliftfix moves them
     if 'rendermode' in steps: render_modes(m, c)                # Source 1 numbers -> CS2's three render mode names
     if 'renderamt' in steps: render_alpha(m, c)
     vd = os.path.join(root, 'vpk')
@@ -997,6 +1004,7 @@ def run(addon, root, passes=None):
         c.src = assets.Source(c, csgov, arcs)
     if 'toolpaths' in steps: repair.tool_paths(m, c)
     if 'steam' in steps: steam.run(m, c, vmfp)
+    if 'smoke' in steps: smokestack.run(m, c, vmfp)          # smoke / dust / embers / trails -> generated particles
     if 'fire' in steps: firefx.run(m, c)
     if 'particles' in steps: particles.run(m, c)               # CS:GO particle system names -> CS2's particle of that name
     if 'physpush' in steps: physpush.run(m, c)
@@ -1014,10 +1022,22 @@ def run(addon, root, passes=None):
     if 'vis' in steps: visfit.run(m, c)                  # hints fitted to the play space + sky shells out of vis
     elif 'skyvis' in steps: skyvis.run(m, c)
     if 'beams' in steps: beammod.run(m, c)
+    if 'spotbeam' in steps and os.path.exists(vmfp):            # point_spotlight (dropped) / beam_spotlight (kept, draws nothing) -> cones
+        import spotbeam
+        spotbeam.run(m, c, spotbeam.from_vmf(vmfp))
     if 'ropes' in steps: ropes.run(m, c, vmfp)   # path_particle_rope needs no vmf
     if ('relight' in steps or 'lights' in steps) and 'lightbright' not in steps and os.path.exists(vmfp): lighting.relight(m, c, vmfp)   # every light rebuilt from the VMF
     elif 'lightbright' in steps and os.path.exists(vmfp): lighting.fix_brightness(m, c, vmfp)   # keep the imported lights, fix values in place
     elif 'lights' in steps: lighting.fix_nan_brightness(m, c)
+    if ('relight' in steps or 'lights' in steps or 'lightbright' in steps) and os.path.exists(vmfp): lighting.fifty_percent_note(c, vmfp)
+    if 'lightcal' in steps or 'lightcal_apply' in steps:     # opt-in: brightness from the compiled CS:GO light list + BSP line traces
+        bsp = texlights.find_bsp(c)
+        if bsp: lighting.calibrate(m, c, bsp, apply='lightcal_apply' in steps, vmfpath=vmfp)
+        else: c.todo.append('lightcal: no BSP staged at <root>/source1/maps/%s.bsp' % addon)
+    if 'lights' in steps and texlights.find_bsp(c): daylight.fullbright(m, c, apply=False)    # report only: a BSP with no baked light
+    if 'fullbright' in steps: daylight.fullbright(m, c)              # opt-in: unlit world materials, shadowless sun, probes
+    if 'colorcorrect' in steps: postfx.color_correction(m, c, vmfp)  # opt-in until one map is seen in game
+    if 'underwaterfog' in steps: postfx.underwater(m, c)            # opt-in, after water: a vpost per CS:GO water fog colour
     if 'lights' in steps: lighting.run(m, c)
     if 'alpha' in steps and c.src: assets.fix_alpha(m, c)
     if 'probes' in steps: probecover.run(m, c)
@@ -1036,16 +1056,22 @@ def run(addon, root, passes=None):
             c.todo = [t for t in c.todo if not t.startswith('overlay materials not converted: ')]
             c.overlay_skipped = prev + c.overlay_skipped
             if c.overlay_skipped: c.todo.append('overlay materials not converted: %s' % '; '.join(c.overlay_skipped)[:800])
+    if 'texlights' in steps: texlights.run(m, c)     # opt-in: lights.rad texture lights -> F_SELF_ILLUM / light_rect (needs the BSP)
     if 'matflags' in steps: texfix.material_flags(m, c)
     if 'physpush' not in steps and 'dead' in steps and any(m.by_class(*physpush.CLASSES)):
         c.todo.append("the map has %d physics props: if player pushes on them feel wrong in game (too easy or too hard for the prop's size), run the physpush step (run_pass.py ... physpush)" % len(m.by_class(*physpush.CLASSES)))
     jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
-    only_phys = c.phys and not (c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js)
+    mom = getattr(c, 'momentum', None)
+    only_phys = c.phys and not (c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js or mom)
     if passes and only_phys and os.path.exists(jp):   # follow-up pass: keep the rest of the existing io script
         c.write('maps/scripts/%s_io.js' % addon, physpush.patch_script(open(jp, encoding='utf-8').read(), c.phys))
-    if not (passes and only_phys and os.path.exists(jp)) and (c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js or c.phys or c.launch):
+    only_mom = mom and not (c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js or c.phys or c.launch)
+    if passes and only_mom and os.path.exists(jp):    # follow-up momentum pass: patch the existing io script, keep the rest
+        c.write('maps/scripts/%s_io.js' % addon, jsapi.ensure_imports(momentum.patch_script(open(jp, encoding='utf-8').read(), mom)))
+    if not (passes and (only_phys or only_mom) and os.path.exists(jp)) and (c.push or c.commands or c.scores or c.speeds or c.gravities or c.spawn_equips or c.items_js or c.phys or c.launch or mom):
         js = gen_script.build(addon, c.script, c.push, c.commands, c.scores, c.speeds, c.gravities, c.spawn_equips, c.items_js, c.phys)
         if c.launch: js = physlaunch.patch_script(js, c.launch)
+        if mom: js = jsapi.ensure_imports(momentum.patch_script(js, mom))
         c.write('maps/scripts/%s_io.js' % addon, js)
         if not any(m.name(e) == c.script for e in m.by_class('point_script')):
             spawn = (m.by_class('info_player_counterterrorist') + m.by_class('info_player_terrorist') + m.entities())[0]

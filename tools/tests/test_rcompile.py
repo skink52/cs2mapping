@@ -87,6 +87,16 @@ class Argv(unittest.TestCase):
         self.assertEqual(R.compiled_map(vmap, self.CS2), os.path.join(self.CS2, 'game', 'csgo_addons', 'mg_x', 'maps', 'sub', 'a.vpk'))
         self.assertEqual(R.addon_and_map(os.path.join('C:\\', 'links', 'content_addons', 'mg_y', 'maps', 'b.vmap')), ('mg_y', 'b'))
 
+    def test_filelist_and_inputs(self):
+        b = R.asset_argv(['a.vmat', 'b.vmat'], cs2=self.CS2, threads=2, filelist='x.inputs')
+        self.assertEqual(b[b.index('-filelist') + 1], 'x.inputs'); self.assertNotIn('-i', b)
+        d = tempfile.mkdtemp()
+        for n in ('a.vmat', 'b.vmat', 'c.txt'): open(os.path.join(d, n), 'w').close()
+        lst = os.path.join(d, 'list.txt')
+        with open(lst, 'w', encoding='utf-8') as f: f.write('# comment\n%s\n\n' % os.path.join(d, 'a.vmat'))
+        got = R.expand_inputs([os.path.join(d, '*.vmat')], lst)          # a.vmat from both: once
+        self.assertEqual([os.path.basename(p) for p in got], ['a.vmat', 'b.vmat'])
+
     def test_missing_compiler_refused(self):
         with self.assertRaises(FileNotFoundError):
             R.build_map(os.path.join(self.CS2, 'nope.vmap'), cs2=os.path.join(tempfile.gettempdir(), 'no_cs2_here'))
