@@ -99,6 +99,7 @@ def adv(size): return SIZES[size] - SIZES[size] // 10
 def row_w(n, size): return n * adv(size) + SIZES[size] // 10      # n cells, each overlapping the next by a tenth
 TEXT_SLOTS = {}
 TEXT_ALIGN = {}
+TEXT_SIZE = {}
 
 def gtext(id_, n, size, color='W', static=None, extra='', align='center', **pl):
     """a pixel-text row of n glyph panels (ids id_0..id_n-1), pinned with place(**pl); `static` text fixes the
@@ -110,7 +111,7 @@ def gtext(id_, n, size, color='W', static=None, extra='', align='center', **pl):
             ch = static[k].upper()
             g = ' g%d' % ord(ch if ch in CHARSET else '?')
         kids.append(P('%s_%d' % (id_, k) if id_ and static is None else None, 'G' + g))
-    if id_ and static is None: TEXT_SLOTS[id_] = n; TEXT_ALIGN[id_] = align
+    if id_ and static is None: TEXT_SLOTS[id_] = n; TEXT_ALIGN[id_] = align; TEXT_SIZE[id_] = size
     cls = 'Txt s%s c%s' % (size, color) + (' ' + extra if extra else '')
     cls += ' ' + place(w=row_w(n, size), h=SIZES[size], **pl)
     return P(id_, cls, kids)
@@ -323,6 +324,11 @@ for i in range(MMCELLS):
     c = i * (MM // MMCELLS) + MM // MMCELLS / 2          # centre of picture pixel i
     rule('.Dot.x%d' % i, transform='translatex(%dpx)' % int(round(c - DOT / 2)))
     rule('.DotSq.y%d' % i, transform='translatey(%dpx)' % int(round(c - DOT / 2)))
+    # a car dot carries two classes, not four (24 Nov 2026: the layout's class state overflowed on the live server): any x class
+    # shows it, and its colour rides on the y class (y<n>O / T / C = out / T / CT)
+    rule('.Dot.x%d' % i, opacity='1')
+    for suf, col in (('O', PLUM), ('T', ORANGE), ('C', SKYBLUE)):
+        rule('.DotSq.y%d%s' % (i, suf), transform='translatey(%dpx)' % int(round(c - DOT / 2)), background_color=hexc(col))
     rule('.DotL.x%d' % i, transform='translatex(%dpx)' % int(round(c - DOTL / 2)))
     rule('.DotSqL.y%d' % i, transform='translatey(%dpx)' % int(round(c - DOTL / 2)))
 dots = [P('spr_md%d' % k, 'Dot', [P('spr_mdy%d' % k, 'DotSq')]) for k in range(MAXDOTS)]
@@ -563,6 +569,45 @@ screen = P(None, 'Screen', [
     P(None, 'Crt Full'),
 ])
 root = P('spr_root', 'SprRoot', [screen])
+
+# ---------------------------------------------------------------- whole-line pictures (24 Nov 2026)
+# A pixel-text row costs one glyph class per letter for every player, and the layout's class state overflowed on the live
+# server. A line known ahead (data/hud_lines.json, chosen by tools/hud_lines_pick.py from mock runs) is one picture instead:
+# the row panel gets class i<k> (its background, placed like the row's own alignment) and its letter cells stay empty.
+LINES = {}
+_lines_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'hud_lines.json')
+if os.path.exists(_lines_path):
+    _theme = 'neon' if NEON else 'depth' if DEPTH else 'space'
+    os.makedirs(os.path.join(IMGDIR, 'l'), exist_ok=True)
+    def _glyph(ch, col):
+        img = pixfont.render(ch, scale=1, color=col, outline=BLACK)
+        m = pixfont.glyph(ch)
+        for y in range(5, 8):
+            for x in range(8):
+                if m[y, x]: img[y + 1, x + 1, :3] = np.array(shade(col, 0.78), np.uint8)
+        return img
+    for row, text, colcls in json.load(open(_lines_path, encoding='utf-8')).get(_theme, []):
+        if row not in TEXT_SLOTS or len(text) > TEXT_SLOTS[row]: continue
+        ck = colcls[1:] if colcls[:1] == 'c' and colcls[1:] in COLORS else 'W'
+        col = COLORS[ck]
+        k = len(LINES)
+        canvas = np.zeros((10, len(text) * 9 + 1, 4), np.uint8)       # 10 x 10 glyphs, each overlapping the next by one font pixel
+        for i, ch in enumerate(text.upper()):
+            if ch == ' ': continue
+            g = _glyph(ch if ch in CHARSET else '?', col)
+            region = canvas[:, i * 9:i * 9 + 10]
+            a = g[:, :, 3:4].astype(np.float32) / 255.0
+            region[:] = (g * a + region * (1 - a)).astype(np.uint8)
+            region[:, :, 3] = np.maximum(region[:, :, 3], g[:, :, 3])
+        url = save(up(canvas, GS), 'l/i%d.png' % k)
+        size = TEXT_SIZE[row]; n = TEXT_SLOTS[row]
+        W, RW, H = len(text) * adv(size) + SIZES[size] // 10, row_w(n, size), SIZES[size]
+        al = TEXT_ALIGN.get(row, 'center')
+        x0 = 0 if al == 'left' else RW - W if al == 'right' else (RW - W) // 2
+        rule('.Txt.i%d' % k, background_image='url("%s")' % url, background_size='%dpx %dpx' % (W, H),
+             background_repeat='no-repeat', background_position='%dpx 0px' % x0)
+        LINES['%s\t%s\t%s' % (row, text.upper(), colcls)] = k
+    print('hud: %d whole-line pictures (%s)' % (len(LINES), _theme))
 doc = ('<root>\n\t<styles>\n\t\t<include src="file://{resources}/styles/custom_game/%s.css" />\n\t</styles>\n'
        '\t<Panel class="SprWrap" hittest="false">\n' % NAME + P('spr_opts', 'SprOpts', [root]) + '\n\t</Panel>\n</root>\n')
 os.makedirs(os.path.join(OUT, 'panorama/layout/custom_game'), exist_ok=True)
@@ -573,12 +618,12 @@ ids = re.findall(r'id="([^"]+)"', doc)
 assert len(ids) == len(set(ids)), 'duplicate panel ids'
 # classes the script switches on and off must never have a rule of their own (a lone ".Name { }"): the panel getting
 # the class would pick up that rule's layout (the first CS2 test's bug)
-DYNAMIC = re.compile(r'^(st[A-Z]\w*|On|sel|low|ready|boosting|charging|pad|me|T|CT|N|Out|Lead|blink|pulse|pop2?|hit|wreck|nocrt|[lr][12]|p[123]|[xyw]\d+|mm_\w+|pic_\w+|g\d+|c[WYCRGP])$')
+DYNAMIC = re.compile(r'^(st[A-Z]\w*|On|sel|low|ready|boosting|charging|pad|me|T|CT|N|Out|Lead|blink|pulse|pop2?|hit|wreck|nocrt|[lr][12]|p[123]|[xyw]\d+|mm_\w+|pic_\w+|g\d+|i\d+|c[WYCRGP])$')
 lone = [m.group(1) for m in (re.match(r'^\.([\w-]+) \{', c) for c in css) if m]
 bad = sorted(set(c for c in lone if DYNAMIC.match(c)))
 assert not bad, 'switched classes with rules of their own: %s' % bad
 json.dump(sorted(set(ids)), open(os.path.join(OUT, '_gen/hud_ids.json'), 'w'))
-json.dump(dict(slots=TEXT_SLOTS, align=TEXT_ALIGN, charset=CHARSET, colors=sorted(COLORS), mm_cells=MMCELLS, max_dots=MAXDOTS),
+json.dump(dict(slots=TEXT_SLOTS, align=TEXT_ALIGN, charset=CHARSET, colors=sorted(COLORS), mm_cells=MMCELLS, max_dots=MAXDOTS, lines=LINES),
           open(os.path.join(OUT, '_gen/hud_text.json'), 'w'))
 # the layout, for the preview: every pinned class's box
 json.dump(dict(pl=_pl[0]), open(os.path.join(OUT, '_gen/hud_layout.json'), 'w'))

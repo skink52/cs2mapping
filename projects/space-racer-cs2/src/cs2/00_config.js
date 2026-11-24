@@ -101,6 +101,8 @@ const CONFIG = {
   MAX_SOUNDS_PER_TICK: 24,
   SPAWN_BUDGET: 24,              // new props per server tick at most
   HUD_BUDGET: 900,               // HUD changes per server tick at most (pixel text sends one per changed letter)
+  HUD_PACK_BUDGET: 12500,        // bytes the HUD may fill in its layout entity, all players together (24 Nov 2026: the live server crashed
+                                 // when the entity's packed size passed ~16 KB; the script's figure is an estimate, so it keeps a margin)
   STANDINGS_PERIOD: 0.5,         // seconds between standings refreshes
   MINIMAP_DOT_HZ: 8,             // refreshes per second of the other cars' minimap dots (about half of all HUD traffic;
                                  // 4 halves that for a slightly choppier minimap)

@@ -1,0 +1,3718 @@
+{
+"depth": [
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_ctr",
+"MISSED CHECKPOINT",
+"cR"
+],
+[
+"spr_abtxt",
+"E HYDROJET",
+"cW"
+],
+[
+"spr_abtxt",
+"E UNDERTOW",
+"cR"
+],
+[
+"spr_abtxt",
+"E DEPTH CHARGE",
+"cR"
+],
+[
+"spr_abtxt",
+"E HYDROJET",
+"cR"
+],
+[
+"spr_abtxt",
+"E UNDERTOW",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREAM  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_abtxt",
+"E DEPTH CHARGE",
+"cY"
+],
+[
+"spr_abtxt",
+"E INK CLOUD",
+"cY"
+],
+[
+"spr_abtxt",
+"E HYDROJET",
+"cY"
+],
+[
+"spr_lap",
+"FINAL LAP",
+"cR"
+],
+[
+"spr_lob1",
+"THE RACE STARTS AFTER FREEZE TIME",
+"cW"
+],
+[
+"spr_ctr",
+"WRONG WAY",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR - RAM  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_msg",
+"ATTACKS ON: SPINS ARE LIVE",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBURN  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_abtxt",
+"E INK CLOUD",
+"cR"
+],
+[
+"spr_msg",
+"TOO EARLY - ENGINE STALLED",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREAM  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_lob1",
+"RACE OVER - NEXT ONE SOON",
+"cW"
+],
+[
+"spr_abtxt",
+"E DEPTH CHARGE",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR - RAM  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_abtxt",
+"E INK CLOUD",
+"cW"
+],
+[
+"spr_lob1",
+"STARTING...",
+"cW"
+],
+[
+"spr_abtxt",
+"E UNDERTOW",
+"cW"
+],
+[
+"spr_abtxt",
+"E HYDRO ET",
+"cR"
+],
+[
+"spr_msg",
+"IN AN UNDERTOW: DRAGGED BACK",
+"cC"
+],
+[
+"spr_msg",
+"IN AN UNDERTOW: PULLED ALONG",
+"cC"
+],
+[
+"spr_clock",
+"RESULTS",
+"cY"
+],
+[
+"spr_lob3",
+"LANTERN DEEP: RESULTS",
+"cC"
+],
+[
+"spr_abtxt",
+"E DEPTH CH",
+"cR"
+],
+[
+"spr_abtxt",
+"E DEPTH CHA",
+"cR"
+],
+[
+"spr_abtxt",
+"E UNDER OW",
+"cR"
+],
+[
+"spr_msg",
+"UNDERTOW - YOUR SIDE RIDES YOUR WAKE",
+"cC"
+],
+[
+"spr_ctr",
+"WRECKED",
+"cR"
+],
+[
+"spr_msg",
+"GLIDE: W DOWN  S UP  HIT THE RINGS",
+"cC"
+],
+[
+"spr_lob3",
+"JOIN T OR CT TO RACE",
+"cC"
+],
+[
+"spr_abtxt",
+"E DEPTH CHAR",
+"cR"
+],
+[
+"spr_abtxt",
+"E DEPTH CHARG",
+"cR"
+],
+[
+"spr_msg",
+"!! SERPENT AHEAD !!",
+"cC"
+],
+[
+"spr_clock",
+"GRID",
+"cY"
+],
+[
+"spr_ctr",
+"LANTERN DEEP",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBURN  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_lob3",
+"ABYSS DROP: RESULTS",
+"cC"
+],
+[
+"spr_ctr",
+"MISSED CHECKPO",
+"cR"
+],
+[
+"spr_msg",
+"INK CLOUD - THEY CAN'T SEE OR STEER",
+"cC"
+],
+[
+"spr_ctr",
+"ABYSS DROP",
+"cY"
+],
+[
+"spr_ctr",
+"GO!",
+"cG"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT",
+""
+],
+[
+"spr_vn0",
+"KELP CANYON",
+"cW"
+],
+[
+"spr_ctr",
+"MISSED CHECKP",
+"cR"
+],
+[
+"spr_msg",
+"YOUR CAR: METEOR - E DEPTH CHARGE",
+"cC"
+],
+[
+"spr_ctr",
+"MISSED CHECKPOI",
+"cR"
+],
+[
+"spr_msg",
+"YOUR CAR: BASTION - E UNDERTOW",
+"cC"
+],
+[
+"spr_msg",
+"YOUR CAR: HORNET - E INK CLOUD",
+"cC"
+],
+[
+"spr_lob3",
+"THE WRECK: RESULTS",
+"cC"
+],
+[
+"spr_ctr",
+"VENT FIELD",
+"cY"
+],
+[
+"spr_ctr",
+"MISSED CHECKPOIN",
+"cR"
+],
+[
+"spr_ctr",
+"THE WRECK",
+"cY"
+],
+[
+"spr_ctr",
+"KELP CANYON",
+"cY"
+],
+[
+"spr_ctr",
+"FELL OFF",
+"cR"
+],
+[
+"spr_msg",
+"HYDROJET - OVER EVERY HAZARD",
+"cC"
+],
+[
+"spr_msg",
+"YOUR CAR: COMET - E HYDROJET",
+"cC"
+],
+[
+"spr_lob3",
+"CORAL CROWN: RESULTS",
+"cC"
+],
+[
+"spr_lob3",
+"VOTES SO FAR: ABYSS DROP",
+"cC"
+],
+[
+"spr_lob3",
+"NEXT: CORAL CROWN",
+"cC"
+],
+[
+"spr_ctr",
+"MI  ED CHECKP",
+"cR"
+],
+[
+"spr_ctr",
+"WR NG WAY",
+"cR"
+],
+[
+"spr_vn1",
+"ABYSS DROP",
+"cW"
+],
+[
+"spr_ctr",
+"M   ED CHECKP",
+"cR"
+],
+[
+"spr_ctr",
+"MIS ED CHECKP",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT ON",
+""
+],
+[
+"spr_vn3",
+"LANTERN DEEP",
+"cW"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT ONE  (",
+""
+],
+[
+"spr_ctr",
+"ED CH CKP",
+"cR"
+],
+[
+"spr_lob3",
+"VENT FIELD: RESULTS",
+"cC"
+],
+[
+"spr_vn2",
+"ABYSS DROP",
+"cW"
+],
+[
+"spr_lob3",
+"KELP CANYON: RESULTS",
+"cC"
+],
+[
+"spr_lob3",
+"NEXT: KELP CANYON",
+"cC"
+],
+[
+"spr_vn1",
+"THE WRECK",
+"cW"
+],
+[
+"spr_ctr",
+"M   ED CH CKP",
+"cR"
+],
+[
+"spr_ctr",
+"MI  ED CH CKP",
+"cR"
+],
+[
+"spr_msg",
+"CAMERA: NEAR  (!CAM HIGH/FAR/NEAR)",
+"cC"
+],
+[
+"spr_ctr",
+"ED CHECKP",
+"cR"
+],
+[
+"spr_ctr",
+"MIS ED CH CKP",
+"cR"
+],
+[
+"spr_msg",
+"!! MANTA AHEAD !!",
+"cC"
+],
+[
+"spr_msg",
+"!! WHALE AHEAD !!",
+"cC"
+],
+[
+"spr_lob3",
+"NEXT: VENT FIELD",
+"cC"
+],
+[
+"spr_vn2",
+"THE WRECK",
+"cW"
+],
+[
+"spr_msg",
+"MUSIC: ON FOR THE WHOLE SERVER",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHANG",
+""
+],
+[
+"spr_ctr",
+"CORAL CROWN",
+"cY"
+],
+[
+"spr_ctr",
+"MISSED CH CKP",
+"cR"
+],
+[
+"spr_msg",
+"CAMERA TILT OFF   (!TILT)",
+"cC"
+],
+[
+"spr_lob3",
+"NEXT: THE WRECK",
+"cC"
+],
+[
+"spr_msg",
+"CAMERA TILT ON   (!TILT)",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (",
+""
+],
+[
+"spr_msg",
+"NEXT RACE: METEOR - RAM",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRI",
+""
+],
+[
+"spr_msg",
+"SCANLINES OFF   (!CRT)",
+"cC"
+],
+[
+"spr_msg",
+"YOUR CAR: METEOR - RAM",
+"cC"
+],
+[
+"spr_msg",
+"SCANLINES ON   (!CRT)",
+"cC"
+],
+[
+"spr_msg",
+"DEPTH CHARGE DROPPED",
+"cC"
+],
+[
+"spr_msg",
+"YOUR CAR: HORNET - E",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT",
+""
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN TH",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIF",
+""
+],
+[
+"spr_lob2",
+"OUR CAR: BASTION - SLIPSTREAM  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHAN",
+""
+],
+[
+"spr_lob3",
+"LANTERN DEEP: LEADER B",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHA",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREAM  (R TO CHA",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO C",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO",
+""
+],
+[
+"spr_ctr",
+"OUT OF BOUNDS",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R",
+""
+],
+[
+"spr_ctr",
+"MISSED CH",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU AR",
+""
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT O",
+""
+],
+[
+"spr_lob3",
+"LANTERN DEEP: LE",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHAR",
+""
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEX",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHA",
+""
+],
+[
+"spr_lob3",
+"NEXT: VENT YSS DROP: RESULTS",
+"cC"
+],
+[
+"spr_vn1",
+"ABYSS DROP",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CH",
+""
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE N",
+""
+],
+[
+"spr_lob2",
+"RIFT CHARGE  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBUR",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT C",
+""
+],
+[
+"spr_msg",
+"YOUR CAR: HOR",
+"cC"
+],
+[
+"spr_vn2",
+"THE WRECK",
+"cY"
+],
+[
+"spr_vn3",
+"LANTERN",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERB",
+""
+],
+[
+"spr_lob3",
+"LANTERN DEEP: LEADER BOT",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HO",
+""
+],
+[
+"spr_lob3",
+"LANTERN DEEP: LEADER BO",
+""
+],
+[
+"spr_msg",
+"YOUR CAR: HO",
+"cC"
+],
+[
+"spr_sub",
+"WATCHING LAT",
+""
+],
+[
+"spr_vn3",
+"LANTERN DEEP",
+""
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN T",
+""
+],
+[
+"spr_lob1",
+"STARTING...FREEZE TIME",
+"cW"
+],
+[
+"spr_msg",
+"IN AN UNDERTOW: PULLED",
+"cC"
+],
+[
+"spr_vn2",
+"THE WREC",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - D",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR - R",
+""
+],
+[
+"spr_lob3",
+"JOIN T OR CT TO RACE",
+""
+],
+[
+"spr_lob3",
+"VOTED: KELP CANYON -",
+""
+],
+[
+"spr_abtxt",
+"E HYDROJET",
+""
+],
+[
+"spr_lob1",
+"STAR ING..",
+"cW"
+],
+[
+"spr_lob3",
+"JOIN T OR CT TO RAC",
+""
+],
+[
+"spr_lob3",
+"LANTERN DEEP: RESUL",
+""
+],
+[
+"spr_sub",
+"EXT  E ARENA  R CAR",
+"cW"
+],
+[
+"spr_vn3",
+"VENT FIELD",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET -",
+""
+],
+[
+"spr_lob3",
+"JOIN T OR CT TO RA",
+""
+],
+[
+"spr_msg",
+"YOUR CAR: HORNET -",
+"cC"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR:",
+""
+],
+[
+"spr_lob3",
+"JOIN T OR",
+""
+],
+[
+"spr_lob3",
+"NEXT: THE WRECK -",
+""
+],
+[
+"spr_msg",
+"HIT BY THE WHALE!",
+"cC"
+],
+[
+"spr_vn1",
+"ABYSS DRO",
+""
+],
+[
+"spr_vn2",
+"THE W",
+""
+],
+[
+"spr_lob2",
+"D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_lob2",
+"M  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR",
+""
+],
+[
+"spr_lob3",
+"NEXT: VENT FIELD",
+""
+],
+[
+"spr_msg",
+"ATTACKS ON: SPIN",
+"cC"
+],
+[
+"spr_lob1",
+"RACE ON - YOU A",
+""
+],
+[
+"spr_lob3",
+"ABYSS DROP: LEA",
+""
+],
+[
+"spr_abtxt",
+"E DEPTH CHARGE",
+""
+],
+[
+"spr_abtxt",
+"E HEPTH CHARGE",
+"cY"
+],
+[
+"spr_lob3",
+"JOIN T OR CT T",
+""
+],
+[
+"spr_msg",
+"!! WHALE AHEAD",
+"cC"
+],
+[
+"spr_msg",
+"!! WHALE AHEA",
+"cC"
+],
+[
+"spr_abtxt",
+"E DEPTH CHAR",
+""
+],
+[
+"spr_ctr",
+"MISSED CHECK",
+"cR"
+],
+[
+"spr_lob3",
+"LANTERN DEEP",
+""
+],
+[
+"spr_sub",
+"ARENA  R CAR",
+"cW"
+],
+[
+"spr_vn3",
+"LANTERN DEEP",
+"cY"
+],
+[
+"spr_abtxt",
+"E DEP H CHA",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - Y",
+""
+],
+[
+"spr_msg",
+"!! WHALE AH",
+"cC"
+],
+[
+"spr_vn0",
+"KELP CANYON",
+"cY"
+],
+[
+"spr_vn3",
+"LANTER",
+""
+],
+[
+"spr_abtxt",
+"E HYD O ET",
+"cR"
+],
+[
+"spr_abtxt",
+"E HYD OJET",
+"cR"
+],
+[
+"spr_abtxt",
+"E INDERTOW",
+"cW"
+],
+[
+"spr_abtxt",
+"E UND RTOW",
+"cR"
+],
+[
+"spr_ctr",
+"MISSED CHE",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR",
+""
+],
+[
+"spr_lob3",
+"LANTERN DE",
+""
+],
+[
+"spr_vn1",
+"ABYSS DROP",
+""
+],
+[
+"spr_vn3",
+"VENT FIELD",
+"cY"
+],
+[
+"spr_abtxt",
+"ATTACKS I",
+""
+],
+[
+"spr_lob1",
+"THE R",
+""
+],
+[
+"spr_msg",
+"WRECKED -",
+"cC"
+],
+[
+"spr_vn2",
+"THE WRECK",
+""
+],
+[
+"spr_vn3",
+"LANTERN D",
+""
+],
+[
+"spr_ctr",
+"D CHECKP",
+"cR"
+],
+[
+"spr_ctr",
+"MISSED C",
+"cR"
+],
+[
+"spr_lap",
+"LAAL LAP",
+"cR"
+],
+[
+"spr_lob3",
+"JOIN T O",
+""
+],
+[
+"spr_vn0",
+"KELP CAN",
+""
+],
+[
+"spr_clock",
+"RESULTS",
+"cW"
+],
+[
+"spr_ctr",
+"WRONG W",
+"cR"
+],
+[
+"spr_lob2",
+"ONFIRM)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CA",
+""
+],
+[
+"spr_lob3",
+"ABYSS D",
+""
+],
+[
+"spr_lob3",
+"THE WRE",
+""
+],
+[
+"spr_sub",
+"WATCHIN",
+""
+],
+[
+"spr_sub",
+"YOU STA",
+""
+],
+[
+"spr_vf",
+"TOP",
+""
+],
+[
+"spr_vn1",
+"ABYSS D",
+""
+],
+[
+"spr_vn2",
+"THE",
+""
+],
+[
+"spr_vn2",
+"THE WRE",
+""
+],
+[
+"spr_vn3",
+"VEN",
+""
+],
+[
+"spr_ctr",
+"MISSED",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR C",
+""
+],
+[
+"spr_sub",
+"YOU ST",
+""
+],
+[
+"spr_vn0",
+"KELP C",
+""
+],
+[
+"spr_vn2",
+"THE WR",
+""
+],
+[
+"spr_abtxt",
+"HARGE",
+"cY"
+],
+[
+"spr_abtxt",
+"ROJET",
+"cY"
+],
+[
+"spr_ctr",
+"WRO",
+"cR"
+],
+[
+"spr_vn1",
+"ABYSS",
+""
+],
+[
+"spr_ctr",
+"ED C",
+"cR"
+],
+[
+"spr_lob3",
+"LANT",
+""
+],
+[
+"spr_sub",
+"WATC",
+"cW"
+],
+[
+"spr_vn0",
+"KELP",
+""
+],
+[
+"spr_vn1",
+"ABYS",
+""
+],
+[
+"spr_vn3",
+"LANT",
+""
+],
+[
+"spr_vn3",
+"VENT",
+""
+],
+[
+"spr_abtxt",
+"E U",
+""
+],
+[
+"spr_ctr",
+"MIS",
+"cR"
+],
+[
+"spr_lob2",
+"YOU",
+""
+],
+[
+"spr_vf",
+"YOU",
+""
+],
+[
+"spr_vn1",
+"ABY",
+""
+]
+],
+"neon": [
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_abtxt",
+"E LIGHT TRAIL",
+"cY"
+],
+[
+"spr_abtxt",
+"E OVERCLOCK",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREAM  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_ctr",
+"MISSED CHECKPOINT",
+"cR"
+],
+[
+"spr_lap",
+"FINAL LAP",
+"cR"
+],
+[
+"spr_abtxt",
+"E FIREWALL",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR - RAM  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_lob1",
+"THE RACE STARTS AFTER FREEZE TIME",
+"cW"
+],
+[
+"spr_abtxt",
+"E OVERCLOCK",
+"cY"
+],
+[
+"spr_ctr",
+"WRONG WAY",
+"cR"
+],
+[
+"spr_abtxt",
+"E EMP",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_abtxt",
+"E FIREWALL",
+"cR"
+],
+[
+"spr_msg",
+"ATTACKS ON: SPINS ARE LIVE",
+"cC"
+],
+[
+"spr_abtxt",
+"E LIGHT TRAIL",
+"cR"
+],
+[
+"spr_abtxt",
+"E EMP",
+"cY"
+],
+[
+"spr_msg",
+"TOO EARLY - ENGINE STALLED",
+"cC"
+],
+[
+"spr_abtxt",
+"E OVERCLOCK",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREAM  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_abtxt",
+"E FIR",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBURN  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_lob1",
+"RACE OVER - NEXT ONE SOON",
+"cW"
+],
+[
+"spr_abtxt",
+"E LIGHT TRAIL",
+"cW"
+],
+[
+"spr_msg",
+"CUT ACROSS A BOOST TRAIL",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR - RAM  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_abtxt",
+"E FIREWALL",
+"cW"
+],
+[
+"spr_lob1",
+"STARTING...",
+"cW"
+],
+[
+"spr_lob3",
+"VOID HOP: RESULTS",
+"cC"
+],
+[
+"spr_lob3",
+"DATA STREAM: RESULTS",
+"cC"
+],
+[
+"spr_abtxt",
+"E EMP",
+"cW"
+],
+[
+"spr_ctr",
+"WRECKED",
+"cR"
+],
+[
+"spr_clock",
+"RESULTS",
+"cY"
+],
+[
+"spr_ctr",
+"ED CH CKP",
+"cR"
+],
+[
+"spr_abtxt",
+"E OVE",
+"cR"
+],
+[
+"spr_ctr",
+"WR NG WAY",
+"cR"
+],
+[
+"spr_lob3",
+"OVERCLOCK: RESULTS",
+"cC"
+],
+[
+"spr_ctr",
+"ED CHECKP",
+"cR"
+],
+[
+"spr_clock",
+"GRID",
+"cY"
+],
+[
+"spr_lob3",
+"JOIN T OR CT TO RACE",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE",
+""
+],
+[
+"spr_abtxt",
+"E OVERCLOC",
+"cR"
+],
+[
+"spr_msg",
+"LIGHT TRAIL - THEY BOUNCE OFF IT",
+"cC"
+],
+[
+"spr_ctr",
+"GRID CIRCUIT",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARG",
+""
+],
+[
+"spr_ctr",
+"SKYLINE DIVE",
+"cY"
+],
+[
+"spr_msg",
+"FLIGHT: W DOWN  S UP  HIT THE RINGS",
+"cC"
+],
+[
+"spr_ctr",
+"GO!",
+"cG"
+],
+[
+"spr_msg",
+"YOUR CAR: HORNET - E LIGHT TRAIL",
+"cC"
+],
+[
+"spr_msg",
+"FIREWALL UP - YOUR SIDE PASSES",
+"cC"
+],
+[
+"spr_msg",
+"YOUR CAR: BASTION - E FIREWALL",
+"cC"
+],
+[
+"spr_abtxt",
+"E LIGHT TRA",
+"cR"
+],
+[
+"spr_ctr",
+"PULSE CITY",
+"cY"
+],
+[
+"spr_ctr",
+"VOID HOP",
+"cY"
+],
+[
+"spr_ctr",
+"MI  ED CHECKP",
+"cR"
+],
+[
+"spr_ctr",
+"MISSED CHECKPOI",
+"cR"
+],
+[
+"spr_ctr",
+"OVERCLOCK",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBURN  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_abtxt",
+"E FIREW LL",
+"cW"
+],
+[
+"spr_abtxt",
+"E LIGHT TRAI",
+"cR"
+],
+[
+"spr_abtxt",
+"E LIG",
+"cR"
+],
+[
+"spr_abtxt",
+"E FIREW LL",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET   DRIFT CHARGE  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_ctr",
+"WRONG WA",
+"cR"
+],
+[
+"spr_abtxt",
+"E OVERC OC",
+"cR"
+],
+[
+"spr_lob3",
+"NEXT: PULSE CITY",
+"cC"
+],
+[
+"spr_clock",
+"ULTS",
+"cY"
+],
+[
+"spr_abtxt",
+"E FIR",
+"cW"
+],
+[
+"spr_ctr",
+"M   ED CHECKP",
+"cR"
+],
+[
+"spr_ctr",
+"MISSED CHEC",
+"cR"
+],
+[
+"spr_msg",
+"ATTACKS UNLOC",
+"cC"
+],
+[
+"spr_ctr",
+"MISSED CHECKPOIN",
+"cR"
+],
+[
+"spr_msg",
+"YOUR CAR: METEOR - E EMP",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTIO    SLIPSTREAM  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT ON",
+""
+],
+[
+"spr_abtxt",
+"E LIGHT TR",
+"cR"
+],
+[
+"spr_lob3",
+"NEXT: GRID CIRCUIT",
+"cC"
+],
+[
+"spr_abtxt",
+"E FIRE",
+"cR"
+],
+[
+"spr_lob3",
+"PULSE CITY: RESULTS",
+"cC"
+],
+[
+"spr_ctr",
+"MISSED CHECKPO",
+"cR"
+],
+[
+"spr_abtxt",
+"E OVER",
+"cR"
+],
+[
+"spr_msg",
+"YOUR CAR: COMET - E OVERCLOCK",
+"cC"
+],
+[
+"spr_ctr",
+"WRONG W",
+"cR"
+],
+[
+"spr_lob2",
+"CAR  HORNET - DRIFT CH RG   (A / D, E TO CONFIR",
+"cY"
+],
+[
+"spr_abtxt",
+"E OVERC OCK",
+"cR"
+],
+[
+"spr_ctr",
+"DATA STREAM",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHANG",
+""
+],
+[
+"spr_lob3",
+"VOTED  PULSE  ITY     LAPS",
+"cC"
+],
+[
+"spr_lob3",
+"VOTED: PULSE  ITY     LAPS",
+"cC"
+],
+[
+"spr_msg",
+"ATTACKS UNLO",
+"cC"
+],
+[
+"spr_ctr",
+"MI  ED CH CKP",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT O",
+""
+],
+[
+"spr_msg",
+"ATTACKS ON: S",
+"cC"
+],
+[
+"spr_sub",
+"WATCHIN",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO C",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT",
+""
+],
+[
+"spr_sub",
+"WATCHI",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREA",
+""
+],
+[
+"spr_abtxt",
+"EMP - FRIED",
+"cR"
+],
+[
+"spr_sub",
+"WATCHING LAT",
+"cW"
+],
+[
+"spr_vn0",
+"GRID CIRCUIT",
+"cY"
+],
+[
+"spr_ctr",
+"M   ED CH CKP",
+"cR"
+],
+[
+"spr_ctr",
+"MISSED CHECKP",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR - RAM  (R T",
+""
+],
+[
+"spr_sub",
+"WATCHING L",
+"cW"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT ONE  (",
+""
+],
+[
+"spr_lob3",
+"NEXT: VOID HOP",
+"cC"
+],
+[
+"spr_abtxt",
+"E FIRE",
+"cW"
+],
+[
+"spr_msg",
+"CAMERA: NEAR  (!CAM HIGH/FAR/NEAR)",
+"cC"
+],
+[
+"spr_sub",
+"WATCHING",
+"cW"
+],
+[
+"spr_abtxt",
+"E OVERCLO",
+"cR"
+],
+[
+"spr_ctr",
+"OUT OF BOUNDS",
+"cR"
+],
+[
+"spr_ctr",
+"WRONG",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT ONE",
+""
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT ONE",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBURN  (R T",
+""
+],
+[
+"spr_sub",
+"WATCHING LATE",
+"cW"
+],
+[
+"spr_lob2",
+"CAR  BASTIO  - SLIPSTR AM   A / D, E TO CONFIRM",
+"cY"
+],
+[
+"spr_ctr",
+"FELL OFF",
+"cR"
+],
+[
+"spr_msg",
+"ATTACKS UNLOCK",
+"cC"
+],
+[
+"spr_abtxt",
+"E OVERC OC",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBURN  (R",
+""
+],
+[
+"spr_lob3",
+"VOTES SO FAR: SKYLI",
+""
+],
+[
+"spr_msg",
+"ATTACKS UNL",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHANGE",
+""
+],
+[
+"spr_msg",
+"CUT ACROSS A BOOST TRAI",
+"cC"
+],
+[
+"spr_vn0",
+"GRID CIRCUIT",
+"cW"
+],
+[
+"spr_msg",
+"MUSIC: ON FOR THE WHOLE SERVER",
+"cC"
+],
+[
+"spr_ctr",
+"MIS ED CHECKP",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHAN",
+""
+],
+[
+"spr_msg",
+"CUT ACROSS A BO",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHA",
+""
+],
+[
+"spr_abtxt",
+"E LIGHT T",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CH",
+""
+],
+[
+"spr_msg",
+"ATTACKS ON:",
+"cC"
+],
+[
+"spr_msg",
+"EMP - NOBODY IN RANGE",
+"cC"
+],
+[
+"spr_ctr",
+"WRO",
+"cR"
+],
+[
+"spr_msg",
+"T ACROSS A BOOST TRA",
+"cC"
+],
+[
+"spr_sub",
+"WATCH",
+"cW"
+],
+[
+"spr_lob3",
+"VOTES SO FAR: SKYLINE DIVE",
+"cC"
+],
+[
+"spr_abtxt",
+"E OVERCLOC",
+"cW"
+],
+[
+"spr_ctr",
+"MISSED CHE",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R T",
+""
+],
+[
+"spr_msg",
+"CAMERA TILT OFF   (!TILT)",
+"cC"
+],
+[
+"spr_abtxt",
+"E LIGH",
+"cR"
+],
+[
+"spr_sub",
+"WATCHING LA",
+"cW"
+],
+[
+"spr_msg",
+"CAMERA TILT ON   (!TILT)",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (",
+""
+],
+[
+"spr_msg",
+"NEXT RACE: METEOR - RAM",
+"cC"
+],
+[
+"spr_ctr",
+"RONG WAY",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRI",
+""
+],
+[
+"spr_msg",
+"ATTACKS UN",
+"cC"
+],
+[
+"spr_msg",
+"SCANLINES OFF   (!CRT)",
+"cC"
+],
+[
+"spr_msg",
+"YOUR CAR: METEOR - RAM",
+"cC"
+],
+[
+"spr_abtxt",
+"E LIGHT",
+"cR"
+],
+[
+"spr_ctr",
+"MIS ED CH CKP",
+"cR"
+],
+[
+"spr_msg",
+"CUT ACROSS A BOO",
+"cC"
+],
+[
+"spr_msg",
+"SCANLINES ON   (!CRT)",
+"cC"
+],
+[
+"spr_ctr",
+"ED C",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - D",
+""
+],
+[
+"spr_lob3",
+"VOTES SO FAR: SKYLIN",
+""
+],
+[
+"spr_msg",
+"ATTACKS ON: SPINS AR",
+"cC"
+],
+[
+"spr_abtxt",
+"E OVERCL",
+"cR"
+],
+[
+"spr_ctr",
+"MISSED CH",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR - RAM  (R TO",
+""
+],
+[
+"spr_abtxt",
+"E LIGHT TRAI",
+""
+],
+[
+"spr_ctr",
+"MISSED CHECK",
+"cR"
+],
+[
+"spr_abtxt",
+"E FIREW",
+"cR"
+],
+[
+"spr_abtxt",
+"E OVERC",
+"cR"
+],
+[
+"spr_ctr",
+"ED CH C",
+"cR"
+],
+[
+"spr_msg",
+"ATTACKS ON: SPINS A",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET    RIFT CHARGE  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_msg",
+"ATTACKS ON: SP",
+"cC"
+],
+[
+"spr_ctr",
+"MISSED",
+"cR"
+],
+[
+"spr_lap",
+"LAP",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT C",
+""
+],
+[
+"spr_abtxt",
+"E FIREW",
+""
+],
+[
+"spr_abtxt",
+"E OVERC",
+""
+],
+[
+"spr_ctr",
+"WR NG W",
+"cR"
+],
+[
+"spr_ctr",
+"WRON",
+"cR"
+],
+[
+"spr_lob2",
+"CAR  BASTION - SLIPST  A   (A / D, E TO CONFIRM",
+"cY"
+],
+[
+"spr_lob2",
+"CAR: HORNET - DRIFT CH RG   (A / D, E TO CONFIR",
+"cY"
+],
+[
+"spr_lob2",
+"R CA : COMET - AFTERBU N   A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_lob2",
+"UR C R: COMET - AFTERB  N  (A / D, E TO CONFIRM",
+"cY"
+],
+[
+"spr_abtxt",
+"E FIRE",
+"cY"
+],
+[
+"spr_abtxt",
+"E FIREW LL",
+"cY"
+],
+[
+"spr_lob2",
+"CAR  HORNET - DRI T CH RG   (A / D, E TO CONFI",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHANGE)",
+""
+],
+[
+"spr_msg",
+"CUT ACROSS A",
+"cC"
+],
+[
+"spr_lob2",
+"OUR CAR: METE R - RAM  (A / D, E TO CONF RM)",
+"cY"
+],
+[
+"spr_ctr",
+"D CHECKP",
+"cR"
+],
+[
+"spr_ctr",
+"ED CHECK",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNE",
+""
+],
+[
+"spr_msg",
+"CUT ACROSS A BOOST TRA",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHA",
+""
+],
+[
+"spr_abtxt",
+"E FIR",
+"cY"
+],
+[
+"spr_abtxt",
+"E OVERC OCK",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DR",
+""
+],
+[
+"spr_msg",
+"CUT ACROSS A B",
+"cC"
+],
+[
+"spr_lob1",
+"THE RACE STARTS AFTE",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO",
+""
+],
+[
+"spr_abtxt",
+"E OV",
+""
+],
+[
+"spr_abtxt",
+"E OVERCLOC",
+""
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE I",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR - RAM  (R TO CHANGE)",
+""
+],
+[
+"spr_msg",
+"ACKS ON: SPIN",
+"cC"
+],
+[
+"spr_msg",
+"ATTACKS ON",
+"cC"
+],
+[
+"spr_abtxt",
+"E FIREWA",
+"cW"
+],
+[
+"spr_abtxt",
+"E FIREWA",
+""
+],
+[
+"spr_ctr",
+"ED CHE",
+"cR"
+],
+[
+"spr_ctr",
+"PULSE CI",
+"cY"
+],
+[
+"spr_vn0",
+"OVERCLOC",
+""
+],
+[
+"spr_abtxt",
+"E L",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREAM  (R",
+""
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR:",
+""
+],
+[
+"spr_lob3",
+"OVERCLOCK: LEADER",
+""
+],
+[
+"spr_msg",
+"ATTACKS O",
+"cC"
+],
+[
+"spr_msg",
+"CUT ACROSS A BOOS",
+"cC"
+],
+[
+"spr_abtxt",
+"E LIGH",
+""
+],
+[
+"spr_abtxt",
+"E LIGHT",
+""
+],
+[
+"spr_abtxt",
+"E OVERCLOCK",
+""
+],
+[
+"spr_ctr",
+"WR N",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU AR",
+""
+],
+[
+"spr_lob1",
+"THE RACE STARTS AFTER FREEZE TI",
+""
+],
+[
+"spr_lob2",
+"T - DRIFT CHARGE  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET",
+""
+],
+[
+"spr_lob3",
+"OVERCL",
+""
+],
+[
+"spr_lob3",
+"OVERCLOCK: LEADE",
+""
+],
+[
+"spr_msg",
+"A  ACKS ON: SPIN",
+"cC"
+],
+[
+"spr_msg",
+"AT ACKS ON: SPIN",
+"cC"
+],
+[
+"spr_msg",
+"ATTACKS UNLOCK I",
+"cC"
+],
+[
+"spr_sub",
+"VOTE THE NEXT TRACK: W / S  (YO",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREAM",
+""
+],
+[
+"spr_abtxt",
+"E OVE",
+"cW"
+],
+[
+"spr_abtxt",
+"E OVERCL",
+""
+],
+[
+"spr_ctr",
+"ED CH CK",
+"cR"
+],
+[
+"spr_ctr",
+"MISSED C",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHAR",
+""
+],
+[
+"spr_msg",
+"FRIED BY AN EMP",
+"cC"
+],
+[
+"spr_abtxt",
+"E FI",
+""
+],
+[
+"spr_ctr",
+"MIS    CHE",
+"cR"
+],
+[
+"spr_ctr",
+"MISS   CHE",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEX",
+""
+],
+[
+"spr_msg",
+"CUT ACROSS",
+"cC"
+],
+[
+"spr_sub",
+"WATC",
+"cW"
+],
+[
+"spr_ctr",
+"CHE",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NE",
+""
+]
+],
+"space": [
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_ctr",
+"MISSED CHECKPOINT",
+"cR"
+],
+[
+"spr_abtxt",
+"E SEEKER BOLT",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREAM  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_abtxt",
+"E SHOCKWAVE",
+"cR"
+],
+[
+"spr_abtxt",
+"E NOVA BURN",
+"cR"
+],
+[
+"spr_lob1",
+"THE RACE STARTS AFTER FREEZE TIME",
+"cW"
+],
+[
+"spr_abtxt",
+"E NOVA BURN",
+"cY"
+],
+[
+"spr_abtxt",
+"E SHOCKWAVE",
+"cY"
+],
+[
+"spr_lap",
+"FINAL LAP",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR - RAM  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_abtxt",
+"E AEGIS",
+"cY"
+],
+[
+"spr_ctr",
+"WRONG WAY",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_abtxt",
+"E AEGIS",
+"cR"
+],
+[
+"spr_msg",
+"ATTACKS ON: SPINS ARE LIVE",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBURN  (R TO CHANGE)",
+"cY"
+],
+[
+"spr_abtxt",
+"E SEEKER BOLT",
+"cR"
+],
+[
+"spr_lob1",
+"RACE OVER - NEXT ONE SOON",
+"cW"
+],
+[
+"spr_msg",
+"TOO EARLY - ENGINE STALLED",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREAM  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_abtxt",
+"E NOVA BURN",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR - RAM  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_lob1",
+"STARTING...",
+"cW"
+],
+[
+"spr_abtxt",
+"E AEGIS",
+"cW"
+],
+[
+"spr_clock",
+"RESULTS",
+"cY"
+],
+[
+"spr_ctr",
+"WRECKED",
+"cR"
+],
+[
+"spr_lob3",
+"NULL GAP: RESULTS",
+"cC"
+],
+[
+"spr_abtxt",
+"E AEGI",
+"cR"
+],
+[
+"spr_abtxt",
+"E SHOCKWAVE",
+"cW"
+],
+[
+"spr_clock",
+"GRID",
+"cY"
+],
+[
+"spr_abtxt",
+"E SEEKER BOLT",
+"cW"
+],
+[
+"spr_ctr",
+"SWITCHBACK SPIRE",
+"cY"
+],
+[
+"spr_abtxt",
+"E NOVA",
+"cR"
+],
+[
+"spr_lob3",
+"JOIN T OR CT TO RACE",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBURN  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_lob3",
+"NEXT: SWITCHBACK SPIRE",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHANGE)",
+""
+],
+[
+"spr_abtxt",
+"E NOVA B",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHA",
+""
+],
+[
+"spr_lob3",
+"RINGWORLD: RESULTS",
+"cC"
+],
+[
+"spr_ctr",
+"HAIRPIN HARBOUR",
+"cY"
+],
+[
+"spr_ctr",
+"GO!",
+"cG"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT",
+""
+],
+[
+"spr_ctr",
+"MISSED CHECKPOIN",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHANGE",
+""
+],
+[
+"spr_abtxt",
+"E SHOC",
+"cR"
+],
+[
+"spr_abtxt",
+"E SHOCK",
+"cR"
+],
+[
+"spr_msg",
+"YOUR CAR: BASTION - E AEGIS",
+"cC"
+],
+[
+"spr_msg",
+"YOUR CAR: METEOR - E SHOCKWAVE",
+"cC"
+],
+[
+"spr_ctr",
+"MISSED CHECKP",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CH",
+""
+],
+[
+"spr_msg",
+"YOUR CAR: HORNET - E SEEKER BOLT",
+"cC"
+],
+[
+"spr_ctr",
+"SKYWAY",
+"cY"
+],
+[
+"spr_abtxt",
+"E SEEK",
+"cR"
+],
+[
+"spr_ctr",
+"ED CHECKP",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHA",
+""
+],
+[
+"spr_abtxt",
+"E SHOC WAVE",
+"cR"
+],
+[
+"spr_lob3",
+"VOTES SO FAR: HAIRPIN HARBOUR",
+"cC"
+],
+[
+"spr_clock",
+"ULTS",
+"cY"
+],
+[
+"spr_ctr",
+"RINGWORLD",
+"cY"
+],
+[
+"spr_ctr",
+"MISSED CHECKPO",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBURN",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R TO CHAN",
+""
+],
+[
+"spr_ctr",
+"FELL OFF",
+"cR"
+],
+[
+"spr_ctr",
+"ED CH CKP",
+"cR"
+],
+[
+"spr_abtxt",
+"E NOVA B RN",
+"cR"
+],
+[
+"spr_ctr",
+"OUT OF BOUNDS",
+"cR"
+],
+[
+"spr_lob3",
+"VOTES SO FAR: RINGWORLD",
+"cC"
+],
+[
+"spr_ctr",
+"SOLAR OVAL",
+"cY"
+],
+[
+"spr_ctr",
+"MISSED CHECKPOI",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR - RAM  (R TO C",
+""
+],
+[
+"spr_lob3",
+"VOTES SO FAR: NULL GAP",
+"cC"
+],
+[
+"spr_ctr",
+"WR NG WAY",
+"cR"
+],
+[
+"spr_abtxt",
+"E NOVA",
+"cW"
+],
+[
+"spr_lob3",
+"CROSSWIRE: RESULTS",
+"cC"
+],
+[
+"spr_lob3",
+"SOLAR OVAL: RESULTS",
+"cC"
+],
+[
+"spr_lob3",
+"HELIX: RESULTS",
+"cC"
+],
+[
+"spr_abtxt",
+"E SEEK R BO",
+"cR"
+],
+[
+"spr_lob3",
+"SWITCHBACK SPIRE: RESU",
+""
+],
+[
+"spr_lob3",
+"VOTE : SKYWAY      APS",
+"cC"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT ON",
+""
+],
+[
+"spr_abtxt",
+"E NOVA BU",
+"cR"
+],
+[
+"spr_ctr",
+"WRONG WA",
+"cR"
+],
+[
+"spr_ctr",
+"CROSSWIRE",
+"cY"
+],
+[
+"spr_ctr",
+"M   ED CHECKP",
+"cR"
+],
+[
+"spr_lob1",
+"N THE NEXT ONE",
+"cW"
+],
+[
+"spr_abtxt",
+"E SEEKER BOL",
+"cR"
+],
+[
+"spr_abtxt",
+"E SHOCKW",
+"cR"
+],
+[
+"spr_lob3",
+"VOTES SO FAR: HELI",
+""
+],
+[
+"spr_abtxt",
+"E NOVA",
+"cY"
+],
+[
+"spr_abtxt",
+"E NOVA BUR",
+"cR"
+],
+[
+"spr_abtxt",
+"E SEEK R BOL",
+"cR"
+],
+[
+"spr_msg",
+"YOUR CAR: COMET - E NOVA BURN",
+"cC"
+],
+[
+"spr_lob2",
+"CAR  HORNET - DRIFT CH RG   (A / D, E TO CONFIR",
+"cY"
+],
+[
+"spr_vn0",
+"RINGWORLD",
+"cW"
+],
+[
+"spr_abtxt",
+"E SHOC W",
+"cR"
+],
+[
+"spr_abtxt",
+"E SEEKE",
+"cR"
+],
+[
+"spr_ctr",
+"MI  ED CHECKP",
+"cR"
+],
+[
+"spr_ctr",
+"MISSED CHECK",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTR",
+""
+],
+[
+"spr_lob3",
+"NEXT: SKYWAY",
+"cC"
+],
+[
+"spr_sub",
+"WATCHING LAT",
+"cW"
+],
+[
+"spr_sub",
+"WATCHING LATE",
+"cW"
+],
+[
+"spr_lob3",
+"VOTES SO FAR: CROS",
+""
+],
+[
+"spr_lob3",
+"VOTES SO FAR: NULL",
+""
+],
+[
+"spr_lob3",
+"VOTED: SK",
+""
+],
+[
+"spr_abtxt",
+"E NOVA BURN",
+""
+],
+[
+"spr_abtxt",
+"E SHOC W VE",
+"cR"
+],
+[
+"spr_abtxt",
+"E SHOCKW VE",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTER",
+""
+],
+[
+"spr_sub",
+"WATCHING LA",
+"cW"
+],
+[
+"spr_ctr",
+"MIS ED CHECKP",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET   DRIFT CHARGE  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_abtxt",
+"E SEEKER",
+"cR"
+],
+[
+"spr_msg",
+"AEGIS UP",
+"cC"
+],
+[
+"spr_sub",
+"WATCHING",
+"cW"
+],
+[
+"spr_ctr",
+"WRONG W",
+"cR"
+],
+[
+"spr_msg",
+"ATTACKS",
+"cC"
+],
+[
+"spr_abtxt",
+"E AEGI",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: METEOR - RAM  (R",
+""
+],
+[
+"spr_abtxt",
+"E SEEKER BOL",
+"cY"
+],
+[
+"spr_ctr",
+"MIS    CHE",
+"cR"
+],
+[
+"spr_ctr",
+"MISSED CHE",
+"cR"
+],
+[
+"spr_msg",
+"CAMERA: NEAR  (!CAM HIGH/FAR/NEAR)",
+"cC"
+],
+[
+"spr_sub",
+"WATCHING L",
+"cW"
+],
+[
+"spr_abtxt",
+"E NOVA B",
+"cW"
+],
+[
+"spr_abtxt",
+"E NOVA B",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBU",
+""
+],
+[
+"spr_ctr",
+"HELIX",
+"cY"
+],
+[
+"spr_lob2",
+"UR C R: COMET - AFTERB  N  (A / D, E TO CONFIRM",
+"cY"
+],
+[
+"spr_msg",
+"ATTACKS ON: SPINS ARE LI",
+"cC"
+],
+[
+"spr_ctr",
+"NULL GAP",
+"cY"
+],
+[
+"spr_abtxt",
+"E SHOCKWAV",
+""
+],
+[
+"spr_ctr",
+"MISSED CHEC",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE I",
+""
+],
+[
+"spr_lob3",
+"NEXT: SOLAR OVAL",
+"cC"
+],
+[
+"spr_msg",
+"MUSIC: ON FOR THE WHOLE SERVER",
+"cC"
+],
+[
+"spr_lob2",
+"OUR  AR: METE R - RAM  (A / D, E TO CONF RM)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREAM  (R TO CHANGE",
+""
+],
+[
+"spr_abtxt",
+"E SHOC",
+"cW"
+],
+[
+"spr_abtxt",
+"E SEEK R",
+"cR"
+],
+[
+"spr_clock",
+"RE ULTS",
+"cY"
+],
+[
+"spr_msg",
+"YOUR CAR: METEOR - RAM",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBURN  (R TO CHANGE)",
+""
+],
+[
+"spr_abtxt",
+"E SHOCKWAV",
+"cR"
+],
+[
+"spr_lob1",
+"STAR ING..",
+"cW"
+],
+[
+"spr_abtxt",
+"E SEEKER BO",
+""
+],
+[
+"spr_ctr",
+"WRONG",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBURN  (R TO CHANGE",
+""
+],
+[
+"spr_msg",
+"ATTACK",
+"cC"
+],
+[
+"spr_abtxt",
+"E SHOCK",
+"cW"
+],
+[
+"spr_sub",
+"WATCHIN  HUMAN",
+"cW"
+],
+[
+"spr_sub",
+"WATCHING HUMAN",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPST",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET - AFTERBUR",
+""
+],
+[
+"spr_sub",
+"WATCHI",
+"cW"
+],
+[
+"spr_ctr",
+"MI     CHE",
+"cR"
+],
+[
+"spr_ctr",
+"MISS   CHE",
+"cR"
+],
+[
+"spr_ctr",
+"MISSE  CHE",
+"cR"
+],
+[
+"spr_ctr",
+"MISSED CH",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREAM  (R TO",
+""
+],
+[
+"spr_msg",
+"CAMERA TILT OFF   (!TILT)",
+"cC"
+],
+[
+"spr_abtxt",
+"E SEEKER BO",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT ONE  (",
+""
+],
+[
+"spr_ctr",
+"WRON",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIP",
+""
+],
+[
+"spr_msg",
+"CAMERA TILT ON   (!TILT)",
+"cC"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE  (R",
+""
+],
+[
+"spr_lob2",
+"YOUR CA",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: BAST",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: COME",
+""
+],
+[
+"spr_lob3",
+"VOTED: NULL GA",
+""
+],
+[
+"spr_abtxt",
+"E NOVA BU",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR:",
+""
+],
+[
+"spr_lob3",
+"CROSSWIRE: LEADER",
+""
+],
+[
+"spr_msg",
+"ATTAC",
+"cC"
+],
+[
+"spr_ctr",
+"M      CHE",
+"cR"
+],
+[
+"spr_ctr",
+"RONG WAY",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN T",
+""
+],
+[
+"spr_msg",
+"SCANLINES OFF   (!CRT)",
+"cC"
+],
+[
+"spr_abtxt",
+"E NOV",
+""
+],
+[
+"spr_abtxt",
+"E SHOCKW VE",
+"cY"
+],
+[
+"spr_ctr",
+"M   ED CH CKP",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN THE NEXT O",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHARGE",
+""
+],
+[
+"spr_msg",
+"ATTACKS UNL",
+"cC"
+],
+[
+"spr_msg",
+"SCANLINES ON   (!CRT)",
+"cC"
+],
+[
+"spr_vn2",
+"SWITCHBACK SPIRE",
+"cW"
+],
+[
+"spr_lap",
+"LAP",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - D",
+""
+],
+[
+"spr_lob3",
+"CROSSWIRE: LEADER BO",
+""
+],
+[
+"spr_abtxt",
+"E SHO",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET - DRIFT CHAR",
+""
+],
+[
+"spr_lob3",
+"VOTED: SKYWAY -",
+""
+],
+[
+"spr_msg",
+"ATTACKS O",
+"cC"
+],
+[
+"spr_msg",
+"ATTACKS UNLO",
+"cC"
+],
+[
+"spr_abtxt",
+"E SHOCK",
+"cY"
+],
+[
+"spr_msg",
+"ATTACKS ON",
+"cC"
+],
+[
+"spr_vn0",
+"SOLAR OVAL",
+"cW"
+],
+[
+"spr_lob2",
+"YOUR CAR: HORNET    RIFT CHARGE  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTIO    SLIP TREAM  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTIO    SLIPSTREAM  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_sub",
+"WATCH",
+"cW"
+],
+[
+"spr_abtxt",
+"E SHOC WAVE",
+"cW"
+],
+[
+"spr_abtxt",
+"E SHOCKW VE",
+"cW"
+],
+[
+"spr_lob2",
+"UR CAR: BASTION - SLIPSTREA   (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_msg",
+"ATTACKS ON:",
+"cC"
+],
+[
+"spr_vn1",
+"SKYWAY",
+"cW"
+],
+[
+"spr_abtxt",
+"E NOVA B",
+""
+],
+[
+"spr_ctr",
+"MISSED C",
+"cR"
+],
+[
+"spr_abtxt",
+"E AEGIS",
+""
+],
+[
+"spr_abtxt",
+"E NOVA BU",
+""
+],
+[
+"spr_abtxt",
+"E SHOCKWA",
+"cR"
+],
+[
+"spr_lob2",
+"YOUR CAR: COMET -",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: HOR",
+""
+],
+[
+"spr_lob3",
+"VOTES SO FAR:",
+""
+],
+[
+"spr_msg",
+"ATTA",
+"cC"
+],
+[
+"spr_sub",
+"WATCHIN",
+"cW"
+],
+[
+"spr_vn0",
+"CROSSWIRE",
+"cW"
+],
+[
+"spr_lob2",
+"CAR: HORNET   DRIFT CHARG   (  / D, E TO CONFIRM",
+"cY"
+],
+[
+"spr_lob2",
+"CAR  BASTIO  - SLIPSTR AM   A / D, E TO CONFIRM",
+"cY"
+],
+[
+"spr_lob2",
+"CAR: BASTIO  - SLIPSTR AM   A / D, E TO CONFIRM",
+"cY"
+],
+[
+"spr_lob2",
+"CAR: HORNET - DRIFT CH RG   (A / D, E TO CONFIR",
+"cY"
+],
+[
+"spr_lob2",
+"R CA : COMET - AFTERBU N  (  / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_lob2",
+"UR CAR: COMET - AFTERB  N  (A / D, E TO CONFIRM",
+"cY"
+],
+[
+"spr_lob2",
+"CAR  HOR ET - DRI T CH RG   (A / D, E TO CONFI",
+"cY"
+],
+[
+"spr_lob2",
+"UR C R: C MET -  F ERB  N  (  / D  E TO CONFIR",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTIO",
+""
+],
+[
+"spr_sub",
+"WATCHING H",
+"cW"
+],
+[
+"spr_vn2",
+"SWITCHBACK SPIRE",
+"cY"
+],
+[
+"spr_ctr",
+"WRO",
+"cR"
+],
+[
+"spr_lob1",
+"RACE ON - YOU ARE IN TH",
+""
+],
+[
+"spr_lob2",
+"UR CAR: COMET -  F ERB  N  (  / D  E TO CONFI",
+"cY"
+],
+[
+"spr_lob2",
+"YO R CA : MET O  - RAM  (  /  , E  O CO FIRM)",
+"cY"
+],
+[
+"spr_lob2",
+"YO R CA : METEO  - RAM  (A / D, E TO CONFIRM)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CA : MET O  - RAM  (  /  , E  O CO FIRM)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLI",
+""
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTR AM  (R TO CH NGE)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: BASTION - SLIPSTREAM  (R TO CH NGE)",
+"cY"
+],
+[
+"spr_lob2",
+"YOUR CAR: MET O  - RAM  (  /  , E  O CO FIRM)",
+"cY"
+],
+[
+"spr_lob3",
+"VOTED",
+""
+],
+[
+"spr_msg",
+"ATTACKS ON: SPINS ARE L",
+"cC"
+],
+[
+"spr_msg",
+"NEXT RACE: METEOR - RAM",
+"cC"
+],
+[
+"spr_lob2",
+"OUR  AR: ME E R - RAM  (A / D, E TO C NF RM)",
+"cY"
+],
+[
+"spr_lob2",
+"R CA : COME  - AF ERB  N  (A / D, E TO CONFI",
+"cY"
+],
+[
+"spr_abtxt",
+"E SEEKE",
+"cY"
+],
+[
+"spr_ctr",
+"D CHECKP",
+"cR"
+],
+[
+"spr_ctr",
+"W EC ED",
+"cR"
+]
+]
+}

@@ -35,6 +35,9 @@ const IFR_HUD_LINE_MIN = 1.6, IFR_HUD_LINE_KEEP = 3.5, IFR_HUD_LINE_PAGE = 3, IF
 const IFR_HUD_FOCAL = (typeof CONFIG === 'object' && CONFIG && CONFIG.HUD_FOCAL) || 720;   // px per unit of view tangent at 1080 high (CS2: 90 degrees across 4:3)
 const IFR_HUD_RADAR_CELLS = (IFR_HUD_ON && HUD.radar && HUD.radar.cells) || 24;
 const IFR_HUD_RADAR_DOTS = (IFR_HUD_ON && HUD.radar && HUD.radar.dots) || 64;
+const IFR_HUD_POPS = false;      // the one-shot pop animations (stPop / stPop2): off since 24 Nov 2026 (HUD class state)
+const IFR_HUD_POP_KEEP = new Set(['ifr_hit', 'ifr_hitH', 'ifr_hitK']);   // hit markers only show during their pop: they keep it
+const IFR_HUD_RADAR_MAX = IFR_HUD_RADAR_DOTS;   // radar dots drawn at most: the nearest mechs (the layout has 24, tools/hud.py)
 const IFR_HUD_PRIOS = 4;
 
 // ---------------------------------------------------------------- the contract
@@ -78,7 +81,7 @@ function ifrHudSlot(slot) {
   if (!s) {
     s = { slot, want: new Map(), have: new Map(), wantVar: new Map(), haveVar: new Map(), dirty: [], ladder: new Map(), grid: new Map(),
       num: new Map(), pops: new Map(), memo: new Map(), lineUntil: 0, lineQ: [], lineCur: null, killUntil: 0, xpUntil: 0, deathAt: 0, deathWait: 0, screen: '', team: 0, points: null,
-      pos: null, match: null, capture: false, mech: null, tgt: null, hints: new Set(), cards: {}, spawns: 0, deaths: 0 };
+      pos: null, match: null, capture: false, mech: null, tgt: null, hints: new Set(), cards: {}, spawns: 0, deaths: 0, on: 0, vb: 0 };
     for (let i = 0; i < IFR_HUD_PRIOS; i++) s.dirty.push(new Map());
     ifrHudSlots.set(slot, s);
   }
@@ -93,32 +96,61 @@ function ifrHudLog(msg) {
   else try { Console.Log('[ironframe] ' + msg); } catch (err) { /* no console */ }
 }
 
-// ---------------------------------------------------------------- the layout entity (re-found when it goes away)
-let ifrHudEntity = null, ifrHudWarnedMissing = false;
-function ifrHudEnt() {
-  if (!IFR_HUD_ON) return null;
-  if (ifrHudEntity) {
-    try { if (ifrHudEntity.IsValid()) return ifrHudEntity; } catch (err) { /* fall through */ }
-    ifrHudEntity = null;
+// ---------------------------------------------------------------- the layout entities (re-found when they go away)
+// 24 Nov 2026: CS2 packs each custom_hud_layout entity into a buffer of ~16 KB (the live box crashed past it), shared by every player
+// on that entity. A map may carry copies of the same layout (ifr_hud, ifr_hud2, ifr_hud3...); each player is put on the copy with the
+// fewest players and stays there, so N copies give N times the room. A copy shows nothing to a player it does not serve (the root is
+// hidden until stOn). One copy (no ifr_hud2 in the map) works as before.
+const IFR_HUD_MAX_COPIES = 8;
+let ifrHudLays = [], ifrHudWarnedMissing = false;     // [{ ent, name, slots: Set, onTotal, varBytes, tableBytes, ids: Set, names: Set, capSaid }]
+function ifrHudLayNew(ent, name) { return { ent, name, slots: new Set(), onTotal: 0, varBytes: 0, tableBytes: 0, ids: new Set(), names: new Set(), capSaid: false }; }
+function ifrHudFindLays() {
+  const out = [];
+  for (let k = 1; k <= IFR_HUD_MAX_COPIES; k++) {
+    const name = k === 1 ? IFR_HUD_NAME : IFR_HUD_NAME + k;
+    let e = null; try { e = Entities.FindByName(name)[0]; } catch (err) { e = null; }
+    if (!e || typeof e.SetHasClassForPlayer !== 'function') { if (k === 1) continue; break; }
+    out.push(ifrHudLayNew(e, name));
   }
-  let e = null;
-  try { e = Entities.FindByName(IFR_HUD_NAME)[0]; } catch (err) { e = null; }
-  if (!e || typeof e.SetHasClassForPlayer !== 'function') {
-    if (!ifrHudWarnedMissing) { ifrHudWarnedMissing = true; ifrHudLog('WARNING: no custom_hud_layout named ' + IFR_HUD_NAME + ' - no HUD'); }
-    return null;
-  }
-  ifrHudEntity = e;
-  for (const s of ifrHudSlots.values()) ifrHudMarkAll(s);     // a new entity shows its authored state: redraw every want
-  return e;
+  return out;
 }
-/** map start / script reload: find the layout, reset it for everyone (the mirrors start empty) */
+function ifrHudLaysOk() {
+  if (!IFR_HUD_ON) return false;
+  if (ifrHudLays.length) {
+    let ok = true;
+    for (const L of ifrHudLays) { try { if (!L.ent.IsValid()) ok = false; } catch (err) { ok = false; } }
+    if (ok) return true;
+  }
+  ifrHudLays = ifrHudFindLays();
+  if (!ifrHudLays.length) {
+    if (!ifrHudWarnedMissing) { ifrHudWarnedMissing = true; ifrHudLog('WARNING: no custom_hud_layout named ' + IFR_HUD_NAME + ' - no HUD'); }
+    return false;
+  }
+  for (const s of ifrHudSlots.values()) { s.lay = undefined; ifrHudMarkAll(s); }     // new entities show their authored state: redraw every want
+  return true;
+}
+/** the first layout entity (the test hooks); a player's own copy is ifrHudEntFor */
+function ifrHudEnt() { return ifrHudLaysOk() ? ifrHudLays[0].ent : null; }
+/** the copy serving this player's slot record (put on the copy with the fewest players the first time) */
+function ifrHudLayFor(s) {
+  if (!ifrHudLaysOk()) return null;
+  if (s.lay === undefined || !ifrHudLays[s.lay]) {
+    let best = 0; for (let i = 1; i < ifrHudLays.length; i++) if (ifrHudLays[i].slots.size < ifrHudLays[best].slots.size) best = i;
+    // (test builds only: CONFIG.HUD_TEST_COPY = k puts every new player on copy k, to check a copy other than the first in game)
+    const tc = typeof CONFIG === 'object' && CONFIG ? CONFIG.HUD_TEST_COPY | 0 : 0; if (tc > 0 && tc < ifrHudLays.length) best = tc;
+    s.lay = best; ifrHudLays[best].slots.add(s.slot);
+  }
+  return ifrHudLays[s.lay];
+}
+function ifrHudEntFor(s) { const L = ifrHudLayFor(s); return L ? L.ent : null; }
+/** map start / script reload: find the layouts, reset them for everyone (the mirrors start empty) */
 function ifrHudInit() {
-  ifrHudEntity = null; ifrHudWarnedMissing = false;
-  const e = ifrHudEnt();
-  if (e) { try { e.Reset(); } catch (err) { /* ignore */ } }
-  for (const s of ifrHudSlots.values()) ifrHudMarkAll(s);
-  ifrHudLog('HUD ' + (e ? 'on: ' + IFR_HUD_PANELS.size + ' panel ids (CS2 allows 1024 per layout), budget ' + IFR_HUD_BUDGET + ' writes a tick' : IFR_HUD_ON ? 'MISSING (' + IFR_HUD_NAME + ')' : 'off (no hud.json baked)'));
-  return !!e;
+  ifrHudLays = []; ifrHudWarnedMissing = false;
+  const ok = ifrHudLaysOk();
+  if (ok) for (const L of ifrHudLays) { try { L.ent.Reset(); } catch (err) { /* ignore */ } }
+  for (const s of ifrHudSlots.values()) { s.lay = undefined; ifrHudMarkAll(s); }
+  ifrHudLog('HUD ' + (ok ? 'on: ' + IFR_HUD_PANELS.size + ' panel ids (CS2 allows 1024 per layout), ' + ifrHudLays.length + ' layout cop' + (ifrHudLays.length === 1 ? 'y' : 'ies') + ', budget ' + IFR_HUD_BUDGET + ' writes a tick' : IFR_HUD_ON ? 'MISSING (' + IFR_HUD_NAME + ')' : 'off (no hud.json baked)'));
+  return ok;
 }
 
 // ---------------------------------------------------------------- primitives
@@ -386,7 +418,9 @@ function ifrHudPop(slot, id) {
   if (!IFR_HUD_ON) return;
   const s = ifrHudSlot(slot), cur = s.pops.get(id) || 0, next = cur === 1 ? 2 : 1;
   if (cur) ifrHudSet(slot, id, cur === 1 ? 'stPop' : 'stPop2', false);
-  ifrHudSet(slot, id, next === 1 ? 'stPop' : 'stPop2', true);
+  // 24 Nov 2026: no pop class any more (one more class per player in the layout's networked class state); the alternation is
+  // kept, so the old class still goes off
+  if (IFR_HUD_POPS || IFR_HUD_POP_KEEP.has(id)) ifrHudSet(slot, id, next === 1 ? 'stPop' : 'stPop2', true);
   s.pops.set(id, next);
 }
 /** hit marker on the reticle: kind 'hit' (light) | 'heavy' (stagger or impact >= 500) | 'kill'; one flash replay per call */
@@ -403,6 +437,9 @@ function ifrHudOne(slot, s, id, memoKey, cls) {
   s.memo.set(memoKey, cls || '');
 }
 function ifrHudMarkAll(s) {
+  const L = s.lay !== undefined ? ifrHudLays[s.lay] : null;   // (called after ResetForPlayer, or for new entities: nothing is on any more)
+  if (L) { L.onTotal -= s.on; L.varBytes -= s.vb; }
+  s.on = 0; s.vb = 0;
   s.have.clear(); s.haveVar.clear();
   for (const d of s.dirty) d.clear();
   for (const [id, m] of s.want) {
@@ -416,7 +453,7 @@ function ifrHudMarkAll(s) {
 /** full redraw request: ResetForPlayer, then every wanted class and text goes out again (activate / team change / spawn / leave) */
 function ifrHudReset(slot) {
   if (!IFR_HUD_ON) return;
-  const s = ifrHudSlot(slot), e = ifrHudEnt();
+  const s = ifrHudSlot(slot), e = ifrHudEntFor(s);
   if (e) { try { e.ResetForPlayer(slot); } catch (err) { /* ignore */ } }
   ifrHudMarkAll(s);
   if (s.capture && e && typeof e.SetInputCaptureEnabled === 'function') { try { e.SetInputCaptureEnabled(slot, true); } catch (err) { /* ignore */ } }   // a reset may drop the garage's mouse
@@ -424,13 +461,42 @@ function ifrHudReset(slot) {
 /** the player left: forget the slot */
 function ifrHudOff(slot) {
   if (!IFR_HUD_ON) return;
+  const gone = ifrHudSlots.get(slot);
+  const L = gone && gone.lay !== undefined ? ifrHudLays[gone.lay] : null;
+  if (L) { L.onTotal -= gone.on; L.varBytes -= gone.vb; L.slots.delete(slot); }
   ifrHudSlots.delete(slot);
   if (typeof garagePreviewDrop === 'function') garagePreviewDrop(slot);     // the player's hangar preview props (60_garage.js)
-  const e = ifrHudEnt();
+  const e = L ? L.ent : ifrHudEnt();
   if (e) { try { e.ResetForPlayer(slot); } catch (err) { /* ignore */ } }
 }
 
 // ---------------------------------------------------------------- the governor
+// Packed-size budget (24 Nov 2026). The live JB box crashed when CS2's serializer ran out of room packing this layout entity
+// ("CFlattenedSerializer::EncodeField overflowed CCSCustomHudLayout m_vecClassNames[686/687]" with five humans, then fatal PackEntity;
+// the racers overflowed at other elements): the entity's whole packed size (Source's per-entity buffer is 16 KB), filled by every
+// player's switched-on classes and dialog texts plus the layout's two string tables (every panel id and class name used this map,
+// never removed). The driver keeps its own estimate under CONFIG.HUD_PACK_BUDGET bytes, each player with a HUD getting an equal
+// share of what the tables leave (ifrHudWrite); priority-0 panels (screen states, the energy bar) always go out.
+const IFR_HUD_PACK_BUDGET = (typeof CONFIG === 'object' && CONFIG && CONFIG.HUD_PACK_BUDGET) || 1e9;
+const IFR_HUD_ENTRY_BYTES = 4, IFR_HUD_STR_BYTES = 2;   // estimate per switched-on class / extra per string
+// (all per layout copy: each copy is its own entity with its own buffer and its own panel-id / class-name tables)
+function ifrHudPackBytes(L) { return L.tableBytes + L.onTotal * IFR_HUD_ENTRY_BYTES + L.varBytes; }
+function ifrHudShareBytes(L) { return (IFR_HUD_PACK_BUDGET - L.tableBytes) / Math.max(1, L.slots.size); }
+function ifrHudSlotBytes(s) { return s.on * IFR_HUD_ENTRY_BYTES + s.vb; }
+function ifrHudNewTableBytes(L, id, cls) { return (L.ids.has(id) ? 0 : id.length + IFR_HUD_STR_BYTES) + (cls && !L.names.has(cls) ? cls.length + IFR_HUD_STR_BYTES : 0); }
+// (the share counts only once the budget is 80 % used: small games keep the whole HUD)
+function ifrHudOver(L, s, add, newTables) { const now = ifrHudPackBytes(L); return now + newTables + add > IFR_HUD_PACK_BUDGET || (now > IFR_HUD_PACK_BUDGET * 0.8 && ifrHudSlotBytes(s) + add > ifrHudShareBytes(L)); }
+function ifrHudCapNote(L) { if (!L.capSaid) { L.capSaid = true; ifrHudLog('HUD byte budget reached on ' + L.name + ': ' + L.slots.size + ' players, ~' + Math.round(ifrHudPackBytes(L)) + ' of ' + IFR_HUD_PACK_BUDGET + ' bytes; parts of the HUD wait'); } }
+function ifrHudTableNote(L, id, cls) {
+  if (cls && !L.names.has(cls)) { L.names.add(cls); L.tableBytes += cls.length + IFR_HUD_STR_BYTES; }
+  if (!L.ids.has(id)) { L.ids.add(id); L.tableBytes += id.length + IFR_HUD_STR_BYTES; }
+}
+/** the budget figures, all copies together (bytes, classes, texts) and per copy */
+function ifrHudBudgetStats() {
+  const per = ifrHudLays.map((L) => ({ name: L.name, players: L.slots.size, bytes: Math.round(ifrHudPackBytes(L)), tables: L.tableBytes, classes: L.onTotal, vars: L.varBytes }));
+  const sum = (k) => per.reduce((n, x) => n + x[k], 0);
+  return { bytes: sum('bytes'), tables: sum('tables'), classes: sum('classes'), vars: sum('vars'), ids: ifrHudIds.size, maxBytes: per.reduce((m, x) => Math.max(m, x.bytes), 0), copies: per };
+}
 let ifrHudTickNo = 0;
 const ifrHudStat = { tick: 0, writes: 0, last: 0, max: 0, deferred: 0, deferredTicks: 0 };
 // every panel id this script has named to the engine: CS2 stops updating panels past 1024 of them (see the header)
@@ -442,18 +508,28 @@ function ifrHudRef(id) {
   if (ifrHudIds.size === IFR_HUD_ID_WARN + 1) ifrHudLog('WARNING: the HUD has referenced ' + ifrHudIds.size + ' panel ids; CS2 stops updating panels past 1024 (tools/hud.py budget, test/hud_ids.cjs)');
 }
 function ifrHudWrite(e, s, u) {
-  ifrHudRef(u.id);
+  const L = ifrHudLayFor(s); if (!L) return 0;
+  const prio0 = (IFR_HUD_PANELS.get(u.id) || { prio: 2 }).prio === 0;
   if (u.txt) {
     const m = s.want.get(u.id), text = (m && m.get('\u0001')) || '';
-    if ((s.haveVar.get(u.id) || '') === text) return 0;
+    const had = s.haveVar.get(u.id);
+    if ((had || '') === text) return 0;
+    const grow = text.length - (had === undefined ? -IFR_HUD_STR_BYTES : had.length);
+    // the byte budget: a longer text waits (stays dirty) past the share; a shorter one always goes out
+    if (grow > 0 && !prio0 && ifrHudOver(L, s, grow, ifrHudNewTableBytes(L, u.id, null))) { ifrHudCapNote(L); return -1; }
+    ifrHudRef(u.id); ifrHudTableNote(L, u.id, null);
     e.SetDialogVariableStringForPlayer(s.slot, u.id, 'v', text);
-    s.haveVar.set(u.id, text);
+    s.haveVar.set(u.id, text); s.vb += grow; L.varBytes += grow;
     return 1;
   }
   const on = ifrHudHas(s.want, u.id, u.cls);
   if (ifrHudHas(s.have, u.id, u.cls) === on) return 0;
+  // the byte budget: priority-0 panels (screen states, the energy bar) always go out; the rest waits (stays dirty) past the share
+  if (on && !prio0 && ifrHudOver(L, s, IFR_HUD_ENTRY_BYTES, ifrHudNewTableBytes(L, u.id, u.cls))) { ifrHudCapNote(L); return -1; }
+  ifrHudRef(u.id); ifrHudTableNote(L, u.id, u.cls);
   e.SetHasClassForPlayer(s.slot, u.id, u.cls, on);
   ifrHudPut(s.have, u.id, u.cls, on);
+  const d = on ? 1 : -1; s.on += d; L.onTotal += d;
   return 1;
 }
 /** flushes the dirty writes: priority bands, odd / even player half first (alternating), up to the budget. Call it last
@@ -470,8 +546,7 @@ function ifrHudTick() {
     if (s.xpUntil && now >= s.xpUntil) { s.xpUntil = 0; ifrHudSet(s.slot, 'ifr_xp', 'stOn', false); }
     if (s.deathAt && s.screen === 'death') { const left = s.deathWait - (now - s.deathAt); ifrHudVar(s.slot, 'respawn', left > 0 ? 'RESPAWN IN ' + Math.ceil(left) : 'SPACE SORTIE   CTRL GARAGE'); }
   }
-  const e = ifrHudEnt();
-  if (!e) return 0;
+  if (!ifrHudLaysOk()) return 0;
   const first = ifrHudTickNo & 1, order = [];
   for (const s of ifrHudSlots.values()) if ((s.slot & 1) === first) order.push(s);
   for (const s of ifrHudSlots.values()) if ((s.slot & 1) !== first) order.push(s);
@@ -484,7 +559,8 @@ function ifrHudTick() {
       for (const [key, u] of d) {
         if (budget <= 0) { left++; continue; }
         let n = 0;
-        try { n = ifrHudWrite(e, s, u); } catch (err) { ifrHudLog('WARNING: HUD write ' + u.id + ' ' + (u.cls || 'text') + ': ' + err); }
+        try { n = ifrHudWrite(ifrHudEntFor(s), s, u); } catch (err) { ifrHudLog('WARNING: HUD write ' + u.id + ' ' + (u.cls || 'text') + ': ' + err); }
+        if (n < 0) { left++; continue; }   // held back by the byte budget: stays dirty, tried again next tick
         d.delete(key);
         budget -= n; writes += n;
       }
@@ -571,7 +647,8 @@ function ifrHudVitals(slot, m) {
   if (IFR_HUD_TEXT.ptag && ((ifrHudTickNo + slot) & 63) === 0) ifrHudPilot(slot);
   if (IFR_HUD_TEXT.pk) {
     const sum = m.sum || {};
-    ifrHudNum(slot, 'pk', (sum.kills | 0) + (sum.pveKills | 0) + (sum.bossKills | 0), 1); ifrHudNum(slot, 'pd', sum.deaths | 0, 1); ifrHudNum(slot, 'pa', sum.assists | 0, 1);
+    // kills already counts AI kills (pveKills and bossKills are subsets of it): adding them showed 26 for 13 (24 Nov 2026)
+    ifrHudNum(slot, 'pk', sum.kills | 0, 1); ifrHudNum(slot, 'pd', sum.deaths | 0, 1); ifrHudNum(slot, 'pa', sum.assists | 0, 1);
     const n = Math.max(0, (m.fkills !== undefined ? m.fkills : m.streak) | 0);
     if (s.memo.get('stk') !== n) {
       const was = s.memo.get('stk'); s.memo.set('stk', n);
@@ -727,6 +804,8 @@ function ifrHudGridTo(slot, s, id, p) {
   ifrHudOne(slot, s, id + 'x', id + 'x', 'stX' + (kx + g.x));
   ifrHudOne(slot, s, id + 'y', id + 'y', 'stY' + (ky + g.y));
 }
+/** the pair's position classes off (a hidden mark keeps none: they would still be networked) */
+function ifrHudGridOff(slot, s, id) { ifrHudOne(slot, s, id + 'x', id + 'x', ''); ifrHudOne(slot, s, id + 'y', id + 'y', ''); }
 /** teammate marks: a green chevron over the head of up to grid.allies living teammates that are on the pilot's screen and within
  *  IFR_HUD_ALLY_RANGE (nearest first). A mark keeps its mech while that mech stays in the set, so marks do not swap places.
  *  ally(v) is the adapter's rule (90_main.js: nobody in Skirmish, every pilot and AI ally in Sortie, the own team elsewhere). */
@@ -748,7 +827,7 @@ function ifrHudAllies(slot, me, mechs, ally) {
   }
   found.sort((a, b) => a.d2 - b.d2); if (found.length > n) found.length = n;
   const want = new Map(); for (const f of found) want.set(f.v.slot, f);
-  for (let i = 0; i < n; i++) if (own[i] >= 0 && !want.has(own[i])) { ifrHudOne(slot, s, 'ifr_fr' + i, 'fr' + i, ''); own[i] = -1; }
+  for (let i = 0; i < n; i++) if (own[i] >= 0 && !want.has(own[i])) { ifrHudOne(slot, s, 'ifr_fr' + i, 'fr' + i, ''); ifrHudGridOff(slot, s, 'ifr_fr' + i); own[i] = -1; }
   for (const f of found) {
     let i = own.indexOf(f.v.slot);
     if (i < 0) { i = own.indexOf(-1); if (i < 0) continue; own[i] = f.v.slot; }
@@ -828,11 +907,18 @@ function ifrHudLock(slot, lock, threats, target, me) {
 }
 
 // ---------------------------------------------------------------- radar
+// a radar item is a column (id: its column class stGx<k>) holding the item (id + 'y': its row class stGy<k> and its own look); two
+// classes from 24 + 24 names instead of one of 576 (24 Nov 2026: every class name used stays in the layout's packed data)
+const IFR_HUD_GX = [], IFR_HUD_GY = [];
+for (let k = 0; k < IFR_HUD_RADAR_CELLS; k++) { IFR_HUD_GX.push('stGx' + k); IFR_HUD_GY.push('stGy' + k); }
 function ifrHudGrid(slot, s, id, cellOrNull) {
   const prev = s.grid.get(id);
   if (prev === cellOrNull) return;
-  if (prev !== undefined && prev !== null) ifrHudSet(slot, id, 'stG' + prev, false);
-  if (cellOrNull !== null) ifrHudSet(slot, id, 'stG' + cellOrNull, true);
+  const n = IFR_HUD_RADAR_CELLS, idy = id + 'y';
+  const px = prev === undefined || prev === null ? -1 : prev % n, py = prev === undefined || prev === null ? -1 : Math.floor(prev / n);
+  const cx = cellOrNull === null ? -1 : cellOrNull % n, cy = cellOrNull === null ? -1 : Math.floor(cellOrNull / n);
+  if (px !== cx) { if (px >= 0) ifrHudSet(slot, id, IFR_HUD_GX[px], false); if (cx >= 0) ifrHudSet(slot, id, IFR_HUD_GX[cx], true); }
+  if (py !== cy) { if (py >= 0) ifrHudSet(slot, idy, IFR_HUD_GY[py], false); if (cy >= 0) ifrHudSet(slot, idy, IFR_HUD_GY[cy], true); }
   s.grid.set(id, cellOrNull);
 }
 /** world offset (dx, dy) from the viewer, turned so the viewer's yaw points up, into a grid cell (clamped to the disc) */
@@ -852,15 +938,24 @@ function ifrHudRadar(slot, dots, myYaw, myPos) {
   const s = ifrHudSlot(slot);
   s.pos = myPos ? { x: myPos.x, y: myPos.y, z: myPos.z } : null;     // ifrHudMode: which capture zone the viewer stands in
   let n = 0;
+  // the nearest IFR_HUD_RADAR_MAX mechs only (24 Nov 2026: each dot is classes networked per player; was every mech, up to 64),
+  // half of that when this player is near their share of the class cap
+  const Lr = ifrHudLayFor(s), share = Lr ? ifrHudShareBytes(Lr) : 1e9, mine = ifrHudSlotBytes(s);   // (halved at 85 % of the share, back under 60 %: no flicker at the line)
+  s.radarHalf = mine >= share * 0.85 || (!!s.radarHalf && mine >= share * 0.6);
+  const max = Math.min(IFR_HUD_RADAR_DOTS, s.radarHalf ? IFR_HUD_RADAR_MAX >> 1 : IFR_HUD_RADAR_MAX);
+  if (dots && dots.length > max) dots = dots.filter((d) => d).sort((a, b) => (a.x * a.x + a.y * a.y) - (b.x * b.x + b.y * b.y));
   if (myPos && dots) for (const d of dots) {
-    if (!d || n >= IFR_HUD_RADAR_DOTS) continue;
+    if (!d || n >= max) continue;
     const id = 'ifr_rd' + n++, ally = s.team ? d.team === s.team : d.team === 3;
     ifrHudGrid(slot, s, id, ifrHudCell(d.x, d.y, myYaw));
-    ifrHudSet(slot, id, 'stA', ally); ifrHudSet(slot, id, 'stE', !ally);
-    ifrHudSet(slot, id, 'stBig', d.kind === 'bounty'); ifrHudSet(slot, id, 'stBoss', d.kind === 'boss'); ifrHudSet(slot, id, 'stTgt', d.kind === 'target');
+    const idy = id + 'y';   // (the dot's look is on the item inside its column)
+    ifrHudSet(slot, idy, 'stE', !ally);   // allies are the dot's default colour (one class less a dot: the layout's class state is networked per player)
+    ifrHudSet(slot, idy, 'stBig', d.kind === 'bounty'); ifrHudSet(slot, idy, 'stBoss', d.kind === 'boss'); ifrHudSet(slot, idy, 'stTgt', d.kind === 'target');
   }
   const used = s.memo.get('dots') || 0;
-  for (let i = n; i < used; i++) ifrHudGrid(slot, s, 'ifr_rd' + i, null);
+  // a dot no longer used drops every class, not only its cell: hidden panels' classes are still networked, and the live server's
+  // custom HUD state overflowed (24 Nov 2026, CCSCustomHudLayout m_vecClassNames)
+  for (let i = n; i < used; i++) { const id = 'ifr_rd' + i; ifrHudGrid(slot, s, id, null); for (const c of ['stE', 'stBig', 'stBoss', 'stTgt']) ifrHudSet(slot, id + 'y', c, false); }
   s.memo.set('dots', n);
   const arena = typeof ARENA === 'object' && ARENA ? ARENA : null;
   const pts = myPos && arena && arena.points ? arena.points : [];
@@ -870,7 +965,7 @@ function ifrHudRadar(slot, dots, myYaw, myPos) {
     seen[p.id] = true;
     const id = 'ifr_rd' + p.id, own = s.points && s.points[p.id] ? s.points[p.id] : { owner: 0, cap: false };
     ifrHudGrid(slot, s, id, ifrHudCell(p.pos[0] - myPos.x, p.pos[1] - myPos.y, myYaw));
-    ifrHudSet(slot, id, 'stOwnT', own.owner === 2); ifrHudSet(slot, id, 'stOwnCT', own.owner === 3); ifrHudSet(slot, id, 'stCap', !!own.cap);
+    ifrHudSet(slot, id + 'y', 'stOwnT', own.owner === 2); ifrHudSet(slot, id + 'y', 'stOwnCT', own.owner === 3); ifrHudSet(slot, id + 'y', 'stCap', !!own.cap);
   }
   for (const L in seen) if (!seen[L]) ifrHudGrid(slot, s, 'ifr_rd' + L, null);
   const drops = myPos && arena && arena.drops ? arena.drops : null;
@@ -1244,14 +1339,14 @@ if (typeof PARTS === 'object' && PARTS && PARTS.parts) for (const p of PARTS.par
  *  slot so a HUD reset (ResetForPlayer) or a re-found layout entity turns it back on (ifrHudReset, ifrHudKeepCapture) */
 function ifrHudCapture(slot, on) {
   if (!IFR_HUD_ON) return;
-  ifrHudSlot(slot).capture = !!on;
-  const e = ifrHudEnt();
+  const sc = ifrHudSlot(slot); sc.capture = !!on;
+  const e = ifrHudEntFor(sc);
   if (e && typeof e.SetInputCaptureEnabled === 'function') { try { e.SetInputCaptureEnabled(slot, !!on); } catch (err) { /* ignore */ } }
 }
 /** while the garage is open: puts the mouse capture back if the engine dropped it (cheap: one query) */
 function ifrHudKeepCapture(slot) {
   if (!IFR_HUD_ON) return;
-  const s = ifrHudSlots.get(slot), e = ifrHudEnt();
+  const s = ifrHudSlots.get(slot), e = s ? ifrHudEntFor(s) : null;
   if (!s || !s.capture || !e || typeof e.IsInputCaptureEnabled !== 'function') return;
   try { if (!e.IsInputCaptureEnabled(slot)) { e.SetInputCaptureEnabled(slot, true); ifrHudLog('garage: mouse capture was off for slot ' + slot + ', turned it back on'); } } catch (err) { /* ignore */ }
 }
@@ -1269,6 +1364,24 @@ function ifrHudGSection(name, fn) {
  *   scroll, total, tracks: [{n, s, c, l, a, b, frac, state:'up'|'max'|'poor'|'dis'}], urow, utitle, frame: {name, type},
  *   budgets: {weight, load, en, output, valid, deny, ap, walk, boost, qb}, lock, top: {map, credits, kda, rank}, bay, bay2, confirm: {q, hint} | null,
  *   info: {name, type, lines: [a, b, c], key, cmp}, weapons: [{pic, name, stats} x4], legend, tips: [a, b], hint, pending} */
+// the garage's panels emptied when the garage closes (24 Nov 2026): their texts and classes stayed set while the pilot fought, and
+// hidden panels' state is still packed into the layout entity (five pilots' garage texts were half of its ~16 KB, the live crash).
+// The next open redraws everything (garageOpen draws at once, garageTick every 0.5 s); the three memoised parts forget their memo.
+const IFR_HUD_GARAGE_IDS = IFR_HUD_ON ? Object.keys(HUD.panels).filter((id) => HUD.panels[id].screen === 'garage') : [];
+function ifrHudGarageClear(slot) {
+  if (!IFR_HUD_ON) return;
+  const s = ifrHudSlots.get(slot); if (!s) return;
+  for (const id of IFR_HUD_GARAGE_IDS) {
+    const m = s.want.get(id); if (!m) continue;
+    const p = IFR_HUD_PANELS.get(id); if (!p) continue;
+    for (const [cls, on] of m) {
+      if (cls === '\u0001') { if (on) ifrHudText(s, p.prio, id, ''); }
+      else if (on) ifrHudSet(slot, id, cls, false);
+    }
+    s.wantVar.delete(id);
+  }
+  for (const k of Array.from(s.memo.keys())) if (/^(gep|grp)\d+$|^gthumb$/.test(k)) s.memo.delete(k);
+}
 function ifrHudGarage(slot, g) {
   if (!IFR_HUD_ON || !g) return;
   const s = ifrHudSlot(slot), V = (n, t) => ifrHudVar(slot, n, t);

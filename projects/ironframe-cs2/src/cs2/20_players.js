@@ -36,8 +36,23 @@ function newPerson(slot, ctrl) {
     specYaw: 0, garage: null, pilot: null, ready: false, hudReset: true, camScale: 1, garageSeenThisLife: false, kick: null, eye: { yaw: 0, pitch: 0 }, lastRideErr: 0, snaps: 0, joinedAt: gameTime() };
 }
 
+// The GOTV (SourceTV / CSTV) client has a player controller, and IsBot() is false for it, so it used to become a "human": the
+// watchdog JoinTeam'ed it onto T and it ran the whole pilot life (intro, a mech, cameras, HUD, AFK, spectator). With GOTV on,
+// that cost the server ~400 MiB about two minutes into every Dunes visit, never given back at the map change (local server,
+// 23 Nov 2026; the live JB box was OOM-killed 2 min 21 s into Dunes, in GOTV's thread). cs_script has no IsHLTV, so it is
+// the name: the engine's defaults and the JB box's.
+// Not tv_name: CS2 refuses that convar to Workshop scripts ("DISALLOWED WORKSHOP CONVAR: tv_name", and the call throws with a
+// stack trace in the console on every scan; skink52's Workshop Tools test, 24 Nov 2026), so the names below are the whole check.
+const GOTV_NAMES = new Set(['SourceTV', 'CSTV', 'GOTV', 'Slime Demo Recorder']);   // (the JB box's demo plugin names its GOTV client so, 24 Nov 2026)
+function isGotv(c) {
+  let name = ''; try { name = c.GetPlayerName() || ''; } catch (err) { return false; }
+  if (!name) return false;
+  return GOTV_NAMES.has(name);
+}
+const gotvSlots = new Set();   // logged once per slot
+
 // Walk every controller: new people join, people whose controller object changed are replaced (a slot reused without a
-// disconnect), teams are re-read. Once a second and on events.
+// disconnect), teams are re-read. Once a second and on events. The GOTV client is left out (isGotv).
 function scanPeople() {
   let ctrls = [];
   try { ctrls = Instance.GetAllPlayerControllers() || []; } catch (err) { return; }
@@ -45,6 +60,7 @@ function scanPeople() {
   for (const c of ctrls) {
     if (!live(c)) continue;
     let slot; try { slot = c.GetPlayerSlot(); } catch (err) { continue; }
+    if (isGotv(c)) { if (!gotvSlots.has(slot)) { gotvSlots.add(slot); log('GOTV client in slot ' + slot + ': not a pilot'); } continue; }
     seen.add(slot);
     let pe = people.get(slot);
     if (pe && pe.ctrl !== c) { dropPerson(slot, 'slot reused'); pe = undefined; }

@@ -217,7 +217,7 @@
   },
   "create/panorama.py": {
    "origin": "space-racer-cs2:tools/hud.py",
-   "seen": "63c8e4e7c977f56e9ca7ffb5a84bde50b4975c39"
+   "seen": "94b6a772ba03976f523ec66ca6879d5fe8c21738"
   },
   "create/patch_vmap.py": {
    "origin": "trenchwarfare-cs2:tools/patch_vmap.py",

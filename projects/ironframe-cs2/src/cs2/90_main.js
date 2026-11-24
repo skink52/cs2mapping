@@ -396,7 +396,7 @@ function manageBots(now) {
   if (want > 0 && bots === 0 && botsAskedAt && now - botsAskedAt > 20) { botsUnavailable = true; ifrCvars(['bot_quota 0']); log('no CS2 bots joined (the map needs a nav mesh): the script own AI mechs fill instead'); }
 }
 function watchdog(now) {
-  manageBots(now);
+  if (!dbgOff.has('bots')) manageBots(now);
   let t = 0, ct = 0;
   for (const pe of people.values()) { if (pe.team === TEAM_T) t++; else if (pe.team === TEAM_CT) ct++; }
   for (const pe of people.values()) {
@@ -430,11 +430,91 @@ function think() {
   if (perfOn) { const ms = clockMs() - t0; perfTick(ms, now); perfDeepTick(ms, now); }
   Instance.SetNextThink(now);
 }
+// Soak switches (CONFIG.SOAK_SWITCHES, off in a release): `ent_fire ifr_script RunScriptInput ifr_dbg_off_<part>` skips that part of
+// every tick from then on, so tools/mem_soak.py can find which part makes the server hold memory (SERVER_READY.md F2)
+const dbgOff = new Set(CONFIG.SOAK_SWITCHES && CONFIG.SOAK_OFF_FROM_START ? CONFIG.SOAK_OFF_FROM_START : []);   // (a test build can start with parts off)
+if (CONFIG.SOAK_SWITCHES) for (const part of ['fx', 'props', 'srv', 'render', 'features', 'auras', 'hud', 'bots', 'core', 'people']) {
+  Instance.OnScriptInput('ifr_dbg_off_' + part, () => { dbgOff.add(part); log('soak switch: ' + part + ' off'); });
+}
+// HUD cap probe (same switch): each ifr_dbg_hudflood switches 512 more (player, panel, class) entries on over slots 1-60, to find
+// where CCSCustomHudLayout's networked class list overflows (Space Racer's live crashes, 20 + 24 Nov 2026)
+let hudFlood = 0;
+if (CONFIG.SOAK_SWITCHES) Instance.OnScriptInput('ifr_dbg_hudflood', () => {
+  const e = ifrHudEnt(); if (!e) { log('hud flood: no HUD'); return; }
+  const panels = Array.from(IFR_HUD_PANELS.keys());
+  for (let k = 0; k < 512; k++, hudFlood++) {
+    const slot = 1 + (hudFlood % 60), j = Math.floor(hudFlood / 60);
+    e.SetHasClassForPlayer(slot, panels[j % panels.length], 'fl' + Math.floor(j / panels.length), true);
+  }
+  log('hud flood: ' + hudFlood + ' entries on');
+});
+// variants: _uniq = every entry its own class name (slots 1-60); _gotv = slot 0 only (the GOTV client, a real network client),
+// own class names
+let hudFloodU = 0;
+for (const v of ['uniq', 'gotv']) if (CONFIG.SOAK_SWITCHES) Instance.OnScriptInput('ifr_dbg_hudflood_' + v, () => {
+  const e = ifrHudEnt(); if (!e) { log('hud flood: no HUD'); return; }
+  const panels = Array.from(IFR_HUD_PANELS.keys());
+  for (let k = 0; k < 512; k++, hudFloodU++) {
+    const slot = v === 'gotv' ? 0 : 1 + (hudFloodU % 60);
+    e.SetHasClassForPlayer(slot, panels[hudFloodU % panels.length], 'u' + hudFloodU, true);
+  }
+  log('hud flood: ' + hudFloodU + ' entries on (' + v + ')');
+});
+// _gotvmany: slot 0 only, few names (a new one per full pass over the panels): many entries on one real client
+let hudFloodM = 0;
+if (CONFIG.SOAK_SWITCHES) Instance.OnScriptInput('ifr_dbg_hudflood_gotvmany', () => {
+  const e = ifrHudEnt(); if (!e) { log('hud flood: no HUD'); return; }
+  const panels = Array.from(IFR_HUD_PANELS.keys());
+  for (let k = 0; k < 512; k++, hudFloodM++) e.SetHasClassForPlayer(0, panels[hudFloodM % panels.length], 'm' + Math.floor(hudFloodM / panels.length), true);
+  log('hud flood: ' + hudFloodM + ' entries on (gotvmany)');
+});
+// _humans: 64 more entries a call over the connected HUMAN players only, few class names (one more per pass over the panels),
+// to find the per-client limit (the live Dunes crash came with five humans, 24 Nov 2026). Logs the total and the per-player count.
+let hudFloodH = 0;
+if (CONFIG.SOAK_SWITCHES) Instance.OnScriptInput('ifr_dbg_hudflood_humans', () => {
+  const e = ifrHudEnt(); if (!e) { log('hud flood: no HUD'); return; }
+  const humans = Array.from(people.values()).filter((pe) => pe.human).map((pe) => pe.slot);
+  if (!humans.length) { log('hud flood: no human connected'); return; }
+  const panels = Array.from(IFR_HUD_PANELS.keys());
+  for (let k = 0; k < 64; k++, hudFloodH++) {
+    const slot = humans[hudFloodH % humans.length], j = Math.floor(hudFloodH / humans.length);
+    e.SetHasClassForPlayer(slot, panels[j % panels.length], 'fh' + Math.floor(j / panels.length), true);
+  }
+  log('hud flood: ' + hudFloodH + ' entries on (humans: ' + humans.length + ', ' + Math.ceil(hudFloodH / humans.length) + ' each)');
+});
+// _vars: 32 more dialog-variable texts a call (48 characters each) on the human players' Label panels: does dialog text count
+// toward the overflow too (m_vecDialogVariableStrings sits in the same per-player state)? Logs texts and bytes so far.
+let hudFloodV = 0;
+if (CONFIG.SOAK_SWITCHES) Instance.OnScriptInput('ifr_dbg_hudflood_vars', () => {
+  const e = ifrHudEnt(); if (!e) { log('hud flood: no HUD'); return; }
+  const humans = Array.from(people.values()).filter((pe) => pe.human).map((pe) => pe.slot);
+  if (!humans.length) { log('hud flood: no human connected'); return; }
+  const labels = Array.from(IFR_HUD_PANELS.entries()).filter(([, p]) => p.vars && p.vars.size).map(([id]) => id);
+  for (let k = 0; k < 32; k++, hudFloodV++) {
+    const slot = humans[hudFloodV % humans.length], id = labels[Math.floor(hudFloodV / humans.length) % labels.length];
+    e.SetDialogVariableStringForPlayer(slot, id, 'v', ('FLOOD ' + hudFloodV + ' ').padEnd(48, 'X'));
+  }
+  log('hud flood: ' + hudFloodV + ' texts on (' + (hudFloodV * 48) + ' bytes; humans: ' + humans.length + ')');
+});
+// _long: slot 0, every entry its own 48-character class name (128 a call): is the limit the names' bytes?
+let hudFloodL = 0;
+if (CONFIG.SOAK_SWITCHES) Instance.OnScriptInput('ifr_dbg_hudflood_long', () => {
+  const e = ifrHudEnt(); if (!e) { log('hud flood: no HUD'); return; }
+  const panels = Array.from(IFR_HUD_PANELS.keys());
+  for (let k = 0; k < 128; k++, hudFloodL++) e.SetHasClassForPlayer(0, panels[hudFloodL % panels.length], ('L' + hudFloodL + '_').padEnd(48, 'x'), true);
+  log('hud flood: ' + hudFloodL + ' entries on (long)');
+});
+let soakSpawned = false;   // test build: CONFIG.SOAK_SPAWN props from the template at the first frame, then left alone
 function frame(dt, now) {
+  if (CONFIG.SOAK_SWITCHES && CONFIG.SOAK_SPAWN && !soakSpawned) {
+    soakSpawned = true; const tpl = findPropTemplate(); let n = 0;
+    if (tpl) for (let i = 0; i < CONFIG.SOAK_SPAWN; i++) { const e = /** @type {any} */ (tpl).ForceSpawn(HIDE_POS, ZERO_ANG); if (e && e.length) n++; }
+    log('soak spawn: ' + n + ' template spawns');
+  }
   if ((ifrTickNo & 63) === 0) scanPeople();
-  fxTick(now);
-  propsTick(now);
-  srvTick(now);
+  if (!dbgOff.has('fx')) fxTick(now);
+  if (!dbgOff.has('props')) propsTick(now);
+  if (!dbgOff.has('srv')) srvTick(now);
   flushKills(); respawnWatch(now);
   perfMark('fx+props+server');
   if (navProbing) { const done = guard('nav probe', () => game.probeStep(world, 90)); if (done !== false) { navProbing = false; log('world survey done: ' + game.probeSummary()); } }
@@ -454,9 +534,9 @@ function frame(dt, now) {
     }
   }
   if (phase === 'podium' && now > podiumAt) finishRound();
-  for (const pe of people.values()) guard('person', () => personTick(pe, now));
+  if (!dbgOff.has('people')) for (const pe of people.values()) guard('person', () => personTick(pe, now));
   perfMark('players in');
-  if (phase === 'running' || phase === 'podium') {
+  if ((phase === 'running' || phase === 'podium') && !dbgOff.has('core')) {
     guard('core tick', () => game.tick(dt, now));
     perfMark('core rest');
     const evs = game.events;
@@ -465,18 +545,18 @@ function frame(dt, now) {
     perfMark('events');
     for (const pe of people.values()) guard('after', () => personAfterTick(pe));
     perfMark('players out');
-    guard('render', renderAll);
+    if (!dbgOff.has('render')) guard('render', renderAll);
     perfMark('render');
-    guard('features', featTick);
+    if (!dbgOff.has('features')) guard('features', featTick);
     perfMark('features');
-    for (const m of game.mechs.values()) guard('loops', () => fxMechLoops(m));
+    if (!dbgOff.has('fx')) for (const m of game.mechs.values()) guard('loops', () => fxMechLoops(m));
     perfMark('loops');
-    guard('auras', auraTick);
+    if (!dbgOff.has('auras')) guard('auras', auraTick);
     perfMark('auras');
-    for (const pe of people.values()) guard('hudfeed', () => hudFeed(pe, now));
+    if (!dbgOff.has('hud')) for (const pe of people.values()) guard('hudfeed', () => hudFeed(pe, now));
     perfMark('hud feed');
   }
-  if (typeof ifrHudTick === 'function') guard('hudtick', ifrHudTick);
+  if (typeof ifrHudTick === 'function' && !dbgOff.has('hud')) guard('hudtick', ifrHudTick);
   perfMark('hud write');
 }
 

@@ -237,6 +237,12 @@ They apply just as well to port scripts. Methods are from Valve's `point_script.
   read cvars, and `RegisterCheatCommand` needs `sv_cheats`, so this is how a server switches a map script off (cs2mapTTT `ttt:server`; untested with a real plugin).
 
 ## Players: parking, cameras and input
+- **The GOTV client is a player controller with `IsBot()` false** (24 Nov 2026, IRONFRAME): `GetAllPlayerControllers()` returns it,
+  so a script that treats every non-bot as a human puts GOTV on a team and runs it as a player. There is no `IsHLTV`: check the
+  name against a fixed list (SourceTV, CSTV, GOTV, plus any server's own name such as the JB box's "Slime Demo Recorder"). **Don't
+  read `tv_name`**: Workshop scripts may not, so `Console.GetConvarString('tv_name')` prints `DISALLOWED WORKSHOP CONVAR: tv_name` and
+  throws with a stack trace on every call, even inside try/catch (seen in Workshop Tools, 24 Nov 2026). IRONFRAME's `isGotv` in
+  src/cs2/20_players.js.
 
 - **Pawn parking** (games where the player isn't the pawn): freeze the pawn with `pawn.SetMoveType(CSMoveType.NONE)` in a sealed booth, hide it,
   drive the view with a camera, read input from the pawn. Restore with `CSMoveType.WALK`. Abort all CS2 damage to parked pawns except your own kills.

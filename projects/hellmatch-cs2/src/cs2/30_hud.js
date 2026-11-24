@@ -9,6 +9,23 @@ const hudLines = new Map();   // slot -> Map(line or number prefix -> what it la
 const HUD_LINE_CHECK = false; // test only: still compare every skipped line panel by panel
 let hudCheckMiss = 0;
 let hudGen = 0;               // goes up whenever the HUD entity is found again (everything gets resent)
+// Packed-size budget (24 Nov 2026). The live JB box crashed three times when CS2's serializer ran out of room packing a map's
+// custom_hud_layout entity ("CFlattenedSerializer::EncodeField overflowed CCSCustomHudLayout m_vecPanelIds[480/489]" /
+// "m_vecClassNames[162/203]" / "[686/687]", then fatal PackEntity): the entity's whole packed size (Source's per-entity buffer is 16 KB),
+// filled by every player's switched-on classes plus the layout's two string tables (every panel id and class name used this map,
+// never removed). The script keeps its own estimate under CONFIG.HUD_PACK_BUDGET bytes, each player getting an equal share of what
+// the tables leave; a class past it waits. The screen state always goes out.
+const hudOnBy = new Map();    // slot -> classes switched on for that player
+const HUD_ENTRY_BYTES = 4, HUD_STR_BYTES = 2;     // estimate per switched-on class / extra per string
+const hudIdsUsed = new Set(), hudNamesUsed = new Set();
+let hudOnTotal = 0, hudTableBytes = 0, hudCapRefused = 0, hudCapSaid = false;
+function hudPackBytes() { return hudTableBytes + hudOnTotal * HUD_ENTRY_BYTES; }
+function hudShareBytes() { return ((CONFIG.HUD_PACK_BUDGET || 1e9) - hudTableBytes) / Math.max(1, hudCache.size); }
+function hudNewTableBytes(panel, cls) { return (hudIdsUsed.has(panel) ? 0 : panel.length + HUD_STR_BYTES) + (cls && !hudNamesUsed.has(cls) ? cls.length + HUD_STR_BYTES : 0); }
+function hudNoteTables(panel, cls) {
+  if (!hudIdsUsed.has(panel)) { hudIdsUsed.add(panel); hudTableBytes += panel.length + HUD_STR_BYTES; }
+  if (cls && !hudNamesUsed.has(cls)) { hudNamesUsed.add(cls); hudTableBytes += cls.length + HUD_STR_BYTES; }
+}
 
 let hudValidThink = false;     // true once hudEnt has been checked during the current think (reset each think)
 function hud() {
@@ -18,7 +35,8 @@ function hud() {
   if (!hudEnt) { warnOnce("hud", "no custom_hud_layout named " + CONFIG.HUD + " - no game HUD"); return hudEnt; }
   // a (re)found HUD entity doesn't know what we sent before: clear it and resend everything
   for (const slot of hudCache.keys()) { try { hudEnt.ResetForPlayer(slot); } catch (err) { /* ignore */ } }
-  hudCache.clear();
+  hudCache.clear(); hudOnBy.clear(); hudOnTotal = 0;
+  hudIdsUsed.clear(); hudNamesUsed.clear(); hudTableBytes = 0;   // (a new layout entity: its string tables start empty too)
   hudLines.clear();
   hudGen++;
   return hudEnt;
@@ -32,10 +50,11 @@ function hudSame(slot, prefix, value) {
 
 // remember what a line/number shows, but only if every change for it went out (the budget can cut a line short,
 // and a HUD entity found again halfway through means the start of the line was wiped)
-function hudDrawn(slot, prefix, value, gen) {
+function hudDrawn(slot, prefix, value, gen, refused) {
   let lines = hudLines.get(slot);
   if (!lines) { lines = new Map(); hudLines.set(slot, lines); }
-  if (hudBudget > 0 && gen === hudGen && hudCache.has(slot)) lines.set(prefix, value); else lines.delete(prefix);
+  // (refused: hudCapRefused when the line started; a character held back by the class cap means it is not all there)
+  if (hudBudget > 0 && gen === hudGen && hudCache.has(slot) && (refused === undefined || refused === hudCapRefused)) lines.set(prefix, value); else lines.delete(prefix);
 }
 
 function hudSwap(slot, panel, cls) {
@@ -46,6 +65,18 @@ function hudSwap(slot, panel, cls) {
   if (hudBudget <= 0) return;
   const h = hud();
   if (!h) return;
+  const mine = hudOnBy.get(slot) || 0;
+  if (cls && panel !== "fdm_root") {   // (the screen state always goes out)
+    const add = old ? 0 : HUD_ENTRY_BYTES, tbl = hudNewTableBytes(panel, cls);
+    const budget = CONFIG.HUD_PACK_BUDGET || 1e9, now = hudPackBytes();   // (the share counts only once the budget is 80 % used)
+    if (now + tbl + add > budget || (now > budget * 0.8 && mine * HUD_ENTRY_BYTES + add > hudShareBytes())) {
+      hudCapRefused++;
+      if (!hudCapSaid) { hudCapSaid = true; log("HUD byte budget reached: " + hudCache.size + " players, ~" + Math.round(hudPackBytes()) + " of " + CONFIG.HUD_PACK_BUDGET + " bytes; parts of the HUD wait"); }
+      return;
+    }
+  }
+  hudNoteTables(panel, old); hudNoteTables(panel, cls);
+  const d = (cls ? 1 : 0) - (old ? 1 : 0); hudOnBy.set(slot, mine + d); hudOnTotal += d;
   hudBudget -= old && cls ? 2 : 1;
   if (old) h.SetHasClassForPlayer(slot, panel, old, false);
   if (cls) h.SetHasClassForPlayer(slot, panel, cls, true);
@@ -53,6 +84,7 @@ function hudSwap(slot, panel, cls) {
 }
 
 function hudReset(slot) {
+  hudOnTotal -= hudOnBy.get(slot) || 0; hudOnBy.delete(slot);
   hudCache.delete(slot);
   hudLines.delete(slot);
   const h = hud();
@@ -104,7 +136,7 @@ function hudText(slot, prefix, len, text) {
   text = String(text || "").toUpperCase();
   const same = hudSame(slot, prefix, text);
   if (same && !HUD_LINE_CHECK) return;
-  const full = text, gen = hudGen;
+  const full = text, gen = hudGen, refused = hudCapRefused;
   const pre = HUD_STRING_INDEX.get(text);
   const set = (panel, cls) => { if (!same) hudSwap(slot, panel, cls); else { const c = hudCache.get(slot); if (((c && c.get(panel)) || null) !== cls) hudCheckMiss++; } };
   set(prefix + "img", pre === undefined ? null : "t" + pre);
@@ -117,7 +149,7 @@ function hudText(slot, prefix, len, text) {
     else if (ch) cls = "csp";
     set(prefix + i, cls);
   }
-  if (!same) hudDrawn(slot, prefix, full, gen);
+  if (!same) hudDrawn(slot, prefix, full, gen, refused);
 }
 
 function hudNumber(slot, prefix, digits, value, kind, showZero) {
@@ -128,7 +160,7 @@ function hudNumber(slot, prefix, digits, value, kind, showZero) {
   else { key = Math.floor(value); if (key !== key) key = "NaN"; }
   const same = hudSame(slot, prefix, key);
   if (same && !HUD_LINE_CHECK) return;
-  const gen = hudGen;
+  const gen = hudGen, refused = hudCapRefused;
   const set = (panel, cls) => { if (!same) hudSwap(slot, panel, cls); else { const c = hudCache.get(slot); if (((c && c.get(panel)) || null) !== cls) hudCheckMiss++; } };
   let v = Math.max(-99, Math.min(Math.pow(10, digits) - 1, Math.floor(value)));
   const neg = v < 0; if (neg) v = -v;
@@ -141,7 +173,7 @@ function hudNumber(slot, prefix, digits, value, kind, showZero) {
     if (value === null) cls = null;
     set(prefix + i, cls);
   }
-  if (!same) hudDrawn(slot, prefix, key, gen);
+  if (!same) hudDrawn(slot, prefix, key, gen, refused);
 }
 
 // ---------------------------------------------------------------- face (ST_updateFaceWidget)
@@ -225,6 +257,7 @@ function hudOptions(slot) {
 }
 
 function hudPlayer(slot, p, arena, info) {
+  hudStatusOn.add(slot);
   hudSwap(slot, "fdm_root", "On");
   hudOptions(slot);
   hudSwap(slot, "fdm_sbarbox", info && info.sbar && info.sbar !== "centre" ? info.sbar : null);
@@ -279,11 +312,28 @@ function hudPlayer(slot, p, arena, info) {
 
 function hudOff(slot) {
   hudSwap(slot, "fdm_root", null);
+  hudStatusClear(slot);
+}
+
+// the status bar's classes switched off when it is hidden (lobby, HUD off): classes on hidden panels are still networked, and the
+// layout's class state overflowed on the live server (other maps, 24 Nov 2026)
+const hudStatusOn = new Set();   // slots whose status bar has (or may have) something on it
+const HUD_STATUS_PANELS = ["fdm_sbarbox", "fdm_wspr", "fdm_wflash", "fdm_wpn", "fdm_wbob", "fdm_face", "fdm_faceb", "fdm_flash", "fdm_team"];
+const HUD_STATUS_NUMBERS = [["fdm_ammo", "b"], ["fdm_hp", "b"], ["fdm_ar", "b"], ["fdm_frag", "b"]].concat(HUD_AMC.map((p) => [p, "y"]), HUD_AMM.map((p) => [p, "y"]));
+function hudStatusClear(slot) {
+  if (!hudStatusOn.has(slot)) return;
+  const c = hudCache.get(slot);
+  for (const panel of HUD_STATUS_PANELS) hudSwap(slot, panel, null);
+  for (const [prefix, kind] of HUD_STATUS_NUMBERS) hudNumber(slot, prefix, 3, null, kind);
+  hudText(slot, "fdm_msg", 56, ""); hudText(slot, "fdm_msgb", 56, "");
+  // done when nothing of it is left on (the per-tick budget can cut it short: then again next time)
+  if (!c || (HUD_STATUS_PANELS.every((p) => !c.get(p)) && hudBudget > 0)) hudStatusOn.delete(slot);
 }
 
 // lobby: only the text lines (top right, centre, bottom)
 function hudLobby(slot, info) {
   hudSwap(slot, "fdm_root", "Lobby");
+  hudStatusClear(slot);
   hudSwap(slot, "fdm_screen", info.text && info.text !== "normal" ? info.text : null);
   hudOptions(slot);
   hudText(slot, "fdm_inf1_", 32, info.line1 || "");

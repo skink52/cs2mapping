@@ -72,6 +72,7 @@ function garageClose(pe) {
   if (pe.human && typeof ifrHudCapture === 'function') ifrHudCapture(pe.slot, false);
   if (game) game.events.push({ t: 'garage', slot: pe.slot, open: false });
   if (ifrHudSlate) ifrHudSlate(pe.slot, 'none', null);
+  if (typeof ifrHudGarageClear === 'function') ifrHudGarageClear(pe.slot);   // (its hidden texts and classes off: 50_hud.js)
 }
 function garageParse(s) { const ids = String(s).split(',').map((x) => parseInt(x, 10) || 0); while (ids.length < 9) ids.push(0); return ids.slice(0, 9); }
 function garageStr(ids) { return ids.join(','); }

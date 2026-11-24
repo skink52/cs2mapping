@@ -73,6 +73,7 @@ function scanPeople(force) {
   const unassigned = [];
   for (const c of Instance.GetAllPlayerControllers()) {
     if (!c || !c.IsConnected()) continue;
+    if (isGotv(c)) continue;   // the GOTV client is no player (10_util.js)
     const slot = c.GetPlayerSlot();
     seen.add(slot);
     const bot = c.IsBot();

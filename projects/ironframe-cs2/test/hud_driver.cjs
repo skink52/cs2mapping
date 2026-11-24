@@ -18,7 +18,7 @@ const ent = {
   SetHasClassForPlayer(slot, id, cls, on) { idsSeen.add(id); if (!HUD.panels[id]) throw new Error('class on an id the layout does not have: ' + id); calls.push(['cls', slot, id, cls, on]); },
   SetDialogVariableStringForPlayer(slot, id, v, text) { idsSeen.add(id); if (!HUD.panels[id] || v !== 'v') throw new Error('text on an id the layout does not have: ' + id + '.' + v); calls.push(['var', slot, id, text]); shownVar.set(slot + '|' + id, text); },
 };
-const ctx = { HUD, PARTS, ARENA, CONFIG: { HUD: 'ifr_hud', HUD_BUDGET: 900 }, Entities: { FindByName: () => (ent ? [ent] : []), FireInput() {} }, Console: { Log: (m) => console.log('  (log) ' + m), ServerCommand() {} }, GameRules: { IsWarmupPeriod: () => false }, Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg: (m) => console.log('  (log) ' + m) }, console };
+const ctx = { HUD, PARTS, ARENA, CONFIG: { HUD: 'ifr_hud', HUD_BUDGET: 900 }, Entities: { FindByName: (n) => (ent && n === 'ifr_hud' ? [ent] : []), FireInput() {} }, Console: { Log: (m) => console.log('  (log) ' + m), ServerCommand() {} }, GameRules: { IsWarmupPeriod: () => false }, Instance: { FindEntityByName: () => ent, GetGameTime: () => now, Msg: (m) => console.log('  (log) ' + m) }, console };
 vm.createContext(ctx);
 const src = fs.readFileSync(path.join(root, 'src/cs2/50_hud.js'), 'utf8');
 const api = vm.runInContext(src + '\n;({ ifrHudInit, ifrHudSet, ifrHudVar, ifrHudNum, ifrHudLadder, ifrHudLine, ifrHudReset, ifrHudOff, ifrHudTick, ifrHudStats, ifrHudPending, ifrHudScreen, ifrHudVitals, ifrHudWeapons, ifrHudLock, ifrHudRadar, ifrHudMode, ifrHudSlate, ifrHudGarage, ifrHudCapture, ifrHudFeed, ifrHudCard, ifrHudCardOn, ifrHudHint, ifrHudHinted, ifrHudCount, ifrHudLoadout, ifrHudProject, ifrHudAllies, ifrHudWrapAll, ifrHudFitText, ifrHudFits, ifrHudCutList })', ctx);
@@ -32,13 +32,16 @@ const clear = () => { calls.length = 0; };
 let passed = 0;
 function test(name, fn) { try { fn(); passed++; console.log('ok   ' + name); } catch (e) { console.log('FAIL ' + name + ': ' + (e.stack || e)); process.exitCode = 1; } }
 
+// distinct (panel, class) pairs from the radar's 12 columns (stGx0..23) and 12 items (stGy0..23): 576 in all (24 Nov 2026: the radar
+// went from one cell class stG0..575 to a column + row class each)
+const RP = (i) => (i % 576) < 288 ? ['ifr_rd' + (i % 12), 'stGx' + (Math.floor(i / 12) % 24)] : ['ifr_rd' + (i % 12) + 'y', 'stGy' + (Math.floor((i % 576 - 288) / 12) % 24)];
 H.ifrHudInit();
 test('unknown panel / class / text slot / ladder throw', () => {
   assert.throws(() => H.ifrHudSet(0, 'ifr_nope', 'stOn', true), /unknown panel/);
   assert.throws(() => H.ifrHudSet(0, 'ifr_lag', 'stWrong', true), /no class/);
   assert.throws(() => H.ifrHudVar(0, 'nope', 'x'), /unknown text slot/);
   assert.throws(() => H.ifrHudLadder(0, 'nope', 0.5), /unknown ladder/);
-  H.ifrHudSet(0, 'ifr_rd3', 'stG575', true); assert.throws(() => H.ifrHudSet(0, 'ifr_rd3', 'stG576', true), /no class/);
+  H.ifrHudSet(0, 'ifr_rd3', 'stGx23', true); assert.throws(() => H.ifrHudSet(0, 'ifr_rd3', 'stGx24', true), /no class/);
 });
 test('change-only: the second identical call sends nothing', () => {
   H.ifrHudOff(0); clear(); H.ifrHudSet(0, 'ifr_lag', 'stOn', true); H.ifrHudVar(0, 'ap', '6 420'); H.ifrHudTick();
@@ -65,15 +68,16 @@ test('quantised numbers with hysteresis', () => {
 });
 test('governor caps at 900 writes per tick and finishes next tick', () => {
   clear();
-  for (let i = 0; i < 64; i++) H.ifrHudSet(5, 'ifr_rd' + i, 'stG' + i, true);           // 64
-  for (let i = 0; i < 64; i++) { H.ifrHudSet(5, 'ifr_rd' + i, 'stE', true); H.ifrHudSet(5, 'ifr_rd' + i, 'stBig', true); }   // 128
-  for (let i = 0; i < 12; i++) H.ifrHudSet(6, 'ifr_rd' + i, 'stA', true);
-  for (let sl = 10; sl < 24; sl++) for (let i = 0; i < 64; i++) H.ifrHudSet(sl, 'ifr_rd' + i, 'stG' + (i + sl), true);   // 896 more
+  // (the radar has 12 dot panels since 24 Nov 2026: 64 distinct classes spread over them)
+  for (let i = 0; i < 64; i++) H.ifrHudSet(5, ...RP(i), true);    // 64
+  for (let i = 0; i < 12; i++) { H.ifrHudSet(5, 'ifr_rd' + i + 'y', 'stE', true); H.ifrHudSet(5, 'ifr_rd' + i + 'y', 'stBig', true); }   // 24
+  for (let i = 0; i < 12; i++) H.ifrHudSet(6, 'ifr_rd' + i + 'y', 'stA', true);
+  for (let sl = 10; sl < 24; sl++) for (let i = 0; i < 64; i++) H.ifrHudSet(sl, ...RP(i + sl), true);   // 896 more
   const total = H.ifrHudPending(5) + H.ifrHudPending(6);
   let sum = 0; for (let sl = 10; sl < 24; sl++) sum += H.ifrHudPending(sl);
-  assert.strictEqual(total + sum, 192 + 12 + 896);
+  assert.strictEqual(total + sum, 88 + 12 + 896);
   const n1 = H.ifrHudTick(); assert.strictEqual(n1, 900); assert.strictEqual(writes().length, 900);
-  clear(); const n2 = H.ifrHudTick(); assert.strictEqual(n2, 200);
+  clear(); const n2 = H.ifrHudTick(); assert.strictEqual(n2, 96);
   clear(); assert.strictEqual(H.ifrHudTick(), 0);
 });
 test('priority bands: warnings before gauges before text, whatever the order of the calls', () => {
@@ -82,14 +86,14 @@ test('priority bands: warnings before gauges before text, whatever the order of 
 });
 test('odd / even halves alternate: the first-served half changes every tick', () => {
   for (const sl of [30, 31]) { H.ifrHudOff(sl); }
-  clear(); for (const sl of [30, 31]) for (let i = 0; i < 576; i++) H.ifrHudSet(sl, 'ifr_rd' + (i % 64), 'stG' + i, true);
+  clear(); for (const sl of [30, 31]) for (let i = 0; i < 576; i++) H.ifrHudSet(sl, ...RP(i), true);
   // each slot has 576 writes; the budget serves one half fully (576) and the other 324
   H.ifrHudTick();
   const firstSlot = writes()[0][1], t = H.ifrHudStats().tick;
   assert.strictEqual(firstSlot & 1, t & 1);
   assert.strictEqual(writes().filter((c) => c[1] === firstSlot).length, 576);
   assert.strictEqual(writes().filter((c) => c[1] !== firstSlot).length, 324);
-  clear(); for (const sl of [30, 31]) for (let i = 0; i < 576; i++) H.ifrHudSet(sl, 'ifr_rd' + (i % 64), 'stG' + i, false);
+  clear(); for (const sl of [30, 31]) for (let i = 0; i < 576; i++) H.ifrHudSet(sl, ...RP(i), false);
   H.ifrHudTick();
   assert.strictEqual(writes()[0][1], firstSlot ^ 1);        // the other half first this time
   H.ifrHudTick(); H.ifrHudOff(30); H.ifrHudOff(31);

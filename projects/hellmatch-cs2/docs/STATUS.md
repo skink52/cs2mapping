@@ -15,6 +15,24 @@ Copy, wait ~20 s, write, then stage the file back and compare sha1 before tellin
 After a script/HUD change Zach must fully reload (`disconnect`, run the map again) so the script
 and Panorama files recompile. Zach doesn't code: plain-language explanations, light code comments.
 
+## Update 24 Nov 2026 (later) - more whole-line pictures
+Every fixed all-caps text in the scripts (spectator lines such as "TYPE !BACK TO PLAY", "YOU PLAY NEXT ROUND", loadout names) is now in
+build/hud_strings.json and drawn as one picture (tools/build_all.sh's list step). Mock at 12 humans: 1 140 -> 971 classes on.
+Deployed: script, styles and 565 line pictures to mg_freedm, compiled (backup in backups/). Not seen in game.
+
+## Update 24 Nov 2026 - HUD class cap (script only, deployed + compiled, not uploaded)
+
+The live JB box crashed on Space Racer and IRONFRAME when CS2's serializer overflowed a custom HUD's class state
+(`CCSCustomHudLayout.m_vecClassNames`, fatal PackEntity; docs/reference/jb-box-crashes-2026-11.md). Hellmatch's HUD works the
+same way, so it now: switches its status bar off (weapon, face, numbers, message, tint, team) when the player goes to the lobby
+or the HUD goes off (classes on hidden panels are still networked); and keeps every player's classes under
+`CONFIG.HUD_CLASS_CAP` (3000, provisional) together, each player getting an equal share, the screen state always going out.
+Mock (`node test/mock_cs2.mjs <humans> 0 150`, new `hud active` line): 1 277 -> 1 140 classes on at 12 humans, 6 240 -> 2 944 at
+64 (at 64 parts of each HUD wait). Scenarios 10 6 240, 12 8 300 churn, 8 4 200 statsinput: clean. Deployed to mg_freedm
+(script only; backup in backups/). Built from this clone with `FREEDOOM_DIR` set to the PC's Freedoom checkout, the music list taken from
+the deployed script (libADLMIDI is not built on the PC); tools/build.mjs now finds its folder on Windows (fileURLToPath).
+Needs a Workshop update; not seen in game.
+
 ## Next compile (earmarked 5 Nov 2026, from the slime-mg-gm server tests)
 - v0.2.1 on the Workshop works on the server: `server stats on` after SlimeMG's `mgstat_on`, guard locked, no errors.
 - `CONFIG.CVARS_ALWAYS` (radar off, no money, no buy time, respawn immunity 0) is sent once at activation and the server's mode cfg re-run 0.25 s later overrode it (radar was on, start money 800). The server now repeats them in its per-map cfg; in the script, send them again at every round start too.

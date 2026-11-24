@@ -70,6 +70,16 @@ function addEnt(e) { world.set(e.name, e); return e; }
 class PointTemplate extends Entity { ForceSpawn(pos) { stats.spawned++; const e = new Entity('tplspawn' + stats.spawned, 'prop_dynamic', pos); spawnedEnts.push(e); return [e]; } }
 // what each player's HUD panels show (panel -> class), so text lines can be read back
 const hudState = new Map();
+// classes switched on at once, all players (the layout's networked class state: the live JB box crashed when CS2's serializer
+// overflowed it on other maps, 24 Nov 2026)
+let hudOn = { n: 0, max: 0, at: 0, perMax: 0, by: '' };
+const hudNamesEver = new Set(), hudIdsEver = new Set();   // the layout's shared string tables over the run
+function hudOnNote() {
+  let n = 0; for (const m of hudState.values()) n += m.size;
+  hudOn.n = n; if (n <= hudOn.max) return; hudOn.max = n; hudOn.at = time;
+  let top = -1, tn = -1; for (const [sl, m] of hudState) if (m.size > tn) { tn = m.size; top = sl; }
+  if (tn > hudOn.perMax) { hudOn.perMax = tn; const by = {}; for (const p of hudState.get(top).keys()) { const g = p.replace(/\d+$/, '#'); by[g] = (by[g] || 0) + 1; } hudOn.by = Object.entries(by).sort((x, y) => y[1] - x[1]).slice(0, 14).map(([g, c]) => g + ' ' + c).join(', '); }
+}
 const loadingSlots = new Set();   // 'hudwipe': slots whose client drops HUD messages until they pick a team
 class CustomHudLayout extends Entity {
   SetHasClassForPlayer(slot, panel, cls, on) {
@@ -77,9 +87,10 @@ class CustomHudLayout extends Entity {
     if (OPTS.includes('hudwipe') && loadingSlots.has(slot)) return;   // client not ready: the change never arrives
     let m = hudState.get(slot); if (!m) hudState.set(slot, m = new Map());
     if (on) m.set(panel, cls); else if (m.get(panel) === cls) m.delete(panel);
+    hudOnNote(); if (on) { hudNamesEver.add(cls); } hudIdsEver.add(panel);
   }
   SetDialogVariableStringForPlayer() { stats.hudCalls++; }
-  ResetForPlayer(slot) { hudState.delete(slot); }
+  ResetForPlayer(slot) { hudState.delete(slot); hudOnNote(); }
 }
 const HUD_STRINGS = JSON.parse(fs.readFileSync(path.join(root, 'build/hud_strings.json'), 'utf8'));
 function hudLine(slot, prefix, n) {
@@ -449,6 +460,8 @@ if (TRACE) {
 }
 console.log('round end reasons', JSON.stringify(winReasons));
 console.log(`simulated ${SECONDS}s with ${HUMANS} humans + ${BOTS} bots: ${rounds} CS2 rounds ended`);
+console.log(`hud tables: ${hudNamesEver.size} class names (${[...hudNamesEver].reduce((n, x) => n + x.length + 1, 0)} bytes), ${hudIdsEver.size} panel ids (${[...hudIdsEver].reduce((n, x) => n + x.length + 1, 0)} bytes) used this run`);
+console.log(`hud active: peak ${hudOn.max} classes on at t=${hudOn.at.toFixed(0)} s, most on one player ${hudOn.perMax}: ${hudOn.by}`);
 console.log(`props spawned ${stats.spawned}, moves ${stats.moves}, teleports ${stats.teleports}, setModel ${stats.setModel}, skins ${stats.skins}, hud calls ${stats.hudCalls}, sounds ${stats.sounds}`);
 console.log(`CS2 kills ${stats.kills} (scripted ${stats.scriptKills}), camera modes ${JSON.stringify(cams)}`);
 console.log(`think time: avg ${(thinkMs / (SECONDS * 64)).toFixed(3)} ms, max ${maxThink.toFixed(1)} ms`);

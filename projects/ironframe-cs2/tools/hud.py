@@ -454,7 +454,7 @@ for hid, cls, size, th, gap in (('ifr_hit', 'HitL', 56, 3, 8), ('ifr_hitH', 'Hit
 # translate class each (stX<k> / stY<k>, 20 px steps from the screen centre, eased 0.1 s), which the driver sets from the target's place on the
 # screen (50_hud.js ifrHudProject). States: stAcq (a target is in the ring: thin amber corners, ACQUIRING), stSoft (white: guns track it),
 # stHard1..2 (closing in), stHard3 (red, flashing: LOCKED, missiles track). Name above, the lock progress under it, state word + range + target AP below.
-LKS, LKXN, LKYN = 20, 58, 26            # step px, steps each side of the centre (x: +-1160 covers 21:9, y: +-520)
+LKS, LKXN, LKYN = 32, 36, 16            # step px, steps each side of the centre (x: +-1152 covers 21:9, y: +-512); 32 px (was 20): fewer class names, 24 Nov 2026
 rule('.LkRoot', overflow='noclip noclip'); rule('.LkX', overflow='noclip noclip', transition_property='transform', transition_duration='0.1s', transition_timing_function='linear')
 rule('.LkY', overflow='noclip noclip', transition_property='transform', transition_duration='0.1s', transition_timing_function='linear')
 for k in range(2 * LKXN + 1): rule('.LkX.stX%d' % k, transform='translatex(%dpx)' % ((k - LKXN) * LKS))
@@ -527,36 +527,50 @@ reticle = P(None, 'Fight ' + h.place(w=RB, h=RB, center=True, y=RY), ret)
 
 screen('common')
 # ================================================================ COMMON: radar (top left, where CS2's own radar sits; sv_disable_radar 1 hides that one)
-RS, RX, RYY, CELLS, DOTS = 280, 20, 20, 24, 64
+RS, RX, RYY, CELLS, DOTS = 280, 20, 20, 24, 12   # 12 dots (was 64, then 24): the nearest mechs only, 24 Nov 2026 (HUD class state)
 rule('.Radar', background_image=url('radar.png'), background_size='100% 100%', background_repeat='no-repeat', overflow='noclip noclip')
-rule('.RdG', opacity='0', transition_property='transform', transition_duration='0.12s')
+# A radar item is two panels (24 Nov 2026): an outer column RS tall moved sideways by its column class stGx<k>, and the item itself
+# inside it moved down by its row class stGy<k>. 24 + 24 class names instead of 576 (stG<cell>): every class name a map ever uses
+# stays in the layout entity's packed data, and its overflow crashed the live server (the racer minimap does the same, seen in CS2)
+rule('.RdG', opacity='0', overflow='noclip', transition_property='transform', transition_duration='0.12s')
+rule('.RdGy', transition_property='transform', transition_duration='0.12s')
 cell = RS / CELLS
-for n in range(CELLS * CELLS):
-    gx, gy = n % CELLS, n // CELLS
-    rule('.RdG.stG%d' % n, opacity='1', transform='translatex(%dpx) translatey(%dpx)' % (round((gx + 0.5) * cell - RS / 2), round((gy + 0.5) * cell - RS / 2)))
-GRID = ['stG%d' % n for n in range(CELLS * CELLS)]
-rule('.RdDot', width='10px', height='10px', background_color=PAL['Dim'])
+def _rd_axes(w, hh):
+    for k in range(CELLS):
+        c = round((k + 0.5) * cell)
+        rule('.RdG.stGx%d.Rw%d' % (k, w), opacity='1', transform='translatex(%dpx)' % (c - w // 2))
+        rule('.RdGy.stGy%d.Rh%d' % (k, hh), transform='translatey(%dpx)' % (c - hh // 2))
+for _w in (10, 22, 14): _rd_axes(_w, _w)
+GRIDX = ['stGx%d' % k for k in range(CELLS)]
+GRIDY = ['stGy%d' % k for k in range(CELLS)]
+def rd_item(pid, w, cls):
+    """the column (pid, stGx) and the item (pid + 'y', stGy + the item's own classes) at the radar's top-left"""
+    return P(pid, 'RdG Rw%d %s' % (w, h.place(w=w, h=RS, x=0, y=0)), [P(pid + 'y', 'RdGy Rh%d %s %s' % (w, cls, h.place(w=w, h=w, x=0, y=0)))])
+rule('.RdDot', width='10px', height='10px', background_color=PAL['Ally'])   # allies by default: the script sets only stE (24 Nov 2026)
 rule('.RdDot.stA', background_color=PAL['Ally']); rule('.RdDot.stE', background_color=PAL['Enemy'])
 rule('.RdDot.stBig', border='2px solid ' + PAL['Gold'])
 rule('.RdDot.stBoss', border='3px solid ' + PAL['Danger'])
 rule('.RdDot.stTgt', border='2px solid #ffffff')
 rdk = []
 for n in range(DOTS):
-    reg('ifr_rd%d' % n, GRID + ['stA', 'stE', 'stBig', 'stBoss', 'stTgt'], prio=2)
-    rdk.append(P('ifr_rd%d' % n, 'RdG RdDot ' + h.place(w=10, h=10, x=RS / 2 - 5, y=RS / 2 - 5)))
+    reg('ifr_rd%d' % n, GRIDX, prio=2)
+    reg('ifr_rd%dy' % n, GRIDY + ['stA', 'stE', 'stBig', 'stBoss', 'stTgt'], prio=2)
+    rdk.append(rd_item('ifr_rd%d' % n, 10, 'RdDot'))
 rule('.RdPt', background_size='100% 100%', background_repeat='no-repeat')
 for L in 'ABC':
     rule('.RdPt.RdPt%s' % L, background_image=url('pt_%s_n.png' % L))
     rule('.RdPt.RdPt%s.stOwnT' % L, background_image=url('pt_%s_t.png' % L))
     rule('.RdPt.RdPt%s.stOwnCT' % L, background_image=url('pt_%s_ct.png' % L))
-    reg('ifr_rd%s' % L, GRID + ['stOwnT', 'stOwnCT', 'stCap'], prio=2)
-    rdk.append(P('ifr_rd%s' % L, 'RdG RdPt RdPt%s %s' % (L, h.place(w=22, h=22, x=RS / 2 - 11, y=RS / 2 - 11))))
+    reg('ifr_rd%s' % L, GRIDX, prio=2)
+    reg('ifr_rd%sy' % L, GRIDY + ['stOwnT', 'stOwnCT', 'stCap'], prio=2)
+    rdk.append(rd_item('ifr_rd%s' % L, 22, 'RdPt RdPt%s' % L))
 rule('.RdPt.stCap', **BLINK)
 rule('.RdDrop', border='2px solid ' + PAL['Dim'])
 rule('.RdDrop.RdDropA', border='2px solid ' + PAL['Ally']); rule('.RdDrop.RdDropE', border='2px solid ' + PAL['Enemy'])
 for k, c in (('a', 'A'), ('e', 'E')):
-    reg('ifr_rdD%s' % k, GRID, prio=2)
-    rdk.append(P('ifr_rdD%s' % k, 'RdG RdDrop RdDrop%s %s' % (c, h.place(w=14, h=14, x=RS / 2 - 8, y=RS / 2 - 8))))
+    reg('ifr_rdD%s' % k, GRIDX, prio=2)
+    reg('ifr_rdD%sy' % k, GRIDY, prio=2)
+    rdk.append(rd_item('ifr_rdD%s' % k, 14, 'RdDrop RdDrop%s' % c))
 rule('.RdSelf', background_image=url('self.png'), background_size='100% 100%', background_repeat='no-repeat')
 rdk.append(P(None, 'RdSelf ' + h.place(w=16, h=16, x=RS / 2 - 8, y=RS / 2 - 8)))
 rdk.append(lbl('rrange', '', 80, 16, 'XS', 'Dim', 'right', right=14, y=RS - 24, maxlen=6))
@@ -1143,7 +1157,7 @@ xp, cp = h.write(OUT, NAME, root, dynamic=r'^st[A-Z]\w*$', wrap_cls='IfrWrap')
 def compact(v):
     """a panel's contract entry: plain classes plus ranges [prefix, lo, hi] for stG0..575 and stL0..n (the driver expands them)"""
     cls, ranges = set(v['classes']), []
-    for pre in ('stG', 'stL', 'stX', 'stY'):
+    for pre in ('stGx', 'stGy', 'stG', 'stL', 'stX', 'stY'):
         nums = sorted(int(c[len(pre):]) for c in cls if re.match(r'^%s\d+$' % pre, c))
         if nums and nums == list(range(nums[0], nums[-1] + 1)) and len(nums) > 3:
             ranges.append([pre, nums[0], nums[-1]])

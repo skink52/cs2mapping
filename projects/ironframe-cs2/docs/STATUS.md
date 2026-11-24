@@ -15,6 +15,13 @@
 - [ ] Further polish passes.
 
 ## Resume here
+**24 Nov 2026, ~00:50 (skink52: the live JB box's crash report, OOM-kill 2 min 21 s into Dunes): [SERVER_READY.md](SERVER_READY.md) section F.**
+- GOTV was a pilot: fixed (F1). With GOTV on, Dunes still leaves ~300 MiB per visit on the server for good (F2, open: the script plus GOTV,
+  at ~2 min of map time). `tools/mem_soak.py` measures it on the local server (`--map --tv --delay --restart-every --visit`; ~16 min).
+- Local server: its `cfg/slime_local.cfg` RCON password differs from slime-mg-gm `server/local.cfg` since 19 Nov, so `build/server_map.py`
+  and slime-mg-gm's `tests/run.py` get "RCON: wrong password" (mem_soak.py reads the server's own cfg). The 18 Nov `server_copy remove`
+  had left Dunes as a bare vpk there (error models); copied back in full 23 Nov.
+
 **18 Nov 2026: getting both maps server ready. The tracker is [SERVER_READY.md](SERVER_READY.md) (release blockers, client checks, unattended server checks); resume from its first row that is not DONE.**
 
 **14 Nov 2026, evening (skink52: "free to use compute power ... to improve both maps and the gamemode"; "the legs [of the heavy

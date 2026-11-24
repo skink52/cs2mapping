@@ -14,3 +14,4 @@ __pycache__/
 ref/pc/
 # converted Freedoom level geometry for the FreeDM test fixture (regenerate with the Hellmatch converter; tests prefer out/addon/_gen/levels.json)
 test/fixtures/fdm/levels_*.json
+backups/

@@ -214,6 +214,10 @@ def booth(ctx, env):
     import names as N
     ent('point_script', (bx, by, bz + 64), group=ctx.group, targetname='%s_script' % PREFIX, cs_script=N.SCRIPT_PATH)
     ent('custom_hud_layout', (bx + 32, by, bz + 64), group=ctx.group, targetname='%s_hud' % PREFIX, layout=N.HUD_PATH, observable='1')
+    # copies of the HUD layout (24 Nov 2026): CS2 packs each custom_hud_layout into ~16 KB shared by the players on it (the live box
+    # crashed past it); the script puts each player on the copy with the fewest players (50_hud.js), so 8 copies give 8 times the room
+    for k in range(2, 9):
+        ent('custom_hud_layout', (bx + 32 + 32 * (k - 1), by, bz + 64), group=ctx.group, targetname='%s_hud%d' % (PREFIX, k), layout=N.HUD_PATH, observable='1')
     for cls, pos, yaw in (('counterterrorist_team_intro', (bx + 300, by + 300, bz + 64), 90), ('terrorist_team_intro', (bx - 300, by + 300, bz + 64), 90),
                           ('team_select', (bx, by - 300, bz + 64), 90), ('end_of_match', (bx, by, bz + 64), 90)):
         ctx.clone(cls, pos, (0, yaw, 0))

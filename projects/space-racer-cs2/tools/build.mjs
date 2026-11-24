@@ -18,7 +18,7 @@ const adapterDir = path.join(root, 'src/cs2');
 const carModels = path.join(root, 'out/addon/_gen/car_models.json');
 if (fs.existsSync(adapterDir) && fs.existsSync(carModels)) {
   const adapter = cat(adapterDir);
-  const head = `import { Instance, CSInputs, CSPlayerPawn, CSPlayerController, BaseModelEntity, PointTemplate, CustomHudLayout, CSDamageFlags, CSDamageTypes, CustomCameraMode, CSMoveType, CSRoundEndReason, Entity } from "cs_script/point_script";\n`;
+  const head = `import { Instance, Console, CSInputs, CSPlayerPawn, CSPlayerController, BaseModelEntity, PointTemplate, CustomHudLayout, CSDamageFlags, CSDamageTypes, CustomCameraMode, CSMoveType, CSRoundEndReason, Entity } from "cs_script/point_script";\n`;
   const models = fs.readFileSync(carModels, 'utf8');
   const hudTextPath = path.join(root, 'out/addon/_gen/hud_text.json');
   const hudText = fs.existsSync(hudTextPath) ? fs.readFileSync(hudTextPath, 'utf8') : '{"slots":{},"charset":""}';

@@ -19,7 +19,7 @@ let ENTFILE = null;
 for (const a of args.slice(1)) { const i = a.indexOf('='); if (i < 0 && a.endsWith('.json')) ENTFILE = a; else kv.set(i < 0 ? a : a.slice(0, i), i < 0 ? '1' : a.slice(i + 1)); }
 const opt = (k, d) => (kv.has(k) ? kv.get(k) : d);
 const on = (k) => kv.has(k) && kv.get(k) !== '0';
-const KNOWN = 'players seconds seed round warm trace calls held churn silent norespawn warmup unassigned resetfirst hudwipe maskall autoents models hud css inputs noinputs fire chat scenario';
+const KNOWN = 'hudcopies packbytes hudclasses namesby players seconds seed round warm trace calls held churn silent norespawn warmup unassigned resetfirst hudwipe maskall autoents models hud css inputs noinputs fire chat scenario';
 for (const k of kv.keys()) if (!KNOWN.split(' ').includes(k)) console.log('warning: unknown option ' + k);
 
 const SCRIPT = path.resolve(args[0]);
@@ -269,6 +269,31 @@ if (kv.has('hud')) {
 }
 const hudRef = new Set();     // distinct panel ids the script has referenced (CS2 caps these: 'The maximum number of panel ids has been reached')
 const hudState = new Map();   // 'slot|panel' -> Set of classes
+// classes switched on right now, over every player (and 'all'): what CCSCustomHudLayout networks; past CS2's limit PackEntity
+// overflows m_vecClassNames and the server crashes (Space Racer, IRONFRAME on the live JB box, 20-24 Nov 2026). hudclasses=N: a PROBLEM over N
+const HUDCLASSES = +opt('hudclasses', 0);
+let hudActive = 0, hudActiveMax = 0, hudActiveAt = 0;
+const hudNamesEver = new Set();   // every class name used this run (CCSCustomHudLayout m_vecClassNames)
+// the layout entity's packed size, estimated as the scripts do (4 bytes a switched-on class, strings + 2): tables + classes + texts;
+// the live server crashed past ~16 KB (24 Nov 2026). packbytes=N: a PROBLEM over N
+const PACKBYTES = +opt('packbytes', 0);
+const HUDCOPIES = +opt('hudcopies', 1);
+let hudPackMax = 0, hudPackAt = 0, hudPackN = 0, hudPackParts = '';
+function hudPackNote() {
+  if ((++hudPackN & 31) !== 0) return;
+  let b = hudActive * 4;
+  for (const x of hudNamesEver) b += x.length + 2;
+  for (const x of hudRef) b += x.length + 2;
+  for (const v of hudVars.values()) b += String(v).length + 2;
+  if (b > hudPackMax) { hudPackMax = b; hudPackAt = time; let tv = 0; const byP = {}; for (const [k, v] of hudVars) { tv += String(v).length + 2; const pn = k.slice(k.indexOf('|') + 1).replace(/\..*$/, '').replace(/\d+$/, '#'); byP[pn] = (byP[pn] || 0) + String(v).length + 2; } hudPackParts = `classes ${hudActive * 4} B, texts ${tv} B (` + Object.entries(byP).sort((x, y) => y[1] - x[1]).slice(0, 8).map(([g, n]) => g + ' ' + n).join(', ') + ')'; }
+}
+let hudActiveBy = '';   // the busiest player's classes by panel group, at (about) the peak
+function hudActiveSnap() {
+  const per = new Map(); for (const [k, set] of hudState) { const sl = k.slice(0, k.indexOf('|')); per.set(sl, (per.get(sl) || 0) + set.size); }
+  let top = '', n = -1; for (const [sl, v] of per) if (v > n) { n = v; top = sl; }
+  const by = {}; for (const [k, set] of hudState) if (set.size && k.startsWith(top + '|')) { const g = k.slice(top.length + 1).replace(/\d+$/, '').replace(/_$/, ''); by[g] = (by[g] || 0) + set.size; }
+  hudActiveBy = `player ${top}: ${n} on: ` + Object.entries(by).sort((x, y) => y[1] - x[1]).slice(0, 25).map(([g, c]) => g + ' ' + c).join(', ');
+}
 const hudVars = new Map();    // 'slot|panel.name' -> dialog variable text ('all|...' for everyone); scenarios read it with api.hudVar
 const loading = new Set();    // hudwipe: slots whose client drops HUD changes until they pick a team
 function hudPanel(panel, cls) {
@@ -282,15 +307,19 @@ const chkSlot = (s) => { if (!Number.isInteger(s) || s < 0 || s > 63) throw new 
 function hudCls(scope, panel, cls, has) {
   const k = scope + '|' + panel; let set = hudState.get(k);
   if (!set) hudState.set(k, set = new Set());
+  const was = set.size;
+  if (has === true || has === undefined && scope === 'all') hudNamesEver.add(cls);
   if (has === true || has === undefined && scope === 'all') set.add(cls); else set.delete(cls);
+  hudPackNote(); hudActive += set.size - was; if (hudActive > hudActiveMax) { hudActiveMax = hudActive; hudActiveAt = time; if (hudActiveMax % 64 === 0) hudActiveSnap(); }
   if (OBS) see('h ' + k, [...set].sort().join(' '));
 }
-function hudReset(prefix) { for (const k of [...hudState.keys()]) if (!prefix || k.startsWith(prefix)) { hudState.delete(k); if (OBS) see('h ' + k, undefined); }
+function hudReset(prefix) { for (const k of [...hudState.keys()]) if (!prefix || k.startsWith(prefix)) { hudActive -= hudState.get(k).size; hudState.delete(k); if (OBS) see('h ' + k, undefined); }
   for (const k of [...hudVars.keys()]) if (!prefix || k.startsWith(prefix)) hudVars.delete(k);
   if (OBS) for (const k of [...state.keys()]) if (k.startsWith('v ') && (!prefix || k.startsWith('v ' + prefix))) see(k, undefined); }
+const hudByEnt = new Map();   // layout entity name -> slots it served (a map may carry copies of one layout)
 class Hud extends Ent {
   SetHasClass(panel, cls, has) { hudPanel(panel, cls); hudCls('all', panel, cls, has === undefined ? false : !!has); }
-  SetHasClassForPlayer(slot, panel, cls, has) { chkSlot(slot); hudPanel(panel, cls); if (HUDWIPE && loading.has(slot)) { stats.hudDropped++; return; } hudCls(slot, panel, cls, has === undefined ? undefined : !!has); }
+  SetHasClassForPlayer(slot, panel, cls, has) { chkSlot(slot); { let st = hudByEnt.get(this._n); if (!st) hudByEnt.set(this._n, st = new Set()); st.add(slot); const on = (this._on ||= new Map()); const k = slot + '|' + panel + '|' + cls; if (has) on.set(k, slot); else on.delete(k); } hudPanel(panel, cls); if (HUDWIPE && loading.has(slot)) { stats.hudDropped++; return; } hudCls(slot, panel, cls, has === undefined ? undefined : !!has); }
   SetDialogVariableString(panel, name, value) { hudPanel(panel); if (typeof value !== 'string') throw new Error('non-string dialog var ' + panel + '.' + name + ' = ' + value); hudVars.set('all|' + panel + '.' + name, value); if (OBS) see('v all|' + panel + '.' + name, value); }
   SetDialogVariableStringForPlayer(slot, panel, name, value) { chkSlot(slot); hudPanel(panel);
     if (value !== undefined && typeof value !== 'string') throw new Error('non-string dialog var ' + panel + '.' + name + ' = ' + value);
@@ -298,7 +327,7 @@ class Hud extends Ent {
     if (value === undefined) hudVars.delete(slot + '|' + panel + '.' + name); else hudVars.set(slot + '|' + panel + '.' + name, value);
     if (OBS) see('v ' + slot + '|' + panel + '.' + name, value); }
   SetInputCaptureEnabled(slot) { chkSlot(slot); } IsInputCaptureEnabled() { return false; }
-  Reset() { hudReset(''); } ResetForPlayer(slot) { chkSlot(slot); hudReset(slot + '|'); }
+  Reset() { hudReset(''); if (this._on) this._on.clear(); } ResetForPlayer(slot) { chkSlot(slot); hudReset(slot + '|'); if (this._on) for (const [k, sl] of [...this._on]) if (sl === slot) this._on.delete(k); }
 }
 class Template extends Ent {
   ForceSpawn(origin, angle) { if (origin) chkV(origin, 'ForceSpawn origin', true); if (angle) chkA(angle, 'ForceSpawn angles'); stats.spawned++;
@@ -346,6 +375,8 @@ function byNameMatch(n) {
   if (typeof n !== 'string') throw new Error('entity name must be a string: ' + n);
   if (n.includes('*')) { const re = new RegExp('^' + n.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$'); return world.filter((e) => e._ok && re.test(e._n)); }
   let a = byName.get(n);
+  // hudcopies=N: HUD layout copies <name>2..<name>N exist (a script may look for more: CS2 packs each layout entity into ~16 KB)
+  if (!a && AUTOENTS && n && /hud\d+$/i.test(n) && +n.match(/(\d+)$/)[1] > HUDCOPIES) return [];
   if (!a && AUTOENTS && n) {   // autoents: any name the script looks up exists, as a permissive prop/template/hud
     const C = /templ|tpl/i.test(n) ? Template : /hud/i.test(n) ? Hud : ModelEnt;
     const e = new C(n, C === Template ? 'point_template' : C === Hud ? 'custom_hud_layout' : 'prop_dynamic'); e._auto = true; e._map = true;
@@ -363,6 +394,8 @@ function addMapEnt(d) {
 }
 for (const d of ENTS) addMapEnt(d);
 if (HUD && !world.some((e) => e instanceof Hud)) addMapEnt({ name: 'hud', cls: 'custom_hud_layout', origin: [0, 0, 0], angles: [0, 0, 0] });
+// hudcopies=N: copies <name>2..<name>N of the map's HUD layout entity (CS2 packs each layout entity into ~16 KB; a script may spread players over copies)
+if (HUDCOPIES > 1) for (const h of world.filter((e) => e instanceof Hud && !/\d$/.test(e._n || ''))) for (let k = 2; k <= HUDCOPIES; k++) addMapEnt({ name: h._n + k, cls: 'custom_hud_layout', origin: [0, 0, 0], angles: [0, 0, 0] });
 const SPAWNS = ENTS.filter((e) => e.cls.startsWith('info_player'));
 
 // ---------------------------------------------------------------- players, damage, rounds
@@ -766,6 +799,12 @@ if (stats.tpAuto) console.log(`autoents names Teleported 3+ ticks in a row (a pr
 if (Object.keys(stats.mgstat).length) console.log('mgstat stats sent (' + Object.keys(stats.mgstat).length + ' names): ' + Object.entries(stats.mgstat).sort((x, y) => y[1] - x[1]).map(([k, n]) => k + ' x' + n).join(', '));
 if (stats.invalidCalls) console.log('calls on entities that had gone away:', stats.invalidCalls);
 if (Object.keys(stats.notInApi).length) stats.errors.push('Instance methods not in point_script.d.ts: ' + Object.keys(stats.notInApi).join(', '));
+console.log(`HUD classes on at once (all players): peak ${hudActiveMax} at ${hudActiveAt.toFixed(0)} s`); console.log(`HUD tables: ${hudNamesEver.size} class names (${[...hudNamesEver].reduce((n, x) => n + x.length + 1, 0)} bytes), ${hudRef.size} panel ids (${[...hudRef].reduce((n, x) => n + x.length + 1, 0)} bytes) used this run`); if (hudActiveBy) console.log('  busiest ' + hudActiveBy);
+if (hudByEnt.size > 1) { const now = {}; for (const h of world.filter((e) => e instanceof Hud && e._on)) for (const sl of h._on.values()) (now[sl] ||= new Set()).add(h._n); const both = Object.entries(now).filter(([, st]) => st.size > 1); console.log('HUD copies at the end: ' + Object.entries(now).map(([sl, st]) => sl + '->' + [...st].join('+')).join(' ') + (both.length ? '  PROBLEM: slots with classes on two copies: ' + both.map(([sl]) => sl).join(',') : '')); if (both.length) flagIt('HUD: a player has classes on two layout copies'); }
+if (hudByEnt.size) console.log('HUD layout copies used: ' + [...hudByEnt].map(([n, st]) => n + ' (slots ' + [...st].sort((x, y) => x - y).join(',') + ')').join(', '));
+console.log(`HUD packed size (estimate): peak ${hudPackMax} bytes at ${hudPackAt.toFixed(0)} s: ${hudPackParts}`); if (opt("namesby", 0)) { const by = {}; for (const x of hudNamesEver) { const g = x.replace(/d+/g, "#").replace(/^(st[A-Z][a-z]?).*/, "$1*"); by[g] = (by[g] || [0, 0]); by[g][0]++; by[g][1] += x.length + 2; } console.log("HUD class names by group: " + Object.entries(by).sort((a, b) => b[1][1] - a[1][1]).slice(0, 15).map(([g, [n, b]]) => g + " " + n + " (" + b + " B)").join(", ")); }
+if (PACKBYTES && hudPackMax > PACKBYTES) flagIt(`HUD: packed size estimate ${hudPackMax} bytes, over packbytes=${PACKBYTES} (the live server crashed past ~16 KB)`);
+if (HUDCLASSES && hudActiveMax > HUDCLASSES) flagIt(`HUD: ${hudActiveMax} classes on at once, over hudclasses=${HUDCLASSES} (CS2 overflows CCSCustomHudLayout m_vecClassNames and the server crashes)`);
 if (PANELIDS && hudRef.size > PANELIDS) flagIt(`HUD: ${hudRef.size} distinct panel ids referenced, over panelids=${PANELIDS} (CS2: "The maximum number of panel ids has been reached": later panels never update)`);
 const probs = [...new Set(stats.problems)];
 if (probs.length) console.log('PROBLEMS (' + probs.length + '):\n  ' + probs.slice(0, 10).join('\n  '));

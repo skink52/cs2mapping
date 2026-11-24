@@ -39,6 +39,10 @@ const CONFIG = {
   RIDE_GAIN: 8, RIDE_MAX: 600, RIDE_SNAP: 400, RIDE_MAX_SPEED: 5800, RIDE_PAWN_UP: 36,
   // ---- rendering budgets
   SPAWN_BUDGET: 24, MAX_POOL: 900, FAR_DIST: 9000, HUD_BUDGET: 900, TELEPORT_DIST: 400,
+  // bytes the HUD may fill in its layout entity, all players together (24 Nov 2026: the live server crashed when the entity's
+  // packed size passed ~16 KB; 50_hud.js "Packed-size budget" is an estimate, so it keeps a margin)
+  HUD_PACK_BUDGET: 12500,
+  HUD_TEST_COPY: 0,     // test builds only: >0 puts every new player on that HUD layout copy (ifr_hud<k+1>); 0 in a release
   FX: { boom: 24, spark: 16, gboom: 8, beam: 16, tracer: 48, missile: 128, ring: 24, anchors: 16, soundsPerTick: 24, fxDist: 12000, sndDist: 7000 },
   // ---- frame auras (47_auras.js): tier 2 = every part + flares (humans' own mechs + the nearest fullCap within fullDist of a human),
   //      tier 1 = one idle part (next reducedCap within reducedDist), else none; props from the shared pool, at most maxProps
@@ -61,4 +65,5 @@ const CONFIG = {
   core: {},
   // ---- diagnostics
   PERF_LOG: true, DEBUG: false,
+  SOAK_SWITCHES: false,  // true only for tools/mem_soak.py --off and tools/hud_cap_probe.py on the LOCAL server (SERVER_READY.md F2, F4); never in an upload
 };

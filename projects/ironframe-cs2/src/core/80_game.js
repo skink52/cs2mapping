@@ -564,7 +564,7 @@ class IF_Game {
       .map((m) => ({ m, s: m.sum.kills * 3 + m.sum.assists + m.sum.captures * 2 + m.sum.pveKills * 2 + m.sum.bossKills * 10 + m.sum.damage / 3000 }))
       .sort((a, b) => (b.s - a.s) || ((a.m.npc ? 1 : 0) - (b.m.npc ? 1 : 0)) || (a.m.slot - b.m.slot));
     M.podium = ranked.slice(0, 3).map((r) => r.m.slot);
-    M.podiumInfo = ranked.slice(0, 3).map((r) => ({ slot: r.m.slot, name: r.m.name, team: r.m.team, npc: r.m.npc, kills: r.m.sum.kills + r.m.sum.pveKills + r.m.sum.bossKills, score: Math.round(r.s) }));
+    M.podiumInfo = ranked.slice(0, 3).map((r) => ({ slot: r.m.slot, name: r.m.name, team: r.m.team, npc: r.m.npc, kills: r.m.sum.kills /* AI kills included (pveKills is a subset); 24 Nov 2026 */, score: Math.round(r.s) }));
     M.winner = winner; M.phase = 'podium'; M.timeLeft = this.cfg.round.podium; this.combatOn = false;
     for (const m of this.mechs.values()) {
       const won = M.mode === 'so' ? (playersWon && m.team !== 0) : M.mode === 'sk' ? (ranked.length > 0 && ranked[0].m === m) : (winner !== 0 && m.team === winner);

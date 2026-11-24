@@ -9,15 +9,42 @@
 
 let hudEnt;
 let hudBudget = Infinity;
+// Packed-size budget (24 Nov 2026). The live JB box crashed three times when CS2's serializer ran out of room packing this layout
+// entity ("CFlattenedSerializer::EncodeField overflowed CCSCustomHudLayout m_vecPanelIds[480/489]", "... m_vecClassNames[162/203]"
+// and "[686/687]" on IRONFRAME, then fatal PackEntity): the overflow lands at a different element each time, so it is the entity's
+// whole packed size (Source's per-entity buffer is 16 KB), filled by every player's switched-on classes and dialog texts plus the
+// layout's two string tables (every panel id and class name used this map, never removed). The script keeps its own estimate and
+// stays under CONFIG.HUD_PACK_BUDGET bytes: each player with a HUD gets an equal share of what the tables leave; near it the other
+// cars' minimap dots go first; a class or text that would pass it waits (like the per-tick budget). Screen states always go out.
+const HUD_ENTRY_BYTES = 4, HUD_STR_BYTES = 2;     // estimate per switched-on class / extra per string
+const hudIdsUsed = new Set(), hudNamesUsed = new Set();
+let hudOnTotal = 0, hudVarBytes = 0, hudTableBytes = 0, hudCapSaid = false;   // (said once a map)
+function hudPackBytes() { return hudTableBytes + hudOnTotal * HUD_ENTRY_BYTES + hudVarBytes; }
+function hudShareBytes() { return ((CONFIG.HUD_PACK_BUDGET || 1e9) - hudTableBytes) / Math.max(1, hudSlots.size); }
+function hudSlotBytes(hs) { return hs.on * HUD_ENTRY_BYTES + hs.vb; }
+function hudNewTableBytes(panel, cls) { return (hudIdsUsed.has(panel) ? 0 : panel.length + HUD_STR_BYTES) + (cls && !hudNamesUsed.has(cls) ? cls.length + HUD_STR_BYTES : 0); }
+function hudNoteTables(panel, cls) {
+  if (!hudIdsUsed.has(panel)) { hudIdsUsed.add(panel); hudTableBytes += panel.length + HUD_STR_BYTES; }
+  if (cls && !hudNamesUsed.has(cls)) { hudNamesUsed.add(cls); hudTableBytes += cls.length + HUD_STR_BYTES; }
+}
+function hudOverBudget(hs, add, newTables) {
+  const budget = CONFIG.HUD_PACK_BUDGET || 1e9, now = hudPackBytes();   // (the share counts only once the budget is 80 % used: small games keep the whole HUD)
+  return now + newTables + add > budget || (now > budget * 0.8 && hudSlotBytes(hs) + add > hudShareBytes());
+}
+function hudCapNote() { if (!hudCapSaid) { hudCapSaid = true; log(`HUD byte budget reached: ${hudSlots.size} players, ~${Math.round(hudPackBytes())} of ${CONFIG.HUD_PACK_BUDGET} bytes; parts of the HUD wait`); } }
+function hudBudgetStats() { return { bytes: Math.round(hudPackBytes()), tables: hudTableBytes, ids: hudIdsUsed.size, names: hudNamesUsed.size, classes: hudOnTotal, vars: hudVarBytes }; }
 let hudCheckedTick = -1;
 const hudSlots = new Map();    // slot -> HudSlot
 
 class HudSlot {
   constructor() {
     this.c = new Map();        // class slot key -> class (or dialog variable key -> text)
+    this.on = 0;               // classes switched on for this player now (the byte budget)
+    this.vb = 0;               // bytes of this player's dialog texts now
     this.rows = new Map();     // text row id -> { t, c, f } last drawn
     this.stand = null; this.standMe = -2;          // standings list object + the watched slot
-    this.resMe = null; this.resRank = null; this.resKey = '';   // results board
+    this.resMe = null; this.resRank = null; this.resKey = '';   // results board ('' = empty on screen)
+    this.lobbyOn = false; this.raceOn = false;      // lobby / race rows have something on them (cleared when the other screen shows)
     this.posKey = NaN; this.posOf = NaN; this.tallyT = NaN; this.tallyCT = NaN; this.lapKey = NaN; this.best = NaN;
     this.dots = new Int32Array(MAX_DOTS + 2).fill(-1);   // per dot: packed x / y / colour / shown (-1 = unknown)
     this.optCrt = null; this.optHelp = null;
@@ -34,7 +61,8 @@ function hud() {
   if (!hudEnt) { warnOnce('hud', 'no custom_hud_layout named ' + CONFIG.HUD + ' - no HUD'); return hudEnt; }
   hudCheckedTick = tickNo;
   for (const slot of hudSlots.keys()) { try { hudEnt.ResetForPlayer(slot); } catch (err) { /* ignore */ } }
-  hudSlots.clear();
+  hudSlots.clear(); hudOnTotal = 0; hudVarBytes = 0;   // (a new layout entity: its string tables start empty too)
+  hudIdsUsed.clear(); hudNamesUsed.clear(); hudTableBytes = 0;
   return hudEnt;
 }
 
@@ -71,6 +99,9 @@ function hudSwapK(hs, slot, panel, key, cls) {
   const h = hud();
   if (!h) return false;
   if (hudSlots.get(slot) !== hs) return false;    // the HUD was reset while drawing: the next update starts clean
+  if (cls && panel !== 'spr_root' && hudOverBudget(hs, old ? 0 : HUD_ENTRY_BYTES, hudNewTableBytes(panel, cls))) { hudCapNote(); return false; }   // (screen states always go out)
+  hudNoteTables(panel, old); hudNoteTables(panel, cls);
+  const d = (cls ? 1 : 0) - (old ? 1 : 0); hs.on += d; hudOnTotal += d;
   hudBudget -= old && cls ? 2 : 1;
   if (old) h.SetHasClassForPlayer(slot, panel, old, false);
   if (cls) h.SetHasClassForPlayer(slot, panel, cls, true);
@@ -92,6 +123,10 @@ function hudVar(slot, panel, text) {
   const h = hud();
   if (!h) return false;
   if (hudSlots.get(slot) !== hs) return false;
+  const was = c.get(key), grow = text.length - (was === undefined ? -HUD_STR_BYTES : was.length);
+  if (grow > 0 && hudOverBudget(hs, grow, hudNewTableBytes(panel, null))) { hudCapNote(); return false; }
+  hudNoteTables(panel, null);
+  hs.vb += grow; hudVarBytes += grow;
   hudBudget--;
   h.SetDialogVariableStringForPlayer(slot, panel, 'v', text);
   c.set(key, text);
@@ -118,9 +153,20 @@ const ROWS = {};               // row id -> { ids, align, colKey, fxKey }
 for (const id in HUD_TEXT.slots) {
   SLOT_IDS[id] = [];
   for (let k = 0; k < HUD_TEXT.slots[id]; k++) SLOT_IDS[id].push(id + '_' + k);
-  ROWS[id] = { ids: SLOT_IDS[id], align: HUD_TEXT.align ? HUD_TEXT.align[id] : 'left', colKey: gkey(id, 'col'), fxKey: gkey(id, 'fx') };
+  ROWS[id] = { ids: SLOT_IDS[id], align: HUD_TEXT.align ? HUD_TEXT.align[id] : 'left', colKey: gkey(id, 'col'), fxKey: gkey(id, 'fx'), imgKey: gkey(id, 'img') };
 }
 const tooLong = new Set();
+// whole-line pictures (tools/hud.py, data/hud_lines.json): 'row<TAB>TEXT<TAB>colour class' -> picture k (class i<k> on the row).
+// One class instead of one per letter, for every player (the layout's class state overflowed on the live server, 24 Nov 2026)
+const HUD_LINES = new Map(Object.entries(HUD_TEXT.lines || {}));
+const LINE_CLS = new Map();
+function lineClass(id, text, color) {
+  if (color === undefined || !text || !HUD_LINES.size) return null;
+  const k = HUD_LINES.get(id + '\t' + text.toUpperCase() + '\t' + (TEXT_COLOR[color] || color || ''));
+  if (k === undefined) return null;
+  let c = LINE_CLS.get(k); if (c === undefined) { c = 'i' + k; LINE_CLS.set(k, c); }
+  return c;
+}
 function hudText(slot, id, text, color, fx) {
   const R = ROWS[id];
   if (!R) return;
@@ -143,6 +189,19 @@ function hudText(slot, id, text, color, fx) {
   if (R.align === 'center') pad = Math.floor((n - t.length) / 2);
   else if (R.align === 'right') pad = n - t.length;
   let ok = true;
+  const pic = lineClass(id, t, color);
+  if (pic) {
+    // the whole line is one picture: letter cells and the colour class off, the picture on (the effect class stays)
+    for (let k = 0; k < n; k++) if (!hudSwapK(hs, slot, ids[k], ids[k], null)) ok = false;
+    if (!hudSwapK(hs, slot, id, R.colKey, null)) ok = false;
+    if (!hudSwapK(hs, slot, id, R.imgKey, pic)) ok = false;
+    if (!hudSwapK(hs, slot, id, R.fxKey, fx || null)) ok = false;
+    if (!ok) { if (m) hs.rows.delete(id); return; }
+    if (!m) { m = { t: '', c: '', f: '' }; hs.rows.set(id, m); }
+    m.t = text; m.c = cn; m.f = fn;
+    return;
+  }
+  if (!hudSwapK(hs, slot, id, R.imgKey, null)) ok = false;
   for (let k = 0; k < n; k++) {
     const j = k - pad;
     const ch = j >= 0 && j < t.length ? t[j] : ' ';
@@ -161,7 +220,9 @@ function popFx(slot, row, key) {
   let st = pop.get(row);
   if (!st) { st = { key: null, flip: false }; pop.set(row, st); }
   if (st.key !== key) { st.key = key; st.flip = !st.flip; }
-  return st.flip ? 'pop2' : 'pop';
+  // 24 Nov 2026: no pop any more (each effect is one more class per player in the layout's networked class state); the
+  // flip is kept so a later return of the effect needs no new bookkeeping
+  return null;
 }
 
 // a centre message: short ones big, long ones in the smaller row; new messages pop in, warnings blink
@@ -176,6 +237,7 @@ function hudCenter(slot, text, cls) {
 }
 
 function hudReset(slot) {
+  const hs = hudSlots.get(slot); if (hs) { hudOnTotal -= hs.on; hudVarBytes -= hs.vb; }
   hudSlots.delete(slot);
   const h = hud();
   if (h) { try { h.ResetForPlayer(slot); } catch (err) { /* ignore */ } }
@@ -226,9 +288,11 @@ const MM_CELLS = HUD_TEXT.mm_cells || 48;
 const MAX_DOTS = HUD_TEXT.max_dots || 32;
 const X_CLS = [], Y_CLS = [];
 for (let k = 0; k < MM_CELLS; k++) { X_CLS.push('x' + k); Y_CLS.push('y' + k); }
-const DOT_COL = [null, 'Out', 'T', 'CT'];          // index 0 = no colour class
+const DOT_COL = [null, 'Out', 'T', 'CT'];          // index 0 = no colour class (the lead / own dots)
+// car dots: two classes each, the x cell (which also shows the dot) and the y cell with the colour in it (tools/hud.py)
+const Y_COL = [Y_CLS, Y_CLS.map((c) => c + 'O'), Y_CLS.map((c) => c + 'T'), Y_CLS.map((c) => c + 'C')];
 const DOTS = [];                                  // panel names and class slot keys per dot
-for (let k = 0; k < MAX_DOTS; k++) DOTS.push(dotPanels('spr_md' + k, 'spr_mdy' + k));
+for (let k = 0; k < MAX_DOTS; k++) { const P = dotPanels('spr_md' + k, 'spr_mdy' + k); P.car = true; DOTS.push(P); }
 const DOT_LEAD = dotPanels('spr_ldot', 'spr_ldoty'), DOT_ME = dotPanels('spr_dot', 'spr_doty');
 function dotPanels(outer, inner) { return { outer, inner, xk: gkey(outer, 'x'), yk: gkey(inner, 'y'), ck: gkey(inner, 'col'), ok: gkey(outer, 'on') }; }
 function dotCell(track, v, isY) {
@@ -246,6 +310,12 @@ function hudDot(hs, slot, idx, P, car, track, col, step) {
     if (step > 1) { cx -= cx % step; cy -= cy % step; }
     packed = 1 + cx * 4 + cy * 256 + (col + 1) * 65536;
     if (hs.dots[idx] === packed) return;
+    if (P.car) {
+      let ok = hudSwapK(hs, slot, P.outer, P.xk, X_CLS[cx]);
+      if (!hudSwapK(hs, slot, P.inner, P.yk, Y_COL[col >= 0 ? col : 0][cy])) ok = false;
+      hs.dots[idx] = ok ? packed : -1;
+      return;
+    }
     let ok = hudSwapK(hs, slot, P.outer, P.xk, X_CLS[cx]);
     if (!hudSwapK(hs, slot, P.inner, P.yk, Y_CLS[cy])) ok = false;
     if (col >= 0 && !hudSwapK(hs, slot, P.inner, P.ck, DOT_COL[col])) ok = false;
@@ -254,7 +324,13 @@ function hudDot(hs, slot, idx, P, car, track, col, step) {
     return;
   }
   if (hs.dots[idx] === packed) return;
-  hs.dots[idx] = hudSwapK(hs, slot, P.outer, P.ok, null) ? packed : -1;
+  // a hidden dot drops every class, not only 'On': classes on hidden panels are still networked (the layout's class state
+  // overflowed on the live server, 20 + 24 Nov 2026)
+  let ok = hudSwapK(hs, slot, P.outer, P.ok, null);
+  if (!hudSwapK(hs, slot, P.outer, P.xk, null)) ok = false;
+  if (!hudSwapK(hs, slot, P.inner, P.yk, null)) ok = false;
+  if (!hudSwapK(hs, slot, P.inner, P.ck, null)) ok = false;
+  hs.dots[idx] = ok ? packed : -1;
 }
 // every car in the race on the minimap (grid order = dot number), the leader in gold and the watched car blinking
 // white on top. To keep the class traffic down the other cars move in 2-pixel steps and a quarter of them is
@@ -263,13 +339,31 @@ function hudDot(hs, slot, idx, P, car, track, col, step) {
 // quarter of the dots per update, 4 = an eighth)
 const DOT_PARTS = Math.max(1, Math.round(32 / Math.max(1, CONFIG.MINIMAP_DOT_HZ || 8)));
 const DOT_PER = Math.ceil(MAX_DOTS / DOT_PARTS);
+// the other cars' dots: the NEAR_DOTS nearest the watched car (or the leader) only, not the whole field (24 Nov 2026: two classes
+// a dot for every player, in the layout's networked class state)
+const NEAR_DOTS = 12;
+const nearCache = new Map();   // arena -> { tick, ref, set }
+function nearSet(arena, ref) {
+  let c = nearCache.get(arena);
+  if (c && c.tick === tickNo && c.ref === ref) return c.set;
+  const list = [];
+  for (const car of arena.order) if (car && car !== ref && car.visible && !car.left) list.push(car);
+  let set = null;
+  if (list.length > NEAR_DOTS && ref) {
+    list.sort((a, b) => ((a.x - ref.x) ** 2 + (a.y - ref.y) ** 2) - ((b.x - ref.x) ** 2 + (b.y - ref.y) ** 2));
+    set = new Set(list.slice(0, NEAR_DOTS));
+  }
+  nearCache.set(arena, c = { tick: tickNo, ref, set });
+  return set;
+}
 function hudDots(hs, slot, arena, me) {
   const T = arena.track;
+  const near = nearSet(arena, me || arena.ranking[0]);
   const n = ++pkeep(slot).dotTurn;
   const from = (n % DOT_PARTS) * DOT_PER, to = Math.min(MAX_DOTS, from + DOT_PER), order = arena.order;
   for (let k = from; k < to; k++) {
     const car = order[k];
-    const show = car && car !== me && car.visible && !car.left;
+    const show = car && car !== me && car.visible && !car.left && (!near || near.has(car));
     hudDot(hs, slot, k, DOTS[k], show ? car : null, T,
       show ? (car.state === 'wrecked' || car.state === 'finished' ? 1 : car.team === 0 ? 2 : car.team === 1 ? 3 : 0) : -1, 2);
   }
@@ -318,6 +412,17 @@ function hudRaceCommon(hs, slot, arena, info, car) {
     hs.stand = ok ? rows : null; hs.standMe = me;
   }
   if (arena.state === 'over') hudResults(hs, slot, arena, car);
+  else if (hs.resKey !== '') hudResultsClear(hs, slot);
+}
+// the board's rows emptied once the results are gone (hidden panels' classes are still networked)
+function hudResultsClear(hs, slot) {
+  let ok = true;
+  for (let i = 0; i < 8; i++) {
+    const B = RB[i];
+    if (!hudVar(slot, B.p, '') || !hudVar(slot, B.n, '') || !hudVar(slot, B.t, '')) ok = false;
+    if (!hudSwapK(hs, slot, B.row, B.side, null) || !hudSwapK(hs, slot, B.row, B.me, null) || !hudSwapK(hs, slot, B.row, B.pod, null)) ok = false;
+  }
+  if (ok) { hs.resKey = ''; hs.resRank = null; hs.resMe = null; }
 }
 
 // the results board: the top 8 (your own line instead of the 8th if you placed lower), with finish times and gaps
@@ -356,7 +461,12 @@ function hudResults(hs, slot, arena, me) {
 const VOTE_ROWS = 4;
 function hudVote(hs, slot, ballot) {
   if (!ballot) {
-    if (hs.vote !== false) hs.vote = rootSwap(hs, slot, 'vote', null) ? false : null;
+    if (hs.vote !== false) {
+      let ok = rootSwap(hs, slot, 'vote', null);
+      for (let i = 0; i < VOTE_ROWS; i++) { hudText(slot, 'spr_vn' + i, '', null, null); hudText(slot, 'spr_vc' + i, '', null, null); if (!hs.rows.has('spr_vn' + i) || !hs.rows.has('spr_vc' + i)) ok = false; }
+      hudText(slot, 'spr_vf', '', null, null); if (!hs.rows.has('spr_vf')) ok = false;
+      hs.vote = ok ? false : null;
+    }
     return;
   }
   const v = ballot.voters.get(slot);
@@ -368,7 +478,7 @@ function hudVote(hs, slot, ballot) {
   for (let i = 0; i < VOTE_ROWS; i++) {
     const id = ballot.tracks[i];
     const picked = !!(mine && id && mine.choice === id);
-    hudText(slot, 'spr_vn' + i, id ? trackTitle(id) : '', picked ? 'cY' : 'cW', picked ? 'pulse' : null);
+    hudText(slot, 'spr_vn' + i, id ? trackTitle(id) : '', picked ? 'cY' : 'cW', null);   // (gold shows the pick; no pulse class)
     const n = id ? tally.get(id) || 0 : 0;
     hudText(slot, 'spr_vc' + i, n ? String(Math.min(9, n)) : '', 'cC');
     if (!hs.rows.has('spr_vn' + i) || !hs.rows.has('spr_vc' + i)) ok = false;
@@ -403,7 +513,7 @@ function hudRace(slot, car, arena, info) {
     const ord = car.pos ? ordinal(car.pos) : '-';
     const num = car.pos ? String(car.pos) : '-';
     const posCol = car.pos === 1 ? 'cY' : car.pos && car.pos <= 3 ? 'cG' : 'cW';
-    hudText(slot, 'spr_pos', num, posCol, pk.posFlip ? 'pop2' : 'pop');
+    hudText(slot, 'spr_pos', num, posCol, null);   // (no pop class since 24 Nov 2026)
     hudText(slot, 'spr_suf', ord.slice(num.length), posCol);
     hs.posKey = hs.rows.has('spr_pos') && hs.rows.has('spr_suf') ? posKey : NaN;
   }
@@ -443,7 +553,7 @@ function hudRace(slot, car, arena, info) {
     hudSwapK(hs, slot, 'spr_abfill', K.abfill, pct(RULES.empTime - car.emp, RULES.empTime));
     hudSwapK(hs, slot, 'spr_abil', K.abSt, 'low');
   } else {
-    hudText(slot, 'spr_abtxt', ABIL_TEXT[sp.key] || 'E ' + sp.abilityName, ready && !short ? 'cY' : short ? 'cR' : 'cW', ready && !short && !info.spectating ? 'pulse' : null);
+    hudText(slot, 'spr_abtxt', ABIL_TEXT[sp.key] || 'E ' + sp.abilityName, ready && !short ? 'cY' : short ? 'cR' : 'cW', null);   // (gold shows ready; no pulse class since 24 Nov 2026)
     hudSwapK(hs, slot, 'spr_abfill', K.abfill, pct(ready ? sp.abilityCd : sp.abilityCd - car.abilCd, sp.abilityCd));
     hudSwapK(hs, slot, 'spr_abil', K.abSt, short ? 'low' : ready ? 'ready' : null);
   }
@@ -457,10 +567,34 @@ function hudRace(slot, car, arena, info) {
   // speed lines: white for the car's own boost (Mouse 1, Nova Burn), gold for a boost pad or a turbo start
   const fast = car.state === 'racing' && !info.spectating;
   rootSwap(hs, slot, 'boost', fast && car.padTimer > 0 ? 'stPadb' : fast && (car.boosting || car.novaTimer > 0) ? 'stBoost' : null);
-  hudDots(hs, slot, arena, car);
+  // near the class share the other cars' dots go first (the leader and the player's own dot stay)
+  // (shed at 85 % of the share, back under 60 %, so the dots don't flicker at the line)
+  const share = hudShareBytes(), mine = hudSlotBytes(hs);
+  if (mine >= share * 0.85 || (hs.dotsShed && mine >= share * 0.6)) {
+    if (!hs.dotsShed) { for (let k = 0; k < MAX_DOTS; k++) hudDot(hs, slot, k, DOTS[k], null, null, -1, 1); hs.dotsShed = hs.dots.subarray(0, MAX_DOTS).every((v) => v === 0); }
+  } else { hs.dotsShed = false; hudDots(hs, slot, arena, car); }
   rootSwap(hs, slot, 'spec', info.spectating ? 'stSpec' : null);
   rootSwap(hs, slot, 'lobby', null);
   hudVote(hs, slot, info.vote || null);
+  hs.raceOn = true;
+  if (hs.lobbyOn) {
+    for (const id of LOBBY_ROWS) hudText(slot, id, '', null, null);
+    hs.lobbyOn = !LOBBY_ROWS.every((id) => hs.rows.has(id));
+  }
+}
+const LOBBY_ROWS = ['spr_lob1', 'spr_lob2', 'spr_lob3'];
+// the race readouts emptied in the lobby (their panels are hidden there, but their classes would still be networked)
+const RACE_ROWS = ['spr_pos', 'spr_suf', 'spr_posof', 'spr_tt', 'spr_tct', 'spr_lap', 'spr_laptime', 'spr_best', 'spr_spd', 'spr_abtxt', 'spr_clock'];
+function hudRaceClear(hs, slot) {
+  let ok = true;
+  for (const id of RACE_ROWS) { hudText(slot, id, '', null, null); if (!hs.rows.has(id)) ok = false; }
+  for (const [panel, key] of [['spr_shfill', K.shfill], ['spr_shield', K.shLow], ['spr_chfill', K.chfill], ['spr_charge', K.chSt], ['spr_abfill', K.abfill],
+    ['spr_abil', K.abSt], ['spr_spfill', K.spfill], ['spr_speed', K.spPad], ['spr_turn', K.turn]]) if (!hudSwapK(hs, slot, panel, key, null)) ok = false;
+  for (let k = 0; k < MAX_DOTS; k++) hudDot(hs, slot, k, DOTS[k], null, null, -1, 1);
+  hudDot(hs, slot, MAX_DOTS, DOT_LEAD, null, null, -1, 1); hudDot(hs, slot, MAX_DOTS + 1, DOT_ME, null, null, -1, 1);
+  for (let k = 0; k < MAX_DOTS + 2; k++) if (hs.dots[k] !== 0) ok = false;
+  if (hs.resKey !== '') { hudResultsClear(hs, slot); if (hs.resKey !== '') ok = false; }
+  if (ok) { hs.raceOn = false; hs.posKey = NaN; hs.posOf = NaN; hs.tallyT = NaN; hs.tallyCT = NaN; hs.lapKey = NaN; hs.best = NaN; }
 }
 // the turn arrow for a car, worked out once per tick however many players look through that car
 function turnClass(car, arena) {
@@ -490,6 +624,8 @@ function hudLobby(slot, info) {
   hudText(slot, 'spr_msg', info.msg || '', 'cC');
   hudSwapK(hs, slot, 'spr_flash', 'spr_flash', null);
   hudVote(hs, slot, info.vote || null);
+  hs.lobbyOn = true;
+  if (hs.raceOn) hudRaceClear(hs, slot);
 }
 
 function hudHelp(slot, on) { const hs = hslot(slot); rootSwap(hs, slot, 'help', on ? 'stHelp' : null); hs.optHelp = null; }

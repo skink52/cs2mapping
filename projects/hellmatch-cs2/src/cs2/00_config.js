@@ -98,8 +98,8 @@ const CONFIG = {
   SPAWN_BUDGET: 20,             // new props created per server tick at most (round start creates hundreds)
   HIDE_HUD_ON_SCOREBOARD: false,  // default for everyone; each player can switch it with !hud scores
   HUD_BUDGET: 600,               // HUD changes sent per server tick at most (the first draw for many players is spread out)
-
-  // ---- entity names in the map
+  HUD_PACK_BUDGET: 12500,        // bytes the HUD may fill in its layout entity, all players together (24 Nov 2026: the live server crashed
+                                 // when such an entity's packed size passed ~16 KB; 30_hud.js "Packed-size budget" is an estimate, so a margin)
   HUD: "fdm_hud",
   PROP_TEMPLATE: "fdm_tpl_prop",
   BOOTH: "fdm_booth",

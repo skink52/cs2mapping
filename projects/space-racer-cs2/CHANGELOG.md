@@ -1,5 +1,31 @@
 # Space Racer changelog
 
+## v0.7.2: smaller HUD class state (24 Nov 2026; all three titles)
+
+- **Whole-line pictures:** a line whose text is known ahead (the car line, ability names, centre messages, FINAL LAP, track
+  names...) is one picture on the row panel (class `i<k>`) instead of one glyph class per letter. Chosen per title from mock
+  runs (`node test/mock_cs2.mjs ... strings` -> build/hud_lines_seen.json -> `python -I tools/hud_lines_pick.py` -> data/hud_lines.json,
+  at most 250 a title: each is a class name), rendered by tools/hud.py from the same glyphs. tools/deploy_hud.sh copies them.
+- **Fewer effect classes:** no pop on new messages or the position, no pulse on the ready ability or the voted track (blink stays on
+  warnings). **Minimap:** the 12 nearest other cars only.
+- Mock at 12 humans: 2 140 -> 1 924 classes on at once (busiest player 219 -> 190). The "car picker covered the results board 0.1 s"
+  note with seed 4 is in the original script too.
+
+- **Class cap:** the script keeps every player's classes switched on under `CONFIG.HUD_CLASS_CAP` (3000, provisional) together,
+  each player with a HUD getting an equal share; near it the other cars' minimap dots go first (back under 60 %), screen states
+  always go out, anything else waits. Mock: 3 012 at 64 humans (was 22 995), 2 140 at 12 (under the cap).
+
+- **The live JB box crashed twice on mg_space_racer** (20 + 24 Nov) when CS2's network serializer overflowed the custom HUD's
+  class state (`CCSCustomHudLayout.m_vecClassNames`, fatal `PackEntity`), at a race's results. Classes switched on stay
+  networked even on hidden panels, and the HUD left many on: now the lobby text is emptied during the race, the race
+  readouts, bars, minimap dots and results board in the lobby, the vote box when it closes, the results board when the next
+  race starts, and a hidden minimap dot drops all its classes. A car dot now carries two classes, not four (any `x<n>` shows it,
+  its colour rides on the y class: `y<n>O / T / C`, tools/hud.py).
+- Mock (`node test/mock_cs2.mjs <humans> 0 100 held,silent,seed=3`, new `hud active` line): classes on at once, all players,
+  3 617 -> 2 140 at 12 humans, 22 995 -> 11 748 at 64. CS2's real limit is not known yet (local probes: projects/ironframe-cs2/docs/SERVER_READY.md F4).
+- Deployed: script + HUD styles of mg_space_racer, mg_neon_racer, mg_depth_racer (`SPR_THEME=<title> sh tools/deploy_hud.sh`, compiled;
+  backups in backups/). No Hammer build needed. Workshop updates of all three still to do. Not seen in game.
+
 ## v0.7.1: server stats reach a plugin on Workshop maps (8 Nov 2026)
 
 - **Stats go out as `echo mgstat ...`** (all three games). A dedicated server drops any command a Workshop map's script

@@ -10,6 +10,16 @@ Hellmatch (`projects/hellmatch-cs2`, addon `mg_freedm`) is never modified. skink
 control - do the problem solving independently ... AAA quality, with the hellmatch graphics").
 
 ## Resume here
+**24 Nov 2026 (later): more whole-line pictures** (tools/hud_strings.py takes every fixed all-caps text in the scripts): 761
+pictures, deployed with the script and styles, compiled; 29/29 scenarios OK. Little change at 12 humans (~1 300 classes on): ZE's
+remaining text is mostly names ("SPECTATING <name>"). Not seen in game.
+**24 Nov 2026: HUD class cap (script only; deployed + compiled, not uploaded).** The live JB box crashed on Space Racer and
+IRONFRAME when CS2's serializer overflowed a custom HUD's class state (docs/reference/jb-box-crashes-2026-11.md). ZE's HUD (the
+Hellmatch one) now switches the status bar off in the lobby / when the HUD is off, and keeps every player's classes under
+`CONFIG.HUD_CLASS_CAP` (3000, provisional) together, an equal share each, the screen state always out. Mock: 1 300 classes on at
+12 humans, 2 944 at 64 (capped). 29/29 scenarios OK, api + tscheck clean. Only `maps/scripts/hellescape.js` was deployed (backup in
+backups/): this PC's rebuild lacks some sprite models the addon has (the mock says "missing model ... fsku_a" with the old
+script too), so `tools/deploy.py` was not used. Needs a Workshop update; not seen in game.
 **Round 4 done 21 Nov 2026 (simulated, deployed, compiled): floating lost soul, connected zombie respawns + door use, softer damage
 tint, no zombie-zombie collision, escape finale in DM03. Awaiting skink52's playtest (`TESTING_HELLESCAPE.md` Round 4 section);
 the horde is stronger now (tune CONFIG.ZE AI_DAMAGE / AI_PER_HUMAN first).**

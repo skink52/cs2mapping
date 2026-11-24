@@ -21,6 +21,12 @@ msgs = re.findall(r"GOT[A-Z0-9]+: '([^']+)'", src)
 fixed = msgs + ['FIGHT!', 'RESPAWNING...', 'SPECTATING', '1', '2', '3', 'RED TEAM WINS', 'BLUE TEAM WINS', 'DRAW',
   'Exits are disabled in this game.', 'MOVE OR YOU WILL BE MARKED AFK', 'FREE FOR ALL', 'TEAM DEATHMATCH', 'TEAM ELIMINATION', 'LAST MAN STANDING',
   'BOSS BATTLE', 'VICTORY', 'OVERRUN', 'WAVE CLEARED', 'BOSS INCOMING', 'TIME UP']
+# every fixed all-caps text in the scripts (spectator lines, loadout names...): drawn as one picture instead of a class a letter
+# (24 Nov 2026: the custom HUD's per-player class state overflowed on the live server); digits and partial strings are left out
+import glob
+for f in glob.glob('src/cs2/*.js') + glob.glob('src/core/*.js'):
+    for lit in re.findall(r'["'+"'"+r']([A-Z][A-Z !.,:?/'+"'"+r'-]{3,46})["'+"'"+r']', open(f, encoding='utf-8').read()):
+        if lit == lit.strip() and not lit.endswith((' -', ':')) and (' ' in lit or len(lit) >= 8): fixed.append(lit)   # (not 4-letter sprite / state names)
 json.dump(sorted(set(s.upper() for s in fixed)), open('build/hud_strings.json', 'w'))
 PY
 python3 -I tools/hud.py out/addon build/hud_frames.json

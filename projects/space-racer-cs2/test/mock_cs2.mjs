@@ -100,8 +100,54 @@ const hudCss = fs.readFileSync(path.join(root, `out/addon/panorama/styles/custom
 const classesUsed = new Map();
 const rootCls = new Map();      // slot -> the state classes on spr_root right now (stRes = results board, stPick = car picker)
 const resStart = new Map();     // slot -> when their results board last came up
+// hudactive: every (player, panel, class) switched on right now and every dialog variable set: what the layout entity networks
+// (CCSCustomHudLayout m_vecClassNames / panel ids: JB box crashes 20 + 24 Nov 2026 on a PackEntity overflow)
+const active = new Map(), activeVars = new Set();
+const panelsEver = new Set();   // every panel id named to the layout this run
+// the layout entity's packed size, estimated as the scripts do (4 bytes a switched-on class, strings + 2): tables + classes + dialog texts
+const varLen = new Map(); let varBytes = 0, packMax = 0, packAt = 0;
+function packNote() { let t = 0; for (const x of panelsEver) t += x.length + 2; for (const x of classesUsed.keys()) t += x.length + 2; const b = t + activeN * 4 + varBytes; if (b > packMax) { packMax = b; packAt = time; } }
+// strings[=file]: every text a pixel row shows (row, text, colour class), read back from the cells once a tick, for the
+// whole-line pictures (tools/hud_lines.py); written to build/hud_lines_seen.json (merged with what is there)
+const STRINGS = OPTS.includes('strings');
+const rowsDirty = new Set(), linesSeen = new Map();
+const LINE_TEXT = new Map();   // picture k -> its text (hud_text.json lines)
+try { for (const [k, v] of Object.entries(JSON.parse(fs.readFileSync(path.join(root, 'out/addon/_gen/hud_text.json'), 'utf8')).lines || {})) LINE_TEXT.set(v, k.split('\t')[1]); } catch (err) { /* no pictures */ }
+function rowsNote(slot, panel) { if (!STRINGS) return; const m = /^(spr_[a-z0-9]+?)_\d+$/.exec(panel); rowsDirty.add(slot + '|' + (m ? m[1] : panel)); }
+function rowsRead() {
+  for (const k of rowsDirty) {
+    const i = k.indexOf('|'), slot = k.slice(0, i), row = k.slice(i + 1);
+    if (!hudIds.has(row + '_0')) continue;
+    let t = '';
+    for (let c = 0; hudIds.has(row + '_' + c); c++) { const set = active.get(slot + '|' + row + '_' + c); const g = set && [...set].find((x) => /^g\d+$/.test(x)); t += g ? String.fromCharCode(+g.slice(1)) : ' '; }
+    const rs0 = active.get(slot + '|' + row); const pic = rs0 && [...rs0].find((x) => /^i\d+$/.test(x));
+    if (pic) t = LINE_TEXT.get(+pic.slice(1)) || t;
+    t = t.trim(); if (!t) continue;
+    const rs = active.get(slot + '|' + row); const col = (rs && [...rs].find((x) => /^c[A-Z]$/.test(x))) || '';
+    const key = row + '\t' + t + '\t' + col; linesSeen.set(key, (linesSeen.get(key) || 0) + 1);
+  }
+  rowsDirty.clear();
+}
+let activeN = 0, activeMax = { n: 0, t: 0, perSlot: 0, vars: 0, res: 0 };
+const pairs = new Map(); let pairMax = 0;   // panel|class -> how many players have it on (if CS2 keeps one entry per pair with a player mask)
+function pairNote(panel, cls, d) { const k = panel + '|' + cls, n = (pairs.get(k) || 0) + d; if (n > 0) pairs.set(k, n); else pairs.delete(k); if (pairs.size > pairMax) pairMax = pairs.size; }
+function activeNote() {
+  if (activeN > activeMax.n) { activeMax.n = activeN; activeMax.t = time; activeMax.vars = activeVars.size; }
+  let res = 0; for (const s of rootCls.values()) if (s.has('stRes')) res++;
+  if (res && activeN > activeMax.res) activeMax.res = activeN;
+}
+function activePer() {
+  const per = new Map(); for (const [k, set] of active) { const sl = k.slice(0, k.indexOf('|')); per.set(sl, (per.get(sl) || 0) + set.size); }
+  let m = 0, ms = ''; for (const [sl, v] of per) if (v > m) { m = v; ms = sl; }
+  if (m > activeMax.perSlot) { const by = {}; for (const [k, set] of active) if (k.startsWith(ms + '|') && set.size) { const g = k.slice(ms.length + 1).replace(/_\d+$/, '').replace(/\d+$/, ''); by[g] = (by[g] || 0) + set.size; } activeMax.by = Object.entries(by).sort((x, y) => y[1] - x[1]).map(([g, n]) => g + ' ' + n).join(', '); }
+  return m;
+}
 class CustomHudLayout extends Entity {
   SetHasClassForPlayer(slot, panel, cls, on) {
+    panelsEver.add(panel);
+    { const k = slot + '|' + panel; let set = active.get(k); if (!set) active.set(k, set = new Set());
+      if (on && !set.has(cls)) { set.add(cls); activeN++; pairNote(panel, cls, 1); } else if (!on && set.delete(cls)) { activeN--; pairNote(panel, cls, -1); }
+      if (activeN >= activeMax.n) { activeNote(); activeMax.perSlot = Math.max(activeMax.perSlot, activePer()); } rowsNote(slot, panel); if (activeN >= activeMax.n - 2) packNote(); }
     if (panel === 'spr_root') {
       let s = rootCls.get(slot); if (!s) rootCls.set(slot, s = new Set());
       if (on) s.add(cls); else s.delete(cls);
@@ -109,8 +155,8 @@ class CustomHudLayout extends Entity {
     }
     if (TRACE) { const k = slot + '|' + panel; touch('h', k); let set = obs.hud.get(k); if (!set) obs.hud.set(k, set = new Set()); if (on) set.add(cls); else set.delete(cls); }
     stats.hudCalls++; if (OPTS.includes('hudstats')) { const pk = panel.replace(/_\d+$/, '').replace(/\d+$/, ''); (stats.hudBy ||= {})[pk] = (stats.hudBy[pk] || 0) + 1; } if (OPTS.includes('hudtrace') && slot === 0 && (pk === 'spr_lap' || pk === 'spr_sub') && on && time > 60 && time < 64) console.log('t', time.toFixed(2), panel, cls); if (!hudIds.has(panel)) throw new Error('unknown HUD panel ' + panel); classesUsed.set(cls, (classesUsed.get(cls) || 0) + 1); }
-  SetDialogVariableStringForPlayer(slot, panel, name, value) { stats.hudVars++; if (TRACE) { touch('v', slot + '|' + panel); obs.vars.set(slot + '|' + panel, value); } if (!hudIds.has(panel)) throw new Error('unknown HUD panel ' + panel); if (typeof value !== 'string') throw new Error('non-string dialog var'); }
-  ResetForPlayer(slot) { rootCls.delete(slot); if (TRACE) { for (const k of [...obs.hud.keys()]) if (k.startsWith(slot + '|')) { touch('h', k); obs.hud.delete(k); } for (const k of [...obs.vars.keys()]) if (k.startsWith(slot + '|')) { touch('v', k); obs.vars.delete(k); } } }
+  SetDialogVariableStringForPlayer(slot, panel, name, value) { panelsEver.add(panel); { const k = slot + '|' + panel, o = varLen.get(k); const n = String(value).length; varBytes += n - (o === undefined ? -2 : o); varLen.set(k, n); } activeVars.add(slot + '|' + panel); stats.hudVars++; if (TRACE) { touch('v', slot + '|' + panel); obs.vars.set(slot + '|' + panel, value); } if (!hudIds.has(panel)) throw new Error('unknown HUD panel ' + panel); if (typeof value !== 'string') throw new Error('non-string dialog var'); }
+  ResetForPlayer(slot) { for (const [k, n] of [...varLen]) if (k.startsWith(slot + '|')) { varBytes -= n + 2; varLen.delete(k); } for (const [k, set] of [...active]) if (k.startsWith(slot + '|')) { activeN -= set.size; const pn = k.slice(k.indexOf('|') + 1); for (const c of set) pairNote(pn, c, -1); active.delete(k); } for (const k of [...activeVars]) if (k.startsWith(slot + '|')) activeVars.delete(k); rootCls.delete(slot); if (TRACE) { for (const k of [...obs.hud.keys()]) if (k.startsWith(slot + '|')) { touch('h', k); obs.hud.delete(k); } for (const k of [...obs.vars.keys()]) if (k.startsWith(slot + '|')) { touch('v', k); obs.vars.delete(k); } } }
 }
 const ents = JSON.parse(fs.readFileSync(path.join(root, 'build/entities.json'), 'utf8'));
 for (const e of ents) {
@@ -300,6 +346,7 @@ const phases = {};
 const asked = new Map(), picker = { overResults: 0, askedOverResults: 0, ticks: new Map() };
 while (time < SECONDS) {
   time += TICK;
+  if (STRINGS) rowsRead();
   if (OPTS.includes('statsinput') && Math.abs(time - 5) < TICK / 2 && hooks['input:mgstat_on']) hooks['input:mgstat_on']({});
   for (const [at, text] of Object.entries(CHATS)) if (Math.abs(time - +at) < TICK / 2 && players[0] && hooks.OnPlayerChat) {
     if (/^[!/](car|pick)$/.test(text)) asked.set(0, time);
@@ -402,6 +449,21 @@ function churn() {
 const cams = players.filter((c) => c.pawn && c.pawn.cam).map((c) => c.pawn.cam.mode);
 console.log('round end reasons', JSON.stringify(winReasons), 'phases (s)', JSON.stringify(phases));
 console.log(`simulated ${SECONDS}s with ${HUMANS} humans + ${BOTS} bots: ${rounds} CS2 rounds ended`);
+if (STRINGS) {
+  const f = path.join(root, 'build/hud_lines_seen.json');
+  let all = {}; try { all = JSON.parse(fs.readFileSync(f, 'utf8')); } catch (err) { all = {}; }
+  const th = process.env.SPR_THEME || 'space';
+  for (const [k, n] of linesSeen) { const key = th + '	' + k; all[key] = (all[key] || 0) + n; }
+  fs.writeFileSync(f, JSON.stringify(all, null, 0)); console.log('strings: ' + linesSeen.size + ' row texts this run -> ' + f);
+}
+console.log(`hud active: peak ${activeMax.n} classes on at t=${activeMax.t.toFixed(0)} s (${activeMax.vars} dialog vars), peak with a results board up ${activeMax.res}, most on one player ${activeMax.perSlot}, distinct class names ${classesUsed.size}, peak distinct (panel, class) pairs on ${pairMax}`);
+if (activeMax.by) console.log('hud active on that player: ' + activeMax.by);
+{ // the layout's two shared string tables (CCSCustomHudLayout m_vecClassNames / m_vecPanelIds): every name / id ever used this map
+  const ids = new Set(); for (const k of active.keys()) ids.add(k.slice(k.indexOf('|') + 1));
+  const idb = [...panelsEver].reduce((n, x) => n + x.length + 1, 0), cnb = [...classesUsed.keys()].reduce((n, x) => n + x.length + 1, 0);
+  packNote(); console.log(`hud packed size (estimate): peak ${packMax} bytes at t=${packAt.toFixed(0)} s`);
+  console.log(`hud tables: ${classesUsed.size} class names (${cnb} bytes), ${panelsEver.size} panel ids (${idb} bytes) used this run`);
+}
 console.log(`props spawned ${stats.spawned}, moves ${stats.moves}, teleports ${stats.teleports}, setModel ${stats.setModel}, skins ${stats.skins}, hud class calls ${stats.hudCalls}, hud vars ${stats.hudVars}, sounds ${stats.sounds}, camera moves ${stats.camMoves}`);
 console.log(`CS2 kills ${stats.kills} (scripted ${stats.scriptKills}), camera modes ${JSON.stringify(cams.slice(0, 12))}`);
 console.log(`think time: avg ${(thinkMs / (SECONDS * 64)).toFixed(3)} ms, max ${maxThink.toFixed(1)} ms; ticks over 16 ms: ${(stats.slow || []).length} ${(stats.slow || []).slice(0, 8).join(' ')}`);

@@ -62,3 +62,14 @@ function trackTitle(id) { return TRACK_TITLE[id] || String(id).toUpperCase(); }
 // the colour shades (!shade): per side, the car skin and the colour (for the glow), from tools/cars.py
 const SHADES = CAR_MODELS.shades || { t: [{ skin: 't', name: 'ORANGE', rgb: [255, 150, 40] }], ct: [{ skin: 'ct', name: 'BLUE', rgb: [70, 150, 255] }] };
 
+// The GOTV (SourceTV / CSTV) client has a player controller and IsBot() is false for it, so the player scan took it for a human:
+// a person with a HUD (and, where it applies, a team). Its HUD state counted against the custom HUD's networked class state that
+// overflowed on the live JB box (24 Nov 2026). cs_script has no IsHLTV: it is the name.
+// Not tv_name: CS2 refuses that convar to Workshop scripts ("DISALLOWED WORKSHOP CONVAR: tv_name", and the call throws with a
+// stack trace in the console on every scan; skink52's Workshop Tools test, 24 Nov 2026), so the names below are the whole check.
+const GOTV_NAMES = new Set(['SourceTV', 'CSTV', 'GOTV', 'Slime Demo Recorder']);   // (the JB box's demo plugin names its GOTV client so, 24 Nov 2026)
+function isGotv(c) {
+  let name = ''; try { name = c.GetPlayerName() || ''; } catch (err) { return false; }
+  if (!name) return false;
+  return GOTV_NAMES.has(name);
+}
