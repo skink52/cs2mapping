@@ -972,7 +972,7 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'momentum', 'dead', 'trigmat', 'toolpaths', 'trigsplit', 'thintrig', 'spawnlift', 'rendermode', 'renderamt', 'steam', 'smoke', 'fire', 'particles', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'culled', 'displaybrush', 'splitfaces', 'sky', 'skyvis', 'vis', 'beams', 'spotbeam', 'ropes', 'lights', 'alpha', 'probes', 'waterprobe', 'radar', 'assets', 'matflags', 'matscroll', 'compat', 'origindup', 'droppedio']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'momentum', 'dead', 'trigmat', 'toolpaths', 'trigsplit', 'thintrig', 'spawnlift', 'spawndropfix', 'rendermode', 'renderamt', 'steam', 'smoke', 'fire', 'particles', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'culled', 'displaybrush', 'splitfaces', 'sky', 'skyvis', 'vis', 'beams', 'spotbeam', 'ropes', 'lights', 'alpha', 'probes', 'waterprobe', 'radar', 'assets', 'matflags', 'matscroll', 'compat', 'physboxmass', 'origindup', 'droppedio']
     c.steps = steps
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
@@ -995,7 +995,7 @@ def run(addon, root, passes=None):
     if 'trigsplit' in steps: repair.split_triggers(m, c)
     if 'thintrig' in steps or 'thintrigfix' in steps: repair.thin_triggers(m, c, fix='thintrigfix' in steps)   # report; thintrigfix raises them
     if 'spawnlift' in steps or 'spawnliftfix' in steps: repair.spawn_lift(m, c, fix='spawnliftfix' in steps)   # report; spawnliftfix moves them
-    if 'spawnlift' in steps or 'spawndropfix' in steps: repair.spawn_drop(m, c, fix='spawndropfix' in steps)   # floating 16-48 u: report; spawndropfix moves them
+    if 'spawnlift' in steps or 'spawndropfix' in steps: repair.spawn_drop(m, c, fix='spawndropfix' in steps)   # floating 16-48 u: new builds move them (default); stage D only by name, never on legacy ports
     if 'rendermode' in steps: render_modes(m, c)                # Source 1 numbers -> CS2's three render mode names
     if 'renderamt' in steps: render_alpha(m, c)
     vd = os.path.join(root, 'vpk')

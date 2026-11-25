@@ -42,11 +42,13 @@ maps themselves were not changed: `stage_d.py <addon> <root> compat` applies it 
 | AddOutput keyvalues CS2 rejects on named targets → SetHealth / Alpha / Color (SetColor on lights), rendermode dropped; added outputs `OnX t:i:p:d:n` → `OnX>t>i>p>d>n` | `compat` / `addoutfix` | mg_arcs_multigames 60 rendercolor, mg_color_multigames 24 added outputs; 35 !activator ones listed for the io script | mg_arcs, mg_color: as counted, rerun 0 |
 | Wake beside Enable / Toggle of a physics-object trigger over a sleeping physbox / prop | `compat` / `physwake` | 116 sleeping physboxes, 300 sleeping props, 174 physics triggers in 19 ports | none matched in the 8 maps tried |
 | Shared parent name → the entity CS:GO picked (first in the VMF), renamed `<name>__parent`, outputs copied | `compat` / `sharedparent` | 35 children in 9 ports | mg_insomnia_course officedoor4 (6 children), mg_jahoukarail_2015 Grenade6 (4) |
-| func_physbox SetMass to CS:GO's mass (volume, visible sides 0.5 u in approximated as volume − 0.5 × visible area, × CS:GO surfaceprop density read from its surfaceproperties, × massScale, max 50000) | opt-in `physboxmass` | 311 physboxes in 24 ports; template and shared-name ones left | ba_jail_lightsout Dball_1 2281 kg (concrete), mg_jahoukarail_2015 Break3 20.8 kg (metal, hollow) |
+| func_physbox SetMass to CS:GO's mass (volume, visible sides 0.5 u in approximated as volume − 0.5 × visible area, × CS:GO surfaceprop density read from its surfaceproperties, × massScale, max 50000) | stage C default `physboxmass` (new builds only) | 311 physboxes in 24 ports; template and shared-name ones left | ba_jail_lightsout Dball_1 2281 kg (concrete), mg_jahoukarail_2015 Break3 20.8 kg (metal, hollow) |
 | TextureScroll on `$basetexturetransform` → csgo_unlitgeneric + DynamicParams `g_vTexCoordOffset` | `matscroll` (texfix) | ttt_terrortrain 5 (3D skybox ground), mg_pokemon_adventure 2 | written to memory only, rerun 0 |
 | BSPSource 4-decimal scales → 1/256 multiple (`DECOMPILE_SCALE_FIX`) | `facescale` | every decompiled VMF | unit values (0.0313 → 0.03125, 0.4688 → 0.46875, 0.3 kept) |
-| Floating spawns 16-48 u → 2 u over the floor (not over a prop) | stage C report, D `spawndropfix` | mg_arcs_multigames 65 at 32 u, mg_nature 48, ba_jail_keimusho 23 | report only |
+| Floating spawns 16-48 u → 2 u over the floor (not over a prop) | stage C default `spawndropfix` (new builds only) | mg_arcs_multigames 65 at 32 u, mg_nature 48, ba_jail_keimusho 23 | report only |
 | debug_watch.js (in-game console tools) | `tools/debug_watch.js`, opt-in `debugwatch` | — | api check and tscheck clean |
+
+skink52, 25 Nov 2026: physbox masses and floating-spawn drops apply to new builds (stage C defaults), never to legacy ports.
 
 Left out of batch 2 on purpose: ConveyorScroll (needs a material copy per conveyor speed), ANIMATED_UNLIT (our importer route already writes F_TEXTURE_ANIMATION;
 `animprops` handles tiled faces), VMDL_BODYGROUP_NAMES (`vmdlfix.py` already does it).

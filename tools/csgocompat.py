@@ -30,7 +30,8 @@ Ideas from Ninja-Chris's cs2-slop-porting 2026-11-24 (MIT, Ninja-Chris and skink
 
   debugwatch    (opt-in) tools/debug_watch.js as point_script debug_watch: in-game console tools dw_find / dw_class / dw_watch / dw_rel / dw_io
 
-Usage: stage_d.py <addon> <root> lightio,telekeys,...   (`compat` = all but the opt-in physboxmass and debugwatch; physboxmass reads CS:GO's
+Usage: stage_d.py <addon> <root> lightio,telekeys,...   (`compat` = all but physboxmass and debugwatch. physboxmass runs by default in stage C,
+so new builds get it; don't run it on legacy ports. debugwatch only by name; physboxmass reads CS:GO's
 surfaceproperties, sharedparent the VMF)
 """
 import collections, fnmatch, os, re
@@ -477,7 +478,8 @@ def debugwatch(m, c):
     return 1
 
 
-OPT_IN = ('physboxmass', 'debugwatch')     # physboxmass changes how physics props behave (run it by name once checked in game); debugwatch is a test tool
+OPT_IN = ('physboxmass', 'debugwatch')     # not in `compat`: physboxmass is in stage C's default list (new builds only; skink52 25 Nov 2026: never on
+                                           # legacy ports through stage D), debugwatch is a test tool
 
 
 def run(m, c, passes):
