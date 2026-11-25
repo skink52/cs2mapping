@@ -434,7 +434,45 @@ def thin_triggers(m, c, fix=False, max_h=THIN_MAX, to=THIN_TO):
 # (spawn_low) are left alone: imported spawns sit at 0.6-0.8 and play. The stage C step reports; stage D `spawnliftfix` moves them.
 SPAWN_LIFT = 2.0
 SPAWN_SINK = 8.0
+SPAWN_DROP = (16.0, 48.0)    # spawns floating this far over the floor: CS2 put the player ~35 u up, into a low roof (cs2-slop-porting SPAWN_DROP_MAX,
+                             # ba_jail_os_gulag_d); CS:GO dropped them to the floor. Only stage D `spawndropfix` moves them (a prop floor isn't seen)
 SPAWN_COLS = [(0.0, 0.0)] + [(sx * 15.5, sy * 15.5) for sx in (-1, 1) for sy in (-1, 1)]
+
+
+def spawn_drop(m, c, fix=False):
+    """Spawns SPAWN_DROP[0]..[1] units over the solid floor under their 32 x 32 footprint -> SPAWN_LIFT over it (stage D `spawndropfix`);
+    report only otherwise (stage C `spawnlift`). Props aren't meshes, so a spawn standing on a prop would drop through it: check the list."""
+    import mapsanity as MS
+    spawns = [e for e in m.by_class('info_player_terrorist', 'info_player_counterterrorist', 'info_player_start')]
+    if not spawns: return []
+    cells = {(int(math.floor((m.origin(e)[0] + dx) / MS.CELL)), int(math.floor((m.origin(e)[1] + dy) / MS.CELL)))
+             for e in spawns for dx in (-16, 16) for dy in (-16, 16)}
+    tris = MS.solid_triangles(m, cells)
+    props = [m.origin(e) for e in m.entities() if m.cls(e).startswith('prop_')]
+    out = []
+    for e in spawns:
+        o = m.origin(e)
+        near = [t for t in tris if min(p[0] for p in t) <= o[0] + 17 and max(p[0] for p in t) >= o[0] - 17
+                and min(p[1] for p in t) <= o[1] + 17 and max(p[1] for p in t) >= o[1] - 17]
+        fl = [MS.floor_below(near, (o[0] + dx, o[1] + dy, o[2]), start=0.0, drop=SPAWN_DROP[1] + 1) for dx, dy in SPAWN_COLS]
+        fl = [z for z in fl if z is not None]
+        if not fl: continue
+        floor = max(fl); gap = o[2] - floor
+        if not SPAWN_DROP[0] <= gap <= SPAWN_DROP[1]: continue
+        prop = any(abs(p[0] - o[0]) < 48 and abs(p[1] - o[1]) < 48 and floor - 4 <= p[2] <= o[2] for p in props)
+        label = '%s %s at %s' % (m.cls(e), m.name(e) or '(unnamed)', ' '.join('%g' % round(x, 1) for x in o))
+        out.append((label, round(gap, 1), round(floor + SPAWN_LIFT, 2), not prop))
+        if fix and not prop: dmx.set_(m.E[e], b'origin', dmx.T_V3, [float(o[0]), float(o[1]), float(round(floor + SPAWN_LIFT, 2))])
+    if not out: return out
+    desc = lambda L: '; '.join('%s (%g u up)' % x[:2] for x in L)[:700]
+    moved = [x for x in out if x[3]]; held = [x for x in out if not x[3]]
+    if fix:
+        if moved: c.log.append('spawndropfix: %d spawns floating %g-%g u over the floor put down to 2 u over it: %s' % (len(moved), SPAWN_DROP[0], SPAWN_DROP[1], desc(moved)))
+        if held: c.todo.append('spawndropfix: %d floating spawns left (a prop under them may be the floor): %s' % (len(held), desc(held)))
+    else:
+        c.todo.append('spawndrop: %d spawns float %g-%g u over the floor (CS2 may spawn the player into a low roof; stage D spawndropfix puts them down): %s'
+                      % (len(out), SPAWN_DROP[0], SPAWN_DROP[1], desc(out)))
+    return out
 
 
 def spawn_lift(m, c, fix=False):

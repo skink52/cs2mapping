@@ -1,7 +1,7 @@
 """Run individual clean passes on an already-cleaned map (keeps your own Hammer edits).
 
 python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alpha, radar, daylight, skyvis, visfit, visfit_lower, visfit_lean, gravity, roundend (game_round_end / player_weaponstrip -> io script), weaponmodels (CS:GO w_ weapon props -> CS2 weapon models), playercolor (!activator Color -> io script SetColor), envglobal (env_global + logic_autos reading a global state -> io script),
-        overlayfix (rebuild placeholder overlay quads), overlaydepth (same + projection depth 8 on every overlay), facescale, matflags,
+        overlayfix (rebuild placeholder overlay quads), overlaydepth (same + projection depth 8 on every overlay), facescale, matflags, matscroll (TextureScroll materials scroll: unlit),
         probes (report static func_breakable/func_brush outside probe volumes), probecover (add volumes for them),
         lightbright (rebuild light brightness from the VMF: the importer's brightness = nan / too dim), relight (delete every light and rebuild it
         from the VMF; run before lights), equipitems (item_* out of equip slots),
@@ -25,15 +25,16 @@ python3 stage_d.py <addon> <root> pass[,pass...]      passes: beams, lights, alp
         texlights (lights.rad texture lights -> self-illum / light_rect; needs the BSP), lightcal / lightcal_apply (light brightness from the
         compiled light list + BSP traces: report / apply), fullbright (map with no baked light: unlit world, shadowless sun, probes),
         blendpaint (displacement blend paint from the VMF), thintrigfix (thin boost/gravity triggers raised to 6 u), spawnliftfix (spawns in the
-        floor lifted), numnames (names the importer read as numbers get their VMF text back; run with io / droppedio), smoke (smoke / dust /
+        floor lifted), spawndropfix (spawns floating 16-48 u put down), numnames (names the importer read as numbers get their VMF text back; run with io / droppedio), smoke (smoke / dust /
         embers / trails -> particles), momentum (Momentum Mod triggers -> io script), blendupgrade (one-layer blend vmats from older
         runs -> two layers; before blendpaint), spotbeam (point_spotlight / beam_spotlight -> cones), stockmodels (CS:GO chicken /
-        hostage / agent props -> CS2 stock models)
+        hostage / agent props -> CS2 stock models),
+        compat = lightio, telekeys, ambientstop, defaultanim, clipvphys, cliplayer (CS:GO entity / I/O behaviour; see csgocompat.py)
 Appends to maps/<addon>_cleanup_log.txt (reads the current one from <root>/content/<addon>/maps if present).
 """
 import os, re, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import tesla, probefill, repair, firefx, splitfaces, waterprobe, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol, ropes, particles, roundend, texlights, postfx, smokestack, momentum, blendpaint, jsapi
+import tesla, probefill, repair, firefx, splitfaces, waterprobe, vmapedit as V, stage_c, gameui, beams, lighting, assets, vpk, radar, daylight, skyvis, visfit, gravity, texfix, probecover, steam, soundscripts, physpush, physlaunch, droppedio, ovlquad, ventlight, doorsolid, watervol, ropes, particles, roundend, texlights, postfx, smokestack, momentum, blendpaint, jsapi, csgocompat
 
 def run(addon, root, passes):
     c = stage_c.Ctx(addon, root)
@@ -49,6 +50,7 @@ def run(addon, root, passes):
     if 'ovlquads' in passes: ovlquad.run(m, c)   # overlays on brush entities -> parented quads
     if 'facescale' in passes: texfix.face_scales(m, c, vmfp)
     if 'matflags' in passes: texfix.material_flags(m, c)
+    if 'matscroll' in passes: texfix.texture_scroll(m, c)
     if 'beams' in passes: beams.run(m, c)
     if 'ropes' in passes: ropes.run(m, c, vmfp)   # path_particle_rope needs no vmf
     if 'skyvis' in passes: skyvis.run(m, c)
@@ -107,6 +109,8 @@ def run(addon, root, passes):
     if 'numnames' in passes and os.path.exists(vmfp): repair.numeric_names(m, c, vmfp)
     if 'thintrigfix' in passes: repair.thin_triggers(m, c, fix=True)
     if 'spawnliftfix' in passes: repair.spawn_lift(m, c, fix=True)
+    if 'spawndropfix' in passes: repair.spawn_drop(m, c, fix=True)
+    if 'compat' in passes or any(p in passes for p in csgocompat.PASSES): csgocompat.run(m, c, passes)   # lightio after relight
     if 'smoke' in passes: smokestack.run(m, c, vmfp)
     if 'momentum' in passes:
         momentum.run(m, c)

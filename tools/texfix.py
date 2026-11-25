@@ -346,14 +346,31 @@ def _moved(s, t):
     r['va'] = s['va'][:3] + [s['va'][3] - dot(s['va'][:3], t) / s['vs']]
     return r
 
+DECOMPILE_SNAP = 1.0 / 256      # BSPSource writes scales to 4 decimals (1/32 = 0.03125 -> 0.0313): put back the multiple of this they round
+def _snap_decompile_scale(v):
+    """A VMF scale within BSPSource's 4-decimal rounding of a multiple of 1/256 -> that multiple (0.0313 -> 0.03125, 0.1563 -> 0.15625).
+    Far from the origin the rounding drifts the texture (cs2-slop-porting DECOMPILE_SCALE_FIX: mg_mario_party's A / B buttons at x 2000)."""
+    k = round(v / DECOMPILE_SNAP)
+    x = k * DECOMPILE_SNAP
+    return x if k and x != v and abs(x - v) <= 0.00005 + 1e-9 else v
+
+
 def face_scales(m, c, vmfpath):
     """Faces are matched to a VMF side, first try wins: same plane + material (slivers by corners only; a renamed material = the one VMF
     material with the same file name) -> a moved copy of a VMF brush of the same size (texture lock) -> rounded corners (2.5u) -> pushed-off
     faces (6u) -> a displacement's base face -> (absurd scales only) a side of another material on the same plane."""
     lo, hi = BAD_RATIO
     sides, brushes = [], []
+    nsnap = 0
     if os.path.exists(vmfpath):
-        for br in vmf_brushes(vmfmod.parse(open(vmfpath, encoding='utf-8', errors='replace').read())):
+        vtxt = open(vmfpath, encoding='utf-8', errors='replace').read()
+        decomp = 'bspsource' in vtxt[:4000].lower()
+        for br in vmf_brushes(vmfmod.parse(vtxt)):
+            if decomp:
+                for s in br:
+                    for k in ('us', 'vs'):
+                        v = s.get(k)
+                        if v: x = _snap_decompile_scale(v); nsnap += x != v; s[k] = x
             ok = False
             for s in br:
                 s['solid'] = br
@@ -554,6 +571,7 @@ def face_scales(m, c, vmfpath):
             elif fix and not ts: no_tex.add(mat)
     done = ['%s (%d)' % (os.path.basename(k)[:-5], max(a + b, d)) for k, (a, b, _, d) in sorted(res.items()) if a + b + d]
     tg = sum(1 for f in faces if f['tgt'])
+    if nsnap: c.log.append('face texture scales: %d VMF side scales put back from the BSPSource 4-decimal rounding to the 1/256 multiple (0.0313 -> 0.03125)' % nsnap)
     c.log.append('face texture scales: %d brush faces, %d matched to one VMF mapping%s' % (len(faces), tg, ''.join('; %d %s' % (v, k) for k, v in sorted(stat.items()))))
     if renamed: c.log.append('face texture scales: vmap materials not in the VMF matched to the one VMF material with the same file name: %s'
                              % ', '.join('%s (%d)' % kv for kv in sorted(renamed.items()))[:900])
@@ -685,3 +703,75 @@ def material_flags(m, c):
     if alpha: c.log.append('$alpha materials -> F_TRANSLUCENT with that opacity: %s' % ', '.join(alpha))
     if glow: c.log.append('$selfillum materials -> F_SELF_ILLUM (mask from the texture alpha): %s' % ', '.join(glow))
 
+
+
+# ------------------------------------------------------------------ matscroll: Source 1 TextureScroll -> scrolling CS2 material
+# From cs2-slop-porting TEXTURE_SCROLL (2026-11-24, MIT): in their CS2 test only csgo_unlitgeneric scrolled with a DynamicParams
+# g_vTexCoordOffset (mg_divine's waterfall); the same block on csgo_complex / csgo_lightmappedgeneric stayed still. Valve's importer
+# drops the proxy, so the texture stood still. Such a material becomes unlit (not lit by the map).
+def vmt_proxies(raw):
+    """{proxy name (lower): [ {key (lower): value} ...]} from a .vmt's Proxies block"""
+    txt = re.sub(r'//[^\n]*', '', raw.decode('utf-8', 'replace') if isinstance(raw, (bytes, bytearray)) else raw)
+    mp = re.search(r'(?i)"?proxies"?\s*\{', txt)
+    out = {}
+    if not mp: return out
+    i = mp.end(); depth = 1
+    while i < len(txt) and depth:
+        mb = re.compile(r'\s*"?([A-Za-z0-9_]+)"?\s*\{([^{}]*)\}|\s*\}').match(txt, i)
+        if not mb: i += 1; continue
+        if mb.group(0).strip() == '}': depth -= 1; i = mb.end(); continue
+        tok = [a if a else b for a, b in re.findall(r'"([^"]*)"|([^\s"{}]+)', mb.group(2))]
+        out.setdefault(mb.group(1).lower(), []).append({tok[k].lower(): tok[k + 1] for k in range(0, len(tok) - 1, 2)})
+        i = mb.end()
+    return out
+
+
+def texture_scroll(m, c):
+    """Materials on the map's meshes and on every other vmap of the addon (3D skybox, prefabs: ttt_terrortrain's scrolling ground)."""
+    import assets, vmapedit
+    mats = set(assets.mesh_materials(m))
+    md = os.path.join(c.content, 'maps')
+    for dp, _dn, fn in os.walk(md) if os.path.isdir(md) else ():
+        for f in fn:
+            if f.endswith('.vmap') and f != c.addon + '.vmap':
+                try: mats |= set(assets.mesh_materials(vmapedit.Map(os.path.join(dp, f))))
+                except Exception: pass
+    done, kept = [], []
+    for mat in sorted(mats):
+        if not mat.endswith('.vmat') or mat.startswith('materials/tools/'): continue
+        vp = os.path.join(c.content, mat)
+        if mat in c.files: txt = c.files[mat].decode('utf-8', 'replace')
+        elif os.path.exists(vp): txt = open(vp, encoding='utf-8', errors='replace').read()
+        else: continue
+        if 'DynamicParams' in txt: continue                            # already scrolling (an earlier run, or by hand); the importer writes a static g_vTexCoordOffset
+        raw = _read_src(c, mat[:-5] + '.vmt')
+        if raw is None: continue
+        px = vmt_proxies(raw)
+        if not px.get('texturescroll'):
+            sh, kv = _vmt_kv(raw)
+            if sh == 'patch' and kv.get('include'):
+                r2 = _read_src(c, kv['include'].replace(chr(92), '/'))
+                px = vmt_proxies(r2) if r2 else {}
+        dx = dy = None
+        for blk in px.get('texturescroll', []):
+            if (blk.get('texturescrollvar') or '').lower() != '$basetexturetransform': continue
+            try: rate = float(blk.get('texturescrollrate') or 0); ang = math.radians(float(blk.get('texturescrollangle') or 0))
+            except ValueError: continue
+            if rate: dx, dy = round(rate * math.cos(ang), 3) + 0.0, round(rate * math.sin(ang), 3) + 0.0
+        if dx is None: continue
+        ms = re.search(r'(?im)^(\s*"?shader"?\s+")([^"]+)(")', txt)
+        if not ms: continue
+        new = txt
+        if 'unlit' not in ms.group(2).lower():
+            if 'static_overlay' in ms.group(2).lower() or 'water' in ms.group(2).lower() or 'sky' in ms.group(2).lower(): kept.append(os.path.basename(mat)[:-5]); continue
+            new = new[:ms.start(2)] + 'csgo_unlitgeneric.vfx' + new[ms.end(2):]
+            new = re.sub(r'(?im)^\s*"?(TextureNormal|TextureRoughness|TextureMetalness|TextureAmbientOcclusion|TextureDetail\w*|F_SELF_ILLUM|F_SPECULAR\w*)"?\s+[^\n]*\n?', '', new)
+        block = '\n    DynamicParams\n    {\n        g_vTexCoordOffset "frac( float2( %.3f, %.3f ) * time() )"\n    }\n' % (dx, dy)
+        k = new.rstrip().rfind('}')
+        new = new[:k].rstrip() + '\n' + block + new[k:]
+        c.write(mat, new); done.append('%s (%g, %g /s)' % (os.path.basename(mat)[:-5], dx, dy))
+    if done: c.log.append('matscroll: %d TextureScroll materials scroll again (csgo_unlitgeneric + DynamicParams g_vTexCoordOffset; no longer lit by the map): %s'
+                          % (len(done), ', '.join(done[:20])))
+    if kept: c.todo.append('matscroll: TextureScroll on overlay / water / sky materials left still: %s' % ', '.join(kept))
+    if done: c.todo.append('matscroll: %d scrolling materials made unlit: check direction and speed against CS:GO' % len(done))
+    return len(done)

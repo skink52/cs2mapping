@@ -67,6 +67,9 @@ mean are in [docs/reference/compatibility.md](docs/reference/compatibility.md); 
 - Blend terrain (two textures painted across the ground) keeps its painting when the ground has to be rebuilt.
 - Smoke stacks, floating dust, embers and sprite trails come back as particles; entity names that look like numbers (`000`) keep their exact text so the logic using them works.
 - Bhop and surf maps made for Momentum Mod keep their special triggers (teleports that keep speed, speed gates, slides, push pads) *(simulated only)*.
+- Lights that maps switch or flicker work the CS2 way, teleports keep their "use landmark angles" setting, looping sounds stop when the map stops them, animated props play their animation, and player-only clips stop only players *(tested on copies, not in game)*.
+- Scrolling textures (moving water, conveyor-style ground) move again, AddOutput tricks that CS2 rejects are rewritten into inputs it accepts, sleeping physics objects wake when their trigger turns on, and props stay attached to the same parent as in CS:GO *(tested on copies, not in game)*.
+- Optional: physics boxes can be given their CS:GO weight, spawn points floating in the air can be put on the floor, and an in-game debug console (find, watch, follow outputs) can be added for testing *(tested on copies, not in game)*.
 - Paper-thin boost pads and spawns sunk into the floor are reported, and fixed on request.
 - Blend terrain rebuilt with both textures, so painted grass / rock edges show; spotlight beams (including CS:GO's rotating ones) rebuilt as glowing cones; statues of CS:GO agents, hostages and chickens switched to CS2's own models *(on request)*.
 - A minimap drawn from where bots and players can actually walk (the compiled map's nav mesh), as an option beside the floor-based one; tighter on maps with big unreachable scenery.

@@ -1,4 +1,4 @@
-# cs2-slop-porting recheck, 8 Nov 2026
+# cs2-slop-porting rechecks (8 and 25 Nov 2026)
 
 > **AI-generated.** Written by Claude for skink52's pipeline. Earlier rechecks (29 Oct, 30 Oct, 2 Nov) are summarised in
 > [external-tools.md](external-tools.md).
@@ -6,6 +6,79 @@
 What was read: [Ninja-Chris/cs2-slop-porting](https://github.com/Ninja-Chris/cs2-slop-porting) at commit `8b94235` (8 Nov 2026):
 `vmap_asset_slop_import.py` and `scripts/hurt_zone.js`, `player_velocity.js`, `push_mass.js`. Our last recheck was 3.5 / 2026-11-02a
 (commit `949e104`). Nothing of theirs was copied into our tools; what we took is written fresh (the repo is MIT, Ninja-Chris and skink52).
+
+## Recheck 25 Nov 2026 (2026-11-24h)
+
+Read: commits `de5420b`..`ba2cbb1` (24 Nov 2026). The script now parses (30,016 lines, 439 settings, 117 new since 8 Nov, `DOOR_SPEED_MOVELINEAR`
+gone) and ships 11 new cs_script files (player_equip, teleport_cycle, softbarrier, speedmod, screen_overlay, round_end, game_score,
+maker_spawn, trigger_push, debug_watch, pickup_probe). The author's commit note: "diff merge yourself". Most new work was tuned on
+mg_mario_party, mg_divine, mg_hellz and ba_jail_os_gulag_d. Each new setting was sized by a census of our 90 port vmaps (counts below).
+
+**Omni-script: not recommended.** Their file is one 30k-line script holding every step; ours is the same work as small passes
+(`stage_c` / `stage_d` / `run_c`, autoport on top), each testable and rerunnable on a map someone has edited in Hammer. Taking their
+ideas into those passes (as below) gives one pipeline without importing a second, overlapping one. `stage_c` with its default list
+already is the "one command".
+
+### Taken (stage C default `compat`, stage D passes; `tools/csgocompat.py`, `tools/lighting.py`)
+
+| What | Our ports | Evidence |
+|---|---|---|
+| Light styles written as CS2 style names | 1 (ttt_terrortrain) + every future relight | CS2's `scripts/light_styles.vdata_c` (read 25 Nov 2026): 11 named dimmer curves, exactly Source 1 presets 1-11 (`flicker_1` = style 1's `mmnmmommommnonmmonqnmmo`). We wrote the pattern string, which CS2 doesn't take. |
+| Lights switched by outputs no longer client-only; TurnOn / TurnOff → Enable / Disable, SetPattern → SetStyle | 278 named client-only lights in 8 ports; switched: ba_jail_lightsout 147, ba_jail_skylight 30 | CS2 FGD: light_omni2 has Enable / Disable / Toggle / SetStyle, no TurnOn. A Create Client-Only Entity light has no server entity, so inputs never reach it (theirs: gulag's disco lights). Our `relight` set client-only on every light. |
+| trigger_teleport `UseLandmarkAngles` / `CheckDestIfClearForPlayer` → `use_landmark_angles` / `check_if_dest_clear_for_player` | 175 set to 1 under the old name, 11 ports (mg_swag_multigames 55) | CS2 FGD has only the new names; the importer keeps the old ones. |
+| StopSound in front of a Volume 0 (never raised again) / a Kill of a looping ambient_generic | mg_arcs_multigames 38, 4 more ports 22 | Theirs from CS:GO's binary + game (Mario Party lobby music). |
+| prop_dynamic DefaultAnim → IdleAnim, looping | 72 in 4 ports (mg_antique_course 60) | CS2 FGD prop_dynamic has no DefaultAnim key. |
+| func_clip_vphysics toolstrigger faces → toolsnodraw | 69 entities in 13 ports | Theirs in game (Mario Party lanes); not checked by us. |
+| All-playerclip func_brush / func_wall / unbreakable func_breakable → func_clip_interaction_layer (InteractsAs playerclip, InteractsWith player) | mg_swag_multigames 28, mg_yolo_multigames 4, ba_jail_skylight 1 | Theirs in game (Mario Party cannon); FGD has the class and both keys. Entities sent Toggle / Break etc. are left and listed. |
+
+Tested: scratch copies of ba_jail_lightsout, mg_swag_multigames, mg_arcs_multigames, mg_antique_course, ba_jail_skylight,
+mg_yolo_multigames: changes as counted, entity count kept, a second run changes nothing. Not built, not checked in game. The ported
+maps themselves were not changed: `stage_d.py <addon> <root> compat` applies it to one.
+
+### Taken, batch 2 (same day)
+
+| What | Where | Our ports | Tested on scratch copies |
+|---|---|---|---|
+| AddOutput keyvalues CS2 rejects on named targets → SetHealth / Alpha / Color (SetColor on lights), rendermode dropped; added outputs `OnX t:i:p:d:n` → `OnX>t>i>p>d>n` | `compat` / `addoutfix` | mg_arcs_multigames 60 rendercolor, mg_color_multigames 24 added outputs; 35 !activator ones listed for the io script | mg_arcs, mg_color: as counted, rerun 0 |
+| Wake beside Enable / Toggle of a physics-object trigger over a sleeping physbox / prop | `compat` / `physwake` | 116 sleeping physboxes, 300 sleeping props, 174 physics triggers in 19 ports | none matched in the 8 maps tried |
+| Shared parent name → the entity CS:GO picked (first in the VMF), renamed `<name>__parent`, outputs copied | `compat` / `sharedparent` | 35 children in 9 ports | mg_insomnia_course officedoor4 (6 children), mg_jahoukarail_2015 Grenade6 (4) |
+| func_physbox SetMass to CS:GO's mass (volume, visible sides 0.5 u in approximated as volume − 0.5 × visible area, × CS:GO surfaceprop density read from its surfaceproperties, × massScale, max 50000) | opt-in `physboxmass` | 311 physboxes in 24 ports; template and shared-name ones left | ba_jail_lightsout Dball_1 2281 kg (concrete), mg_jahoukarail_2015 Break3 20.8 kg (metal, hollow) |
+| TextureScroll on `$basetexturetransform` → csgo_unlitgeneric + DynamicParams `g_vTexCoordOffset` | `matscroll` (texfix) | ttt_terrortrain 5 (3D skybox ground), mg_pokemon_adventure 2 | written to memory only, rerun 0 |
+| BSPSource 4-decimal scales → 1/256 multiple (`DECOMPILE_SCALE_FIX`) | `facescale` | every decompiled VMF | unit values (0.0313 → 0.03125, 0.4688 → 0.46875, 0.3 kept) |
+| Floating spawns 16-48 u → 2 u over the floor (not over a prop) | stage C report, D `spawndropfix` | mg_arcs_multigames 65 at 32 u, mg_nature 48, ba_jail_keimusho 23 | report only |
+| debug_watch.js (in-game console tools) | `tools/debug_watch.js`, opt-in `debugwatch` | — | api check and tscheck clean |
+
+Left out of batch 2 on purpose: ConveyorScroll (needs a material copy per conveyor speed), ANIMATED_UNLIT (our importer route already writes F_TEXTURE_ANIMATION;
+`animprops` handles tiled faces), VMDL_BODYGROUP_NAMES (`vmdlfix.py` already does it).
+
+### Needs a check in game before taking
+
+- **trigger_teleport the "CS:GO way"** (`CSGO_TELEPORTS` + teleport_cycle.js: keep the toucher's angles and velocity, cycle through
+  same-named destinations). This contradicts Source SDK 2013's `CTriggerTeleport::Touch` (no landmark: destination angles and zero
+  velocity unless spawnflag 32 Preserve angles), and would touch 1,462 landmark-less teleports in 39 of our ports. Same-named
+  destinations: only 26 teleports in 3 ports (mg_bob2 13, jb_renegade 9, mg_minecraft_multigames 4). Test in CS:GO first.
+- **phys_thruster force** (`PHYS_THRUSTER_FORCE`: × mass / 1000 with flag 16): 237 thrusters in 8 ports (mapgames 128, ba_jail_skylight 48).
+  From their binary reading; needs the attached object's CS:GO mass. Our gotcha already says thrusters didn't move Mario Party's Dog_box.
+- **logic_case fed numbers** (`LOGIC_CASE_FLOAT_TEXT`): they say CS2 sends "1.0", our gotcha guessed "1.000000". 7 math → case links in 3 ports.
+- **trigger_buoyancy** over func_water (`WATER_BUOYANCY`): not in CS2's FGD.
+
+### Not yet taken (bigger; candidates for later batches)
+
+(Batch 2 took `ADDOUTPUT_KEY_INPUTS`, `ADDOUTPUT_OUTPUTS_GATED` (as a rewrite to the `>` form), `PHYS_TRIGGER_WAKE`, `PHYSBOX_SET_MASS`,
+`SHARED_PARENT_FIX` / `AMBIGUOUS_PARENT_FIX`, `TEXTURE_SCROLL`, `DECOMPILE_SCALE_FIX`, `SPAWN_DROP_MAX`, `DEBUG_WATCH_SCRIPT`; the rest are still open.)
+Models: `MDL_VTX_ONE_STRIP_GROUP` (cs_mdl_import joins a second strip group's triangles to the first's vertices: hostage faces),
+`MDL_INCLUDE_TRIM` (import only the sequences the map plays from $includemodel), `MDL_CRASH_OTHER_SOURCE`, `MDL_REMEMBER_FAILURES`,
+`VMDL_BODYGROUP_NAMES`, `RAGDOLL_*`, `MODEL_DEFAULT_POSE*`, `MODEL_SPHERE_HULLS`, `EYE_IRIS_BAKE`, `PROPDATA_MISSING_MODELS`.
+Materials: `TEXTURE_SCROLL` / `ANIMATED_UNLIT` / `CONVEYOR_SCROLL` (only csgo_unlitgeneric animated in their tests), `ANIM_ONLY_BY_PROXY`,
+`SELFILLUM_MASKS`, `REFRACT_FACES`, `MISSING_BLACK_FIX`, `RENDER_TARGET_BLACK`, `MATERIAL_BRACE_FIX`, `AREAPORTAL_FADE_BRUSH`.
+Geometry (VMF-based): `DECOMPILE_SCALE_FIX` (BSPSource's 4-decimal scales), `BROKEN_SCALE_BY_PLANE`, `HIDDEN_FACE_FIX`, `GLASS_BACK_FIX`,
+`GLASS_FLUSH_FIX`, `DISP_REBUILD`, `STATIC_OVERLAY_FIT_DEPTH` / `SURFACE_GAP`. Entities: `ENV_SUN_IN_SKY`, `CONVERT_SOUNDSCAPES` (35 in 15),
+`WORLDTEXT_FIX` (75 in 9, mostly our originals), `SOFT_BARRIERS`, `SCREEN_OVERLAYS` (1), `MONSTER_GENERIC_FIX`, `MAKER_TEMPLATE_AT_ENTITY`,
+`SHARED_PARENT_FIX` / `AMBIGUOUS_PARENT_FIX`, `PHYS_TRIGGER_WAKE`, `PHYSBOX_SET_MASS` (CS2 gave a physbox 10.6 kg for CS:GO's 445),
+`ADDOUTPUT_KEY_INPUTS` / `ADDOUTPUT_OUTPUTS_GATED` (ao_targetname 209 in 8, ao_health 37, output-adding 44), `SPAWN_FLOOR_FIX` drop of
+floating spawns (our `spawnlift` only lifts), `ROPE_CLIENTSIDE`. Tools: `debug_watch.js` (in-game entity / I/O console) is worth a copy
+in `create/` as a debugging aid, not added to every map.
+Covered already by our io script: equips, game_round_end, game_score, player_speedmod, trigger_gravity, trigger_push, dustmotes, ropes.
 
 ## State of their script
 

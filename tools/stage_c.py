@@ -12,7 +12,7 @@ sky, skyvis, vis, beams, lights, alpha, probes, waterprobe, radar, assets, matfl
 """
 import os, re, sys, json, math, glob, collections, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import dmx, vmf as vmfmod, vmapedit as V, gen_script, repair, firefx, particles, splitfaces, waterprobe, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch, droppedio, ovlquad, ropes, texlights, postfx, daylight, smokestack, momentum, jsapi
+import dmx, vmf as vmfmod, vmapedit as V, gen_script, repair, firefx, particles, splitfaces, waterprobe, assets, vpk, sky as skymod, beams as beammod, lighting, radar, skyvis, visfit, gravity, texfix, probecover, soundscripts, steam, physpush, physlaunch, droppedio, ovlquad, ropes, texlights, postfx, daylight, smokestack, momentum, jsapi, csgocompat
 
 CS2 = os.environ.get('CS2_ROOT') or r'C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive'
 
@@ -972,7 +972,7 @@ def run(addon, root, passes=None):
     c = Ctx(addon, root)
     vp = os.path.join(c.content, 'maps', addon + '.vmap')
     m = V.Map(vp)
-    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'momentum', 'dead', 'trigmat', 'toolpaths', 'trigsplit', 'thintrig', 'spawnlift', 'rendermode', 'renderamt', 'steam', 'smoke', 'fire', 'particles', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'culled', 'displaybrush', 'splitfaces', 'sky', 'skyvis', 'vis', 'beams', 'spotbeam', 'ropes', 'lights', 'alpha', 'probes', 'waterprobe', 'radar', 'assets', 'matflags', 'origindup', 'droppedio']
+    steps = passes or ['merge', 'io', 'wall', 'equip', 'launch', 'push', 'cmd', 'roundcfg', 'score', 'speed', 'gravity', 'momentum', 'dead', 'trigmat', 'toolpaths', 'trigsplit', 'thintrig', 'spawnlift', 'rendermode', 'renderamt', 'steam', 'smoke', 'fire', 'particles', 'sounds', 'soundscripts', 'doors', 'overlays', 'overlayfix', 'ovlquads', 'facescale', 'culled', 'displaybrush', 'splitfaces', 'sky', 'skyvis', 'vis', 'beams', 'spotbeam', 'ropes', 'lights', 'alpha', 'probes', 'waterprobe', 'radar', 'assets', 'matflags', 'matscroll', 'compat', 'origindup', 'droppedio']
     c.steps = steps
     if 'merge' in steps: merge_prefabs(m, c)
     vmfp = os.path.join(root, 'source1', 'maps', addon + '.vmf')
@@ -995,6 +995,7 @@ def run(addon, root, passes=None):
     if 'trigsplit' in steps: repair.split_triggers(m, c)
     if 'thintrig' in steps or 'thintrigfix' in steps: repair.thin_triggers(m, c, fix='thintrigfix' in steps)   # report; thintrigfix raises them
     if 'spawnlift' in steps or 'spawnliftfix' in steps: repair.spawn_lift(m, c, fix='spawnliftfix' in steps)   # report; spawnliftfix moves them
+    if 'spawnlift' in steps or 'spawndropfix' in steps: repair.spawn_drop(m, c, fix='spawndropfix' in steps)   # floating 16-48 u: report; spawndropfix moves them
     if 'rendermode' in steps: render_modes(m, c)                # Source 1 numbers -> CS2's three render mode names
     if 'renderamt' in steps: render_alpha(m, c)
     vd = os.path.join(root, 'vpk')
@@ -1058,6 +1059,7 @@ def run(addon, root, passes=None):
             if c.overlay_skipped: c.todo.append('overlay materials not converted: %s' % '; '.join(c.overlay_skipped)[:800])
     if 'texlights' in steps: texlights.run(m, c)     # opt-in: lights.rad texture lights -> F_SELF_ILLUM / light_rect (needs the BSP)
     if 'matflags' in steps: texfix.material_flags(m, c)
+    if 'matscroll' in steps: texfix.texture_scroll(m, c)   # after matflags: TextureScroll -> unlit scrolling vmat
     if 'physpush' not in steps and 'dead' in steps and any(m.by_class(*physpush.CLASSES)):
         c.todo.append("the map has %d physics props: if player pushes on them feel wrong in game (too easy or too hard for the prop's size), run the physpush step (run_pass.py ... physpush)" % len(m.by_class(*physpush.CLASSES)))
     jp = os.path.join(c.content, 'maps', 'scripts', addon + '_io.js')
@@ -1078,6 +1080,7 @@ def run(addon, root, passes=None):
             o = m.origin(spawn)
             m.new_entity('point_script', [o[0], o[1], o[2] + 64], {'targetname': c.script, 'cs_script': 'maps/scripts/%s_io.vjs' % addon})
             c.log.append('added point_script %s (maps/scripts/%s_io.js)' % (c.script, addon))
+    if 'compat' in steps or any(p in steps for p in csgocompat.PASSES): csgocompat.run(m, c, steps)   # after lights: lightio needs the rebuilt lights
     if 'origindup' in steps and os.path.exists(vmfp): repair.origin_duplicates(m, c, vmfp)   # report only; stage D origindup deletes
     if 'droppedio' in steps and os.path.exists(vmfp): droppedio.run(m, c, vmfp)   # last, so it sees what our steps converted
     c.log.append('pruned %d orphaned elements' % m.prune())

@@ -283,6 +283,12 @@ LIGHT_STYLES = {1: 'mmnmmommommnonmmonqnmmo', 2: 'abcdefghijklmnopqrstuvwxyzyxwv
                 4: 'mamamamamama', 5: 'jklmnopqrstuvwxyzyxwvutsrqponmlkj', 6: 'nmonqnmomnmomomno', 7: 'mmmaaaabcdefgmmmmaaaammmaamm',
                 8: 'mmmaaammmaaammmabcdefaaaammmmabcdefmmmaaaa', 9: 'aaaaaaaazzzzzzzz', 10: 'mmamammmmammamamaaamammma',
                 11: 'abcdefghijklmnopqrrqponmlkjihgfedcba'}
+# CS2's light_style key and SetStyle input take a style NAME from scripts/light_styles.vdata, not a pattern. Read from CS2's
+# light_styles.vdata_c (25 Nov 2026): its 11 named dimmer curves are Source 1's presets 1-11 (flicker_1's curve is style 1's
+# 'mmnmmommommnonmmonqnmmo' at m = 1.0). Name list as in cs2-slop-porting 2026-11-24 (MIT).
+LIGHT_STYLE_NAMES = {1: 'flicker_1', 2: 'slow_strong_pulse', 3: 'candle_1', 4: 'fast_strobe', 5: 'gentle_pulse', 6: 'flicker_2', 7: 'candle_2',
+                     8: 'candle_3', 9: 'slow_strobe', 10: 'fluorescent_flicker', 11: 'slow_pulse_nofade'}
+LIGHT_PATTERN_NAMES = {LIGHT_STYLES[k]: v for k, v in LIGHT_STYLE_NAMES.items()}
 
 
 def vmf_light(e):
@@ -360,9 +366,10 @@ def fix_brightness(m, c, vmfpath):
         m.setp(e, 'brightness_legacy', '%g' % round(leg, 6)); m.setp(e, 'brightness', '%g' % round(math.log2(leg), 6))
         m.setp(e, 'color', col); m.setp(e, 'colormode', '0')     # the importer writes a 6600 K white (colour temperature)
         if dark: m.setp(e, 'enabled', '0')
-        if style in LIGHT_STYLES: m.setp(e, 'light_style', LIGHT_STYLES[style]); nstyle += 1
+        if style in LIGHT_STYLE_NAMES: m.setp(e, 'light_style', LIGHT_STYLE_NAMES[style]); nstyle += 1
         if (dark or switched or style) and m.P(e, 'directlight') not in ('2', '3'):
             m.setp(e, 'directlight', '2'); ndyn += 1             # a Static (baked) light cannot be switched or flicker
+        if switched: m.setp(e, 'clientSideEntity', '0')          # a client-only entity never gets the server's inputs
         if special:
             m.setp(e, 'range', '%.0f' % max(256.0, RANGE_Q * math.sqrt(leg))); nspecial += 1
         if m.cls(e) == 'light_omni2':
@@ -383,7 +390,7 @@ def fix_brightness(m, c, vmfpath):
                  % (fixed, nan, '; %d unmatched lights set to brightness 0' % len(left) if left else '',
                     '; %d lights with _fifty_percent_distance / linear falloff matched to CS:GO at %d units, range %d x sqrt(legacy)' % (nspecial, FIT_DIST, RANGE_Q) if nspecial else ''))
     if ndyn: c.log.append('%d switched / start-dark / styled lights set to Dynamic (directlight 2)' % ndyn)
-    if nstyle: c.todo.append('%d lights got a CS:GO light style pattern in light_style: check they flicker in game' % nstyle)
+    if nstyle: c.todo.append('%d lights got a CS2 light style (light_styles.vdata name) from their CS:GO style: check they flicker in game' % nstyle)
     if sunspread > 0:
         for e in m.by_class('light_environment'):
             try: cur = float(m.P(e, 'angulardiameter', '0') or 0)
@@ -479,8 +486,9 @@ def relight(m, c, vmfpath, scale=1.0):
                 if any(d):
                     pitch = math.degrees(math.atan2(-d[2], math.hypot(d[0], d[1]))); yaw = math.degrees(math.atan2(d[1], d[0])); n_tgt += 1
             ang = (pitch, yaw, roll); n_barn += 1
-        if style in LIGHT_STYLES: p['light_style'] = LIGHT_STYLES[style]; n_style += 1
+        if style in LIGHT_STYLE_NAMES: p['light_style'] = LIGHT_STYLE_NAMES[style]; n_style += 1
         if dark or switched or style: p['directlight'] = '2'; n_dyn += 1
+        if switched: p['clientSideEntity'] = '0'                 # a client-only entity never gets the server's inputs
         m.new_entity('light_omni2' if cls == 'light' else 'light_barn', o, p, angles=ang)
     for e in ents:
         if (e.get('classname') or '').lower() == 'light_environment' and fl(e.get('SunSpreadAngle')) > 0:
@@ -491,7 +499,7 @@ def relight(m, c, vmfpath, scale=1.0):
                  % (gone, n_omni, n_barn, ', %d aimed at their target' % n_tgt if n_tgt else '', n_dyn,
                     '; %d with linear / fifty-percent falloff fitted to CS:GO at %d u' % (n_fit, FIT_DIST) if n_fit else '',
                     '; %d zero-intensity lights skipped' % n_skip if n_skip else '', '; all scaled by %g' % scale if scale != 1.0 else ''))
-    if n_style: c.todo.append('relight: %d lights got a CS:GO light style pattern in light_style - check they flicker in game' % n_style)
+    if n_style: c.todo.append('relight: %d lights got a CS2 light style (light_styles.vdata name) from their CS:GO style - check they flicker in game' % n_style)
     c.todo.append('relight: brightness scale (1000 lumens per 265 _light) is not checked against a real CS2 bake - compare a few rooms with CS:GO')
     return n_omni + n_barn
 
